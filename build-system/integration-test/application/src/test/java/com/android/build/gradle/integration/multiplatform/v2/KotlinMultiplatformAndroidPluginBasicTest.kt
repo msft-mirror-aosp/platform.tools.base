@@ -41,10 +41,8 @@ class KotlinMultiplatformAndroidPluginBasicTest {
                 kotlin {
                     androidLibrary {
                         withJava()
-                        compilations.all {
-                            compilerOptions.configure {
-                                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                            }
+                        compilerOptions {
+                            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
                         }
                     }
                 }

@@ -21,11 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuil
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.apk.Apk
-import com.android.testutils.truth.DexClassSubject
-import com.android.testutils.truth.DexSubject
 import com.android.utils.FileUtils
-import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -43,12 +39,9 @@ class KotlinMultiplatformAndroidDexingTest {
             """
                 kotlin {
                     androidLibrary {
-                        compilations.all {
-                            compilerOptions.configure {
-                                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
-                            }
+                        compilerOptions {
+                            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
                         }
-
                         enableCoreLibraryDesugaring = true
                     }
                 }
