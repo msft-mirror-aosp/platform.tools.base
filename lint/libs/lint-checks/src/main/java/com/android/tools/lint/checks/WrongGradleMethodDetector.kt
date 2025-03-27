@@ -38,6 +38,7 @@ import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.name
+import org.jetbrains.kotlin.analysis.api.symbols.receiverType
 import org.jetbrains.kotlin.analysis.api.types.KaClassType
 import org.jetbrains.kotlin.analysis.api.types.KaFunctionType
 import org.jetbrains.kotlin.analysis.api.types.KaType
@@ -89,6 +90,21 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
       val parentType = getReceiverType(symbol) as? KaClassType ?: return
       val thisType = getTypeReceiverType(ktCall) as? KaClassType ?: return
       if (!thisType.isSubtypeOf(parentType)) {
+        val thisTypeString = thisType.classId.asSingleFqName().asString()
+        val parentTypeString = parentType.classId.asSingleFqName().asString()
+
+        // Hotfix for b/405442664
+        if (
+          thisTypeString == "org.gradle.api.NamedDomainObjectContainer" &&
+            parentTypeString == "org.gradle.api.NamedDomainObjectProvider"
+        ) {
+          val thisTypeParameterType = thisType.typeArguments.firstOrNull()?.type
+          val parentParameterType = parentType.typeArguments.firstOrNull()?.type
+          if (thisTypeParameterType == parentParameterType) {
+            return
+          }
+        }
+
         if (statement == FIREBASE_APP_DISTRIBUTION_NAME) {
           reportFirebaseAppDistributionMistake(context, ktCall)
           return
@@ -102,7 +118,6 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
             null
           }
 
-        val thisTypeString = thisType.classId.asSingleFqName().asString()
         val inProductFlavor = thisTypeString == "com.android.build.api.dsl.ApplicationProductFlavor"
         val inBuildType = thisTypeString == "com.android.build.api.dsl.ApplicationBuildType"
         val simpleParentType = parentType.classId.relativeClassName.asString()
