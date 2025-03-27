@@ -21,6 +21,7 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:truth",
         "//tools/adt/idea/.idea/libraries:mockito-kotlin",
     ],
+    test_resources = ["manifest-merger/src/test/resources"],
     test_srcs = ["manifest-merger/src/test/java"],
     visibility = ["//visibility:public"],
     exports = ["//tools/base/sdklib:studio.android.sdktools.sdklib"],
@@ -61,16 +62,9 @@ kotlin_test(
         "manifest-merger/src/test/java/com/android/manifmerger/unit/*.kt",
         "manifest-merger/src/test/java/com/android/manifmerger/*.kt",
     ]),
-    # TODO: Why are the xml files not under resources?
     jvm_flags = ["-Dtest.suite.jar=tools.manifest-merger_tests.jar"],
     lint_baseline = "lint_baseline_manifest_merger_tests.xml",
-    resources = glob(
-        include = ["manifest-merger/src/test/java/**"],
-        exclude = [
-            "manifest-merger/src/test/java/**/*.java",
-            "manifest-merger/src/test/java/**/*.kt",
-        ],
-    ),
+    resources = glob(["manifest-merger/src/test/resources/**"]),
     tags = ["noci:studio-win"],  # b/77288863
     test_class = "com.android.testutils.JarTestSuite",
     runtime_deps = ["//tools/base/testutils:tools.testutils"],
