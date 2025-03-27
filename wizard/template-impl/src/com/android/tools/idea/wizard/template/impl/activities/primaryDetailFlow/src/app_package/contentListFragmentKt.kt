@@ -80,8 +80,8 @@ import androidx.core.view.ViewCompat
 import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
 import androidx.navigation.findNavController
 import ${getMaterialComponentName("android.support.v7.widget.RecyclerView", useAndroidX)}
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
-import ${packageName}.placeholder.PlaceholderContent;
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
+import ${escapeKotlinIdentifier(packageName)}.placeholder.PlaceholderContent;
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Kotlin)}
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, itemListContentLayout, Language.Kotlin)}
 

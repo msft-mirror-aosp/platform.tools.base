@@ -34,7 +34,9 @@ fun basicActivityKt(
   navHostFragmentId: String,
   isViewBindingSupported: Boolean
 ): String {
-  val applicationPackageBlock = renderIf(applicationPackage != null) { "import $applicationPackage.R" }
+  val applicationPackageBlock = renderIf(applicationPackage != null) {
+      "import ${escapeKotlinIdentifier(applicationPackage!!)}.R"
+  }
   val newProjectImportBlock = renderIf(isNewProject) {
     """
 import android.view.Menu

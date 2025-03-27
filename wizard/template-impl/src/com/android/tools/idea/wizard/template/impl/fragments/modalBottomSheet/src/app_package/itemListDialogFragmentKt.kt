@@ -78,7 +78,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, itemLayout, Language.Kotlin)}
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, listLayout, Language.Kotlin)}
 

@@ -57,8 +57,8 @@ import com.google.android.gms.wallet.*
 import org.json.JSONException
 import org.json.JSONObject
 
-import $packageName.R
-import $packageName.viewmodel.$viewModelClass
+import ${escapeKotlinIdentifier(packageName)}.R
+import ${escapeKotlinIdentifier(packageName)}.viewmodel.$viewModelClass
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Kotlin)}
 
 /**

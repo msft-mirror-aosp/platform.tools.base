@@ -190,7 +190,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Kotlin)}
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 
 import java.util.Locale
 

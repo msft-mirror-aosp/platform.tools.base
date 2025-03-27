@@ -16,6 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.other.appWidget.src.app_package
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.renderIf
 
 fun appWidgetKt(
@@ -29,13 +30,13 @@ fun appWidgetKt(
   else "val widgetText = context.getString(R.string.appwidget_text)"
 
   return """
-package ${packageName}
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.widget.RemoteViews
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 
 /**
  * Implementation of App Widget functionality.

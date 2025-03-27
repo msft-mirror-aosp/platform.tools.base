@@ -32,7 +32,7 @@ fun transformFragmentKt(
   val layoutName = "fragment_transform"
   val bindingName = layoutToViewBindingClass(layoutName)
   return """
-package ${packageName}.ui.${navFragmentPrefix}
+package ${escapeKotlinIdentifier(packageName)}.ui.${navFragmentPrefix}
 
 import android.os.Bundle
 import android.view.LayoutInflater

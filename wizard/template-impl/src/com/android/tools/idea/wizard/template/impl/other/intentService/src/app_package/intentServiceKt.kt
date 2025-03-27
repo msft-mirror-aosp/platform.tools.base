@@ -69,7 +69,7 @@ fun intentServiceKt(
   }
 
   return """
-package ${packageName}
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.app.IntentService
 import android.content.Intent

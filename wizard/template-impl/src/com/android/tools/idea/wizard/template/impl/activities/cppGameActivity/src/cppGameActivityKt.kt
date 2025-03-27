@@ -15,13 +15,15 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.src
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+
 fun cppGameActivityKt(
     packageName: String,
     activityClass: String,
     libraryName: String,
 ): String {
     return """
-package $packageName
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.view.View
 import com.google.androidgamesdk.GameActivity

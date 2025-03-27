@@ -16,12 +16,13 @@
 
 package com.android.tools.idea.wizard.template.impl.other.broadcastReceiver.src.app_package
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
 fun broadcastReceiverKt(
   className: String,
-  kotlinEscapedPackageName: String
+  packageName: String
 ) = """
-package ${kotlinEscapedPackageName}
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.content.BroadcastReceiver
 import android.content.Context

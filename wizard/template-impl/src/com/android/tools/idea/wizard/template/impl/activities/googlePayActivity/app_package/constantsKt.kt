@@ -16,10 +16,12 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googlePayActivity.app_package
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+
 fun constantsKotlin(packageName: String): String {
 
   return """
-package $packageName
+package ${escapeKotlinIdentifier(packageName)}
 
 import com.google.android.gms.wallet.WalletConstants
 

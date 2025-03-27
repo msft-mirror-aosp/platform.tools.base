@@ -91,7 +91,13 @@ fun importViewBindingClass(
     // unavailable, the containing class's package is used instead. That may be incorrect, but it's
     // better than having no import statement; at least the user will see that the statement doesn't
     // resolve, and may be able to fix it themselves.
-    "import ${escapeKotlinIdentifier(applicationPackage ?: packageName)}.databinding.${layoutToViewBindingClass(layoutName)}${renderIf(language == Language.Java){";"}}"
+    val escapedPackageName =
+      if (language == Language.Kotlin) {
+        escapeKotlinIdentifier(applicationPackage ?: packageName)
+      } else {
+        applicationPackage ?: packageName
+      }
+    "import ${escapedPackageName}.databinding.${layoutToViewBindingClass(layoutName)}${renderIf(language == Language.Java){";"}}"
   }
 
 fun layoutToViewBindingClass(layoutName: String) = underscoreToCamelCase(layoutName) + "Binding"

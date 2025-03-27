@@ -52,8 +52,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
-import ${packageName}.placeholder.PlaceholderContent
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
+import ${escapeKotlinIdentifier(packageName)}.placeholder.PlaceholderContent
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Kotlin)}
 
 /**

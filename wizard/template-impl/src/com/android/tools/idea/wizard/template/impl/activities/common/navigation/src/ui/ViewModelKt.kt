@@ -15,12 +15,13 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.common.navigation.src.ui
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
 fun viewModelKt(
   packageName: String, navFragmentPrefix: String, navViewModelClass: String, useAndroidX: Boolean = true
 ) = """
-package ${packageName}.ui.${navFragmentPrefix}
+package ${escapeKotlinIdentifier(packageName)}.ui.${navFragmentPrefix}
 
 import ${getMaterialComponentName("android.arch.lifecycle.LiveData", useAndroidX)}
 import ${getMaterialComponentName("android.arch.lifecycle.MutableLiveData", useAndroidX)}

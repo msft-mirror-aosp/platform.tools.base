@@ -27,7 +27,7 @@ fun blankFragmentKt(
   packageName: String,
   useAndroidX: Boolean
 ): String {
-  val applicationPackageBlock = renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }
+  val applicationPackageBlock = renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }
   return """
 package ${escapeKotlinIdentifier(packageName)}
 

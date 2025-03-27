@@ -17,6 +17,7 @@
 package com.android.tools.idea.wizard.template.impl.fragments.listFragment.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -26,7 +27,7 @@ fun recyclerViewAdapterKt(
   adapterClassName: String,
   applicationPackage: String?,
   fragmentLayout: String,
-  kotlinEscapedPackageName: String,
+  packageName: String,
   useAndroidX: Boolean,
   isViewBindingSupported: Boolean
 ): String {
@@ -58,17 +59,17 @@ fun recyclerViewAdapterKt(
     }
   """
   return """
-package ${kotlinEscapedPackageName}
+package ${escapeKotlinIdentifier(packageName)}
 
 import ${getMaterialComponentName("android.support.v7.widget.RecyclerView", useAndroidX)}
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 
-import ${kotlinEscapedPackageName}.placeholder.PlaceholderContent.PlaceholderItem
-${importViewBindingClass(isViewBindingSupported, kotlinEscapedPackageName, applicationPackage, fragmentLayout, Language.Kotlin)}
+import ${escapeKotlinIdentifier(packageName)}.placeholder.PlaceholderContent.PlaceholderItem
+${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, fragmentLayout, Language.Kotlin)}
 
 /**
  * [RecyclerView.Adapter] that can display a [PlaceholderItem].

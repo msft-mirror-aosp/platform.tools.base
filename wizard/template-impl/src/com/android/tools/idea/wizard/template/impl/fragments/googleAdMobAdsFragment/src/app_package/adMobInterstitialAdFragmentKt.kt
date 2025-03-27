@@ -51,7 +51,7 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Kotlin)}
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.interstitial.InterstitialAd

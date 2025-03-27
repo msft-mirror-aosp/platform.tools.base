@@ -16,6 +16,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.basicActivity.src
 
 import com.android.tools.idea.wizard.template.Language
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
@@ -37,7 +38,7 @@ fun firstFragmentKt(
       return binding.root
   """ else "return inflater.inflate(R.layout.$firstFragmentLayoutName, container, false)"
 
-  return  """package ${packageName}
+  return  """package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
 import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
