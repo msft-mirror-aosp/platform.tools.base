@@ -1020,6 +1020,231 @@ class LintJarApiMigrationTest {
   }
 
   @Test
+  fun testGetClassOrObjectSymbolByClassId() {
+    // From http://aosp/3483011
+    val file =
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
+            package test.pkg
+
+            import org.jetbrains.kotlin.analysis.api.analyze
+            import org.jetbrains.kotlin.name.ClassId
+            import org.jetbrains.kotlin.name.FqName
+            import org.jetbrains.kotlin.psi.KtClass
+
+            fun isSubtypeOf(ktClass: KtClass?, fqn: String): Boolean {
+              if (ktClass == null) return false
+              return analyze(ktClass) {
+                val symbol = ktClass.getClassOrObjectSymbol() ?: return@analyze false
+                val baseClassId = ClassId.topLevel(FqName(fqn))
+                val baseClassSymbol = getClassOrObjectSymbolByClassId(baseClassId)
+                symbol.isSubClassOf(baseClassSymbol ?: return@analyze false)
+              }
+            }
+          """
+          )
+          .indented(),
+        0xbd30f596,
+        """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
+                GAAvgr4WLAAAAA==
+                """,
+        """
+                test/pkg/TestKt.class:
+                H4sIAAAAAAAA/+1XW3cbVxX+jmR5pJGsOEqcWg6kbq1S+SpLTu1GjgtOagfV
+                spNGrl0n0DCSx/bY0oyiGalxgBKgXALtryisvLSw6EPStGvRAFl0wTvQZ34A
+                P4HwzUjyLZJtEh5ZS5o5l72/vc++nT1//fenvwdwGu8LHLFU04oVN1Zj8xzM
+                WBKEQPu6UlFieUVfjV3Mrqs5rroF/JqZKWetzaJ6cUVgLJo2SquxddXKlhRN
+                N2MbhpXX9FjR1GIz1vm8Yprj6W2cjFXS9NXx3isCkT2Miq4blmJpBsdz5Xxe
+                yebVcYGe/cgMy6YklXvluu6FT+BUTf56pRDTdEst6Uo+ltJtsaaWMyX4BTpy
+                a2puo8Z8SSkpBZWEAi9G03tP3Ej3hQDaEJQRwBGB8YanVyh109SobVGLmapp
+                Ut3YjJKpji6VjIq2rJYkHBXwnTcKRUXnssCFxrY8HFpkC2g8gGM47kMIHQLP
+                7+OeqbxaUHW69RkBeVW1CGUfWiAa7U3njKoF83ltPWYUVd2WXqxSxGqUlBRG
+                lx+dOMkY2kaIDg0N9XrxVYGTO209daNYqiq9oOTLagDPVu3YLTD1Pzm5hOcZ
+                oNQjpZuWoudUATV6uJP0Po3taYcIXpDRg68JhCh/ssZWoxPI7JsnNUccSokt
+                4RQaRa9MN/cJnMiqK0ZJnbJDnlFaly8w30RwE8xDackMGMCgLXlIoPWspmvW
+                K8zBqL0xjLiMFiQYRAcVhoulelk5LdD/X2gpYZQnppl3wWQ2C1kj73j8sJIP
+                53UH16R4h7cqhsZ/GWf8GENS4LmGIDrrSsxhSS1LOCsw2FjYTro9SfyKDxP4
+                ukB3c8bp63N8SZhkXYs2rlbDOC/jHF5tZuTGCkiYFvBaRjGtVlSa9UITs+7Q
+                opk5dwrgub6JlIwLeE3g2cY+PLdZIxZ4az+pdcin8WIas7YX5wQCzsVWVYc3
+                W/kwidMY9YkZe68EcAmv2wpdFjiurDCb06pS2ZHRAcxXU+8N1vaIFlEigw7w
+                TXWwenVHdtzPkbiASDFHzVpunHli1VhXs4qpbjlm773cyC+8E7Z46tnZHbHW
+                NHOnktfKidN5pZBdVuzRcNM8aVKxBE5XzWBu6rm1kqFrN9XlwccviZqVIvGI
+                VuGPN17eyG3UJ6HHr35GBIFX6ozML2V3Va/z+u0TXavPJp7qIhGQNqopQfce
+                3FrtVryW883qxQ5GCeu7+rsqpwQ6aOwJI0QCr7lj25Dz9MXbdhMnoShwNF0D
+                mlUtZVmxFGrpKlTcbECF/fDZDzBaN+yBi5s3NHvEcHAtM4pHHtwKyQ9uya52
+                v/PqdFVnwa7O9ge3ulzDIuFtd3W1dIphd6K1vYUrHpuV9xBRJbu9HdpgZ9OX
+                btQgZoxyKae+qmbLq1M3LFWvBZanYrcpQoxlZicvyTUMecYBkPsy3fXRtNzf
+                He+u7+9ppbmX6K7FkL19sHknq8QO60j3YzFyOJCmISb3peV4T3wgPpqMy4mX
+                exIDiWR8TB4Z7RkZiI8k42e2T+YY5KDj2XDDPXFiDCRqozMEkvumZIGW88Yy
+                M6ctYym5jVmlOG8HBMtCWtPVuXIhq5ZqK6G0kVPyC0pJs+e1xcjlsm5pBTWl
+                VzRT49JWsz65/RXANE3pulpyQlHlVK56c1qzIY43cq1AuIa8UMXdBXdyr9Qd
+                u4jDxe6mGqtheNDK+Y8ZsP/kajtXv+wPyZ+gve8LeNwfuic+xom+B+i8j68I
+                LIVOfYLn7uLFObhHWwbt9bvoT3oGw57qOIbP0LJ0DyPJ1nBrUgpLfyShN+xJ
+                +tyjcthHopfuY9yFpS/gXXTfQTLp/xjf+AznlvrvYeouZpKBsC8cuI+LLiTb
+                OPSH20gbXHSPBhcXO4J34L2PjBvElP7U4b0Df/IIR+Ejn4+2bimxcAehpLQ9
+                DUufd7QCH/J8s/g1PuIZP8JvnfdZ3MNDvh/iz87bjXf5/Be8gUe4Br+EDQkF
+                ISHE/5iEFv7sEZNcgvGIpgw2JSGBhAk+4XY2DIejZV9Q8Qg+eBsR2AKvP4J0
+                EHsQrbsJaozBvYxiiw34Cf9XcIKR4OOnjEzio/wYCLE3P4YEOmilE2zinsE0
+                v5Jex0m8CT90Ur7Dr8jbpP6Aax9w7x5O4Q/8InrI99/I83di/IN4PyX+u6R9
+                EzNY5FMm90tYokw/MV7AVXyLaLfRhW9zrQ1vYA5v0f4+SruM75DDS9kGFGSp
+                YxS/QY5r7NDxKyyTzkOM30HFCv0XxF+cXZcdyVjFmhPpXxJLY7z/jOM2l11O
+                nfD38unBz/mUObvAQx5jSty2yzd+gF+Q5P9188nqJn5JI07QqCUa2LwKdwpW
+                CuUUKng7hRvYTOEmvnsVwsT38P2rbO/gMfGOiVUTayZ8HOM9QgQJcYv/Hzqk
+                P/oPD3yvF/ERAAA=
+                """,
+      )
+
+    checkBytecodeMigration(
+      file,
+      "isSubtypeOf",
+      """
+@@ -85 +85
+-  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
++  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+@@ -107 +107
+-  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbolByClassId (Lorg/jetbrains/kotlin/name/ClassId;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
++  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.findClass (Lorg/jetbrains/kotlin/name/ClassId;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      """,
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
+            package another.test.pkg
+            open class Base
+            class Sub : Base()
+          """
+        ),
+      checks = { ktFile, migratedClass ->
+        fun checkIsSubTypeOf(ktClass: KtClass?, fqn: String): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, ktClass, fqn)
+        }
+        val sub = ktFile.declarations.filterIsInstance<KtClass>().lastOrNull()
+        assertEquals(true, checkIsSubTypeOf(sub, "another.test.pkg.Base"))
+      },
+    )
+  }
+
+  @Test
+  fun testAnnotationsList() {
+    // b/393478604#comment10
+    val file =
+      bytecode(
+        "code.jar",
+        kotlin(
+            """
+            package test.pkg
+
+            import org.jetbrains.kotlin.analysis.api.analyze
+            import org.jetbrains.kotlin.psi.KtClass
+
+            fun isAnnotated(ktClass: KtClass?, fqn: String): Boolean {
+              if (ktClass == null) return false
+              return analyze(ktClass) {
+                val symbol = ktClass.getClassOrObjectSymbol() ?: return@analyze false
+                symbol.annotationsList.annotationInfos.any { it.classId?.asFqNameString() == fqn } == true
+              }
+            }
+          """
+          )
+          .indented(),
+        0xac5c720e,
+        """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
+                GAAvgr4WLAAAAA==
+                """,
+        """
+                test/pkg/TestKt.class:
+                H4sIAAAAAAAA/+1XW3AbZxX+fl288kpWHMW5yAnFjRXqOHZkyY6dyEnATZ1W
+                WHHSOs0VYtby2llbWjnatRsHKIZeuFMoEAjXtlz80icYQgwMMTBDZxieeYPX
+                wmNhmGGmTM337658ixO7CQ88MGN5z57/nO+c/5zzn//sH975xa8BdGBWYJOt
+                W3ZyYnw0eZpEn61ACNSOaVNasqCZo8mTQ2N6nly/QNiwekyzZGu2PizQ1ZQr
+                lUeTY7o9VNYM00qOl+yCYSYnLCPZZx8raJbVnVvCGbDLhjnavfeCQGKVouaC
+                GiXS/ZOFgjZU0LsFGu8lVrKlJKX8I1fMEKoFHvLsj00Vk4Zp62VTKySzpjRr
+                GXlLQVhga/6ynh/3lE9pZa2oU1Dgkabc6h2v5fuZCGoQVRHBJoHuNXev0eq0
+                ZdDbCSNp6ZZFd5N92oBLnSqXpoxhvaxgs0D1sVJxQjPJFnh87VhuDC2xCNQd
+                wRbUVSOGrQK775Ge3oJe1E2mdbuAOqrbhJKbFmhq2pvLl9wIFgrGWLI0oZvS
+                +oQrkfQkaSmO+jB2YCdraAmhaf/+/XtDeI/AzuWx7r06UXadPqMVJvUI3uvG
+                sUGg97+ycwW7WaD0I2tatmbmdQG9aWM72fsgsWccEtijohHvE4jRfo+n5skJ
+                DNzznHiJ2JATi8ZptAl7Vaa5WWDbkD5SKuu9suRZpRX7AqfvYvgumBvykieg
+                Ba3S8n6BqsOGadhHeQab5EIbUioCSLOI1msMJ8uVttIhsO9deKmgkztmmFfA
+                DEwXh0oFJ+MbtbyxrDu4Fs07uq4ZBv8gDoXRhQyb4H2CKDhcKZfFppYzLB7A
+                R5s24tnyXtinLYFIDDp4FO9XcQQfEDj6YFgKHl3tZ9YcKbG6YvTT6ZCTtlFI
+                enYfQ28Yx3Ccy0vdM8vClC1dwRMCdUs6x0qFAjPhZPWDAoph9RYn7GmnnC5E
+                kMOJMPrQLxAyJIJdYqPetsJq1uPT8ik8GUYWT1Usr1hXcJr4lzWrX79qR3BG
+                Ij+NswIBkww6VUFd3v8jOI8LUu6iQOb+o6jgw26LdbKf5cW5524ZNnkdJT0x
+                mh/ER8K4BE3g4XXFFeQFopp1/Eo/ue59tXpf3i0WgY4RFcOgQEhj47gyqRXW
+                vQIrp4aJMTAmW/c48bURRjina1PLGk8ERbdDsPc1JIyElmjVzOlWd7pILBsh
+                EqlESkBkBXwGk3D4Acqec4Cquz0qYUyxBu70nJulMyMJ+iIQSdiXDUvSjnhd
+                7s5qpcLuivf04Jq+5g7YBC2v+Ry674Yi4+T4swx6cDLdUdCKQ8OapGin9V01
+                c4EO13lr2sxfLpdM45o+3Hrn/entjakwppxQqIVSfrzyEvEi5shwetJW3m0V
+                sbB0frDyduSBrlOe03H3qDD+6w+YK1PtVTjjuZ6igk+vmHJdTQWfFdiyxD3N
+                yD3jtq7PC2zOeTgndFsb1myNhnzFKT8naSH/Vct/YEWPS8LHxauGpNpIDTOD
+                7fMzMXV+RvXVhp3HDp/7Fq3fUTs/U+9rE+lQra8+sEO0+dNVtQFyglKVFypR
+                FTmn7x/nQWnOrTXpDpQmy3n9MX1ocrT3qq2bXhkEp+S8JcSrAyd6Tqkehtrn
+                AKjNAw0V6ri6ryHVUFlf9U3AtXSDVwZyef0E97jCjmp7wx1p3hjIXauEoB0N
+                g0v3hyXxPIT8EnfZDWP12YODgyve1eacmmpMtaTSmZSaPtiYbiHRrrZ3Nra3
+                HMqkDqgdXaTSmXSXmuoi3dHSnkl3LMXMCfV6gaONg40p4rakXeJAyyGHSHeR
+                k2qTFIHV5l6Vt9Gx0jCPWc2AreXHT2gTp2XpcbrOGabeP1kc0sseJ5Yr5bXC
+                Ga1syHePmXhq0rSNop41pwzLIGvx+2bZjMED7hbKcUPq1K1VNQJxD+qMC7RC
+                f+dqM8tWkYKPE6B7DOIIoorv3wP818ndQuaufTH1Fmqb30DQ/7r/yE+wrXke
+                O+awS+B87KFbePgmHumHvzPQKvk3sS8TbI0HXTqJXyJw/udoz1TFqzJKXPkt
+                BUPxYKba36nGqyl0YA7dPpx/A6Gz/lk8mwnHwzfRM4fHBeaRzUT8nTXxyG/Q
+                dwN18cg8+uZwUuAGFAo/EY/MYYAXfTQencM5ye6Q1IfI2hTfNI9LmVp/5+Z4
+                7RyG6OvvUX0Tl2cRPCv23ULhxsIfA7MI+AOvQHEI+qX8bmtoFuFMjFQ8druz
+                anEjpVnEMsrSa1y5vbUKeJ0xOoG/4S1G7y38w3kextsixLiFhCqf8OP7fGtD
+                NLLA8SCs4DMKPicUxPjrUhDgn6TYgxQceQct/K8gK/6NkIKnF9CK2F1VPFHK
+                OcxLDsZwD4X/BXWBtqPrqUIIRQreyy2xgGrpzJ0C0twXFqCspx5F1UoBTzG6
+                WlEsqgGv8DeGetajwsklROEafrZF+RW1CWlsZpxjHJe34Djq8CS24xy9NKFi
+                ht+3N1jJt0n/ic8/E+MvpN+kzJuUfZtfv0FWb4jPOM3WIyp2Ev9V2nsNtdTb
+                jglcoYVfUbMMi7yf0aqNSVqe4XQ3xdUafBwansFV+nYOL2GaPJX2p3ENH4Uc
+                QV/GxyhTTd+u41muhujpT/EJolQR7e9EuiK/vPBXfJJyQezBP/EpPMd6iYoa
+                Z9UnTx+exwvO4dxFrBd5Rl/jS41P3i7OkZUlFsAP5O2Fb+GHZP3/2vhfvzbw
+                I6brCJP3Reb9Sxfhz+KlLL6cxVfwchZfxdey+DquX4Sw8A188yLnVQQt3LDw
+                vIUXLFSTxo/l8SbEt/n7jiP63f8AxygasCMUAAA=
+                """,
+      )
+
+    checkBytecodeMigration(
+      file,
+      "isAnnotated",
+      """
+@@ -85 +85
+-  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
++  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+@@ -97 +97
+-  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getAnnotationsList ()Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;
+-  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList.getAnnotationInfos ()Ljava/util/List; (itf)
++  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getAnnotations ()Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;
+      """,
+      showDiff = true,
+      checkSource =
+        kotlin(
+          """
+            package another.test.pkg
+            annotation class MyAnno
+
+            @MyAnno
+            class Test
+          """
+        ),
+      checks = { ktFile, migratedClass ->
+        fun checkIsAnnotated(ktClass: KtClass?, fqn: String): Any? {
+          val method = migratedClass.declaredMethods[0]
+          return method.invoke(null, ktClass, fqn)
+        }
+        val sub = ktFile.declarations.filterIsInstance<KtClass>().lastOrNull()
+        assertEquals(true, checkIsAnnotated(sub, "another.test.pkg.MyAnno"))
+      },
+    )
+  }
+
+  @Test
   fun testMigrateLintUtil1() {
     val file =
       bytecode(
