@@ -26,6 +26,7 @@ import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator.jarWithClasses
 import com.android.testutils.ZipContents
 import com.android.testutils.generateAarWithContent
+import com.android.testutils.truth.PathSubject
 import com.google.common.truth.Truth
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
@@ -181,12 +182,16 @@ class GradualR8Test {
     @Test
     fun `test gradual r8 filter all`() {
         val build = rule.build
-        build.executor.run(":app:assembleRelease")
         val app = build.androidApplication()
 
-        Truth.assertThat(app.resolve(MERGED_PACKAGES_FOR_R8).resolve(
-            "release/mergeReleasePackageListsForR8/packages.txt"
-        ).toFile().exists()).isFalse()
+        // Validate package list artifact does not exist when boolean option flag is not present
+        build.executor.run(":app:assembleRelease")
+
+        val intermediateMergedPackageList = app
+            .resolve(MERGED_PACKAGES_FOR_R8)
+            .resolve("release/mergeReleasePackageListsForR8/packages.txt")
+            .toFile()
+        PathSubject.assertThat(intermediateMergedPackageList).doesNotExist()
 
         build.executor.with(BooleanOption.GRADUAL_R8_SHRINKING, true).run(":app:assembleRelease")
 

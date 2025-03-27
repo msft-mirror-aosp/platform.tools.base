@@ -36,7 +36,6 @@ import org.gradle.api.tasks.Classpath
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream

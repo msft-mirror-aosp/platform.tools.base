@@ -39,7 +39,6 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 
 /**
  * Task to collect package names for R8 task from local libraries when a consumer proguard rule file
