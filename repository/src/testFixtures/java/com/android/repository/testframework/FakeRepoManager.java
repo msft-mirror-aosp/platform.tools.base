@@ -85,6 +85,7 @@ public class FakeRepoManager extends RepoManager {
         return Collections.emptyList();
     }
 
+    @NonNull
     @Override
     public List<RepositorySource> getSources(
             @Nullable Downloader downloader,
@@ -100,9 +101,9 @@ public class FakeRepoManager extends RepoManager {
     @Override
     public void load(
             long cacheExpirationMs,
-            @Nullable List<RepoLoadedListener> onLocalComplete,
-            @Nullable List<RepoLoadedListener> onSuccess,
-            @Nullable List<Runnable> onError,
+            @Nullable List<? extends RepoLoadedListener> onLocalComplete,
+            @Nullable List<? extends RepoLoadedListener> onSuccess,
+            @Nullable List<? extends Runnable> onError,
             @NonNull ProgressRunner runner,
             @Nullable Downloader downloader,
             @Nullable SettingsController settings) {
@@ -113,13 +114,11 @@ public class FakeRepoManager extends RepoManager {
             onSuccess.forEach(callback -> callback.loaded(mPackages));
         }
     }
-
     @Override
-    public void loadSynchronously(
-            long cacheExpirationMs,
-            @Nullable List<RepoLoadedListener> onLocalComplete,
-            @Nullable List<RepoLoadedListener> onSuccess,
-            @Nullable List<Runnable> onError,
+    public void loadSynchronously(long cacheExpirationMs,
+            @Nullable List<? extends RepoLoadedListener> onLocalComplete,
+            @Nullable List<? extends RepoLoadedListener> onSuccess,
+            @Nullable List<? extends Runnable> onError,
             @NonNull ProgressRunner runner,
             @Nullable Downloader downloader,
             @Nullable SettingsController settings) {

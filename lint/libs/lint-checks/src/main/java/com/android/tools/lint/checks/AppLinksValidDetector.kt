@@ -814,21 +814,12 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     // We insist on this because hosts, paths, and ports will be ignored if there is no explicit
     // scheme, which makes the intent filter very misleading.
     if (showMissingSchemeCheck) {
-      val fix =
-        if (intentFilterData.dataTags.hostPortPairs.isEmpty()) {
-          // If there are no hosts, ask the user to specify the scheme.
-          fix().set().todo(ANDROID_URI, ATTR_SCHEME).independent(true)
-        } else {
-          // If there's at least one host, it's likely they want http(s), so we can prompt them with
-          // http.
-          fix().set().todo(ANDROID_URI, ATTR_SCHEME, "http").independent(true)
-        }
       reportUrlError(
         context,
         firstData,
         context.getLocation(firstData),
         "At least one `scheme` must be specified",
-        fix.build(),
+        fix().set().todo(ANDROID_URI, ATTR_SCHEME).independent(true).build(),
       )
     }
 

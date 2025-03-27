@@ -53,6 +53,44 @@ class PresubmitTest(parameterized.TestCase):
     self.build_env = self.enter_context(fake_build_env.make_fake_build_env())
     self.gce = self.enter_context(fake_gce.make_fake_gce(self, self.build_env))
 
+  @parameterized.named_parameters(
+      dict(
+          testcase_name='empty',
+          targets=[],
+          should_upload=False,
+      ),
+      dict(
+          testcase_name='too_many',
+          targets=['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+          should_upload=False,
+      ),
+      dict(
+          testcase_name='typical',
+          targets=['1', '2', '3'],
+          should_upload=True,
+      ),
+  )
+  def test_validate_and_upload_failed_tests(self, targets, should_upload):
+    failed_tests_path = self.build_env.dist_path / 'failed_tests.txt'
+    failed_tests_path.write_text('\n'.join(targets))
+    changes = [
+        self.gce.add_change('owner', 'message', []),
+        self.gce.add_change('owner', 'message', []),
+    ]
+    changes_hash = presubmit.change_set_hash(changes)
+
+    presubmit.validate_and_upload_failed_tests(self.build_env)
+
+    downloaded = self.build_env.tmp_path / 'downloaded'
+    did_download = gce.download_from_gcs(
+        'adt-byob',
+        f'failed-tests/v1/{changes_hash}-studio-test.txt',
+        downloaded,
+    )
+    self.assertEqual(did_download, should_upload)
+    if did_download:
+      self.assertEqual(downloaded.read_text(), failed_tests_path.read_text())
+
   def test_generate_and_upload_hash_file(self):
     mock_generate = self._mock_generate_hash_file('hash-file')
     presubmit.generate_and_upload_hash_file(self.build_env)
@@ -92,29 +130,44 @@ class PresubmitTest(parameterized.TestCase):
       dict(
           testcase_name='basic',
           tags=[],
+          failed_tests=[],
           impacted_targets=['target1', 'target2', 'target3', 'target4'],
           query_targets=['target2', 'target3'],
-          expected_found=True,
           expected_targets=['target2', 'target3'],
-          expected_selected_target_count=2,
+          expected_flags=[
+              f'--build_metadata=selective_presubmit_strategy=impacted_targets',
+              f'--build_metadata=selective_presubmit_found=True',
+              f'--build_metadata=selective_presubmit_impacted_target_count=2',
+              f'--build_metadata=selective_presubmit_target_distance=(0:2)',
+              f'--build_metadata=selective_presubmit_package_distance=(0:2)',
+          ],
       ),
       dict(
           testcase_name='with_default_presubmit_test',
           tags=[('Presubmit-Test', 'default')],
+          failed_tests=[],
           impacted_targets=['target1', 'target2'],
           query_targets=['target2'],
-          expected_found=False,
           expected_targets=['base_target1', 'base_target2'],
-          expected_selected_target_count=0,
+          expected_flags=[
+              f'--build_metadata=selective_presubmit_strategy=default_explicit',
+              f'--build_metadata=selective_presubmit_found=False',
+          ],
       ),
       dict(
           testcase_name='with_other_target_name',
           tags=[('Presubmit-Test', 'studio-other:target3')],
+          failed_tests=[],
           impacted_targets=['target1', 'target2'],
           query_targets=['target2'],
-          expected_found=True,
           expected_targets=['target2'],
-          expected_selected_target_count=1,
+          expected_flags=[
+              f'--build_metadata=selective_presubmit_strategy=impacted_targets',
+              f'--build_metadata=selective_presubmit_found=True',
+              f'--build_metadata=selective_presubmit_impacted_target_count=1',
+              f'--build_metadata=selective_presubmit_target_distance=(0:1)',
+              f'--build_metadata=selective_presubmit_package_distance=(0:1)',
+          ],
       ),
       dict(
           testcase_name='with_multiple_explicit_targets',
@@ -122,22 +175,52 @@ class PresubmitTest(parameterized.TestCase):
               ('Presubmit-Test', 'target3'),
               ('Presubmit-Test', 'target4'),
           ],
+          failed_tests=[],
           impacted_targets=['target1', 'target2'],
           query_targets=['target2'],
-          expected_found=True,
           expected_targets=['target2', 'target3', 'target4'],
-          expected_selected_target_count=1,
+          expected_flags=[
+              f'--build_metadata=selective_presubmit_strategy=impacted_targets',
+              f'--build_metadata=selective_presubmit_found=True',
+              f'--build_metadata=selective_presubmit_impacted_target_count=1',
+              f'--build_metadata=selective_presubmit_target_distance=(0:1)',
+              f'--build_metadata=selective_presubmit_package_distance=(0:1)',
+          ],
+      ),
+      dict(
+          testcase_name='with_failed_tests',
+          tags=[
+              ('Presubmit-Test', 'target3'),
+              ('Presubmit-Test', 'target4'),
+          ],
+          failed_tests=['target1', 'target2'],
+          impacted_targets=[],
+          query_targets=[],
+          expected_targets=['target1', 'target2', 'target3', 'target4'],
+          expected_flags=[
+              f'--build_metadata=selective_presubmit_strategy=retry_failed',
+              f'--build_metadata=selective_presubmit_found=False',
+          ],
       ),
   )
   def test_find_test_targets(
       self,
       tags,
+      failed_tests,
       impacted_targets,
       query_targets,
-      expected_found,
       expected_targets,
-      expected_selected_target_count,
+      expected_flags,
   ):
+    if failed_tests:
+      failed_tests_path = self.build_env.tmp_path / 'failed_tests.txt'
+      failed_tests_path.write_text('\n'.join(failed_tests))
+      gce.upload_to_gcs(
+          failed_tests_path,
+          'adt-byob',
+          'failed-tests/v1/15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b-studio-test.txt',
+      )
+
     self._mock_generate_hash_file('hash-file')
     self._mock_get_impacted_targets(impacted_targets)
     self.build_env.bazel_query.return_value.stdout = '\n'.join(
@@ -154,16 +237,13 @@ class PresubmitTest(parameterized.TestCase):
     self.gce.add_change('owner', 'message', tags)
     self.gce.changes[0].topic = 'topic'
 
-    targets = presubmit.find_test_targets(
+    result = presubmit.find_test_targets(
         self.build_env,
         ['base_target1', 'base_target2'],
         'includefilter,-excludefilter',
     )
-    self.assertEqual(targets.found, expected_found)
-    self.assertEqual(set(targets.targets), set(expected_targets))
-    expected_flags = [
-        f'--build_metadata=selective_presubmit_found={expected_found}',
-        f'--build_metadata=selective_presubmit_impacted_target_count={expected_selected_target_count}',
+    self.assertEqual(set(result.targets), set(expected_targets))
+    expected_flags += [
         '--build_metadata=gerrit_change_set_hash=15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b',
         '--build_metadata=gerrit_owner=owner@google.com',
         '--build_metadata=gerrit_change_id=changeid0',
@@ -171,16 +251,12 @@ class PresubmitTest(parameterized.TestCase):
         '--build_metadata=gerrit_change_patchset=0',
         '--build_metadata=gerrit_topic=topic',
     ]
-    if expected_found:
-      expected_flags.extend([
-          f'--build_metadata=selective_presubmit_target_distance=(0:{expected_selected_target_count})',
-          f'--build_metadata=selective_presubmit_package_distance=(0:{expected_selected_target_count})',
-      ])
     self.assertSameElements(
-        targets.flags,
+        result.flags,
         expected_flags,
     )
-    if expected_found:
+
+    if result.strategy == 'impacted_targets':
       self.build_env.bazel_query.assert_called_with(
           'base_target1 union attr(tags, "includefilter", base_target1) union'
           ' base_target2 union attr(tags, "includefilter", base_target2) except'

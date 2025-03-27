@@ -15,11 +15,14 @@
  */
 package com.android.support;
 
+import static com.android.ide.common.repository.GoogleMavenArtifactId.androidxIdOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.android.ide.common.repository.GoogleMavenArtifactId;
 import org.junit.Test;
 
 public class AndroidxNameUtilsTest {
@@ -44,6 +47,18 @@ public class AndroidxNameUtilsTest {
                             || androidxCoordinate.startsWith("com.google.android.material")
                             || androidxCoordinate.startsWith("android.test.legacy"));
             assertEquals(androidxCoordinate, AndroidxNameUtils.getCoordinateMapping(oldCoordinate));
+        }
+    }
+
+    @Test
+    public void testGoogleMavenArtifactIdMappings() {
+        for (String oldCoordinate : AndroidxNameUtils.ANDROIDX_COORDINATES_MAPPING.keySet()) {
+            String androidxCoordinate = AndroidxNameUtils.getCoordinateMapping(oldCoordinate);
+            GoogleMavenArtifactId oldId = GoogleMavenArtifactId.find(oldCoordinate);
+            assertNotNull(oldId);
+            GoogleMavenArtifactId androidxId = GoogleMavenArtifactId.find(androidxCoordinate);
+            assertNotNull(androidxId);
+            assertEquals(androidxId, androidxIdOf(oldId));
         }
     }
 }

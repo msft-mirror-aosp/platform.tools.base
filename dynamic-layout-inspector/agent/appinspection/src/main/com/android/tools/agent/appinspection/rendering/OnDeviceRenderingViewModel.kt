@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -40,7 +41,7 @@ import kotlinx.coroutines.withContext
  * @param rootId The id of the root view containing the [OverlayView] that needs to do the drawing.
  * @param bounds The rectangle to be rendered.
  */
-data class OverlayViewInstruction(val rootId: Long, val bounds: Rect, val color: Int)
+data class OverlayViewInstruction(val rootId: Long, val bounds: Rect, val color: Int, val label: String?)
 
 /** View model handling the logic for on-device rendering */
 class OnDeviceRenderingViewModel(
@@ -92,22 +93,27 @@ class OnDeviceRenderingViewModel(
     }
 
     fun setSelectedNodes(instruction: List<DrawInstruction>) {
+        addOverlayViewsIfMissing()
         _selectedNodes.value = instruction.map { it.toOverlayViewInstruction() }
     }
 
     fun setHoveredNodes(instruction: List<DrawInstruction>) {
+        addOverlayViewsIfMissing()
         _hoveredNodes.value = instruction.map { it.toOverlayViewInstruction() }
     }
 
     fun setVisibleNodes(instructions: List<DrawInstruction>) {
+        addOverlayViewsIfMissing()
         _visibleNodes.value = instructions.map { it.toOverlayViewInstruction() }
     }
 
     fun setRecomposingNodes(instructions: List<DrawInstruction>) {
+        addOverlayViewsIfMissing()
         _recomposingNodes.value = instructions.map { it.toOverlayViewInstruction() }
     }
 
     fun setInterceptTouchEvents(intercept: Boolean) {
+        addOverlayViewsIfMissing()
         _interceptTouchEvents.value = intercept
     }
 
@@ -184,7 +190,20 @@ class OnDeviceRenderingViewModel(
             }
         }
     }
+
+    /**
+     * A root view can be missing its OverlayView if the root view children were all removed,
+     * but the root view itself was not. This can happen in some cases, for example if the
+     * Activity is relaunched, see b/402729631.
+     *
+     * This is a utility method to make sure the OverlayView is actually present, each time
+     * LayoutInspector tries to interact with it.
+     */
+    private fun addOverlayViewsIfMissing() {
+        scope.launch { roots.values.forEach { inspectorView -> addOverlayView(inspectorView) } }
+    }
 }
 
-private fun DrawInstruction.toOverlayViewInstruction() = OverlayViewInstruction(rootId, bounds.toAndroidRect(), color)
+private fun DrawInstruction.toOverlayViewInstruction() = OverlayViewInstruction(rootId, bounds.toAndroidRect(), color, labelOrNull())
 private fun LayoutInspectorViewProtocol.Rect.toAndroidRect() = Rect(x, y, x + w, y + h)
+private fun DrawInstruction.labelOrNull() = if (hasLabel()) label else null

@@ -60,9 +60,12 @@ sealed interface ApkSelector: OutputSelector {
         @JvmField
         val ANDROIDTEST_DEBUG = of(buildType = "debug", testSuite = "androidTest", isSigned = true)
 
+        @JvmField
+        val NO_BUILD_TYPE = of(buildType = null, isSigned = true)
+
         @JvmStatic
         fun of(
-            buildType: String,
+            buildType: String?,
             isSigned: Boolean
         ): ApkSelector {
             return ApkSelectorImp(
@@ -75,7 +78,7 @@ sealed interface ApkSelector: OutputSelector {
 
         @JvmStatic
         fun of(
-            buildType: String,
+            buildType: String?,
             testSuite: String?,
             isSigned: Boolean
         ): ApkSelector {
@@ -91,7 +94,7 @@ sealed interface ApkSelector: OutputSelector {
 
 internal data class ApkSelectorImp(
     override val name: String? = null,
-    private val buildType: String,
+    private val buildType: String?,
     internal val testSuite: String?,
     private val flavors: List<String>,
     private val isSigned: Boolean,
@@ -126,7 +129,7 @@ internal data class ApkSelectorImp(
         segments.add(projectName)
         flavors.let { segments.addAll(it) }
         filter?.let { segments.add(it) }
-        buildType.let { segments.add(it) }
+        buildType?.let { segments.add(it) }
         testSuite?.let { segments.add(it) }
         suffix?.let { segments.add(it) }
         if (!isSigned) { segments.add("unsigned") }
@@ -146,7 +149,9 @@ internal data class ApkSelectorImp(
             pathBuilder.append(flavors.combineAsCamelCase()).append('/')
         }
 
-        pathBuilder.append(buildType).append('/')
+        buildType?.let {
+            pathBuilder.append(it).append('/')
+        }
         return pathBuilder.toString()
     }
 }

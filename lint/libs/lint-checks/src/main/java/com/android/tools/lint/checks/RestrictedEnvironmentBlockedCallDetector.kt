@@ -20,6 +20,7 @@ import com.android.tools.lint.detector.api.AnnotationInfo
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
 import com.android.tools.lint.detector.api.Category
+import com.android.tools.lint.detector.api.ConstantEvaluator
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
@@ -43,7 +44,6 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UField
 import org.jetbrains.uast.UMethod
-import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.UastCallKind
 import org.jetbrains.uast.toUElementOfType
 
@@ -196,7 +196,7 @@ class RestrictedEnvironmentBlockedCallDetector : Detector(), SourceCodeScanner {
           ?: return emptySequence()
       if (!envArrayCall.hasKind(UastCallKind.NESTED_ARRAY_INITIALIZER)) return emptySequence()
       return envArrayCall.valueArguments.asSequence().mapNotNull {
-        (it as? UReferenceExpression)?.resolvedName
+        ConstantEvaluator().evaluate(it) as? String
       }
     }
 
@@ -333,8 +333,9 @@ class RestrictedEnvironmentBlockedCallDetector : Detector(), SourceCodeScanner {
       "androidx.annotation.ChecksRestrictedEnvironment"
 
     /**
-     * The initial release of the environment names enum was just "SDK_SANDBOX". We treat
-     * `Process.isSdkSandbox()` as being annotated with `@ChecksSandbox(environment = SDK_SANDBOX)`.
+     * The restricted environment name for the Privacy Sandbox (also known as the SDK Sandbox). We
+     * treat `Process.isSdkSandbox()` as being annotated with
+     * `@ChecksRestrictedEnvironment(["SDK_SANDBOX"])`.
      */
     private const val SDK_SANDBOX_ENVIRONMENT_NAME = "SDK_SANDBOX"
 

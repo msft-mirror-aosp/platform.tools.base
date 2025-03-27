@@ -17,6 +17,7 @@
 package com.android.tools.agent.appinspection.rendering
 
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.Rect
@@ -47,7 +48,7 @@ class OverlayView(
      * @param rect The rect to be drawn.
      * @param color The color used to draw the [rect], in ARGB format.
      */
-    private class DrawInstruction(val rect: Rect, val color: Int)
+    private class DrawInstruction(val rect: Rect, val color: Int, val label: String?)
 
     private val rootId = root.uniqueDrawingId
     private val selectedRectPaint = Paint().apply {
@@ -64,6 +65,10 @@ class OverlayView(
     }
     private val recomposingRectPaint = Paint().apply {
         style = Paint.Style.FILL
+    }
+    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textSize = dpToPx(20f)
     }
 
     /** Holds the screen coordinates of this [OverlayView]. Updated in onLayout. */
@@ -187,7 +192,7 @@ class OverlayView(
 
         // The rendering order matters.
         recomposingRectangles.forEach {
-            recomposingRectPaint.color = it.color.setColorAlpha(64)
+            recomposingRectPaint.color = it.color
             canvas.drawRect(it.rect.toViewCoordinates(), recomposingRectPaint)
         }
         visibleRectangles.forEach {
@@ -200,8 +205,72 @@ class OverlayView(
         }
         selectedRectangles.forEach {
             selectedRectPaint.color = it.color
-            canvas.drawRect(it.rect.toViewCoordinates(), selectedRectPaint)
+            val bounds = it.rect.toViewCoordinates()
+            canvas.drawRect(bounds, selectedRectPaint)
+            if (it.label != null) {
+                drawLabel(
+                    text = it.label,
+                    viewBounds = bounds,
+                    backgroundPaint = selectedRectPaint,
+                    textPaint = textPaint,
+                    canvas = canvas
+                )
+            }
         }
+    }
+
+    private fun drawLabel(text: String, viewBounds: Rect, backgroundPaint: Paint, textPaint: Paint, canvas: Canvas) {
+        if (
+            viewBounds.bottom < 0 && viewBounds.top < 0 ||
+            viewBounds.left < 0 && viewBounds.right < 0 ||
+            viewBounds.bottom > canvas.height  && viewBounds.top > canvas.height ||
+            viewBounds.left > canvas.width  && viewBounds.right > canvas.width
+            ) {
+            // The bounds are not visible on the screen, don't render the label.
+            return
+        }
+
+        val fontMetrics = textPaint.fontMetrics
+        val horizontalPadding = dpToPx(4f)
+        val textWidth = textPaint.measureText(text)
+        val textHeight = fontMetrics.bottom - fontMetrics.top
+        val strokeWidth = backgroundPaint.strokeWidth
+        val canvasWidth = canvas.width
+
+        var labelBottom = viewBounds.top.toFloat()
+        var labelLeft = viewBounds.left.toFloat() - (strokeWidth / 2f)
+        var labelTop = labelBottom - textHeight
+
+        val totalWidth = textWidth + 2 * horizontalPadding
+        var labelRight = labelLeft + totalWidth
+
+        // If the text goes above the top edge of the canvas, move it down so it fits.
+        if (labelTop < 0) {
+            labelTop = 0f
+            labelBottom = labelTop + textHeight
+        }
+        // If it extends beyond the left edge of the canvas, move it right so it fits.
+        if (labelLeft < 0) {
+            labelLeft = 0f
+            labelRight = labelLeft + totalWidth
+        }
+        // If it extends beyond the right edge of the canvas, move it left so it fits.
+        if (labelRight > canvasWidth) {
+            labelRight = canvasWidth.toFloat()
+            labelLeft = labelRight - totalWidth
+        }
+
+        // The background rectangle for the label.
+        val labelBackgroundRect = Rect(labelLeft.toInt(), labelTop.toInt(), labelRight.toInt(), labelBottom.toInt())
+        val backgroundPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = backgroundPaint.color
+        }
+        canvas.drawRect(labelBackgroundRect, backgroundPaint)
+
+        val textBaseline = labelBottom - fontMetrics.bottom
+        val textX = labelLeft + horizontalPadding
+        canvas.drawText(text, textX, textBaseline, textPaint)
     }
 
     /** Convert the [MotionEvent] coordinates from view to screen coordinates. */
@@ -228,12 +297,6 @@ class OverlayView(
 
     /** Map each [OverlayViewInstruction] to a [Rect] to be rendered in the provided [ownerRootId]. */
     private fun List<OverlayViewInstruction>.mapToDrawInstructions(ownerRootId: Long): List<DrawInstruction> {
-        return filter { it.rootId == ownerRootId }.map { DrawInstruction(it.bounds, it.color) }
-    }
-
-    /** Set the alpha for the int representation of a color. */
-    private fun Int.setColorAlpha(alpha: Int): Int {
-        val validAlpha = alpha.coerceIn(0, 255)
-        return (validAlpha shl 24) or (this and 0x00FFFFFF)
+        return filter { it.rootId == ownerRootId }.map { DrawInstruction(it.bounds, it.color, it.label) }
     }
 }

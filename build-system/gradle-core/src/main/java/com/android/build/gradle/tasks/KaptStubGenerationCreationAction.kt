@@ -22,7 +22,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.KotlinBaseApiVersion
-import com.android.build.gradle.internal.services.KotlinServices
+import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
@@ -31,7 +31,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 class KaptStubGenerationCreationAction(
     creationConfig: ComponentCreationConfig,
-    private val kotlinServices: KotlinServices,
+    private val kotlinServices: BuiltInKotlinServices,
     private val kotlinCompileTaskProvider: TaskProvider<out KotlinJvmCompile>,
     private val kaptExtension: KaptExtensionConfig?
 ) : KotlinTaskCreationAction<KaptGenerateStubs>(creationConfig) {

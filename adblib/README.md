@@ -98,11 +98,11 @@ To set logging in Android Studio, open the "Debug Log Settings" dialog. e.g:
 
 ```
 #com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollector
-#com.android.adblib.tools.debugging.impl.JdwpSessionProxy
+#com.android.adblib.tools.debugging.impl.JdwpProxySocketServerImpl
 #com.android.adblib.tools.debugging.impl.JdwpProcessImpl
 #com.android.adblib.tools.debugging.DdmsPacketsHandler
 #com.android.adblib.impl.AdbBufferedInputChannel
-#com.android.adblib.tools.debugging.impl.JdwpSessionProxy:all
+#com.android.adblib.tools.debugging.impl.JdwpProxySocketServerImpl:all
 #com.android.adblib.tools.debugging.impl.SharedJdwpSessionImpl:all
 #com.android.adblib.tools.debugging.impl.SharedJdwpSessionImpl$JdwpPacketReceiverImpl$ReceiverFlowImpl:all
 #com.android.adblib.tools.debugging.impl.SharedJdwpSessionImpl$PacketSender:all

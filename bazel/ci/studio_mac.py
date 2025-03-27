@@ -74,7 +74,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
                   '',
               ),
               (
-                  'tools/adt/idea/android/src/com/android/tools/idea/diagnostics/heap/native/libjni_object_tagger.dylib',
+                  'tools/adt/idea/android/native/diagnostics/heap/libjni_object_tagger.dylib',
                   '',
               ),
               ('tools/vendor/google/skia/skiaparser.zip', ''),

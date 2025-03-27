@@ -22,6 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,7 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 
 internal class AdbServerControllerImpl(
     private val host: AdbSessionHost,
@@ -132,9 +134,32 @@ internal class AdbServerControllerImpl(
         }
 
         try {
-            transitionJob?.await()
+            transitionJob?.awaitOrThrow()
         } finally {
             lastKnownRemoteAddressStateFlow.update { null }
+        }
+    }
+
+    /**
+     * Awaits for the deferred, but distinguishes between different sources of
+     * `CancellationException`s thrown from `await` and treats them differently:
+     * - If `CancellationException` is the result of the current Job being cancelled,
+     * then simply propagate this exception
+     * - If `CancellationException` is thrown by await itself, e.g. when `AdbServerController`'s
+     * state transition job was interrupted by the controller's business logic, then
+     * throw `IOException` to indicate that a transition failed to complete.
+     */
+    private suspend fun <T> Deferred<T>.awaitOrThrow(): T {
+        return try {
+            await()
+        } catch (e: CancellationException) {
+            // As discussed in kotlin's documentation for `await` method
+            // (https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/await.html)
+            // the following call throws if the current coroutine was cancelled
+            currentCoroutineContext().ensureActive()
+            // If we get here then the exception is the result of `await()` itself
+            throw IOException("`AdbServerController` operation was interrupted by another operation")
+                .apply { addSuppressed(e) }
         }
     }
 
@@ -155,7 +180,13 @@ internal class AdbServerControllerImpl(
             logger.debug(e) { "Failed `createChannel` on port ${currentState.params.lastUsedConfig}" }
             // Failed to create channel. Try to restart adb server / update configuration and try again.
             host.timeProvider.withErrorTimeout(tracker.remainingMills) {
-                restart()
+                try {
+                    restart()
+                } catch (e: IOException) {
+                    throw IOException(
+                        "`createChannel` failed to restart `AdbServerController` on failure", e
+                    )
+                }
             }
             connectProvider.createChannel(tracker.remainingNanos, TimeUnit.NANOSECONDS)
         }
@@ -456,7 +487,7 @@ internal class AdbServerControllerImpl(
     }
 
     /**
-     * The "starting" state, i.e. [State.start] has been called and is not finished yet.
+     * The "restarting" state, i.e. [State.restart] has been called and is not finished yet.
      */
     private class RestartingState(params: StateParams) : State(params) {
 

@@ -410,13 +410,6 @@ fun findKaptOrKspConfigurationsForVariant(
     }
 }
 
-fun findKotlinBaseApiPlugin(projectInfo: ProjectInfo): KotlinBaseApiPlugin? =
-    try {
-        projectInfo.findPlugin(KotlinBaseApiPlugin::class.java)
-    } catch (e: Throwable) {
-        if (e is ClassNotFoundException || e is NoClassDefFoundError) null else throw e
-    }
-
 /**
  * Add the kotlin stdlib to the compile and runtime classpaths, if it's not added by the user.
  * Similar to https://youtrack.jetbrains.com/issue/KT-38221.
@@ -436,7 +429,7 @@ internal fun maybeAddKotlinStdlibDependency(
 
     val kotlinStdlibVersion =
         creationConfig.global.kotlinAndroidProjectExtension?.coreLibrariesVersion
-            ?: creationConfig.services.kotlinServices?.kgpVersion
+            ?: creationConfig.services.builtInKotlinServices.kgpVersion
 
     fun Configuration.hasKotlinStdlibDependency(): Boolean {
         val externalDependencies = this.allDependencies.matching { it !is ProjectDependency }

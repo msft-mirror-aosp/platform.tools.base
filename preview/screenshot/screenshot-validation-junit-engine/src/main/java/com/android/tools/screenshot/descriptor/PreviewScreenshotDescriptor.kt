@@ -70,17 +70,17 @@ class PreviewScreenshotDescriptor(
             )
         } finally {
             if (File(newImagePath).exists()) {
-                context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                context.executionListener.reportingEntryPublished(
                     this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath)
                 )
             }
             if (File(refImagePath).exists()) {
-                context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                context.executionListener.reportingEntryPublished(
                     this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath)
                 )
             }
             if (File(diffImagePath).exists()) {
-                context.executionRequest.engineExecutionListener.reportingEntryPublished(
+                context.executionListener.reportingEntryPublished(
                     this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath)
                 )
             }

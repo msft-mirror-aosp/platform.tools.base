@@ -15,12 +15,22 @@
  */
 package com.android.adblib.tools.testutils
 
+import com.android.adblib.AdbSession
 import com.android.adblib.ByteBufferAdbOutputChannel
+import com.android.adblib.ConnectedDevice
+import com.android.adblib.connectedDevicesTracker
+import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils
+import com.android.adblib.testingutils.FakeAdbServerProvider
+import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpSession
+import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
 import com.android.adblib.tools.debugging.impl.JdwpProcessManager
+import com.android.adblib.tools.debugging.impl.JdwpProcessSessionFinder
+import com.android.adblib.tools.debugging.impl.addJdwpProcessSessionFinder
 import com.android.adblib.tools.debugging.impl.jdwpProcessManager
+import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkView
@@ -33,10 +43,14 @@ import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.properties
 import com.android.adblib.tools.debugging.utils.AdbRewindableInputChannel
 import com.android.adblib.utils.ResizableBuffer
+import com.android.adblib.waitForDevice
+import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.transform
 import java.io.EOFException
 
 open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
@@ -63,7 +77,7 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
         //process.startMonitoring()
         CoroutineTestUtils.yieldUntil {
-            process.properties.jdwpSessionProxyStatus.socketAddress != null &&
+            process.properties.jdwpProxyStatus.socketAddress != null &&
                     process.properties.processName != null
         }
         val jdwpSession = attachDebuggerSession(process)
@@ -75,9 +89,10 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
     }
 
     protected suspend fun attachDebuggerSession(process: JdwpProcess): JdwpSession {
+        process.propertiesFlow.first { it.jdwpProxyStatus.socketAddress != null }
         val clientSocket = registerCloseable(
             session.channelFactory.connectSocket(
-                process.properties.jdwpSessionProxyStatus.socketAddress!!
+                process.properties.jdwpProxyStatus.socketAddress!!
             )
         )
         return registerCloseable(
@@ -159,7 +174,78 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
         }
     }
 
-    private fun JdwpProcessManager.getProcess(pid: Int): JdwpProcess {
-        return this.addProcesses(setOf(pid))[pid]!!
+    internal fun JdwpProcessManager.getProcess(pid: Int): AbstractJdwpProcess {
+        return this.addProcesses(setOf(pid))[pid]!! as AbstractJdwpProcess
+    }
+
+    /**
+     * Return a new "child" [AdbSession] of this [AdbSession]. A "child" session delegates JDWP
+     * facilities to its parent session (see [JdwpProcessSessionFinder]).
+     */
+    protected fun AdbSession.createDelegatingChildSession(fakeAdbRule: FakeAdbServerProviderRule): AdbSession {
+        val childSession = AdbSession.createChildSession(
+            this,
+            fakeAdbRule.host,
+            fakeAdbRule.fakeAdb.createChannelProvider(fakeAdbRule.host)
+        )
+        childSession.addJdwpProcessSessionFinder(object : JdwpProcessSessionFinder {
+            override fun findDelegateSession(forSession: AdbSession): AdbSession {
+                return if (forSession == childSession) {
+                    this@createDelegatingChildSession
+                } else {
+                    forSession
+                }
+            }
+        })
+        return childSession
+    }
+
+    /**
+     * Given [sourceProcess], a [JdwpProcess] in a given [AdbSession], waits for and returns
+     * a [JdwpProcess] instance from this [AdbSession] that has the same process ID as
+     * [sourceProcess]. Typically, the wait should be small, as it is only intended to take
+     * into account the fact that [AdbSession] instances are notified of new [JdwpProcess]
+     * instances asynchronously.
+     *
+     * This method is intended to be used in conjunction with [createDelegatingChildSession].
+     */
+    protected suspend fun AdbSession.awaitJdwpProcess(sourceProcess: JdwpProcess): JdwpProcess {
+        // Find the device in this session, then look for process with same pid
+        val sessionDevice = connectedDevicesTracker.waitForDevice(sourceProcess.device.serialNumber)
+        return sessionDevice.jdwpProcessTracker.processesFlow.transform { processList ->
+            processList.firstOrNull { it.pid == sourceProcess.pid }?.also {
+                emit(it)
+            }
+        }.first()
+    }
+
+    internal suspend fun createJdwpProcess(
+        deviceApi: Int = 30,
+        pid: Int = 10,
+        waitForDebugger: Boolean = true
+    ): Triple<FakeAdbServerProvider, ConnectedDevice, AbstractJdwpProcess> {
+        val device = fakeAdb.addDevice(deviceApi)
+        val clientState = device.createFakeAdbProcess(pid, waitForDebugger)
+        val process = device.jdwpProcessManager.getProcess(clientState.pid)
+        return Triple(fakeAdb, device, process)
+    }
+
+    internal suspend fun FakeAdbServerProvider.addDevice(deviceApi: Int = 30): ConnectedDevice {
+        val fakeAdb = this
+        val fakeDevice = addFakeDevice(fakeAdb, deviceApi)
+        return waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+    }
+
+    internal suspend fun ConnectedDevice.createFakeAdbProcess(
+        pid: Int = 10,
+        waitForDebugger: Boolean = false
+    ): ClientState {
+        return fakeAdb.device(serialNumber).startClient(
+            pid = pid,
+            userId = 2,
+            processName = "p1",
+            packageName = "pkg",
+            isWaiting = waitForDebugger
+        )
     }
 }

@@ -115,14 +115,21 @@ class IntentDetector : Detector(), SourceCodeScanner {
 
           val dataParent = findParent(seenData)
           val typeParent = findParent(seenType)
-          //noinspection LintImplPsiEquals
-          if (dataParent != typeParent) {
-            return
-          } else if (dataParent is UIfExpression) {
-            // Make sure they're both inside the same then clause or same else clause
-            val parent = dataParent.thenExpression
-            if (parent != null && seenData!!.isBelow(parent) != seenType!!.isBelow(parent)) {
+
+          // If it is not obvious that both "set" calls were made in the same block (approximately)
+          // then we return early to avoid false-positives. But if the data was set in the
+          // constructor then we can skip this check, because the constructor must have been
+          // executed.
+          if (!seenInConstructor) {
+            //noinspection LintImplPsiEquals
+            if (dataParent != typeParent) {
               return
+            } else if (dataParent is UIfExpression) {
+              // Make sure they're both inside the same then clause or same else clause
+              val parent = dataParent.thenExpression
+              if (parent != null && seenData!!.isBelow(parent) != seenType!!.isBelow(parent)) {
+                return
+              }
             }
           }
 

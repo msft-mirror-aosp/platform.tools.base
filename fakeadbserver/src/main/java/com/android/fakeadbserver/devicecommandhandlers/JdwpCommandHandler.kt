@@ -138,6 +138,13 @@ class JdwpCommandHandler : DeviceCommandHandler("jdwp") {
                 }
             }
         }
+        // The JDWP session started, change the process state to `not waiting for debugger`
+        // if needed
+        if (client.getWaitingForDebuggerAndReset()) {
+            // The process state has changed, make sure `track-app-info` sends an updated list
+            // if needed.
+            device.clientChangeHub.appProcessListChanged()
+        }
         try {
             jdwpLoop(device, client, iStream, oStream, socketScope)
         } finally {

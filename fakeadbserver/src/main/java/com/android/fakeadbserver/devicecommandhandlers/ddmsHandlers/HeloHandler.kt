@@ -42,7 +42,18 @@ class HeloHandler : DdmPacketHandler {
 
         // ABI starts at API 21
         val writeAbi = deviceApiLevel >= 21
-        val abi = device.cpuAbi
+        // Simulate the Android Framework implementation in `DdmHandleHello.handleHELO`
+        // See https://cs.android.com/android/_/android/platform/frameworks/base/+/eea3b0d26916f92184b48d8ba95a064db2ca884c:core/java/android/ddm/DdmHandleHello.java;l=128
+        val instructionSetDescription =  if (device.cpuAbi.contains("64")) {
+            "64-bit"
+        } else {
+            "32-bit"
+        }
+        val abi = if (device.cpuAbi.isEmpty()) {
+            instructionSetDescription
+        } else {
+            "$instructionSetDescription (${device.cpuAbi})"
+        }
 
         // JvmFlags starts at API 21
         val writeJvmFlags = deviceApiLevel >= 21
@@ -181,7 +192,7 @@ class HeloHandler : DdmPacketHandler {
 
         val CHUNK_TYPE = DdmPacket.encodeChunkType("HELO")
         private const val VM_IDENTIFIER = "FakeVM"
-        private const val JVM_FLAGS = "-jvmflag=true"
+        private const val JVM_FLAGS = "CheckJNI=true"
         private const val HELO_CHUNK_HEADER_LENGTH = 16
         private const val VERSION = 9999
     }

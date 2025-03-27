@@ -159,6 +159,7 @@ def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path) -> None:
   dist_path = pathlib.Path(build_env.dist_dir)
   error_log_path = dist_path / 'logs/build_error.log'
   perfgate_data_path = dist_path / 'perfgate_data.zip'
+  failed_tests_path = dist_path / 'failed_tests.txt'
 
   args = [
       '//tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector',
@@ -171,6 +172,8 @@ def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path) -> None:
       str(error_log_path),
       '-module_info',
       str(dist_path),
+      '-failed_tests',
+      str(failed_tests_path)
   ]
   if build_type == BuildType.POSTSUBMIT:
     args.append('-perfzip')

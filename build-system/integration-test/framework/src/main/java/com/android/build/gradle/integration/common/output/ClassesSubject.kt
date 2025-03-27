@@ -62,25 +62,6 @@ interface ClassesSubject: FileArchiveSubject {
      *   archive that are in that package.
      * - binary class names ending with `$` to match against a class and all its inner classes.
      */
-    override fun containsExactly(item: String) {
-        // mostly there to override javadoc
-        super.containsExactly(item)
-    }
-
-    /**
-     * Validates that the class list matches exactly with the provided list.
-     *
-     * The class list contains classes only. There are no folders in it.
-     *
-     * The format of the class names is using the binary format. For example:
-     *   com/example/Foo$InnerClass
-     *
-     * The possible format of the items in the provided list includes
-     * - normal binary class names
-     * - packages/folders (ending with /), in which case it will match against any classes in the
-     *   archive that are in that package.
-     * - binary class names ending with `$` to match against a class and all its inner classes.
-     */
     override fun containsExactly(vararg items: String) {
         // mostly there to override javadoc
         super.containsExactly(*items)

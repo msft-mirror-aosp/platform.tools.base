@@ -32,7 +32,7 @@ class ClientState internal constructor(
     override val uid: Int,
     override val processName: String,
     val packageName: String,
-    override val waitingForDebugger: Boolean,
+    override var waitingForDebugger: Boolean,
     override val architecture: String
 ) : ProcessState(device, pid) {
 
@@ -102,6 +102,13 @@ class ClientState internal constructor(
             }
         }
         jdwpSocket = null
+    }
+
+    @Synchronized
+    fun getWaitingForDebuggerAndReset(): Boolean {
+        return waitingForDebugger.also {
+            waitingForDebugger = false
+        }
     }
 
     fun nextDdmsCommandId(): Int {

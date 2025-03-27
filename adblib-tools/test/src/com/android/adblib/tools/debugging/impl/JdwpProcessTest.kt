@@ -19,6 +19,7 @@ import com.android.adblib.AdbUsageTracker
 import com.android.adblib.AdbUsageTracker.JdwpProcessPropertiesCollectorEvent
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.InstructionSet
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
@@ -498,17 +499,13 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         } else {
             assertEquals("FakeVM", properties.vmIdentifier)
         }
-        assertEquals("x86_64", properties.abi)
-        if (isFromAppInfo) {
-            // When using `app_info`, there is no equivalent of "jvmFlag" available
-            assertNull(properties.jvmFlags)
-        } else {
-            assertEquals("-jvmflag=true", properties.jvmFlags)
-        }
+        assertEquals("64-bit (x86_64)", properties.instructionSetDescription)
+        assertEquals(InstructionSet.X86_64, properties.instructionSet)
+        assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
-        assertFalse(properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
-        assertNotNull(properties.jdwpSessionProxyStatus.socketAddress)
+        assertFalse(properties.jdwpProxyStatus.isExternalDebuggerAttached)
+        assertNotNull(properties.jdwpProxyStatus.socketAddress)
         if (isFromAppInfo) {
             // When using `app_info`, the list of features comes from
             // `am capabilities`
@@ -548,12 +545,13 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertNull(properties.userId)
         assertNull(properties.packageName)
         assertNull(properties.vmIdentifier)
-        assertNull(properties.abi)
+        assertNull(properties.instructionSetDescription)
+        assertNull(properties.instructionSet)
         assertNull(properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
-        assertFalse(properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
-        assertNull(properties.jdwpSessionProxyStatus.socketAddress)
+        assertFalse(properties.jdwpProxyStatus.isExternalDebuggerAttached)
+        assertNull(properties.jdwpProxyStatus.socketAddress)
         assertTrue(properties.features.isEmpty())
         assertNull(properties.exception)
         assertFalse(properties.completed)

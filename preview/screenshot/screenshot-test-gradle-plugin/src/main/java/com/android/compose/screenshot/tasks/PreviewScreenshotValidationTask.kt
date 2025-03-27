@@ -129,6 +129,7 @@ abstract class PreviewScreenshotValidationTask : Test() {
             // Required by LayoutLib.
             jvmArgs("-Djava.security.manager=allow")
         }
+        jvmArgs("-Dlayoutlib.thread.profile.slow-rendering.enable=false")
     }
 
     override fun getClasspath(): ConfigurableFileCollection {

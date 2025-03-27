@@ -16,6 +16,7 @@
 package com.android.adblib.impl
 
 import com.android.adblib.AppProcessEntry
+import com.android.adblib.InstructionSet
 import com.android.server.adb.protos.AppProcessesProto
 import java.nio.ByteBuffer
 
@@ -39,7 +40,7 @@ internal class AppProcessEntryListParser {
                     pid = it.pid.toInt(),
                     debuggable = it.debuggable,
                     profileable = it.profileable,
-                    architecture = it.architecture,
+                    instructionSet = InstructionSet.fromString(it.architecture),
                     //
                     // Note: The fields below are set only when the `app_info` feature is
                     //       supported by the device.

@@ -26,6 +26,7 @@ import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.addException
+import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
@@ -92,9 +93,9 @@ internal class UsingAppInfoFlowUpdater(
                                 (properties.packageName != null) &&
                                 (properties.userId != null) &&
                                 (properties.vmIdentifier != null) &&
-                                // Note: This is obsolete
-                                //(properties.jvmFlags != null) &&
-                                (properties.abi != null) &&
+                                (properties.jvmFlags != null) &&
+                                (properties.instructionSetDescription != null) &&
+                                (properties.instructionSet != null) &&
                                 (properties.features.isNotEmpty())
 
                     completed
@@ -137,12 +138,19 @@ internal class UsingAppInfoFlowUpdater(
                 packageName = JdwpProcessPropertiesCollector.filterFakeName(appProcessEntry.packageNames?.firstOrNull())
                     ?: current.packageName,
                 userId = appProcessEntry.userId32 ?: current.userId,
-                abi = appProcessEntry.architecture,
+                instructionSet = appProcessEntry.instructionSet,
                 isWaitingForDebugger = appProcessEntry.waitingForDebugger ?: current.isWaitingForDebugger,
-                // Note: This is obsolete
-                // jvmFlags = "CheckJNI=true",
+                jvmFlags = legacyJvmFlags()
             )
         }
+    }
+
+    /**
+     * We need set the [JdwpProcessProperties.jvmFlags] property to its legacy value,
+     * which is not supported by `track-app`.
+     */
+    private fun legacyJvmFlags(): String {
+        return "CheckJNI=true"
     }
 
     companion object {

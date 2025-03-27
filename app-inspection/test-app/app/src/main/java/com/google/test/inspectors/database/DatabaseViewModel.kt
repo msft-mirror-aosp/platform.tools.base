@@ -30,6 +30,7 @@ import androidx.room.Room
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.driver.bundled.SQLITE_OPEN_CREATE
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_READONLY
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_READWRITE
 import androidx.sqlite.execSQL
@@ -271,7 +272,11 @@ internal class DatabaseViewModel @Inject constructor(private val application: Ap
   }
 
   private fun openBundledDatabase(isReadOnly: Boolean): SQLiteConnection {
-    val flags = if (isReadOnly) SQLITE_OPEN_READONLY else SQLITE_OPEN_READWRITE
+    val flags =
+      when {
+        isReadOnly -> SQLITE_OPEN_READONLY
+        else -> SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE
+      }
     val path = application.getDatabasePath("bundled-database.db").path
     return bundledSQLiteDriver.open(path, flags).apply {
       if (!isReadOnly) {

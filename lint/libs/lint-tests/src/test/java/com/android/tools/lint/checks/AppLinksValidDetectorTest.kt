@@ -1576,7 +1576,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         -                 <data android:host="example.com" />
         +                 <data
         +                     android:host="example.com"
-        +                     android:scheme="http[TODO]|" />
+        +                     android:scheme="[TODO]|" />
                           <data android:path="/gizmos" />
         """
       )
@@ -2534,7 +2534,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
         -                 <data android:host="example.com" />
         +                 <data
         +                     android:host="example.com"
-        +                     android:scheme="http[TODO]|" />
+        +                     android:scheme="[TODO]|" />
         Fix for AndroidManifest.xml line 80: Add `host` attribute:
         @@ -80 +80
         -             <intent-filter android:autoVerify="true"> <!-- Missing host -->

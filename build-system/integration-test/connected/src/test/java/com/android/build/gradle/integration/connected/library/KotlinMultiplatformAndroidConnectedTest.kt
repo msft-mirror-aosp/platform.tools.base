@@ -94,7 +94,7 @@ class KotlinMultiplatformAndroidConnectedTest {
 
         val coveragePackageFolder = FileUtils.join(
             project.getSubproject("kmpFirstLib").buildDir,
-            "reports", "coverage", "androidTest", "main", "connected", "com.example.kmpfirstlib"
+            "reports", "coverage", "androidTest", "connected", "com.example.kmpfirstlib"
         )
 
         Truth.assertThat(coveragePackageFolder.exists()).isTrue()

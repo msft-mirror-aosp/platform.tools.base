@@ -177,6 +177,12 @@ public class AppInspectionService {
         sendDisposeInspectorResponseSuccess(commandId);
     }
 
+    public void deamonTerminated() {
+        for (String inspectorId : mInspectorBridges.keySet()) {
+            doDispose(inspectorId, "Deamon terminated");
+        }
+    }
+
     public void sendCommand(String inspectorId, int commandId, byte[] rawCommand) {
         if (inspectorId == null) {
             sendRawResponseError(commandId, INSPECTOR_ID_MISSING_ERROR);

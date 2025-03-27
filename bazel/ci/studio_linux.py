@@ -131,6 +131,8 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
     flags.extend(presubmit.generate_runs_per_test_flags(build_env))
 
   result = studio.run_tests(build_env, flags, targets)
+  if build_type == studio.BuildType.PRESUBMIT:
+    presubmit.validate_and_upload_failed_tests(build_env)
   copy_agp_supported_versions(build_env)
   if studio.is_build_successful(result):
     copy_artifacts(

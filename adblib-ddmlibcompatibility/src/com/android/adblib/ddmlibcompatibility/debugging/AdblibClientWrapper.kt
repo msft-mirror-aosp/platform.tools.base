@@ -28,16 +28,13 @@ import com.android.adblib.tools.debugging.ProfilerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.allocationTracker
 import com.android.adblib.tools.debugging.executeGarbageCollector
-import com.android.adblib.tools.debugging.handleDdmsCaptureView
-import com.android.adblib.tools.debugging.handleDdmsDumpViewHierarchy
-import com.android.adblib.tools.debugging.handleDdmsListViewRoots
 import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
-import com.android.adblib.tools.debugging.packets.ddms.withPayload
 import com.android.adblib.tools.debugging.profiler
 import com.android.adblib.tools.debugging.properties
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.debugging.toByteBuffer
+import com.android.adblib.tools.debugging.viewHierarchy
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.withErrorTimeout
 import com.android.adblib.withPrefix
@@ -117,7 +114,8 @@ internal class AdblibClientWrapper(
                 hasChanged(userId, newProcessInfo.userId) ||
                 hasChanged(packageName, newProcessInfo.packageName) ||
                 hasChanged(vmIdentifier, newProcessInfo.vmIdentifier) ||
-                hasChanged(abi, newProcessInfo.abi) ||
+                hasChanged(instructionSetDescription, newProcessInfo.instructionSetDescription) ||
+                hasChanged(instructionSet, newProcessInfo.instructionSet) ||
                 hasChanged(jvmFlags, newProcessInfo.jvmFlags) ||
                 hasChanged(isWaitingForDebugger, newProcessInfo.isWaitingForDebugger) ||
                 hasChanged(isNativeDebuggable, newProcessInfo.isNativeDebuggable)
@@ -157,7 +155,7 @@ internal class AdblibClientWrapper(
             clientWrapper.clientData.setNames(names)
         }
         clientWrapper.clientData.vmIdentifier = newProperties.vmIdentifier
-        clientWrapper.clientData.abi = newProperties.abi
+        clientWrapper.clientData.abi = newProperties.instructionSetDescription
         clientWrapper.clientData.jvmFlags = newProperties.jvmFlags
         clientWrapper.clientData.isNativeDebuggable = newProperties.isNativeDebuggable
         if (newProperties.features.isNotEmpty()) {
@@ -167,7 +165,7 @@ internal class AdblibClientWrapper(
         // "DebuggerStatus" is trickier: order is important
         clientWrapper.clientData.debuggerConnectionStatus = when {
             // This comes from the JDWP connection proxy, when a JDWP connection is started
-            newProperties.jdwpSessionProxyStatus.isExternalDebuggerAttached -> ClientData.DebuggerStatus.ATTACHED
+            newProperties.jdwpProxyStatus.isExternalDebuggerAttached -> ClientData.DebuggerStatus.ATTACHED
 
             // This comes from seeing a DDMS_WAIT packet on the JDWP connection
             newProperties.isWaitingForDebugger -> ClientData.DebuggerStatus.WAITING
@@ -238,7 +236,7 @@ internal class AdblibClientWrapper(
      * Android Studio) can connect to open a JDWP session with the process.
      */
     override fun getDebuggerListenPort(): Int {
-        return jdwpProcess.properties.jdwpSessionProxyStatus.socketAddress?.port ?: -1
+        return jdwpProcess.properties.jdwpProxyStatus.socketAddress?.port ?: -1
     }
 
     /**
@@ -246,7 +244,7 @@ internal class AdblibClientWrapper(
      * currently attached to the process via a JDWP session.
      */
     override fun isDebuggerAttached(): Boolean {
-        return jdwpProcess.properties.jdwpSessionProxyStatus.isExternalDebuggerAttached
+        return jdwpProcess.properties.jdwpProxyStatus.isExternalDebuggerAttached
     }
 
     override fun executeGarbageCollector() {
@@ -444,35 +442,30 @@ internal class AdblibClientWrapper(
 
     override fun listViewRoots(replyHandler: DebugViewDumpHandler) {
         launchLegacyWithJdwpSession("listViewRoots") {
-            val buffer = handleDdmsListViewRoots { chunkReply ->
+            jdwpProcess.viewHierarchy.listViewRoots { payload, payloadLength ->
                 // Note: At this point, the ddms chunk payload points directly
                 // to the socket of the underlying JDWP session.
                 // We clone it into an in-memory ByteBuffer (which is wasteful)
                 // only because the ddmlib API requires it.
-                chunkReply.withPayload { it.toByteBuffer(chunkReply.length) }
+                replyHandler.handleChunkData(payload.toByteBuffer(payloadLength))
             }
-
-            // Invoke the handler with the packet result payload
-            replyHandler.handleChunkData(buffer)
         }
     }
 
     override fun captureView(
-        viewRoot: String,
-        view: String,
-        replyHandler: DebugViewDumpHandler
+        viewRoot: String, view: String, replyHandler: DebugViewDumpHandler
     ) {
         launchLegacyWithJdwpSession("captureView($viewRoot, $view)") {
-            val buffer = handleDdmsCaptureView(viewRoot, view) { chunkReply ->
+            jdwpProcess.viewHierarchy.captureView(
+                viewRoot,
+                view
+            ) { payload, payloadLength ->
                 // Note: At this point, the ddms chunk payload points directly
                 // to the socket of the underlying JDWP session.
                 // We clone it into an in-memory ByteBuffer (which is wasteful)
                 // only because the ddmlib API requires it.
-                chunkReply.withPayload { it.toByteBuffer(chunkReply.length) }
+                replyHandler.handleChunkData(payload.toByteBuffer(payloadLength))
             }
-
-            // Invoke the handler with the packet result payload
-            replyHandler.handleChunkData(buffer)
         }
     }
 
@@ -484,21 +477,18 @@ internal class AdblibClientWrapper(
         handler: DebugViewDumpHandler
     ) {
         launchLegacyWithJdwpSession("dumpViewHierarchy($viewRoot, $skipChildren, $includeProperties, $useV2)") {
-            val buffer = handleDdmsDumpViewHierarchy(
+            jdwpProcess.viewHierarchy.dumpViewHierarchy(
                 viewRoot = viewRoot,
                 skipChildren = skipChildren,
                 includeProperties = includeProperties,
                 useV2 = useV2
-            ) { chunkReply ->
+            ) { payload, payloadLength ->
                 // Note: At this point, the ddms chunk payload points directly
                 // to the socket of the underlying JDWP session.
                 // We clone it into an in-memory ByteBuffer (which is wasteful)
                 // only because the ddmlib API requires it.
-                chunkReply.withPayload { it.toByteBuffer(chunkReply.length) }
+                handler.handleChunkData(payload.toByteBuffer(payloadLength))
             }
-
-            // Invoke the handler with the packet result payload
-            handler.handleChunkData(buffer)
         }
     }
 

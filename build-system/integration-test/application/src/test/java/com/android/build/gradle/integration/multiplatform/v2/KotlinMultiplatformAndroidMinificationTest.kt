@@ -16,12 +16,11 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
-import com.android.build.gradle.integration.common.output.AarSubject
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
-import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -75,11 +74,7 @@ class KotlinMultiplatformAndroidMinificationTest {
         project.executor()
             .run(":kmpFirstLib:assemble")
 
-        val aarPath = project.getSubproject("kmpFirstLib")
-            .getOutputFile("aar", "kmpFirstLib.aar")
-            .toPath()
-
-        AarSubject.assertThat(aarPath) {
+        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             mainJar {
                 classes().containsExactly("com/example/kmpfirstlib/KmpAndroidActivity")
                 resources().containsExactly("kmp_resource.txt")
@@ -89,14 +84,11 @@ class KotlinMultiplatformAndroidMinificationTest {
 
     @Test
     fun testAppClassesAreMinified() {
-        project.executor()
-            .run(":app:assembleDebug")
+        project.executor().run(":app:assembleDebug")
 
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
             // only the main activity is left
-            Truth.assertThat(apk.mainDexFile.get().classes.keys).containsExactly(
-                "Lcom/example/kmpfirstlib/KmpAndroidActivity;"
-            )
+            mainDex().containsExactly("com/example/kmpfirstlib/KmpAndroidActivity")
         }
     }
 
@@ -117,14 +109,9 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor()
-            .run(":kmpFirstLib:assemble")
+        project.executor().run(":kmpFirstLib:assemble")
 
-        val aarPath = project.getSubproject("kmpFirstLib")
-            .getOutputFile("aar", "kmpFirstLib.aar")
-            .toPath()
-
-        AarSubject.assertThat(aarPath) {
+        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             mainJar {
                 // code is optimized by default, and so the invocations to classes from common
                 // and androidLib are replaced by a literal string and removed.
@@ -147,22 +134,21 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor()
-            .run(":app:assembleDebug")
+        project.executor().run(":app:assembleDebug")
 
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            Truth.assertThat(apk.mainDexFile.get().classes.keys).containsExactly(
-                "Lcom/example/androidlib/AndroidLib;",
-                "Lcom/example/app/AndroidApp;",
-                "Lcom/example/kmpfirstlib/KmpAndroidActivity;",
-                "Lcom/example/kmpfirstlib/KmpAndroidFirstLibClass;",
-                "Lcom/example/kmpfirstlib/KmpCommonFirstLibClass;",
-                "Lcom/example/kmpsecondlib/KmpAndroidSecondLibClass;",
-                "Lcom/example/kmplibraryplugin/KmpLibraryPluginAndroidClass;",
-                "Lcom/example/kmplibraryplugin/KmpLibraryPluginCommonClass;",
-                "Lcom/example/kmpjvmonly/KmpCommonJvmOnlyLibClass;",
-                "Lcom/example/kmpjvmonly/KmpJvmOnlyLibClass;",
-                "Lkotlin/jvm/internal/Intrinsics;"
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+            mainDex().containsExactly(
+                "com/example/androidlib/AndroidLib",
+                "com/example/app/AndroidApp",
+                "com/example/kmpfirstlib/KmpAndroidActivity",
+                "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+                "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+                "com/example/kmpsecondlib/KmpAndroidSecondLibClass",
+                "com/example/kmplibraryplugin/KmpLibraryPluginAndroidClass",
+                "com/example/kmplibraryplugin/KmpLibraryPluginCommonClass",
+                "com/example/kmpjvmonly/KmpCommonJvmOnlyLibClass",
+                "com/example/kmpjvmonly/KmpJvmOnlyLibClass",
+                "kotlin/jvm/internal/Intrinsics"
             )
         }
     }
@@ -179,17 +165,16 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor()
-            .run(":app:assembleDebug")
+        project.executor().run(":app:assembleDebug")
 
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            Truth.assertThat(apk.mainDexFile.get().classes.keys).containsExactly(
-                "Lcom/example/kmpfirstlib/KmpAndroidActivity;",
-                "Lcom/example/kmpfirstlib/KmpAndroidFirstLibClass;",
-                "Lcom/example/kmpfirstlib/KmpCommonFirstLibClass;",
-                "Lcom/example/kmpsecondlib/KmpAndroidSecondLibClass;",
-                "Lcom/example/kmplibraryplugin/KmpLibraryPluginAndroidClass;",
-                "Lcom/example/kmplibraryplugin/KmpLibraryPluginCommonClass;",
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+            mainDex().containsExactly(
+                "com/example/kmpfirstlib/KmpAndroidActivity",
+                "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+                "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+                "com/example/kmpsecondlib/KmpAndroidSecondLibClass",
+                "com/example/kmplibraryplugin/KmpLibraryPluginAndroidClass",
+                "com/example/kmplibraryplugin/KmpLibraryPluginCommonClass",
             )
         }
     }
@@ -205,11 +190,7 @@ class KotlinMultiplatformAndroidMinificationTest {
 
         project.executor().run(":kmpFirstLib:bundleAndroidMainAar")
 
-        val aarPath = project.getSubproject("kmpFirstLib")
-            .getOutputFile("aar", "kmpFirstLib.aar")
-            .toPath()
-
-        AarSubject.assertThat(aarPath) {
+        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             textFile("proguard.txt").isEqualTo(
                 """
                    -keep class com.example.kmpfirstlib.** { *; }
@@ -235,13 +216,10 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor()
-            .run(":app:assembleDebug")
+        project.executor().run(":app:assembleDebug")
 
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            Truth.assertThat(apk.mainDexFile.get().classes.keys).containsExactly(
-                "Lcom/example/kmpfirstlib/KmpAndroidActivity;"
-            )
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+            mainDex().containsExactly("com/example/kmpfirstlib/KmpAndroidActivity")
         }
     }
 }

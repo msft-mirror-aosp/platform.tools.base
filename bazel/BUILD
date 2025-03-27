@@ -48,18 +48,6 @@ java_binary(
     ],
 )
 
-java_binary(
-    name = "formc",
-    srcs = ["src/com/android/tools/form/FormCompiler.java"],
-    main_class = "com.android.tools.form.FormCompiler",
-    visibility = ["//visibility:public"],
-    runtime_deps = ["@maven//:org.jetbrains.kotlin.kotlin-stdlib"],
-    deps = [
-        ":utils",
-        "//prebuilts/tools/common/bazel/formc-deps",
-    ],
-)
-
 java_library(
     name = "bazel_generator",
     srcs = glob([

@@ -20,6 +20,7 @@ import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.deviceProperties
 import com.android.adblib.tools.debugging.impl.JdwpProcessAllocationTrackerImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessProfilerImpl
+import com.android.adblib.tools.debugging.impl.JdwpProcessViewHierarchyImpl
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -136,6 +137,14 @@ private val jdwpProcessProfilerKey =
 val JdwpProcess.profiler: JdwpProcessProfiler
     get() = this.cache.getOrPut(jdwpProcessProfilerKey) {
         JdwpProcessProfilerImpl(this)
+    }
+
+private val jdwpProcessViewHierarchyKey =
+    CoroutineScopeCache.Key<JdwpProcessViewHierarchy>("JdwpProcessViewHierarchy")
+
+val JdwpProcess.viewHierarchy: JdwpProcessViewHierarchy
+    get() = this.cache.getOrPut(jdwpProcessViewHierarchyKey) {
+        JdwpProcessViewHierarchyImpl(this)
     }
 
 enum class DdmsProtocolKind {

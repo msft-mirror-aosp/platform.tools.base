@@ -201,6 +201,9 @@ public class X509TrustManagerDetector extends Detector implements SourceCodeScan
             MethodNode method = (MethodNode) m;
             if ("checkServerTrusted".equals(method.name)
                     || "checkClientTrusted".equals(method.name)) {
+                if (context.getDriver().isSuppressed(TRUSTS_ALL, classNode, method, null)) {
+                    continue;
+                }
                 InsnList nodes = method.instructions;
                 boolean emptyMethod = true; // Stays true if method doesn't perform any "real"
                 // operations

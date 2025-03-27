@@ -15,7 +15,6 @@
  */
 package com.android.tools.lint.checks
 
-import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.ProjectDescription
 import com.android.tools.lint.checks.infrastructure.ProjectDescription.Type.APP
 import com.android.tools.lint.checks.infrastructure.ProjectDescription.Type.LIBRARY
@@ -41,7 +40,6 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
               import android.os.Process
               import androidx.annotation.ChecksRestrictedEnvironment
               import androidx.annotation.RestrictedForEnvironment
-              import androidx.annotation.RestrictedForEnvironment.Environment.SDK_SANDBOX
 
               class MyApp6 {
                   fun foo(context: Context) {
@@ -63,19 +61,19 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
                       }
                   }
 
-                  @RestrictedForEnvironment([SDK_SANDBOX], 31)
+                  @RestrictedForEnvironment(["SDK_SANDBOX"], 31)
                   fun getData() {
                       getMoreData() // OK - the containing method is annotated
                       // (and the outer "from" targetSdk is <= the blocked call "from" targetSdk)
                   }
 
-                  @RestrictedForEnvironment([SDK_SANDBOX], 32)
+                  @RestrictedForEnvironment(["SDK_SANDBOX"], 32)
                   fun getMoreData() {}
 
                   @RestrictedForEnvironment([], 31) // No environments
                   fun getNotMuch() {}
 
-                  @ChecksRestrictedEnvironment([SDK_SANDBOX])
+                  @ChecksRestrictedEnvironment(["SDK_SANDBOX"])
                   fun isSandboxed(): Boolean = TODO()
               }
               """
@@ -105,10 +103,10 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        ../lib/src/com/example/MyApp6.kt:15: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp6.kt:14: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
                 val state = wifiManager?.wifiState // Bad - calling getWifiState()
                             ~~~~~~~~~~~~~~~~~~~~~~
-        ../lib/src/com/example/MyApp6.kt:18: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 31 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp6.kt:17: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 31 or above [PrivacySandboxBlockedCall]
                 getData() // Bad
                 ~~~~~~~~~
         0 errors, 2 warnings
@@ -125,8 +123,6 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
           java(
               """
               package com.example;
-
-              import static androidx.annotation.RestrictedForEnvironment.Environment.SDK_SANDBOX;
 
               import android.content.Context;
               import android.net.wifi.WifiManager;
@@ -155,19 +151,19 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
                       }
                   }
 
-                  @RestrictedForEnvironment(environments = { SDK_SANDBOX }, from = 31)
+                  @RestrictedForEnvironment(environments = { "SDK_SANDBOX" }, from = 31)
                   public void getData() {
                       getMoreData(); // OK - the containing method is annotated
                       // (and the outer "from" targetSdk is <= the blocked call "from" targetSdk)
                   }
 
-                  @RestrictedForEnvironment(environments = { SDK_SANDBOX }, from = 32)
+                  @RestrictedForEnvironment(environments = { "SDK_SANDBOX" }, from = 32)
                   public void getMoreData() {}
 
                   @RestrictedForEnvironment(environments = {}, from = 31) // No environments
                   public void getNotMuch() {}
 
-                  @ChecksRestrictedEnvironment(environments = { SDK_SANDBOX })
+                  @ChecksRestrictedEnvironment(environments = { "SDK_SANDBOX" })
                   public boolean isSandboxed() {
                       return true;
                   }
@@ -200,10 +196,10 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        ../lib/src/com/example/MyApp7.java:17: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp7.java:15: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
                 int state = wifiManager.getWifiState(); // Bad - calling getWifiState()
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ../lib/src/com/example/MyApp7.java:20: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 31 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp7.java:18: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 31 or above [PrivacySandboxBlockedCall]
                 getData(); // Bad
                 ~~~~~~~~~
         0 errors, 2 warnings
@@ -351,20 +347,19 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
               import android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL
               import android.hardware.biometrics.BiometricManager.BIOMETRIC_SUCCESS
               import androidx.annotation.RestrictedForEnvironment
-              import androidx.annotation.RestrictedForEnvironment.Environment.SDK_SANDBOX
 
               class MyApp4(
                   private val biometricManager: BiometricManager,
               ) {
-                  @RestrictedForEnvironment(environments = [SDK_SANDBOX], from = 33)
+                  @RestrictedForEnvironment(environments = ["SDK_SANDBOX"], from = 33)
                   fun foo(): Boolean =
                       biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // OK
 
-                  @RestrictedForEnvironment(environments = [SDK_SANDBOX], from = 34)
+                  @RestrictedForEnvironment(environments = ["SDK_SANDBOX"], from = 34)
                   fun foo2(): Boolean =
                       biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // OK
 
-                  @RestrictedForEnvironment(environments = [SDK_SANDBOX], from = 35)
+                  @RestrictedForEnvironment(environments = ["SDK_SANDBOX"], from = 35)
                   fun foo3(): Boolean =
                       biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // Bad - 35 is too high
 
@@ -373,7 +368,7 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
                       biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // Bad - missing environment
 
                   val foo5
-                      @RestrictedForEnvironment(environments = [SDK_SANDBOX], from = 34)
+                      @RestrictedForEnvironment(environments = ["SDK_SANDBOX"], from = 34)
                       get() = biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // OK
               }
               """
@@ -403,10 +398,10 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        ../lib/src/com/example/MyApp4.kt:22: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp4.kt:21: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
                 biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // Bad - 35 is too high
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ../lib/src/com/example/MyApp4.kt:26: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp4.kt:25: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
                 biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // Bad - missing environment
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
@@ -430,12 +425,11 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
               import android.os.Build
               import android.os.Process
               import androidx.annotation.ChecksRestrictedEnvironment
-              import androidx.annotation.RestrictedForEnvironment.Environment.SDK_SANDBOX
 
               class MyApp5(
                   private val biometricManager: BiometricManager,
               ) {
-                  @ChecksRestrictedEnvironment(environments = [SDK_SANDBOX])
+                  @ChecksRestrictedEnvironment(environments = ["SDK_SANDBOX"])
                   val isSandboxed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Process.isSdkSandbox()
 
                   fun foo(): Boolean {
@@ -485,10 +479,10 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        ../lib/src/com/example/MyApp5.kt:26: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp5.kt:25: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
                 return biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // Bad foo2
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ../lib/src/com/example/MyApp5.kt:35: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp5.kt:34: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
             val foo6 = biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS // Bad - foo5
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
@@ -508,7 +502,6 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
 
               import static android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL;
               import static android.hardware.biometrics.BiometricManager.BIOMETRIC_SUCCESS;
-              import static androidx.annotation.RestrictedForEnvironment.Environment.SDK_SANDBOX;
 
               import android.hardware.biometrics.BiometricManager;
               import android.os.Build;
@@ -518,7 +511,7 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
 
               public class MyApp8 {
 
-                  @ChecksRestrictedEnvironment(environments = {SDK_SANDBOX})
+                  @ChecksRestrictedEnvironment(environments = {"SDK_SANDBOX"})
                   private final boolean isSandboxed = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && Process.isSdkSandbox();
 
                   private BiometricManager biometricManager;
@@ -566,10 +559,10 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        ../lib/src/com/example/MyApp8.java:29: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp8.java:28: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
                 return biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS; // Bad - foo2
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ../lib/src/com/example/MyApp8.java:34: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
+        ../lib/src/com/example/MyApp8.java:33: Warning: Call is blocked in the Privacy Sandbox when targetSdk is 34 or above [PrivacySandboxBlockedCall]
             private final boolean foo4 = biometricManager.canAuthenticate(DEVICE_CREDENTIAL) == BIOMETRIC_SUCCESS; // Bad - foo4
                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
@@ -580,7 +573,7 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
   companion object {
 
     val RESTRICTED_ANNOTATION: TestFile =
-      LintDetectorTest.kotlin(
+      kotlin(
           """
           package androidx.annotation
 
@@ -598,26 +591,19 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
               AnnotationTarget.FIELD,
           )
           annotation class RestrictedForEnvironment(
-              val environments: Array<Environment>,
-              val from: Int
-          ) {
-              enum class Environment {
-                  SDK_SANDBOX,
-                  SOME_OTHER_SANDBOX_ENVIRONMENT,
-              }
-          }
+              val environments: Array<String>,
+              val from: Int,
+          )
           """
         )
         .indented()
 
     val CHECKS_ANNOTATION: TestFile =
-      LintDetectorTest.kotlin(
+      kotlin(
           """
           package androidx.annotation
 
           /* HIDE-FROM-DOCUMENTATION */
-
-          import androidx.annotation.RestrictedForEnvironment.Environment
 
           @MustBeDocumented
           @Retention(AnnotationRetention.BINARY)
@@ -630,7 +616,7 @@ class RestrictedEnvironmentBlockedCallDetectorTest : AbstractCheckTest() {
               AnnotationTarget.FIELD,
           )
           annotation class ChecksRestrictedEnvironment(
-              val environments: Array<Environment>,
+              val environments: Array<String>,
           )
           """
         )

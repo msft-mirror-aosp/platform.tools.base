@@ -24,7 +24,6 @@ import com.android.tools.lint.detector.api.GradleContext
 import com.android.tools.lint.detector.api.GradleScanner
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Location
-import com.android.tools.lint.detector.api.Project
 import java.io.File
 
 /**
@@ -79,10 +78,7 @@ open class GradleVisitor {
       val parentFile = context.file.parentFile
       if (parentFile != null) {
         val includedFile = File(parentFile, relative)
-        if (
-          relative.startsWith("..") &&
-            !Project.isDesignatedRootProject(context.client, context.project)
-        ) {
+        if (relative.startsWith("..") && !context.project.isGradleRootHolder) {
           // We'll encounter root files from all the including projects, but we
           // only want to report issues here once; pick a designated project
           // to report them from. This project is not it.

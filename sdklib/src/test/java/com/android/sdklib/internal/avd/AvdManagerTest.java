@@ -54,6 +54,7 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -63,9 +64,10 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.OptionalLong;
 import java.util.TreeMap;
 
 @RunWith(JUnit4.class)
@@ -133,10 +135,10 @@ public final class AvdManagerTest {
         Files.write(file, "412503".getBytes());
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.of(412503), pid);
+        assertThat(pid).isEqualTo(412503);
     }
 
     @Test
@@ -162,10 +164,10 @@ public final class AvdManagerTest {
         Files.createFile(file);
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.empty(), pid);
+        assertThat(pid).isEqualTo(0);
     }
 
     @Test
@@ -191,10 +193,10 @@ public final class AvdManagerTest {
         Files.write(file, "notlong".getBytes());
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.empty(), pid);
+        assertThat(pid).isEqualTo(0);
     }
 
     @Test
@@ -220,10 +222,10 @@ public final class AvdManagerTest {
         Files.write(file, "412503".getBytes());
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.of(412503), pid);
+        assertThat(pid).isEqualTo(412503);
     }
 
     @Test
@@ -244,10 +246,10 @@ public final class AvdManagerTest {
                         false);
 
         // Act
-        Object pid = mAvdManager.getPid(avd);
+        long pid = mAvdManager.getPid(avd);
 
         // Assert
-        assertEquals(OptionalLong.empty(), pid);
+        assertThat(pid).isEqualTo(0);
     }
 
     @Test
@@ -1141,5 +1143,51 @@ public final class AvdManagerTest {
 
         // check that the AndroidVersion survives the round trip
         assertThat(avdInfo.getAndroidVersion()).isEqualTo(image.getAndroidVersion());
+    }
+
+    @Test
+    public void parseAvdInfoWithoutDisplayName() throws Exception {
+        mAvdManager.createAvd(
+                mAvdFolder,
+                name.getMethodName(),
+                systemImages.getApi23().getImage(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                false,
+                false);
+
+        // Remove the display name property from the .ini file
+        Path parentFolder = mAvdFolder.getParent();
+        String avdIniName = name.getMethodName() + ".ini";
+        Path avdIniFile = parentFolder.resolve(avdIniName).toAbsolutePath();
+        removeKeyFromIniFile(avdIniFile, ConfigKey.DISPLAY_NAME);
+
+        String expectedDisplayName = name.getMethodName();
+        AvdInfo avdInfo = mAvdManager.parseAvdInfo(avdIniFile);
+        assertEquals(expectedDisplayName, avdInfo.getDisplayName());
+        assertEquals(expectedDisplayName, avdInfo.getProperty(ConfigKey.DISPLAY_NAME));
+    }
+
+    private void removeKeyFromIniFile(Path path, String key) throws IOException {
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.contains(key)) {
+                    lines.add(line);
+                }
+            }
+        }
+
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardOpenOption.WRITE)) {
+            for (String line : lines) {
+                writer.write(line);
+                writer.newLine();
+            }
+        }
     }
 }

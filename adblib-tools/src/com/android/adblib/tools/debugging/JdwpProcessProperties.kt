@@ -15,8 +15,9 @@
  */
 package com.android.adblib.tools.debugging
 
-import com.android.adblib.tools.debugging.impl.JdwpSessionProxy
+import com.android.adblib.InstructionSet
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsFeatChunk
+import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsHeloChunk
 import java.net.InetSocketAddress
 
 /**
@@ -60,9 +61,10 @@ data class JdwpProcessProperties(
     val vmIdentifier: String? = null,
 
     /**
-     * The ABI identifier, or `null` if the value is not known yet.
+     * The [InstructionSet] used by this process, or `null` if the value is not known yet.
+     * https://cs.android.com/android/platform/superproject/main/+/b8e25499cd5f4290507e5be0d7686c2b129cb6ab:art/libartbase/arch/instruction_set.cc;l=41
      */
-    val abi: String? = null,
+    val instructionSet: InstructionSet? = null,
 
     /**
      * The JVM flags, or `null` if the value is not known yet.
@@ -89,9 +91,9 @@ data class JdwpProcessProperties(
     /**
      * The status of JDWP session proxy between an external debugger and the Android Process.
      *
-     * @see JdwpSessionProxy
+     * @see JdwpProxySocketServer
      */
-    val jdwpSessionProxyStatus: JdwpSessionProxyStatus = JdwpSessionProxyStatus(),
+    val jdwpProxyStatus: JdwpProxySocketServerStatus = JdwpProxySocketServerStatus(),
 
     /**
      * List of features reported by the [DdmsFeatChunk] packet
@@ -115,29 +117,73 @@ data class JdwpProcessProperties(
      * from the Android VM if there is already a JDWP session active for that process.
      */
     val exception: Throwable? = null,
-)
+) {
+    /**
+     * A description of the [instructionSet] (e.g. "64-bit (arm64)"), or `null` if
+     * the value is not known yet.
+     *
+     * See [instructionSet] for the specific CPU architecture
+     */
+    val instructionSetDescription: String?
+        get() = instructionSet?.toLegacyDescription()
+}
+
+/**
+ * Convert this [InstructionSet] (typically `"arm64"` or `"arm"`) to the legacy representation
+ * used in [DdmsHeloChunk.abi] for backward compatibility (e.g. `"64-bit (arm)"`).
+ */
+fun InstructionSet.toLegacyDescription(): String {
+    // See https://cs.android.com/android/_/android/platform/frameworks/base/+/eea3b0d26916f92184b48d8ba95a064db2ca884c:core/java/android/ddm/DdmHandleHello.java;l=128
+    val instructionSetDescription = if (text.contains("64")) {
+        "64-bit"
+    } else {
+        "32-bit"
+    }
+    return if (text.isEmpty()) {
+        instructionSetDescription
+    } else {
+        "$instructionSetDescription (${text})"
+    }
+}
+
+/**
+ * Convert a legacy instruction set description from the [DdmsHeloChunk.abi] field
+ * of [DdmsHeloChunk] (e.g. `"64-bit (arm)"`) into a valid [InstructionSet].
+ *
+ * Note: Values that are not recognized are returned as [InstructionSet.Unknown] instances.
+ */
+fun InstructionSet.Companion.fromLegacyDescription(value: String): InstructionSet {
+    // See https://cs.android.com/android/_/android/platform/frameworks/base/+/eea3b0d26916f92184b48d8ba95a064db2ca884c:core/java/android/ddm/DdmHandleHello.java;l=128
+    val index1 = value.indexOf('(')
+    val index2 = value.indexOf(')')
+    return if (index1 >= 0 && index2 > index1) {
+        fromString(value.substring(index1 + 1, index2))
+    } else {
+        fromString(value)
+    }
+}
 
 /**
  * Status of JDWP Session proxy external Java debuggers can use to connect to a
  * [JdwpProcess].
  *
  * @see JdwpProcess
- * @see JdwpProcessProperties.jdwpSessionProxyStatus
+ * @see JdwpProcessProperties.jdwpProxyStatus
  */
-data class JdwpSessionProxyStatus(
+data class JdwpProxySocketServerStatus(
     /**
      * The [InetSocketAddress] (typically on `localhost`) a Java debugger can use to open a
      * JDWP debugging session with the Android process. If the value is `null`, the debugger
      * connection is not ready yet.
      *
-     * @see JdwpSessionProxy
+     * @see JdwpProxySocketServer
      */
     val socketAddress: InetSocketAddress? = null,
 
     /**
      * `true` if there is an active JDWP debugging session on [socketAddress].
      *
-     * @see JdwpSessionProxy
+     * @see JdwpProxySocketServer
      */
     val isExternalDebuggerAttached: Boolean = false,
 )
@@ -150,7 +196,7 @@ internal fun JdwpProcessProperties.mergeWith(other: JdwpProcessProperties): Jdwp
         userId = source.userId.mergeWith(other.userId),
         packageName = source.packageName.mergeWith(other.packageName),
         vmIdentifier = source.vmIdentifier.mergeWith(other.vmIdentifier),
-        abi = source.abi.mergeWith(other.abi),
+        instructionSet = source.instructionSet.mergeWith(other.instructionSet),
         jvmFlags = source.jvmFlags.mergeWith(other.jvmFlags),
         isNativeDebuggable = source.isNativeDebuggable.mergeWith(other.isNativeDebuggable),
         waitCommandReceived = source.waitCommandReceived.mergeWith(other.waitCommandReceived),
@@ -158,8 +204,8 @@ internal fun JdwpProcessProperties.mergeWith(other: JdwpProcessProperties): Jdwp
         completed = source.completed.mergeWith(other.completed),
         exception = source.exception.mergeWith(other.exception),
         isWaitingForDebugger = source.isWaitingForDebugger.mergeWith(other.isWaitingForDebugger),
-        jdwpSessionProxyStatus = source.jdwpSessionProxyStatus.mergeWith(
-            other.jdwpSessionProxyStatus
+        jdwpProxyStatus = source.jdwpProxyStatus.mergeWith(
+            other.jdwpProxyStatus
         ),
     )
 }
@@ -168,8 +214,8 @@ internal fun JdwpProcessProperties.addException(throwable: Throwable): Throwable
     return exception?.also { it.addSuppressed(throwable) } ?: throwable
 }
 
-private fun JdwpSessionProxyStatus.mergeWith(other: JdwpSessionProxyStatus): JdwpSessionProxyStatus {
-    return JdwpSessionProxyStatus(
+private fun JdwpProxySocketServerStatus.mergeWith(other: JdwpProxySocketServerStatus): JdwpProxySocketServerStatus {
+    return JdwpProxySocketServerStatus(
         isExternalDebuggerAttached = this.isExternalDebuggerAttached.mergeWith(other.isExternalDebuggerAttached),
         socketAddress = this.socketAddress ?: other.socketAddress
     )
@@ -184,6 +230,10 @@ private fun Throwable?.mergeWith(other: Throwable?): Throwable? {
 }
 
 private fun Int?.mergeWith(other: Int?): Int? {
+    return this ?: other
+}
+
+private fun InstructionSet?.mergeWith(other: InstructionSet?): InstructionSet? {
     return this ?: other
 }
 

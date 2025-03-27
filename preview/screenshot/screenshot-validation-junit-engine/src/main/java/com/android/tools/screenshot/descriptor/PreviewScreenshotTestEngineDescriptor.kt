@@ -30,9 +30,9 @@ class PreviewScreenshotTestEngineDescriptor(uniqueId: UniqueId, displayName: Str
         context: PreviewScreenshotExecutionContext,
         invocation: Node.Invocation<PreviewScreenshotExecutionContext>
     ) {
-        context.executionRequest.engineExecutionListener.reportingEntryPublished(
+        context.executionListener.reportingEntryPublished(
             this, ReportEntry.from("deviceId", "Preview"))
-        context.executionRequest.engineExecutionListener.reportingEntryPublished(
+        context.executionListener.reportingEntryPublished(
             this, ReportEntry.from("deviceDisplayName", "Preview"))
 
         Renderer(

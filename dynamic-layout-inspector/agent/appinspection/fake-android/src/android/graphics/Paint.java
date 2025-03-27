@@ -19,9 +19,15 @@ package android.graphics;
 import java.util.Objects;
 
 public class Paint {
+    public static final int ANTI_ALIAS_FLAG = 0x01;
+
     private int color = 0;
     private Style style = Style.FILL;
     private float strokeWidth = 0f;
+
+    public Paint() {}
+
+    public Paint(int flags) {}
 
     public int getColor() {
         return color;
@@ -45,6 +51,25 @@ public class Paint {
 
     public void setStrokeWidth(float width) {
         this.strokeWidth = width;
+    }
+
+    public float getTextSize() {
+        return 0f;
+    }
+
+    public void setTextSize(float textSize) {}
+
+    public FontMetrics getFontMetrics() {
+        return new FontMetrics();
+    }
+
+    public float measureText(String text) {
+        return 0f;
+    }
+
+    public static class FontMetrics {
+        public float top;
+        public float bottom;
     }
 
     public static enum Style {

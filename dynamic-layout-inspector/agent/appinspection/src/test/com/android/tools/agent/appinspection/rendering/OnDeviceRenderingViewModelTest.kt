@@ -24,6 +24,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.inspection.Connection
 import com.android.tools.agent.appinspection.InspectorView
+import com.android.tools.agent.appinspection.framework.getChildren
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
@@ -86,6 +87,52 @@ class OnDeviceRenderingViewModelTest {
 
         assertContainsOverlayView(inspectorView1)
         assertDoesNotContainsOverlayView(inspectorView2)
+    }
+
+    @Test
+    fun testSetSelectedNodeAddOverlayView() = runTest {
+        val connection = object : Connection() { }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val onDeviceRenderingViewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+        onDeviceRenderingViewModel.setEnableOnDeviceRendering(true)
+        testScheduler.advanceUntilIdle()
+
+        val inspectorView1 = createRootInspectorView()
+        onDeviceRenderingViewModel.setRoots(mapOf(1L to inspectorView1))
+        testScheduler.advanceUntilIdle()
+
+        assertContainsOverlayView(inspectorView1)
+
+        val inspectorView2 = createRootInspectorView()
+        onDeviceRenderingViewModel.setRoots(mapOf(1L to inspectorView1, 2L to inspectorView2))
+        testScheduler.advanceUntilIdle()
+
+        assertContainsOverlayView(inspectorView1)
+        assertContainsOverlayView(inspectorView2)
+
+        onDeviceRenderingViewModel.setRoots(mapOf(1L to inspectorView1))
+        testScheduler.advanceUntilIdle()
+
+        assertContainsOverlayView(inspectorView1)
+        assertDoesNotContainsOverlayView(inspectorView2)
+
+        // Manually remove the OverlayView.
+        (inspectorView1.view as ViewGroup).getChildren().forEach {
+            (inspectorView1.view as ViewGroup).removeView(it)
+        }
+
+        val drawInstruction = buildDrawInstructionsProto(
+            rootId = 1L,
+            bounds = listOf(Rect(0, 0, 2, 2)),
+            color = 1,
+            label = "label"
+        )
+        // Calling set selected nods should add back the OverlayView.
+        onDeviceRenderingViewModel.setSelectedNodes(drawInstruction)
+        testScheduler.advanceUntilIdle()
+
+        assertContainsOverlayView(inspectorView1)
     }
 
     @Test
@@ -175,7 +222,8 @@ class OnDeviceRenderingViewModelTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = 1L,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 1
+            color = 1,
+            label = "label"
         )
         onDeviceRenderingViewModel.setSelectedNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -187,7 +235,7 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1))
+            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = "label"))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -221,7 +269,7 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1))
+            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -255,7 +303,7 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1))
+            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -289,7 +337,7 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1))
+            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
         )
         assertThat(instructions[1]).isEmpty()
     }

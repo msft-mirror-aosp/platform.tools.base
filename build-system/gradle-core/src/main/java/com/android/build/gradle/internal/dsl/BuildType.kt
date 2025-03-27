@@ -129,7 +129,7 @@ abstract class BuildType @Inject constructor(
 
     abstract override var isProfileable: Boolean
 
-    @Deprecated("This property is deprecated. Changing its value has no effect.")
+    @Deprecated("This property is deprecated. Changing its value has no effect (AGP produced artifacts are already aligned).")
     override var isZipAlignEnabled: Boolean
         get() = true
         set(_) { }

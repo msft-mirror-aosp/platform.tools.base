@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.output.JarSubject
 import com.android.build.gradle.integration.common.output.ZipSubject
@@ -86,11 +87,7 @@ class KotlinMultiplatformResourcesTest {
     fun testLibraryAarContents() {
         project.executor().run(":kmpFirstLib:assemble")
 
-        val aarPath = project.getSubproject("kmpFirstLib")
-            .getOutputFile("aar", "kmpFirstLib.aar")
-            .toPath()
-
-        AarSubject.assertThat(aarPath) {
+        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             textSymbolFile().contains("int string kmp_lib_string 0x0")
 
             androidResources().resourceAsText("values/values.xml").isEqualTo(

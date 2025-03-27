@@ -15,28 +15,29 @@
  */
 package com.android.adblib.tools.debugging.impl
 
-import com.android.adblib.AdbSession
-import com.android.adblib.ConnectedDevice
+import com.android.adblib.InstructionSet
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
-import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.tools.AdbLibToolsProperties
-import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.jdwpProcessTracker
+import com.android.adblib.tools.debugging.flow
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
+import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
+import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
+import com.android.adblib.tools.debugging.packets.payloadLength
+import com.android.adblib.tools.debugging.packets.withPayload
 import com.android.adblib.tools.debugging.properties
-import com.android.adblib.tools.testutils.AdbLibToolsTestBase
-import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
+import com.android.adblib.tools.debugging.toByteArray
+import com.android.adblib.tools.testutils.AdbLibToolsJdwpTestBase
 import com.android.adblib.waitForDevice
-import com.android.fakeadbserver.ClientState
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -44,11 +45,13 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.nio.ByteBuffer
 import java.time.Duration
 
-class JdwpProcessManagerTest : AdbLibToolsTestBase() {
+class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
 
     @Test
     fun addProcessesEnsuresProcessInstancesAreCreated() = runBlockingWithTimeout {
@@ -148,7 +151,7 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         // Prepare
         val device = fakeAdb.addDevice()
         device.createFakeAdbProcess(10)
-        val delegatingSession = device.session.createDelegatingSession()
+        val delegatingSession = device.session.createDelegatingChildSession(fakeAdbRule)
         val delegatingSessionDevice = delegatingSession.connectedDevicesTracker.waitForDevice(device.serialNumber)
         val processManager = device.jdwpProcessManager
         val delegatingProcessManager = delegatingSessionDevice.jdwpProcessManager
@@ -191,7 +194,7 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         // Prepare
         val device = fakeAdb.addDevice()
         device.createFakeAdbProcess(10)
-        val delegatingSession = device.session.createDelegatingSession()
+        val delegatingSession = device.session.createDelegatingChildSession(fakeAdbRule)
         val delegatingSessionDevice = delegatingSession.connectedDevicesTracker.waitForDevice(device.serialNumber)
         val processManager = device.jdwpProcessManager
         val delegatingProcessManager = delegatingSessionDevice.jdwpProcessManager
@@ -226,8 +229,8 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
             Duration.ofSeconds(1)
         )
         val (_, _, connectedJdwpProcess) = createJdwpProcess(waitForDebugger = false)
-        val delegatingSession = session.createDelegatingSession()
-        val delegatingProcess = delegatingSession.awaitDelegatingProcess(connectedJdwpProcess)
+        val delegatingSession = session.createDelegatingChildSession(fakeAdbRule)
+        val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
 
         // Act: Collecting properties of the "connected" process should impact the properties
         // of the "delegating" process
@@ -248,8 +251,8 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
             connectedJdwpProcess.jdwpSessionActivationCount.first { it >= 1 }
             wasJdwpSessionRetained.complete(Unit)
         }
-        val delegatingSession = connectedJdwpProcess.device.session.createDelegatingSession()
-        val delegatingProcess = delegatingSession.awaitDelegatingProcess(connectedJdwpProcess)
+        val delegatingSession = connectedJdwpProcess.device.session.createDelegatingChildSession(fakeAdbRule)
+        val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
 
         // Act: Acquiring the jdwp session from the delegating process should end up
         // acquiring the jdwp session from the "connected" process
@@ -269,8 +272,8 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         val delegatingSessionCount = 5
         val jdwpSessionActivationCount = 100
         val delegatingProcesses = (1..delegatingSessionCount).map {
-            val delegatingSession = connectedJdwpProcess.device.session.createDelegatingSession()
-            delegatingSession.awaitDelegatingProcess(connectedJdwpProcess)
+            val delegatingSession = connectedJdwpProcess.device.session.createDelegatingChildSession(fakeAdbRule)
+            delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
         }
         setHostPropertyValue(
             connectedJdwpProcess.device.session.host,
@@ -313,8 +316,8 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
     fun delegatingProcessIsClosedWhenProcessTerminates() = runBlockingWithTimeout {
         // Prepare
         val (_, _, connectedJdwpProcess) = createJdwpProcess(waitForDebugger = false)
-        val delegatingSession = connectedJdwpProcess.device.session.createDelegatingSession()
-        val delegatingProcess = delegatingSession.awaitDelegatingProcess(connectedJdwpProcess)
+        val delegatingSession = connectedJdwpProcess.device.session.createDelegatingChildSession(fakeAdbRule)
+        val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
 
         // Act
         val activeBefore = delegatingProcess.scope.isActive
@@ -328,34 +331,62 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         assertFalse(activeAfter)
     }
 
-    private suspend fun createJdwpProcess(
-        deviceApi: Int = 30,
-        pid: Int = 10,
-        waitForDebugger: Boolean = true
-    ): Triple<FakeAdbServerProvider, ConnectedDevice, AbstractJdwpProcess> {
-        val device = fakeAdb.addDevice(deviceApi)
-        val clientState = device.createFakeAdbProcess(pid, waitForDebugger)
-        val process = device.jdwpProcessManager.getProcess(clientState.pid)
-        return Triple(fakeAdb, device, process)
+    @Test
+    fun delegatingProcessSessionAllowsDebuggerConnection() = runBlockingWithTimeout {
+        // Prepare
+        val (_, _, connectedJdwpProcess) = createJdwpProcess(waitForDebugger = false)
+        val delegatingSession = connectedJdwpProcess.device.session.createDelegatingChildSession(fakeAdbRule)
+        val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
+
+        // Act
+        val debuggerSession = attachDebuggerSession(delegatingProcess)
+        val version = sendVmVersionPacket(debuggerSession)
+
+        // Assert
+        assertTrue(version.isReply)
     }
 
-    private suspend fun FakeAdbServerProvider.addDevice(deviceApi: Int = 30): ConnectedDevice {
-        val fakeAdb = this
-        val fakeDevice = addFakeDevice(fakeAdb, deviceApi)
-        return waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+    @Test
+    fun delegatingProcessAllowsSharedJdwpSession() = runBlockingWithTimeout {
+        // Prepare
+        val (_, _, connectedJdwpProcess) = createJdwpProcess(waitForDebugger = false)
+        val delegatingSession = connectedJdwpProcess.device.session.createDelegatingChildSession(fakeAdbRule)
+        val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
+
+        // Act
+        val reply = delegatingProcess.withJdwpSession {
+            val versionCommand = MutableJdwpPacket.createCommandPacket(
+                nextPacketId(),
+                JdwpCommands.CmdSet.SET_VM.value,
+                JdwpCommands.VmCmd.CMD_VM_VERSION.value,
+                ByteBuffer.allocate(0)
+            )
+            newPacketReceiver()
+                .withActivation {
+                    sendPacket(versionCommand)
+                }.flow()
+                .first { reply -> reply.id == versionCommand.id }
+        }
+
+        // Assert
+        assertEquals(true, reply.isReply)
+        assertEquals(42, reply.payloadLength)
+        assertEquals(42, reply.withPayload { it.toByteArray(reply.payloadLength).size })
     }
 
-    private suspend fun ConnectedDevice.createFakeAdbProcess(
-        pid: Int = 10,
-        waitForDebugger: Boolean = false
-    ): ClientState {
-        return fakeAdb.device(serialNumber).startClient(
-          pid = pid,
-          userId = 2,
-          processName = "p1",
-          packageName = "pkg",
-          isWaiting = waitForDebugger
-        )
+    @Test
+    fun delegatingProcessExposesSameProxySocketAddress() = runBlockingWithTimeout {
+        // Prepare
+        val (_, _, connectedJdwpProcess) = createJdwpProcess(waitForDebugger = false)
+        val delegatingSession = connectedJdwpProcess.device.session.createDelegatingChildSession(fakeAdbRule)
+        val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
+
+        // Act
+        val proxyAddress = connectedJdwpProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
+        val delegatingProxyAddress = delegatingProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
+
+        // Assert
+        assertSame(proxyAddress, delegatingProxyAddress)
     }
 
     private fun assertProcessPropertiesComplete(properties: JdwpProcessProperties) {
@@ -364,12 +395,13 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         assertEquals(2, properties.userId)
         assertEquals("pkg", properties.packageName)
         assertEquals("FakeVM", properties.vmIdentifier)
-        assertEquals("x86_64", properties.abi)
-        assertEquals("-jvmflag=true", properties.jvmFlags)
+        assertEquals("64-bit (x86_64)", properties.instructionSetDescription)
+        assertEquals(InstructionSet.X86_64, properties.instructionSet)
+        assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
-        assertFalse(properties.jdwpSessionProxyStatus.isExternalDebuggerAttached)
-        assertNotNull(properties.jdwpSessionProxyStatus.socketAddress)
+        assertFalse(properties.jdwpProxyStatus.isExternalDebuggerAttached)
+        assertNotNull(properties.jdwpProxyStatus.socketAddress)
         assertEquals(
             listOf(
                 "hprof-heap-dump",
@@ -383,37 +415,5 @@ class JdwpProcessManagerTest : AdbLibToolsTestBase() {
         )
         assertNull(properties.exception)
         assertTrue(properties.completed)
-    }
-
-    private fun AdbSession.createDelegatingSession(): AdbSession {
-        val childSession = AdbSession.createChildSession(
-            this,
-            fakeAdbRule.host,
-            fakeAdb.createChannelProvider(fakeAdbRule.host)
-        )
-        childSession.addJdwpProcessSessionFinder(object : JdwpProcessSessionFinder {
-            override fun findDelegateSession(forSession: AdbSession): AdbSession {
-                return if (forSession == childSession) {
-                    this@createDelegatingSession
-                } else {
-                    forSession
-                }
-            }
-        })
-        return childSession
-    }
-
-    private suspend fun AdbSession.awaitDelegatingProcess(firstProcess: JdwpProcess): JdwpProcess {
-        // Find device in "session2", then look for process with same pid
-        val sessionDevice = connectedDevicesTracker.waitForDevice(firstProcess.device.serialNumber)
-        return sessionDevice.jdwpProcessTracker.processesFlow.transform { processList ->
-            processList.firstOrNull { it.pid == firstProcess.pid }?.also {
-                emit(it)
-            }
-        }.first()
-    }
-
-    private fun JdwpProcessManager.getProcess(pid: Int): AbstractJdwpProcess {
-        return this.addProcesses(setOf(pid))[pid]!! as AbstractJdwpProcess
     }
 }

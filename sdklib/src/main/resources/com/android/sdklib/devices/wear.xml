@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<d:devices xmlns:d="http://schemas.android.com/sdk/devices/1">
+<d:devices xmlns:d="http://schemas.android.com/sdk/devices/7">
     <d:device>
         <d:name>Wear OS Large Round</d:name>
         <d:id>wearos_large_round</d:id>
@@ -159,7 +159,7 @@
         </d:boot-props>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Wear OS Rectangular</d:name>
         <d:id>wearos_rect</d:id>
         <d:manufacturer>Google</d:manufacturer>
@@ -233,7 +233,7 @@
         <d:tag-id>android-wear</d:tag-id>
     </d:device>
 
-    <d:device>
+    <d:device deprecated="true">
         <d:name>Wear OS Square</d:name>
         <d:id>wearos_square</d:id>
         <d:manufacturer>Google</d:manufacturer>

@@ -2077,7 +2077,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented(),
         source(
-            "gradle/wrapper/gradle-wrapper.properties",
+            "../gradle/wrapper/gradle-wrapper.properties",
             // language=properties
             """
             #Tue Jun 11 09:46:18 PDT 2024
@@ -2097,7 +2097,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         build.gradle:2: Warning: A newer version of com.android.application than 8.0.0 is available: 8.0.2 [AndroidGradlePluginVersion]
           id 'com.android.application' version '8.0.0'
                                                ~~~~~~~
-        gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.2 is available: 8.1.1 [AndroidGradlePluginVersion]
+        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 7.2 is available: 8.1.1 [AndroidGradlePluginVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-7.2-bin.zip
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
@@ -2129,7 +2129,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           )
           .indented(),
         source(
-            "gradle/wrapper/gradle-wrapper.properties",
+            "../gradle/wrapper/gradle-wrapper.properties",
             // language=properties
             """
             #Tue Jun 11 09:46:18 PDT 2024
@@ -2149,7 +2149,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         build.gradle:2: Warning: A newer version of com.android.application than 7.1.0 is available: 8.0.2 [AndroidGradlePluginVersion]
           id 'com.android.application' version '7.1.0'
                                                ~~~~~~~
-        gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 6.0 is available: 7.6.4 [AndroidGradlePluginVersion]
+        ../gradle/wrapper/gradle-wrapper.properties:4: Warning: A newer version of Gradle than 6.0 is available: 7.6.4 [AndroidGradlePluginVersion]
         distributionUrl=https\://services.gradle.org/distributions/gradle-6.0-bin.zip
                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
@@ -8939,7 +8939,9 @@ class GradleDetectorTest : AbstractCheckTest() {
         artifact = "$coordinate.gradle.plugin"
       }
       val base =
-        if (artifact.endsWith(".gradle.plugin")) {
+        if (coordinate == "org.gradle:gradle-tooling-api") {
+          "repo.gradle.org/artifactory/libs-releases"
+        } else if (artifact.endsWith(".gradle.plugin")) {
           "plugins.gradle.org/m2"
         } else {
           "repo1.maven.org/maven2"
@@ -8956,7 +8958,12 @@ class GradleDetectorTest : AbstractCheckTest() {
           "    <latest>$latest</latest>\n" +
           "    <release>$latest</release>\n" +
           "    <versions>\n" +
-          versions.joinToString("") { "      <version>$it</version>\n" } +
+          versions.joinToString(
+            // language=text
+            ""
+          ) {
+            "      <version>$it</version>\n"
+          } +
           "    </versions>\n" +
           "  </versioning>\n" +
           "</metadata>\n",
@@ -9217,52 +9224,35 @@ class GradleDetectorTest : AbstractCheckTest() {
         """
           .trimIndent(),
       )
-      task.networkData(
-        "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/maven-metadata.xml",
-        // language=XML
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <metadata modelVersion="1.1.0">
-          <groupId>org.gradle</groupId>
-          <artifactId>gradle-tooling-api</artifactId>
-          <version>4.3</version>
-          <versioning>
-            <latest>8.14-milestone-3</latest>
-            <release>8.14-milestone-3</release>
-            <versions>
-              <version>7.0</version>
-              <version>7.0.1</version>
-              <version>7.0.2</version>
-              <version>7.6-rc-4</version>
-              <version>7.6</version>
-              <version>7.6.1</version>
-              <version>7.6.2</version>
-              <version>7.6.3</version>
-              <version>7.6.4</version>
-              <version>8.0-milestone-6</version>
-              <version>8.0-rc-1</version>
-              <version>8.0-rc-2</version>
-              <version>8.0-rc-3</version>
-              <version>8.0-rc-4</version>
-              <version>8.0-rc-5</version>
-              <version>8.0</version>
-              <version>8.0.1</version>
-              <version>8.0.2</version>
-              <version>8.1-rc-1</version>
-              <version>8.1-rc-2</version>
-              <version>8.1-rc-3</version>
-              <version>8.1-rc-4</version>
-              <version>8.1</version>
-              <version>8.1.1</version>
-              <version>8.2-milestone-1</version>
-              <version>8.2-milestone-2</version>
-              <version>8.2-rc-1</version>
-            </versions>
-            <lastUpdated>20250225092419</lastUpdated>
-          </versioning>
-        </metadata>
-        """
-          .trimIndent(),
+      task.mavenMetadata(
+        "org.gradle:gradle-tooling-api",
+        "7.0",
+        "7.0.1",
+        "7.0.2",
+        "7.6-rc-4",
+        "7.6",
+        "7.6.1",
+        "7.6.2",
+        "7.6.3",
+        "7.6.4",
+        "8.0-milestone-6",
+        "8.0-rc-1",
+        "8.0-rc-2",
+        "8.0-rc-3",
+        "8.0-rc-4",
+        "8.0-rc-5",
+        "8.0",
+        "8.0.1",
+        "8.0.2",
+        "8.1-rc-1",
+        "8.1-rc-2",
+        "8.1-rc-3",
+        "8.1-rc-4",
+        "8.1",
+        "8.1.1",
+        "8.2-milestone-1",
+        "8.2-milestone-2",
+        "8.2-rc-1",
       )
 
       // Similarly set up the expected SDK Index network output from dl.google.com to

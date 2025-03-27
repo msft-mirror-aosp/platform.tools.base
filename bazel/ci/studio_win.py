@@ -41,6 +41,7 @@ def studio_win(build_env: bazel.BuildEnv):
       f'--test_tag_filters={test_tag_filters}',
 
       '--tool_tag=studio_win.cmd',
+      '--jobs=500',
   ]
 
   build_type = studio.BuildType.from_build_number(build_env.build_number)
@@ -60,6 +61,9 @@ def studio_win(build_env: bazel.BuildEnv):
     flags.extend(presubmit.generate_runs_per_test_flags(build_env))
 
   test_result = studio.run_tests(build_env, flags, targets)
+
+  if build_type == studio.BuildType.PRESUBMIT:
+    presubmit.validate_and_upload_failed_tests(build_env)
 
   studio.copy_artifacts(
       build_env,

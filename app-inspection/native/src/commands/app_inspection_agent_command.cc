@@ -129,6 +129,29 @@ void AppInspectionAgentCommand::RegisterAppInspectionCommandHandler(
       });
 }
 
+void AppInspectionAgentCommand::DeamonTerminated(JavaVM* vm) {
+  JNIEnv* jni_env = profiler::GetThreadLocalJNI(vm);
+  jclass service_class = jni_env->FindClass(
+      "com/android/tools/agent/app/inspection/"
+      "AppInspectionService");
+  jmethodID instance_method =
+      jni_env->GetStaticMethodID(service_class, "instance",
+                                 "()Lcom/android/tools/agent/app/inspection/"
+                                 "AppInspectionService;");
+  jobject service =
+      jni_env->CallStaticObjectMethod(service_class, instance_method);
+
+  if (service == nullptr) {
+    // failed to instantiate AppInspectionService,
+    // errors will have been logged indicating failures.
+    return;
+  }
+
+  jmethodID daemon_terminated_method =
+      jni_env->GetMethodID(service_class, "deamonTerminated", "()V");
+  jni_env->CallVoidMethod(service, daemon_terminated_method);
+}
+
 jobject createLibraryCompatibility(JNIEnv* jni_env,
                                    LibraryCompatibility compatibility) {
   ArtifactCoordinate coordinate = compatibility.coordinate();

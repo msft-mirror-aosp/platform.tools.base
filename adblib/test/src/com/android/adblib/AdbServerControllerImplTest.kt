@@ -20,6 +20,8 @@ import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProvider
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlin.test.assertContentEquals
@@ -38,6 +40,7 @@ import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
+import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.file.Paths
@@ -130,6 +133,91 @@ class AdbServerControllerImplTest {
         // Act
         controller.start()
     }
+
+    @Test
+    fun testStartThrowsIOException_whenItIsPreemptedByStop(): Unit =
+        runBlockingWithTimeout {
+            // This test makes sure `start` throws an `IOException` and not a
+            // `CancellationException` when its `job` is cancelled by a call to `stop`.
+
+            // Prepare
+            val controller =
+                registerCloseable(
+                    AdbServerControllerImpl(
+                        host,
+                        configFlow
+                    )
+                )
+            configFlow.update {
+                it.copy(
+                    adbPath = ADB_FILE_PATH,
+                    serverPort = fakeAdb.port,
+                    isUnitTest = false
+                )
+            }
+
+            // Make sure start() takes some time to run, so that we could interrupt it by a `stop()`
+            val startResult = async {
+                processRunner.delayByMs = 5000
+                controller.start()
+            }
+            exceptionRule.expect(IOException::class.java)
+
+            // Act
+            // Give `start` an opportunity to being executing, and make sure that it completes
+            // with expected exception.
+            delay(100)
+            processRunner.delayByMs = 0
+            controller.stop()
+            // This should throw
+            startResult.await()
+
+            // Assert
+            fail("Should not reach")
+        }
+
+    @Test
+    fun testStopThrowsIOException_whenItIsPreemptedByStart(): Unit =
+        runBlockingWithTimeout {
+            // This test makes sure `stop` throws an `IOException` and not a
+            // `CancellationException` when its `job` is cancelled by a call to `start`.
+
+            // Prepare
+            val controller =
+                registerCloseable(
+                    AdbServerControllerImpl(
+                        host,
+                        configFlow
+                    )
+                )
+            configFlow.update {
+                it.copy(
+                    adbPath = ADB_FILE_PATH,
+                    serverPort = fakeAdb.port,
+                    isUnitTest = false
+                )
+            }
+            controller.start()
+
+            // Make sure stop() takes some time to run, so that we could interrupt it by a `start()`
+            val stopResult = async {
+                processRunner.delayByMs = 5000
+                controller.stop()
+            }
+            exceptionRule.expect(IOException::class.java)
+
+            // Act
+            // Give `stop` an opportunity to being executing, and make sure that it completes
+            // with expected exception.
+            delay(100)
+            processRunner.delayByMs = 0
+            controller.start()
+            // This should throw
+            stopResult.await()
+
+            // Assert
+            fail("Should not reach")
+        }
 
     @Test
     fun testCanStopControllerInUserManagedMode(): Unit = runBlockingWithTimeout {
@@ -272,6 +360,69 @@ class AdbServerControllerImplTest {
             // Act
             // createChannel call will timeout, because the `restart()` takes 100ms
             registerCloseable(controller.channelProvider.createChannel(50, TimeUnit.MILLISECONDS))
+        }
+
+    @Test
+    fun testCreateChannelThrowsIOException_whenRestartJobCancelled(): Unit =
+        runBlockingWithTimeout {
+            // This test makes sure `createChannel` throws an `IOException` and not a
+            // `CancellationException` when the `restart` job is cancelled by `stop`
+
+            // Prepare
+            processRunner.delayByMs = 100
+            val controller =
+                registerCloseable(
+                    AdbServerControllerImpl(
+                        host,
+                        configFlow
+                    )
+                )
+            configFlow.update {
+                it.copy(
+                    adbPath = ADB_FILE_PATH,
+                    serverPort = fakeAdb.port,
+                    isUnitTest = false
+                )
+            }
+            controller.start()
+            // Close fakeAdb server to force `restart()` call to be triggered from `createChannel()`
+            fakeAdb.close()
+
+            // Act / Assert: `createChannel` throws a correct exception when its execution is
+            // interrupted by `AdbServerController.stop()`.
+            var stopJob: Job? = null
+            try {
+                assertEquals(true, controller.isStarted)
+                // ChannelProvider's `createChannel` will try to establish a connection and if it
+                // fails it will run `controller.restart()`. Because the attempt to establish
+                // a connection can fail quickly (as on linux) or after a few seconds (as appears
+                // to be happening on Windows), we wait until `restart` begins to execute before
+                // initiating a `stop` operation.
+                processRunner.onRunProcessStarted = {
+                    // We started executing restart, and so trigger `stop` command
+                    stopJob = launch {
+                        // Trigger a quick stop command
+                        processRunner.onRunProcessStarted = null
+                        processRunner.delayByMs = 50
+                        controller.stop()
+                    }
+                }
+                // Make restart() take a long time, so that we could call `stop()` in the meantime
+                processRunner.delayByMs = 5000
+                registerCloseable(controller.channelProvider.createChannel())
+                fail("Should not reach")
+            } catch (e: IOException) {
+                // Expected exception
+                assertEquals(
+                    "`createChannel` failed to restart `AdbServerController` on failure",
+                    e.message
+                )
+            }
+
+            // Stop should succeed
+            assertNotNull(stopJob)
+            stopJob.join()
+            assertEquals(false, controller.isStarted)
         }
 
     @Test
@@ -655,7 +806,7 @@ class AdbServerControllerImplTest {
     fun testMultipleStateTransitions_properlyCancelled_whenPreempted(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            processRunner.delayByMs = 100
+            processRunner.delayByMs = 5000
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
@@ -667,22 +818,34 @@ class AdbServerControllerImplTest {
                 it.copy(adbPath = ADB_FILE_PATH, serverPort = PORT, isUnitTest = false)
             }
 
-            // Act: queue up a few start/stop pairs, and a final start
+            // Act: queue up a bunch of start/stop pairs
+            val totalOperations = 20
+            var failingTransitions = 0
             var index = 0
-            val startStopJobs = List(20) {
+            val startStopJobs = List(totalOperations) {
                 launch {
-                    if (index++ % 2 == 0) {
-                        controller.start()
-                    } else {
-                        controller.stop()
+                    try {
+                        if (index == totalOperations - 1) {
+                            // This is the last operation. Make it run quickly.
+                            processRunner.delayByMs = 10
+                        }
+                        if (index++ % 2 == 0) {
+                            controller.start()
+                        } else {
+                            controller.stop()
+                        }
+                    } catch (_: IOException) {
+                        // Expected
+                        ++failingTransitions
                     }
-                }.also { delay(50) }
+                }.also { delay(25) }
             }
 
             startStopJobs.joinAll()
 
-            // Assert
+            // Assert: only the last controller operation succeeds
             assertFalse(controller.isStarted)
+            assertEquals(19, failingTransitions)
             assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
         }
 
@@ -786,17 +949,14 @@ class AdbServerControllerImplTest {
         }
 
         // Act
-        val startJob = launch {
-            processRunner.throwOnNextCommand =
-                IllegalStateException("Exception in a first call to `controller.start()`")
-            try {
-                controller.start()
-                fail("Should not reach")
-            } catch (_: IllegalStateException) {
-                // Ignore: This exception is expected
-            }
+        processRunner.throwOnNextCommand =
+            IllegalStateException("Exception in a first call to `controller.start()`")
+        try {
+            controller.start()
+            fail("Should not reach")
+        } catch (_: IllegalStateException) {
+            // Ignore: This exception is expected
         }
-        startJob.join()
 
         // Assert
         assertFalse(controller.isStarted)
@@ -832,17 +992,14 @@ class AdbServerControllerImplTest {
         processRunner.reset()
 
         // Act
-        val startJob = launch {
-            processRunner.throwOnNextCommand =
-                IllegalStateException("Exception in a first call to `controller.start()`")
-            try {
-                controller.stop()
-                fail("Should not reach")
-            } catch (_: IllegalStateException) {
-                // Ignore: This exception is expected
-            }
+        processRunner.throwOnNextCommand =
+            IllegalStateException("Exception in a first call to `controller.start()`")
+        try {
+            controller.stop()
+            fail("Should not reach")
+        } catch (_: IllegalStateException) {
+            // Ignore: This exception is expected
         }
-        startJob.join()
 
         // Assert
         assertTrue(controller.isStarted)

@@ -1261,29 +1261,6 @@ allprojects { proj ->
         return getApk(ApkType.ANDROIDTEST_DEBUG, *dimensions)
     }
 
-    /**
-     * Returns the output bundle file from the instantapp plugin for the given dimension.
-     *
-     *
-     * Expected dimensions orders are: - product flavors - build type
-     */
-    fun getInstantAppBundle(vararg dimensions: String): Zip {
-        val dimensionList: MutableList<String?> =
-            Lists
-                .newArrayListWithExpectedSize(1 + dimensions.size)
-        dimensionList.add(name)
-        dimensionList.addAll(Arrays.asList(*dimensions))
-        return Zip(
-            getOutputFile(
-                "apk",
-                ImmutableList.copyOf(dimensions)
-                    .combineAsCamelCase(),
-                Joiner.on("-").join(dimensionList) + SdkConstants
-                    .DOT_ZIP
-            )
-        )
-    }
-
     /** Fluent method to run a build.  */
     fun executor(): GradleTaskExecutor {
         return applyOptions(GradleTaskExecutor(location,this, gradleOptions, projectConnection) { it ->

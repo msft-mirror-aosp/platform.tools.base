@@ -18,13 +18,14 @@ package com.android.adblib.tools.debugging.processinventory.impl
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.InstructionSet
 import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpSessionProxyStatus
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.mergeWith
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
 import com.android.adblib.tools.debugging.processinventory.impl.ProcessInventoryServerConnection.ConnectionForDevice
@@ -275,15 +276,15 @@ private class ProcessInventoryServerConnectionForDevice(
         val source = this
         return copy(
             isWaitingForDebugger = if (proxyInfo.hasWaitingForDebugger()) proxyInfo.waitingForDebugger else source.isWaitingForDebugger,
-            jdwpSessionProxyStatus = source.jdwpSessionProxyStatus.mergeWith(proxyInfo)
+            jdwpProxyStatus = source.jdwpProxyStatus.mergeWith(proxyInfo)
         )
     }
 
-    private fun JdwpSessionProxyStatus.mergeWith(
+    private fun JdwpProxySocketServerStatus.mergeWith(
         proxyInfo: ProcessInventoryServerProto.JdwpProcessDebuggerProxyInfo
-    ): JdwpSessionProxyStatus {
+    ): JdwpProxySocketServerStatus {
         val source = this
-        return JdwpSessionProxyStatus(
+        return JdwpProxySocketServerStatus(
             isExternalDebuggerAttached = if (proxyInfo.hasIsExternalDebuggerAttached()) proxyInfo.isExternalDebuggerAttached else source.isExternalDebuggerAttached,
             socketAddress = if (proxyInfo.hasSocketAddress()) proxyInfo.socketAddress.toInetSocketAddress() else source.socketAddress
         )
@@ -303,7 +304,7 @@ private class ProcessInventoryServerConnectionForDevice(
             packageName = if (source.hasPackageName()) source.packageName else null,
             userId = if (source.hasUserId()) source.userId else null,
             vmIdentifier = if (source.hasVmIdentifier()) source.vmIdentifier else null,
-            abi = if (source.hasAbi()) source.abi else null,
+            instructionSet = if (source.hasInstructionSet()) InstructionSet.fromString(source.instructionSet) else null,
             jvmFlags = if (source.hasJvmFlags()) source.jvmFlags else null,
             isNativeDebuggable = if (source.hasNativeDebuggable()) source.nativeDebuggable else false,
             waitCommandReceived = if (source.hasWaitPacketReceived()) source.waitPacketReceived else false,
@@ -327,7 +328,7 @@ private class ProcessInventoryServerConnectionForDevice(
                 source.packageName?.also { proto.packageName = it }
                 source.userId?.also { proto.userId = it }
                 source.vmIdentifier?.also { proto.vmIdentifier = it }
-                source.abi?.also { proto.abi = it }
+                source.instructionSet?.also { proto.instructionSet = it.text }
                 source.jvmFlags?.also { proto.jvmFlags = it }
                 @Suppress("DEPRECATION")
                 source.isNativeDebuggable.also { proto.nativeDebuggable = it }
@@ -356,12 +357,12 @@ private class ProcessInventoryServerConnectionForDevice(
                 // for external instances to connect to (since the JDWP process is stuck in
                 // the "WAIT" state)
                 if (source.isWaitingForDebugger) {
-                    source.jdwpSessionProxyStatus.socketAddress?.also {
+                    source.jdwpProxyStatus.socketAddress?.also {
                         proto.socketAddress = it.toInetSocketAddressProto()
                     }
                 }
                 proto.isExternalDebuggerAttached =
-                    source.jdwpSessionProxyStatus.isExternalDebuggerAttached
+                    source.jdwpProxyStatus.isExternalDebuggerAttached
             }.build()
     }
 

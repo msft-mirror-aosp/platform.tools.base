@@ -96,6 +96,14 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   // instance created within this function will no longer be valid.
   SetupPerfa(vm, jvmti_env, Agent::Instance().agent_config());
 
+  Agent::Instance().AddDaemonStatusChangedCallback([vm](bool becomes_alive) {
+    if (becomes_alive) return false;  // don't remove this callback
+
+    // The daemon is no longer alive
+    AppInspectionAgentCommand::DeamonTerminated(vm);
+    return true;  // remove this callback
+  });
+
   Agent::Instance().AddDaemonConnectedCallback([] {
     Agent::Instance().StartHeartbeat();
     // Perf-test currently waits on this message to determine that agent is

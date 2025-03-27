@@ -17,8 +17,8 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbSession
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 import kotlinx.coroutines.flow.Flow
-import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * A component that produces a [Flow] of [JdwpProcessProperties] as the properties of
@@ -42,7 +42,7 @@ interface ExternalJdwpProcessPropertiesCollector {
  * A factory of [ExternalJdwpProcessPropertiesCollector], typically injected into an
  * [AdbSession] with the [AdbSession.addExternalJdwpProcessPropertiesCollectorFactory]
  */
-interface ExternalJdwpProcessPropertiesCollectorFactory {
+interface ExternalJdwpProcessPropertiesCollectorFactory: AutoCloseable {
 
     /**
      * Creates an [ExternalJdwpProcessPropertiesCollector] for the given [process] if appropriate,
@@ -55,14 +55,14 @@ interface ExternalJdwpProcessPropertiesCollectorFactory {
  * The [CoroutineScopeCache.Key] for the list of [ExternalJdwpProcessPropertiesCollectorFactory]
  */
 private val ExternalJdwpProcessPropertiesCollectorFactoryListKey =
-    CoroutineScopeCache.Key<CopyOnWriteArrayList<ExternalJdwpProcessPropertiesCollectorFactory>>("ExternalJdwpProcessPropertiesCollectorFactoryListKey")
+    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>>("ExternalJdwpProcessPropertiesCollectorFactoryListKey")
 
 /**
  * The list of [ExternalJdwpProcessPropertiesCollectorFactory] associated to this [AdbSession]
  */
-internal val AdbSession.externalJdwpProcessPropertiesCollectorFactoryList: CopyOnWriteArrayList<ExternalJdwpProcessPropertiesCollectorFactory>
+internal val AdbSession.externalJdwpProcessPropertiesCollectorFactoryList: ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>
     get() = this.cache.getOrPut(ExternalJdwpProcessPropertiesCollectorFactoryListKey) {
-        CopyOnWriteArrayList<ExternalJdwpProcessPropertiesCollectorFactory>()
+        ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>()
     }
 
 /**
@@ -70,11 +70,4 @@ internal val AdbSession.externalJdwpProcessPropertiesCollectorFactoryList: CopyO
  */
 fun AdbSession.addExternalJdwpProcessPropertiesCollectorFactory(factory: ExternalJdwpProcessPropertiesCollectorFactory) {
     externalJdwpProcessPropertiesCollectorFactoryList.add(factory)
-}
-
-/**
- * Removes a [ExternalJdwpProcessPropertiesCollectorFactory] from this [AdbSession]
- */
-fun AdbSession.removeExternalJdwpProcessPropertiesCollectorFactory(factory: ExternalJdwpProcessPropertiesCollectorFactory) {
-    externalJdwpProcessPropertiesCollectorFactoryList.remove(factory)
 }

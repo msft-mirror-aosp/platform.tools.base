@@ -439,7 +439,7 @@ data class AppProcessEntry(
      * [abis](https://developer.android.com/ndk/guides/abis).
      * Examples: "arm64-v8a", "x86_64"
      */
-    val architecture: String,
+    val instructionSet: InstructionSet,
 
     /**
      * The Android User ID

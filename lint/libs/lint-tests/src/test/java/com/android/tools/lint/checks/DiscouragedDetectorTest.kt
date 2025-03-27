@@ -178,13 +178,13 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:7: Warning: Should not restrict activity to maximum or minimum aspect ratio. This may not be suitable for different form factors, causing the app to be letterboxed. [DiscouragedApi]
+        AndroidManifest.xml:7: Warning: Minimum and maximum aspect ratios will be ignored in most cases, starting from Android 16. Android is moving toward a model where apps are expected to adapt to various orientations, display sizes, and aspect ratios. [DiscouragedApi]
                     android:maxAspectRatio="1.0"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        AndroidManifest.xml:8: Warning: Should not restrict activity to fixed orientation. This may not be suitable for different form factors, causing the app to be letterboxed. [DiscouragedApi]
+        AndroidManifest.xml:8: Warning: Fixed screen orientations will be ignored in most cases, starting from Android 16. Android is moving toward a model where apps are expected to adapt to various orientations, display sizes, and aspect ratios. [DiscouragedApi]
                     android:screenOrientation="portrait"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        AndroidManifest.xml:9: Warning: Activity should not be non-resizable. With this setting, apps cannot be used in multi-window or free form mode. [DiscouragedApi]
+        AndroidManifest.xml:9: Warning: Setting resizeableActivity to false will be ignored in most cases, starting from Android 16. Android is moving toward a model where apps are expected to adapt to various orientations, display sizes, and aspect ratios. [DiscouragedApi]
                     android:resizeableActivity="false" >
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 3 warnings

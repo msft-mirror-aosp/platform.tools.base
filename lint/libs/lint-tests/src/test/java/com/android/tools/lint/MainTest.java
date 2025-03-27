@@ -48,6 +48,7 @@ import kotlin.text.Charsets;
 import kotlin.text.StringsKt;
 
 import org.intellij.lang.annotations.Language;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -1214,7 +1215,9 @@ public class MainTest extends AbstractCheckTest {
                         kotlin("src/blank.kt", ""),
                         kotlin("src/test/pkg/test3.kt", "\n// My file\n"));
 
-        File root = getTempDir();
+        TemporaryFolder temporaryFolder = new TemporaryFolder();
+        temporaryFolder.create();
+        File root = temporaryFolder.newFolder();
         String codename = "future";
         int apiLevel = 100;
         // Stub SDK
@@ -1312,6 +1315,7 @@ public class MainTest extends AbstractCheckTest {
                     null);
         } finally {
             DesugaredMethodLookup.Companion.reset();
+            temporaryFolder.delete();
         }
     }
 

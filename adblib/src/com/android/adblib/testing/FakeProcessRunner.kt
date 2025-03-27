@@ -22,6 +22,7 @@ import java.nio.file.Path
 
 class FakeProcessRunner() : ProcessRunner {
 
+    var onRunProcessStarted: (suspend () -> Unit)? = null
     var delayByMs: Long = 0
     var lastDirectory: String? = null
     var lastCommand: List<String>? = null
@@ -32,6 +33,7 @@ class FakeProcessRunner() : ProcessRunner {
     override suspend fun runProcess(
         executable: Path, args: List<String>, envVars: Map<String, String>
     ): ProcessResult {
+        onRunProcessStarted?.invoke()
         delay(delayByMs)
         throwOnNextCommand?.let { throw it }
         val command = listOf(executable.toString()) + args

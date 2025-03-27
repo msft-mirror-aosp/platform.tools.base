@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.truth.forEachLine
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
@@ -380,7 +381,8 @@ class ScreenshotTest {
         )
 
         // Validate previews matches screenshots
-        build.sstExecutor().run(":app:validateDebugScreenshotTest")
+        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+        result.assertOutputDoesNotContain("Slow render action")
 
         // Verify that HTML reports are generated and all tests pass
         val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
@@ -758,5 +760,33 @@ class ScreenshotTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun runPreviewScreenshotTestWithReportEntrySettingEnabled() {
+        val build = rule.build {
+            androidApplication {
+                class EnableEntrySettingCallback: GenericCallback {
+                    override fun handleProject(project: Project) {
+                        project.afterEvaluate {
+                            project.tasks.named(
+                                "validateDebugScreenshotTest", org.gradle.api.tasks.testing.Test::class.java) {
+                                it.jvmArgs("-DPreviewScreenshotTestEngineInput.ReportEntrySetting.redirectToStdout=true")
+                            }
+                        }
+                    }
+                }
+                pluginCallbacks += EnableEntrySettingCallback::class.java
+            }
+        }
+        build.androidApplication()
+
+        // Generate screenshots to be tested against
+        updateReferenceImage()
+
+        // Validate previews matches screenshots
+        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.newImagePath=")
     }
 }

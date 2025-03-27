@@ -1914,15 +1914,18 @@ abstract class LintClient {
     // Workaround: we need the root project; it's not yet part of the model,
     // and adding it now would clash with simultaneous edits to decouple Gradle
     // and lint
-    val parent = root?.parentFile
-    if (parent != null) {
+    var parent = root?.parentFile
+    while (parent != null) {
+      // The settings file is the best marker for the root of the
+      // Gradle project.
       if (
-        File(parent, SdkConstants.FN_BUILD_GRADLE).exists() ||
-          File(parent, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
-          File(parent, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists()
+        File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() ||
+          File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists() ||
+          File(parent, SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE).exists()
       ) {
         return parent
       }
+      parent = parent.parentFile
     }
 
     return root

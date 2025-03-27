@@ -3079,4 +3079,14 @@ public final class SdkConstants {
 
     /** Logical ID of the primary display of an Android device. */
     public static int PRIMARY_DISPLAY_ID = 0;
+
+    /**
+     * The name of the property used to declare which Watch Face Format is used.
+     *
+     * @see <a
+     *     href="https://developer.android.com/training/wearables/wff/setup#declare-wff-use">Watch
+     *     Face Format</a>
+     */
+    public static final String WATCH_FACE_FORMAT_VERSION_PROPERTY =
+            "com.google.wear.watchface.format.version";
 }

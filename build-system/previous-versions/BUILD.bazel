@@ -11,6 +11,8 @@ AGP_8_9_0_ARTIFACTS = [
     "@maven//:com.android.tools.build.aapt2_8.9.0-12782657",
     "@maven//:com.android.tools.build.gradle_8.9.0",
     "@maven//:com.android.tools.lint.lint-gradle_31.9.0",
+    "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.20",
+    "@maven//:org.junit.junit-bom_5.10.2",
 ]
 
 maven_repository(

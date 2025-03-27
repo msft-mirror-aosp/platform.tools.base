@@ -26,6 +26,7 @@ import com.android.sdklib.BuildToolInfo
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Dex
 import com.android.utils.StdLogger
+import com.google.common.truth.Fact
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.IntegerSubject
 import com.google.common.truth.StringSubject
@@ -39,6 +40,7 @@ import java.util.function.Consumer
 import java.util.regex.Pattern
 import kotlin.io.path.bufferedReader
 import kotlin.io.path.fileSize
+import kotlin.io.path.readBytes
 
 /**
  * A truth subject to validate the content of an APK.
@@ -200,6 +202,41 @@ class ApkSubject(
 
     }
 
+    fun hasApkSigningBlock() {
+        exists()
+
+        // IMPLEMENTATION NOTE: To avoid having to implement too much parsing, this method does not
+        // parse the APK to locate the APK Signing Block. Instead, it simply scans the file for the
+        // APK Signing Block magic bitstring. If the string is there in the file, it's assumed to
+        // contain an APK Signing Block.
+
+        val zipFile: SimpleZip? = actual() as? SimpleZip
+
+        if (zipFile == null) {
+            failWithActual(
+                Fact.simpleFact("expected to be a direct Zip"),
+                Fact.simpleFact("but was ${actual().javaClass.name}")
+            )
+            return // not needed since fail will throw but needed to handle smart casting of zipFile
+        }
+
+        // archivePath is not null since we called exist earlier
+        val contents = zipFile.archivePath!!.readBytes()
+
+        outer@ for (contentsOffset in contents.size - APK_SIG_BLOCK_MAGIC.size downTo 0) {
+            for (magicOffset in APK_SIG_BLOCK_MAGIC.indices) {
+                if (contents[contentsOffset + magicOffset] != APK_SIG_BLOCK_MAGIC[magicOffset]) {
+                    continue@outer
+                }
+            }
+            // Found at offset contentsOffset
+            return
+        }
+
+        // Not found
+        failWithActual(Fact.simpleFact("expected to have signing block"))
+    }
+
     /**
      * Validates the APK is properly zipAligned
      */
@@ -278,3 +315,8 @@ class ApkSubject(
     }
 
 }
+
+private val APK_SIG_BLOCK_MAGIC = byteArrayOf(
+    0x41, 0x50, 0x4b, 0x20, 0x53, 0x69, 0x67, 0x20, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x20, 0x34,
+    0x32
+)

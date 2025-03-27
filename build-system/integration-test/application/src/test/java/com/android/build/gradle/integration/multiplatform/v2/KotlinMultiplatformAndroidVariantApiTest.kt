@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -50,8 +52,8 @@ class KotlinMultiplatformAndroidVariantApiTest {
 
         val result = project.executor().run(":kmpFirstLib:assemble")
 
-        ScannerSubject.assertThat(result.stdout).contains("androidMain:androidHostTest")
-        ScannerSubject.assertThat(result.stdout).contains("androidMain:androidDeviceTest")
+        result.assertOutputContains("androidMain:androidHostTest")
+        result.assertOutputContains("androidMain:androidDeviceTest")
     }
 
     @Test
@@ -103,19 +105,14 @@ class KotlinMultiplatformAndroidVariantApiTest {
 
         project.executor().run(":kmpFirstLib:assembleAndroidMain")
 
-        val aarFile = project.getSubproject("kmpFirstLib").getOutputFile("aar", "kmpFirstLib.aar").toPath()
-        AarSubject.assertThat(aarFile) {
+        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             assets().containsExactly("asset.txt")
         }
 
         project.executor().run(":kmpFirstLib:assembleDeviceTest")
-        val testApk = project.getSubproject("kmpFirstLib").getOutputFile(
-            "apk", "androidTest", "main", "kmpFirstLib-androidTest.apk"
-        )
-        assertThat(testApk.exists()).isTrue()
 
-        Apk(testApk).use { apk ->
-            assertThat(apk.getEntry("assets/asset.txt")).isNotNull()
+        project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+            assets().containsExactly("asset.txt")
         }
     }
 
@@ -217,13 +214,11 @@ class KotlinMultiplatformAndroidVariantApiTest {
         )
 
         project.executor().run(":kmpFirstLib:assembleDeviceTest")
-        val testApk = project.getSubproject("kmpFirstLib").getOutputFile(
-            "apk", "androidTest", "main", "kmpFirstLib-androidTest.apk"
-        )
-        assertThat(testApk.exists()).isTrue()
 
-        Apk(testApk).use { apk ->
-            assertThat(apk.getEntry("assets/static.txt")).isNotNull()
+        project.getSubproject("kmpFirstLib").assertApk(
+            ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
+        ) {
+            assets().containsExactly("static.txt")
         }
     }
 }

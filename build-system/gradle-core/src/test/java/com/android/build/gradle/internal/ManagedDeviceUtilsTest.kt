@@ -29,6 +29,7 @@ class ManagedDeviceUtilsTest {
     fun computeAvdName_sameAvdSameVendor() {
         val google = computeAvdName(
             30,
+            0,
             null,
             "google",
             "",
@@ -37,6 +38,7 @@ class ManagedDeviceUtilsTest {
         )
         val googleApis = computeAvdName(
             30,
+            0,
             null,
             "google_apis",
             "",
@@ -51,6 +53,7 @@ class ManagedDeviceUtilsTest {
     fun computeAvdName_pageAlignmentWorks() {
         val pageSize4k = computeAvdName(
             36,
+            0,
             null,
             "google_apis",
             "",
@@ -62,6 +65,7 @@ class ManagedDeviceUtilsTest {
 
         val pageSize16k =computeAvdName(
             36,
+            0,
             null,
             "google_apis",
             "_ps16k",
@@ -74,8 +78,9 @@ class ManagedDeviceUtilsTest {
 
     @Test
     fun computAvdName_extensionVersionWorks() {
-        var noExtension = computeAvdName(
+        val noExtension = computeAvdName(
             34,
+            0,
             null,
             "google_apis",
             "",
@@ -87,6 +92,7 @@ class ManagedDeviceUtilsTest {
 
         val extension = computeAvdName(
             34,
+            0,
             12,
             "google_apis",
             "",
@@ -97,10 +103,49 @@ class ManagedDeviceUtilsTest {
         assertThat(extension).isEqualTo("dev34_ext12_google_apis_x86_64_Pixel_3")
     }
 
+    fun computeAvdName_minorVersionWorks() {
+        val noMinor = computeAvdName(
+            35,
+            0,
+            null,
+            "default",
+            "",
+            "x86_64",
+            "Pixel 5"
+        )
+
+        assertThat(noMinor).isEqualTo("dev35_default_x86_64_Pixel_5")
+
+        val minorOnly = computeAvdName(
+            35,
+            5,
+            null,
+            "default",
+            "x86_64",
+            "",
+            "Pixel 5"
+        )
+
+        assertThat(minorOnly).isEqualTo("dev35_m5_default_x86_64_Pixel_5")
+
+        val minorAndExtension = computeAvdName(
+            35,
+            5,
+            21,
+            "default",
+            "x86_64",
+            "",
+            "Pixel 5"
+        )
+
+        assertThat(minorAndExtension).isEqualTo("dev35_m5_ext21_default_x86_64_Pixel_5")
+    }
+
     @Test
     fun computeAvdName_worksWithParenthesis() {
         val computedName = computeAvdName(
             29,
+            0,
             null,
             "google_apis",
             "",
@@ -115,6 +160,7 @@ class ManagedDeviceUtilsTest {
     fun computeAvdName_worksWitQuotations() {
         val computedName = computeAvdName(
             33,
+            0,
             null,
             "google_apis",
             "",

@@ -108,8 +108,8 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
 
         // Assert
         assertEquals(0, reply.errorCode)
-        assertEquals(122, reply.length)
-        assertEquals(111, reply.withPayload { it.countBytes() })
+        assertEquals(140, reply.length)
+        assertEquals(129, reply.withPayload { it.countBytes() })
     }
 
     @Test

@@ -242,7 +242,6 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           InefficientWeightDetector.NESTED_WEIGHTS,
           InefficientWeightDetector.ORIENTATION,
           InefficientWeightDetector.WRONG_0DP,
-          InstantAppDetector.ISSUE,
           IntentDetector.ISSUE,
           IntentWillNullActionDetector.ISSUE,
           InternalInsetResourceDetector.ISSUE,
@@ -310,6 +309,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           ManifestResourceDetector.ISSUE,
           ManifestTypoDetector.ISSUE,
           MediaBrowserServiceCompatVersionDetector.ISSUE,
+          MemberExtensionConflictDetector.ISSUE,
           MergeMarkerDetector.ISSUE,
           MergeRootFrameLayoutDetector.ISSUE,
           MissingClassDetector.INNERCLASS,
@@ -618,6 +618,9 @@ open class BuiltinIssueRegistry : IssueRegistry() {
       // Obsolete at this point (and the associated learn-more
       // URL is now unavailable, see b/259295923)
       "PackageManagerGetSignatures",
+
+      // Instant app support is no longer available (see bug 388263752)
+      "InstantApps",
     )
 
   override fun getIssueCapacity(scope: EnumSet<Scope>): Int {

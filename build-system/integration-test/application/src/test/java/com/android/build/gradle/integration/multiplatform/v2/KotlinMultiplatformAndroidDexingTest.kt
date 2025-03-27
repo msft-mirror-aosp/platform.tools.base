@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.apk.Apk
@@ -97,17 +98,14 @@ class KotlinMultiplatformAndroidDexingTest {
 
     @Test
     fun testDesugaringForInstrumentedTestApk() {
-        project.executor()
-            .run(":kmpFirstLib:assembleDeviceTest")
-        val testApk = project.getSubproject("kmpFirstLib").getOutputFile(
-            "apk", "androidTest", "main", "kmpFirstLib-androidTest.apk"
-        )
+        project.executor().run(":kmpFirstLib:assembleDeviceTest")
 
-        Truth.assertThat(testApk.exists()).isTrue()
-
-        Apk(testApk).use { apk ->
-            DexClassSubject.assertThat(apk.getClass("Lcom/example/kmpfirstlib/KmpAndroidActivity;"))
-                .hasMethodThatInvokes("getText", "Lj$/util/stream/Stream;->findFirst()Lj$/util/Optional;")
+        project.getSubproject("kmpFirstLib").assertApk(
+            ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
+        ) {
+            classes().classDefinition("com/example/kmpfirstlib/KmpAndroidActivity")
+                .invocationListForMethod("getText")
+                .contains("Lj$/util/stream/Stream;->findFirst()Lj$/util/Optional;")
         }
     }
 
@@ -153,25 +151,22 @@ class KotlinMultiplatformAndroidDexingTest {
             """.trimIndent()
         )
 
-        project.executor()
-            .run(":kmpFirstLib:assembleDeviceTest")
-        val testApk = project.getSubproject("kmpFirstLib").getOutputFile(
-            "apk", "androidTest", "main", "kmpFirstLib-androidTest.apk"
-        )
+        project.executor().run(":kmpFirstLib:assembleDeviceTest")
 
-        Truth.assertThat(testApk.exists()).isTrue()
+        project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+            classes().classDefinition("com/example/kmpfirstlib/KmpAndroidActivity")
+                .invocationListForMethod("getText")
+                .contains("Lj$/util/stream/Stream;->findFirst()Lj$/util/Optional;")
 
-        Apk(testApk).use { apk ->
-            DexClassSubject.assertThat(apk.getClass("Lcom/example/kmpfirstlib/KmpAndroidActivity;"))
-                .hasMethodThatInvokes("getText", "Lj$/util/stream/Stream;->findFirst()Lj$/util/Optional;")
-
-            DexSubject.assertThat(
-                apk.allDexes.find { it.classes.containsKey( "Lcom/example/kmpfirstlib/KmpAndroidFirstLibClass;") }
-            ).doesNotContainClasses("Lcom/example/kmpfirstlib/KmpAndroidActivity;")
-
-            DexSubject.assertThat(
-                apk.mainDexFile.get()
-            ).containsClass("Lcom/example/kmpfirstlib/KmpAndroidActivity;")
+            mainDex().contains("com/example/kmpfirstlib/KmpAndroidActivity")
+            // make sure KmpAndroidActivity is not in the secondary dex files
+            secondaryDexes().subPackage("com/example/kmpfirstlib").containsExactly(
+                "KmpAndroidFirstLibClass",
+                "KmpAndroidFirstLibJavaClass",
+                "KmpCommonFirstLibClass",
+                "test/KmpAndroidFirstLibActivityTest$",
+                "test/R$"
+            )
         }
     }
 }

@@ -95,6 +95,7 @@ import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.android.tools.lint.gradle.LintGradleUtilsKt;
 import com.android.tools.lint.model.LintModelExternalLibrary;
 import com.android.tools.lint.model.LintModelLibrary;
 import com.android.tools.lint.model.LintModelLintOptions;
@@ -398,7 +399,8 @@ public class TestLintClient extends LintCliClient {
     @Nullable
     @Override
     public File getSdkHome() {
-        if (task.sdkHome != null) {
+        //noinspection ConstantValue
+        if (task != null && task.sdkHome != null) {
             return task.sdkHome;
         }
 
@@ -480,11 +482,11 @@ public class TestLintClient extends LintCliClient {
             // locations
             if (hasOldDirectoryLayout(dir)) {
                 fail(
-                        "Warning: This test uses a gradle model mocker but doesn't have a main "
-                                + "source set (src/main/java); that's suspicious; check that the test "
-                                + "file is in (for example) src/main/res/ rather than res/.\n"
-                                + "Alternatively, set useTestProjectImplementation(true) on the "
-                                + "lint task.");
+                        "Warning: This test uses a gradle model mocker but doesn't have a main"
+                            + " source set (src/main/java); that's suspicious; check that the test"
+                            + " file is in (for example) src/main/res/ rather than res/.\n"
+                            + "Alternatively, set useTestProjectImplementation(true) on the lint"
+                            + " task.");
             }
 
             Project oldProject = project;
@@ -492,8 +494,29 @@ public class TestLintClient extends LintCliClient {
             project.setDirectLibraries(oldProject.getDirectLibraries());
         }
 
+        if (project.isGradleProject()) {
+            project.isGradleRootHolder =
+                    LintGradleUtilsKt.isDesignatedGradleRootHolder(project, this);
+        }
+
         registerProject(dir, project);
         return project;
+    }
+
+    @Override
+    public @Nullable File getRootDir() {
+        File root = getPathVariables().get("TEST_ROOT");
+        //noinspection ConstantValue
+        if (root != null && task != null) {
+            // No this is one level too high
+            TestMode mode = task.runner.getCurrentTestMode();
+            File taskFolder = new File(root, mode.getFolderName());
+            if (taskFolder.isDirectory()) {
+                return taskFolder;
+            }
+            return root;
+        }
+        return super.getRootDir();
     }
 
     private static boolean hasOldDirectoryLayout(File dir) {
@@ -798,7 +821,7 @@ public class TestLintClient extends LintCliClient {
     }
 
     public String writeOutput(List<Incident> incidents) throws IOException {
-        LintStats stats = LintStats.Companion.create(incidents, (LintBaseline)null);
+        LintStats stats = LintStats.Companion.create(incidents, (LintBaseline) null);
         for (Reporter reporter : getFlags().getReporters()) {
             reporter.write(stats, incidents, driver.getRegistry());
         }
@@ -893,8 +916,8 @@ public class TestLintClient extends LintCliClient {
                                         + " : Failure processing source "
                                         + file
                                         + ".\n"
-                                        + "If you want your test to work with broken XML sources, add "
-                                        + "`allowCompilationErrors()` on the TestLintTask.\n");
+                                        + "If you want your test to work with broken XML sources,"
+                                        + " add `allowCompilationErrors()` on the TestLintTask.\n");
                         return null;
                     }
                 }
@@ -1097,8 +1120,7 @@ public class TestLintClient extends LintCliClient {
                 TestMode mode = task.runner.getCurrentTestMode();
                 String field = mode.getFieldName();
                 String prologue =
-                        ""
-                                + "java.lang.AssertionError: Incident (message, location) reported more\n"
+                        "java.lang.AssertionError: Incident (message, location) reported more\n"
                                 + "than once";
 
                 if (mode != TestMode.DEFAULT) {
@@ -1106,20 +1128,18 @@ public class TestLintClient extends LintCliClient {
                 }
 
                 prologue +=
-                        "; this typically "
-                                + "means that your detector is incorrectly reaching the same element "
-                                + "twice (for example, visiting each call of a method and reporting the "
-                                + "error on the method itself), or that you should incorporate more "
-                                + "details in your error message such as specific names of methods or "
-                                + "variables to make each message unique if overlapping errors are "
-                                + "expected.\n"
+                        "; this typically means that your detector is incorrectly reaching the same"
+                                + " element twice (for example, visiting each call of a method and"
+                                + " reporting the error on the method itself), or that you should"
+                                + " incorporate more details in your error message such as specific"
+                                + " names of methods or variables to make each message unique if"
+                                + " overlapping errors are expected.\n"
                                 + "\n";
 
                 if (mode != TestMode.DEFAULT) {
                     prologue +=
-                            ""
-                                    + "To debug the unit test in this test mode, add the following to the "
-                                    + "lint() test task: testModes("
+                            "To debug the unit test in this test mode, add the following to the"
+                                    + " lint() test task: testModes("
                                     + field
                                     + ")\n"
                                     + "\n";
@@ -1130,21 +1150,24 @@ public class TestLintClient extends LintCliClient {
                 String interlogue = "";
                 if (driver.getMode() == LintDriver.DriverMode.MERGE) {
                     interlogue =
-                            ""
-                                    + "This error happened while merging in provisional results; a common\n"
-                                    + "cause for this is that your detector is\tusing the merged manifest from\n"
-                                    + "each project to report problems. This means that these same errors are\n"
-                                    + "reported repeatedly, from each sub project,\tinstead\tof only\tbeing\n"
-                                    + "reported on the\tmain/app project. To fix this, consider\tadding a check\n"
-                                    + "for (context.project == context.mainProject).\n"
-                                    + "\n";
+                            "This error happened while merging in provisional results; a common\n"
+                                + "cause for this is that your detector is\tusing the merged"
+                                + " manifest from\n"
+                                + "each project to report problems. This means that these same"
+                                + " errors are\n"
+                                + "reported repeatedly, from each sub project,\tinstead\tof only"
+                                + "\tbeing\n"
+                                + "reported on the\tmain/app project. To fix this, consider\tadding"
+                                + " a check\n"
+                                + "for (context.project == context.mainProject).\n"
+                                + "\n";
                 }
                 String epilogue =
-                        ""
-                                + "If you *really* want to allow this, add .allowDuplicates() to the test\n"
+                        "If you *really* want to allow this, add .allowDuplicates() to the test\n"
                                 + "task.\n"
                                 + "\n"
-                                + "Identical incident encountered at the same location more than once:\n"
+                                + "Identical incident encountered at the same location more than"
+                                + " once:\n"
                                 + incident;
 
                 fail(prologue + interlogue + epilogue);
@@ -1158,8 +1181,10 @@ public class TestLintClient extends LintCliClient {
             // We normally are able to compute the expected range in super.report,
             // but not here so ask detector to explicitly provide one.
             fail(
-                    "Could not find the associated modifier list location for the annotation lint fix.\n"
-                            + "Please explicitly initialize it using `annotate(...).range(context.getLocation(member))...`");
+                    "Could not find the associated modifier list location for the annotation lint"
+                            + " fix.\n"
+                            + "Please explicitly initialize it using"
+                            + " `annotate(...).range(context.getLocation(member))...`");
         }
     }
 
@@ -1224,9 +1249,12 @@ public class TestLintClient extends LintCliClient {
                                     + "    "
                                     + path
                                     + "\n"
-                                    + "in a reported error message; this is discouraged because absolute\n"
-                                    + "paths do not play well with baselines, shared HTML reports, remote\n"
-                                    + "caching, etc. If you really want this, you can set the property\n"
+                                    + "in a reported error message; this is discouraged because"
+                                    + " absolute\n"
+                                    + "paths do not play well with baselines, shared HTML reports,"
+                                    + " remote\n"
+                                    + "caching, etc. If you really want this, you can set the"
+                                    + " property\n"
                                     + "`lint().allowAbsolutePathsInMessages(true)`.\n"
                                     + "\n"
                                     + "Error message was: `"
@@ -1832,12 +1860,11 @@ public class TestLintClient extends LintCliClient {
                 fail(
                         "Could not find SDK to compile with ("
                                 + targetHash
-                                + "). "
-                                + "Either allow the test to use any installed SDK (it defaults to the "
-                                + "highest version) via TestLintTask#requireCompileSdk(false), or make "
-                                + "sure the SDK being used is the right  one via "
-                                + "TestLintTask#sdkHome(File) or $ANDROID_HOME and that the actual SDK "
-                                + "platform (platforms/"
+                                + "). Either allow the test to use any installed SDK (it defaults"
+                                + " to the highest version) via"
+                                + " TestLintTask#requireCompileSdk(false), or make sure the SDK"
+                                + " being used is the right  one via TestLintTask#sdkHome(File) or"
+                                + " $ANDROID_HOME and that the actual SDK platform (platforms/"
                                 + targetHash
                                 + " is installed "
                                 + "there");
@@ -1848,7 +1875,10 @@ public class TestLintClient extends LintCliClient {
             if (version != null) {
                 return new AndroidTestTargetWrapper(compileTarget, version);
             } else {
-                fail("Invalid `compileSdkVersion` " + StringsKt.removePrefix(targetHash, AndroidTargetHash.PLATFORM_HASH_PREFIX));
+                fail(
+                        "Invalid `compileSdkVersion` "
+                                + StringsKt.removePrefix(
+                                        targetHash, AndroidTargetHash.PLATFORM_HASH_PREFIX));
             }
         }
 
@@ -1999,9 +2029,9 @@ public class TestLintClient extends LintCliClient {
 
         if (!task.allowNetworkAccess) {
             fail(
-                    "Lint detector test attempted to read from the network. Normally this means "
-                            + "that you have forgotten to set up mock data (calling networkData() on the "
-                            + "lint task) or the URL no longer matches. The URL encountered was "
+                    "Lint detector test attempted to read from the network. Normally this means"
+                        + " that you have forgotten to set up mock data (calling networkData() on"
+                        + " the lint task) or the URL no longer matches. The URL encountered was "
                             + url);
         }
 

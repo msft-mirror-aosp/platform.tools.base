@@ -22,9 +22,11 @@ import com.android.adblib.property
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * A [JdwpProcessPropertiesCollector] is responsible for collecting properties of a given JDWP
@@ -49,11 +51,15 @@ internal class JdwpProcessPropertiesCollector(
      * retrying as many times as necessary if there is contention on acquiring JDWP sessions
      * to the process.
      */
-    suspend fun execute(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
-        createFlowUpdater().execute(processScope, stateFlow)
+    suspend fun execute(
+        stateFlow: AtomicStateFlow<JdwpProcessProperties>,
+        proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>) {
+        createFlowUpdater(proxyStatusFlow).execute(processScope, stateFlow)
     }
 
-    private suspend fun createFlowUpdater(): JdwpProcessPropertiesFlowUpdater {
+    private suspend fun createFlowUpdater(
+        proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
+    ): JdwpProcessPropertiesFlowUpdater {
         val useAppInfo =
             device.session.property(AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE) &&
                     device.isAppInfoSupported()
@@ -62,7 +68,7 @@ internal class JdwpProcessPropertiesCollector(
             return UsingAppInfoFlowUpdater(device, pid)
         } else {
             logger.debug { "${AdbFeatures.APP_INFO} is not supported or active, using JDWP collector" }
-            UsingJdwpSessionFlowUpdater(device, pid, jdwpSessionProvider)
+            UsingJdwpSessionFlowUpdater(device, pid, jdwpSessionProvider, proxyStatusFlow)
         }
     }
 

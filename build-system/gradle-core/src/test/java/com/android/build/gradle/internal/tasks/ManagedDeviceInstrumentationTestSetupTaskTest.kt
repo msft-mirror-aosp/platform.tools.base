@@ -115,6 +115,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
             .whenever(task).buildToolsRevision
         doReturn(realPropertyFor("x86_64")).whenever(task).abi
         doReturn(realPropertyFor(29)).whenever(task).sdkVersion
+        doReturn(realPropertyFor(0)).whenever(task).sdkMinorVersion
         doReturn(realEmptyPropertyFor<Int>()).whenever(task).sdkExtensionVersion
         doReturn(realPropertyFor("")).whenever(task).pageAlignmentSuffix
         doReturn(realPropertyFor("aosp")).whenever(task).systemImageVendor
@@ -207,6 +208,56 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
     }
 
     @Test
+    fun testTaskAction_failsWhenMinorVersionOnOldApi() {
+        val task = basicTaskSetup()
+
+        doReturn(realPropertyFor(35)).whenever(task).sdkVersion
+        doReturn(realPropertyFor(1)).whenever(task).sdkMinorVersion
+        whenever(mockVersionedSdkLoader.offlineMode).thenReturn(true)
+        whenever(mockVersionedSdkLoader.sdkImageDirectoryProvider(any()))
+            .thenReturn(FakeGradleProperty(null))
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            task.taskAction()
+        }
+        assertThat(error.message).isEqualTo(
+            """
+                someDeviceName has a minor version specified for
+                sdkVersion = 35. The minimum api version that supports minor
+                versions is 36.
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTaskAction_selectsImageBasedOnMinorVersion() {
+        val task = basicTaskSetup()
+
+        doReturn(realPropertyFor(36)).whenever(task).sdkVersion
+        doReturn(realPropertyFor(1)).whenever(task).sdkMinorVersion
+        whenever(mockVersionedSdkLoader.offlineMode).thenReturn(true)
+        whenever(mockVersionedSdkLoader.sdkImageDirectoryProvider(any()))
+            .thenReturn(FakeGradleProperty(null))
+
+        val error = assertThrows(IllegalStateException::class.java) {
+            task.taskAction()
+        }
+        assertThat(error.message).isEqualTo(
+            """
+                The system image for someDeviceName is not available and Gradle is in offline mode.
+                Could not download the image or find other compatible images.
+            """.trimIndent()
+        )
+
+        verify(mockVersionedSdkLoader)
+            .sdkImageDirectoryProvider("system-images;android-36.1;default;x86_64")
+        verify(mockVersionedSdkLoader)
+            .offlineMode
+        verifyNoMoreInteractions(mockVersionedSdkLoader)
+        verifyNoInteractions(avdService)
+    }
+
+    @Test
     fun testTaskAction_errorOnAutoProfile() {
         val task = basicTaskSetup()
         doReturn(realPropertyFor("Automotive (1024p landscape)"))
@@ -267,6 +318,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 val buildToolsRevision = mockEmptyProperty<Revision>()
                 val abiProperty = mockEmptyProperty<String>()
                 val sdkVersion = mockEmptyProperty<Int>()
+                val sdkMinorVersion = mockEmptyProperty<Int>()
                 val systemImageVendor = mockEmptyProperty<String>()
                 val hardwareProfile = mockEmptyProperty<String>()
                 val emulatorGpuFlag = mockEmptyProperty<String>()
@@ -279,6 +331,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 whenever(task.buildToolsRevision).thenReturn(buildToolsRevision)
                 whenever(task.abi).thenReturn(abiProperty)
                 whenever(task.sdkVersion).thenReturn(sdkVersion)
+                whenever(task.sdkMinorVersion).thenReturn(sdkMinorVersion)
                 whenever(task.systemImageVendor).thenReturn(systemImageVendor)
                 whenever(task.hardwareProfile).thenReturn(hardwareProfile)
                 whenever(task.emulatorGpuFlag).thenReturn(emulatorGpuFlag)
@@ -309,6 +362,10 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
 
                 verify(sdkVersion).set(27)
                 verify(sdkVersion).disallowChanges()
+                verifyNoMoreInteractions(sdkVersion)
+
+                verify(sdkMinorVersion).set(0)
+                verify(sdkMinorVersion).disallowChanges()
                 verifyNoMoreInteractions(sdkVersion)
 
                 verify(systemImageVendor).set("aosp")
@@ -380,6 +437,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 val buildToolsRevision = mockEmptyProperty<Revision>()
                 val abiProperty = mockEmptyProperty<String>()
                 val sdkVersion = mockEmptyProperty<Int>()
+                val sdkMinorVersion = mockEmptyProperty<Int>()
                 val systemImageVendor = mockEmptyProperty<String>()
                 val hardwareProfile = mockEmptyProperty<String>()
                 val emulatorGpuFlag = mockEmptyProperty<String>()
@@ -392,6 +450,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 whenever(task.buildToolsRevision).thenReturn(buildToolsRevision)
                 whenever(task.abi).thenReturn(abiProperty)
                 whenever(task.sdkVersion).thenReturn(sdkVersion)
+                whenever(task.sdkMinorVersion).thenReturn(sdkMinorVersion)
                 whenever(task.systemImageVendor).thenReturn(systemImageVendor)
                 whenever(task.hardwareProfile).thenReturn(hardwareProfile)
                 whenever(task.emulatorGpuFlag).thenReturn(emulatorGpuFlag)
@@ -422,6 +481,10 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
 
                 verify(sdkVersion).set(28)
                 verify(sdkVersion).disallowChanges()
+                verifyNoMoreInteractions(sdkVersion)
+
+                verify(sdkMinorVersion).set(0)
+                verify(sdkMinorVersion).disallowChanges()
                 verifyNoMoreInteractions(sdkVersion)
 
                 verify(systemImageVendor).set("aosp")
@@ -456,6 +519,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         val result = ManagedDeviceInstrumentationTestSetupTask.generateSystemImageErrorMessage(
             "test_device_name",
             28,
+            0,
             null,
             "aosp",
             "",
@@ -479,6 +543,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         val result = ManagedDeviceInstrumentationTestSetupTask.generateSystemImageErrorMessage(
             "some_test_device",
             28,
+            0,
             null,
             "aosp",
             "",

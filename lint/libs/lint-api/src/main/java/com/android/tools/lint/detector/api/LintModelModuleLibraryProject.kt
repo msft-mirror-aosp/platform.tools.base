@@ -129,6 +129,15 @@ open class LintModelModuleAndroidLibraryProject(
     }
   }
 
+  /*
+   * override fun isExternalLibrary(): Boolean = true
+   *
+   * You might think this library should correspond to an external library, but Gradle
+   * will also model local dependencies here; see for example the LintDependencySdkIntCheckTest
+   * integration test, where the lib module is modeled here (and if we treat it as
+   * an external library, we won't load partial results for it.)
+   */
+
   override fun getBuildLibraryModel(): LintModelAndroidLibrary = androidLibrary
 
   override fun getManifestFiles(): List<File> {

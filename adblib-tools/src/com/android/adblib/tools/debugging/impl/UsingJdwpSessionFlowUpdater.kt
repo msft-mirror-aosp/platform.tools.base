@@ -20,6 +20,7 @@ import com.android.adblib.AdbSession
 import com.android.adblib.AdbUsageTracker
 import com.android.adblib.ByteBufferAdbOutputChannel
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.InstructionSet
 import com.android.adblib.adbLogger
 import com.android.adblib.property
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT
@@ -29,8 +30,10 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TI
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_DURATION
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.addException
+import com.android.adblib.tools.debugging.fromLegacyDescription
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollector.Companion.filterFakeName
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
@@ -78,7 +81,8 @@ import java.nio.channels.InterruptedByTimeoutException
 internal class UsingJdwpSessionFlowUpdater(
     private val device: ConnectedDevice,
     private val pid: Int,
-    private val jdwpSessionProvider: SharedJdwpSessionProvider
+    private val jdwpSessionProvider: SharedJdwpSessionProvider,
+    private val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
 ) : JdwpProcessPropertiesFlowUpdater {
 
     private val session: AdbSession
@@ -365,12 +369,16 @@ internal class UsingJdwpSessionFlowUpdater(
                 userId = heloChunk.userId,
                 packageName = filterFakeName(heloChunk.packageName),
                 vmIdentifier = heloChunk.vmIdentifier,
-                abi = heloChunk.abi,
+                instructionSet = convertLegacyDescriptionToInstructionSet(heloChunk.abi),
                 jvmFlags = heloChunk.jvmFlags,
                 isNativeDebuggable = heloChunk.isNativeDebuggable
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
+    }
+
+    private fun convertLegacyDescriptionToInstructionSet(abi: String?): InstructionSet? {
+        return abi?.let { InstructionSet.fromLegacyDescription(abi) }
     }
 
     private suspend fun processFeatReply(
@@ -491,10 +499,9 @@ internal class UsingJdwpSessionFlowUpdater(
                 // it is active. If/when the external debugger detaches from the process,
                 // we also release the SharedJdwpSession in case another debug session
                 // needs to be started later on.
-                with(propertiesFlow.asStateFlow()) {
-                    waitUntil { jdwpSessionProxyStatus.isExternalDebuggerAttached }
-                    waitWhile { jdwpSessionProxyStatus.isExternalDebuggerAttached }
-                }
+                proxyStatusFlow.waitUntil { isExternalDebuggerAttached }
+                propertiesFlow.update { it.copy(isWaitingForDebugger = false) }
+                proxyStatusFlow.waitWhile { isExternalDebuggerAttached }
 
                 logger.debug { "JDWP session holder: JDWP session about to be released as debugger has detached" }
             }

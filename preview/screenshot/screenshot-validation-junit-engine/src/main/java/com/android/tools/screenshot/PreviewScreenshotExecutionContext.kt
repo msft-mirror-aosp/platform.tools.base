@@ -17,12 +17,12 @@
 package com.android.tools.screenshot
 
 import com.android.tools.render.Renderer
-import org.junit.platform.engine.ExecutionRequest
+import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
 import java.io.File
 
 data class PreviewScreenshotExecutionContext(
-    val executionRequest: ExecutionRequest,
+    val executionListener: EngineExecutionListener,
     val previewImageOutputDir: File,
     val previewDiffImageOutputDir: File,
     val referenceImageDir: File,
