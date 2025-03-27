@@ -141,8 +141,6 @@ message ProcessUpdate {
         JdwpProcessInfo process_updated = 1;
         // A previously known process has exited
         int32 process_terminated_pid = 2;
-        // The JDWP debugger proxy status has changed
-        JdwpProcessDebuggerProxyInfo debugger_proxy_info = 3;
     }
 }
 
@@ -220,38 +218,6 @@ message JdwpProcessInfo {
     message Features {
         repeated string feature = 1;
     }
-}
-
-message JdwpProcessDebuggerProxyInfo {
-    /*
-     * The JDWP process ID, always present
-     */
-    int32 pid = 1;
-
-    /*
-     * The [InetSocketAddress] a Java debugger can connect to start a JDWP debugging session.
-     * The field is only set when [waiting_for_debugger] is `true`, as it is the only case
-     * an existing JDWP session needs to be re-used via the proxy at this address. In other
-     * case, a new JDWP session can be opened by any adblib instance.
-     */
-    optional InetSocketAddress socket_address = 2;
-
-    /*
-     * Whether a Java debugger is currently connected to this JDWP proxy.
-     */
-    optional bool is_external_debugger_attached = 3;
-}
-
-/*
- * See https://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html
- * See https://docs.oracle.com/javase/8/docs/api/java/net/InetAddress.html
- */
-message InetSocketAddress {
-    /* host name if known ('localhost' for local machine) */
-    optional string hostname = 1;
-    /* bytes of the IP address, either 4-bytes for ipv4 or 16-bytes for ipv6 */
-    bytes ip_address = 2;
-    int32 tcp_port = 3;
 }
 
 message Exception {

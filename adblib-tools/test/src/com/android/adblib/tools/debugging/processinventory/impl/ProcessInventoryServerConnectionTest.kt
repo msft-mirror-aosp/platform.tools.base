@@ -159,7 +159,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun testProcessUpdateUpdatesAllPropertiesExceptProxyAddressWhenIsWaitingForDebuggerIsFalse(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+    fun testProcessUpdateUpdatesAllPropertiesExceptJdwpProxyStatus(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
         // Prepare
         setHostPropertyValue(
             session.host,
@@ -206,8 +206,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             processListSnapshots.run {
                 isNotEmpty() &&
                         last().size == 1 &&
-                        last().first().completed &&
-                        last().first().jdwpProxyStatus.isExternalDebuggerAttached
+                        last().first().completed
             }
         }
         job.cancel()
@@ -215,10 +214,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         // Assert
         val lastList = processListSnapshots.last()
         val localPropertiesWithoutProxySocketAddress = localProperties.copy(
-            jdwpProxyStatus = JdwpProxySocketServerStatus(
-                socketAddress = null,
-                isExternalDebuggerAttached = true
-            )
+            jdwpProxyStatus = JdwpProxySocketServerStatus()
         )
         assertEquals(1, lastList.size)
         assertEquals(localPropertiesWithoutProxySocketAddress, lastList[0])
@@ -272,16 +268,18 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             processListSnapshots.run {
                 isNotEmpty() &&
                         last().size == 1 &&
-                        last().first().completed &&
-                        last().first().jdwpProxyStatus.socketAddress != null
+                        last().first().completed
             }
         }
         job.cancel()
 
         // Assert
         val lastList = processListSnapshots.last()
+        val localPropertiesWithoutProxySocketAddress = localProperties.copy(
+            jdwpProxyStatus = JdwpProxySocketServerStatus()
+        )
         assertEquals(1, lastList.size)
-        assertEquals(localProperties, lastList[0])
+        assertEquals(localPropertiesWithoutProxySocketAddress, lastList[0])
     }
 
     @Test
@@ -612,59 +610,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertNull(it.exception)
         }
 
-        localProperties = localProperties.copy(
-            jdwpProxyStatus = localProperties.jdwpProxyStatus.copy(
-                isExternalDebuggerAttached = true
-            )
-        )
-        sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.jdwpProxyStatus.isExternalDebuggerAttached
-        }.also {
-            assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertEquals("FooBar", it.jvmFlags)
-            @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable)
-            assertTrue(it.isWaitingForDebugger)
-            assertTrue(it.jdwpProxyStatus.isExternalDebuggerAttached)
-            assertNull(it.jdwpProxyStatus.socketAddress)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
-        }
-
-        val proxyAddress = InetSocketAddress(InetAddress.getLoopbackAddress(), 200)
-        localProperties = localProperties.copy(
-            jdwpProxyStatus = localProperties.jdwpProxyStatus.copy(
-                socketAddress = proxyAddress
-            )
-        )
-        sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.jdwpProxyStatus.socketAddress == proxyAddress
-        }.also {
-            assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertEquals("FooBar", it.jvmFlags)
-            @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable)
-            assertTrue(it.isWaitingForDebugger)
-            assertTrue(it.jdwpProxyStatus.isExternalDebuggerAttached)
-            assertEquals(proxyAddress, it.jdwpProxyStatus.socketAddress)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
-        }
-
         localProperties = localProperties.copy(features = listOf("f1", "f2", "f3"))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
             it.pid == 10 && it.features == listOf("f1", "f2", "f3")
@@ -680,8 +625,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
             assertTrue(it.isWaitingForDebugger)
-            assertTrue(it.jdwpProxyStatus.isExternalDebuggerAttached)
-            assertEquals(proxyAddress, it.jdwpProxyStatus.socketAddress)
+            assertFalse(it.jdwpProxyStatus.isExternalDebuggerAttached)
+            assertNull(it.jdwpProxyStatus.socketAddress)
             assertEquals(listOf("f1", "f2", "f3"), it.features)
             assertFalse(it.completed)
             assertNull(it.exception)
@@ -702,8 +647,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
             assertTrue(it.isWaitingForDebugger)
-            assertTrue(it.jdwpProxyStatus.isExternalDebuggerAttached)
-            assertEquals(proxyAddress, it.jdwpProxyStatus.socketAddress)
+            assertFalse(it.jdwpProxyStatus.isExternalDebuggerAttached)
+            assertNull(it.jdwpProxyStatus.socketAddress)
             assertEquals(listOf("f1", "f2", "f3"), it.features)
             assertTrue(it.completed)
             assertNull(it.exception)
@@ -724,8 +669,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             @Suppress("DEPRECATION")
             assertTrue(it.isNativeDebuggable)
             assertTrue(it.isWaitingForDebugger)
-            assertTrue(it.jdwpProxyStatus.isExternalDebuggerAttached)
-            assertEquals(proxyAddress, it.jdwpProxyStatus.socketAddress)
+            assertFalse(it.jdwpProxyStatus.isExternalDebuggerAttached)
+            assertNull(it.jdwpProxyStatus.socketAddress)
             assertEquals(listOf("f1", "f2", "f3"), it.features)
             assertTrue(it.completed)
             assertEquals("Message", it.exception?.message)

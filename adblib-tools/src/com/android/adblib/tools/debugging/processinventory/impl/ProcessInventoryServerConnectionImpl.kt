@@ -149,11 +149,9 @@ private class ProcessInventoryServerConnectionForDevice(
                 .forClient(config.clientDescription)
 
             val processInfo = properties.toJdwpProcessInfoProto()
-            val debuggerProxyInfo = properties.toJdwpProcessDebuggerProxyInfoProto()
             val response = protocolChannel.sendDeviceProcessInfoUpdates(
                     device.serialNumber,
                     listOf(processInfo),
-                    listOf(debuggerProxyInfo),
                     emptyList()
                 )
             logger.debug { "Sent process properties: $response" }
@@ -202,9 +200,6 @@ private class ProcessInventoryServerConnectionForDevice(
                         processInfoUpdateList = currentList.map {
                             it.toJdwpProcessInfoProto()
                         },
-                        debuggerProxyInfoUpdateList = currentList.map {
-                            it.toJdwpProcessDebuggerProxyInfoProto()
-                        },
                         removedProcessList = emptyList()
                     )
                 }
@@ -240,15 +235,6 @@ private class ProcessInventoryServerConnectionForDevice(
                 }
             }
 
-            update.hasDebuggerProxyInfo() -> {
-                val debuggerProxyInfo = update.debuggerProxyInfo
-                logger.debug { "Debugger proxy for process ${debuggerProxyInfo.pid} has been updated: $debuggerProxyInfo" }
-
-                processMap.updateProcess(debuggerProxyInfo.pid) { currentProperties ->
-                    currentProperties.mergeWith(debuggerProxyInfo)
-                }
-            }
-
             update.hasProcessTerminatedPid() -> {
                 val pid = update.processTerminatedPid
                 logger.debug { "Process $pid has exited" }
@@ -268,25 +254,6 @@ private class ProcessInventoryServerConnectionForDevice(
         update: (JdwpProcessProperties) -> JdwpProcessProperties
     ) {
         this[pid] = update(this.computeIfAbsent(pid) { JdwpProcessProperties(it) })
-    }
-
-    private fun JdwpProcessProperties.mergeWith(
-        proxyInfo: ProcessInventoryServerProto.JdwpProcessDebuggerProxyInfo
-    ): JdwpProcessProperties {
-        val source = this
-        return copy(
-            jdwpProxyStatus = source.jdwpProxyStatus.mergeWith(proxyInfo)
-        )
-    }
-
-    private fun JdwpProxySocketServerStatus.mergeWith(
-        proxyInfo: ProcessInventoryServerProto.JdwpProcessDebuggerProxyInfo
-    ): JdwpProxySocketServerStatus {
-        val source = this
-        return JdwpProxySocketServerStatus(
-            isExternalDebuggerAttached = if (proxyInfo.hasIsExternalDebuggerAttached()) proxyInfo.isExternalDebuggerAttached else source.isExternalDebuggerAttached,
-            socketAddress = if (proxyInfo.hasSocketAddress()) proxyInfo.socketAddress.toInetSocketAddress() else source.socketAddress
-        )
     }
 
     /**
@@ -338,30 +305,6 @@ private class ProcessInventoryServerConnectionForDevice(
                 }
             }
             .build()
-    }
-
-    /**
-     * Converts a [JdwpProcessProperties] from a local [JdwpProcessProperties] to a
-     * [ProcessInventoryServerProto.JdwpProcessDebuggerProxyInfo] for sending to the inventory server.
-     */
-    private fun JdwpProcessProperties.toJdwpProcessDebuggerProxyInfoProto(): ProcessInventoryServerProto.JdwpProcessDebuggerProxyInfo {
-        val source = this
-        return ProcessInventoryServerProto.JdwpProcessDebuggerProxyInfo
-            .newBuilder()
-            .also { proto ->
-                proto.pid = source.pid
-                // We send the proxy address only if we are in the "waiting for debugger" state
-                // as this is the only use case we need to expose our internal proxy externally
-                // for external instances to connect to (since the JDWP process is stuck in
-                // the "WAIT" state)
-                if (source.isWaitingForDebugger) {
-                    source.jdwpProxyStatus.socketAddress?.also {
-                        proto.socketAddress = it.toInetSocketAddressProto()
-                    }
-                }
-                proto.isExternalDebuggerAttached =
-                    source.jdwpProxyStatus.isExternalDebuggerAttached
-            }.build()
     }
 
     private fun List<String>.toFeaturesProto(): ProcessInventoryServerProto.JdwpProcessInfo.Features {
@@ -416,40 +359,5 @@ private class ProcessInventoryServerConnectionForDevice(
                 null
             }
         }
-    }
-
-    /**
-     * Converts a protobuf [ProcessInventoryServerProto.InetSocketAddress] to an
-     * equivalent [InetSocketAddress].
-     *
-     * Note: An [InetSocketAddress] is a wrapper around a 4-bytes or a 16-bytes array
-     * of bytes. The "hostname" part of it is optional.
-     */
-    private fun ProcessInventoryServerProto.InetSocketAddress.toInetSocketAddress(): InetSocketAddress {
-        val sourceProto = this
-        // Note: We need to make sure we don't perform actual name resolution, hence we use the
-        // `getByAddress` API.
-        val inetAddress =
-            InetAddress.getByAddress(sourceProto.hostname, sourceProto.ipAddress.toByteArray())
-        return InetSocketAddress(inetAddress, sourceProto.tcpPort)
-    }
-
-    /**
-     * Converts a protobuf [ProcessInventoryServerProto.InetSocketAddress] to an
-     * equivalent [InetSocketAddress]
-     *
-     * Note: An [InetSocketAddress] is a wrapper around a 4-bytes or 16-bytes array
-     * of bytes. The "hostname" part of it is optional.
-     */
-    private fun InetSocketAddress.toInetSocketAddressProto(): ProcessInventoryServerProto.InetSocketAddress {
-        val source = this
-        return ProcessInventoryServerProto.InetSocketAddress
-            .newBuilder()
-            .also { proto ->
-                source.hostString?.also { proto.hostname = it }
-                source.address?.also { proto.ipAddress = ByteString.copyFrom(it.address) }
-                proto.tcpPort = source.port
-            }
-            .build()
     }
 }
