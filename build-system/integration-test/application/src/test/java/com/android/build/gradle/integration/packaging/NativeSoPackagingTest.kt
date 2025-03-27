@@ -837,7 +837,7 @@ internal fun AbstractAndroidArchiveSubject<*, *>.checkJniContent(
     abi: String,
     vararg itemList: Any,
 ) {
-    jniLibs().abi(abi).apply {
+    jniLibs().abi(abi) {
         if (itemList.isEmpty()) {
             isEmpty()
         } else {

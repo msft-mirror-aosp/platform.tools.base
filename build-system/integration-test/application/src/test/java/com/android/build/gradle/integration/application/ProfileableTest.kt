@@ -20,7 +20,7 @@ import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_V
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.SigningHelper
@@ -61,22 +61,16 @@ class ProfileableTest {
         assertThat(
             verificationResult.signerCertificates.first().subjectX500Principal.name
         ).isEqualTo("C=US,O=Android,CN=Android Debug")
-        val manifest = ApkSubject.getManifestContent(apkSigned.file.toAbsolutePath())
-        assertThat(manifest).containsAtLeastElementsIn(
-            arrayListOf(
-                "        E: application (line=11)",
-                "            E: profileable (line=12)",
-                "              A: http://schemas.android.com/apk/res/android:enabled(0x0101000e)=true",
-                "              A: http://schemas.android.com/apk/res/android:shell(0x01010594)=true"
-            )
-        )
+
+        project.getSubproject("app").checkProjectContainsProfileableInManifest(ApkSelector.RELEASE_SIGNED)
 
         // Test no signing config configured, if the automatic signing config assignment is disabled.
         project.executor().with(BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG, false)
                 .run("clean", "assembleRelease")
-        val apkUnsigned =
-                project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE)
-        ApkSubject.assertThat(apkUnsigned).doesNotContainApkSigningBlock()
+
+        project.getSubproject("app").assertApk(ApkSelector.RELEASE) {
+            doesNotHaveApkSigningBlock()
+        }
     }
 
     @Test
@@ -99,22 +93,16 @@ class ProfileableTest {
         assertThat(
             verificationResult.signerCertificates.first().subjectX500Principal.name
         ).isEqualTo("C=US,O=Android,CN=Android Debug")
-        val manifest = ApkSubject.getManifestContent(apkSigned.file.toAbsolutePath())
-        assertThat(manifest).containsAtLeastElementsIn(
-            arrayListOf(
-                "        E: application (line=11)",
-                "            E: profileable (line=12)",
-                "              A: http://schemas.android.com/apk/res/android:enabled(0x0101000e)=true",
-                "              A: http://schemas.android.com/apk/res/android:shell(0x01010594)=true"
-            )
-        )
+
+        project.getSubproject("app").checkProjectContainsProfileableInManifest(ApkSelector.RELEASE_SIGNED)
 
         // Test no signing config configured, if the automatic signing config assignment is disabled.
         project.executor().with(BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG, false)
             .run("clean", "assembleRelease")
-        val apkUnsigned =
-            project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE)
-        ApkSubject.assertThat(apkUnsigned).doesNotContainApkSigningBlock()
+
+        project.getSubproject("app").assertApk(ApkSelector.RELEASE) {
+            doesNotHaveApkSigningBlock()
+        }
     }
 
     @Test
@@ -134,19 +122,18 @@ class ProfileableTest {
         project.executor()
                 .with(BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG, true)
                 .run("assembleRelease")
-        val apkSigned =
-                project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE_SIGNED)
-        val manifest = ApkSubject.getManifestContent(apkSigned.file.toAbsolutePath())
-        assertThat(manifest).containsAtLeastElementsIn(
-                arrayListOf(
-                        "        E: application (line=11)",
-                        "            E: profileable (line=12)",
-                        "              A: http://schemas.android.com/apk/res/android:shell(0x01010594)=true"
+
+        project.getSubproject("app").assertApk(ApkSelector.RELEASE_SIGNED) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .node("profileable")
+                .attributes()
+                .containsExactly(
+                    // should not contain 'enabled=true'
+                    "http://schemas.android.com/apk/res/android:shell=true"
                 )
-        )
-        assertThat(manifest).doesNotContain(
-                "              A: http://schemas.android.com/apk/res/android:enabled(0x0101000e)=true"
-        )
+        }
     }
 
 
@@ -161,19 +148,17 @@ class ProfileableTest {
         project.executor()
                 .with(BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG, true)
                 .run("assembleRelease")
-        val apkSigned =
-                project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE_SIGNED)
-        val manifest = ApkSubject.getManifestContent(apkSigned.file.toAbsolutePath())
-        assertThat(manifest).containsAtLeastElementsIn(
-                arrayListOf(
-                        "        E: application (line=11)",
-                        "            E: profileable (line=12)",
-                        "              A: http://schemas.android.com/apk/res/android:shell(0x01010594)=true"
+        project.getSubproject("app").assertApk(ApkSelector.RELEASE_SIGNED) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .node("profileable")
+                .attributes()
+                .containsExactly(
+                    // should not contain 'enabled=true'
+                    "http://schemas.android.com/apk/res/android:shell=true"
                 )
-        )
-        assertThat(manifest).doesNotContain(
-                "              A: http://schemas.android.com/apk/res/android:enabled(0x0101000e)=true"
-        )
+        }
     }
 
     @Test
@@ -182,17 +167,16 @@ class ProfileableTest {
         app.buildFile.appendText("android.buildTypes.debug.debuggable = true\n")
         app.buildFile.appendText("android.buildTypes.debug.profileable = true\n")
         val result = project.executor().run("assembleDebug")
+
         // Ensure profileable is not applied (debuggable dsl option overrides profileable).
-        val manifest = ApkSubject.getManifestContent(
-            project.getApkAsFile(GradleTestProject.ApkType.DEBUG).toPath()
-        )
-        assertThat(manifest).doesNotContain(
-            arrayListOf(
-                "        E: application (line=11)",
-                "            E: profileable (line=12)",
-                "              A: http://schemas.android.com/apk/res/android:shell(0x01010594)=true"
-            )
-        )
+        app.assertApk(ApkSelector.DEBUG) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .nodes()
+                .isEmpty()
+        }
+
         result.stdout.use { out ->
             ScannerSubject.assertThat(out).contains(
                 ":app build type 'debug' can only have debuggable or profileable enabled.\n" +
@@ -217,16 +201,14 @@ class ProfileableTest {
         )
         val result = project.executor().run("assembleDebug")
         // Ensure profileable is not applied (debuggable dsl option overrides profileable).
-        val manifest = ApkSubject.getManifestContent(
-            project.getApkAsFile(GradleTestProject.ApkType.DEBUG).toPath()
-        )
-        assertThat(manifest).doesNotContain(
-            arrayListOf(
-                "        E: application (line=11)",
-                "            E: profileable (line=12)",
-                "              A: http://schemas.android.com/apk/res/android:shell(0x01010594)=true"
-            )
-        )
+        app.assertApk(ApkSelector.DEBUG) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .nodes()
+                .isEmpty()
+        }
+
         result.stdout.use { out ->
             ScannerSubject.assertThat(out).contains(
                 "Variant 'debug' can only have debuggable or profileable enabled.\n" +
@@ -246,7 +228,7 @@ class ProfileableTest {
         assertThat(result.tasks.filter { it.lowercase(Locale.US).contains("lint") })
                 .named("Lint tasks")
                 .isEmpty()
-        checkProjectContainsProfileableInManifest(app, GradleTestProject.ApkType.DEBUG)
+        app.checkProjectContainsProfileableInManifest(ApkSelector.DEBUG)
     }
 
     @Test
@@ -259,7 +241,7 @@ class ProfileableTest {
         assertThat(result.tasks.filter { it.lowercase(Locale.US).contains("lint") })
                 .named("Lint tasks")
                 .isEmpty()
-        checkProjectContainsProfileableInManifest(app, GradleTestProject.ApkType.RELEASE_SIGNED)
+        app.checkProjectContainsProfileableInManifest(ApkSelector.RELEASE_SIGNED)
     }
 
     @Test
@@ -346,19 +328,19 @@ class ProfileableTest {
         }
     }
 
-    private fun checkProjectContainsProfileableInManifest(
-        project: GradleTestProject,
-        apkType: GradleTestProject.ApkType
+    private fun GradleTestProject.checkProjectContainsProfileableInManifest(
+        apkSelector: ApkSelector
     ) {
-        val manifest = ApkSubject.getManifestContent(project.getApkAsFile(apkType).toPath())
-        assertThat(manifest).containsAtLeastElementsIn(
-            arrayListOf(
-                "        E: application (line=11)",
-                "          A: http://schemas.android.com/apk/res/android:testOnly(0x01010272)=true",
-                "            E: profileable (line=14)",
-                "              A: http://schemas.android.com/apk/res/android:enabled(0x0101000e)=true",
-                "              A: http://schemas.android.com/apk/res/android:shell(0x01010594)=true"
-            )
-        )
+        assertApk(apkSelector) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .node("profileable")
+                .attributes()
+                .containsExactly(
+                    "http://schemas.android.com/apk/res/android:enabled=true",
+                    "http://schemas.android.com/apk/res/android:shell=true"
+                )
+        }
     }
 }

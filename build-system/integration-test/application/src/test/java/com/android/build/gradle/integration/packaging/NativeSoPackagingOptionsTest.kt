@@ -18,25 +18,21 @@ package com.android.build.gradle.integration.packaging
 
 import com.android.build.api.variant.JniLibsPackaging
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.ANDROIDTEST_DEBUG
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.RELEASE
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
-import com.android.testutils.truth.PathSubject.assertThat
-import com.google.common.truth.Truth.assertThat
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import org.junit.Rule
 import org.junit.Test
 import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 
 /**
  * Integration tests for [JniLibsPackaging]
  */
 class NativeSoPackagingOptionsTest {
+
+    val LIB_CONTENT_FOO = "foo".toByteArray()
+    val LIB_CONTENT_BAR = "bar".toByteArray()
 
     private val app =
         MinimalSubProject.app("com.example.app")
@@ -68,18 +64,18 @@ class NativeSoPackagingOptionsTest {
                         })
                     }
                     """.trimIndent()
-            ).withFile("src/main/jniLibs/x86/appKeep.so", "foo")
-            .withFile("src/main/jniLibs/x86/dslExclude1.so", "foo")
-            .withFile("src/main/jniLibs/x86/dslExclude2.so", "foo")
-            .withFile("src/main/jniLibs/x86/dslExclude3.so", "foo")
-            .withFile("src/main/jniLibs/x86/dslPickFirst.so", "foo")
-            .withFile("src/main/jniLibs/x86_64/dslPickFirst.so", "foo")
-            .withFile("src/main/jniLibs/x86/debugExclude.so", "foo")
-            .withFile("src/main/jniLibs/x86/releaseExclude.so", "foo")
-            .withFile("src/main/jniLibs/x86/variantPickFirst.so", "foo")
-            .withFile("src/main/jniLibs/x86_64/variantPickFirst.so", "foo")
-            .withFile("src/androidTest/jniLibs/x86/testKeep.so", "foo")
-            .withFile("src/androidTest/jniLibs/x86/testExclude.so", "foo")
+            ).withFile("src/main/jniLibs/x86/appKeep.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86/dslExclude1.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86/dslExclude2.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86/dslExclude3.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86/dslPickFirst.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86_64/dslPickFirst.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86/debugExclude.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86/releaseExclude.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86/variantPickFirst.so", LIB_CONTENT_FOO)
+            .withFile("src/main/jniLibs/x86_64/variantPickFirst.so", LIB_CONTENT_FOO)
+            .withFile("src/androidTest/jniLibs/x86/testKeep.so", LIB_CONTENT_FOO)
+            .withFile("src/androidTest/jniLibs/x86/testExclude.so", LIB_CONTENT_FOO)
 
     private val lib =
         MinimalSubProject.lib("com.example.lib")
@@ -102,17 +98,17 @@ class NativeSoPackagingOptionsTest {
                         })
                     }
                     """.trimIndent()
-            ).withFile("src/main/jniLibs/x86/libKeep.so", "bar")
-            .withFile("src/main/jniLibs/x86/dslExclude1.so", "bar")
-            .withFile("src/main/jniLibs/x86/dslExclude2.so", "bar")
-            .withFile("src/main/jniLibs/x86/dslExclude3.so", "bar")
-            .withFile("src/main/jniLibs/x86/dslPickFirst.so", "bar")
-            .withFile("src/main/jniLibs/x86_64/dslPickFirst.so", "bar")
-            .withFile("src/main/jniLibs/x86/libExclude.so", "bar")
-            .withFile("src/main/jniLibs/x86/variantPickFirst.so", "bar")
-            .withFile("src/main/jniLibs/x86_64/variantPickFirst.so", "bar")
-            .withFile("src/androidTest/jniLibs/x86/testKeep.so", "bar")
-            .withFile("src/androidTest/jniLibs/x86/testExclude.so", "bar")
+            ).withFile("src/main/jniLibs/x86/libKeep.so", LIB_CONTENT_BAR)
+            .withFile("src/main/jniLibs/x86/dslExclude1.so", LIB_CONTENT_BAR)
+            .withFile("src/main/jniLibs/x86/dslExclude2.so", LIB_CONTENT_BAR)
+            .withFile("src/main/jniLibs/x86/dslExclude3.so", LIB_CONTENT_BAR)
+            .withFile("src/main/jniLibs/x86/dslPickFirst.so", LIB_CONTENT_BAR)
+            .withFile("src/main/jniLibs/x86_64/dslPickFirst.so", LIB_CONTENT_BAR)
+            .withFile("src/main/jniLibs/x86/libExclude.so", LIB_CONTENT_BAR)
+            .withFile("src/main/jniLibs/x86/variantPickFirst.so", LIB_CONTENT_BAR)
+            .withFile("src/main/jniLibs/x86_64/variantPickFirst.so", LIB_CONTENT_BAR)
+            .withFile("src/androidTest/jniLibs/x86/testKeep.so", LIB_CONTENT_BAR)
+            .withFile("src/androidTest/jniLibs/x86/testExclude.so", LIB_CONTENT_BAR)
 
     private val multiModuleTestProject =
         MultiModuleTestProject.builder()
@@ -135,64 +131,82 @@ class NativeSoPackagingOptionsTest {
         appSubProject.execute("assemble", "assembleDebugAndroidTest")
         libSubProject.execute("assembleDebug", "assembleDebugAndroidTest")
 
-        val debugApkFile = appSubProject.getApk(DEBUG).file.toFile()
-        assertThat(debugApkFile).exists()
-        val debugApk = TruthHelper.assertThat(appSubProject.getApk(DEBUG))
-        debugApk.doesNotContainJavaResource("lib/x86/dslExclude1.so")
-        debugApk.doesNotContainJavaResource("lib/x86/dslExclude2.so")
-        debugApk.doesNotContainJavaResource("lib/x86/dslExclude3.so")
-        debugApk.doesNotContainJavaResource("lib/x86/debugExclude.so")
-        debugApk.containsJavaResourceWithContent("lib/x86/appKeep.so", "foo")
-        debugApk.containsJavaResourceWithContent("lib/x86/dslPickFirst.so", "foo")
-        debugApk.containsJavaResourceWithContent("lib/x86_64/dslPickFirst.so", "foo")
-        debugApk.containsJavaResourceWithContent("lib/x86/releaseExclude.so", "foo")
-        debugApk.containsJavaResourceWithContent("lib/x86/variantPickFirst.so", "foo")
-        debugApk.containsJavaResourceWithContent("lib/x86_64/variantPickFirst.so", "foo")
-        // check correct compression and manifest from useLegacyPackaging
-        ZipFile(debugApkFile).use {
-            val nativeLibEntry = it.getEntry("lib/x86/appKeep.so")
-            assertThat(nativeLibEntry).isNotNull()
-            assertThat(nativeLibEntry.method).isEqualTo(ZipEntry.DEFLATED)
-        }
-        assertThat(
-            ApkSubject.getManifestContent(debugApkFile.toPath()).any {
-                // check strings separately because there are extra characters between them
-                // in this manifest.
-                it.contains("android:extractNativeLibs") && it.contains("=true")
-            }
-        ).isTrue()
-
-        val releaseApkFile = appSubProject.getApk(RELEASE).file.toFile()
-        assertThat(releaseApkFile).exists()
-        val releaseApk = TruthHelper.assertThat(appSubProject.getApk(RELEASE))
-        releaseApk.doesNotContainJavaResource("lib/x86/dslExclude1.so")
-        releaseApk.doesNotContainJavaResource("lib/x86/dslExclude2.so")
-        releaseApk.doesNotContainJavaResource("lib/x86/dslExclude3.so")
-        releaseApk.doesNotContainJavaResource("lib/x86/releaseExclude.so")
-        releaseApk.containsJavaResourceWithContent("lib/x86/appKeep.so", "foo")
-        releaseApk.containsJavaResourceWithContent("lib/x86/dslPickFirst.so", "foo")
-        releaseApk.containsJavaResourceWithContent("lib/x86_64/dslPickFirst.so", "foo")
-        releaseApk.containsJavaResourceWithContent("lib/x86/debugExclude.so", "foo")
-        releaseApk.containsJavaResourceWithContent("lib/x86/variantPickFirst.so", "foo")
-        releaseApk.containsJavaResourceWithContent("lib/x86_64/variantPickFirst.so", "foo")
-        // check correct compression and manifest from useLegacyPackaging
-        ZipFile(releaseApkFile).use {
-            val nativeLibEntry = it.getEntry("lib/x86/appKeep.so")
-            assertThat(nativeLibEntry).isNotNull()
-            assertThat(nativeLibEntry.method).isEqualTo(ZipEntry.STORED)
-        }
-        assertThat(
-                ApkSubject.getManifestContent(releaseApkFile.toPath()).any {
-                    // check strings separately because there are extra characters between them
-                    // in this manifest.
-                    it.contains("android:extractNativeLibs") && it.contains("=false")
+        appSubProject.assertApk(ApkSelector.DEBUG) {
+            jniLibs {
+                abi("x86") {
+                    // before checking content, ensure we only have that's expected, and nothing else
+                    containsExactly(
+                        "appKeep.so",
+                        "libKeep.so",
+                        "dslPickFirst.so",
+                        "releaseExclude.so",
+                        "variantPickFirst.so"
+                    )
+                    bytesOf("appKeep.so").isEqualTo(LIB_CONTENT_FOO)
+                    bytesOf("dslPickFirst.so").isEqualTo(LIB_CONTENT_FOO)
+                    bytesOf("releaseExclude.so").isEqualTo(LIB_CONTENT_FOO)
+                    bytesOf("variantPickFirst.so").isEqualTo(LIB_CONTENT_FOO)
                 }
-        ).isTrue()
+                abi("x86_64") {
+                    // before checking content, ensure we only have that's expected, and nothing else
+                    containsExactly("dslPickFirst.so", "variantPickFirst.so")
+                    bytesOf("dslPickFirst.so").isEqualTo(LIB_CONTENT_FOO)
+                    bytesOf("variantPickFirst.so").isEqualTo(LIB_CONTENT_FOO)
+                }
+            }
 
-        assertThat(appSubProject.getApk(ANDROIDTEST_DEBUG).file).exists()
-        val androidTestApk = TruthHelper.assertThat(appSubProject.getApk(ANDROIDTEST_DEBUG))
-        androidTestApk.doesNotContainJavaResource("lib/x86/testExclude.so")
-        androidTestApk.containsJavaResourceWithContent("lib/x86/testKeep.so", "foo")
+            // check correct compression and manifest from useLegacyPackaging
+            zipEntry("lib/x86/appKeep.so").hasCompressionMethod(ZipEntry.DEFLATED)
+
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .attributes()
+                .contains("http://schemas.android.com/apk/res/android:extractNativeLibs=true")
+
+        }
+
+        appSubProject.assertApk(ApkSelector.RELEASE) {
+            jniLibs {
+                abi("x86") {
+                    // before checking content, ensure we only have that's expected, and nothing else
+                    containsExactly(
+                        "appKeep.so",
+                        "libKeep.so",
+                        "dslPickFirst.so",
+                        "debugExclude.so",
+                        "variantPickFirst.so"
+                    )
+                    bytesOf("appKeep.so").isEqualTo(LIB_CONTENT_FOO)
+                    bytesOf("dslPickFirst.so").isEqualTo(LIB_CONTENT_FOO)
+                    bytesOf("debugExclude.so").isEqualTo(LIB_CONTENT_FOO)
+                    bytesOf("variantPickFirst.so").isEqualTo(LIB_CONTENT_FOO)
+                }
+                abi("x86_64") {
+                    // before checking content, ensure we only have that's expected, and nothing else
+                    containsExactly("dslPickFirst.so", "variantPickFirst.so")
+                    bytesOf("dslPickFirst.so").isEqualTo(LIB_CONTENT_FOO)
+                    bytesOf("variantPickFirst.so").isEqualTo(LIB_CONTENT_FOO)
+                }
+            }
+
+            // check correct compression and manifest from useLegacyPackaging
+            zipEntry("lib/x86/appKeep.so").hasCompressionMethod(ZipEntry.STORED)
+
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .attributes()
+                .contains("http://schemas.android.com/apk/res/android:extractNativeLibs=false")
+        }
+
+        appSubProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            jniLibs().abi("x86") {
+                // before checking content, ensure we only have that's expected, and nothing else
+                containsExactly("testKeep.so",)
+                bytesOf("testKeep.so").isEqualTo(LIB_CONTENT_FOO)
+            }
+        }
 
         libSubProject.assertAar(AarSelector.DEBUG) {
             jniLibs().containsExactly(
@@ -204,9 +218,11 @@ class NativeSoPackagingOptionsTest {
             )
         }
 
-        assertThat(libSubProject.getApk(ANDROIDTEST_DEBUG).file).exists()
-        val libAndroidTestApk = TruthHelper.assertThat(libSubProject.getApk(ANDROIDTEST_DEBUG))
-        libAndroidTestApk.doesNotContainJavaResource("lib/x86/testExclude.so")
-        libAndroidTestApk.containsJavaResourceWithContent("lib/x86/testKeep.so", "bar")
+        libSubProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            jniLibs().abi("x86") {
+                containsExactly("testKeep.so", "dslPickFirst.so", "libKeep.so", "variantPickFirst.so")
+                bytesOf("testKeep.so").isEqualTo(LIB_CONTENT_BAR)
+            }
+        }
     }
 }

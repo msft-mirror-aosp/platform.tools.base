@@ -21,13 +21,12 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSdkLibraryProject
-import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.build.GenericBuiltArtifactsLoader
-import com.android.testutils.apk.Apk
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -101,148 +100,145 @@ class PrivacySandboxSdkMinimalTest {
             LoggerWrapper.getLogger(PrivacySandboxSdkMinimalTest::class.java))
             .single { it.applicationId == "com.example.emptyprivacysandboxsdk_10002" }
             .elements.single().outputFile
-        val extractedPssApkFile = File(extractedPssApk)
-        Apk(extractedPssApkFile).use { apk ->
-            ApkSubject.assertThat(apk).exists()
-            val manifest = ApkSubject.getManifestContent(extractedPssApkFile.toPath())
-            Truth.assertThat(manifest.joinToString("\n")).isEqualTo("""
-                N: android=http://schemas.android.com/apk/res/android (line=2)
-                  E: manifest (line=2)
-                    A: http://schemas.android.com/apk/res/android:versionCode(0x0101021b)=1
-                    A: http://schemas.android.com/apk/res/android:versionName(0x0101021c)="1.2.3" (Raw: "1.2.3")
-                    A: http://schemas.android.com/apk/res/android:compileSdkVersion(0x01010572)=35
-                    A: http://schemas.android.com/apk/res/android:compileSdkVersionCodename(0x01010573)="15" (Raw: "15")
-                    A: package="com.example.emptyprivacysandboxsdk_10002" (Raw: "com.example.emptyprivacysandboxsdk_10002")
+        ApkSubject.assertThat(File(extractedPssApk)) {
+            manifest().isEqualTo("""
+                N: android=http://schemas.android.com/apk/res/android
+                  E: manifest
+                    A: http://schemas.android.com/apk/res/android:versionCode=1
+                    A: http://schemas.android.com/apk/res/android:versionName="1.2.3"
+                    A: http://schemas.android.com/apk/res/android:compileSdkVersion=35
+                    A: http://schemas.android.com/apk/res/android:compileSdkVersionCodename="15"
+                    A: package="com.example.emptyprivacysandboxsdk_10002"
                     A: platformBuildVersionCode=35
                     A: platformBuildVersionName=15
-                      E: uses-sdk (line=5)
-                        A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=33
-                        A: http://schemas.android.com/apk/res/android:targetSdkVersion(0x01010270)=35
-                      E: uses-permission (line=13)
-                        A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.example.emptyprivacysandboxsdk.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" (Raw: "com.example.emptyprivacysandboxsdk.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION")
-                      E: application (line=15)
-                        A: http://schemas.android.com/apk/res/android:appComponentFactory(0x0101057a)="androidx.core.app.CoreComponentFactory" (Raw: "androidx.core.app.CoreComponentFactory")
-                          E: sdk-library (line=0)
-                            A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.example.emptyprivacysandboxsdk" (Raw: "com.example.emptyprivacysandboxsdk")
-                            A: http://schemas.android.com/apk/res/android:versionMajor(0x01010577)=10002
-                          E: meta-data (line=0)
-                            A: http://schemas.android.com/apk/res/android:name(0x01010003)="shadow.bundletool.com.android.vending.sdk.version.patch" (Raw: "shadow.bundletool.com.android.vending.sdk.version.patch")
-                            A: http://schemas.android.com/apk/res/android:value(0x01010024)=3
-                          E: property (line=0)
-                            A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.sdksandbox.PROPERTY_SDK_PROVIDER_CLASS_NAME" (Raw: "android.sdksandbox.PROPERTY_SDK_PROVIDER_CLASS_NAME")
-                            A: http://schemas.android.com/apk/res/android:value(0x01010024)="Test" (Raw: "Test")
-                            """.trimIndent()
+                      E: uses-sdk
+                        A: http://schemas.android.com/apk/res/android:minSdkVersion=33
+                        A: http://schemas.android.com/apk/res/android:targetSdkVersion=35
+                      E: uses-permission
+                        A: http://schemas.android.com/apk/res/android:name="com.example.emptyprivacysandboxsdk.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+                      E: application
+                        A: http://schemas.android.com/apk/res/android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+                          E: sdk-library
+                            A: http://schemas.android.com/apk/res/android:name="com.example.emptyprivacysandboxsdk"
+                            A: http://schemas.android.com/apk/res/android:versionMajor=10002
+                          E: meta-data
+                            A: http://schemas.android.com/apk/res/android:name="shadow.bundletool.com.android.vending.sdk.version.patch"
+                            A: http://schemas.android.com/apk/res/android:value=3
+                          E: property
+                            A: http://schemas.android.com/apk/res/android:name="android.sdksandbox.PROPERTY_SDK_PROVIDER_CLASS_NAME"
+                            A: http://schemas.android.com/apk/res/android:value="Test"
+            """.trimIndent())
+
+            androidResources().containsExactly(
+                "layout-v21/notification_template_icon_group.xml",
+                "layout-v21/notification_template_custom_big.xml",
+                "layout-v21/notification_action_tombstone.xml",
+                "layout-v21/notification_action.xml",
+                "layout-v16/notification_template_custom_big.xml",
+                "layout/notification_template_part_time.xml",
+                "layout/notification_template_part_chronometer.xml",
+                "layout/notification_template_icon_group.xml",
+                "layout/notification_action_tombstone.xml",
+                "layout/notification_action.xml",
+                "layout/ime_secondary_split_test_activity.xml",
+                "layout/ime_base_split_test_activity.xml",
+                "layout/custom_dialog.xml",
+                "drawable-xxxhdpi-v4/ic_call_decline_low.png",
+                "drawable-xxxhdpi-v4/ic_call_decline.png",
+                "drawable-xxxhdpi-v4/ic_call_answer_video_low.png",
+                "drawable-xxxhdpi-v4/ic_call_answer_video.png",
+                "drawable-xxxhdpi-v4/ic_call_answer_low.png",
+                "drawable-xxxhdpi-v4/ic_call_answer.png",
+                "drawable-xxhdpi-v4/ic_call_decline_low.png",
+                "drawable-xxhdpi-v4/ic_call_decline.png",
+                "drawable-xxhdpi-v4/ic_call_answer_video_low.png",
+                "drawable-xxhdpi-v4/ic_call_answer_video.png",
+                "drawable-xxhdpi-v4/ic_call_answer_low.png",
+                "drawable-xxhdpi-v4/ic_call_answer.png",
+                "drawable-xhdpi-v4/notify_panel_notification_icon_bg.png",
+                "drawable-xhdpi-v4/notification_bg_normal_pressed.9.png",
+                "drawable-xhdpi-v4/notification_bg_normal.9.png",
+                "drawable-xhdpi-v4/notification_bg_low_pressed.9.png",
+                "drawable-xhdpi-v4/notification_bg_low_normal.9.png",
+                "drawable-xhdpi-v4/ic_call_decline_low.png",
+                "drawable-xhdpi-v4/ic_call_decline.png",
+                "drawable-xhdpi-v4/ic_call_answer_video_low.png",
+                "drawable-xhdpi-v4/ic_call_answer_video.png",
+                "drawable-xhdpi-v4/ic_call_answer_low.png",
+                "drawable-xhdpi-v4/ic_call_answer.png",
+                "drawable-v21/notification_action_background.xml",
+                "drawable-mdpi-v4/notify_panel_notification_icon_bg.png",
+                "drawable-mdpi-v4/notification_bg_normal_pressed.9.png",
+                "drawable-mdpi-v4/notification_bg_normal.9.png",
+                "drawable-mdpi-v4/notification_bg_low_pressed.9.png",
+                "drawable-mdpi-v4/notification_bg_low_normal.9.png",
+                "drawable-mdpi-v4/ic_call_decline_low.png",
+                "drawable-mdpi-v4/ic_call_decline.png",
+                "drawable-mdpi-v4/ic_call_answer_video_low.png",
+                "drawable-mdpi-v4/ic_call_answer_video.png",
+                "drawable-mdpi-v4/ic_call_answer_low.png",
+                "drawable-mdpi-v4/ic_call_answer.png",
+                "drawable-ldpi-v4/ic_call_decline_low.png",
+                "drawable-ldpi-v4/ic_call_decline.png",
+                "drawable-ldpi-v4/ic_call_answer_video_low.png",
+                "drawable-ldpi-v4/ic_call_answer_video.png",
+                "drawable-ldpi-v4/ic_call_answer_low.png",
+                "drawable-ldpi-v4/ic_call_answer.png",
+                "drawable-hdpi-v4/notify_panel_notification_icon_bg.png",
+                "drawable-hdpi-v4/notification_oversize_large_icon_bg.png",
+                "drawable-hdpi-v4/notification_bg_normal_pressed.9.png",
+                "drawable-hdpi-v4/notification_bg_normal.9.png",
+                "drawable-hdpi-v4/notification_bg_low_pressed.9.png",
+                "drawable-hdpi-v4/notification_bg_low_normal.9.png",
+                "drawable-hdpi-v4/ic_call_decline_low.png",
+                "drawable-hdpi-v4/ic_call_decline.png",
+                "drawable-hdpi-v4/ic_call_answer_video_low.png",
+                "drawable-hdpi-v4/ic_call_answer_video.png",
+                "drawable-hdpi-v4/ic_call_answer_low.png",
+                "drawable-hdpi-v4/ic_call_answer.png",
+                "drawable-anydpi-v21/ic_call_decline_low.xml",
+                "drawable-anydpi-v21/ic_call_decline.xml",
+                "drawable-anydpi-v21/ic_call_answer_video_low.xml",
+                "drawable-anydpi-v21/ic_call_answer_video.xml",
+                "drawable-anydpi-v21/ic_call_answer_low.xml",
+                "drawable-anydpi-v21/ic_call_answer.xml",
+                "drawable/notification_tile_bg.xml",
+                "drawable/notification_icon_background.xml",
+                "drawable/notification_bg_low.xml",
+                "drawable/notification_bg.xml",
             )
-            Truth.assertThat(apk.entries.map { it.toString() }).containsExactly(
-                "/resources.arsc",
-                "/res/layout-v21/notification_template_icon_group.xml",
-                "/res/layout-v21/notification_template_custom_big.xml",
-                "/res/layout-v21/notification_action_tombstone.xml",
-                "/res/layout-v21/notification_action.xml",
-                "/res/layout-v16/notification_template_custom_big.xml",
-                "/res/layout/notification_template_part_time.xml",
-                "/res/layout/notification_template_part_chronometer.xml",
-                "/res/layout/notification_template_icon_group.xml",
-                "/res/layout/notification_action_tombstone.xml",
-                "/res/layout/notification_action.xml",
-                "/res/layout/ime_secondary_split_test_activity.xml",
-                "/res/layout/ime_base_split_test_activity.xml",
-                "/res/layout/custom_dialog.xml",
-                "/res/drawable-xxxhdpi-v4/ic_call_decline_low.png",
-                "/res/drawable-xxxhdpi-v4/ic_call_decline.png",
-                "/res/drawable-xxxhdpi-v4/ic_call_answer_video_low.png",
-                "/res/drawable-xxxhdpi-v4/ic_call_answer_video.png",
-                "/res/drawable-xxxhdpi-v4/ic_call_answer_low.png",
-                "/res/drawable-xxxhdpi-v4/ic_call_answer.png",
-                "/res/drawable-xxhdpi-v4/ic_call_decline_low.png",
-                "/res/drawable-xxhdpi-v4/ic_call_decline.png",
-                "/res/drawable-xxhdpi-v4/ic_call_answer_video_low.png",
-                "/res/drawable-xxhdpi-v4/ic_call_answer_video.png",
-                "/res/drawable-xxhdpi-v4/ic_call_answer_low.png",
-                "/res/drawable-xxhdpi-v4/ic_call_answer.png",
-                "/res/drawable-xhdpi-v4/notify_panel_notification_icon_bg.png",
-                "/res/drawable-xhdpi-v4/notification_bg_normal_pressed.9.png",
-                "/res/drawable-xhdpi-v4/notification_bg_normal.9.png",
-                "/res/drawable-xhdpi-v4/notification_bg_low_pressed.9.png",
-                "/res/drawable-xhdpi-v4/notification_bg_low_normal.9.png",
-                "/res/drawable-xhdpi-v4/ic_call_decline_low.png",
-                "/res/drawable-xhdpi-v4/ic_call_decline.png",
-                "/res/drawable-xhdpi-v4/ic_call_answer_video_low.png",
-                "/res/drawable-xhdpi-v4/ic_call_answer_video.png",
-                "/res/drawable-xhdpi-v4/ic_call_answer_low.png",
-                "/res/drawable-xhdpi-v4/ic_call_answer.png",
-                "/res/drawable-v21/notification_action_background.xml",
-                "/res/drawable-mdpi-v4/notify_panel_notification_icon_bg.png",
-                "/res/drawable-mdpi-v4/notification_bg_normal_pressed.9.png",
-                "/res/drawable-mdpi-v4/notification_bg_normal.9.png",
-                "/res/drawable-mdpi-v4/notification_bg_low_pressed.9.png",
-                "/res/drawable-mdpi-v4/notification_bg_low_normal.9.png",
-                "/res/drawable-mdpi-v4/ic_call_decline_low.png",
-                "/res/drawable-mdpi-v4/ic_call_decline.png",
-                "/res/drawable-mdpi-v4/ic_call_answer_video_low.png",
-                "/res/drawable-mdpi-v4/ic_call_answer_video.png",
-                "/res/drawable-mdpi-v4/ic_call_answer_low.png",
-                "/res/drawable-mdpi-v4/ic_call_answer.png",
-                "/res/drawable-ldpi-v4/ic_call_decline_low.png",
-                "/res/drawable-ldpi-v4/ic_call_decline.png",
-                "/res/drawable-ldpi-v4/ic_call_answer_video_low.png",
-                "/res/drawable-ldpi-v4/ic_call_answer_video.png",
-                "/res/drawable-ldpi-v4/ic_call_answer_low.png",
-                "/res/drawable-ldpi-v4/ic_call_answer.png",
-                "/res/drawable-hdpi-v4/notify_panel_notification_icon_bg.png",
-                "/res/drawable-hdpi-v4/notification_oversize_large_icon_bg.png",
-                "/res/drawable-hdpi-v4/notification_bg_normal_pressed.9.png",
-                "/res/drawable-hdpi-v4/notification_bg_normal.9.png",
-                "/res/drawable-hdpi-v4/notification_bg_low_pressed.9.png",
-                "/res/drawable-hdpi-v4/notification_bg_low_normal.9.png",
-                "/res/drawable-hdpi-v4/ic_call_decline_low.png",
-                "/res/drawable-hdpi-v4/ic_call_decline.png",
-                "/res/drawable-hdpi-v4/ic_call_answer_video_low.png",
-                "/res/drawable-hdpi-v4/ic_call_answer_video.png",
-                "/res/drawable-hdpi-v4/ic_call_answer_low.png",
-                "/res/drawable-hdpi-v4/ic_call_answer.png",
-                "/res/drawable-anydpi-v21/ic_call_decline_low.xml",
-                "/res/drawable-anydpi-v21/ic_call_decline.xml",
-                "/res/drawable-anydpi-v21/ic_call_answer_video_low.xml",
-                "/res/drawable-anydpi-v21/ic_call_answer_video.xml",
-                "/res/drawable-anydpi-v21/ic_call_answer_low.xml",
-                "/res/drawable-anydpi-v21/ic_call_answer.xml",
-                "/res/drawable/notification_tile_bg.xml",
-                "/res/drawable/notification_icon_background.xml",
-                "/res/drawable/notification_bg_low.xml",
-                "/res/drawable/notification_bg.xml",
-                "/kotlin/reflect/reflect.kotlin_builtins",
-                "/kotlin/ranges/ranges.kotlin_builtins",
-                "/kotlin/kotlin.kotlin_builtins",
-                "/kotlin/internal/internal.kotlin_builtins",
-                "/kotlin/coroutines/coroutines.kotlin_builtins",
-                "/kotlin/collections/collections.kotlin_builtins",
-                "/kotlin/annotation/annotation.kotlin_builtins",
-                "/classes.dex",
-                "/META-INF/services/kotlinx.coroutines.internal.MainDispatcherFactory",
-                "/META-INF/services/kotlinx.coroutines.CoroutineExceptionHandler",
-                "/META-INF/kotlinx_coroutines_core.version",
-                "/META-INF/kotlinx_coroutines_android.version",
-                "/META-INF/androidx.versionedparcelable_versionedparcelable.version",
-                "/META-INF/androidx.tracing_tracing.version",
-                "/META-INF/androidx.startup_startup-runtime.version",
-                "/META-INF/androidx.savedstate_savedstate.version",
-                "/META-INF/androidx.profileinstaller_profileinstaller.version",
-                "/META-INF/androidx.privacysandbox.sdkruntime_sdkruntime-core.version",
-                "/META-INF/androidx.privacysandbox.sdkruntime_sdkruntime-client.version",
-                "/META-INF/androidx.lifecycle_lifecycle-viewmodel.version",
-                "/META-INF/androidx.lifecycle_lifecycle-viewmodel-savedstate.version",
-                "/META-INF/androidx.lifecycle_lifecycle-runtime.version",
-                "/META-INF/androidx.lifecycle_lifecycle-livedata-core.version",
-                "/META-INF/androidx.interpolator_interpolator.version",
-                "/META-INF/androidx.core_core.version",
-                "/META-INF/androidx.core_core-ktx.version",
-                "/META-INF/androidx.arch.core_core-runtime.version",
-                "/META-INF/androidx.annotation_annotation-experimental.version",
-                "/META-INF/androidx.activity_activity.version",
-                "/META-INF/androidx/privacysandbox/tools/tools/LICENSE.txt",
-                "/DebugProbesKt.bin",
-                "/AndroidManifest.xml"
+
+            javaResources().containsExactly(
+                "kotlin/reflect/reflect.kotlin_builtins",
+                "kotlin/ranges/ranges.kotlin_builtins",
+                "kotlin/kotlin.kotlin_builtins",
+                "kotlin/internal/internal.kotlin_builtins",
+                "kotlin/coroutines/coroutines.kotlin_builtins",
+                "kotlin/collections/collections.kotlin_builtins",
+                "kotlin/annotation/annotation.kotlin_builtins",
+                "META-INF/services/kotlinx.coroutines.internal.MainDispatcherFactory",
+                "META-INF/services/kotlinx.coroutines.CoroutineExceptionHandler",
+                "META-INF/kotlinx_coroutines_core.version",
+                "META-INF/kotlinx_coroutines_android.version",
+                "META-INF/androidx.versionedparcelable_versionedparcelable.version",
+                "META-INF/androidx.tracing_tracing.version",
+                "META-INF/androidx.startup_startup-runtime.version",
+                "META-INF/androidx.savedstate_savedstate.version",
+                "META-INF/androidx.profileinstaller_profileinstaller.version",
+                "META-INF/androidx.privacysandbox.sdkruntime_sdkruntime-core.version",
+                "META-INF/androidx.privacysandbox.sdkruntime_sdkruntime-client.version",
+                "META-INF/androidx.lifecycle_lifecycle-viewmodel.version",
+                "META-INF/androidx.lifecycle_lifecycle-viewmodel-savedstate.version",
+                "META-INF/androidx.lifecycle_lifecycle-runtime.version",
+                "META-INF/androidx.lifecycle_lifecycle-livedata-core.version",
+                "META-INF/androidx.interpolator_interpolator.version",
+                "META-INF/androidx.core_core.version",
+                "META-INF/androidx.core_core-ktx.version",
+                "META-INF/androidx.arch.core_core-runtime.version",
+                "META-INF/androidx.annotation_annotation-experimental.version",
+                "META-INF/androidx.activity_activity.version",
+                "META-INF/androidx/privacysandbox/tools/tools/LICENSE.txt",
+                "DebugProbesKt.bin",
             )
         }
     }

@@ -21,6 +21,7 @@ import com.android.utils.FileUtils
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
 import java.nio.file.Files
+import java.util.function.Consumer
 
 /**
  * An object that can validate the content of a folder of jni libraries.
@@ -34,6 +35,24 @@ interface JniSubject: FileArchiveSubject {
      * @param abiName the name of the abi
      */
     fun abi(abiName: String): JniSubject
+
+    /**
+     * Runs the provided action on a [JniSubject] representing the given ABI folder inside the current Jni folder
+     *
+     * @param abiName the name of the abi
+     */
+    fun abi(abiName: String, action: JniSubject.() -> Unit) {
+        action(abi(abiName))
+    }
+
+    /**
+     * Runs the provided action on a [JniSubject] representing the given ABI folder inside the current Jni folder
+     *
+     * @param abiName the name of the abi
+     */
+    fun abi(abiName: String, action: Consumer<JniSubject>) {
+        action.accept(abi(abiName))
+    }
 
     /**
      * Returns a [NativeLibrarySubject] to test the content of the library at the provided path

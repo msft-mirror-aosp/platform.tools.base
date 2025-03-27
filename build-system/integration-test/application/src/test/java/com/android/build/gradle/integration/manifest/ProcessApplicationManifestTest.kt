@@ -19,11 +19,10 @@ package com.android.build.gradle.integration.manifest
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.truth.ApkSubject.getManifestContent
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
-import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertTrue
@@ -110,9 +109,14 @@ class ProcessApplicationManifestTest {
         // The manifest shouldn't contain android:debuggable if we set the testBuildType to release.
         project.getSubproject(":app").buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
         project.executor().run("assembleReleaseAndroidTest")
-        val releaseManifestContent =
-            getManifestContent(project.getSubproject(":app").getApk(GradleTestProject.ApkType.ANDROIDTEST_RELEASE).file)
-        assertManifestContentDoesNotContainString(releaseManifestContent, "android:debuggable")
+
+        project.getSubproject(":app").assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .attributes()
+                .containsExactly("http://schemas.android.com/apk/res/android:extractNativeLibs=false")
+        }
     }
 
     @Test
@@ -135,27 +139,13 @@ class ProcessApplicationManifestTest {
             }
         """.trimIndent())
         project.executor().run("assembleReleaseAndroidTest")
-        val releaseManifestContent =
-            getManifestContent(project.getSubproject(":app").getApk(GradleTestProject.ApkType.ANDROIDTEST_RELEASE).file)
-        assertManifestContentContainsString(releaseManifestContent, "android:debuggable")
-    }
 
-    private fun assertManifestContentContainsString(
-        manifestContent: Iterable<String>,
-        stringToAssert: String
-    ) {
-        manifestContent.forEach { if (it.trim().contains(stringToAssert)) return }
-        fail("Cannot find $stringToAssert in ${manifestContent.joinToString(separator = "\n")}")
-    }
-
-    private fun assertManifestContentDoesNotContainString(
-        manifestContent: Iterable<String>,
-        stringToAssert: String
-    ) {
-        manifestContent.forEach {
-            if (it.trim().contains(stringToAssert)) {
-                fail("$stringToAssert found in ${manifestContent.joinToString(separator = "\n")}")
-            }
+        project.getSubproject(":app").assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .attributes()
+                .contains("http://schemas.android.com/apk/res/android:debuggable=true")
         }
     }
 }
