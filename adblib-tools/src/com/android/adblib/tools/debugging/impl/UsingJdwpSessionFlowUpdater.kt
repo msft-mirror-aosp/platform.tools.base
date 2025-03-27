@@ -405,10 +405,7 @@ internal class UsingJdwpSessionFlowUpdater(
         }
         logger.debug { "`WAIT` command: $waitChunk" }
         collectState.propertiesFlow.update {
-            it.copy(
-                waitCommandReceived = true,
-                isWaitingForDebugger = true
-            )
+            it.copy(isWaitingForDebugger = true)
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
     }
@@ -552,7 +549,7 @@ internal class UsingJdwpSessionFlowUpdater(
     }
 
     private fun JdwpProcessProperties.summaryForLogging() =
-        "processName=${processName ?: "<not yet received>"}, waitCommandReceived=${waitCommandReceived}"
+        "processName=${processName ?: "<not yet received>"}, isWaitingForDebugger=${isWaitingForDebugger}"
 
     /**
      * List of DDMS requests sent to the Android VM.

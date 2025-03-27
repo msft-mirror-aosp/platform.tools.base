@@ -207,12 +207,10 @@ message JdwpProcessInfo {
      */
     optional bool native_debuggable = 10;
 
-    /*
-     * Whether the DDMS `WAIT` packet was received for this process.
-     * The default value is `false`. Once the value is `true`, it never changes back
-     * to `false`.
+    /**
+     * Whether the process is waiting for a debugger to attach.
      */
-    optional bool wait_packet_received = 11;
+    optional bool waiting_for_debugger = 11;
 
     /*
      * List of features reported by the [DdmsFeatChunk] packet
@@ -231,30 +229,17 @@ message JdwpProcessDebuggerProxyInfo {
     int32 pid = 1;
 
     /*
-     * Whether the JDWP session is currently open waiting for a Java Debugger
-     * to connect to the address specified in [socket_address].
-     *
-     * Typically, this value is `true` when a process a received a `WAIT` packet from
-     * from the Android platform, i.e. [wait_packet_received] is `true`. Usually, this
-     * is the result of starting a process with `am start -D`.
-     *
-     * Note the value is reset to `false` once a Java debugger has connected to
-     * the [socket_address] address, and never set to `true` again.
-     */
-    optional bool waiting_for_debugger = 2;
-
-    /*
      * The [InetSocketAddress] a Java debugger can connect to start a JDWP debugging session.
      * The field is only set when [waiting_for_debugger] is `true`, as it is the only case
      * an existing JDWP session needs to be re-used via the proxy at this address. In other
      * case, a new JDWP session can be opened by any adblib instance.
      */
-    optional InetSocketAddress socket_address = 3;
+    optional InetSocketAddress socket_address = 2;
 
     /*
      * Whether a Java debugger is currently connected to this JDWP proxy.
      */
-    optional bool is_external_debugger_attached = 4;
+    optional bool is_external_debugger_attached = 3;
 }
 
 /*

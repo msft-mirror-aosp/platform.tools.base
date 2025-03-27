@@ -178,8 +178,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
-        yieldUntil { process.properties.waitCommandReceived }
-        assertTrue(process.properties.isWaitingForDebugger)
+        yieldUntil { process.properties.isWaitingForDebugger }
 
         // Act
         attachDebuggerSession(process)

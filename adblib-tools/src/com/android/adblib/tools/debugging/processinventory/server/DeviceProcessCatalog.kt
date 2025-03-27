@@ -292,7 +292,7 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
                 if (other.hasVmIdentifier()) proto.vmIdentifier = other.vmIdentifier
                 if (other.hasJvmFlags()) proto.jvmFlags = other.jvmFlags
                 if (other.hasNativeDebuggable()) proto.nativeDebuggable = other.nativeDebuggable
-                if (other.hasWaitPacketReceived()) proto.waitPacketReceived = other.waitPacketReceived
+                if (other.hasWaitingForDebugger()) proto.waitingForDebugger = other.waitingForDebugger
                 if (other.hasFeatures()) proto.features = other.features
             }
             .build()
@@ -306,7 +306,6 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
         return JdwpProcessDebuggerProxyInfo.newBuilder(this)
             .also { proto ->
                 proto.pid = other.pid
-                if (other.hasWaitingForDebugger()) proto.waitingForDebugger = other.waitingForDebugger
                 if (other.hasSocketAddress()) proto.socketAddress = other.socketAddress
                 if (other.hasIsExternalDebuggerAttached()) proto.isExternalDebuggerAttached = other.isExternalDebuggerAttached
             }

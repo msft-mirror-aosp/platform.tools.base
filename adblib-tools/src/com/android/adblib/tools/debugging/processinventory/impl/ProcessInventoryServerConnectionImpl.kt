@@ -275,7 +275,6 @@ private class ProcessInventoryServerConnectionForDevice(
     ): JdwpProcessProperties {
         val source = this
         return copy(
-            isWaitingForDebugger = if (proxyInfo.hasWaitingForDebugger()) proxyInfo.waitingForDebugger else source.isWaitingForDebugger,
             jdwpProxyStatus = source.jdwpProxyStatus.mergeWith(proxyInfo)
         )
     }
@@ -307,7 +306,7 @@ private class ProcessInventoryServerConnectionForDevice(
             instructionSet = if (source.hasInstructionSet()) InstructionSet.fromString(source.instructionSet) else null,
             jvmFlags = if (source.hasJvmFlags()) source.jvmFlags else null,
             isNativeDebuggable = if (source.hasNativeDebuggable()) source.nativeDebuggable else false,
-            waitCommandReceived = if (source.hasWaitPacketReceived()) source.waitPacketReceived else false,
+            isWaitingForDebugger = if (source.hasWaitingForDebugger()) source.waitingForDebugger else false,
             features = if (source.hasFeatures()) source.features.featureList else emptyList(),
         )
     }
@@ -332,7 +331,7 @@ private class ProcessInventoryServerConnectionForDevice(
                 source.jvmFlags?.also { proto.jvmFlags = it }
                 @Suppress("DEPRECATION")
                 source.isNativeDebuggable.also { proto.nativeDebuggable = it }
-                source.waitCommandReceived.also { proto.waitPacketReceived = it }
+                source.isWaitingForDebugger.also { proto.waitingForDebugger = it }
                 source.features.also {
                     if (it.isNotEmpty()) proto.features =
                         it.toFeaturesProto()
@@ -351,7 +350,6 @@ private class ProcessInventoryServerConnectionForDevice(
             .newBuilder()
             .also { proto ->
                 proto.pid = source.pid
-                proto.waitingForDebugger = source.isWaitingForDebugger
                 // We send the proxy address only if we are in the "waiting for debugger" state
                 // as this is the only use case we need to expose our internal proxy externally
                 // for external instances to connect to (since the JDWP process is stuck in

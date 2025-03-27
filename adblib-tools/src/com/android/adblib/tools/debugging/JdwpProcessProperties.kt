@@ -78,11 +78,6 @@ data class JdwpProcessProperties(
     val isNativeDebuggable: Boolean = false,
 
     /**
-     * `true` if the `WAIT` command was received.
-     */
-    val waitCommandReceived: Boolean = false,
-
-    /**
      * `true` if the process is waiting for a debugger to attach.
      * `false` if we don't know or if a debugger is already attached.
      */
@@ -199,7 +194,6 @@ internal fun JdwpProcessProperties.mergeWith(other: JdwpProcessProperties): Jdwp
         instructionSet = source.instructionSet.mergeWith(other.instructionSet),
         jvmFlags = source.jvmFlags.mergeWith(other.jvmFlags),
         isNativeDebuggable = source.isNativeDebuggable.mergeWith(other.isNativeDebuggable),
-        waitCommandReceived = source.waitCommandReceived.mergeWith(other.waitCommandReceived),
         features = source.features.mergeWith(other.features),
         completed = source.completed.mergeWith(other.completed),
         exception = source.exception.mergeWith(other.exception),
