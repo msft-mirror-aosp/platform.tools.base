@@ -62,6 +62,7 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
             is found at: https://issuetracker.google.com/issues/350432371
           """,
         implementation = IMPLEMENTATION,
+        enabledByDefault = false,
       )
   }
 
