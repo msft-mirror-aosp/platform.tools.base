@@ -58,8 +58,8 @@ internal class AdbServerControllerImpl(
 
     /**
      *  Job [TransitionStatus] is volatile because it's updated from `invokeOnCompletion`.
-     *  It is OK to use it, because the important aspect is that TransitionStatus is only
-     *  set to `IN_PROGRESS` after the previous job is completed (with or without an exception).
+     *  When the transition starts it is set to `IN_PROGRESS` and when transition ends it's set
+     *  to `COMPLETED_OK` or `COMPLETED_FAILURE`.
      */
     @Volatile
     private var currentJobTransitionStatus = TransitionStatus.COMPLETED_OK
