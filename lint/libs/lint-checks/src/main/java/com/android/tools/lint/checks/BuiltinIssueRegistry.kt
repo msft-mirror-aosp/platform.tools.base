@@ -513,6 +513,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           WearableConfigurationActionDetector.CONFIGURATION_ACTION,
           WearBackNavigationDetector.ISSUE,
           WearPasswordInputDetector.ISSUE,
+          WatchFaceFormatDeclaresHasNoCodeDetector.ISSUE,
           WatchFaceForAndroidXDetector.ISSUE,
           WatchFaceEditorDetector.ISSUE,
           WearMaterialThemeDetector.ISSUE,
