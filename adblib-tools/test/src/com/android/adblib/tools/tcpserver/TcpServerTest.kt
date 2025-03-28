@@ -143,7 +143,7 @@ class TcpServerTest {
         // Assert
         assertEquals(generateSequence { "Hello" }.take(requestCount).toList(), responses)
         assertEquals(1, tcpServer.launchedCallCount.get())
-        assertEquals(requestCount, tcpServer.requestCount.get())
+        assertEquals(requestCount, tcpServer.processedRequestsCount.get())
         assertEquals(false, tcpServer.closed.get())
     }
 
@@ -277,7 +277,7 @@ class TcpServerTest {
         assertEquals(generateSequence{"Hello"}.take(queryCount).toList(), responses)
         val activatedServers = servers.filter { it.tcpServer.launchedCallCount.get() > 0 }
         assertEquals(1, activatedServers.size)
-        assertEquals(queryCount, activatedServers[0].tcpServer.requestCount.get())
+        assertEquals(queryCount, activatedServers[0].tcpServer.processedRequestsCount.get())
     }
 
     @Test
@@ -311,7 +311,7 @@ class TcpServerTest {
         // Assert
         assertEquals(generateSequence { "Hello" }.take(serverCount).toList(), responses)
         servers.forEach {
-            assertEquals(1, it.tcpServer.requestCount.get())
+            assertEquals(1, it.tcpServer.processedRequestsCount.get())
         }
     }
 
@@ -378,7 +378,7 @@ class TcpServerTest {
         val scope = session.scope.createChildScope(isSupervisor = true)
         var launchedCallCount = AtomicInteger()
         var closed = AtomicBoolean(false)
-        var requestCount = AtomicInteger()
+        var processedRequestsCount = AtomicInteger()
 
         override fun launch(serverSocket: AdbServerSocket): Job {
             launchedCallCount.incrementAndGet()
@@ -400,10 +400,21 @@ class TcpServerTest {
         }
 
         open suspend fun runOneServerRequest(socketChannel: AdbChannel) {
-            requestCount.incrementAndGet()
             val socket = wrapClientSocket(socketChannel)
-            val request = socket.readString()
-            socket.writeString(request)
+
+            val request = try {
+                socket.readString()
+            } catch (e: java.io.EOFException) {
+                // Sometimes the client establishes a connection but doesn't send any data to the
+                // server, because `tryConnect` times out at the same time. In this case this socket
+                // is immediately closed, and we end up getting EOF when trying to read from it here.
+                println("EOFException in `MyTestTcpServer` server request handling (${e.message})")
+                null
+            }
+            if (request != null) {
+                socket.writeString(request)
+                processedRequestsCount.incrementAndGet()
+            }
         }
 
         override fun close() {
