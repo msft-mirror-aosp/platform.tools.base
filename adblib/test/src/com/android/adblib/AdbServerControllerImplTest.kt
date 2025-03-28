@@ -393,7 +393,6 @@ class AdbServerControllerImplTest {
     fun testCreateChannelThrowsTimeoutException_whenTimesOutOnRestart(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            processRunner.delayByMs = 100
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
@@ -414,7 +413,8 @@ class AdbServerControllerImplTest {
             exceptionRule.expect(TimeoutException::class.java)
 
             // Act
-            // createChannel call will timeout, because the `restart()` takes 100ms
+            // createChannel call will timeout, because the `restart()` takes a long time
+            processRunner.delayByMs = 5000
             registerCloseable(controller.channelProvider.createChannel(50, TimeUnit.MILLISECONDS))
             fail("Should not reach")
         }
@@ -426,7 +426,6 @@ class AdbServerControllerImplTest {
             // `CancellationException` when the `restart` job is cancelled by `stop`
 
             // Prepare
-            processRunner.delayByMs = 100
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
