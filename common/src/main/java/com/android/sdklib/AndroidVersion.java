@@ -103,6 +103,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         public static final int TIRAMISU = 33;
         public static final int UPSIDE_DOWN_CAKE = 34;
         public static final int VANILLA_ICE_CREAM = 35;
+        public static final int BAKLAVA = 36;
     }
 
     /**
