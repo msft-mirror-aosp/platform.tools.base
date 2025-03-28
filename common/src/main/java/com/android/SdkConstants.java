@@ -1196,6 +1196,8 @@ public final class SdkConstants {
     public static final String TAG_WATCH_FACE = "WatchFace";
     public static final String TAG_WATCH_FACES = "WatchFaces";
     public static final String TAG_WATCH_FACE_INFO = "WatchFaceInfo";
+    public static final String TAG_COMPLICATION = "Complication";
+    public static final String TAG_IMAGE = "Image";
 
     public static final String VIEW = "View";
     public static final String VIEW_GROUP = "ViewGroup";
