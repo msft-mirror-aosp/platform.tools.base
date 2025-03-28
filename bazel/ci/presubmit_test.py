@@ -198,6 +198,8 @@ class PresubmitTest(parameterized.TestCase):
           query_targets=[],
           expected_targets=['target1', 'target2', 'target3', 'target4'],
           expected_flags=[
+              f'--flaky_test_attempts=target1@2',
+              f'--flaky_test_attempts=target2@2',
               f'--build_metadata=selective_presubmit_strategy=retry_failed',
               f'--build_metadata=selective_presubmit_found=False',
           ],

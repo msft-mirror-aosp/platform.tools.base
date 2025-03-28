@@ -23,6 +23,7 @@ _FILE_BUCKET = 'adt-byob'
 
 _FAILED_TESTS_FILE_NAME = 'failed-tests/v1/{changes_hash}-{target}.txt'
 _MAX_FAILED_TESTS = 5
+_FAILED_TESTS_RUNS = 2
 
 _HASH_FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
 _MAX_RUNS_PER_TEST = 200
@@ -425,7 +426,10 @@ def find_test_targets(
     return SelectivePresubmitResult(
         strategy=SelectivePresubmitStrategy.RETRY_FAILED,
         targets=failed_test_targets + explicit_targets,
-        base_flags=flags,
+        base_flags=flags + [
+            f'--flaky_test_attempts={target}@{_FAILED_TESTS_RUNS}'
+            for target in failed_test_targets
+        ],
     )
   except SelectivePresubmitError as e:
     logging.warning('Failed to find failed tests: %s', e)
