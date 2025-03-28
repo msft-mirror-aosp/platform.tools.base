@@ -504,8 +504,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
-        assertFalse(properties.jdwpProxyStatus.isExternalDebuggerAttached)
-        assertNotNull(properties.jdwpProxyStatus.socketAddress)
         if (isFromAppInfo) {
             // When using `app_info`, the list of features comes from
             // `am capabilities`
@@ -550,8 +548,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertNull(properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
-        assertFalse(properties.jdwpProxyStatus.isExternalDebuggerAttached)
-        assertNull(properties.jdwpProxyStatus.socketAddress)
         assertTrue(properties.features.isEmpty())
         assertNull(properties.exception)
         assertFalse(properties.completed)

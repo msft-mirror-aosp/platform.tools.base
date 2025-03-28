@@ -19,6 +19,7 @@ import com.android.adblib.AdbChannelFactory
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.tools.debugging.impl.JdwpProxySocketServerImpl
 import kotlinx.coroutines.flow.StateFlow
+import java.net.InetSocketAddress
 
 /**
  * Maintains a JDWP socket proxy for the given [process] on a given device.
@@ -51,6 +52,41 @@ interface JdwpProxySocketServer {
      */
     val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
 }
+
+/**
+ * The current value of [JdwpProxySocketServer.proxyStatusFlow]
+ */
+val JdwpProxySocketServer.proxyStatus: JdwpProxySocketServerStatus
+    get() = proxyStatusFlow.value
+
+/**
+ * Status of JDWP Session proxy external Java debuggers can use to connect to a
+ * [JdwpProcess].
+ *
+ * @see JdwpProcess.jdwpProxySocketServer
+ */
+data class JdwpProxySocketServerStatus(
+    /**
+     * The process ID
+     */
+    val pid: Int,
+
+    /**
+     * The [InetSocketAddress] (typically on `localhost`) a Java debugger can use to open a
+     * JDWP debugging session with the Android process. If the value is `null`, the debugger
+     * connection is not ready yet.
+     *
+     * @see JdwpProxySocketServer
+     */
+    val socketAddress: InetSocketAddress? = null,
+
+    /**
+     * `true` if there is an active JDWP debugging session on [socketAddress].
+     *
+     * @see JdwpProxySocketServer
+     */
+    val isExternalDebuggerAttached: Boolean = false,
+)
 
 private val jdwpProxySocketServerKey =
     CoroutineScopeCache.Key<JdwpProxySocketServer>("${JdwpProxySocketServer::class.simpleName}")

@@ -24,14 +24,17 @@ import com.android.adblib.tools.debugging.DdmsCommandException
 import com.android.adblib.tools.debugging.JdwpCommandProgress
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.ProfilerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.allocationTracker
 import com.android.adblib.tools.debugging.executeGarbageCollector
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.profiler
 import com.android.adblib.tools.debugging.properties
+import com.android.adblib.tools.debugging.proxyStatus
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.debugging.toByteBuffer
 import com.android.adblib.tools.debugging.viewHierarchy
@@ -49,6 +52,7 @@ import com.google.common.annotations.VisibleForTesting
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
@@ -85,19 +89,24 @@ internal class AdblibClientWrapper(
     }
 
     private suspend fun trackJdwpProcessInfo() {
-        var lastProcessInfo = jdwpProcess.propertiesFlow.value
-        jdwpProcess.propertiesFlow.collect { processInfo ->
+        var lastProperties = jdwpProcess.propertiesFlow.value
+        // Combine both 'properties' and 'proxy status' flows so that changes to
+        // either are unified in a single `collect`.
+        jdwpProcess.propertiesFlow.combine(jdwpProcess.jdwpProxySocketServer.proxyStatusFlow) {
+            properties, proxyStatus -> Pair(properties, proxyStatus)
+        }.collect { (properties, proxyStatus) ->
             try {
-                updateJdwpProcessInfo(lastProcessInfo, processInfo)
+                updateJdwpProcessInfo(lastProperties, properties, proxyStatus)
             } finally {
-                lastProcessInfo = processInfo
+                lastProperties = properties
             }
         }
     }
 
     private suspend fun updateJdwpProcessInfo(
-        previousProcessInfo: JdwpProcessProperties,
-        newProcessInfo: JdwpProcessProperties
+        previousProperties: JdwpProcessProperties,
+        newProperties: JdwpProcessProperties,
+        newProxyStatus: JdwpProxySocketServerStatus,
     ) {
         fun <T> hasChanged(x: T?, y: T?): Boolean {
             return x != y
@@ -105,20 +114,20 @@ internal class AdblibClientWrapper(
 
         // Always update "Client" wrapper data
         val previousDebuggerStatus = this.clientData.debuggerConnectionStatus
-        updateClientWrapper(this, newProcessInfo)
+        updateClientWrapper(this, newProperties, newProxyStatus)
         val newDebuggerStatus = this.clientData.debuggerConnectionStatus
 
-        // Check if anything related to process info has changed
-        with(previousProcessInfo) {
-            if (hasChanged(processName, newProcessInfo.processName) ||
-                hasChanged(userId, newProcessInfo.userId) ||
-                hasChanged(packageName, newProcessInfo.packageName) ||
-                hasChanged(vmIdentifier, newProcessInfo.vmIdentifier) ||
-                hasChanged(instructionSetDescription, newProcessInfo.instructionSetDescription) ||
-                hasChanged(instructionSet, newProcessInfo.instructionSet) ||
-                hasChanged(jvmFlags, newProcessInfo.jvmFlags) ||
-                hasChanged(isWaitingForDebugger, newProcessInfo.isWaitingForDebugger) ||
-                hasChanged(isNativeDebuggable, newProcessInfo.isNativeDebuggable)
+        // Check if anything related to process properties has changed
+        with(previousProperties) {
+            if (hasChanged(processName, newProperties.processName) ||
+                hasChanged(userId, newProperties.userId) ||
+                hasChanged(packageName, newProperties.packageName) ||
+                hasChanged(vmIdentifier, newProperties.vmIdentifier) ||
+                hasChanged(instructionSetDescription, newProperties.instructionSetDescription) ||
+                hasChanged(instructionSet, newProperties.instructionSet) ||
+                hasChanged(jvmFlags, newProperties.jvmFlags) ||
+                hasChanged(isWaitingForDebugger, newProperties.isWaitingForDebugger) ||
+                hasChanged(isNativeDebuggable, newProperties.isNativeDebuggable)
             ) {
                 @Suppress("DeferredResultUnused")
                 trackerHost.postClientUpdated(
@@ -141,7 +150,8 @@ internal class AdblibClientWrapper(
 
     private suspend fun updateClientWrapper(
         clientWrapper: AdblibClientWrapper,
-        newProperties: JdwpProcessProperties
+        newProperties: JdwpProcessProperties,
+        newProxyStatus: JdwpProxySocketServerStatus
     ) {
         val names = ClientData.Names(
             newProperties.processName ?: "",
@@ -165,7 +175,7 @@ internal class AdblibClientWrapper(
         // "DebuggerStatus" is trickier: order is important
         clientWrapper.clientData.debuggerConnectionStatus = when {
             // This comes from the JDWP connection proxy, when a JDWP connection is started
-            newProperties.jdwpProxyStatus.isExternalDebuggerAttached -> ClientData.DebuggerStatus.ATTACHED
+            newProxyStatus.isExternalDebuggerAttached -> ClientData.DebuggerStatus.ATTACHED
 
             // This comes from seeing a DDMS_WAIT packet on the JDWP connection
             newProperties.isWaitingForDebugger -> ClientData.DebuggerStatus.WAITING
@@ -236,7 +246,7 @@ internal class AdblibClientWrapper(
      * Android Studio) can connect to open a JDWP session with the process.
      */
     override fun getDebuggerListenPort(): Int {
-        return jdwpProcess.properties.jdwpProxyStatus.socketAddress?.port ?: -1
+        return jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress?.port ?: -1
     }
 
     /**
@@ -244,7 +254,7 @@ internal class AdblibClientWrapper(
      * currently attached to the process via a JDWP session.
      */
     override fun isDebuggerAttached(): Boolean {
-        return jdwpProcess.properties.jdwpProxyStatus.isExternalDebuggerAttached
+        return jdwpProcess.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached
     }
 
     override fun executeGarbageCollector() {

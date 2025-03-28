@@ -400,8 +400,6 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
         assertEquals("CheckJNI=true", properties.jvmFlags)
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable)
-        assertFalse(properties.jdwpProxyStatus.isExternalDebuggerAttached)
-        assertNotNull(properties.jdwpProxyStatus.socketAddress)
         assertEquals(
             listOf(
                 "hprof-heap-dump",

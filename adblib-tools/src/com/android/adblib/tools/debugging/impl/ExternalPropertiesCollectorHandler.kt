@@ -19,11 +19,9 @@ import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.ExternalJdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.mergeWith
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Collect changes from an [ExternalJdwpProcessPropertiesCollector], merging them into
@@ -32,8 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 internal class ExternalPropertiesCollectorHandler(
     private val externalCollector: ExternalJdwpProcessPropertiesCollector,
     private val localCollectorJob: Job,
-    private val localPropertiesStateFlow: AtomicStateFlow<JdwpProcessProperties>,
-    private val localProxyStatusStateFlow: StateFlow<JdwpProxySocketServerStatus>
+    private val localPropertiesStateFlow: AtomicStateFlow<JdwpProcessProperties>
 ) {
     private val session = externalCollector.process.device.session
     private val logger = adbLogger(session)
@@ -46,7 +43,7 @@ internal class ExternalPropertiesCollectorHandler(
 
             localPropertiesStateFlow.update { localProperties ->
                 // merge external properties with local properties
-                val newProperties = localProperties.mergeWithRemote(externalProperties)
+                val newProperties = localProperties.mergeWith(externalProperties)
 
                 // Stop local property collector so that it does not hog a JDWP session
                 if (newProperties.completed) {
@@ -58,43 +55,5 @@ internal class ExternalPropertiesCollectorHandler(
                 newProperties
             }
         }
-    }
-
-    /**
-     * Copy the values of all fields [other] to the fields of this [JdwpProcessProperties], but
-     * only if the destination field value is the "default" value of that field, i.e. this method
-     * does not overwrite fields of [this] that are already initialized.
-     */
-    private fun JdwpProcessProperties.mergeWithRemote(other: JdwpProcessProperties): JdwpProcessProperties {
-        // Special case: If the external collector tells us the process is waiting for
-        // a debugger to connect, we need to use the socket address/port of that collector
-        // locally, because that is the only valid address/port that can be used to
-        // resume the process.
-        val isWaitingForDebugger: Boolean
-        val jdwpProxyStatus: JdwpProxySocketServerStatus
-        if (other.isWaitingForDebugger) {
-            logger.debug { "Overriding local proxy status because external collector says `isWaitingForDebugger` == true" }
-            // If an external collector says the process is waiting for a debugger,
-            // that takes precedence over our jdwp proxy value
-            if (other.jdwpProxyStatus != this.jdwpProxyStatus)
-                logger.info {
-                    "Using JDWP session proxy " +
-                            "'${other.jdwpProxyStatus}' " +
-                            "from external collector '${this@ExternalPropertiesCollectorHandler}' instead of " +
-                            "local JDWP proxy' " +
-                            "${this.jdwpProxyStatus.socketAddress}'"
-                }
-            isWaitingForDebugger = true
-            jdwpProxyStatus = other.jdwpProxyStatus
-        } else {
-            logger.debug { "Using local proxy status because external collector says `isWaitingForDebugger` == false" }
-            isWaitingForDebugger = false
-            jdwpProxyStatus = localProxyStatusStateFlow.value
-        }
-
-        return this.mergeWith(other).copy(
-            isWaitingForDebugger = isWaitingForDebugger,
-            jdwpProxyStatus = jdwpProxyStatus
-        )
     }
 }
