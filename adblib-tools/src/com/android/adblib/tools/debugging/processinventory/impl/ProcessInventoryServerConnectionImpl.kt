@@ -25,10 +25,10 @@ import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.mergeWith
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
-import com.android.adblib.tools.debugging.processinventory.impl.ProcessInventoryServerConnection.ConnectionForDevice
+import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
+import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection.ConnectionForDevice
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessUpdate
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
@@ -39,7 +39,6 @@ import com.android.adblib.tools.tcpserver.TcpServerConnection
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.utils.runAlongOtherScope
 import com.android.adblib.withPrefix
-import com.google.protobuf.ByteString
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,8 +47,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.net.InetAddress
-import java.net.InetSocketAddress
 
 internal class ProcessInventoryServerConnectionImpl(
     session: AdbSession,

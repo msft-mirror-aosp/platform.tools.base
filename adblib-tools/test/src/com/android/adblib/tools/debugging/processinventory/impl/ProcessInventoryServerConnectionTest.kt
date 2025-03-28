@@ -25,6 +25,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.waitNonNull
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
+import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice

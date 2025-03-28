@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.adblib.tools.debugging.processinventory.impl
+package com.android.adblib.tools.debugging.processinventory
 
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.processinventory.impl.ProcessInventoryServerConnectionImpl
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import kotlinx.coroutines.flow.Flow
@@ -27,8 +28,12 @@ import kotlinx.coroutines.flow.StateFlow
  * A connection to a remote [ProcessInventoryServer] to help with tracking and
  * updating [devices][ConnectedDevice] and the [JdwpProcessProperties] of their
  * JDWP processes.
+ *
+ * Implementation are guaranteed to be thread-safe, and typically shared across
+ * a given [AdbSession] to ensure efficient use of th underlying communication
+ * channel (i.e. socket).
  */
-internal interface ProcessInventoryServerConnection : AutoCloseable {
+interface ProcessInventoryServerConnection : AutoCloseable {
 
     /**
      * Invokes [block] with the [ConnectionForDevice] corresponding to [device].

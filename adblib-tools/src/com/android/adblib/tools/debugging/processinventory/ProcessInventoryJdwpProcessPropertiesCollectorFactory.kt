@@ -21,22 +21,19 @@ import com.android.adblib.tools.debugging.ExternalJdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.addExternalJdwpProcessPropertiesCollectorFactory
 import com.android.adblib.tools.debugging.processinventory.impl.ProcessInventoryJdwpProcessPropertiesCollector
-import com.android.adblib.tools.debugging.processinventory.impl.ProcessInventoryServerConnectionImpl
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
-import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 
 /**
  * The main entry point for enabling synchronization of JDWP process properties with
- * a [ProcessInventoryServer]. Use [installForSession] to activate this service
- * for a given [AdbSession].
+ * a [ProcessInventoryServer].
+ *
+ * Use [AdbSession.installProcessInventoryJdwpProcessPropertiesCollectorFactory] to activate
+ * this service for a given [AdbSession].
  */
-class ProcessInventoryJdwpProcessPropertiesCollectorFactory private constructor(
-    session: AdbSession,
-    config: ProcessInventoryServerConfiguration,
+internal class ProcessInventoryJdwpProcessPropertiesCollectorFactory(
+    private val serverConnection: ProcessInventoryServerConnection,
     private val enabled: () -> Boolean
 ) : ExternalJdwpProcessPropertiesCollectorFactory {
-
-    private val serverConnection = ProcessInventoryServerConnectionImpl(session, config)
 
     override suspend fun create(process: JdwpProcess): ExternalJdwpProcessPropertiesCollector? {
         return if (enabled())
@@ -49,17 +46,16 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactory private constructor(
     override fun close() {
         serverConnection.close()
     }
+}
 
-    companion object {
-
-        fun installForSession(
-            session: AdbSession,
-            config: ProcessInventoryServerConfiguration,
-            enabled: () -> Boolean
-        ) {
-            val factory = ProcessInventoryJdwpProcessPropertiesCollectorFactory(session, config, enabled)
-            // Note: We don't need to remove, as lifetime is tied to the AdbSession lifetime.
-            session.addExternalJdwpProcessPropertiesCollectorFactory(factory)
-        }
-    }
+/**
+ * Activates a [ProcessInventoryJdwpProcessPropertiesCollectorFactory] for this [AdbSession]
+ */
+fun AdbSession.installProcessInventoryJdwpProcessPropertiesCollectorFactory(
+    serverConnection: ProcessInventoryServerConnection,
+    enabled: () -> Boolean
+)  {
+    val factory = ProcessInventoryJdwpProcessPropertiesCollectorFactory(serverConnection, enabled)
+    // Note: We don't need to remove, as lifetime is tied to the AdbSession lifetime.
+    this.addExternalJdwpProcessPropertiesCollectorFactory(factory)
 }
