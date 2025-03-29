@@ -162,6 +162,8 @@ internal constructor(
     suspend fun deleteAvd(avdInfo: AvdInfo)
 
     suspend fun downloadAvdSystemImage(avdInfo: AvdInfo)
+
+    fun requestedAvdShutdown(avdInfo: AvdInfo) {}
   }
 
   // We can identify local emulators reliably, so this can be relatively high priority.
@@ -706,6 +708,7 @@ internal constructor(
     emulatorConsole?.let {
       try {
         it.kill()
+        avdManager.requestedAvdShutdown(avdInfo)
         return
       } catch (e: IOException) {
         // Connection to emulator console is closed, possibly due to a harmless race condition.
