@@ -16,14 +16,17 @@
 package com.android.tools.instrumentation.threading.agent;
 
 import com.android.annotations.NonNull;
-import java.lang.instrument.ClassFileTransformer;
-import java.security.ProtectionDomain;
-import java.util.logging.Logger;
+
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
-class Transformer implements ClassFileTransformer {
+import java.lang.instrument.ClassFileTransformer;
+import java.security.ProtectionDomain;
+import java.util.List;
+import java.util.logging.Logger;
 
+class Transformer implements ClassFileTransformer {
+    private static final List<String> INCLUDE_LIST_PATTERNS = List.of("/android/", "/google/gct/");
     private static final Logger LOGGER = Logger.getLogger(Transformer.class.getName());
 
     @NonNull private final AnnotationMappings annotationMappings;
@@ -47,7 +50,7 @@ class Transformer implements ClassFileTransformer {
         String className = classJvmName.replace('/', '.');
         // To optimize the performance skip the classes that certainly
         // do not contain Android Studio threading annotations
-        if (!classJvmName.contains("/android/")) {
+        if (INCLUDE_LIST_PATTERNS.stream().noneMatch(classJvmName::contains)) {
             return null;
         }
 
