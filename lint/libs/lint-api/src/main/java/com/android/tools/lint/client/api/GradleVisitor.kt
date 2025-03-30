@@ -77,7 +77,7 @@ open class GradleVisitor {
     if (relative.endsWith(DOT_GRADLE) || relative.endsWith(DOT_GRADLE_KTS)) {
       val parentFile = context.file.parentFile
       if (parentFile != null) {
-        val includedFile = File(parentFile, relative)
+        var includedFile = File(parentFile, relative)
         if (relative.startsWith("..") && !context.project.isGradleRootHolder) {
           // We'll encounter root files from all the including projects, but we
           // only want to report issues here once; pick a designated project
@@ -93,10 +93,14 @@ open class GradleVisitor {
           // CLI setup when using K2
           return
         }
-        if (includedFile.isFile) {
-          val scripts = includedScripts ?: mutableListOf<File>().also { includedScripts = it }
-          scripts.add(includedFile)
+        if (!includedFile.isFile) {
+          includedFile = File(relative)
+          if (!includedFile.isFile) {
+            return
+          }
         }
+        val scripts = includedScripts ?: mutableListOf<File>().also { includedScripts = it }
+        scripts.add(includedFile)
       }
     }
   }

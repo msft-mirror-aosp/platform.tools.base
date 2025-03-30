@@ -142,7 +142,7 @@ open class Context(
    * Returns the location of the given [node], which could be an AST node, an XML element, and so
    * on.
    */
-  fun getLocation(node: Any?, type: LocationType = LocationType.DEFAULT): Location {
+  open fun getLocation(node: Any?, type: LocationType = LocationType.DEFAULT): Location {
     node ?: return Location.NONE
 
     // Switch location lookup by element type. Note that we handle all the cases

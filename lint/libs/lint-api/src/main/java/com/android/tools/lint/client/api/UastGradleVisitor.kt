@@ -168,7 +168,16 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
           valueArguments.isNotEmpty() &&
           !context.driver.isIsolated()
       ) {
-        val relative = valueArguments.first().evaluate()?.toString()
+        var relative = valueArguments.first().evaluate()?.toString()
+        if (relative == null) {
+          val path = valueArguments.first().sourcePsi?.text?.removeSurrounding("\"")
+          if (path != null && path.startsWith("\${project.rootDir}")) {
+            val root = javaContext.client.getRootDir()
+            if (root != null) {
+              relative = root.path + path.removePrefix("\${project.rootDir}")
+            }
+          }
+        }
         addIncludedScript(context, relative)
       }
     }
