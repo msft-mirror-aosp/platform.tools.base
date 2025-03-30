@@ -16,7 +16,9 @@
 package com.android.tools.lint.detector.api
 
 import com.android.tools.lint.checks.AbstractCheckTest
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.client.api.UElementHandler
+import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBinaryExpressionWithPattern
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
@@ -144,6 +146,142 @@ class UElementVisitorTest : AbstractCheckTest() {
       )
   }
 
+  fun testAnnotationTargets_propertyParameter() {
+    // b/406850340
+    // https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
+    // @property use-site is not visible to Java
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            annotation class Anno
+
+            class Foo(
+              @get:Anno
+              var annotatedWithGet: Int,
+              @set:Anno
+              var annotatedWithSet: Int,
+              @property:Anno
+              var annotatedWithProperty: Int,
+              @Anno
+              var annotatedWithDefault: Int,
+            )
+          """
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.JVM_OVERLOADS)
+      .run()
+      .expect(
+        """
+src/test/pkg/Anno.kt:6: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @get:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:8: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @set:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @Anno
+  ~~~~~
+0 errors, 3 warnings
+        """
+      )
+  }
+
+  fun testAnnotationTargets_withDefaultValue() {
+    // b/406850340
+    // https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
+    // @property use-site is not visible to Java
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            annotation class Anno
+
+            class Foo(
+              @get:Anno
+              var annotatedWithGet: Int = 0,
+              @set:Anno
+              var annotatedWithSet: Int = 1,
+              @property:Anno
+              var annotatedWithProperty: Int = 2,
+              @Anno
+              var annotatedWithDefault: Int = 3,
+            )
+          """
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.JVM_OVERLOADS)
+      .run()
+      .expect(
+        """
+src/test/pkg/Anno.kt:6: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @get:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:8: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @set:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @Anno
+  ~~~~~
+0 errors, 3 warnings
+        """
+      )
+  }
+
+  fun testAnnotationTargets_regularProperty() {
+    // TODO: https://youtrack.jetbrains.com/issue/KT-76431
+    // b/406850340
+    // https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
+    // @property use-site is not visible to Java
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            annotation class Anno
+
+            class Foo {
+              @get:Anno
+              var annotatedWithGet: Int = 0
+              @set:Anno
+              var annotatedWithSet: Int = 1
+              @property:Anno
+              var annotatedWithProperty: Int = 2
+              @Anno
+              var annotatedWithDefault: Int = 3
+            }
+          """
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.JVM_OVERLOADS)
+      .run()
+      .expect(
+        """
+src/test/pkg/Anno.kt:6: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @get:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:8: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @set:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:10: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @property:Anno
+  ~~~~~~~~~~~~~~
+src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @Anno
+  ~~~~~
+0 errors, 4 warnings
+        """
+      )
+  }
+
   override fun getDetector(): Detector = TestDetector()
 
   override fun getIssues(): List<Issue> = listOf(TEST_ISSUE)
@@ -164,6 +302,7 @@ class UElementVisitorTest : AbstractCheckTest() {
 
     override fun getApplicableUastTypes(): List<Class<out UElement>> {
       return listOf(
+        UAnnotation::class.java,
         UNamedExpression::class.java,
         UPatternExpression::class.java,
         UBinaryExpressionWithPattern::class.java,
@@ -191,6 +330,16 @@ class UElementVisitorTest : AbstractCheckTest() {
             node,
             context.getNameLocation(node),
             "Visited pattern expression `${node.variable?.nameFromSource}`",
+          )
+        }
+
+        override fun visitAnnotation(node: UAnnotation) {
+          if (node.qualifiedName?.contains("Anno") != true) return
+          context.report(
+            TEST_ISSUE,
+            node,
+            context.getNameLocation(node),
+            "Visited annotation `${node.qualifiedName}`",
           )
         }
       }
