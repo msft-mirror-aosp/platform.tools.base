@@ -1759,10 +1759,13 @@ class AnnotationHandlerTest {
           src/test/pkg/Test.java:6: Error: METHOD_CALL usage associated with @MyKotlinAnnotation on PROPERTY_DEFAULT [_AnnotationIssue]
               int value = new AnnotatedKotlinMembers().getField();
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          src/test/pkg/Test.java:7: Error: METHOD_CALL_PARAMETER usage associated with @MyKotlinAnnotation on METHOD [_AnnotationIssue]
+              new AnnotatedKotlinMembers().setFieldWithSetMarker(-1);
+                                                                 ~~
           src/test/pkg/Test.java:7: Error: METHOD_CALL usage associated with @MyKotlinAnnotation on METHOD [_AnnotationIssue]
               new AnnotatedKotlinMembers().setFieldWithSetMarker(-1);
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          4 errors, 0 warnings
+          5 errors, 0 warnings
         """
       )
   }
@@ -1942,6 +1945,117 @@ class AnnotationHandlerTest {
               constructor(val x: String, val y: Int) : this(x + y.toString())
                                                        ~~~~~~~~~~~~~~~~~~~~~~
           5 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testAnnotationOnConstructorParameter() {
+    // b/406850340
+    lint(includesDefinition = true)
+      .files(
+        kotlin(
+            """
+            package pkg1
+
+            import pkg.kotlin.MyKotlinAnnotation
+
+            class Foo(
+              @get:MyKotlinAnnotation
+              var annotatedWithGet: Int,
+              @set:MyKotlinAnnotation
+              var annotatedWithSet: Int,
+              @property:MyKotlinAnnotation
+              var annotatedWithProperty: Int,
+              @MyKotlinAnnotation
+              var annotatedWithDefault: Int,
+            )
+          """
+          )
+          .indented(),
+        kotlinAnnotation,
+      )
+      .run()
+      .expect(
+        """
+src/pkg1/Foo.kt:6: Error: DEFINITION usage associated with @MyKotlinAnnotation on METHOD [_AnnotationIssue]
+  @get:MyKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:6: Error: DEFINITION usage associated with @MyKotlinAnnotation on SELF [_AnnotationIssue]
+  @get:MyKotlinAnnotation
+  ~~~~~~~~~~~~~~~~~~~~~~~
+src/pkg1/Foo.kt:8: Error: DEFINITION usage associated with @MyKotlinAnnotation on METHOD [_AnnotationIssue]
+  @set:MyKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:8: Error: DEFINITION usage associated with @MyKotlinAnnotation on SELF [_AnnotationIssue]
+  @set:MyKotlinAnnotation
+  ~~~~~~~~~~~~~~~~~~~~~~~
+src/pkg1/Foo.kt:10: Error: DEFINITION usage associated with @MyKotlinAnnotation on PROPERTY_DEFAULT [_AnnotationIssue]
+  @property:MyKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation on PARAMETER [_AnnotationIssue]
+  @MyKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation on PROPERTY_DEFAULT [_AnnotationIssue]
+  @MyKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation on SELF [_AnnotationIssue]
+  @MyKotlinAnnotation
+  ~~~~~~~~~~~~~~~~~~~
+8 errors
+        """
+      )
+  }
+
+  @Test
+  fun testMetaAnnotationOnConstructorParameter() {
+    // b/406850340
+    lint(includesDefinition = true)
+      .files(
+        kotlin(
+            """
+            package pkg1
+
+            import pkg.kotlin.ExperimentalKotlinAnnotation
+
+            class Foo(
+              @get:ExperimentalKotlinAnnotation
+              var annotatedWithGet: Int,
+              @set:ExperimentalKotlinAnnotation
+              var annotatedWithSet: Int,
+              @property:ExperimentalKotlinAnnotation
+              var annotatedWithProperty: Int,
+              @ExperimentalKotlinAnnotation
+              var annotatedWithDefault: Int,
+            )
+          """
+          )
+          .indented(),
+        kotlinAnnotation,
+        experimentalKotlinAnnotation,
+      )
+      .run()
+      .expect(
+        """
+src/pkg/kotlin/ExperimentalKotlinAnnotation.kt:2: Error: DEFINITION usage associated with @MyKotlinAnnotation on SELF [_AnnotationIssue]
+@MyKotlinAnnotation
+~~~~~~~~~~~~~~~~~~~
+src/pkg1/Foo.kt:6: Error: DEFINITION usage associated with @MyKotlinAnnotation on METHOD [_AnnotationIssue]
+  @get:ExperimentalKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:8: Error: DEFINITION usage associated with @MyKotlinAnnotation on METHOD [_AnnotationIssue]
+  @set:ExperimentalKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:10: Error: DEFINITION usage associated with @MyKotlinAnnotation on PROPERTY_DEFAULT [_AnnotationIssue]
+  @property:ExperimentalKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation on PARAMETER [_AnnotationIssue]
+  @ExperimentalKotlinAnnotation
+  ^
+src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation on PROPERTY_DEFAULT [_AnnotationIssue]
+  @ExperimentalKotlinAnnotation
+  ^
+6 errors
         """
       )
   }

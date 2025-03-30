@@ -86,7 +86,7 @@ import org.jetbrains.kotlin.asJava.elements.KtLightParameter
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.psi.KtAnnotationEntry
+import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtConstructorDelegationCall
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtFile
@@ -323,7 +323,7 @@ internal class AnnotationHandler(
     val annotations = getRelevantAnnotations(evaluator, owner, inHierarchy)
     val count = addAnnotations(owner, annotations, source, prepend)
     if (source == PARAMETER || source == METHOD || source == FIELD) {
-      return addDefaultAnnotations(evaluator, owner) + count
+      return addDefaultAnnotations(evaluator, owner, source) + count
     }
     return count
   }
@@ -338,16 +338,17 @@ internal class AnnotationHandler(
   private fun MutableList<AnnotationInfo>.addDefaultAnnotations(
     evaluator: JavaEvaluator,
     owner: PsiModifierListOwner,
+    source: AnnotationOrigin,
   ): Int {
     if (owner is KtLightMember<*>) {
       val origin = owner.unwrapped
       if (origin is KtProperty) {
-        return addDefaultSiteAnnotations(evaluator, owner, origin.annotationEntries)
+        return addDefaultSiteAnnotations(evaluator, owner, origin, source)
       }
     } else if (owner is KtLightParameter) {
       val origin = owner.method.unwrapped as? KtDeclaration
       if (origin is KtProperty || origin is KtParameter) {
-        return addDefaultSiteAnnotations(evaluator, owner, origin.annotationEntries)
+        return addDefaultSiteAnnotations(evaluator, owner, origin, source)
       }
     }
 
@@ -357,12 +358,25 @@ internal class AnnotationHandler(
   private fun MutableList<AnnotationInfo>.addDefaultSiteAnnotations(
     evaluator: JavaEvaluator,
     owner: PsiModifierListOwner,
-    entries: List<KtAnnotationEntry>,
+    origin: KtAnnotated,
+    source: AnnotationOrigin,
   ): Int {
     var count = 0
-    for (ktAnnotation in entries) {
+    for (ktAnnotation in origin.annotationEntries) {
       val site = ktAnnotation.useSiteTarget?.getAnnotationUseSiteTarget()
-      if (site == null || site == AnnotationUseSiteTarget.PROPERTY) {
+      // b/406850340: on a val/var parameter, if devs put annotation without use-site,
+      // we assume that the intention is to apply the annotation (and its meta-annotation)
+      // to the field and accessors. When devs put the specific use-site (accessor),
+      // here we propagate meta-annotation in order to match default use-site behavior.
+      val (needDefaultSiteAnnotationOrMetaAnnotation, annoSource) =
+        when (site) {
+          null -> true to PROPERTY_DEFAULT
+          AnnotationUseSiteTarget.PROPERTY -> true to PROPERTY_DEFAULT
+          AnnotationUseSiteTarget.PROPERTY_GETTER -> (source == PARAMETER) to METHOD
+          AnnotationUseSiteTarget.PROPERTY_SETTER -> (source == PARAMETER) to METHOD
+          else -> false to PROPERTY_DEFAULT
+        }
+      if (needDefaultSiteAnnotationOrMetaAnnotation) {
         val defaultSiteAnnotation =
           (UastFacade.convertElement(ktAnnotation, null) as? UAnnotation ?: continue).let {
             val signature = it.qualifiedName ?: ""
@@ -375,7 +389,7 @@ internal class AnnotationHandler(
         val relevantAnnotations =
           filterRelevantAnnotations(evaluator, listOf(defaultSiteAnnotation))
         for (annotation in relevantAnnotations) {
-          if (addAnnotation(annotation, owner, PROPERTY_DEFAULT, false)) {
+          if (addAnnotation(annotation, owner, annoSource, false)) {
             count++
           }
         }
