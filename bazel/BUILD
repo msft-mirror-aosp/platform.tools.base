@@ -1,5 +1,6 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library", "java_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:kotlin_common.bzl", "kt_java_toolchain_bundle")
@@ -478,10 +479,11 @@ java_library(
     ],
 )
 
-java_binary(
-    name = "local_maven_repository_generator",
-    args = ARTIFACTS +
-           ["+" + d for d in DATA] + [
+write_file(
+    name = "maven_generator_args",
+    out = "maven_generator.params",
+    content = ARTIFACTS +
+              ["+" + d for d in DATA] + [
         "--repo-path",
         "prebuilts/tools/common/m2/repository",
     ] + [item for pair in [(
@@ -492,6 +494,12 @@ java_binary(
         "tools/base/bazel/maven/BUILD.maven",
         "--fetch",
     ],
+)
+
+java_binary(
+    name = "local_maven_repository_generator",
+    args = ["@$(location :maven_generator_args)"],
+    data = [":maven_generator_args"],
     main_class = "com.android.tools.binaries.LocalMavenRepositoryGenerator",
     visibility = ["//visibility:public"],
     runtime_deps = [

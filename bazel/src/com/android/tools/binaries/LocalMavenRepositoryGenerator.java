@@ -34,7 +34,10 @@ import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.util.graph.transformer.ConflictResolver;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -418,7 +421,32 @@ public class LocalMavenRepositoryGenerator {
         // need to issue a warning here.
     }
 
-    public static void main(String[] args) throws Exception {
+    private static String[] expandArguments(String[] args) throws IOException {
+        List<String> result = new ArrayList<>();
+
+        for (String arg : args) {
+            if (arg.startsWith("@")) { // This is an @argfile
+                String filename = arg.substring(1);
+                try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        // Skip empty lines and comments
+                        line = line.trim();
+                        if (!line.isEmpty() && !line.startsWith("#")) {
+                            result.add(line);
+                        }
+                    }
+                }
+            } else {
+                // Regular argument
+                result.add(arg);
+            }
+        }
+
+        return result.toArray(new String[0]);
+    }
+
+    public static void main(String[] initialArgs) throws Exception {
         List<String> noresolveCoords = new ArrayList<>();
         List<String> coords = new ArrayList<>();
         Path repoPath = null;
@@ -426,6 +454,9 @@ public class LocalMavenRepositoryGenerator {
         boolean fetch = !Strings.isNullOrEmpty(System.getenv("MAVEN_FETCH"));
         Map<String, String> remoteRepositories = new LinkedHashMap<>();
         String outputFile = "output.BUILD";
+
+        // Until https://github.com/bazelbuild/bazel/issues/6354 is fixed, we manually expand @args
+        String[] args = expandArguments(initialArgs);
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.equals("-o")) {
