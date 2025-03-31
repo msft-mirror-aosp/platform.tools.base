@@ -22,7 +22,7 @@ import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.builder.model.TestOptions
+import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.prefs.AndroidLocationsProvider
 import com.android.testutils.SystemPropertyOverrides
 import com.android.testutils.truth.PathSubject.assertThat
@@ -37,7 +37,6 @@ import java.util.logging.Level
 import org.gradle.api.file.Directory
 import org.gradle.api.logging.Logger
 import org.gradle.api.provider.Provider
-import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
 import org.junit.Rule
@@ -59,7 +58,6 @@ class ManagedDeviceTestRunnerTest {
     @get:Rule var temporaryFolderRule = TemporaryFolder()
 
     private val mockWorkerExecutor: WorkerExecutor = mock()
-    private val mockWorkQueue: WorkQueue = mock()
     private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
     private val mockAvdComponents: AvdComponentsBuildService = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val mockTestData: StaticTestData = mock()
@@ -68,13 +66,9 @@ class ManagedDeviceTestRunnerTest {
     private val mockLogger: Logger = mock()
     private val mockUtpConfigFactory: UtpConfigFactory = mock()
     private val mockemulatorControlConfig: EmulatorControlConfig = mock()
-    private val mockRetentionConfig: RetentionConfig = mock()
     private val mockCoverageOutputDir: File = mock()
     private val mockAdditionalTestOutputDir: File = mock()
     private val mockDslDevice: ManagedVirtualDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
-    private val mockManagedDeviceShard0: UtpManagedDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
-    private val mockManagedDeviceShard1: UtpManagedDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
-    private val mockUtpTestResultListenerServerRunner: UtpTestResultListenerServerRunner = mock()
     private val mockUtpTestResultListenerServerMetadata: UtpTestResultListenerServerMetadata = mock()
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val androidLocations: AndroidLocationsProvider = mock()
@@ -106,7 +100,6 @@ class ManagedDeviceTestRunnerTest {
         whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
         whenever(mockTestData.privacySandboxInstallBundlesFinder).thenReturn { extractedSdkApks }
         whenever(mockUtpConfigFactory.createRunnerConfigProtoForManagedDevice(
-                any(),
                 any(),
                 any(),
                 any(),
@@ -190,7 +183,6 @@ class ManagedDeviceTestRunnerTest {
                 jvmExecutable,
                 mockVersionedSdkLoader,
                 mockemulatorControlConfig,
-                mockRetentionConfig,
                 useOrchestrator = false,
                 forceCompilation = false,
                 numShards,
@@ -411,7 +403,6 @@ class ManagedDeviceTestRunnerTest {
             jvmExecutable,
             mockVersionedSdkLoader,
             mockemulatorControlConfig,
-            mockRetentionConfig,
             useOrchestrator = false,
             forceCompilation = false,
             numShards = null,

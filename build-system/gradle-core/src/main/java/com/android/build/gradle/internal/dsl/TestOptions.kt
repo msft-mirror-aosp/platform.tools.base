@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
-import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 import com.android.build.gradle.internal.services.DslServices
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.apiVersionFromString

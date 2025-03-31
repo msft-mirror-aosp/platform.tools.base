@@ -20,7 +20,7 @@ import com.android.build.api.variant.impl.AndroidVersionImpl
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.AdbHelper
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.builder.model.TestOptions
+import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.builder.testing.api.DeviceConnector
 import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.workers.ExecutorServiceAdapter
@@ -40,16 +40,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Answers
-import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 import java.io.File
 import java.util.logging.Level
-import kotlin.io.path.Path
 
 /**
  * Unit tests for [UtpTestRunner].
@@ -61,7 +58,6 @@ class UtpTestRunnerTest {
 
     private val mockProcessExecutor: ProcessExecutor = mock()
     private val mockWorkerExecutor: WorkerExecutor = mock()
-    private val mockWorkQueue: WorkQueue = mock()
     private val mockExecutorServiceAdapter: ExecutorServiceAdapter = mock()
     private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
     private val mockAdbHelper: AdbHelper = mock()
@@ -73,7 +69,6 @@ class UtpTestRunnerTest {
     private val mockLogger: ILogger = mock()
     private val mockUtpConfigFactory: UtpConfigFactory = mock()
     private val mockemulatorControlConfig: EmulatorControlConfig = mock()
-    private val mockRetentionConfig: RetentionConfig = mock()
     private val mockTestResultListener: UtpTestResultListener = mock()
     private val mockUtpRunProfileManager: UtpRunProfileManager = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
@@ -118,7 +113,6 @@ class UtpTestRunnerTest {
                 any(),
                 any(),
                 any(),
-                any(),
                 anyOrNull<File>(),
                 any(),
                 any(),
@@ -144,7 +138,6 @@ class UtpTestRunnerTest {
             mockUtpDependencies,
             mockVersionedSdkLoader,
             mockemulatorControlConfig,
-            mockRetentionConfig,
             useOrchestrator = false,
             forceCompilation = false,
             uninstallIncompatibleApks = false,

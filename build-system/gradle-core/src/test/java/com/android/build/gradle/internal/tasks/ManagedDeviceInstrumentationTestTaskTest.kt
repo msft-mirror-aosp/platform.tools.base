@@ -33,7 +33,6 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigI
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
-import com.android.build.gradle.internal.testing.utp.RetentionConfig
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager
 import com.android.build.gradle.options.BooleanOption
@@ -236,8 +235,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
             .thenReturn(FakeGradleProperty(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR))
         whenever(factory.forceCompilation)
             .thenReturn(FakeGradleProperty(false))
-        whenever(factory.retentionConfig)
-            .thenReturn(FakeGradleProperty(mock<RetentionConfig>()))
         whenever(factory.emulatorControlConfig)
             .thenReturn(FakeGradleProperty(mock<EmulatorControlConfig>()))
         whenever(factory.compileSdkVersion).thenReturn(FakeGradleProperty("sdkVersion"))
