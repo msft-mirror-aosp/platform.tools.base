@@ -59859,6 +59859,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.errorprone.error_prone_annotations_2.24.1",
+    pom = "repository/com/google/errorprone/error_prone_annotations/2.24.1/error_prone_annotations-2.24.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_annotations/2.24.1",
+    parent = "com.google.errorprone.error_prone_parent_2.24.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.errorprone.error_prone_annotations_2.26.1",
     pom = "repository/com/google/errorprone/error_prone_annotations/2.26.1/error_prone_annotations-2.26.1.pom",
     repo_root_path = "repository",
@@ -60607,6 +60616,23 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.guava.guava_33.0.0-android",
+    pom = "repository/com/google/guava/guava/33.0.0-android/guava-33.0.0-android.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/guava/guava/33.0.0-android",
+    parent = "com.google.guava.guava-parent_33.0.0-android",
+    deps = [
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.listenablefuture_9999.0-empty-to-avoid-conflict-with-guava",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "org.checkerframework.checker-qual_3.41.0",
+        "com.google.errorprone.error_prone_annotations_2.23.0",
+        "com.google.j2objc.j2objc-annotations_2.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.guava.guava_33.0.0-jre",
     pom = "repository/com/google/guava/guava/33.0.0-jre/guava-33.0.0-jre.pom",
     repo_root_path = "repository",
@@ -61212,6 +61238,23 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-java-util_4.27.2",
+    pom = "repository/com/google/protobuf/protobuf-java-util/4.27.2/protobuf-java-util-4.27.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-java-util/4.27.2",
+    parent = "com.google.protobuf.protobuf-parent_4.27.2",
+    deps = [
+        "com.google.protobuf.protobuf-java_4.27.2",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.code.gson.gson_2.8.9",
+        "com.google.errorprone.error_prone_annotations_2.18.0",
+        "com.google.guava.guava_32.0.1-jre",
+        "com.google.j2objc.j2objc-annotations_2.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protobuf-java_3.0.0",
     pom = "repository/com/google/protobuf/protobuf-java/3.0.0/protobuf-java-3.0.0.pom",
     repo_root_path = "repository",
@@ -61325,6 +61368,15 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/google/protobuf/protobuf-java/3.7.1",
     parent = "com.google.protobuf.protobuf-parent_3.7.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.protobuf.protobuf-java_4.27.2",
+    pom = "repository/com/google/protobuf/protobuf-java/4.27.2/protobuf-java-4.27.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-java/4.27.2",
+    parent = "com.google.protobuf.protobuf-parent_4.27.2",
     visibility = ["//visibility:public"],
 )
 
@@ -61593,6 +61645,23 @@ maven_artifact(
         "com.google.auto.value.auto-value-annotations_1.7.4",
         "com.google.errorprone.error_prone_annotations_2.5.1",
         "org.ow2.asm.asm_9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.truth.truth_1.4.0",
+    pom = "repository/com/google/truth/truth/1.4.0/truth-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/truth/truth/1.4.0",
+    parent = "com.google.truth.truth-parent_1.4.0",
+    deps = [
+        "com.google.guava.guava_33.0.0-android",
+        "org.checkerframework.checker-qual_3.42.0",
+        "junit.junit_4.13.2",
+        "com.google.auto.value.auto-value-annotations_1.10.4",
+        "com.google.errorprone.error_prone_annotations_2.24.1",
+        "org.ow2.asm.asm_9.6",
     ],
     visibility = ["//visibility:public"],
 )
@@ -64545,6 +64614,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "net.bytebuddy.byte-buddy-agent_1.14.5",
+    pom = "repository/net/bytebuddy/byte-buddy-agent/1.14.5/byte-buddy-agent-1.14.5.pom",
+    repo_root_path = "repository",
+    repo_path = "net/bytebuddy/byte-buddy-agent/1.14.5",
+    parent = "net.bytebuddy.byte-buddy-parent_1.14.5",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "net.bytebuddy.byte-buddy_1.12.7",
     pom = "repository/net/bytebuddy/byte-buddy/1.12.7/byte-buddy-1.12.7.pom",
     repo_root_path = "repository",
@@ -64559,6 +64637,15 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "net/bytebuddy/byte-buddy/1.14.11",
     parent = "net.bytebuddy.byte-buddy-parent_1.14.11",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "net.bytebuddy.byte-buddy_1.14.5",
+    pom = "repository/net/bytebuddy/byte-buddy/1.14.5/byte-buddy-1.14.5.pom",
+    repo_root_path = "repository",
+    repo_path = "net/bytebuddy/byte-buddy/1.14.5",
+    parent = "net.bytebuddy.byte-buddy-parent_1.14.5",
     visibility = ["//visibility:public"],
 )
 
@@ -77917,6 +78004,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.mockito.mockito-core_5.4.0",
+    pom = "repository/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/mockito/mockito-core/5.4.0",
+    deps = [
+        "net.bytebuddy.byte-buddy_1.14.5",
+        "net.bytebuddy.byte-buddy-agent_1.14.5",
+        "org.objenesis.objenesis_3.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.nibor.autolink.autolink_0.11.0",
     pom = "repository/org/nibor/autolink/autolink/0.11.0/autolink-0.11.0.pom",
     repo_root_path = "repository",
@@ -79812,6 +79912,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.errorprone.error_prone_parent_2.24.1",
+    pom = "repository/com/google/errorprone/error_prone_parent/2.24.1/error_prone_parent-2.24.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_parent/2.24.1",
+)
+
+maven_artifact(
     name = "com.google.errorprone.error_prone_parent_2.26.1",
     pom = "repository/com/google/errorprone/error_prone_parent/2.26.1/error_prone_parent-2.26.1.pom",
     repo_root_path = "repository",
@@ -80195,6 +80302,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.guava.guava-parent_33.0.0-android",
+    pom = "repository/com/google/guava/guava-parent/33.0.0-android/guava-parent-33.0.0-android.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/guava/guava-parent/33.0.0-android",
+)
+
+maven_artifact(
     name = "com.google.guava.guava-parent_33.0.0-jre",
     pom = "repository/com/google/guava/guava-parent/33.0.0-jre/guava-parent-33.0.0-jre.pom",
     repo_root_path = "repository",
@@ -80422,6 +80536,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-parent_4.27.2",
+    pom = "repository/com/google/protobuf/protobuf-parent/4.27.2/protobuf-parent-4.27.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-parent/4.27.2",
+)
+
+maven_artifact(
     name = "com.google.testparameterinjector.test-parameter-injector-parent_1.18",
     pom = "repository/com/google/testparameterinjector/test-parameter-injector-parent/1.18/test-parameter-injector-parent-1.18.pom",
     repo_root_path = "repository",
@@ -80466,6 +80587,13 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/google/truth/truth-parent/1.1.2",
     parent = "org.sonatype.oss.oss-parent_7",
+)
+
+maven_artifact(
+    name = "com.google.truth.truth-parent_1.4.0",
+    pom = "repository/com/google/truth/truth-parent/1.4.0/truth-parent-1.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/truth/truth-parent/1.4.0",
 )
 
 maven_artifact(
@@ -80875,6 +81003,13 @@ maven_artifact(
     pom = "repository/net/bytebuddy/byte-buddy-parent/1.14.15/byte-buddy-parent-1.14.15.pom",
     repo_root_path = "repository",
     repo_path = "net/bytebuddy/byte-buddy-parent/1.14.15",
+)
+
+maven_artifact(
+    name = "net.bytebuddy.byte-buddy-parent_1.14.5",
+    pom = "repository/net/bytebuddy/byte-buddy-parent/1.14.5/byte-buddy-parent-1.14.5.pom",
+    repo_root_path = "repository",
+    repo_path = "net/bytebuddy/byte-buddy-parent/1.14.5",
 )
 
 maven_artifact(
