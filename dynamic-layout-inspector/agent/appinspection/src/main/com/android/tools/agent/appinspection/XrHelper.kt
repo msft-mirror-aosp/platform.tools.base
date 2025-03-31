@@ -47,7 +47,7 @@ private const val IS_HIDDEN_METHOD = "isHidden"
 private const val SURFACE_CONTROL_VIEW_HOST_FIELD = "surfaceControlViewHost"
 private const val M_SURFACE_CONTROL_VIEW_HOST_FIELD = "mSurfaceControlViewHost"
 private const val RT_PANEL_ENTITY_FIELD = "rtPanelEntity"
-private const val RUNTIME_ACTIVITY_FIELD = "runtimeActivity"
+private const val RUNTIME_ACTIVITY_FIELD = "mRuntimeActivity"
 
 class XrHelper(private val environment: InspectorEnvironment) {
     var enabled = false
