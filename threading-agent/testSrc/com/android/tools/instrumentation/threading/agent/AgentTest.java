@@ -27,7 +27,7 @@ import com.android.tools.instrumentation.threading.agent.callback.ThreadingCheck
 import com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline;
 
 import com.google.common.io.ByteStreams;
-import com.google.gct.GoogleGctSample;
+import com.google.GoogleSample;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ApplicationRule;
 
@@ -194,7 +194,7 @@ public class AgentTest {
                     NoSuchMethodException,
                     InvocationTargetException {
 
-        Class<?> transformedClass = loadAndTransform(GoogleGctSample.class);
+        Class<?> transformedClass = loadAndTransform(GoogleSample.class);
         Object instance = transformedClass.getDeclaredConstructor().newInstance();
         callMethod(transformedClass, instance, "method1", false);
 

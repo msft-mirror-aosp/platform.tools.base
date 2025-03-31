@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.gct
+package com.google
 
 import com.android.annotations.concurrency.UiThread
 
-class GoogleGctSample {
+class GoogleSample {
     @UiThread
     fun method1() {
         // Do nothing

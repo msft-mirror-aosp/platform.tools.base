@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 class Transformer implements ClassFileTransformer {
-    private static final List<String> INCLUDE_LIST_PATTERNS = List.of("/android/", "/google/gct/");
+    private static final List<String> INCLUDE_LIST_PATTERNS = List.of("/android/", "/google/");
     private static final Logger LOGGER = Logger.getLogger(Transformer.class.getName());
 
     @NonNull private final AnnotationMappings annotationMappings;
