@@ -66,7 +66,7 @@ class KotlinMultiplatformAndroidVitalsTest {
 
         val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
         result.assertErrorContains(
-            "Android tests on jvm has already been enabled, and a corresponding compilation (`hostTest`) has already been created."
+            "Android host tests have already been enabled, and a corresponding compilation (`hostTest`) has already been created."
         )
     }
 
