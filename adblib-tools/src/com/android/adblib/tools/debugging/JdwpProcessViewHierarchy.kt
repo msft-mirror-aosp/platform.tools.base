@@ -17,6 +17,11 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbInputChannel
 
+/**
+ * [JdwpProcessViewHierarchy] is available for processes which have a `view-hierarchy` feature
+ * present in the [JdwpProcessProperties.features] which seems to be the case for devices since
+ * at least API 19.
+ */
 interface JdwpProcessViewHierarchy {
 
     /**
