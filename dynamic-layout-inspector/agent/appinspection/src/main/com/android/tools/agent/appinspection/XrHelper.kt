@@ -51,20 +51,6 @@ private const val RUNTIME_ACTIVITY_FIELD = "runtimeActivity"
 
 class XrHelper(private val environment: InspectorEnvironment) {
     var enabled = false
-    private var hasExtension: Boolean? = null
-
-    fun hasXrExtension(): Boolean {
-        if (hasExtension == null) {
-            try {
-                loadClass(PANEL_ENTITY_CLASS_ANDROIDX, PANEL_ENTITY_CLASS)
-                hasExtension = true
-            }
-            catch (_: Throwable) {
-                hasExtension = false
-            }
-        }
-        return hasExtension!!
-    }
 
     /** Get all the views from XR. */
     fun getXrViews(): List<View> {
