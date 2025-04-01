@@ -1304,11 +1304,9 @@ package com.android.build.api.dsl {
 
   public interface KotlinMultiplatformAndroidDeviceTest {
     method @org.gradle.api.Incubating public void emulatorControl(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void emulatorSnapshots(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots,kotlin.Unit> action);
     method public boolean getAnimationsDisabled();
     method public String? getApplicationId();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorControl getEmulatorControl();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorSnapshots getEmulatorSnapshots();
     method public boolean getEnableCoverage();
     method public String getExecution();
     method public Boolean? getFunctionalTest();
@@ -1333,7 +1331,6 @@ package com.android.build.api.dsl {
     property public abstract boolean animationsDisabled;
     property public abstract String? applicationId;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorSnapshots emulatorSnapshots;
     property public abstract boolean enableCoverage;
     property public abstract String execution;
     property public abstract Boolean? functionalTest;
