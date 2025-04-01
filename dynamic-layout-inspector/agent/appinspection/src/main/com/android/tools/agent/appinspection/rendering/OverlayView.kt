@@ -26,12 +26,17 @@ import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.VisibleForTesting
 import com.android.tools.agent.appinspection.SPAM_LOG_TAG
 import com.android.tools.agent.appinspection.framework.measureSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+
+
+@VisibleForTesting
+const val DOUBLE_TAP_TIMEOUT_MS = 300L
 
 /**
  * View responsible for drawing Layout Inspector overlay on-top the app's ui.
@@ -41,7 +46,8 @@ import kotlinx.coroutines.launch
 class OverlayView(
     private val root: ViewGroup,
     private val scope: CoroutineScope,
-    private val viewModel: OnDeviceRenderingViewModel
+    private val viewModel: OnDeviceRenderingViewModel,
+    private val timeProviderMs: () -> Long = { System.currentTimeMillis() }
 ) : View(root.context) {
     /**
      * Drawing instructions for an [OverlayView].
@@ -97,6 +103,9 @@ class OverlayView(
 
     /** Set to true when the view should prevent other views from receiving touch events. */
     private var interceptTouchEvents = false
+
+    /** The time of the last touch event received */
+    private var previousTouchTimeMs: Long = 0
 
     private var viewScope: CoroutineScope? = null
 
@@ -169,13 +178,22 @@ class OverlayView(
         val point = ev.toScreenCoordinates()
         Log.w(SPAM_LOG_TAG, "OverlayView $rootId onTouchEvent: $point")
 
-        if (ev.action == MotionEvent.ACTION_DOWN && ev.buttonState == MotionEvent.BUTTON_SECONDARY) {
-            viewModel.onRightClick(rootId, point)
-            Log.w(SPAM_LOG_TAG, "OverlayView $rootId right click")
+        if (ev.action == MotionEvent.ACTION_DOWN) {
+            val currentTouchTimeMs = timeProviderMs()
+            if (ev.buttonState == MotionEvent.BUTTON_SECONDARY) {
+                viewModel.onRightClick(rootId, point)
+                Log.w(SPAM_LOG_TAG, "OverlayView $rootId right click")
+            }
+            else if (currentTouchTimeMs - previousTouchTimeMs < DOUBLE_TAP_TIMEOUT_MS) {
+                viewModel.onDoubleClick(rootId, point)
+                Log.w(SPAM_LOG_TAG, "OverlayView $rootId double click")
+            }
+            else {
+                viewModel.onTouchEvent(rootId, point)
+                Log.w(SPAM_LOG_TAG, "OverlayView $rootId click")
+            }
+            previousTouchTimeMs = currentTouchTimeMs
         }
-
-        // Always select the view.
-        viewModel.onTouchEvent(rootId, point)
 
         return interceptTouchEvents || super.onTouchEvent(ev)
     }

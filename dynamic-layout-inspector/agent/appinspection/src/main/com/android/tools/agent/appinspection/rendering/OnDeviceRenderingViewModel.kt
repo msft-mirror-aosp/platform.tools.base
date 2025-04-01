@@ -129,6 +129,10 @@ class OnDeviceRenderingViewModel(
         sendInputEvent(rootId, point, UserInputEvent.Type.RIGHT_CLICK)
     }
 
+    fun onDoubleClick(rootId: Long, point: PointF) {
+        sendInputEvent(rootId, point, UserInputEvent.Type.DOUBLE_CLICK)
+    }
+
     suspend fun dispose() {
         setEnableOnDeviceRendering(false)
         setRoots(emptyMap())
