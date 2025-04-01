@@ -18,7 +18,7 @@ package com.android.adblib.tools.debugging
 import com.android.adblib.AdbSession
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
-import java.util.concurrent.CopyOnWriteArrayList
+import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 
 /**
  * A component that gets notified of [JdwpPacketView] packets activity from a given
@@ -45,7 +45,6 @@ interface SharedJdwpSessionMonitor : AutoCloseable {
  * [AdbSession.addSharedJdwpSessionMonitorFactory].
  *
  * @see AdbSession.addSharedJdwpSessionMonitorFactory
- * @see AdbSession.removeSharedJdwpSessionMonitorFactory
  */
 interface SharedJdwpSessionMonitorFactory {
 
@@ -60,14 +59,14 @@ interface SharedJdwpSessionMonitorFactory {
  * The [CoroutineScopeCache.Key] for the list of [SharedJdwpSessionMonitorFactory]
  */
 private val SharedJdwpSessionMonitorFactoryListKey =
-    CoroutineScopeCache.Key<CopyOnWriteArrayList<SharedJdwpSessionMonitorFactory>>("SharedJdwpSessionMonitorFactoryListKey")
+    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<SharedJdwpSessionMonitorFactory>>("SharedJdwpSessionMonitorFactoryListKey")
 
 /**
  * The list of [SharedJdwpSessionMonitorFactory] associated to this [AdbSession]
  */
-internal val AdbSession.sharedJdwpSessionMonitorFactoryList: CopyOnWriteArrayList<SharedJdwpSessionMonitorFactory>
+internal val AdbSession.sharedJdwpSessionMonitorFactoryList: ConcurrentAutoCloseableCollection<SharedJdwpSessionMonitorFactory>
     get() = this.cache.getOrPut(SharedJdwpSessionMonitorFactoryListKey) {
-        CopyOnWriteArrayList<SharedJdwpSessionMonitorFactory>()
+        ConcurrentAutoCloseableCollection<SharedJdwpSessionMonitorFactory>()
     }
 
 /**
@@ -75,11 +74,4 @@ internal val AdbSession.sharedJdwpSessionMonitorFactoryList: CopyOnWriteArrayLis
  */
 fun AdbSession.addSharedJdwpSessionMonitorFactory(factory: SharedJdwpSessionMonitorFactory) {
     sharedJdwpSessionMonitorFactoryList.add(factory)
-}
-
-/**
- * Removes a [SharedJdwpSessionMonitorFactory] for [SharedJdwpSession] of this [AdbSession]
- */
-fun AdbSession.removeSharedJdwpSessionMonitorFactory(factory: SharedJdwpSessionMonitorFactory) {
-    sharedJdwpSessionMonitorFactoryList.remove(factory)
 }

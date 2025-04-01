@@ -28,7 +28,8 @@ import kotlin.concurrent.withLock
  * since this collection's iterator provides a snapshot of the state of the collection when the
  * iterator was constructed. No synchronization is needed while traversing the collection.
  */
-internal class ConcurrentAutoCloseableCollection<T : AutoCloseable> : AutoCloseable, Iterable<T> {
+internal class ConcurrentAutoCloseableCollection<T> : AutoCloseable, Iterable<T> {
+
     private val list = CopyOnWriteArrayList<T>()
     private val lock = ReentrantLock()
     private var isClosed = false
@@ -39,8 +40,9 @@ internal class ConcurrentAutoCloseableCollection<T : AutoCloseable> : AutoClosea
                 list.add(element)
             } else {
                 // If the collection is closed, immediately close the added AutoCloseable
-                runCatching { element.close() }
-                    .onFailure {
+                runCatching {
+                    (element as? AutoCloseable)?.close()
+                }.onFailure {
                         val error =
                             Exception("Error closing element when adding it to a closed collection")
                         error.addSuppressed(it)
@@ -54,7 +56,7 @@ internal class ConcurrentAutoCloseableCollection<T : AutoCloseable> : AutoClosea
         lock.withLock {
             if (!isClosed) {
                 isClosed = true
-                val toClose = list.toList()
+                val toClose = list.filterIsInstance<AutoCloseable>()
                 list.clear()
                 closeAll(toClose)
             }

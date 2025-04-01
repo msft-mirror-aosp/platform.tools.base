@@ -13,6 +13,7 @@ iml_module(
     # do not sort: must match IML order
     test_deps = [
         "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:kotlin-test",
         "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
     ],
     test_srcs = ["test/src"],
@@ -95,6 +96,7 @@ kotlin_test(
         "//tools/base/adblib",
         ":adblib.tools",
         "//tools/base/adblib:adblib.tests.testlib",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
         # For "JarTestSuite"
         "//tools/base/testutils:tools.testutils",
         # For JUnit4 support

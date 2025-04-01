@@ -18,7 +18,7 @@ package com.android.adblib.tools.debugging
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
-import java.util.concurrent.CopyOnWriteArrayList
+import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 
 /**
  * A component that creates instances of [JdwpSessionPipeline] each time a new JDWP session
@@ -26,7 +26,6 @@ import java.util.concurrent.CopyOnWriteArrayList
  * [AdbSession.addJdwpSessionPipelineFactory].
  *
  * @see AdbSession.addJdwpSessionPipelineFactory
- * @see AdbSession.removeJdwpSessionPipelineFactory
  */
 interface JdwpSessionPipelineFactory {
 
@@ -58,14 +57,14 @@ interface JdwpSessionPipelineFactory {
  * The [CoroutineScopeCache.Key] for the list of [JdwpSessionPipelineFactory]
  */
 private val JdwpSessionPipelineFactoryKey =
-    CoroutineScopeCache.Key<CopyOnWriteArrayList<JdwpSessionPipelineFactory>>("JdwpSessionPipelineFactoryListKey")
+    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<JdwpSessionPipelineFactory>>("JdwpSessionPipelineFactoryListKey")
 
 /**
  * The list of [JdwpSessionPipelineFactory] associated to this [AdbSession]
  */
-internal val AdbSession.jdwpSessionPipelineFactoryList: CopyOnWriteArrayList<JdwpSessionPipelineFactory>
+internal val AdbSession.jdwpSessionPipelineFactoryList: ConcurrentAutoCloseableCollection<JdwpSessionPipelineFactory>
     get() = this.cache.getOrPut(JdwpSessionPipelineFactoryKey) {
-        CopyOnWriteArrayList<JdwpSessionPipelineFactory>()
+        ConcurrentAutoCloseableCollection<JdwpSessionPipelineFactory>()
     }
 
 /**
@@ -75,9 +74,3 @@ fun AdbSession.addJdwpSessionPipelineFactory(factory: JdwpSessionPipelineFactory
     jdwpSessionPipelineFactoryList.add(factory)
 }
 
-/**
- * Removes a [JdwpSessionPipelineFactory] for [SharedJdwpSession] of this [AdbSession]
- */
-fun AdbSession.removeJdwpSessionPipelineFactory(factory: JdwpSessionPipelineFactory) {
-    jdwpSessionPipelineFactoryList.remove(factory)
-}
