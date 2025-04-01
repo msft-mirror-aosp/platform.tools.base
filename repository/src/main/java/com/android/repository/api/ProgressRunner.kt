@@ -13,32 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.android.repository.api;
-
-import com.android.annotations.NonNull;
+package com.android.repository.api
 
 /**
  * An interface for facilities that can run tasks, synchronously or asynchronously, and allow them
- * to show their progress using a {@link ProgressIndicator}.
+ * to show their progress using a [ProgressIndicator].
  */
-public interface ProgressRunner {
+interface ProgressRunner {
+  /** Runs a task asynchronously. */
+  fun runAsyncWithProgress(r: ProgressRunnable)
 
-    /** Runs a task asynchronously. */
-    void runAsyncWithProgress(@NonNull ProgressRunnable r);
+  /** Runs a task synchronously. */
+  fun runSyncWithProgress(r: ProgressRunnable)
 
-    /** Runs a task synchronously. */
-    void runSyncWithProgress(@NonNull ProgressRunnable r);
-
-    /**
-     * Runs a {@link Runnable} synchronously. Useful if e.g. it must be run on a certain thread.
-     */
-    void runSyncWithoutProgress(@NonNull Runnable r);
-
-    /**
-     * Interface for tasks that can show their progress using a {@link ProgressIndicator}.
-     */
-    interface ProgressRunnable {
-        void run(@NonNull ProgressIndicator indicator, @NonNull ProgressRunner runner);
-    }
+  /** Interface for tasks that can show their progress using a [ProgressIndicator]. */
+  fun interface ProgressRunnable {
+    suspend fun run(indicator: ProgressIndicator, runner: ProgressRunner)
+  }
 }

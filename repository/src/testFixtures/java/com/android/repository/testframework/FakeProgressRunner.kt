@@ -13,41 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.repository.testframework
 
-package com.android.repository.testframework;
+import com.android.repository.api.ProgressRunner
+import com.android.repository.api.ProgressRunner.ProgressRunnable
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
-import com.android.annotations.NonNull;
-import com.android.repository.api.ProgressRunner;
+/** A basic [ProgressRunner] that uses a [FakeProgressIndicator]. */
+class FakeProgressRunner(
+  val coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
+) : ProgressRunner {
+  var progressIndicator: FakeProgressIndicator = FakeProgressIndicator()
 
-/**
- * A basic {@link ProgressRunner} that uses a {@link FakeProgressIndicator}.
- */
-public class FakeProgressRunner implements ProgressRunner {
+  override fun runAsyncWithProgress(r: ProgressRunnable) {
+    coroutineScope.launch { r.run(progressIndicator, this@FakeProgressRunner) }
+  }
 
-    FakeProgressIndicator mProgressIndicator = new FakeProgressIndicator();
-
-    @Override
-    public void runAsyncWithProgress(@NonNull final ProgressRunner.ProgressRunnable r) {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                r.run(mProgressIndicator, FakeProgressRunner.this);
-            }
-        });
-        t.start();
-    }
-
-    @Override
-    public void runSyncWithProgress(@NonNull ProgressRunner.ProgressRunnable r) {
-        r.run(mProgressIndicator, this);
-    }
-
-    @Override
-    public void runSyncWithoutProgress(@NonNull Runnable r) {
-        r.run();
-    }
-
-    public FakeProgressIndicator getProgressIndicator() {
-        return mProgressIndicator;
-    }
+  override fun runSyncWithProgress(r: ProgressRunnable) {
+    runBlocking { r.run(progressIndicator, this@FakeProgressRunner) }
+  }
 }

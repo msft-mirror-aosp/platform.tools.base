@@ -25,6 +25,7 @@ import com.google.common.annotations.VisibleForTesting
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.runBlocking
 import org.w3c.dom.ls.LSResourceResolver
 
 /**
@@ -275,16 +276,11 @@ abstract class RepoManager {
    * MoreExecutors.directExecutor()).
    */
   protected class DirectProgressRunner(private val progress: ProgressIndicator) : ProgressRunner {
-    override fun runAsyncWithProgress(r: ProgressRunnable) {
-      r.run(progress, this)
-    }
+    // This class is only for use in loadSynchronously; this method is unneeded.
+    override fun runAsyncWithProgress(r: ProgressRunnable) = throw UnsupportedOperationException()
 
     override fun runSyncWithProgress(r: ProgressRunnable) {
-      r.run(progress, this)
-    }
-
-    override fun runSyncWithoutProgress(r: Runnable) {
-      r.run()
+      runBlocking { r.run(progress, this@DirectProgressRunner) }
     }
   }
 

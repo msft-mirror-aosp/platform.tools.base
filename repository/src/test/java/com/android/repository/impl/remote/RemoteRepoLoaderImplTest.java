@@ -44,6 +44,8 @@ import com.android.repository.testframework.FakeSettingsController;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
+import java.util.Locale;
+
 import junit.framework.TestCase;
 
 import org.mockito.Mockito;
@@ -308,9 +310,9 @@ public class RemoteRepoLoaderImplTest extends TestCase {
 
         // file preferred over url: relative paths
         downloader.registerUrl(new URL("http://www.example.com"),
-                String.format(TEST_LOCAL_PREFERRED_REPO, 1, "http", "foo").getBytes());
+                String.format(Locale.ROOT, TEST_LOCAL_PREFERRED_REPO, 1, "http", "foo").getBytes());
         downloader.registerUrl(new URL("file:///foo/bar"),
-                String.format(TEST_LOCAL_PREFERRED_REPO, 1, "file", "bar").getBytes());
+                String.format(Locale.ROOT, TEST_LOCAL_PREFERRED_REPO, 1, "file", "bar").getBytes());
         Map<String, RemotePackage> pkgs =
                 loader.fetchPackages(progress, downloader, new FakeSettingsController(false));
         assertEquals("file", pkgs.get("mypackage;foo").getDisplayName());
@@ -318,18 +320,18 @@ public class RemoteRepoLoaderImplTest extends TestCase {
         // file preferred over url: absolute paths
         downloader = new FakeDownloader(createInMemoryFileSystemAndFolder("tmp"));
         downloader.registerUrl(new URL("file:///foo/bar"),
-                String.format(TEST_LOCAL_PREFERRED_REPO, 1, "http", "http://example.com").getBytes());
+                String.format(Locale.ROOT, TEST_LOCAL_PREFERRED_REPO, 1, "http", "http://example.com").getBytes());
         downloader.registerUrl(new URL("file:///foo/bar2"),
-                String.format(TEST_LOCAL_PREFERRED_REPO, 1, "file", "file:///foo/bar2").getBytes());
+                String.format(Locale.ROOT, TEST_LOCAL_PREFERRED_REPO, 1, "file", "file:///foo/bar2").getBytes());
         pkgs = loader.fetchPackages(progress, downloader, new FakeSettingsController(false));
         assertEquals("file", pkgs.get("mypackage;foo").getDisplayName());
 
         // newer http preferred over file
         downloader = new FakeDownloader(createInMemoryFileSystemAndFolder("tmp"));
         downloader.registerUrl(new URL("http://www.example.com"),
-                String.format(TEST_LOCAL_PREFERRED_REPO, 2, "http", "foo").getBytes());
+                String.format(Locale.ROOT, TEST_LOCAL_PREFERRED_REPO, 2, "http", "foo").getBytes());
         downloader.registerUrl(new URL("file:///foo/bar"),
-                String.format(TEST_LOCAL_PREFERRED_REPO, 1, "file", "bar").getBytes());
+                String.format(Locale.ROOT, TEST_LOCAL_PREFERRED_REPO, 1, "file", "bar").getBytes());
         pkgs = loader.fetchPackages(progress, downloader, new FakeSettingsController(false));
         assertEquals("http", pkgs.get("mypackage;foo").getDisplayName());
     }
@@ -412,11 +414,11 @@ public class RemoteRepoLoaderImplTest extends TestCase {
 
         FakeDownloader downloader = new FakeDownloader(createInMemoryFileSystemAndFolder("tmp"));
         for (int i = 1; i <= 5; i++) {
-            String package1 = String.format(packageTemplate, i, "bad");
-            String package2 = String.format(packageTemplate, i + 1, "good");
+            String package1 = String.format(Locale.ROOT, packageTemplate, i, "bad");
+            String package2 = String.format(Locale.ROOT, packageTemplate, i + 1, "good");
             downloader.registerUrl(
                     new URL("http://www.example.com/f" + i),
-                    String.format(template, package1 + package2).getBytes());
+                    String.format(Locale.ROOT, template, package1 + package2).getBytes());
         }
         FakeProgressIndicator progress = new FakeProgressIndicator(true);
         RemoteRepoLoader loader = new RemoteRepoLoaderImpl(providers, null);

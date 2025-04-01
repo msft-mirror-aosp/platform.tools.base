@@ -312,7 +312,7 @@ class RepoManagerImplTest {
     assertFalse(didRun.get())
 
     // now we do the deep check and should run.
-    mgr.reloadLocalIfNeeded(runner.getProgressIndicator())
+    mgr.reloadLocalIfNeeded(runner.progressIndicator)
     assertTrue(didRun.compareAndSet(true, false))
 
     // check again that we won't reload because of caching
