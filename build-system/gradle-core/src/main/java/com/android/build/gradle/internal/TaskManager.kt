@@ -1048,8 +1048,8 @@ abstract class TaskManager(
         val appliedSubplugins =
             project.plugins
                 .filterIsInstance<KotlinCompilerPluginSupportPlugin>()
-                .filter { it.isApplicable(kotlinCompilation) }
                 .filter { it.getCompilerPluginId() in builtInKotlinCompilerPluginIdAllowlist }
+                .filter { it.isApplicable(kotlinCompilation) }
 
         // Similar to addMavenDependency function in SubpluginEnvironment in KGP
         fun Project.addMavenDependency(configuration: String, artifact: SubpluginArtifact) {
