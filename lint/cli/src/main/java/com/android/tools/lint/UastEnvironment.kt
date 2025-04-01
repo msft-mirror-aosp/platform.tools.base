@@ -277,8 +277,10 @@ interface UastEnvironment {
         if (project.isAndroidProject) {
           Variant.ANDROID
         } else {
-          // From AGP model's build variant
-          project.buildVariant?.name?.toModuleVariant()
+          // From explicit attribute
+          project.platform?.toModuleVariant()?.takeIf { it != Variant.UNKNOWN }
+            // From AGP model's build variant
+            ?: project.buildVariant?.name?.toModuleVariant()
             // From the module name in project.xml
             ?: project.name.toModuleVariant()
         }

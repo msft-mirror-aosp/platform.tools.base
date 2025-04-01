@@ -225,6 +225,14 @@ public class Project {
     }
 
     /**
+     * @return explicitly specified platform string, or `null`
+     */
+    @Nullable
+    public String getPlatform() {
+        return null;
+    }
+
+    /**
      * Returns the project model for this project if supported by the build system.
      *
      * @return the project model, or null
