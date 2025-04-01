@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.plugins
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 
 class AndroidKotlinPlugin : Plugin<Project> {
@@ -32,12 +33,21 @@ class AndroidKotlinPlugin : Plugin<Project> {
         val kotlinBaseApiPlugin = project.plugins.apply(KotlinBaseApiPlugin::class.java)
 
         // Add the `kotlin` extension
-        val kotlinAndroidExtension = kotlinBaseApiPlugin.createKotlinAndroidExtension()
+        val kotlinAndroidExtension = kotlinBaseApiPlugin.createKotlinAndroidExtension() as KotlinAndroidProjectExtension
+        kotlinAndroidExtension.setDefaults(project.name, kotlinBaseApiPlugin.pluginVersion)
         project.extensions.add("kotlin", kotlinAndroidExtension)
-
-        // Set default coreLibrariesVersion
-        kotlinAndroidExtension.coreLibrariesVersion = kotlinBaseApiPlugin.pluginVersion
     }
+}
+
+private fun KotlinAndroidProjectExtension.setDefaults(
+    projectName: String,
+    kotlinBaseApiPluginVersion: String
+) {
+    // Kotlin Gradle plugin requires `coreLibrariesVersion` to be set
+    coreLibrariesVersion = kotlinBaseApiPluginVersion
+
+    // KotlinCompile task requires `moduleName` to be set
+    compilerOptions.moduleName.convention(projectName)
 }
 
 /**

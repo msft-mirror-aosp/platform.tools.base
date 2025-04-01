@@ -967,12 +967,14 @@ abstract class TaskManager(
                 if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
                     copyKaptExtensionProperties(kotlinServices)
                 }
+                val kaptExtensionConfig =
+                    creationConfig.services.projectInfo.getExtension(KaptExtensionConfig::class.java)
                 val kaptCreationAction =
                     KaptCreationAction(
                         creationConfig,
                         project,
                         kotlinServices,
-                        creationConfig.global.kaptExtension
+                        kaptExtensionConfig
                     )
                 kaptCreationAction.registerTask()
                 val kaptStubGenerationCreationAction =
@@ -980,7 +982,7 @@ abstract class TaskManager(
                         creationConfig,
                         kotlinServices,
                         kotlinCompileTaskProvider,
-                        creationConfig.global.kaptExtension
+                        kaptExtensionConfig
                     )
                 kaptStubGenerationCreationAction.registerTask()
             } else {

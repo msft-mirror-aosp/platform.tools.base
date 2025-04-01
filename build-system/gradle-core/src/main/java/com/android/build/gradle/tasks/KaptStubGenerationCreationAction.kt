@@ -33,7 +33,7 @@ class KaptStubGenerationCreationAction(
     creationConfig: ComponentCreationConfig,
     private val kotlinServices: BuiltInKotlinServices,
     private val kotlinCompileTaskProvider: TaskProvider<out KotlinJvmCompile>,
-    private val kaptExtension: KaptExtensionConfig?
+    private val kaptExtension: KaptExtensionConfig
 ) : KotlinTaskCreationAction<KaptGenerateStubs>(creationConfig) {
 
     private val kotlinJvmFactory = kotlinServices.factory
@@ -51,19 +51,10 @@ class KaptStubGenerationCreationAction(
 
     override fun getTaskProvider(): TaskProvider<out KaptGenerateStubs> {
         if (kotlinServices.kotlinBaseApiVersion > KotlinBaseApiVersion.VERSION_1) {
-            if (kaptExtension == null) {
-                // This should never happen.
-                creationConfig.services
-                    .issueReporter
-                    .reportError(
-                        IssueReporter.Type.GENERIC,
-                        RuntimeException("Unable to access kapt extension.")
-                    )
-            }
             return kotlinJvmFactory.registerKaptGenerateStubsTask(
                 taskName,
                 kotlinCompileTaskProvider,
-                kaptExtension ?: kotlinJvmFactory.kaptExtension,
+                kaptExtension,
                 creationConfig.services.provider { kotlinServices.kotlinAndroidProjectExtension.explicitApi }
             )
         }

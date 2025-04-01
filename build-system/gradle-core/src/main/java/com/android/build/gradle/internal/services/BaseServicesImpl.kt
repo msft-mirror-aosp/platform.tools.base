@@ -53,13 +53,10 @@ open class BaseServicesImpl(protected val projectServices: ProjectServices):
         get() = projectServices.projectInfo
 
     override val builtInKotlinServices: BuiltInKotlinServices by lazy {
-        val kotlinBaseApiPlugin =
-            projectInfo.findPlugin(KotlinBaseApiPlugin::class.java)
-                ?: error("Unable to find plugin: ${KotlinBaseApiPlugin::class.java.name}")
-        val kotlinAndroidProjectExtension =
-            projectInfo.findExtensionByType(KotlinAndroidProjectExtension::class.java)
-                ?: error("Unable to find extension with type: ${KotlinAndroidProjectExtension::class.java.name}")
-
-        BuiltInKotlinServices.createFromPlugin(kotlinBaseApiPlugin, kotlinAndroidProjectExtension, projectInfo.name)
+        BuiltInKotlinServices.createFromPlugin(
+            kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
+            kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
+            projectName = projectInfo.name
+        )
     }
 }

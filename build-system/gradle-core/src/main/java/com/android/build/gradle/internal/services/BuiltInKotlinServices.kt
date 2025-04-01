@@ -39,11 +39,11 @@ interface BuiltInKotlinServices {
     companion object {
 
         fun createFromPlugin(
-            plugin: KotlinBaseApiPlugin,
+            kotlinBaseApiPlugin: KotlinBaseApiPlugin,
             kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
             projectName: String
         ): BuiltInKotlinServices {
-            getKotlinPluginVersionFromPlugin(plugin)?.let {
+            getKotlinPluginVersionFromPlugin(kotlinBaseApiPlugin)?.let {
                 if (Version.parse(it) < Version.parse(MINIMUM_BUILT_IN_KOTLIN_VERSION)) {
                     val message =
                         """
@@ -60,21 +60,14 @@ interface BuiltInKotlinServices {
                 }
             }
 
-            kotlinAndroidProjectExtension.setDefaults(projectName)
-
             return object : BuiltInKotlinServices {
-                override val kgpVersion: String = plugin.pluginVersion
-                override val factory: KotlinJvmFactory = plugin
+                override val kgpVersion: String = kotlinBaseApiPlugin.pluginVersion
+                override val factory: KotlinJvmFactory = kotlinBaseApiPlugin
                 override val kotlinBaseApiVersion = kgpVersion.kotlinBaseApiVersion()
                 override val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension = kotlinAndroidProjectExtension
             }
         }
     }
-}
-
-private fun KotlinAndroidProjectExtension.setDefaults(projectName: String) {
-    // KotlinCompile task requires `moduleName` to be set
-    compilerOptions.moduleName.convention(projectName)
 }
 
 /**
