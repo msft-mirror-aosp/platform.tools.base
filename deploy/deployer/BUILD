@@ -23,10 +23,10 @@ iml_module(
     }),
     # do not sort: must match IML order
     test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:mockito",
         "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:mockito",
         "//tools/base/perf-logger:studio.perf-logger",
         "//tools/base/deploy/deployer:fake_device_proto",
         "//tools/adt/idea/.idea/libraries:studio-grpc",
@@ -55,6 +55,7 @@ iml_module(
         "//tools/base/manifest-parser:studio.android.sdktools.manifest-parser",
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
+        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
     ],
 )
 
@@ -86,6 +87,7 @@ coverage_java_library(
         "//tools/base/deploy/proto:deploy_java_proto",
         "//tools/base/deploy/sites:java_sites",
         "//tools/base/manifest-parser:tools.manifest-parser",
+        "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/tracer:tools.tracer",
         "//tools/base/zipflinger",
         "@maven//:com.google.guava.guava",
@@ -160,6 +162,7 @@ maven_library(
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/zipflinger",
         "@maven//:com.android.tools.r8",
         "@maven//:com.google.guava.guava",

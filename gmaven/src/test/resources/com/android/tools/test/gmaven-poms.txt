@@ -415,6 +415,7 @@ com.android.tools.apkdeployer:apkdeployer
     com.android.tools.apkparser:binary-resources (runtime)
     com.android.tools:common (runtime)
     com.android.tools.ddms:ddmlib (runtime)
+    com.android.tools:sdk-common (runtime)
     com.android:zipflinger (runtime)
     com.android.tools:r8 (runtime)
     com.google.guava:guava (runtime)
