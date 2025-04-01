@@ -129,15 +129,14 @@ class UseEmbeddedDexPackagingTest(
         project.assertApk(ApkSelector.DEBUG) {
             manifestAsNodes()
                 .node("manifest")
-                .node("application")
-                .attributes().apply {
+                .node("application").apply {
                     if (expectedMergedManifestValue == null) {
-                        containsExactly(
+                        containsExactlyAttributesAndValues(
                             "http://schemas.android.com/apk/res/android:debuggable=true",
                             "http://schemas.android.com/apk/res/android:extractNativeLibs=false"
                         )
                     } else {
-                        containsExactly(
+                        containsExactlyAttributesAndValues(
                             "http://schemas.android.com/apk/res/android:debuggable=true",
                             "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
                             "http://schemas.android.com/apk/res/android:useEmbeddedDex=$expectedMergedManifestValue"

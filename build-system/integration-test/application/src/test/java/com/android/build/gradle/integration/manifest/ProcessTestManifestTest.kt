@@ -177,18 +177,16 @@ class ProcessTestManifestTest {
                 node("application").apply {
                     nodeByNameAndAttribute("receiver", "com.example.helloworld.TestReceiver")
                     nodeByNameAndAttribute("receiver", "com.example.helloworld.MainReceiver")
-                    attributes()
-                        .containsAtLeast(
-                            "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
-                            "http://schemas.android.com/apk/res/android:debuggable=true")
-                }
-                node("uses-sdk")
-                    .attributes()
-                    .containsExactly(
-                        "http://schemas.android.com/apk/res/android:minSdkVersion=21",
-                        "http://schemas.android.com/apk/res/android:targetSdkVersion=22",
-                        "http://schemas.android.com/apk/res/android:maxSdkVersion=29",
+                    containsAtLeastAttributesAndValues(
+                        "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
+                        "http://schemas.android.com/apk/res/android:debuggable=true"
                     )
+                }
+                node("uses-sdk").containsExactlyAttributesAndValues(
+                    "http://schemas.android.com/apk/res/android:minSdkVersion=21",
+                    "http://schemas.android.com/apk/res/android:targetSdkVersion=22",
+                    "http://schemas.android.com/apk/res/android:maxSdkVersion=29",
+                )
             }
         }
 
@@ -200,8 +198,7 @@ class ProcessTestManifestTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .attributes()
-                .containsExactly(
+                .containsExactlyAttributesAndValues(
                     "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
                     "http://schemas.android.com/apk/res/android:label=@0x7f030000"
                 )
@@ -232,8 +229,10 @@ class ProcessTestManifestTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .attributes()
-                .contains("http://schemas.android.com/apk/res/android:debuggable=true")
+                .containsAttributeAndValue(
+                    "http://schemas.android.com/apk/res/android:debuggable",
+                    "true"
+                )
         }
     }
 
