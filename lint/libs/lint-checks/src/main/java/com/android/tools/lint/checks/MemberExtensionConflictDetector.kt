@@ -32,8 +32,10 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaCallCandidateInfo
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundArrayAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundVariableAccessCall
+import org.jetbrains.kotlin.analysis.api.resolution.KaPartiallyAppliedSymbol
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaDeclarationSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
 import org.jetbrains.kotlin.builtins.StandardNames
@@ -108,30 +110,55 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
             .resolveToCallCandidates()
             // Only applicable candidates
             .filterIsInstance<KaApplicableCallCandidateInfo>()
-        if (candidates.size <= 1) return
+        // Early bail-out: no conflicts
+        if (candidates.size <= 1) {
+          return
+        }
         val (extensions, members) = candidates.partition { it.hasExtensionReceiver() }
+        // Another bail-out: no members
+        if (members.isEmpty()) {
+          return
+        }
+        // Member is chosen over extension.
+        // So, one of candidate members must be the "best" candidate.
+        val filteredMember = members.singleOrNull { it.isInBestCandidates }
+        // Otherwise, extension (along with explicit import) is chosen. Hence, no conflict.
+        if (filteredMember == null) {
+          return
+        }
         val filteredExtensions =
           extensions.filterNot { ext ->
-            ext.isNullableExtensionReceiver() && ext.isFromKotlinBuiltIns()
+            // E.g., kotlin.Any?.toString(), kotlin.text.StringBuilder.append(kotlin.Any?)
+            ext.isFromKotlinBuiltIns() &&
+              (ext.hasNullableExtensionReceiver() || ext.hasNullableValueParameters())
           }
-        if (filteredExtensions.isNotEmpty() && members.isNotEmpty()) {
-          reportConflict(this, node, members, filteredExtensions)
+        // Yet another bail-out: no extensions
+        if (filteredExtensions.isEmpty()) {
+          return
         }
+        reportConflict(this, node, listOf(filteredMember), filteredExtensions)
+      }
+
+      private fun KaApplicableCallCandidateInfo.partialSymbol(): KaPartiallyAppliedSymbol<*, *>? {
+        return (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
       }
 
       private fun KaApplicableCallCandidateInfo.hasExtensionReceiver(): Boolean {
-        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
-        return symbol?.extensionReceiver != null
+        return partialSymbol()?.extensionReceiver != null
       }
 
-      private fun KaApplicableCallCandidateInfo.isNullableExtensionReceiver(): Boolean {
-        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
-        return symbol?.signature?.receiverType?.nullability == KaTypeNullability.NULLABLE
+      private fun KaApplicableCallCandidateInfo.hasNullableExtensionReceiver(): Boolean {
+        return partialSymbol()?.signature?.receiverType?.nullability == KaTypeNullability.NULLABLE
+      }
+
+      private fun KaApplicableCallCandidateInfo.hasNullableValueParameters(): Boolean {
+        val valueParameters =
+          (partialSymbol()?.symbol as? KaFunctionSymbol)?.valueParameters ?: return false
+        return valueParameters.all { it.returnType.nullability == KaTypeNullability.NULLABLE }
       }
 
       private fun KaApplicableCallCandidateInfo.isFromKotlinBuiltIns(): Boolean {
-        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
-        return symbol
+        return partialSymbol()
           ?.signature
           ?.callableId
           ?.packageName

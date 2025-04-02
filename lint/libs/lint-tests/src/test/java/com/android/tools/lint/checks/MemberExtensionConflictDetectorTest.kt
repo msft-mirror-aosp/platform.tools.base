@@ -322,4 +322,26 @@ src/test/pkg/Foo.kt:13: Warning: Conflict applicable candidates of member and ex
       .run()
       .expectClean()
   }
+
+  fun testStringBuilder() {
+    // b/406991279
+    lint()
+      .files(
+        kotlin(
+            """
+            fun test(p: List<Any>): String {
+              val sb = StringBuilder()
+              for (item in p) {
+                sb.append(" | ")
+                sb.append(item)
+              }
+              return sb.toString()
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
 }
