@@ -29,10 +29,29 @@ import org.junit.Test
 private const val DUMPSYS_GMSCORE_CMD = "dumpsys package com.google.android.gms"
 
 private const val LAUNCH_COMMAND = "am start market://details?id=com.google.android.gms"
+private const val DUMPSYS_ACTIVITY = "dumpsys activity activities"
 private const val LAUNCH_COMMAND_STDOUT_VALID =
   "Starting: Intent { act=android.intent.action.VIEW dat=market://details/... }"
 private const val LAUNCH_COMMAND_STDERR_MISSING_STORE =
   "Error: Activity not started, unable to resolve Intent"
+
+private val DUMPSYS_ACTIVITY_VALID_1 =
+  """
+    ACTIVITY MANAGER SETTINGS (dumpsys activity settings) activity_manager_constants:
+    ...
+      mFocusedApp=ActivityRecord{b47d1f u0 com.app/.MainActivity t224}
+    ...
+  """
+    .trimIndent()
+
+private val DUMPSYS_ACTIVITY_VALID_2 =
+  """
+    ACTIVITY MANAGER SETTINGS (dumpsys activity settings) activity_manager_constants:
+    ...
+      ResumedActivity: ActivityRecord{cb4266b u0 com.app/.MainActivity} t8}
+    ...
+  """
+    .trimIndent()
 
 /** Tests for [AbstractAdbServices] */
 class AbstractAdbServicesTest {
@@ -142,8 +161,21 @@ class AbstractAdbServicesTest {
   }
 
   @Test
-  fun getForegroundApplicationId() = runBlocking {
-    val adbServices = FakeAdbServices("serial", 10)
+  fun getForegroundApplicationId_valid1() = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10)
+        .addCommandOverride(Output(DUMPSYS_ACTIVITY, DUMPSYS_ACTIVITY_VALID_1))
+
+    val applicationId = adbServices.getForegroundApplicationId()
+
+    assertThat(applicationId).isEqualTo("com.app")
+  }
+
+  @Test
+  fun getForegroundApplicationId_valid2() = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10)
+        .addCommandOverride(Output(DUMPSYS_ACTIVITY, DUMPSYS_ACTIVITY_VALID_2))
 
     val applicationId = adbServices.getForegroundApplicationId()
 
