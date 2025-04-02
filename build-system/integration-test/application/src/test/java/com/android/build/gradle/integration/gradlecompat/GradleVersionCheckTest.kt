@@ -14,50 +14,35 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.gradlecompat;
+package com.android.build.gradle.integration.gradlecompat
 
-import static com.google.common.truth.Truth.assertThat;
-
-import com.android.SdkConstants;
-import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
-import com.google.common.base.Throwables;
-import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
+import com.android.SdkConstants.GRADLE_LATEST_VERSION
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import org.junit.Rule
+import org.junit.Test
 
 /** Tests whether the Gradle version check takes effect. */
-public class GradleVersionCheckTest {
+class GradleVersionCheckTest {
 
-    /**
-     * An old version of Gradle to use in this test.
-     *
-     * <p>(This can't be lower than 8.4 as those Gradle versions do not support JDK 21, see bug
-     * 243592738.)
-     */
-    private static final String OLD_GRADLE_VERSION = "8.4";
-
-    @Rule
-    public GradleTestProject project =
-            GradleTestProject.builder()
-                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                    .setTargetGradleVersion(OLD_GRADLE_VERSION)
-                    .create();
+    @get:Rule
+    val rule = GradleRule
+        .configure().withGradleLocation { version(OLD_GRADLE_VERSION) }
+        .from { androidApplication {} }
 
     @Test
-    public void testGradleVersionCheck() throws IOException {
-        // Run the build twice, it should fail with the same message
-        // (regression test for bug 265296706)
-        for (int i = 1; i <= 2; i++) {
-            try {
-                project.executor().run("help");
-            } catch (Exception e) {
-                assertThat(Throwables.getRootCause(e).getMessage())
-                        .contains(
-                                String.format(
-                                        "Minimum supported Gradle version is %s. Current version is %s.",
-                                        SdkConstants.GRADLE_LATEST_VERSION, OLD_GRADLE_VERSION));
-            }
+    fun testGradleVersionCheck() {
+        // Run the build twice, it should fail with the same message (regression test for b/265296706)
+        repeat(2) {
+            val result = rule.build.executor.expectFailure().run("help")
+            result.assertErrorContains("Minimum supported Gradle version is $GRADLE_LATEST_VERSION. Current version is $OLD_GRADLE_VERSION.")
         }
     }
 }
+
+/**
+ * An old version of Gradle to use in this test.
+ *
+ * (This can't be lower than 8.4 as those Gradle versions do not support JDK 21, similar to
+ * b/243592738.)
+ */
+private const val OLD_GRADLE_VERSION = "8.4"
