@@ -34,6 +34,7 @@ SCREENSHOT_TEST_GRADLE_PLUGIN_SOURCE_FILES = [
     "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-api:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",
+    "//tools/base/preview/screenshot:release_version.gradle",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",
 ]

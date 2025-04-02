@@ -22,25 +22,12 @@ plugins {
     id 'java-gradle-plugin'
 }
 
+apply from: '../release_version.gradle'
+
 group = 'com.android.compose.screenshot'
 
 base {
     archivesName = 'screenshot-test-gradle-plugin'
-}
-
-if (findProperty('hybrid-build-embedded-in-bazel')?.toBoolean()) {
-    version = getProperty('SCREENSHOT_TEST_PLUGIN_VERSION')
-} else {
-    Properties properties = new Properties()
-    File versionRootDir = rootDir
-    String relativeVersionPath = 'base/preview/screenshot/release_version.bzl'
-    File versionProperties = new File(versionRootDir, relativeVersionPath)
-    versionProperties.withReader { properties.load(it) }
-    if (findProperty('release')?.toBoolean()) {
-        version = properties.getProperty('SCREENSHOT_TEST_PLUGIN_VERSION_RELEASE').replaceAll('"', '')
-    } else {
-        version = properties.getProperty('SCREENSHOT_TEST_PLUGIN_VERSION_DEV').replaceAll('"', '')
-    }
 }
 
 def generateVersionPropertiesResourceFile = tasks.register('generateVersionPropertiesResourceFile') {

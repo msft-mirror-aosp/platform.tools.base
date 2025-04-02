@@ -47,3 +47,5 @@ merged_zip(
         "//tools/base/build-system/integration-test:__subpackages__",
     ],
 )
+
+exports_files(["release_version.gradle"])
