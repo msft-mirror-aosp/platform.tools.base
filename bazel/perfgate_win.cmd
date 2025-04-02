@@ -43,6 +43,7 @@ CALL %SCRIPTDIR%bazel.cmd ^
  --nocache_test_results ^
  --runs_per_test=//prebuilts/studio/buildbenchmarks:.*@5 ^
  --runs_per_test=//tools/adt/idea/sync-perf-tests:intellij.android.sync-perf-tests.*@5 ^
+ --runs_per_test=//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests_tests__Benchmark2000Cpu@5 ^
  --jobs=250 ^
  -- ^
  %TARGETS%
