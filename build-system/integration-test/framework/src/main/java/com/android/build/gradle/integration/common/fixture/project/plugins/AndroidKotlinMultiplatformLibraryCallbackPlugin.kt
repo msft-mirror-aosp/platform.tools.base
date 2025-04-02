@@ -16,32 +16,32 @@
 
 package com.android.build.gradle.integration.common.fixture.project.plugins
 
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
- * A Custom plugin to be used with [AndroidKotlinMultiplatformCallback] in projects created
+ * A Custom plugin to be used with [AndroidKotlinMultiplatformLibraryComponentCallback] in projects created
  * by [GradleRule].
  *
- * Do not extend this. Instead, implement [AndroidKotlinMultiplatformCallback] and register the implementation
+ * Do not extend this. Instead, implement [AndroidKotlinMultiplatformLibraryComponentCallback] and register the implementation
  * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class AndroidKotlinMultiplatformCallbackPlugin: Plugin<Project> {
+abstract class AndroidKotlinMultiplatformLibraryCallbackPlugin: Plugin<Project> {
 
     override fun apply(target: Project) {
-        target.plugins.withId("org.jetbrains.kotlin.multiplatform") {
-            val extension = target.extensions.getByType(KotlinMultiplatformExtension::class.java)
+        target.plugins.withId("com.android.kotlin.multiplatform.library") {
+            val extension = target.extensions.getByType(KotlinMultiplatformAndroidComponentsExtension::class.java)
             handleExtension(target, extension)
         }
     }
 
     abstract fun handleExtension(
         project: Project,
-        extension: KotlinMultiplatformExtension
+        extension: KotlinMultiplatformAndroidComponentsExtension
     )
 }
 
@@ -50,9 +50,9 @@ abstract class AndroidKotlinMultiplatformCallbackPlugin: Plugin<Project> {
  * interface to implement to provide custom plugin logic to a [GradleRule] project
  * of type Kotlin Multiplatform
  */
-interface AndroidKotlinMultiplatformCallback: PluginCallback {
+interface AndroidKotlinMultiplatformLibraryComponentCallback: PluginCallback {
     fun handleExtension(
         project: Project,
-        extension: KotlinMultiplatformExtension
+        extension: KotlinMultiplatformAndroidComponentsExtension
     )
 }

@@ -19,7 +19,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallback
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -43,7 +43,7 @@ class KotlinMultiplatformGeneratedSourcesTest {
         }
     }
 
-    class Callback: AndroidKotlinMultiplatformCallback {
+    class Callback: KotlinMultiplatformCallback {
         override fun handleExtension(
             project: Project,
             extension: KotlinMultiplatformExtension
@@ -86,4 +86,3 @@ abstract class KMP_GenerateJavaRes : DefaultTask() {
         d.writeText("foo")
     }
 }
-
