@@ -60872,6 +60872,30 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.dagger.dagger-compiler_2.56.1",
+    pom = "repository/com/google/dagger/dagger-compiler/2.56.1/dagger-compiler-2.56.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/dagger-compiler/2.56.1",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.56.1",
+        "com.google.dagger.dagger-spi_2.56.1",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.devtools.ksp.symbol-processing-api_2.1.10-1.0.31",
+        "com.google.googlejavaformat.google-java-format_1.5",
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.guava_33.3.1-jre",
+        "com.squareup.javapoet_1.13.0",
+        "com.squareup.kotlinpoet_1.11.0",
+        "javax.inject.javax.inject_1",
+        "net.ltgt.gradle.incap.incap_0.2",
+        "org.checkerframework.checker-compat-qual_2.5.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.dagger.dagger-compiler_2.6",
     pom = "repository/com/google/dagger/dagger-compiler/2.6/dagger-compiler-2.6.pom",
     repo_root_path = "repository",
@@ -61019,6 +61043,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.dagger.dagger-spi_2.56.1",
+    pom = "repository/com/google/dagger/dagger-spi/2.56.1/dagger-spi-2.56.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/dagger-spi/2.56.1",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.56.1",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.devtools.ksp.symbol-processing-api_2.1.10-1.0.31",
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.guava_33.3.1-jre",
+        "com.squareup.javapoet_1.13.0",
+        "javax.inject.javax.inject_1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.dagger.dagger_2.22.1",
     pom = "repository/com/google/dagger/dagger/2.22.1/dagger-2.22.1.pom",
     repo_root_path = "repository",
@@ -61075,6 +61117,20 @@ maven_artifact(
     deps = [
         "jakarta.inject.jakarta.inject-api_2.0.1",
         "javax.inject.javax.inject_1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.dagger.dagger_2.56.1",
+    pom = "repository/com/google/dagger/dagger/2.56.1/dagger-2.56.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/dagger/2.56.1",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "jakarta.inject.jakarta.inject-api_2.0.1",
+        "javax.inject.javax.inject_1",
+        "org.jspecify.jspecify_1.0.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -61384,6 +61440,17 @@ maven_artifact(
     repo_path = "com/google/devtools/ksp/symbol-processing-api/2.0.10-1.0.24",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.23",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.devtools.ksp.symbol-processing-api_2.1.10-1.0.31",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.1.10-1.0.31/symbol-processing-api-2.1.10-1.0.31.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.1.10-1.0.31",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.20",
     ],
     visibility = ["//visibility:public"],
 )
