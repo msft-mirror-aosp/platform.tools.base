@@ -17,6 +17,7 @@ package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.TextFormat
 import com.android.tools.lint.useFirUast
 
 class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
@@ -74,14 +75,14 @@ class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
       )
       // Some test modes change the function signature of interest
       .skipTestModes(TestMode.JVM_OVERLOADS, TestMode.TYPE_ALIAS)
+      .textFormat(TextFormat.RAW)
       .run()
       .expect(
         """
-src/ListWrapper.kt:10: Warning: Conflict applicable candidates of member and extension: members {override val magicCount: kotlin.Int}, extensions {val my.cool.lib.MyList.magicCount: kotlin.Int
-  get()} [MemberExtensionConflict]
+src/ListWrapper.kt:10: Warning: `magicCount` is defined both as a member in class `ListWrapper` and an extension in package `users.own`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   val x = l.magicCount // WARNING 1
             ~~~~~~~~~~
-src/ListWrapper.kt:11: Warning: Conflict applicable candidates of member and extension: members {override fun removeMiddle()}, extensions {fun my.cool.lib.MyList.removeMiddle()} [MemberExtensionConflict]
+src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in class `ListWrapper` and an extension in package `users.own`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   l.removeMiddle() // WARNING 2
   ~~~~~~~~~~~~~~~~
 0 errors, 2 warnings
@@ -182,14 +183,14 @@ src/ListWrapper.kt:11: Warning: Conflict applicable candidates of member and ext
           )
           .indented(),
       )
+      .textFormat(TextFormat.RAW)
       .run()
       .expect(
         """
-src/ListWrapper.kt:10: Warning: Conflict applicable candidates of member and extension: members {override val magicCount: kotlin.Int}, extensions {val my.cool.lib.MyList.magicCount: kotlin.Int
-  get()} [MemberExtensionConflict]
+src/ListWrapper.kt:10: Warning: `magicCount` is defined both as a member in class `ListWrapper` and an extension in package `users.own`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   val x = l.magicCount // WARNING 1
             ~~~~~~~~~~
-src/ListWrapper.kt:11: Warning: Conflict applicable candidates of member and extension: members {override fun removeMiddle()}, extensions {fun my.cool.lib.MyList.removeMiddle()} [MemberExtensionConflict]
+src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in class `ListWrapper` and an extension in package `users.own`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   l.removeMiddle() // WARNING 2
   ~~~~~~~~~~~~~~~~
 0 errors, 2 warnings
@@ -289,13 +290,14 @@ src/ListWrapper.kt:11: Warning: Conflict applicable candidates of member and ext
       )
       // Some test modes change the function signature of interest
       .skipTestModes(TestMode.JVM_OVERLOADS, TestMode.TYPE_ALIAS)
+      .textFormat(TextFormat.RAW)
       .run()
       .expect(
         """
-src/test/pkg/Foo.kt:11: Warning: Conflict applicable candidates of member and extension: members {fun bar()}, extensions {fun test.pkg.Foo?.bar()} [MemberExtensionConflict]
+src/test/pkg/Foo.kt:11: Warning: `bar` is defined both as a member in class `test.pkg.Foo` and an extension in package `another.pkg`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   foo.bar() // Member
   ~~~~~~~~~
-src/test/pkg/Foo.kt:13: Warning: Conflict applicable candidates of member and extension: members {fun bar()}, extensions {fun test.pkg.Foo?.bar()} [MemberExtensionConflict]
+src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `test.pkg.Foo` and an extension in package `another.pkg`. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
   (foo as Foo?)?.bar() // Member
   ~~~~~~~~~~~~~~~~~~~~
 0 errors, 2 warnings

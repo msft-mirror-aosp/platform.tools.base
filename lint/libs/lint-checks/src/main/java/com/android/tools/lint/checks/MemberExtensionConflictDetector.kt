@@ -34,9 +34,11 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundArrayAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundVariableAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaPartiallyAppliedSymbol
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaDeclarationSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.name
 import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.psi.KtElement
@@ -136,7 +138,8 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
         if (filteredExtensions.isEmpty()) {
           return
         }
-        reportConflict(this, node, listOf(filteredMember), filteredExtensions)
+        // Just pick the first extension to report.
+        reportConflict(node, filteredMember, filteredExtensions.first())
       }
 
       private fun KaApplicableCallCandidateInfo.partialSymbol(): KaPartiallyAppliedSymbol<*, *>? {
@@ -165,48 +168,35 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
           ?.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME) == true
       }
 
-      private fun reportConflict(
-        session: KaSession,
+      private fun KaSession.reportConflict(
         node: UElement,
-        members: List<KaCallCandidateInfo>,
-        extensions: List<KaCallCandidateInfo>,
+        member: KaCallCandidateInfo,
+        extension: KaCallCandidateInfo,
       ) {
+        val mem = member.candidate.symbol()
+        val ext = extension.candidate.symbol() as? KaCallableSymbol ?: return
         val message = buildString {
-          append(MSG)
-          append(": members ")
-          members.joinTo(this, prefix = "{", postfix = "}") { info ->
-            info.candidate.symbols().joinToString { symbol ->
-              with(session) {
-                (symbol as? KaDeclarationSymbol)?.render() ?: symbol.psi?.toString() ?: ""
-              }
-            }
-          }
-          append(", extensions ")
-          extensions.joinTo(this, prefix = "{", postfix = "}") { info ->
-            info.candidate.symbols().joinToString { symbol ->
-              with(session) {
-                (symbol as? KaDeclarationSymbol)?.render() ?: symbol.psi?.toString() ?: ""
-              }
-            }
-          }
+          append("`${mem.name?.asString() ?: "<unnamed>"}`")
+          append(" is defined both as a member in class ")
+          val classSymbol = mem.containingDeclaration as? KaClassSymbol
+          append("`${classSymbol?.classId?.asFqNameString() ?: "<unknown>"}`")
+          append(" and an extension in package ")
+          append("`${ext.callableId?.packageName?.asString() ?: "<unknown>"}`. ")
+          append("The defined behavior for this is to use the member, ")
+          append("but since the extension is explicitly imported into this file, ")
+          append("there's a chance that this was not expected. ")
+          append("(One common way this happens is for members to be added to a class ")
+          append("after code was already written to use an extension).")
         }
         context.report(ISSUE, node, context.getLocation(node), message)
       }
 
-      private fun KaCall.symbols(): List<KaSymbol> =
+      private fun KaCall.symbol(): KaSymbol =
         when (this) {
           is KaCompoundVariableAccessCall ->
-            listOfNotNull(
-              variablePartiallyAppliedSymbol.symbol,
-              compoundOperation.operationPartiallyAppliedSymbol.symbol,
-            )
-          is KaCompoundArrayAccessCall ->
-            listOfNotNull(
-              getPartiallyAppliedSymbol.symbol,
-              setPartiallyAppliedSymbol.symbol,
-              compoundOperation.operationPartiallyAppliedSymbol.symbol,
-            )
-          is KaCallableMemberCall<*, *> -> listOf(symbol)
+            compoundOperation.operationPartiallyAppliedSymbol.symbol
+          is KaCompoundArrayAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
+          is KaCallableMemberCall<*, *> -> symbol
         }
     }
 }
