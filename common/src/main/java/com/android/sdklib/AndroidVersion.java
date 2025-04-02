@@ -56,6 +56,12 @@ import java.util.regex.Pattern;
  * For generic UI display of the API version, {@link #getApiString()} is to be used.
  */
 public final class AndroidVersion implements Comparable<AndroidVersion>, Serializable {
+
+    /**
+     * Prefix used to build hash strings for platform targets
+     */
+    public static final String PLATFORM_HASH_PREFIX = "android-";
+
     /**
      * SDK version codes mirroring ones found in Build#VERSION_CODES on Android.
      */
@@ -447,6 +453,27 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
         return String.format(
                 Locale.US, "%1$s-ext%2$d", getApiStringWithoutExtension(), mExtensionLevel);
+    }
+
+    /**
+     * Returns the hash string for a given platform version.
+     *
+     * <p>Base SDK AndroidVersion do not maintain the extension level when converting to hashString,
+     * and then back to AndroidVersion, to maintain backwards compatibility with versions of Studio
+     * where extension levels of base SDKs are not known.
+     *
+     * @return A hash string uniquely representing this platform target.
+     */
+    @NonNull
+    public String getPlatformHashString() {
+        // The platform hash string for API 36 has to be "android-36" instead of "android-36.0".
+        if (mAndroidApiLevel.getMajorVersion() == 36 && mAndroidApiLevel.getMinorVersion() == 0 &&
+                mCodename == null) {
+            return mIsBaseExtension ?
+                   PLATFORM_HASH_PREFIX + "36" :
+                   PLATFORM_HASH_PREFIX + "36-ext" + mExtensionLevel;
+        }
+        return PLATFORM_HASH_PREFIX + getApiStringWithExtension();
     }
 
     /**

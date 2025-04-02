@@ -17,9 +17,9 @@
 package com.android.sdklib
 
 /**
- * A short summary string of the API level of the given android version.
+ * A short summary string of the API level of the given Android version.
  *
- * Generally the same as [AndroidVersion.getApiStringWithExtension] but with explicit minor for 36.
+ * The same as [AndroidVersion.getApiStringWithExtension].
  */
 val AndroidVersion.displayApiString: String get() = getApiStringWithExtension()
 
@@ -87,7 +87,7 @@ fun AndroidVersion.getFullApiName(
  * - API 33        / Android 13.0             (includeReleaseName == true, includeCodeName == false)
  * - API 33        / "Tiramisu"               (includeReleaseName == false, includeCodeName == true)
  * - API 33        / "Tiramisu"; Android 13.0 (includeReleaseName == true, includeCodeName == true)
- * - API 37.0      / "???"; Android API 37.0  (includeReleaseName == true, includeCodeName == true)
+ * - API 36.0      / "Baklava"; Android 16.0  (includeReleaseName == true, includeCodeName == true)
  *
  * If the release name or codename are unknown, they will be omitted.
  *

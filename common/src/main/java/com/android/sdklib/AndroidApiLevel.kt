@@ -24,15 +24,13 @@ import java.io.Serializable
  * <p>In other words, the expected sequence of versions currently encoded is:
  * <ul>
  * <li>35
- * <li>36 (minor is not included in the version string)
- * <li>36.1 (the first version with a minor version)
- * <li>37.0 (minor version is always included in the version string for 37 and above)
- * <li>37.1
+ * <li>36.0 (minor version is always included in the version string for 36 and above)
+ * <li>36.1
  * </ul>
  *
  * See AndroidVersionTest.testMinorVersionNormalization
  */
-private const val MIN_API_FOR_EXPLICIT_MINOR: Int = 37
+private const val MIN_API_FOR_EXPLICIT_MINOR: Int = 36
 
 data class AndroidApiLevel
 @JvmOverloads

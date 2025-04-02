@@ -526,7 +526,7 @@ class SdkParsingUtilsTest {
             """
             We recommend using a newer Android Gradle plugin to use compile SDK version 36.3
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 36.
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 36.0.
 
             You are strongly encouraged to update your project to use a newer
             Android Gradle plugin that has been tested with compile SDK version 36.3.
