@@ -293,15 +293,16 @@ class BackupServiceImplTest {
   }
 
   @Test
-  fun backup_deletesExistingFileBeforeRunning(): Unit = runBlocking {
+  fun backup_doesNotDeleteFileIfFails(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     backupFile.createFile()
     val backupService =
       BackupServiceImpl(FakeAdbServicesFactory("com.app") { it.transports = emptyList() })
 
-    backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
+    val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
 
-    assertThat(backupFile.notExists()).isTrue()
+    assertThat(result).isNotEqualTo(Success)
+    assertThat(backupFile.exists()).isTrue()
   }
 
   @Test
