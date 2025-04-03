@@ -17,8 +17,10 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.fixture.project.builder.bytecode.ReferenceFinderVisitor
-import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformCallback
-import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformCallbackPlugin
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryComponentCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryCallbackPlugin
+import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.DynamicFeatureCallbackPlugin
@@ -90,7 +92,8 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
             PluginData(LegacyLibraryCallback::class, LegacyLibraryCallbackPlugin::class, "com/android/build/gradle/LibraryExtension"),
 
             // KMP callbacks
-            PluginData(AndroidKotlinMultiplatformCallback::class, AndroidKotlinMultiplatformCallbackPlugin::class, "org/jetbrains/kotlin/gradle/dsl/KotlinMultiplatformExtension"),
+            PluginData(KotlinMultiplatformCallback::class, KotlinMultiplatformCallbackPlugin::class, "org/jetbrains/kotlin/gradle/dsl/KotlinMultiplatformExtension"),
+            PluginData(AndroidKotlinMultiplatformLibraryComponentCallback::class, AndroidKotlinMultiplatformLibraryCallbackPlugin::class, "com/android/build/api/variant/KotlinMultiplatformAndroidComponentsExtension"),
 
             // generic plugin with no extension
             PluginData(GenericCallback::class, GenericCallbackPlugin::class, null)

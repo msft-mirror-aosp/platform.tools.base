@@ -84,10 +84,14 @@ object AdbProtocolUtils {
         return String(bytes, ADB_CHARSET)
     }
 
-    fun bufferToByteDumpString(status: ByteBuffer): String {
+    /**
+     * Create a "hex dump" string (for debugging/logging purpose) of up to [maxCount]
+     * characters of [status], leaving [ByteBuffer.position] and [ByteBuffer.limit]
+     * untouched.
+     */
+    fun bufferToByteDumpString(status: ByteBuffer, maxCount: Int = 24): String {
         val sb1 = StringBuilder()
         val sb2 = StringBuilder()
-        val maxCount = 24
         val position = status.position()
         for (i in 0 until min(status.remaining(), maxCount)) {
             val statusByte = status.get(i + position)

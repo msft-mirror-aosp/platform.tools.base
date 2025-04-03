@@ -163,7 +163,9 @@ internal class AbbCommandImpl<T>(
                             commandOutputTimeout = commandOutputTimeout,
                             bufferSize = bufferSize,
                             stripCrLf = false,
-                            shutdownOutput = false
+                            shutdownOutput = false,
+                            shellOptions = null,
+                            windowSizeFlow = null,
                         )
                     ).createFlow()
                 }
@@ -179,7 +181,9 @@ internal class AbbCommandImpl<T>(
                             commandOutputTimeout = commandOutputTimeout,
                             bufferSize = bufferSize,
                             stripCrLf = false,
-                            shutdownOutput = _shutdownOutputForExecProtocol
+                            shutdownOutput = _shutdownOutputForExecProtocol,
+                            shellOptions = null,
+                            windowSizeFlow = null,
                         )
                     ).createFlow()
                 }

@@ -19,15 +19,16 @@ import com.google.common.truth.Truth.assertThat
 import java.time.Duration
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class PeriodicActionTest {
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun run() = runBlockingTest {
+  fun run() = runTest {
     var i = 0
     val action = PeriodicAction(this, Duration.ofHours(1)) { i++ }
     testScheduler.apply {
@@ -40,14 +41,14 @@ class PeriodicActionTest {
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun runNow() = runBlockingTest {
+  fun runNow() = runTest {
     var i = 0
     val action = PeriodicAction(this, Duration.ofHours(1)) { i++ }
     testScheduler.apply {
       advanceTimeBy(Duration.ofMinutes(59).toMillis())
       runCurrent()
     }
-    action.runNow()
+    action.runNow().join()
     assertThat(i).isEqualTo(1)
     testScheduler.apply {
       advanceTimeBy(Duration.ofMinutes(3).toMillis())
@@ -64,7 +65,7 @@ class PeriodicActionTest {
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun runNowCancellation() = runBlockingTest {
+  fun runNowCancellation() = runTest {
     var i = 0
     val action =
       PeriodicAction(this, Duration.ofSeconds(1)) {
@@ -108,12 +109,12 @@ class PeriodicActionTest {
 
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
-  fun actionThrows() = runBlockingTest {
+  fun actionThrows() = runTest {
     var i = 0
     var exceptions = 0
     val exceptionHandler = CoroutineExceptionHandler { ctx, t -> exceptions++ }
     val action =
-      PeriodicAction(this + exceptionHandler, Duration.ofHours(1)) {
+      PeriodicAction(this + exceptionHandler + SupervisorJob(), Duration.ofHours(1)) {
         if (i % 2 == 1) {
           throw Exception()
         }

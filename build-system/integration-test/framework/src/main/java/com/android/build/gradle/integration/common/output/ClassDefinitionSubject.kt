@@ -54,6 +54,8 @@ class ClassDefinitionSubject(
 
     fun methods(): IterableSubject = check("methods()").that(actual().methods)
 
+    fun fieldByName(name: String): StringSubject = check("fieldByName($name)").that(actual().fieldByName(name))
+
     /**
      * Returns the list of methods invoked by the methods matching the provided name.
      *

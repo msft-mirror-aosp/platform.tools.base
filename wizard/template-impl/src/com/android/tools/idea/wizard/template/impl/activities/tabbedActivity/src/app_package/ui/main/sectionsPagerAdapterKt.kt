@@ -16,19 +16,20 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.src.app_package.ui.main
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
 fun sectionsPagerAdapterKt(
   packageName: String,
   useAndroidX: Boolean) =
 
-  """package ${packageName}.ui.main
+  """package ${escapeKotlinIdentifier(packageName)}.ui.main
 
 import android.content.Context
 import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
 import ${getMaterialComponentName("android.support.v4.app.FragmentManager", useAndroidX)}
 import ${getMaterialComponentName("android.support.v4.app.FragmentPagerAdapter", useAndroidX)}
-import ${packageName}.R
+import ${escapeKotlinIdentifier(packageName)}.R
 
 private val TAB_TITLES = arrayOf(
         R.string.tab_text_1,

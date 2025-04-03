@@ -44,7 +44,7 @@ fun firstFragmentKt(
   else "View root = inflater.inflate(R.layout.$layoutName, container, false);"
 
   return """
-package ${packageName}.ui.${navFragmentPrefix}
+package ${escapeKotlinIdentifier(packageName)}.ui.${navFragmentPrefix}
 
 import android.os.Bundle
 import android.view.LayoutInflater

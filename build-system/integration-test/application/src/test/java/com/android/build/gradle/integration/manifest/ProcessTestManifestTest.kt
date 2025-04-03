@@ -18,11 +18,10 @@ package com.android.build.gradle.integration.manifest
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.ApkSubject.getManifestContent
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
-import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertTrue
@@ -173,27 +172,40 @@ class ProcessTestManifestTest {
 
         project.executor().run("assembleDebugAndroidTest")
 
-        val manifestContent = getManifestContent(project.testApk.file)
-        assertManifestContentContainsString(manifestContent, "com.example.helloworld.TestReceiver")
-        assertManifestContentContainsString(manifestContent, "com.example.helloworld.MainReceiver")
-        assertManifestContentContainsString(manifestContent, "A: http://schemas.android.com/apk/res/android:minSdkVersion(0x0101020c)=21")
-        assertManifestContentContainsString(manifestContent, "A: http://schemas.android.com/apk/res/android:targetSdkVersion(0x01010270)=22")
-        assertManifestContentContainsString(manifestContent, "A: http://schemas.android.com/apk/res/android:maxSdkVersion(0x01010271)=29")
-        assertManifestContentContainsString(
-            manifestContent,
-            "A: http://schemas.android.com/apk/res/android:extractNativeLibs(0x010104ea)=false"
-        )
-        assertManifestContentContainsString(
-            manifestContent,
-            "http://schemas.android.com/apk/res/android:debuggable(0x0101000f)=true"
-        )
+        project.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            manifestAsNodes().node("manifest").apply {
+                node("application").apply {
+                    nodeByNameAndAttribute("receiver", "com.example.helloworld.TestReceiver")
+                    nodeByNameAndAttribute("receiver", "com.example.helloworld.MainReceiver")
+                    attributes()
+                        .containsAtLeast(
+                            "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
+                            "http://schemas.android.com/apk/res/android:debuggable=true")
+                }
+                node("uses-sdk")
+                    .attributes()
+                    .containsExactly(
+                        "http://schemas.android.com/apk/res/android:minSdkVersion=21",
+                        "http://schemas.android.com/apk/res/android:targetSdkVersion=22",
+                        "http://schemas.android.com/apk/res/android:maxSdkVersion=29",
+                    )
+            }
+        }
 
         // The manifest shouldn't contain android:debuggable if we set the testBuildType to release.
         project.buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
         project.executor().run("assembleReleaseAndroidTest")
-        val releaseManifestContent =
-            getManifestContent(project.getApk(GradleTestProject.ApkType.ANDROIDTEST_RELEASE).file)
-        assertManifestContentDoesNotContainString(releaseManifestContent, "android:debuggable")
+
+        project.assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .attributes()
+                .containsExactly(
+                    "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
+                    "http://schemas.android.com/apk/res/android:label=@0x7f030000"
+                )
+        }
     }
 
     @Test
@@ -215,9 +227,14 @@ class ProcessTestManifestTest {
         """.trimIndent())
         project.buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
         project.executor().run("assembleReleaseAndroidTest")
-        val releaseManifestContent =
-            getManifestContent(project.getApk(GradleTestProject.ApkType.ANDROIDTEST_RELEASE).file)
-        assertManifestContentContainsString(releaseManifestContent, "android:debuggable")
+
+        project.assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .attributes()
+                .contains("http://schemas.android.com/apk/res/android:debuggable=true")
+        }
     }
 
     @Test
@@ -499,29 +516,10 @@ class ProcessTestManifestTest {
 
         project.executor().run("assembleDebugAndroidTest")
 
-        val manifestContent = getManifestContent(project.testApk.file)
-        assertManifestContentContainsString(manifestContent, "com.example.helloworld.HelloWorld")
-        assertManifestContentContainsString(
-            manifestContent,
-            "com.example.helloworld.test.TestActivity"
-        )
-    }
-
-    private fun assertManifestContentContainsString(
-        manifestContent: Iterable<String>,
-        stringToAssert: String
-    ) {
-        manifestContent.forEach { if (it.trim().contains(stringToAssert)) return }
-        fail("Cannot find $stringToAssert in ${manifestContent.joinToString(separator = "\n")}")
-    }
-
-    private fun assertManifestContentDoesNotContainString(
-        manifestContent: Iterable<String>,
-        stringToAssert: String
-    ) {
-        manifestContent.forEach {
-            if (it.trim().contains(stringToAssert)) {
-                fail("$stringToAssert found in ${manifestContent.joinToString(separator = "\n")}")
+        project.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            manifestAsNodes().node("manifest").node("application").apply {
+                nodeByNameAndAttribute("activity", "com.example.helloworld.HelloWorld")
+                nodeByNameAndAttribute("activity", "com.example.helloworld.test.TestActivity")
             }
         }
     }

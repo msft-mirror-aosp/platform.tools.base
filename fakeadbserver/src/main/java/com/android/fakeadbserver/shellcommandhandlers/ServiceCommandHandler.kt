@@ -21,6 +21,7 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.PackageManager
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.ServiceManager
+import com.android.fakeadbserver.services.StatusWriter
 
 /*
  * A [ShellHandler] thar writes 'Service <argument>: found' to stdout.

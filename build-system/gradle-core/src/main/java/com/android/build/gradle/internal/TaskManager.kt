@@ -121,6 +121,7 @@ import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.api.artifact.impl.ArtifactsLocationsReportTask
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
+import com.android.build.gradle.internal.tasks.MergePackageListsForR8Task
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
@@ -957,7 +958,8 @@ abstract class TaskManager(
             return
         }
         val kotlinServices = creationConfig.services.builtInKotlinServices
-        maybeAddKotlinStdlibDependency(project, creationConfig)
+
+        maybeAddKotlinStdlibDependency(project, creationConfig, kotlinServices)
         val kotlinCompileTaskProvider =
             KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
         val kaptGenerateStubsProvider =
@@ -965,12 +967,14 @@ abstract class TaskManager(
                 if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
                     copyKaptExtensionProperties(kotlinServices)
                 }
+                val kaptExtensionConfig =
+                    creationConfig.services.projectInfo.getExtension(KaptExtensionConfig::class.java)
                 val kaptCreationAction =
                     KaptCreationAction(
                         creationConfig,
                         project,
                         kotlinServices,
-                        creationConfig.global.kaptExtension
+                        kaptExtensionConfig
                     )
                 kaptCreationAction.registerTask()
                 val kaptStubGenerationCreationAction =
@@ -978,30 +982,24 @@ abstract class TaskManager(
                         creationConfig,
                         kotlinServices,
                         kotlinCompileTaskProvider,
-                        creationConfig.global.kaptExtension
+                        kaptExtensionConfig
                     )
                 kaptStubGenerationCreationAction.registerTask()
             } else {
                 null
             }
 
-        val androidTarget = creationConfig.global.kotlinAndroidProjectExtension?.target
-        val kotlinCompilation =
-            androidTarget?.let {
-                BuiltInKotlinJvmAndroidCompilation(
-                    creationConfig.name,
-                    it,
-                    kotlinCompileTaskProvider
-                )
-            }
-        if (kotlinCompilation != null) {
-            if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
-                // Ensure "kotlin-extension" configuration exists here, because the Compose
-                // Compiler Gradle plugin assumes it will have been created already.
-                maybeCreateKotlinExtensionConfiguration()
-            }
-            addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
+        val kotlinCompilation = BuiltInKotlinJvmAndroidCompilation(
+            creationConfig.name,
+            kotlinServices.kotlinAndroidProjectExtension.target,
+            kotlinCompileTaskProvider
+        )
+        if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
+            // Ensure "kotlin-extension" configuration exists here, because the Compose
+            // Compiler Gradle plugin assumes it will have been created already.
+            maybeCreateKotlinExtensionConfiguration()
         }
+        addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
     }
 
     /**
@@ -1050,8 +1048,8 @@ abstract class TaskManager(
         val appliedSubplugins =
             project.plugins
                 .filterIsInstance<KotlinCompilerPluginSupportPlugin>()
-                .filter { it.isApplicable(kotlinCompilation) }
                 .filter { it.getCompilerPluginId() in builtInKotlinCompilerPluginIdAllowlist }
+                .filter { it.isApplicable(kotlinCompilation) }
 
         // Similar to addMavenDependency function in SubpluginEnvironment in KGP
         fun Project.addMavenDependency(configuration: String, artifact: SubpluginArtifact) {
@@ -1951,8 +1949,11 @@ abstract class TaskManager(
             project,
             creationConfig.services.projectOptions
         ).execute()
+        if (creationConfig.services.projectOptions[BooleanOption.GRADUAL_R8_SHRINKING]) {
+            taskFactory.register(MergePackageListsForR8Task.CreationAction(creationConfig))
+        }
         return taskFactory.register(
-                R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
+            R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
     }
 
     protected fun registerParseLibraryResourcesTask(creationConfig: ComponentCreationConfig) {

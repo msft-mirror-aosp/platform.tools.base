@@ -94,7 +94,6 @@ import java.util.Calendar
 import java.util.Collections
 import java.util.EnumSet
 import java.util.function.Predicate
-import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.uast.UCallExpression
@@ -379,7 +378,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         }
       }
     } else if (
-      (property == "compileSdkVersion" || property == "compileSdk") && parent.startsWith("android")
+      (property == "compileSdkVersion" || property == "compileSdk") &&
+        (parent.startsWith("android") || parent == "this" && parentParent == "android")
     ) {
       var version = -1
       if (isStringLiteral(value)) {
@@ -4663,7 +4663,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
     private fun Char.isTomlSeparator(): Boolean = this == '.' || this == '_' || this == '-'
 
-    @VisibleForTesting
     fun isCompileSdkTomlVersionKey(key: String): Boolean =
       key.tomlKeyMatches("compileSdk") ||
         key.tomlKeyMatches("compileSdkVersion") ||

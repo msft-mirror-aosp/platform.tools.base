@@ -35,7 +35,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
@@ -132,6 +131,7 @@ class AdbServerControllerImplTest {
 
         // Act
         controller.start()
+        fail("Should not reach")
     }
 
     @Test
@@ -243,13 +243,67 @@ class AdbServerControllerImplTest {
 
         // Act
         controller.stop()
-        val adbChannel = withTimeoutOrNull(100) {
-            registerCloseable(controller.channelProvider.createChannel())
+
+        // Assert
+        assertFalse(controller.isStarted)
+    }
+
+    @Test
+    fun testCreateChannelInStoppingState_throwsIOException(): Unit = runBlockingWithTimeout {
+        // Prepare: Create a controller and put it into a stopped state
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                adbPath = ADB_FILE_PATH,
+                serverPort = fakeAdb.port,
+                isUnitTest = false
+            )
+        }
+        controller.start()
+        exceptionRule.expect(IOException::class.java)
+        exceptionRule.expectMessage("`AdbServerController` is in a stopping/stopped")
+
+        // Act: start stopping. While the controller is stopping, it can no longer create channels.
+        processRunner.delayByMs = 100
+        launch {
+            controller.stop()
         }
 
-        // Assert: after controller is stopped, it can no longer create channels
+        // delay a little to let the controller start stopping
+        delay(50)
+        // It hasn't been successfully stopped yet, but `createChannel` already throws exceptions
+        assertTrue(controller.isStarted)
+        registerCloseable(controller.channelProvider.createChannel())
+        fail("Should not reach")
+    }
+
+    @Test
+    fun testCreateChannelInStoppedState_throwsIOException(): Unit = runBlockingWithTimeout {
+        // Prepare: Create a controller and put it into a stopped state
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update { it.copy(serverPort = fakeAdb.port) }
+        controller.start()
+        controller.stop()
         assertFalse(controller.isStarted)
-        assertNull(adbChannel)
+
+        exceptionRule.expect(IOException::class.java)
+        exceptionRule.expectMessage("`AdbServerController` is in a stopping/stopped")
+
+        // Act/Assert: after controller is stopped, it can no longer create channels
+        registerCloseable(controller.channelProvider.createChannel())
+        fail("Should not reach")
     }
 
     @Test
@@ -280,6 +334,7 @@ class AdbServerControllerImplTest {
 
         // Act
         controller.stop()
+        fail("Should not reach")
     }
 
     @Test
@@ -331,13 +386,13 @@ class AdbServerControllerImplTest {
             // Act
             // createChannel call will timeout, because the controller has not been started
             registerCloseable(controller.channelProvider.createChannel(50, TimeUnit.MILLISECONDS))
+            fail("Should not reach")
         }
 
     @Test
     fun testCreateChannelThrowsTimeoutException_whenTimesOutOnRestart(): Unit =
         runBlockingWithTimeout {
             // Prepare
-            processRunner.delayByMs = 100
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(
@@ -358,8 +413,10 @@ class AdbServerControllerImplTest {
             exceptionRule.expect(TimeoutException::class.java)
 
             // Act
-            // createChannel call will timeout, because the `restart()` takes 100ms
+            // createChannel call will timeout, because the `restart()` takes a long time
+            processRunner.delayByMs = 5000
             registerCloseable(controller.channelProvider.createChannel(50, TimeUnit.MILLISECONDS))
+            fail("Should not reach")
         }
 
     @Test
@@ -369,7 +426,6 @@ class AdbServerControllerImplTest {
             // `CancellationException` when the `restart` job is cancelled by `stop`
 
             // Prepare
-            processRunner.delayByMs = 100
             val controller =
                 registerCloseable(
                     AdbServerControllerImpl(

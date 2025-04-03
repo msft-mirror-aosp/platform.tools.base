@@ -17,6 +17,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.src.app_package.ui.main
 
 import com.android.tools.idea.wizard.template.Language
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
@@ -39,7 +40,7 @@ fun placeholderFragmentKt(
       val root = binding.root
   """ else "val root = inflater.inflate(R.layout.$fragmentLayoutName, container, false)"
 
-  return """package ${packageName}.ui.main
+  return """package ${escapeKotlinIdentifier(packageName)}.ui.main
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -49,7 +50,7 @@ import android.widget.TextView
 import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
 import ${getMaterialComponentName("android.arch.lifecycle.Observer", useAndroidX)}
 import ${getMaterialComponentName("android.arch.lifecycle.ViewModelProvider", useAndroidX)}
-import ${packageName}.R
+import ${escapeKotlinIdentifier(packageName)}.R
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, fragmentLayoutName, Language.Kotlin)}
 
 /**

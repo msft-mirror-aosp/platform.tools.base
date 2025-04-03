@@ -27,8 +27,10 @@ import com.android.build.api.variant.ResValue
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
 import com.android.build.gradle.internal.dsl.AaptOptions
+import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.getNamePrefixedWithAndroidTarget
+import com.android.build.gradle.internal.scope.ProjectDslInfo
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.ComponentTypeImpl
@@ -100,4 +102,11 @@ class KmpUnitTestDslInfoImpl(
                     it.enableCoverage)
             )
         } ?: listOf()
+
+    override val dslDefinedTestSuites: List<AgpTestSuiteImpl>
+        get() = listOf()
+
+    // TODO: Figure out what to do for KMP
+    override val projectDslInfo: ProjectDslInfo
+        get() = ProjectDslInfo(emptyList())
 }

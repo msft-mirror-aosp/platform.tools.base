@@ -51,7 +51,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.View
 import android.widget.Toast
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Kotlin)}
 
 class ${fragmentClass} : Fragment() {

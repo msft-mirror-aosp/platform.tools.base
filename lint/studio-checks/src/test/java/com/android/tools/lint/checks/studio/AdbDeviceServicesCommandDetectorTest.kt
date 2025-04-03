@@ -181,4 +181,29 @@ class AdbDeviceServicesCommandDetectorTest {
       .run()
       .expect("No warnings.")
   }
+
+  @Test
+  fun testDoesNotTriggerViolationsInAdblibInternalImplementationBasePackage() {
+    studioLint()
+      .files(
+        adbDeviceServicesFile,
+        TestFiles.kotlin(
+            """
+                  package com.android.adblib
+
+                  import com.android.adblib.AdbDeviceServices
+
+                  internal class ShellCommandImpl<T> {
+                      fun someMethod(adbDeviceServices: AdbDeviceServices) {
+                        adbDeviceServices.exec()
+                      }
+                  }
+              """
+          )
+          .indented(),
+      )
+      .issues(AdbDeviceServicesCommandDetector.ISSUE)
+      .run()
+      .expect("No warnings.")
+  }
 }

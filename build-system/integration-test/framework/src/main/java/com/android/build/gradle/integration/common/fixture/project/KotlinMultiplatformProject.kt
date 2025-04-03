@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
@@ -41,12 +41,12 @@ interface KotlinMultiplatformDefinition: GradleProjectDefinition {
      * the Android DSL object. This is only available if the [PluginType.ANDROID_KMP_LIBRARY] is
      * applied
      */
-    val androidLibrary: KotlinMultiplatformAndroidLibraryExtension
+    val androidLibrary: KotlinMultiplatformAndroidLibraryTarget
     /**
      * configures the Android DSL object. This is only available if the
      * [PluginType.ANDROID_KMP_LIBRARY] is applied
      */
-    fun androidLibrary(action: KotlinMultiplatformAndroidLibraryExtension.() -> Unit)
+    fun androidLibrary(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit)
 
     val kotlin: KotlinMultiplatformExtension
     fun kotlin(action: KotlinMultiplatformExtension.() -> Unit)
@@ -71,13 +71,13 @@ internal class KotlinMultiplatformDefinitionImpl(
         action(files)
     }
 
-    override val androidLibrary: KotlinMultiplatformAndroidLibraryExtension =
+    override val androidLibrary: KotlinMultiplatformAndroidLibraryTarget =
         DslProxy.createProxy(
-            KotlinMultiplatformAndroidLibraryExtension::class.java,
+            KotlinMultiplatformAndroidLibraryTarget::class.java,
             dslRecorder,
         )
 
-    override fun androidLibrary(action: KotlinMultiplatformAndroidLibraryExtension.() -> Unit) {
+    override fun androidLibrary(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit) {
         if (!hasPlugin(PluginType.ANDROID_KMP_LIBRARY))
             throw RuntimeException("ANDROID_KMP_PLUGIN not applied")
 

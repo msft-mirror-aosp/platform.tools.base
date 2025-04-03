@@ -18,7 +18,7 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.AdbSession
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.tools.debugging.JdwpProcess
-import java.util.concurrent.CopyOnWriteArrayList
+import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 
 /**
  * Extension point an [AdbSession] should use to find the [AdbSession] that is responsible
@@ -34,14 +34,14 @@ interface JdwpProcessSessionFinder {
 }
 
 private val JdwpProcessSessionFinderListKey =
-    CoroutineScopeCache.Key<CopyOnWriteArrayList<JdwpProcessSessionFinder>>(
+    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<JdwpProcessSessionFinder>>(
         JdwpProcessSessionFinder::class.simpleName!!
     )
 
-internal val AdbSession.jdwpProcessSessionFinderList: CopyOnWriteArrayList<JdwpProcessSessionFinder>
+internal val AdbSession.jdwpProcessSessionFinderList: ConcurrentAutoCloseableCollection<JdwpProcessSessionFinder>
     get() {
         return this.cache.getOrPut(JdwpProcessSessionFinderListKey) {
-            CopyOnWriteArrayList()
+            ConcurrentAutoCloseableCollection()
         }
     }
 
@@ -49,6 +49,3 @@ fun AdbSession.addJdwpProcessSessionFinder(sessionFinder: JdwpProcessSessionFind
     jdwpProcessSessionFinderList.add(sessionFinder)
 }
 
-fun AdbSession.removeJdwpProcessSessionFinder(sessionFinder: JdwpProcessSessionFinder) {
-    jdwpProcessSessionFinderList.remove(sessionFinder)
-}

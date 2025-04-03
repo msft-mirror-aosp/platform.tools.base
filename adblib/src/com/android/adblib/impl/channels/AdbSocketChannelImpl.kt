@@ -71,14 +71,23 @@ internal class AdbSocketChannelImpl(
         get() = socketChannel.remoteAddress as InetSocketAddress
 
     override fun toString(): String {
-        val remoteAddress = try {
-            socketChannel.remoteAddress
-        } catch (e: ClosedChannelException) {
+        val localAddress = try {
+            socketChannel.localAddress
+        } catch (_: ClosedChannelException) {
             "<channel-closed>"
         } catch (e: Throwable) {
             "<error: $e>"
         }
-        return "AdbSocketChannelImpl(remote=$remoteAddress)"
+
+        val remoteAddress = try {
+            socketChannel.remoteAddress
+        } catch (_: ClosedChannelException) {
+            "<channel-closed>"
+        } catch (e: Throwable) {
+            "<error: $e>"
+        }
+
+        return "AdbSocketChannelImpl(local=$localAddress, remote=$remoteAddress)"
     }
 
     @Throws(Exception::class)

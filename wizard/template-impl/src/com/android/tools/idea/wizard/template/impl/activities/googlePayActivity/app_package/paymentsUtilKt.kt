@@ -16,10 +16,12 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googlePayActivity.app_package
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+
 fun paymentsUtilKotlin(packageName: String): String {
 
   return """
-package $packageName.util
+package ${escapeKotlinIdentifier(packageName)}.util
 
 import android.content.Context
 import com.google.android.gms.wallet.PaymentsClient
@@ -30,7 +32,7 @@ import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-import $packageName.Constants
+import ${escapeKotlinIdentifier(packageName)}.Constants
 
 /**
  * Contains helper static methods for dealing with the Payments API.

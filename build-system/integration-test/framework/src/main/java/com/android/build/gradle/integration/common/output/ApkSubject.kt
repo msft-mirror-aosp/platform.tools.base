@@ -128,20 +128,63 @@ class ApkSubject(
             // we have to sanitize the content because attributes are displayed as:
             //    A: <namespace>:<name>(<hex id of the attribute>)=<value>
             // The id of the attribute makes it harder to text their values
-            manifestLines.joinToString(separator = "\n") {
-                val matcher = MANIFEST_ATTRIBUTE_PATTERN.matcher(it)
-                if (matcher.matches()) {
-                    "${matcher.group(1)}${matcher.group(2)}"
-                } else {
-                    it
-                }
-            }
+            manifestLines.joinToString(separator = "\n", transform = manifestSanitizerAction)
         } ?: "actual() not a SimpleZip. Cannot run manifest() on zip views"
 
         return check("manifest()").that(manifestContent)
     }
 
+    fun manifestAsNodes(): NodeSubject {
+        contains("AndroidManifest.xml")
+
+        val manifestContent: List<String>? = (actual() as? SimpleZip)?.archivePath?.let { zip ->
+            val processExecutor: ProcessExecutor =
+                DefaultProcessExecutor(StdLogger(StdLogger.Level.ERROR))
+            val parser = ApkInfoParser(TestUtils.getAapt2().toFile(), processExecutor)
+            val manifestLines = parser.getManifestContent(zip.toFile())
+
+            manifestLines.map(manifestSanitizerAction)
+        }
+
+        if (manifestContent != null) {
+
+            return check("manifestAsNodes()").about(NodeSubject.nodes())
+                .that(parseManifestToNodes(manifestContent))
+        }
+
+        val msg = "actual() not a SimpleZip. Cannot run manifest() on zip views"
+        failWithActual(Fact.simpleFact(msg))
+        // need to throw to satisfy compiler
+        throw RuntimeException(msg)
+    }
+
+    private val manifestSanitizerAction: (String) -> String = {
+        // we have to sanitize the content because attributes are displayed as:
+        //    A: <namespace>:<name>(<hex id of the attribute>)=<value>
+        // The id of the attribute makes it harder to text their values
+        val matcher = MANIFEST_ATTRIBUTE_PATTERN.matcher(it)
+        val result1 = if (matcher.matches()) {
+            "${matcher.group(1)}${matcher.group(2)}"
+        } else {
+            it
+        }
+
+        val matcher2 = MANIFEST_LINE_PATTERN.matcher(result1)
+        val result2 = if (matcher2.matches()) {
+            matcher2.group(1)
+        } else result1
+
+        val matcher3 = MANIFEST_RAW_PATTERN.matcher(result2)
+        val result3 = if (matcher3.matches()) {
+            matcher3.group(1)
+        } else result2
+
+        result3
+    }
+
     private val MANIFEST_ATTRIBUTE_PATTERN = Pattern.compile("^(.+)\\(0x[0-9a-f]{8}\\)(.+)$")
+    private val MANIFEST_LINE_PATTERN = Pattern.compile("^(.+)\\s\\(line=[0-9]+\\)$")
+    private val MANIFEST_RAW_PATTERN = Pattern.compile("^(.+)\\s\\(Raw: \".+\"\\)$")
 
     /**
      * Returns a [ClassesSubject] for all the code in the APK
@@ -202,9 +245,23 @@ class ApkSubject(
 
     }
 
+    fun doesNotHaveApkSigningBlock() {
+        exists()
+
+        if (checkApkSigningBlock()) {
+            failWithActual(Fact.simpleFact("expected to not have signing block"))
+        }
+    }
+
     fun hasApkSigningBlock() {
         exists()
 
+        if (!checkApkSigningBlock()) {
+            failWithActual(Fact.simpleFact("expected to have signing block"))
+        }
+    }
+
+    private fun checkApkSigningBlock(): Boolean {
         // IMPLEMENTATION NOTE: To avoid having to implement too much parsing, this method does not
         // parse the APK to locate the APK Signing Block. Instead, it simply scans the file for the
         // APK Signing Block magic bitstring. If the string is there in the file, it's assumed to
@@ -217,7 +274,7 @@ class ApkSubject(
                 Fact.simpleFact("expected to be a direct Zip"),
                 Fact.simpleFact("but was ${actual().javaClass.name}")
             )
-            return // not needed since fail will throw but needed to handle smart casting of zipFile
+            return false// not needed since fail will throw but needed to handle smart casting of zipFile
         }
 
         // archivePath is not null since we called exist earlier
@@ -230,11 +287,11 @@ class ApkSubject(
                 }
             }
             // Found at offset contentsOffset
-            return
+            return true
         }
 
         // Not found
-        failWithActual(Fact.simpleFact("expected to have signing block"))
+        return false
     }
 
     /**

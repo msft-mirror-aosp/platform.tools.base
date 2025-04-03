@@ -831,4 +831,72 @@ class SuppressibleTestModeTest {
       "foo/MyModule.java:",
     )
   }
+
+  @Test
+  fun testAnonymousObject() {
+    // b/406739378
+    val testFiles =
+      listOf(
+        kotlin(
+            """
+            package test.pkg
+
+            open class Foo {
+              open fun getFoo() : Foo {
+                val x = object : Foo() {} // OK
+                return object : Foo() {} // Nope
+              }
+              fun deeper() : Foo {
+                return object : Foo() { // Nope
+                  override fun getFoo(): Foo {
+                    val foo = object : Foo() {} // OK
+                    return foo // Nope
+                  }
+                }
+              }
+            }
+          """
+          )
+          .indented()
+      )
+    val output =
+      """
+      src/test/pkg/Foo.kt:5: Warning: Warning message here [TestId]
+                val x = object : Foo() {} // OK
+                        ~~~~~~~~~~~~~~~~~
+      src/test/pkg/Foo.kt:6: Warning: Warning message here [TestId]
+                return object : Foo() {} // Nope
+                       ~~~~~~~~~~~~~~~~~
+      src/test/pkg/Foo.kt:9: Warning: Warning message here [TestId]
+                return object : Foo() { // Nope
+                       ~~~~~~~~~~~~~~
+      src/test/pkg/Foo.kt:11: Warning: Warning message here [TestId]
+                    val foo = object : Foo() {} // OK
+                              ~~~~~~~~~~~~~~~~~
+      src/test/pkg/Foo.kt:12: Warning: Warning message here [TestId]
+                    return foo // Nope
+                    ~~~~~~~~~~
+      """
+        .trimIndent()
+    check(
+      output,
+      testFiles,
+      // Don't attempt to put annotation on a label-able expression
+      """
+        test/pkg/Foo.kt:
+        @@ -5 +5
+            open fun getFoo() : Foo {
+        -     val x = object : Foo() {} // OK
+        +     val x = @Suppress("TestId") object : Foo() {} // OK
+              return object : Foo() {} // Nope
+        @@ -10 +10
+              return object : Foo() { // Nope
+        -       override fun getFoo(): Foo {
+        -         val foo = object : Foo() {} // OK
+        +       @Suppress("TestId") override fun getFoo(): Foo {
+        +         val foo = @Suppress("TestId") object : Foo() {} // OK
+                  return foo // Nope
+      """,
+    )
+  }
 }

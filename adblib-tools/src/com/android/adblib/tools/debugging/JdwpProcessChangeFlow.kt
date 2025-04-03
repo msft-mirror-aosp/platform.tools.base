@@ -22,6 +22,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.launch
@@ -69,16 +70,21 @@ val ConnectedDevice.jdwpProcessChangeFlow: Flow<JdwpProcessChange>
 
                 // Keep track of process properties updates
                 val job = addedProcess.scope.launch {
-                    addedProcess.propertiesFlow
-                        .collectIndexed { index, newProperties ->
-                            val updatedProcessInfo =
-                                JdwpProcessInfo(addedProcess.device, newProperties)
-                            // Skip the first update if we just sent it out as part of `Added` update
-                            if (index != 0 || updatedProcessInfo != addedProcessInfo) {
-                                // Send [ProcessChange] for updated process.
-                                send(JdwpProcessChange.Updated(updatedProcessInfo))
-                            }
+                    // Combine both 'properties' and 'proxy status' flows so that changes to
+                    // either are unified in a single `collect`.
+                    addedProcess.propertiesFlow.combine(addedProcess.jdwpProxySocketServer.proxyStatusFlow) { properties, proxyStatus ->
+                        JdwpProcessInfo(
+                            device = addedProcess.device,
+                            properties = properties,
+                            proxyStatus = proxyStatus
+                        )
+                    }.collectIndexed { index, updatedProcessInfo ->
+                        // Skip the first update if we just sent it out as part of `Added` update
+                        if (index != 0 || updatedProcessInfo != addedProcessInfo) {
+                            // Send [ProcessChange] for updated process.
+                            send(JdwpProcessChange.Updated(updatedProcessInfo))
                         }
+                    }
                 }
                 currentProcessTrackingJobs[pid] = job
             }

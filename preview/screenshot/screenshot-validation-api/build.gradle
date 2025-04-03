@@ -17,27 +17,13 @@ apply plugin: 'com.android.tools.java-library'
 apply plugin: 'com.android.tools.kotlin'
 apply plugin: 'com.android.tools.publish'
 
+apply from: '../release_version.gradle'
+
 group = 'com.android.tools.screenshot'
-if (findProperty('hybrid-build-embedded-in-bazel')?.toBoolean()) {
-    version = getProperty('SCREENSHOT_TEST_PLUGIN_VERSION')
-} else {
-    Properties properties = new Properties()
-    File versionRootDir = rootDir
-    String relativeVersionPath = 'base/preview/screenshot/release_version.bzl'
-    File versionProperties = new File(versionRootDir, relativeVersionPath)
-    versionProperties.withReader { properties.load(it) }
-    if (findProperty('release')?.toBoolean()) {
-        version = properties.getProperty('SCREENSHOT_TEST_PLUGIN_VERSION_RELEASE').replaceAll('"', '')
-    } else {
-        version = properties.getProperty('SCREENSHOT_TEST_PLUGIN_VERSION_DEV').replaceAll('"', '')
-    }
-}
-sourceSets {
-    main.resources.srcDir 'src/main/java'
-}
+
 project.ext.pomName = 'screenshot-validation-api'
 project.ext.pomDesc = 'API for screenshot testing.'
+
 dependencies {
-    implementation libs.kotlin_stdlib_jdk8
     implementation libs.junit_platform_commons
 }

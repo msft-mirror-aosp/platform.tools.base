@@ -39,6 +39,7 @@ import org.gradle.api.Incubating
  * TODO: Describe how the JUnit engine can retrieve the values at execution time once experimentation
  * concluded.
  */
+/** @suppress */
 enum class AgpTestSuiteInputParameters(val propertyName: String) {
     /**
      * [java.io.File.pathSeparator] separated list of folders containing test classes for this

@@ -31,7 +31,7 @@ fun fullscreenActivityKt(
   superClassFqcn: String,
   isViewBindingSupported: Boolean
 ): String {
-  val applicationPackageBlock = renderIf(applicationPackage != null) {"import ${applicationPackage}.R"}
+  val applicationPackageBlock = renderIf(applicationPackage != null) {"import ${escapeKotlinIdentifier(applicationPackage!!)}.R"}
   val contentViewBlock = if (isViewBindingSupported) """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)

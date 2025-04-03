@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dsl.AbstractPublishing
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.publishing.AndroidArtifacts

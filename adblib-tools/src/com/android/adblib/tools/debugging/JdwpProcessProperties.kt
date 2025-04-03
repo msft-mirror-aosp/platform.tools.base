@@ -18,7 +18,6 @@ package com.android.adblib.tools.debugging
 import com.android.adblib.InstructionSet
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsFeatChunk
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsHeloChunk
-import java.net.InetSocketAddress
 
 /**
  * List of known properties corresponding to a [JdwpProcess] instance.
@@ -78,22 +77,10 @@ data class JdwpProcessProperties(
     val isNativeDebuggable: Boolean = false,
 
     /**
-     * `true` if the `WAIT` command was received.
-     */
-    val waitCommandReceived: Boolean = false,
-
-    /**
      * `true` if the process is waiting for a debugger to attach.
      * `false` if we don't know or if a debugger is already attached.
      */
     val isWaitingForDebugger: Boolean = false,
-
-    /**
-     * The status of JDWP session proxy between an external debugger and the Android Process.
-     *
-     * @see JdwpProxySocketServer
-     */
-    val jdwpProxyStatus: JdwpProxySocketServerStatus = JdwpProxySocketServerStatus(),
 
     /**
      * List of features reported by the [DdmsFeatChunk] packet
@@ -163,31 +150,6 @@ fun InstructionSet.Companion.fromLegacyDescription(value: String): InstructionSe
     }
 }
 
-/**
- * Status of JDWP Session proxy external Java debuggers can use to connect to a
- * [JdwpProcess].
- *
- * @see JdwpProcess
- * @see JdwpProcessProperties.jdwpProxyStatus
- */
-data class JdwpProxySocketServerStatus(
-    /**
-     * The [InetSocketAddress] (typically on `localhost`) a Java debugger can use to open a
-     * JDWP debugging session with the Android process. If the value is `null`, the debugger
-     * connection is not ready yet.
-     *
-     * @see JdwpProxySocketServer
-     */
-    val socketAddress: InetSocketAddress? = null,
-
-    /**
-     * `true` if there is an active JDWP debugging session on [socketAddress].
-     *
-     * @see JdwpProxySocketServer
-     */
-    val isExternalDebuggerAttached: Boolean = false,
-)
-
 internal fun JdwpProcessProperties.mergeWith(other: JdwpProcessProperties): JdwpProcessProperties {
     val source = this
     @Suppress("DEPRECATION")
@@ -199,26 +161,15 @@ internal fun JdwpProcessProperties.mergeWith(other: JdwpProcessProperties): Jdwp
         instructionSet = source.instructionSet.mergeWith(other.instructionSet),
         jvmFlags = source.jvmFlags.mergeWith(other.jvmFlags),
         isNativeDebuggable = source.isNativeDebuggable.mergeWith(other.isNativeDebuggable),
-        waitCommandReceived = source.waitCommandReceived.mergeWith(other.waitCommandReceived),
         features = source.features.mergeWith(other.features),
         completed = source.completed.mergeWith(other.completed),
         exception = source.exception.mergeWith(other.exception),
         isWaitingForDebugger = source.isWaitingForDebugger.mergeWith(other.isWaitingForDebugger),
-        jdwpProxyStatus = source.jdwpProxyStatus.mergeWith(
-            other.jdwpProxyStatus
-        ),
     )
 }
 
 internal fun JdwpProcessProperties.addException(throwable: Throwable): Throwable {
     return exception?.also { it.addSuppressed(throwable) } ?: throwable
-}
-
-private fun JdwpProxySocketServerStatus.mergeWith(other: JdwpProxySocketServerStatus): JdwpProxySocketServerStatus {
-    return JdwpProxySocketServerStatus(
-        isExternalDebuggerAttached = this.isExternalDebuggerAttached.mergeWith(other.isExternalDebuggerAttached),
-        socketAddress = this.socketAddress ?: other.socketAddress
-    )
 }
 
 private fun String?.mergeWith(other: String?): String? {

@@ -32,6 +32,13 @@ sealed interface ClassDefinition {
     val innerClasses: List<String>
     val fields: List<String>
     val methods: List<String>
+
+    /**
+     *  returns the initial value of a field.
+     *
+     *  if the field is not present, returns null
+     */
+    fun fieldByName(name: String): String?
 }
 
 /**
@@ -49,6 +56,10 @@ internal class ClassDefinitionFromAsm(private val classNode: ClassNode): ClassDe
         get() = classNode.fields.map { it.name }
     override val methods: List<String>
         get() = classNode.methods.map { it.name }
+
+    override fun fieldByName(name: String): String? {
+        throw RuntimeException("Not Supported at the moment")
+    }
 }
 
 /**
@@ -69,6 +80,9 @@ internal class ClassDefinitionFromDex(private val dex: DexBackedClassDef): Class
         get() = dex.fields.map { it.name }
     override val methods: List<String>
         get() = dex.methods.map { it.name }
+
+    override fun fieldByName(name: String): String? =
+        dex.fields.singleOrNull { it.name == name }?.initialValue?.toString()
 
     /**
      * Returns a map of all the methods of the class, and their different implementations.

@@ -28,7 +28,9 @@ import com.android.adblib.ProcessIdList
 import com.android.adblib.ReverseSocketList
 import com.android.adblib.RootResult
 import com.android.adblib.ShellCollector
+import com.android.adblib.ShellOptions
 import com.android.adblib.ShellV2Collector
+import com.android.adblib.ShellWindowSize
 import com.android.adblib.SocketSpec
 import com.android.adblib.utils.AdbProtocolUtils.ADB_CHARSET
 import kotlinx.coroutines.flow.Flow
@@ -158,6 +160,7 @@ class FakeAdbDeviceServices(override val session: AdbSession) : AdbDeviceService
         device: DeviceSelector,
         command: String,
         shellCollector: ShellCollector<T>,
+        shellOptions: ShellOptions?,
         stdinChannel: AdbInputChannel?,
         commandTimeout: Duration,
         bufferSize: Int,
@@ -193,7 +196,7 @@ class FakeAdbDeviceServices(override val session: AdbSession) : AdbDeviceService
         bufferSize: Int,
         shutdownOutput : Boolean
     ): Flow<T> {
-        return shell(device, command, shellCollector, stdinChannel, commandTimeout, bufferSize, shutdownOutput)
+        return shell(device, command, shellCollector, null, stdinChannel, commandTimeout, bufferSize, shutdownOutput)
     }
 
     override suspend fun rawExec(device: DeviceSelector, command: String): AdbChannel {
@@ -204,9 +207,11 @@ class FakeAdbDeviceServices(override val session: AdbSession) : AdbDeviceService
         device: DeviceSelector,
         command: String,
         shellCollector: ShellV2Collector<T>,
+        shellOptions: ShellOptions?,
         stdinChannel: AdbInputChannel?,
+        windowSizeFlow: Flow<ShellWindowSize>?,
         commandTimeout: Duration,
-        bufferSize: Int,
+        bufferSize: Int
     ): Flow<T> {
         if (shellNumTimeouts <= 0) {
             shellV2Requests.add(ShellRequest(device.toString(), command, commandTimeout, bufferSize))

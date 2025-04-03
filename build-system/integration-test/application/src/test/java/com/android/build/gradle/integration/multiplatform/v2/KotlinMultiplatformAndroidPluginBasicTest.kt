@@ -41,10 +41,8 @@ class KotlinMultiplatformAndroidPluginBasicTest {
                 kotlin {
                     androidLibrary {
                         withJava()
-                        compilations.all {
-                            compilerOptions.configure {
-                                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                            }
+                        compilerOptions {
+                            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
                         }
                     }
                 }
@@ -52,72 +50,6 @@ class KotlinMultiplatformAndroidPluginBasicTest {
         )
 
         project.executor().run(":kmpFirstLib:assembleAndroidMain")
-    }
-
-    @Test
-    fun applyShouldFailIfAnotherAndroidPluginHasBeenAppliedBefore() {
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                id("com.android.kotlin.multiplatform.library")
-            """.trimIndent(),
-            """
-                id("com.android.library")
-                id("com.android.kotlin.multiplatform.library")
-            """.trimIndent()
-        )
-
-        val result =
-            project.executor()
-                .expectFailure().run(":kmpFirstLib:assembleAndroidMain")
-
-        result.assertErrorContains(
-            "'com.android.kotlin.multiplatform.library' and 'com.android.library' plugins cannot be applied in the same project."
-        )
-    }
-
-    @Test
-    fun creatingArbitraryCompilationShouldFail() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin {
-                    androidLibrary {
-                        compilations.create("release")
-                    }
-                }
-            """.trimIndent()
-        )
-
-        val result =
-            project.executor()
-                .expectFailure().run(":kmpFirstLib:assembleAndroidMain")
-
-        Truth.assertThat(result.failureMessage).contains(
-            "Kotlin multiplatform android plugin doesn't support creating arbitrary compilations."
-        )
-    }
-
-    @Test
-    fun creatingTwoUnitTestCompilationsShouldFail() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin {
-                    androidLibrary {
-                        withAndroidTestOnJvm { }
-                    }
-                }
-            """.trimIndent()
-        )
-
-        val result =
-            project.executor()
-                .expectFailure().run(":kmpFirstLib:assembleAndroidMain")
-
-        Truth.assertThat(result.failureMessage).contains(
-            "Android tests on jvm has already been enabled, and a corresponding compilation (`hostTest`) has already been created."
-        )
     }
 
     @Test

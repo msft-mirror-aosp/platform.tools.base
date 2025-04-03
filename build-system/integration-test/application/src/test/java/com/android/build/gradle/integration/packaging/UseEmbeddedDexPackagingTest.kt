@@ -19,18 +19,16 @@ package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.sdklib.AndroidVersion.VersionCodes.O
 import com.android.sdklib.AndroidVersion.VersionCodes.P
-import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 
 /**
  * sourceManifestvalue and expectedMergedManifestValue refer to the value of
@@ -127,35 +125,28 @@ class UseEmbeddedDexPackagingTest(
                 assertThat(it).doesNotContain("PackagingOptions.dex.useLegacyPackaging")
             }
         }
-        val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
 
-        // check merged manifest
-        val mergedManifestContents = ApkSubject.getManifestContent(apk.file)
-        when (expectedMergedManifestValue) {
-            null -> {
-                assertThat(
-                    mergedManifestContents.none {
-                        it.contains("android:useEmbeddedDex")
+        project.assertApk(ApkSelector.DEBUG) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .attributes().apply {
+                    if (expectedMergedManifestValue == null) {
+                        containsExactly(
+                            "http://schemas.android.com/apk/res/android:debuggable=true",
+                            "http://schemas.android.com/apk/res/android:extractNativeLibs=false"
+                        )
+                    } else {
+                        containsExactly(
+                            "http://schemas.android.com/apk/res/android:debuggable=true",
+                            "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
+                            "http://schemas.android.com/apk/res/android:useEmbeddedDex=$expectedMergedManifestValue"
+                        )
                     }
-                ).isTrue()
-            }
-            else -> {
-                assertThat(
-                    mergedManifestContents.any {
-                        // check strings separately because there are extra characters between them
-                        // in this manifest.
-                        it.contains("android:useEmbeddedDex")
-                                && it.contains("=${expectedMergedManifestValue}")
-                    }
-                ).isTrue()
-            }
-        }
+                }
 
-        // check compression
-        ZipFile(apk.file.toFile()).use {
-            val nativeLibEntry = it.getEntry("classes.dex")
-            assertThat(nativeLibEntry).isNotNull()
-            assertThat(nativeLibEntry.method).isEqualTo(expectedCompression)
+            // check compression
+            zipEntry("classes.dex").hasCompressionMethod(expectedCompression)
         }
     }
 }

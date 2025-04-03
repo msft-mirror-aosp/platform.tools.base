@@ -24,10 +24,13 @@ public final class LambdaFactory {
         switch (superInternalName) {
             case "kotlin/jvm/internal/Lambda":
                 return makeLambda(args);
-                // Kotlin generates classes for method references (such as MyClass::myMethod); this
-                // is the base class of those references.
             case "kotlin/jvm/internal/FunctionReferenceImpl":
+                // Base class for function references (MyClass::method)
                 return makeFunctionReferenceImpl(args);
+            case "kotlin/jvm/internal/AdaptedFunctionReference":
+                // Base class for function references where function type doesn't match the expected
+                // signature; i.e., passing a () -> String as a () -> Unit
+                return makeAdaptedFunctionReference(args);
             case "kotlin/coroutines/jvm/internal/SuspendLambda":
                 return makeSuspendLambda(args, proxy);
             case "kotlin/coroutines/jvm/internal/RestrictedSuspendLambda":
@@ -39,11 +42,11 @@ public final class LambdaFactory {
         }
     }
 
-    private static Object makeLambda(Object args[]) {
+    private static Object makeLambda(Object[] args) {
         return new LiveEditLambda((int) args[0]);
     }
 
-    private static Object makeFunctionReferenceImpl(Object args[]) {
+    private static Object makeFunctionReferenceImpl(Object[] args) {
         if (args.length == 4) {
             return new LiveEditFunctionReferenceImpl(
                     (int) args[0],
@@ -74,11 +77,34 @@ public final class LambdaFactory {
         throw new IllegalArgumentException("Unhandled FunctionReferenceImpl constructor");
     }
 
-    private static Object makeSuspendLambda(Object args[], Object proxy) {
+    private static Object makeAdaptedFunctionReference(Object[] args) {
+        if (args.length == 5) {
+            return new LiveEditAdaptedFunctionReference(
+                    (int) args[0],
+                    (Class) args[1],
+                    (String) args[2],
+                    (String) args[3],
+                    (int) args[4]);
+        }
+
+        if (args.length == 6) {
+            return new LiveEditAdaptedFunctionReference(
+                    (int) args[0],
+                    args[1],
+                    (Class) args[2],
+                    (String) args[3],
+                    (String) args[4],
+                    (int) args[5]);
+        }
+
+        throw new IllegalArgumentException("Unhandled AdaptedFunctionReference constructor");
+    }
+
+    private static Object makeSuspendLambda(Object[] args, Object proxy) {
         return new LiveEditSuspendLambda((int) args[0], (Continuation) args[1], proxy);
     }
 
-    private static Object makeRestrictedSuspendLambda(Object args[], Object proxy) {
+    private static Object makeRestrictedSuspendLambda(Object[] args, Object proxy) {
         return new LiveEditRestrictedSuspendLambda((int) args[0], (Continuation) args[1], proxy);
     }
 }

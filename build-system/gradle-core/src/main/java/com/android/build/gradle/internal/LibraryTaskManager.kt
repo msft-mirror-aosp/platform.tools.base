@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dependency.ConfigurationVariantMapping
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType
@@ -56,6 +57,7 @@ import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.BundleAar.LibraryCreationAction
 import com.android.build.gradle.tasks.BundleAar.LibraryLocalLintCreationAction
+import com.android.build.gradle.tasks.CollectPackagesForR8Task
 import com.android.build.gradle.tasks.CompileLibraryResourcesTask
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.ExtractDeepLinksTask
@@ -264,6 +266,10 @@ class LibraryTaskManager(
         }
 
         taskFactory.register(ExtractSupportedLocalesTask.CreationAction(libraryVariant))
+
+        if (globalConfig.services.projectOptions[BooleanOption.GRADUAL_R8_SHRINKING]) {
+            taskFactory.register(CollectPackagesForR8Task.CreationAction(libraryVariant))
+        }
 
         createBundleTask(libraryVariant)
     }

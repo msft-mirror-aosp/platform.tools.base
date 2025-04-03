@@ -1747,6 +1747,7 @@ com.android.build.gradle.internal.dsl.ManagedVirtualDevice.getSdkMinorVersion: i
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.getSdkPreview: java.lang.String ()
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.getSdkVersion: int ()
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.getSystemImageSource: java.lang.String ()
+com.android.build.gradle.internal.dsl.ManagedVirtualDevice.getTestedAbi: java.lang.String ()
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.setApiLevel: void (int)
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.setApiPreview: void (java.lang.String)
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.setDevice: void (java.lang.String)
@@ -1757,6 +1758,7 @@ com.android.build.gradle.internal.dsl.ManagedVirtualDevice.setSdkMinorVersion: v
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.setSdkPreview: void (java.lang.String)
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.setSdkVersion: void (int)
 com.android.build.gradle.internal.dsl.ManagedVirtualDevice.setSystemImageSource: void (java.lang.String)
+com.android.build.gradle.internal.dsl.ManagedVirtualDevice.setTestedAbi: void (java.lang.String)
 com.android.build.gradle.internal.dsl.ManagedVirtualDeviceFactory implements org.gradle.api.NamedDomainObjectFactory
 com.android.build.gradle.internal.dsl.ManagedVirtualDeviceFactory.<init>: com.android.build.gradle.internal.dsl.ManagedVirtualDeviceFactory (com.android.build.gradle.internal.services.DslServices)
 com.android.build.gradle.internal.dsl.ManagedVirtualDeviceFactory.create: com.android.build.gradle.internal.dsl.ManagedVirtualDevice (java.lang.String)
@@ -1928,6 +1930,7 @@ com.android.build.gradle.internal.dsl.TestOptions.getManagedDevices: com.android
 com.android.build.gradle.internal.dsl.TestOptions.getManagedDevices: com.android.build.gradle.internal.dsl.ManagedDevices ()
 com.android.build.gradle.internal.dsl.TestOptions.getReportDir: java.lang.String ()
 com.android.build.gradle.internal.dsl.TestOptions.getResultsDir: java.lang.String ()
+com.android.build.gradle.internal.dsl.TestOptions.getSuites: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
 com.android.build.gradle.internal.dsl.TestOptions.getTargetSdk: java.lang.Integer ()
 com.android.build.gradle.internal.dsl.TestOptions.getTargetSdkPreview: java.lang.String ()
 com.android.build.gradle.internal.dsl.TestOptions.getUnitTests: com.android.build.api.dsl.UnitTestOptions ()

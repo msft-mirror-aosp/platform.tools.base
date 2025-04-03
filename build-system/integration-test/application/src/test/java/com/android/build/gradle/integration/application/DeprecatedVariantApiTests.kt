@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
@@ -49,13 +50,13 @@ class DeprecatedVariantApiTests {
                 buildConfigField("String", "CUSTOM_VERSION_NAME", "\"buildVersionName\"")
             }
         }""".trimIndent())
+
         project.execute("assembleDebug")
-        val debugApk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        ApkSubject.assertThat(debugApk)
-            .containsClass("Lcom/example/helloworld/BuildConfig;")
-        val generatedBuildConfig = File(project.buildDir,
-            "generated/source/buildConfig/debug/com/example/helloworld/BuildConfig.java")
-        Truth.assertThat(generatedBuildConfig.exists()).isTrue()
-        Truth.assertThat(generatedBuildConfig.readText()).contains("CUSTOM_VERSION_NAME")
+
+        project.assertApk(ApkSelector.DEBUG) {
+            classes().classDefinition("com/example/helloworld/BuildConfig")
+                .fields()
+                .contains("CUSTOM_VERSION_NAME")
+        }
     }
 }

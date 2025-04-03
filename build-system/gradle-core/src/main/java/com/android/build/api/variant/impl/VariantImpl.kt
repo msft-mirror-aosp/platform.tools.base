@@ -314,6 +314,7 @@ abstract class VariantImpl<DslInfoT: VariantDslInfo>(
             ?: listOf()
 
     private fun hostTests(): List<ComponentImpl<*>> =
-        (this as? HasHostTestsCreationConfig)?.hostTests?.values?.map { it as ComponentImpl<*> }
+        (this as? HasHostTestsCreationConfig)?.hostTests?.values
+            ?.map { it as ComponentImpl<*> }
             ?: listOf()
 }

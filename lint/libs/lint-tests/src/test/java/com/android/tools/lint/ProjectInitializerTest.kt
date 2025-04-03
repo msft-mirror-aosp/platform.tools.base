@@ -58,9 +58,9 @@ import com.google.common.truth.Truth.assertThat
 import com.intellij.psi.PsiField
 import java.io.File
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.readText
 import kotlin.streams.toList
 import kotlin.text.Charsets
-import kotlin.io.path.readText
 import org.intellij.lang.annotations.Language
 import org.jetbrains.uast.UClass
 import org.junit.After
@@ -2819,6 +2819,417 @@ class ProjectInitializerTest {
             <src file="shared/src/androidMain/kotlin/pkg/Platform.kt" />
             <src file="shared/src/iosMain/kotlin/pkg/Platform.kt" />
             <klib file="shared/libs/SomeKlib.klib" />
+          </module>
+        </project>
+      """
+        .trimIndent()
+
+    val projects = lint().projects(shared, androidApp, iosApp).createProjects(root)
+    Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
+
+    MainTest.checkDriver(
+      """
+        src/main/res/values/styles.xml:2: Error: android:Theme.Material.NoActionBar requires API level 21 (current min is 1) [NewApi]
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/main/AndroidManifest.xml:6: Warning: Attribute allowBackup is only used in API level 4 and higher (current min is 1) [UnusedAttribute]
+        android:allowBackup="false"
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/main/AndroidManifest.xml:1: Warning: Should set android:versionCode to specify the application version [MissingVersion]
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ ~~~~~~~~
+src/main/AndroidManifest.xml:1: Warning: Should set android:versionName to specify the application version [MissingVersion]
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ ~~~~~~~~
+src/main/AndroidManifest.xml:5: Warning: Should explicitly set android:icon, there is no default [MissingApplicationIcon]
+    <application
+     ~~~~~~~~~~~
+src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion to at least 17 when enabling RTL support [RtlEnabled]
+        android:supportsRtl="true"
+                             ~~~~
+1 error, 5 warnings
+      """,
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
+      { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
+      { _, _, _, _ -> },
+    )
+  }
+
+  @Test
+  fun testKMPProjectK2_explicitPlatform() {
+    Assume.assumeTrue(useFirUast())
+    val shared =
+      project(
+          kt(
+            "src/commonMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            interface Platform {
+                val name: String
+            }
+            expect fun getPlatform(): Platform
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/commonMain/kotlin/pkg/Greeting.kt",
+            """
+            package pkg
+            class Greeting {
+                private val platform: Platform = getPlatform()
+            }
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/androidMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            class AndroidPlatform : Platform {
+                override val name: String = "Android 34"
+            }
+            actual fun getPlatform(): Platform = AndroidPlatform()
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/iosMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            import platform.UIKit.UIDevice
+            class IOSPlatform: Platform {
+                override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
+            }
+            actual fun getPlatform(): Platform = IOSPlatform()
+          """
+              .trimIndent(),
+          ),
+          klib(
+            "libs/SomeKlib.klib",
+            "" +
+              "H4sIAAAAAAAA/52Xe1BTVx7HL3kHApMXDykyCUgKKw0BfKwVuwGUAYI0Vsva" +
+              "Gprk5iaQJSSQB4MPmIRUjARcFC1ixbVAi1P7h7Bry0zrlmLSggJaaq11dbYG" +
+              "7aqruz62re6a7V7CqvdK7uWmlxkeczmf3/d7zsk5359cRqaEA7OPEEA+DIAD" +
+              "QFqd2mawZry6IRKgI1/KMYdFIIbpzcFH8gEGgzFn5AL0SIu+wqi22sxai7jK" +
+              "aJ3D0ahUKlClkpB9qwU6KlhKc8XRWye8k17PcKpntG942Pu5d1TkGY3i+eQq" +
+              "yvsq5/v87Te5jgPDzG/GUlg6SeZA4bbur6Y+3Xq+6fRzC3KbB8IzB2uZjkpR" +
+              "HbTi8KvSE4pLea05sFo64yNK+BYdXLEXV33MM+qtZr2xAlf6KOArFXxPAetg" +
+              "6bF7X2B4DPJxVg/v/ist97LX33OTue496y3cDvMr5YrLOX5FeY6/KT/Bf7B8" +
+              "2qnoLl91UuE0FGdluW8P3peZs+4n3P+VMN6uu0PKjBjPObJKslLlayo0q37a" +
+              "2xfTyYf6yZFFE4sdFys7ujpfIx0X8Ecprzed5GxURAYcRn846miDhflxHcah" +
+              "HUJa0FZRZNSZYI8QlkeVA5QAgRpnJZ8URMIv+Lg1+Oga1s01+Msvd4A6gY4M" +
+              "1rHPgxxVh2oKjK7UOOTSxNylCm5JoPCBqQ0iETxiA27hhejCevNqrcagNqut" +
+              "epPRguewkAJm0BjPUSD7Rqary3EhyrVvO3/o1ysuUPanvDWY1seUFN2tra21" +
+              "ZjOP2R+wSE0Fra15LdJ3lrXvIedIUxLYKQnSFOlLTvsiOfOsoOAIlSQ1pEBh" +
+              "S/+1682m+HF5VFgU+w+5w+tkJcVvylzuHb27mUd0L36at4ncYbdTnZxkXsBj" +
+              "WsyDThes6aNQJlenNwQmV4dlrYYO0sUimk64SZzt33OJ1JBviZBZNDIZOTtf" +
+              "Y+ElJ0fI8pP9vh7I7/lkb8+jcb7/Eei3e3qunjvo6Tu44cQtrlBHU0emiWgF" +
+              "4gKa0CImP3pvZj9ej4X6neOF8Ia8HnuOfIMesBCXuOxyDVy7A9dCNNoCaIL0" +
+              "AQ8g5gYMA9fTGCoKWL5rJbc4XjEiLW75vfvyzn29u9e6cu3rfLsonYLC9h3u" +
+              "4+7dO52R6ZSAmILov65ZAUPW4IphI8RUq416ndYyd6OunciMIgnZ0i8PnWz3" +
+              "Gs41j4yM7L9QaRgT9HZRaDHNE4nK29eV//2pu4e9/LdJoyu/gUz9X1zbXNat" +
+              "v3E9jntxa2l929WvF/fncY5uGlh2ytD20s3udWER5soPix5k31nich7iO8+2" +
+              "lB5ulB9o8zRY/tJYxqSSGKzG8wVfDu1vdGTMmFEsWO5rhJUcAfDObS7CDHzm" +
+              "mmxmjdYSysHPQQAMemMVpLaqQzn+Y4ONrzZBNoN2DmXaN8icPLP2h8mxksE/" +
+              "gsfAtKIXxAM+YPcW6rc3ym7t3Jy25mFXWplC3vxG4wDPydvYxSvhBhb2ztGh" +
+              "vKUwYDWuFWEwKTVqTZW6QqtUGyGzSQ+FYk1MhCd5/Bu8navnOgbZYDtYP+x9" +
+              "0OJelZnxbupvsqkBR9uaPzdHw//Aw3W0iIACsQljvYObSieIlChNluCWBq+B" +
+              "L4/L0k6dKbkCnsr4HowoTC8unbgCnp7MGBsbnwbrxo9e9W1niETX+m5qO2tq" +
+              "hUN5v1OUkFiK9AQWqVVhSGgllXBZUo5O8PZrduoobedAkaQwM5Vp7mNmZhVK" +
+              "GkDoCpileviZN5wHrmGs+g6s93qptvY3Gu8+LxaJymavvtM/n3HAYvpwpy8J" +
+              "z6sV/tiLa6oqQpm8xYSAEiX8PejcpUwMhI9I+AVXtpqMmkf98s7vUn0bL11q" +
+              "ICmFFwVTU8Vv0+vqbl2t9PwwPfwZ88BXB9WHLi/8kdu/BPrAd7Z0und7a7b8" +
+              "zlv/rr/NO//z4RvmEzvqm168x/r7BdnhpPdcd19f3RBdKfu4beW5ktzJPx3L" +
+              "2/U1/UfqlpP+P6/9Vqx6SJqZtuq/HfNsg3W4cKctMZhLs8lkVf7faihTFnQL" +
+              "o2AS5bwfnbDAoje52dei4Des0NUj1ygU9anzwiSz6z6fg3cXHR+avaQ+Lqte" +
+              "yAVmriE8F8hLyqo2V2itIZ3q8UGGw/pt9cr6ZUtCASXjgvRGjcEGaTFO1flP" +
+              "6blEuHfQ12FssF/CqzJZ4T+C8cJI4QBWC8UE0M/Thoo6i8EbHoEavhwxPNBY" +
+              "IQh84OmuQ7YrC1CEWjTh2QYLg4dsDmJQvIwwALPlwYAhu4A4FIxDAnC6Cwwc" +
+              "MtvzUTgbGodoJDBQyAi9EIX6BxoVrDXAYCIzLVreFBnAiOIYKGQijUah9lEA" +
+              "rEiMwUIGQjaKlUQFgiRaAluVi8L8E4FBZkkCIA4KJKEBwTIlhi9kuItFcWqC" +
+              "cR5nSwKqhCjaf4LR5sZDDJXIwCZGcWV0AtxnYiIB8YtQRSYIFJlNgljnASIx" +
+              "paPQAgYx9NNESEB9EqoEi4lTAhHEMLQjY8tiFLicEBgRyAhIT0RVyA8PUuGZ" +
+              "MIQhG5lX0KvZPi/0cSgKWW9YxDwzgq0XmUxSUdDSeaHIGERAM/r8+gKBfxp2" +
+              "CGDiURgaay4GGXoIAJNRwJdxgYjwE/JZ9A4u+UkICpl7F5f7JAw94VJpMz8T" +
+              "4C8qjMmdueOB/wFP4UXFXBYAAA==",
+            0x2a5ba622,
+            kotlin(
+                """
+            package test.pkg
+            import android.os.Parcelable
+            abstract class Parent : Parcelable
+                """
+              )
+              .indented(),
+            kotlin(
+                """
+                  package android.os
+                  interface Parcelable
+                  interface Parcel
+                """
+              )
+              .indented(),
+          ),
+        )
+        .type(LIBRARY)
+        .name("project1")
+
+    val androidApp =
+      project(
+          source(
+              "src/main/$ANDROID_MANIFEST_XML",
+              """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <uses-permission android:name="android.permission.INTERNET"/>
+
+              <application
+                  android:allowBackup="false"
+                  android:supportsRtl="true"
+                  android:theme="@style/AppTheme">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+        """,
+            )
+            .indented(),
+          xml(
+              "src/main/res/values/styles.xml",
+              """
+            <resources>
+                <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
+            </resources>
+          """,
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MainActivity.kt",
+              """
+            package pkg.android
+
+            import android.os.Bundle
+            import androidx.activity.ComponentActivity
+            import androidx.activity.compose.setContent
+            import androidx.compose.foundation.layout.fillMaxSize
+            import androidx.compose.material.*
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.Modifier
+            import androidx.compose.ui.tooling.preview.Preview
+            import com.example.kmptest.Greeting
+            import androidx.compose.runtime.*
+
+            class MainActivity : ComponentActivity() {
+                override fun onCreate(savedInstanceState: Bundle?) {
+                    super.onCreate(savedInstanceState)
+                    setContent {
+                        MyApplicationTheme {
+                            Surface(
+                                modifier = Modifier.fillMaxSize(),
+                                color = MaterialTheme.colors.background
+                            ) {
+                                var text by remember { mutableStateOf("Loading") }
+                                LaunchedEffect(true) {
+                                    text = try {
+                                        Greeting().greet()
+                                    } catch (e: Exception) {
+                                        e.localizedMessage ?: "error"
+                                    }
+                                }
+                                GreetingView(text)
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Composable
+            fun GreetingView(text: String) {
+                Text(text = text)
+            }
+
+            @Preview
+            @Composable
+            fun DefaultPreview() {
+                MyApplicationTheme {
+                    GreetingView("Hello, Android!")
+                }
+            }
+          """,
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MyApplicationTheme.kt",
+              """
+            package pkg.android
+
+            import androidx.compose.foundation.isSystemInDarkTheme
+            import androidx.compose.foundation.shape.RoundedCornerShape
+            import androidx.compose.material.MaterialTheme
+            import androidx.compose.material.Shapes
+            import androidx.compose.material.Typography
+            import androidx.compose.material.darkColors
+            import androidx.compose.material.lightColors
+            import androidx.compose.runtime.Composable
+            import androidx.compose.ui.graphics.Color
+            import androidx.compose.ui.text.TextStyle
+            import androidx.compose.ui.text.font.FontFamily
+            import androidx.compose.ui.text.font.FontWeight
+            import androidx.compose.ui.unit.dp
+            import androidx.compose.ui.unit.sp
+
+            @Composable
+            fun MyApplicationTheme(
+                darkTheme: Boolean = isSystemInDarkTheme(),
+                content: @Composable () -> Unit
+            ) {
+                val colors = if (darkTheme) {
+                    darkColors(
+                        primary = Color(0xFFBB86FC),
+                        primaryVariant = Color(0xFF3700B3),
+                        secondary = Color(0xFF03DAC5)
+                    )
+                } else {
+                    lightColors(
+                        primary = Color(0xFF6200EE),
+                        primaryVariant = Color(0xFF3700B3),
+                        secondary = Color(0xFF03DAC5)
+                    )
+                }
+                val typography = Typography(
+                    body1 = TextStyle(
+                        fontFamily = FontFamily.Default,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 16.sp
+                    )
+                )
+                val shapes = Shapes(
+                    small = RoundedCornerShape(4.dp),
+                    medium = RoundedCornerShape(4.dp),
+                    large = RoundedCornerShape(0.dp)
+                )
+
+                MaterialTheme(
+                    colors = colors,
+                    typography = typography,
+                    shapes = shapes,
+                    content = content
+                )
+            }
+          """,
+            )
+            .indented(),
+          kt(
+            "src/main/java/pkg/android/expect.kt",
+            """
+            package pkg
+            expect fun getPlatform() : Platform
+          """
+              .trimIndent(),
+          ),
+          kt(
+            "src/main/java/pkg/android/actual.kt",
+            """
+            package pkg
+            actual fun getPlatform() = TODO()
+          """
+              .trimIndent(),
+          ),
+        )
+        .name("project2")
+        .dependsOn(shared)
+
+    val iosApp =
+      project(
+          source(
+            "iosApp/ContentView.swift",
+            """
+            import SwiftUI
+            import shared
+
+            struct ContentView: View {
+                @ObservedObject private(set) var viewModel: ViewModel
+
+                var body: some View {
+                    Text(viewModel.text)
+                }
+            }
+
+            extension ContentView {
+                class ViewModel: ObservableObject {
+                    @Published var text = "Loading..."
+                    init() {
+                        Greeting().greet { greeting, error in
+                                    DispatchQueue.main.async {
+                                        if let greeting = greeting {
+                                            self.text = greeting
+                                        } else {
+                                            self.text = error?.localizedDescription ?? "error"
+                                        }
+                                    }
+                                }
+                    }
+                }
+            }
+          """
+              .trimIndent(),
+          ),
+          source(
+            "iosApp/iOSApp.swift",
+            """
+            import SwiftUI
+
+            @main
+            struct iOSApp: App {
+              var body: some Scene {
+                WindowGroup {
+                        ContentView(viewModel: ContentView.ViewModel())
+                }
+              }
+            }
+          """
+              .trimIndent(),
+          ),
+        )
+        .name("project3")
+
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    @Language("XML")
+    val descriptor =
+      """
+        <project>
+          <sdk dir='${TestUtils.getSdk()}'/>
+          <root dir="$root" />
+
+          <module name="project2" android="true" library="false" compile-sdk-version='18' platform='android'>
+            <manifest file="project2/src/main/AndroidManifest.xml" />
+            <resource file="project2/src/main/res/values/styles.xml" />
+            <src file="project2/src/main/java/pkg/android/MainActivity.kt" />
+            <src file="project2/src/main/java/pkg/android/MyApplicationTheme.kt" />
+            <src file="project2/src/main/java/pkg/android/expect.kt" />
+            <src file="project2/src/main/java/pkg/android/actual.kt" />
+            <dep module="project1" kind="dependsOn" />
+          </module>
+
+          <module name="project3" android="false" library="false" platform='ios'>
+            <src file="project3/iosApp/ContentView.swift" />
+            <src file="project3/iosApp/iOSApp.swift" />
+            <dep module="project1" kind="dependsOn"/>
+          </module>
+
+          <module name="project1" android="false" platform='common'>
+            <src file="project1/src/commonMain/kotlin/pkg/Platform.kt" />
+            <src file="project1/src/androidMain/kotlin/pkg/Platform.kt" />
+            <src file="project1/src/iosMain/kotlin/pkg/Platform.kt" />
+            <klib file="project1/libs/SomeKlib.klib" />
           </module>
         </project>
       """

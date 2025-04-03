@@ -31,13 +31,14 @@ import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
 import com.android.backup.ErrorCode.READ_CONTENT_FAILED
 import com.android.backup.ErrorCode.WRITE_CONTENT_FAILED
 import java.io.IOException
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.util.Properties
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.createDirectories
-import kotlin.io.path.deleteIfExists
 import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 import kotlinx.coroutines.withContext
@@ -67,7 +68,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
             reportProgress("Running backup")
             adbServices.backupNow(applicationId, type)
             reportProgress("Fetching backup")
-            pullBackup(adbServices, BackupMetadata(applicationId, type), backupFile)
+            val tempFile = Files.createTempFile("", ".backup")
+            pullBackup(adbServices, BackupMetadata(applicationId, type), tempFile)
+            backupFile.parent.createDirectories()
+            Files.move(tempFile, backupFile, REPLACE_EXISTING)
           } finally {
             reportProgress("Cleaning up")
           }
@@ -76,8 +80,6 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
       }
       Success
     } catch (e: Throwable) {
-      backupFile.deleteIfExists()
-
       e.toBackupResult()
     }
   }
@@ -157,7 +159,6 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     metadata: BackupMetadata,
     backupFile: Path,
   ) {
-    backupFile.parent.createDirectories()
     ZipOutputStream(backupFile.outputStream()).use { zip ->
       adbServices.pullFileIntoZip(zip, TOKEN_FILE)
       adbServices.pullFileIntoZip(zip, PM_DATA_FILE)

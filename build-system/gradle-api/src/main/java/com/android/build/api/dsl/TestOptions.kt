@@ -29,10 +29,10 @@ interface TestOptions {
     /** Options for controlling unit tests execution. */
     fun unitTests(action: UnitTestOptions.() -> Unit)
 
-    /** Name of the results directory. */
+    /** Name of the results' directory. */
     var resultsDir: String?
 
-    /** Name of the reports directory. */
+    /** Name of the reports' directory. */
     var reportDir: String?
 
     /**
@@ -57,7 +57,7 @@ interface TestOptions {
      */
     @Deprecated("devices is deprecated in testOptions, use managedDevices.devices instead")
     @get:Incubating
-    val devices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<Device>
+    val devices: ExtensiblePolymorphicDomainObjectContainer<Device>
 
     /**
      * List of DeviceGroups that can be run through connected check, using the Unified Test
@@ -227,6 +227,7 @@ interface TestOptions {
      *
      * The types of test suites available depend on the other plugins applied to your project.
      */
+    /** @suppress */
     @get:Incubating
     val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite>
 }

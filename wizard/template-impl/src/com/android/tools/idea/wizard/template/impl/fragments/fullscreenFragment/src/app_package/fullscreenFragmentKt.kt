@@ -17,6 +17,7 @@
 package com.android.tools.idea.wizard.template.impl.fragments.fullscreenFragment.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
@@ -38,7 +39,7 @@ fun fullscreenFragmentKt(
   """ else "return inflater.inflate(R.layout.$layoutName, container, false)"
 
   return """
-package ${packageName}
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
 import android.os.Handler

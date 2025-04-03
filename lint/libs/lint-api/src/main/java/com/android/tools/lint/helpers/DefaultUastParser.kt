@@ -338,7 +338,7 @@ open class DefaultUastParser(
     }
 
     val receiver = call.receiver
-    if (!includeReceiver || receiver == null) {
+    if (!includeReceiver || receiver == null || receiver.sourcePsi == null) {
       if (includeArguments) {
         // Method with arguments but no receiver is the default range for UCallExpressions
         // modulo the scenario with arguments outside the call, handled at the beginning
@@ -450,8 +450,8 @@ open class DefaultUastParser(
     toDelta: Int,
   ): Location {
     var contents = context.getContents()
-    val fromRange = getTextRange(from)
     val toRange = getTextRange(to)
+    val fromRange = getTextRange(from) ?: toRange
 
     if (fromRange != null && toRange != null && fromRange.startOffset > toRange.startOffset) {
       // Not common, but for example for the "contains" operator whe receiver and

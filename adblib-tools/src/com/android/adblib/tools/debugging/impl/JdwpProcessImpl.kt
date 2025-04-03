@@ -85,18 +85,6 @@ internal class JdwpProcessImpl(
     private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         logger.debug { "Start monitoring" }
 
-        scope.launch(session.ioDispatcher) {
-            runCatching {
-                jdwpProxySocketServer.proxyStatusFlow.collect { newProxyStatus ->
-                    propertiesAtomicStateFlow.update {
-                        it.copy(jdwpProxyStatus = newProxyStatus)
-                    }
-                }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-            }
-        }
-
         val localCollectorJob = scope.launch(session.ioDispatcher) {
             runCatching {
                 propertyCollector.execute(propertiesAtomicStateFlow, jdwpProxySocketServer.proxyStatusFlow)
@@ -114,8 +102,7 @@ internal class JdwpProcessImpl(
                     val handler = ExternalPropertiesCollectorHandler(
                         externalCollector,
                         localCollectorJob,
-                        propertiesAtomicStateFlow,
-                        jdwpProxySocketServer.proxyStatusFlow
+                        propertiesAtomicStateFlow
                     )
                     handler.execute()
                 }.onFailure { throwable ->

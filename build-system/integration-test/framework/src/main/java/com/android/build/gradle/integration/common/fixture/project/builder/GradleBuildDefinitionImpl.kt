@@ -346,12 +346,45 @@ internal class GradleBuildDefinitionImpl(
     override fun kotlinMultiplatformLibrary(
         path: String,
         action: KotlinMultiplatformDefinition.() -> Unit
+    ): KotlinMultiplatformDefinition = kotlinMultiplatformLibrary(
+        path,
+        plugins = listOf(),
+        createMinimumAndroidProject = false,
+        action
+    )
+
+    override fun androidKotlinMultiplatformLibrary(
+        path: String,
+        createMinimumProject: Boolean,
+        action: KotlinMultiplatformDefinition.() -> Unit
+    ): KotlinMultiplatformDefinition = kotlinMultiplatformLibrary(
+        path,
+        plugins = listOf(PluginType.ANDROID_KMP_LIBRARY),
+        createMinimumAndroidProject = createMinimumProject,
+        action
+    )
+
+    private fun kotlinMultiplatformLibrary(
+        path: String,
+        plugins: List<PluginType>,
+        createMinimumAndroidProject: Boolean,
+        action: KotlinMultiplatformDefinition.() -> Unit
     ): KotlinMultiplatformDefinition {
         if (path == ":") throw RuntimeException("root project cannot be an Android Kotlin multiplatform library")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
         val project = subProjects.computeIfAbsent(path) {
-            KotlinMultiplatformDefinitionImpl(it)
+            KotlinMultiplatformDefinitionImpl(it).also { project ->
+                for (plugin in plugins) {
+                    project.applyPlugin(plugin)
+                }
+                if (createMinimumAndroidProject) {
+                    project.androidLibrary {
+                        namespace = "pkg.name${path.replace(':', '.').replace('-', '_')}"
+                        compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+                    }
+                }
+            }
         }
 
         project as? KotlinMultiplatformDefinition
@@ -360,21 +393,6 @@ internal class GradleBuildDefinitionImpl(
         action(project)
 
         return project
-    }
-
-    override fun androidKotlinMultiplatformLibrary(
-        path: String,
-        createMinimumProject: Boolean,
-        action: KotlinMultiplatformDefinition.() -> Unit
-    ): KotlinMultiplatformDefinition = kotlinMultiplatformLibrary(path) {
-        applyPlugin(PluginType.ANDROID_KMP_LIBRARY)
-        if (createMinimumProject) {
-            androidLibrary {
-                namespace = "pkg.name${path.replace(':', '.').replace('-', '_')}"
-                compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
-            }
-        }
-        action()
     }
 
     override fun configure(

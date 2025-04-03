@@ -19,12 +19,14 @@ import com.android.adblib.impl.InputChannelShellOutputImpl
 import com.android.adblib.impl.LineCollector
 import com.android.adblib.impl.channels.AdbOutputStreamChannel
 import com.android.adblib.utils.AdbBufferDecoder
+import com.android.adblib.utils.AdbProtocolUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.StateFlow
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
+import java.nio.charset.Charset
 import java.time.Duration
 import java.util.concurrent.TimeoutException
 
@@ -38,8 +40,10 @@ import java.util.concurrent.TimeoutException
  *
  * @see [AdbDeviceServices.shellCommand]
  * @see [AdbDeviceServices.shellV2]
+ * @see [AdbDeviceServices.shellV2Terminal]
  * @see [AdbDeviceServices.exec]
  * @see [AdbDeviceServices.shell]
+ * @see [AdbDeviceServices.shellTerminal]
  */
 interface ShellCommand<T> {
 
@@ -79,6 +83,20 @@ interface ShellCommand<T> {
      * The default value is [INFINITE_DURATION].
      */
     fun withCommandOutputTimeout(timeout: Duration): ShellCommand<T>
+
+    /**
+     * Overrides the additional options to pass to the shell service request
+     */
+    fun withShellOptions(options: ShellOptions?): ShellCommand<T>
+
+    /**
+     * Overrides the [Flow] of [ShellWindowSize] to send to the interactive shell on the
+     * device. This flow is typically used to notify the interactive shell on the device
+     * that the terminal window size (on the host) has changed size.
+     *
+     * This is used only if the [Protocol.SHELL_V2] protocol is used to run this command.
+     */
+    fun withWindowSizeFlow(flow: Flow<ShellWindowSize>?): ShellCommand<T>
 
     /**
      * Overrides the default buffer size used for buffering `stdout`, `stderr` and `stdin`.
@@ -214,10 +232,12 @@ fun <T> ShellCommand<T>.withInputChannelCollector(): ShellCommand<InputChannelSh
  * Note: This should be used only if the output of a shell command is expected to be somewhat
  *       small and can easily fit into memory.
  */
-class TextShellCollector(bufferCapacity: Int = 256)
-    : ShellCollector<String>, ShellCollectorCapabilities {
+class TextShellCollector(
+    bufferCapacity: Int = 256,
+    charset: Charset = AdbProtocolUtils.ADB_CHARSET
+) : ShellCollector<String>, ShellCollectorCapabilities {
 
-    private val decoder = AdbBufferDecoder(bufferCapacity)
+    private val decoder = AdbBufferDecoder(bufferCapacity, charset)
 
     /**
      * Characters accumulated during calls to [collectCharacters]

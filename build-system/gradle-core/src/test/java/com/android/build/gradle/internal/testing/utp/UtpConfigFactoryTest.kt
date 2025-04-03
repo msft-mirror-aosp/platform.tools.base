@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.test.ApkBundlesFinder
 import com.android.build.gradle.internal.test.ApksFinder
 import com.android.build.gradle.internal.testing.StaticTestData
+import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConnector
 import com.android.sdklib.BuildToolInfo
@@ -69,7 +70,6 @@ class UtpConfigFactoryTest {
     private val mockBuildToolInfo: BuildToolInfo = mock()
     private val mockBuildToolInfoProvider: Provider<BuildToolInfo> = mock()
     private val mockemulatorControlConfig: EmulatorControlConfig = mock()
-    private val mockRetentionConfig: RetentionConfig = mock()
     private val mockResultListenerClientCert: File = mock()
     private val mockResultListenerClientPrivateKey: File = mock()
     private val mockTrustCertCollection: File = mock()
@@ -190,7 +190,6 @@ class UtpConfigFactoryTest {
                 mockOutputDir,
                 mockTmpDir,
                 mockemulatorControlConfig,
-                mockRetentionConfig,
                 mockCoverageOutputDir,
                 useOrchestrator,
                 forceCompilation,
@@ -223,6 +222,7 @@ class UtpConfigFactoryTest {
                 "avdName",
                 29,
                 "x86",
+                "x86",
                 "path/to/gradle/avd",
                 ":app:deviceNameDebugAndroidTest",
                 "path/to/emulator",
@@ -238,7 +238,6 @@ class UtpConfigFactoryTest {
                 mockOutputDir,
                 mockTmpDir,
                 mockemulatorControlConfig,
-                mockRetentionConfig,
                 mockCoverageOutputDir,
                 additionalTestOutputDir,
                 useOrchestrator,
@@ -389,59 +388,6 @@ class UtpConfigFactoryTest {
     }
 
     @Test
-    fun createRunnerConfigProtoWithIcebox() {
-        whenever(mockRetentionConfig.enabled).thenReturn(true)
-        whenever(mockRetentionConfig.retainAll).thenReturn(true)
-
-        val runnerConfigProto = createForLocalDevice()
-
-        assertRunnerConfigProto(
-            runnerConfigProto,
-            instrumentationArgs = mapOf("debug" to "true")
-        )
-    }
-
-    @Test
-    fun createRunnerConfigProtoWithDebugAndIcebox() {
-        whenever(mockRetentionConfig.enabled).thenReturn(true)
-        whenever(mockRetentionConfig.retainAll).thenReturn(true)
-
-        val runnerConfigProto = createForLocalDevice(
-            testData = testData.copy(instrumentationRunnerArguments = mapOf("debug" to "true")))
-
-        assertRunnerConfigProto(runnerConfigProto, instrumentationArgs = mapOf("debug" to "true"))
-    }
-
-    @Test
-    fun createRunnerConfigProtoWithIceboxAndCompression() {
-        whenever(mockRetentionConfig.enabled).thenReturn(true)
-        whenever(mockRetentionConfig.maxSnapshots).thenReturn(2)
-        whenever(mockRetentionConfig.retainAll).thenReturn(false)
-        whenever(mockRetentionConfig.compressSnapshots).thenReturn(true)
-
-        val runnerConfigProto = createForLocalDevice()
-
-        assertRunnerConfigProto(
-            runnerConfigProto,
-            instrumentationArgs = mapOf("debug" to "true")
-        )
-    }
-
-    @Test
-    fun createRunnerConfigProtoWithIceboxAndOrchestrator() {
-        whenever(mockRetentionConfig.enabled).thenReturn(true)
-        whenever(mockRetentionConfig.retainAll).thenReturn(true)
-
-        val runnerConfigProto = createForLocalDevice(useOrchestrator = true)
-
-        assertRunnerConfigProto(
-            runnerConfigProto,
-            useOrchestrator = true,
-            instrumentationArgs = mapOf("debug" to "true")
-        )
-    }
-
-    @Test
     fun createRunnerConfigProtoForManagedDevice() {
         val runnerConfigProto = createForManagedDevice()
 
@@ -488,21 +434,6 @@ class UtpConfigFactoryTest {
             deviceId = ":app:deviceNameDebugAndroidTest",
             useGradleManagedDeviceProvider = true,
             installApkTimeout = 5)
-    }
-
-    @Test
-    fun createRunnerConfigManagedDeviceWithRetention() {
-        whenever(mockRetentionConfig.enabled).thenReturn(true)
-        whenever(mockRetentionConfig.retainAll).thenReturn(true)
-
-        val runnerConfigProto = createForManagedDevice()
-
-        assertRunnerConfigProto(
-            runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true,
-            instrumentationArgs = mapOf("debug" to "true"),
-        )
     }
 
     @Test

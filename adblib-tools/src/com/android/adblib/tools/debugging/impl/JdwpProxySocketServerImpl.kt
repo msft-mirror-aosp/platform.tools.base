@@ -63,7 +63,7 @@ internal class JdwpProxySocketServerImpl(
 
     private val logger = adbLogger(device.session).withProcessPrefix(device, process.pid)
 
-    private val proxyStatusStateFlow = MutableStateFlow(JdwpProxySocketServerStatus())
+    private val proxyStatusStateFlow = MutableStateFlow(JdwpProxySocketServerStatus(process.pid))
 
     /**
      * The current [status][JdwpProxySocketServerStatus] of this [JdwpProxySocketServer]

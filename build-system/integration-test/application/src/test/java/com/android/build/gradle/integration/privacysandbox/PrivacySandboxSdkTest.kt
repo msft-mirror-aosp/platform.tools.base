@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
 import com.android.build.gradle.integration.common.output.AarMetadataSubject
 import com.android.build.gradle.integration.common.output.ZipSubject
+import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.signing.KeystoreHelper
@@ -30,6 +31,7 @@ import com.android.testutils.apk.Dex
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject
+import com.android.tools.build.gradle.internal.profile.StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -384,5 +386,35 @@ class PrivacySandboxSdkTest {
                 "        android:targetSdkVersion=\"34\" />"
             )
         )
+    }
+
+    @Test
+    fun testInvalidApiGeneratorDependenciesUsingExperimentalPropertiesInSdk() {
+        val build = rule.build {
+            androidApplication(":example-app") {
+                android {
+                    android {
+                        experimentalProperties[ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR.key] =
+                            listOf("project.dependencies.create(\"com.not:existing-dependency:2.0\")")
+                    }
+                }
+            }
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    android {
+                        experimentalProperties[ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR.key] =
+                            listOf("project.dependencies.create(\"com.not:existing-dependency:1.0\")")
+                    }
+                }
+            }
+        }
+        build.configuredExecutor()
+            .expectFailure()
+            .run(":example-app:assemble")
+            .assertErrorContains("Could not find com.not:existing-dependency:2.0.")
+        build.configuredExecutor()
+            .expectFailure()
+            .run(":privacy-sandbox-sdk:assemble")
+            .assertErrorContains("Could not find com.not:existing-dependency:1.0.")
     }
 }

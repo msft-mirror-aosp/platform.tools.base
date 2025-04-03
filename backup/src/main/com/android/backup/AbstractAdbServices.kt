@@ -141,15 +141,14 @@ abstract class AbstractAdbServices(
   }
 
   override suspend fun getForegroundApplicationId(): String {
+    val stdout = executeCommand("dumpsys activity activities").stdout
+    val lines = stdout.lineSequence()
     val line =
-      executeCommand("dumpsys activity").stdout.lineSequence().find {
-        it.contains("mFocusedApp=ActivityRecord")
-      }
+      lines.find { it.contains("mFocusedApp=ActivityRecord") }
+        ?: lines.find { it.contains("ResumedActivity: ActivityRecord") }
     if (line == null) {
-      throw BackupException(
-        UNEXPECTED_ERROR,
-        "Could not detect foreground app. Dumpsys does not contain a 'ResumedActivity'",
-      )
+      logger.warn("Could not detect foreground app. Unexpected output:\n$stdout")
+      throw BackupException(UNEXPECTED_ERROR, "Could not detect foreground app. See log for detail")
     }
     val applicationId = line.substringBefore('/').substringAfterLast(' ')
     if (!APPLICATION_ID_REGEX.matches(applicationId)) {

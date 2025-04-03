@@ -304,9 +304,9 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
     }
 
     private fun AdbSession.installTestProcessInventoryServer() {
-        ProcessInventoryJdwpProcessPropertiesCollectorFactory.installForSession(
-            this,
-            TestServerConfig(),
+        val server = ProcessInventoryServerConnection.create(this, TestServerConfig())
+        this.installProcessInventoryJdwpProcessPropertiesCollectorFactory(
+            server,
             enabled = { true }
         )
     }

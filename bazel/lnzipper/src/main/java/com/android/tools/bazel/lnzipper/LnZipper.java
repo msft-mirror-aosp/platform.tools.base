@@ -29,7 +29,16 @@ import static com.android.zipflinger.Source.UNX_IXUSR;
 import com.android.zipflinger.FullFileSource;
 import com.android.zipflinger.Source;
 import com.android.zipflinger.Sources;
+import com.android.zipflinger.SynchronizedArchive;
 import com.android.zipflinger.ZipArchive;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,13 +51,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.zip.Deflater;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 
 /**
  * Creates a ZIP archive, using zipflinger, optionally allowing the preservation of symbolic links.
@@ -107,12 +115,22 @@ public class LnZipper {
                     .desc("Whether to preserve attributes in new archives")
                     .build();
 
+    public static final Option multithreaded =
+            Option.builder("t")
+                    .argName("int")
+                    .longOpt("threads")
+                    .desc("Number of threads to use to compress")
+                    .hasArg(true)
+                    .type(Integer.class)
+                    .build();
+
     static Options getCliOptions() {
         Options opts = new Options();
         opts.addOption(compress);
         opts.addOption(create);
         opts.addOption(symlinks);
         opts.addOption(attributes);
+        opts.addOption(multithreaded);
         return opts;
     }
 
@@ -130,12 +148,27 @@ public class LnZipper {
         if (argList.size() < 1) {
             throw new IllegalArgumentException("Missing ZIP archive argument");
         }
+        // Leave 2 cores to not stall the system.
+        int threadCount = Math.min(Runtime.getRuntime().availableProcessors() - 2, 16);
+        try {
+            if (cmdLine.hasOption(multithreaded.getOpt())) {
+                threadCount =
+                        Integer.parseInt(cmdLine.getOptionValue(multithreaded.getOpt()).trim());
+                if (threadCount < 1) {
+                    throw new IllegalArgumentException(
+                            "Invalid number of threads specified: " + threadCount);
+                }
+            }
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(e);
+        }
         Path archive = Paths.get(argList.get(0));
         Map<String, Entry> fileMap = getFileMapping(argList);
 
         createArchive(
                 archive,
                 fileMap,
+                threadCount,
                 cmdLine.hasOption(compress.getOpt()),
                 cmdLine.hasOption(symlinks.getOpt()),
                 cmdLine.hasOption(attributes.getOpt()));
@@ -144,11 +177,12 @@ public class LnZipper {
     private static void createArchive(
             Path dest,
             Map<String, Entry> fileMap,
+            int threadCount,
             boolean compress,
             boolean preserveSymlinks,
             boolean preserveAttributes)
             throws IOException {
-        try (ZipArchive archive = new ZipArchive(dest)) {
+        try (SynchronizedArchive archive = new SynchronizedArchive(new ZipArchive(dest))) {
             BytesSourceFactory bytesSourceFactory =
                     preserveSymlinks
                             ? (file, entryName, compressionLevel) ->
@@ -160,21 +194,26 @@ public class LnZipper {
                             : Sources::from;
             int compressionLevel = compress ? Deflater.BEST_COMPRESSION : Deflater.NO_COMPRESSION;
 
-            for (Map.Entry<String, Entry> fileEntry : fileMap.entrySet()) {
-                Source source =
-                        bytesSourceFactory.create(
-                                fileEntry.getValue().path, fileEntry.getKey(), compressionLevel);
-                int attr = source.getExternalAttributes();
-                if (preserveAttributes) {
-                    attr = readFileAttributes(attr, fileEntry.getValue().path);
-                }
-                if (fileEntry.getValue().attr != 0) {
-                    // Override file attributes, but leave anything else the same
-                    attr = attr & ~(0x1FF0000);
-                    attr |= (fileEntry.getValue().attr & 0x1FF) << 16;
-                }
-                source.setExternalAttributes(attr);
-                archive.add(source);
+            ExecutorService service = Executors.newFixedThreadPool(threadCount);
+
+            try {
+                service.invokeAll(
+                        fileMap.entrySet().stream()
+                                .map(
+                                        entry -> {
+                                            return new CompressEntryJob(
+                                                    archive,
+                                                    entry.getKey(),
+                                                    entry.getValue(),
+                                                    bytesSourceFactory,
+                                                    compressionLevel,
+                                                    preserveAttributes);
+                                        })
+                                .collect(Collectors.toList()));
+                service.shutdown();
+                service.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -282,5 +321,46 @@ public class LnZipper {
             }
         }
         return mask;
+    }
+
+    private static class CompressEntryJob implements Callable<Void> {
+        private SynchronizedArchive archive;
+        private String name;
+        private Entry entry;
+        private BytesSourceFactory bytesSourceFactory;
+        private int compressionLevel;
+        private boolean preserveAttributes;
+
+        public CompressEntryJob(
+                SynchronizedArchive archive,
+                String name,
+                Entry entry,
+                BytesSourceFactory bytesSourceFactory,
+                int compressionLevel,
+                boolean preserveAttributes) {
+            this.archive = archive;
+            this.name = name;
+            this.entry = entry;
+            this.bytesSourceFactory = bytesSourceFactory;
+            this.compressionLevel = compressionLevel;
+            this.preserveAttributes = preserveAttributes;
+        }
+
+        @Override
+        public Void call() throws IOException {
+            Source source = bytesSourceFactory.create(entry.path, name, compressionLevel);
+            int attr = source.getExternalAttributes();
+            if (preserveAttributes) {
+                attr = readFileAttributes(attr, entry.path);
+            }
+            if (entry.attr != 0) {
+                // Override file attributes, but leave anything else the same
+                attr = attr & ~(0x1FF0000);
+                attr |= (entry.attr & 0x1FF) << 16;
+            }
+            source.setExternalAttributes(attr);
+            archive.add(source);
+            return null;
+        }
     }
 }

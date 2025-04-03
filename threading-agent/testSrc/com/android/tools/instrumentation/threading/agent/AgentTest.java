@@ -15,11 +15,22 @@
  */
 package com.android.tools.instrumentation.threading.agent;
 
+import static com.google.common.truth.Truth.assertThat;
+
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+
 import com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerHook;
 import com.android.tools.instrumentation.threading.agent.callback.ThreadingCheckerTrampoline;
+
 import com.google.common.io.ByteStreams;
+import com.google.GoogleSample;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.testFramework.ApplicationRule;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,13 +50,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-
-import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 public class AgentTest {
 
@@ -180,6 +184,21 @@ public class AgentTest {
         callMethod(transformedClass, instance, "workerMethod1", false);
 
         verify(mockThreadingCheckerHook).verifyOnWorkerThread();
+    }
+
+    @Test
+    public void testFqcnIncludePattern()
+            throws IOException,
+                    IllegalAccessException,
+                    InstantiationException,
+                    NoSuchMethodException,
+                    InvocationTargetException {
+
+        Class<?> transformedClass = loadAndTransform(GoogleSample.class);
+        Object instance = transformedClass.getDeclaredConstructor().newInstance();
+        callMethod(transformedClass, instance, "method1", false);
+
+        verify(mockThreadingCheckerHook).verifyOnUiThread();
     }
 
     @Test

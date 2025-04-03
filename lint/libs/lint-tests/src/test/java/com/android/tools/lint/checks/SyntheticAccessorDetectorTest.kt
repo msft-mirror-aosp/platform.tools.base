@@ -572,4 +572,29 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun testDataClassSyntheticMemberWithValueClassParameter() {
+    // b/405654866
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            @JvmInline
+            value class MyColor(val value: long)
+
+            data class JustAnotherData(val value: Int)
+            data class MultiSelectorStateImpl(val value: MyColor)
+
+            fun foo(d: JustAnotherData, state: MultiSelectorStateImpl) {
+              d.hashCode() * state.hashCode()
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
 }

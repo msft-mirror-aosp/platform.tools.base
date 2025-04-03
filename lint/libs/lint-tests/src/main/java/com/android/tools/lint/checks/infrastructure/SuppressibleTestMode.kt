@@ -27,6 +27,7 @@ import com.android.tools.lint.client.api.XmlParser
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.detector.api.firstLabelableParent
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.utils.iterator
 import com.intellij.openapi.Disposable
@@ -48,6 +49,7 @@ import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtClassInitializer
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFunctionLiteral
 import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.KtPackageDirective
@@ -368,6 +370,11 @@ class SuppressibleTestMode :
 
     // Already in reverse document order
     for ((element, ids) in elements) {
+      val labelableExpression = (element as? KtElement)?.firstLabelableParent()
+      if (labelableExpression != null) {
+        // Do not annotate label-able expression
+        continue
+      }
       if (element is PsiModifierListOwner && element.hasAnnotation("java.lang.SuppressWarnings")) {
         // Update existing
         val parameters =

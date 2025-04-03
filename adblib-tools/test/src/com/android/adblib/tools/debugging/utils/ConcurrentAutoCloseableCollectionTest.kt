@@ -15,6 +15,7 @@
  */
 package com.android.adblib.tools.debugging.utils
 
+import kotlin.test.assertContentEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -43,47 +44,56 @@ class ConcurrentAutoCloseableCollectionTest {
     @Test
     fun addElement() {
         // Prepare
-        val collection = ConcurrentAutoCloseableCollection<FakeAutoCloseable>()
-        val element = FakeAutoCloseable("element1")
+        val collection = ConcurrentAutoCloseableCollection<Any>()
+        val element1 = FakeAutoCloseable("element1")
+        val element2 = "string element"
 
         // Act
-        collection.add(element)
-        assertEquals(1, collection.toList().size)
-        assertEquals(element, collection.toList()[0])
+        collection.add(element1)
+        collection.add(element2)
+        assertContentEquals(listOf(element1, element2), collection.toList())
     }
 
     @Test
-    fun closeCollectionClosesElements() {
+    fun closeCollection() {
         // Prepare
-        val collection = ConcurrentAutoCloseableCollection<FakeAutoCloseable>()
+        val collection = ConcurrentAutoCloseableCollection<Any>()
         val element1 = FakeAutoCloseable("element1")
         val element2 = FakeAutoCloseable("element2")
+        val element3 = "string element"
+        val element4 = 34
         collection.add(element1)
         collection.add(element2)
+        collection.add(element3)
+        collection.add(element4)
 
         // Act
         collection.close()
 
-        // Assert
+        // Assert: AutoClosable elements get closed
         assertTrue(element1.isClosed)
         assertTrue(element2.isClosed)
         assertEquals(1, element1.closeCount)
         assertEquals(1, element2.closeCount)
+        // Assert: the collection is cleared
         assertTrue(collection.toList().isEmpty())
     }
 
     @Test
-    fun addAfterCloseClosesElement() {
+    fun addAfterCloseClosesAutoClosableElement() {
         // Prepare
-        val collection = ConcurrentAutoCloseableCollection<FakeAutoCloseable>()
-        val element = FakeAutoCloseable("element1")
+        val collection = ConcurrentAutoCloseableCollection<Any>()
+        val autoClosableElement = FakeAutoCloseable("element1")
+        val nonAutoClosableElement = "just a string"
         collection.close()
 
         // Act
-        collection.add(element)
+        collection.add(nonAutoClosableElement)
+        collection.add(autoClosableElement)
 
         // Assert
-        assertTrue(element.isClosed)
+        assertTrue(autoClosableElement.isClosed)
+        assertTrue(collection.toList().isEmpty())
     }
 
     @Test

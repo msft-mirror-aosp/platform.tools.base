@@ -963,6 +963,7 @@ allprojects { proj ->
         return apk
     }
 
+    @Deprecated("Use ApkSelector with assertApk()")
     public interface ApkType {
         val buildType: String
         val testName: String?
@@ -1074,6 +1075,7 @@ allprojects { proj ->
      *
      * Expected dimensions orders are: - product flavors -
      */
+    @Deprecated("Use assertApk")
     fun getApk(
         apk: ApkType,
         vararg dimensions: String,

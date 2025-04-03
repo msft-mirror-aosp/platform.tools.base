@@ -481,17 +481,12 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KmpOptimization.getTestKeepRules: com.android.build.api.dsl.ConfigurableFiles ()
   * com.android.build.api.dsl.KmpOptimization.setMinify: void (boolean)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.getComponentName: java.lang.String ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getCompilationName: java.lang.String ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getDefaultSourceSetName: java.lang.String ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getSourceSetTreeName: java.lang.String ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setCompilationName: void (java.lang.String)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setDefaultSourceSetName: void (java.lang.String)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setSourceSetTreeName: void (java.lang.String)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.emulatorSnapshots: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getEmulatorControl: com.android.build.api.dsl.EmulatorControl ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getEmulatorSnapshots: com.android.build.api.dsl.EmulatorSnapshots ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getMultidex: com.android.build.api.dsl.MultiDexConfig ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.multidex: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MultiDexConfig, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.dependencyVariantSelection: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection, kotlin.Unit>)
@@ -500,8 +495,6 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withAndroidTestOnDeviceBuilder: com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest> (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withAndroidTestOnJvmBuilder: com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest> (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withDeviceTestBuilder: com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest> (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withHostTestBuilder: com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest> (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTargetKt.androidLibrary: void (org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnDeviceCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
   * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvmCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
@@ -582,7 +575,6 @@ https://issuetracker.google.com/331936874
   * com.android.build.api.variant.HostTestBuilder.getEnable: boolean ()
   * com.android.build.api.variant.HostTestBuilder.getType: java.lang.String ()
   * com.android.build.api.variant.HostTestBuilder.setEnable: void (boolean)
-  * com.android.build.api.variant.HostTestBuilder.setType: void (java.lang.String)
 https://issuetracker.google.com/333537222
   * com.android.build.api.dsl.AndroidSourceDirectorySet.getDirectories: java.util.Set<java.lang.String> ()
 https://issuetracker.google.com/335848584
@@ -702,10 +694,19 @@ https://issuetracker.google.com/387328291
   * com.android.build.api.variant.Component.getResolvableConfiguration: org.gradle.api.artifacts.Configuration (java.lang.String)
 https://issuetracker.google.com/392162853
   * com.android.build.api.dsl.AgpTestSuite implements org.gradle.testing.base.TestSuite
+  * com.android.build.api.dsl.AgpTestSuite.getDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies ()
   * com.android.build.api.dsl.AgpTestSuite.getTargetProductFlavors: java.util.List<kotlin.Pair<java.lang.String, java.lang.String>> ()
   * com.android.build.api.dsl.AgpTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.AgpTestSuite.getUseJunitEngine: com.android.build.api.dsl.JUnitEngineSpec ()
+  * com.android.build.api.dsl.AgpTestSuiteDependencies
+  * com.android.build.api.dsl.AgpTestSuiteDependencies.getCompileOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.AgpTestSuiteDependencies.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.AgpTestSuiteDependencies.getRuntimeOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.DefaultInputsForAgpTestSuites.initialize: void (com.android.build.api.dsl.JUnitEngineSpec)
   * com.android.build.api.dsl.JUnitEngineSpec
+  * com.android.build.api.dsl.JUnitEngineSpec.getIncludeEngines: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.JUnitEngineSpec.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
   * com.android.build.api.dsl.TestOptions.getSuites: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.AgpTestSuite> ()
+https://issuetracker.google.com/398918561
+  * com.android.build.api.dsl.ManagedVirtualDevice.getTestedAbi: java.lang.String ()
+  * com.android.build.api.dsl.ManagedVirtualDevice.setTestedAbi: void (java.lang.String)

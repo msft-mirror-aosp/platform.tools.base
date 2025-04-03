@@ -29,7 +29,6 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
-import com.android.builder.errors.IssueReporter
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
@@ -46,27 +45,11 @@ class KotlinCompileCreationAction(
 
     override fun getTaskProvider(): TaskProvider<out KotlinJvmCompile> {
         if (kotlinServices.kotlinBaseApiVersion > KotlinBaseApiVersion.VERSION_1) {
-            val compilerOptions =
-                creationConfig.global.kotlinAndroidProjectExtension?.compilerOptions
-            // TODO(b/341765853) never allow null compilerOptions once AGP always adds the kotlin
-            //  extension.
-            val allowNullCompilerOptions =
-                creationConfig.componentType.isTestFixturesComponent ||
-                        creationConfig.componentType.isForScreenshotPreview
-            if (compilerOptions == null && !allowNullCompilerOptions) {
-                // This should never happen.
-                creationConfig.services
-                    .issueReporter
-                    .reportError(
-                        IssueReporter.Type.GENERIC,
-                        RuntimeException("Unable to access kotlin extension.")
-                    )
-            }
+            val kotlinAndroidProjectExtension = kotlinServices.kotlinAndroidProjectExtension
             return kotlinJvmFactory.registerKotlinJvmCompileTask(
                 taskName,
-                compilerOptions ?: kotlinJvmFactory.createCompilerJvmOptions(),
-                creationConfig.services
-                    .provider { creationConfig.global.kotlinAndroidProjectExtension?.explicitApi }
+                kotlinAndroidProjectExtension.compilerOptions,
+                creationConfig.services.provider { kotlinAndroidProjectExtension.explicitApi }
             )
         }
         return kotlinJvmFactory.registerKotlinJvmCompileTask(taskName, creationConfig.name)
@@ -128,10 +111,7 @@ class KotlinCompileCreationAction(
         }
 
         if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
-            creationConfig.global
-                .kotlinAndroidProjectExtension
-                ?.compilerOptions
-                ?.let { task.applyCompilerOptions(it) }
+            task.applyCompilerOptions(kotlinServices.kotlinAndroidProjectExtension.compilerOptions)
         }
     }
 }

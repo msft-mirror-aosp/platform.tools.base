@@ -42,6 +42,9 @@ interface AdbDeviceServices {
      * ("<device-transport>:shell" query) and emits the `stdout` and `stderr` output from of
      * the command to the [Flow].
      *
+     * Note: If [command] is empty, this call starts an interactive shell session that can
+     * be fed through [stdinChannel].
+     *
      * This is the equivalent of running "`/system/bin/sh -c `[command]" on the [device], meaning
      * [command] can be any arbitrary shell invocation, including pipes and redirections, as
      * opposed to executing a single process.
@@ -64,9 +67,12 @@ interface AdbDeviceServices {
      * [IOException] or any [Exception] thrown by [shellCollector]
      *
      * @param [device] the [DeviceSelector] corresponding to the target device
-     * @param [command] the shell command to execute
+     * @param [command] the shell command to execute. If [command] is the empty string, a shell
+     *      terminal session is started instead of running a command.
      * @param [shellCollector] The [ShellCollector] invoked to collect the shell command output
      *   and emit elements to the resulting [Flow]
+     * @param [shellOptions] The [ShellOptions] used to specify additional options to the
+     *   "shell" service invocation
      * @param [stdinChannel] is an optional [AdbChannel] providing bytes to send to the `stdin`
      *   of the shell command
      * @param [commandTimeout] timeout tracking the command execution, tracking starts *after* the
@@ -84,6 +90,7 @@ interface AdbDeviceServices {
         device: DeviceSelector,
         command: String,
         shellCollector: ShellCollector<T>,
+        shellOptions: ShellOptions? = null,
         stdinChannel: AdbInputChannel? = null,
         commandTimeout: Duration = INFINITE_DURATION,
         bufferSize: Int = session.property(DEFAULT_SHELL_BUFFER_SIZE),
@@ -154,6 +161,9 @@ interface AdbDeviceServices {
      * ("<device-transport>:shell,v2" query) and emits the output, as well as `stderr` and
      * exit code, of the command to the [Flow].
      *
+     * Note: If [command] is empty, this call starts an interactive shell session that can
+     * be fed through [stdinChannel].
+     *
      * The returned [Flow] elements are collected and emitted through a [ShellV2Collector],
      * which enables advanced use cases for collecting, mapping, filtering and joining
      * the command output which is initially collected as [ByteBuffer]. A typical use
@@ -173,11 +183,16 @@ interface AdbDeviceServices {
      *   an [AdbFailResponseException].
      *
      * @param [device] the [DeviceSelector] corresponding to the target device
-     * @param [command] the shell command to execute
+     * @param [command] the shell command to execute. If [command] is the empty string, a shell
+     *   terminal session is started instead of running a command.
      * @param [shellCollector] The [ShellV2Collector] invoked to collect the shell command output
      *   and emit elements to the resulting [Flow]
+     * @param [shellOptions] The [ShellOptions] used to specify additional options to the
+     *   "shell" service invocation
      * @param [stdinChannel] is an optional [AdbChannel] providing bytes to send to the `stdin`
      *   of the shell command
+     * @param [windowSizeFlow] is an optional [Flow] of [ShellWindowSize] used to notify the
+     *   shell terminal session of changes in terminal window size.
      * @param [commandTimeout] timeout tracking the command execution, tracking starts *after* the
      *   device connection has been successfully established. If the command takes more time than
      *   the timeout, a [TimeoutException] is thrown and the underlying [AdbChannel] is closed.
@@ -187,7 +202,9 @@ interface AdbDeviceServices {
         device: DeviceSelector,
         command: String,
         shellCollector: ShellV2Collector<T>,
+        shellOptions: ShellOptions? = null,
         stdinChannel: AdbInputChannel? = null,
+        windowSizeFlow: Flow<ShellWindowSize>? = null,
         commandTimeout: Duration = INFINITE_DURATION,
         bufferSize: Int = session.property(DEFAULT_SHELL_BUFFER_SIZE),
     ): Flow<T>
@@ -405,6 +422,128 @@ interface AdbDeviceServices {
 }
 
 /**
+ * Execution options when running a shell command with [AdbDeviceServices.shell] or
+ * [AdbDeviceServices.shellV2] or [AdbDeviceServices.shellTerminal] or
+ * [AdbDeviceServices.shellV2Terminal]
+ *
+ * @see AdbDeviceServices.shell
+ * @see AdbDeviceServices.shellTerminal
+ * @see AdbDeviceServices.shellV2
+ * @see AdbDeviceServices.shellV2Terminal
+ */
+data class ShellOptions(
+    val terminalType: ShellTerminalType? = ShellTerminalType.Pty,
+
+    /**
+     * The value of the `TERM` env. variable
+     *
+     * See https://www.gnu.org/software/gettext/manual/html_node/The-TERM-variable.html
+     */
+    val termEnvironmentVariable: String? = "xterm-256color",
+) {
+    /**
+     * The terminal type, either [ShellTerminalType.Pty] or [ShellTerminalType.Raw]
+     *
+     * Note that [AdbDeviceServices.shellTerminal] and [AdbDeviceServices.shellV2Terminal]
+     * always imply [ShellTerminalType.Pty] because they send an empty command to the device,
+     * which results in the creation of an interactive shell. See [source code](https://cs.android.com/android/platform/superproject/main/+/587914add99ec51217b9a2f6b121f6f3ef5896ec:packages/modules/adb/daemon/services.cpp;l=103)
+     *
+     * See [shell_service](https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/adb/daemon/shell_service.cpp)
+     *
+     * ```
+     *    ----------------+--------------------------------------
+     *    Type  Protocol  |   Exit code?  Separate stdout/stderr?
+     *    ----------------+--------------------------------------
+     *    PTY   No        |   No          No
+     *    Raw   No        |   No          No
+     *    PTY   Yes       |   Yes         No
+     *    Raw   Yes       |   Yes         Yes
+     *    ----------------+--------------------------------------
+     * ```
+     */
+    enum class ShellTerminalType(internal val serviceString: String) {
+        Pty("pty"),
+        Raw("raw"),
+    }
+
+    internal fun toList(): List<String> {
+        val result = mutableListOf<String>()
+        if (termEnvironmentVariable != null) {
+            result.add("TERM=${termEnvironmentVariable}")
+        }
+        if (terminalType != null) {
+            result.add(terminalType.serviceString)
+        }
+        return result
+    }
+}
+
+/**
+ * Terminal size when running an interactive shell command with
+ * [AdbDeviceServices.shellV2Terminal]
+ *
+ * See https://man7.org/linux/man-pages/man2/TIOCSWINSZ.2const.html
+ * @see AdbDeviceServices.shellV2Terminal
+ */
+data class ShellWindowSize(
+    val rowCount: Int,
+    val columnCount: Int,
+    val yPixelCount: Int = 0,
+    val xPixelCount: Int = 0,
+)
+
+// Empty command starts an interactive shell session
+private const val INTERACTIVE_SHELL_COMMAND = ""
+
+/**
+ * Shortcut for starting an interactive shell session using [AdbDeviceServices.shell]
+ */
+fun <T> AdbDeviceServices.shellTerminal(
+    device: DeviceSelector,
+    shellCollector: ShellCollector<T>,
+    shellOptions: ShellOptions? = null,
+    stdinChannel: AdbInputChannel? = null,
+    bufferSize: Int = session.property(DEFAULT_SHELL_BUFFER_SIZE),
+    shutdownOutput: Boolean = true,
+    stripCrLf: Boolean = false,
+): Flow<T> {
+    return shell(
+        device,
+        command = INTERACTIVE_SHELL_COMMAND,
+        shellCollector,
+        shellOptions,
+        stdinChannel,
+        commandTimeout = INFINITE_DURATION,
+        bufferSize,
+        shutdownOutput,
+        stripCrLf,
+    )
+}
+
+/**
+ * Shortcut for starting an interactive shell session using [AdbDeviceServices.shellV2]
+ */
+fun <T> AdbDeviceServices.shellV2Terminal(
+    device: DeviceSelector,
+    shellCollector: ShellV2Collector<T>,
+    shellOptions: ShellOptions? = null,
+    stdinChannel: AdbInputChannel? = null,
+    windowSizeFlow: Flow<ShellWindowSize>? = null,
+    bufferSize: Int = session.property(DEFAULT_SHELL_BUFFER_SIZE),
+): Flow<T> {
+    return shellV2(
+        device,
+        command = INTERACTIVE_SHELL_COMMAND,
+        shellCollector,
+        shellOptions,
+        stdinChannel,
+        windowSizeFlow,
+        commandTimeout = INFINITE_DURATION,
+        bufferSize
+    )
+}
+
+/**
  * List of process IDs as returned by [AdbDeviceServices.trackJdwp], as well as list of
  * [ErrorLine] in case some lines in the output from ADB were not recognized.
  */
@@ -613,6 +752,41 @@ interface ShellCollectorCapabilities {
  */
 fun AdbDeviceServices.shellCommand(device: DeviceSelector, command: String): ShellCommand<*> {
     return ShellCommandImpl<Any>(this.session, device, command)
+}
+
+/**
+ * Creates a [ShellCommand] to [start][ShellCommand.execute] a interactive shell session on a
+ * given [device], taking advantage of features available only on more recent devices
+ * (e.g. [AdbDeviceServices.shellV2]), in addition to other customization such as
+ * applying an [ShellV2Collector] and configuring timeouts.
+ *
+ * The returned [ShellCommand] only becomes fully typed when [ShellCommand.withCollector]
+ * is invoked.
+ *
+ * Example:
+ * ```
+ *     // Open a terminal, run "ls -l" then exit the terminal session
+ *     coroutineScope {
+ *         val input = session.channelFactory.createPipedChannel()
+ *         launch {
+ *             input.pipeSource.writeText("ls -l\n")
+ *             input.pipeSource.writeChar(0x04) // Ctrl-D
+ *         }
+ *         val stdout = shellTerminalSession(device)
+ *             .withCollector(TextShellV2Collector())
+ *             .withStdin(input)
+ *             .execute()
+ *             .first()
+ *             .stdout
+ *     }
+ * ```
+ */
+fun AdbDeviceServices.shellTerminalSession(
+    device: DeviceSelector,
+    terminalType: ShellOptions.ShellTerminalType? = null
+): ShellCommand<*> {
+    return ShellCommandImpl<Any>(this.session, device, INTERACTIVE_SHELL_COMMAND)
+        .withShellOptions(ShellOptions(terminalType = terminalType))
 }
 
 /**

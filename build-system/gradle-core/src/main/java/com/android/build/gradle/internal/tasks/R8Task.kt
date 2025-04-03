@@ -62,6 +62,7 @@ import com.android.builder.dexing.ToolConfig
 import com.android.builder.dexing.runR8
 import com.android.utils.FileUtils
 import com.android.zipflinger.ZipArchive
+import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
@@ -245,6 +246,11 @@ abstract class R8Task @Inject constructor(
 
     @get:Input
     abstract val r8ThreadPoolSize: Property<Int>
+
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    @get:InputFiles
+    abstract val packageList: RegularFileProperty
 
     class PrivacySandboxSdkCreationAction(
         val creationConfig: PrivacySandboxSdkVariantScope,
@@ -565,6 +571,9 @@ abstract class R8Task @Inject constructor(
             }
 
             task.partialShrinkingConfig.setDisallowChanges(creationConfig.getPartialShrinkingConfig())
+            task.packageList.setDisallowChanges(
+                creationConfig.artifacts.get(InternalArtifactType.MERGED_PACKAGES_FOR_R8)
+            )
         }
 
         override fun keep(keep: String) {
@@ -603,12 +612,15 @@ abstract class R8Task @Inject constructor(
     }
 
     override fun doTaskAction() {
+        // TODO: add the package list to the gradual R8 API
+        if (packageList.isPresent) {
+            val packageFile = packageList.get()
+        }
         val output: Property<out FileSystemLocation> =
             when {
                 componentType.orNull?.isAar == true -> outputClasses
                 else -> outputDex
             }
-
         // Check for duplicate java resourcesJar if there are dynamic features. We allow duplicate
         // META-INF/services/** entries.
         val featureJavaResourceJarsList = featureJavaResourceJars.toList()

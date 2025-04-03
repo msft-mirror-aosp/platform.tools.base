@@ -21,7 +21,6 @@ import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.DeviceId
-import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.JdwpProcessDebuggerProxyInfo
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.JdwpProcessInfo
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessUpdate
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessUpdates
@@ -88,14 +87,12 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
             // * Merge info for existing processes
             // * Add new processes "as-is"
             val processInfoMap = oldProcessList.processes.associateBy { it.pid }.toMutableMap()
-            val proxyInfoMap = oldProcessList.debuggerProxies.associateBy { it.pid }.toMutableMap()
             processUpdates.processUpdateList.forEach { processUpdate ->
                 when {
                     processUpdate.hasProcessTerminatedPid() -> {
                         val pid = processUpdate.processTerminatedPid
                         logger.debug { "Process $pid has exited" }
                         processInfoMap.remove(pid)
-                        proxyInfoMap.remove(pid)
                     }
 
                     processUpdate.hasProcessUpdated() -> {
@@ -106,22 +103,12 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
                         processInfoMap[newJdwpProcessInfo.pid] =
                             currentJdwpProcessInfo.mergeWith(newJdwpProcessInfo)
                     }
-
-                    processUpdate.hasDebuggerProxyInfo() -> {
-                        val newProxyInfo = processUpdate.debuggerProxyInfo
-                        logger.debug { "Proxy for process ${newProxyInfo.pid} has been updated: $newProxyInfo" }
-                        val currentProxyInfo =
-                            proxyInfoMap.computeIfAbsent(newProxyInfo.pid) { newProxyInfo }
-                        proxyInfoMap[newProxyInfo.pid] =
-                            currentProxyInfo.mergeWith(newProxyInfo)
-                    }
                 }
             }
 
             // Return new process list
             ProcessList(
                 processes = processInfoMap.values.sortedBy { it.pid },
-                debuggerProxies = proxyInfoMap.values.sortedBy { it.pid }
             )
         }
     }
@@ -132,10 +119,7 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
         val addProcesses = ProcessListUpdates(
             addedProcessInfo = processList.processes,
             removedProcessInfo = emptyList(),
-            updatedProcessInfo = emptyList(),
-            addedProxyInfo = processList.debuggerProxies,
-            removedProxyInfo = emptyList(),
-            updatedProxyInfo = emptyList(),
+            updatedProcessInfo = emptyList()
         )
         emitProcessListUpdates(addProcesses)
     }
@@ -147,17 +131,11 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
             "emitProcessListUpdates: emitting updates (" +
                     "added info count=${updates.addedProcessInfo.size}, " +
                     "updated info count=${updates.updatedProcessInfo.size}, " +
-                    "removed info count=${updates.removedProcessInfo.size})" +
-                    "added proxy count=${updates.addedProxyInfo.size}, " +
-                    "updated proxy count=${updates.updatedProxyInfo.size}, " +
-                    "removed proxy count=${updates.removedProxyInfo.size})"
+                    "removed info count=${updates.removedProcessInfo.size})"
         }
         logger.verbose { "emitProcessListUpdates: added info=${updates.addedProcessInfo}" }
         logger.verbose { "emitProcessListUpdates: updated info =${updates.updatedProcessInfo}" }
         logger.verbose { "emitProcessListUpdates: removed info =${updates.removedProcessInfo}" }
-        logger.verbose { "emitProcessListUpdates: added proxy=${updates.addedProxyInfo}" }
-        logger.verbose { "emitProcessListUpdates: updated proxy=${updates.updatedProxyInfo}" }
-        logger.verbose { "emitProcessListUpdates: removed proxy=${updates.removedProxyInfo}" }
 
         val response = ProcessUpdates
             .newBuilder()
@@ -177,21 +155,6 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
                         .newBuilder()
                         .setProcessUpdated(processInfo)
                         .build()
-                } + updates.addedProxyInfo.map { proxyInfo ->
-                    ProcessUpdate
-                        .newBuilder()
-                        .setDebuggerProxyInfo(proxyInfo)
-                        .build()
-                } + updates.removedProxyInfo.map { proxyInfo ->
-                    ProcessUpdate
-                        .newBuilder()
-                        .setProcessTerminatedPid(proxyInfo.pid)
-                        .build()
-                } + updates.updatedProxyInfo.map { proxyInfo ->
-                    ProcessUpdate
-                        .newBuilder()
-                        .setDebuggerProxyInfo(proxyInfo)
-                        .build()
                 }
             )
             .build()
@@ -203,18 +166,12 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
         val addedProcessInfo: List<JdwpProcessInfo>,
         val updatedProcessInfo: List<JdwpProcessInfo>,
         val removedProcessInfo: List<JdwpProcessInfo>,
-        val addedProxyInfo: List<JdwpProcessDebuggerProxyInfo>,
-        val updatedProxyInfo: List<JdwpProcessDebuggerProxyInfo>,
-        val removedProxyInfo: List<JdwpProcessDebuggerProxyInfo>,
     ) {
 
         fun isEmpty(): Boolean {
             return addedProcessInfo.isEmpty() &&
                     updatedProcessInfo.isEmpty() &&
-                    removedProcessInfo.isEmpty() &&
-                    addedProxyInfo.isEmpty() &&
-                    updatedProxyInfo.isEmpty() &&
-                    removedProxyInfo.isEmpty()
+                    removedProcessInfo.isEmpty()
         }
     }
 
@@ -232,23 +189,10 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
         }
         val removedInfoPids = oldInfoMap.keys subtract newInfoMap.keys
 
-        val oldProxyMap = currentList.debuggerProxies.associateBy { it.pid }
-        val newProxyMap = newList.debuggerProxies.associateBy { it.pid }
-        val addedProxyPids = newProxyMap.keys subtract oldProxyMap.keys
-        val updatedProxyPids = (oldProxyMap.keys intersect newProxyMap.keys).filter { pid ->
-            val oldProxy = oldProxyMap[pid]
-            val newProxy = newProxyMap[pid]
-            oldProxy != newProxy
-        }
-        val removedProxyPids = oldProxyMap.keys subtract newProxyMap.keys
-
         return ProcessListUpdates(
             addedProcessInfo = newInfoMap.filter { addedInfoPids.contains(it.key) }.values.toList(),
             updatedProcessInfo = newInfoMap.filter { updatedInfoPids.contains(it.key) }.values.toList(),
             removedProcessInfo = oldInfoMap.filter { removedInfoPids.contains(it.key) }.values.toList(),
-            addedProxyInfo =  newProxyMap.filter { addedProxyPids.contains(it.key) }.values.toList(),
-            updatedProxyInfo = newProxyMap.filter { updatedProxyPids.contains(it.key) }.values.toList(),
-            removedProxyInfo = oldProxyMap.filter { removedProxyPids.contains(it.key) }.values.toList(),
         )
     }
 
@@ -266,12 +210,11 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
     /**
      * A simple wrapper around a [List] of [JdwpProcessInfo]
      */
-    private data class ProcessList(
-        val processes: List<JdwpProcessInfo>,
-        val debuggerProxies: List<JdwpProcessDebuggerProxyInfo>
-    ) {
+    private data class ProcessList(val processes: List<JdwpProcessInfo>) {
+
         companion object {
-            val Empty = ProcessList(emptyList(), emptyList())
+
+            val Empty = ProcessList(emptyList())
         }
     }
 
@@ -292,23 +235,8 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
                 if (other.hasVmIdentifier()) proto.vmIdentifier = other.vmIdentifier
                 if (other.hasJvmFlags()) proto.jvmFlags = other.jvmFlags
                 if (other.hasNativeDebuggable()) proto.nativeDebuggable = other.nativeDebuggable
-                if (other.hasWaitPacketReceived()) proto.waitPacketReceived = other.waitPacketReceived
-                if (other.hasFeatures()) proto.features = other.features
-            }
-            .build()
-    }
-
-    /**
-     * Returns a [JdwpProcessInfo] instances resulting from the merging of properties of this
-     * [JdwpProcessInfo] with [other].
-     */
-    private fun JdwpProcessDebuggerProxyInfo.mergeWith(other: JdwpProcessDebuggerProxyInfo): JdwpProcessDebuggerProxyInfo {
-        return JdwpProcessDebuggerProxyInfo.newBuilder(this)
-            .also { proto ->
-                proto.pid = other.pid
                 if (other.hasWaitingForDebugger()) proto.waitingForDebugger = other.waitingForDebugger
-                if (other.hasSocketAddress()) proto.socketAddress = other.socketAddress
-                if (other.hasIsExternalDebuggerAttached()) proto.isExternalDebuggerAttached = other.isExternalDebuggerAttached
+                if (other.hasFeatures()) proto.features = other.features
             }
             .build()
     }

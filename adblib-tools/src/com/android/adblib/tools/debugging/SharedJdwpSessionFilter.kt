@@ -18,7 +18,7 @@ package com.android.adblib.tools.debugging
 import com.android.adblib.AdbSession
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
-import java.util.concurrent.CopyOnWriteArrayList
+import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 
 /**
  * A component that gets notified of [JdwpPacketView] packets activity from a given
@@ -80,7 +80,6 @@ interface SharedJdwpSessionFilter : AutoCloseable {
  * registered with [AdbSession.addSharedJdwpSessionFilterFactory].
  *
  * @see AdbSession.addSharedJdwpSessionFilterFactory
- * @see AdbSession.removeSharedJdwpSessionFilterFactory
  */
 interface SharedJdwpSessionFilterFactory {
 
@@ -95,16 +94,16 @@ interface SharedJdwpSessionFilterFactory {
  * The [CoroutineScopeCache.Key] for the list of [SharedJdwpSessionFilterFactory]
  */
 private val sharedJdwpSessionFilterFactoryListKey =
-    CoroutineScopeCache.Key<CopyOnWriteArrayList<SharedJdwpSessionFilterFactory>>(
+    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<SharedJdwpSessionFilterFactory>>(
         "sharedJdwpSessionFilterFactoryListKey"
     )
 
 /**
  * The list of [SharedJdwpSessionFilterFactory] associated to this [AdbSession]
  */
-internal val AdbSession.sharedJdwpSessionFilterFactoryList: CopyOnWriteArrayList<SharedJdwpSessionFilterFactory>
+internal val AdbSession.sharedJdwpSessionFilterFactoryList: ConcurrentAutoCloseableCollection<SharedJdwpSessionFilterFactory>
     get() = this.cache.getOrPut(sharedJdwpSessionFilterFactoryListKey) {
-        CopyOnWriteArrayList<SharedJdwpSessionFilterFactory>()
+        ConcurrentAutoCloseableCollection<SharedJdwpSessionFilterFactory>()
     }
 
 /**
@@ -112,11 +111,4 @@ internal val AdbSession.sharedJdwpSessionFilterFactoryList: CopyOnWriteArrayList
  */
 fun AdbSession.addSharedJdwpSessionFilterFactory(factory: SharedJdwpSessionFilterFactory) {
     sharedJdwpSessionFilterFactoryList.add(factory)
-}
-
-/**
- * Removes a [SharedJdwpSessionFilterFactory] for [SharedJdwpSession] of this [AdbSession]
- */
-fun AdbSession.removeSharedJdwpSessionFilterFactory(factory: SharedJdwpSessionFilterFactory) {
-    sharedJdwpSessionFilterFactoryList.remove(factory)
 }

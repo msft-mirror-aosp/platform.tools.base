@@ -20,9 +20,9 @@ import com.android.SdkConstants
 import com.android.apksig.ApkVerifier
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkLocation
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.truth.AabSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
@@ -420,23 +420,19 @@ class DynamicAppTest {
 
         project.execute("assembleDebug")
 
-        val baseApk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(baseApk.file).exists()
-        ApkSubject.assertThat(baseApk).contains(
-            "/lib/${SdkConstants.ABI_ARMEABI_V7A}/libbase.so"
-        )
-        ApkSubject.assertThat(baseApk).doesNotContain(
-            "/lib/${SdkConstants.ABI_INTEL_ATOM64}/libbase.so"
-        )
+        project.getSubproject(":app").assertApk(ApkSelector.DEBUG) {
+            jniLibs().containsExactly(
+                // validating ABI_INTEL_ATOM64 is not present
+                "${SdkConstants.ABI_ARMEABI_V7A}/libbase.so"
+            )
+        }
 
-        val feature1Apk = project.getSubproject(":feature1").getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(feature1Apk.file).exists()
-        ApkSubject.assertThat(feature1Apk).contains(
-            "/lib/${SdkConstants.ABI_ARMEABI_V7A}/libfeature1.so"
-        )
-        ApkSubject.assertThat(feature1Apk).doesNotContain(
-            "/lib/${SdkConstants.ABI_INTEL_ATOM64}/libfeature1.so"
-        )
+        project.getSubproject(":feature1").assertApk(ApkSelector.DEBUG) {
+            jniLibs().containsExactly(
+                // validating ABI_INTEL_ATOM64 is not present
+                "${SdkConstants.ABI_ARMEABI_V7A}/libfeature1.so"
+            )
+        }
     }
 
     @Test
@@ -454,25 +450,19 @@ class DynamicAppTest {
             .with(StringOption.IDE_BUILD_TARGET_ABI, SdkConstants.ABI_ARMEABI_V7A)
             .run("assembleDebug")
 
-        val baseApk = project.getSubproject(":app")
-                .getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates)
-        assertThat(baseApk.file).exists()
-        ApkSubject.assertThat(baseApk).contains(
-            "/lib/${SdkConstants.ABI_ARMEABI_V7A}/libbase.so"
-        )
-        ApkSubject.assertThat(baseApk).doesNotContain(
-            "/lib/${SdkConstants.ABI_INTEL_ATOM64}/libbase.so"
-        )
+        project.getSubproject(":app").assertApk(ApkSelector.DEBUG.fromIntermediates()) {
+            jniLibs().containsExactly(
+                // validating ABI_INTEL_ATOM64 is not present
+                "${SdkConstants.ABI_ARMEABI_V7A}/libbase.so"
+            )
+        }
 
-        val feature1Apk = project.getSubproject(":feature1")
-                .getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates)
-        assertThat(feature1Apk.file).exists()
-        ApkSubject.assertThat(feature1Apk).contains(
-            "/lib/${SdkConstants.ABI_ARMEABI_V7A}/libfeature1.so"
-        )
-        ApkSubject.assertThat(feature1Apk).doesNotContain(
-            "/lib/${SdkConstants.ABI_INTEL_ATOM64}/libfeature1.so"
-        )
+        project.getSubproject(":feature1").assertApk(ApkSelector.DEBUG.fromIntermediates()) {
+            jniLibs().containsExactly(
+                // validating ABI_INTEL_ATOM64 is not present
+                "${SdkConstants.ABI_ARMEABI_V7A}/libfeature1.so"
+            )
+        }
     }
 
     @Test
@@ -1221,7 +1211,18 @@ class DynamicAppTest {
                 "feature1-master.apk",
                 "feature2-master.apk")
         val baseApk: File = apkFolder.listFiles().first { it.name == "base-master.apk" }
-        assertThat(ApkSubject.getManifestContent(baseApk.toPath()).joinToString()).contains("local_testing_dir")
+
+        ApkSubject.assertThat(baseApk) {
+            manifestAsNodes()
+                .node("manifest")
+                .node("application")
+                .nodeByNameAndAttribute("meta-data", "local_testing_dir")
+                .attributes()
+                .containsExactly(
+                    "http://schemas.android.com/apk/res/android:name=\"local_testing_dir\"",
+                    "http://schemas.android.com/apk/res/android:value=\"local_testing\""
+                )
+        }
     }
 
     @Test

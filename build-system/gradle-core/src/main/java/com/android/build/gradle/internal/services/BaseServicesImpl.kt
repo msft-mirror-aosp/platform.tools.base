@@ -18,12 +18,12 @@ package com.android.build.gradle.internal.services
 
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.scope.ProjectInfo
-import com.android.build.gradle.internal.services.BuiltInKotlinServices.Companion.createFromPlugin
 import com.android.build.gradle.internal.utils.GradleEnvironmentProvider
 import com.android.build.gradle.internal.utils.GradleEnvironmentProviderImpl
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.services.BuildServiceRegistry
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import java.io.File
 
@@ -53,9 +53,10 @@ open class BaseServicesImpl(protected val projectServices: ProjectServices):
         get() = projectServices.projectInfo
 
     override val builtInKotlinServices: BuiltInKotlinServices by lazy {
-        val kotlinBaseApiPlugin =
-            projectInfo.findPlugin(KotlinBaseApiPlugin::class.java)
-                ?: error("Unable to find plugin: ${KotlinBaseApiPlugin::class.java.name}")
-        createFromPlugin(kotlinBaseApiPlugin)
+        BuiltInKotlinServices.createFromPlugin(
+            kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
+            kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
+            projectName = projectInfo.name
+        )
     }
 }

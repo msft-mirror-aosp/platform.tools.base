@@ -82,7 +82,7 @@ interface JdwpProcess {
 }
 
 /** Creates immutable [JdwpProcessInfo] from the [JdwpProcess] */
-internal fun JdwpProcess.toJdwpProcessInfo() = JdwpProcessInfo(device, propertiesFlow.value)
+internal fun JdwpProcess.toJdwpProcessInfo() = JdwpProcessInfo(device, propertiesFlow.value, jdwpProxySocketServer.proxyStatusFlow.value)
 
 /**
  * Kills a debuggable process by sending a DDMS EXIT packet to the VM.

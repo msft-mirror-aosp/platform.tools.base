@@ -31,6 +31,7 @@ import com.android.adblib.tools.debugging.impl.JdwpProcessSessionFinder
 import com.android.adblib.tools.debugging.impl.addJdwpProcessSessionFinder
 import com.android.adblib.tools.debugging.impl.jdwpProcessManager
 import com.android.adblib.tools.debugging.jdwpProcessTracker
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkView
@@ -75,9 +76,8 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
         val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
         fakeDevice.startClient(pid, 0, "a.b.c", false)
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
-        //process.startMonitoring()
         CoroutineTestUtils.yieldUntil {
-            process.properties.jdwpProxyStatus.socketAddress != null &&
+             process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress != null &&
                     process.properties.processName != null
         }
         val jdwpSession = attachDebuggerSession(process)
@@ -89,10 +89,10 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
     }
 
     protected suspend fun attachDebuggerSession(process: JdwpProcess): JdwpSession {
-        process.propertiesFlow.first { it.jdwpProxyStatus.socketAddress != null }
+        process.jdwpProxySocketServer.proxyStatusFlow.first { it.socketAddress != null }
         val clientSocket = registerCloseable(
             session.channelFactory.connectSocket(
-                process.properties.jdwpProxyStatus.socketAddress!!
+                process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress!!
             )
         )
         return registerCloseable(

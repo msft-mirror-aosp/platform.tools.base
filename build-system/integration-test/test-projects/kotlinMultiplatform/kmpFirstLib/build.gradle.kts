@@ -12,6 +12,11 @@ kotlin {
 
     withDeviceTest {}
 
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        allWarningsAsErrors.set(false)
+    }
+
     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation::class.java) {
         instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

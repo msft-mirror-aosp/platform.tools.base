@@ -1547,6 +1547,10 @@ class LintDriver(
       override val ktsContext: JavaContext?
         get() = ktsContext
 
+      override fun getLocation(node: Any?, type: LocationType): Location {
+        return ktsContext?.getLocation(node, type) ?: super.getLocation(node, type)
+      }
+
       override fun getTomlValue(key: String, source: Boolean): LintTomlValue? {
         return tomlDocument?.getValue(key)
       }

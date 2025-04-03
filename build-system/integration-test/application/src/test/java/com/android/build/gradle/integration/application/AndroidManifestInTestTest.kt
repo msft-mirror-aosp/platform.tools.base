@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.integration.application
 
-import org.junit.Assert.fail
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.ApkSubject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import org.junit.Rule
 import org.junit.Test
 
@@ -32,32 +30,19 @@ class AndroidManifestInTestTest {
     @Test
     fun testUserProvidedTestAndroidManifest() {
         project.execute("assembleDebugAndroidTest")
-        val testApk = project.testApk
 
-        val output = ApkSubject.getManifestContent(testApk.file)
-
-        var foundPermission = false
-        var foundMetadata = false
-        var isDebuggable = false
-        for (line in output) {
-            if (line.contains("foo.permission-group.COST_MONEY")) {
-                foundPermission = true
+        project.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+            manifestAsNodes().node("manifest").apply {
+                node("permission-group")
+                    .attributes()
+                    .contains("http://schemas.android.com/apk/res/android:name=\"foo.permission-group.COST_MONEY\"")
+                node("application")
+                    .attributes()
+                    .contains("http://schemas.android.com/apk/res/android:debuggable=true")
+                node("instrumentation")
+                    .nodes()
+                    .contains("meta-data")
             }
-            if (line.contains("meta-data")) {
-                foundMetadata = true
-            }
-            if (line.contains("android:debuggable")) {
-                isDebuggable = true
-            }
-        }
-        if (!foundPermission) {
-            fail("Could not find user-specified permission group.")
-        }
-        if (!foundMetadata) {
-            fail("Could not find meta-data under instrumentation ")
-        }
-        if (!isDebuggable) {
-            fail("Generated apk is not debuggable ")
         }
     }
 }

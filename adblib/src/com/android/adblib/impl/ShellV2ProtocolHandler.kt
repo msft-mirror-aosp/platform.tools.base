@@ -22,6 +22,8 @@ import com.android.adblib.AdbOutputChannel
 import com.android.adblib.EmptyAdbInputChannel
 import com.android.adblib.skipRemaining
 import com.android.adblib.utils.ResizableBuffer
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.TimeUnit
@@ -97,7 +99,7 @@ internal class ShellV2ProtocolReader(
  * @see [AdbDeviceServices.shellV2]
  */
 internal class ShellV2ProtocolWriter(
-    private val deviceChannel: AdbOutputChannel,
+    private val deviceChannel: AdbOutputChannelWithMutex,
     private val workBuffer: ResizableBuffer
 ) {
 
@@ -131,7 +133,22 @@ internal class ShellV2ProtocolWriter(
         assert(packetLength >= 0)
         buffer.put(0, kind.value.toByte())
         buffer.putInt(1, packetLength)
-        deviceChannel.writeExactly(buffer, timeout.remainingNanos, TimeUnit.NANOSECONDS)
+        deviceChannel.withLock { channel ->
+            channel.writeExactly(buffer, timeout.remainingNanos, TimeUnit.NANOSECONDS)
+        }
+    }
+}
+
+/**
+ * Allows thread-safe writing to an [AdbOutputChannel] using a [Mutex]
+ */
+internal class AdbOutputChannelWithMutex(private val channel: AdbOutputChannel) {
+    private val mutex = Mutex()
+
+    suspend inline fun <R> withLock(block: (AdbOutputChannel) -> R): R {
+        return mutex.withLock {
+            block(channel)
+        }
     }
 }
 
@@ -142,6 +159,10 @@ internal interface ShellV2Packet {
     val kind: ShellV2PacketKind
     val payloadLength: Int
     val payload: AdbInputChannel
+
+    companion object {
+        const val PACKET_HEADER_SIZE = SHELL_PACKET_HEADER_SIZE
+    }
 }
 
 /**

@@ -37,7 +37,7 @@ class CollectionDslProxyTest {
         dslRecorder.writeContent(writer)
         Truth.assertThat(writer.toString()).isEqualTo("""
             town {
-              places += 'Post Office'
+              places.add('Post Office')
             }
 
         """.trimIndent())

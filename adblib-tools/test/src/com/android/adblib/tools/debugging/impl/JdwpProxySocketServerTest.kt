@@ -17,8 +17,10 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.properties
+import com.android.adblib.tools.debugging.proxyStatus
 import com.android.adblib.tools.testutils.AdbLibToolsJdwpTestBase
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
@@ -52,11 +54,11 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         // Act
         val process = connectedDevice.jdwpProcessManager.getProcess(10)
         yieldUntil {
-            process.properties.jdwpProxyStatus.socketAddress != null
+            process.jdwpProxySocketServer.proxyStatus.socketAddress != null
         }
 
         // Assert
-        assertFalse(process.properties.jdwpProxyStatus.isExternalDebuggerAttached)
+        assertFalse(process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached)
     }
 
     @Test
@@ -91,7 +93,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         // Prepare
         val jdwpSessionInfo = createJdwpProxySession(pid = 11)
         val jdwpProcess = jdwpSessionInfo.process
-        val debuggerSocketAddress = jdwpProcess.properties.jdwpProxyStatus.socketAddress
+        val debuggerSocketAddress = jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress
 
         // Act
         val jdwpSession1 = jdwpSessionInfo.debuggerJdwpSession
@@ -100,16 +102,16 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         // Close JDWP session and wait for process to reflect new status
         jdwpSession1.close()
         yieldUntil {
-            !jdwpProcess.properties.jdwpProxyStatus.isExternalDebuggerAttached
+            !jdwpProcess.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached
         }
-        val debuggerSocketAddress2 = jdwpProcess.properties.jdwpProxyStatus.socketAddress
+        val debuggerSocketAddress2 = jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress
 
         // Open 2nd session
         val jdwpSession2 = attachDebuggerSession(jdwpProcess)
         val reply2 = sendVmVersionPacket(jdwpSession2)
 
         // Assert
-        assertTrue(jdwpProcess.properties.jdwpProxyStatus.isExternalDebuggerAttached)
+        assertTrue(jdwpProcess.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached)
         assertEquals(debuggerSocketAddress, debuggerSocketAddress2)
         assertTrue(reply1.isReply)
         assertTrue(reply2.isReply)
@@ -178,18 +180,17 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
-        yieldUntil { process.properties.waitCommandReceived }
-        assertTrue(process.properties.isWaitingForDebugger)
+        yieldUntil { process.properties.isWaitingForDebugger }
 
         // Act
         attachDebuggerSession(process)
         yieldUntil {
-            process.properties.jdwpProxyStatus.isExternalDebuggerAttached &&
+            process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached &&
               !process.properties.isWaitingForDebugger
         }
 
         // Assert
-        assertTrue(process.properties.jdwpProxyStatus.isExternalDebuggerAttached)
+        assertTrue(process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached)
         assertFalse(process.properties.isWaitingForDebugger)
     }
 
@@ -217,12 +218,12 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         // Act
         attachDebuggerSession(process)
         yieldUntil {
-            process.properties.jdwpProxyStatus.isExternalDebuggerAttached &&
+            process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached &&
               !process.properties.isWaitingForDebugger
         }
 
         // Assert
-        assertTrue(process.properties.jdwpProxyStatus.isExternalDebuggerAttached)
+        assertTrue(process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached)
         assertFalse(process.properties.isWaitingForDebugger)
     }
 }

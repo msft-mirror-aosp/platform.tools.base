@@ -20,7 +20,9 @@ import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.DeviceSelector
 import com.android.adblib.ShellCollector
+import com.android.adblib.ShellOptions
 import com.android.adblib.ShellV2Collector
+import com.android.adblib.ShellWindowSize
 import com.android.adblib.SystemNanoTimeProvider
 import com.android.adblib.adbLogger
 import com.android.adblib.impl.ShellWithIdleMonitoring.HeartbeatRecorder.FlowEntry.Closed
@@ -59,7 +61,9 @@ internal abstract class ShellWithIdleMonitoring<T, TShellCollector, Command>(
         val commandOutputTimeout: Duration,
         val bufferSize: Int,
         val stripCrLf: Boolean,
-        val shutdownOutput: Boolean
+        val shutdownOutput: Boolean,
+        val shellOptions: ShellOptions?,
+        val windowSizeFlow: Flow<ShellWindowSize>?
     )
 
     private val deviceServices: AdbDeviceServices
@@ -326,7 +330,9 @@ internal class ShellV2WithIdleMonitoring<T>(
             parameters.device,
             parameters.command,
             forwardingCollector,
+            parameters.shellOptions,
             parameters.stdinChannel,
+            parameters.windowSizeFlow,
             parameters.commandTimeout,
             parameters.bufferSize
         )
@@ -381,6 +387,7 @@ internal class LegacyShellWithIdleMonitoring<T>(
             parameters.device,
             parameters.command,
             forwardingCollector,
+            parameters.shellOptions,
             parameters.stdinChannel,
             parameters.commandTimeout,
             parameters.bufferSize,

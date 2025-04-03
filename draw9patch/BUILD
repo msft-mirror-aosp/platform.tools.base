@@ -7,12 +7,10 @@ load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 iml_module(
     name = "studio.android.sdktools.draw9patch",
     # do not sort: must match IML order
-    srcs = [
-        "src/main/java",
-        "src/main/resources",
-    ],
+    srcs = ["src/main/java"],
     iml_files = ["android.sdktools.draw9patch.iml"],
     lint_baseline = "lint_baseline.xml",
+    resources = ["src/main/resources"],
     test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],

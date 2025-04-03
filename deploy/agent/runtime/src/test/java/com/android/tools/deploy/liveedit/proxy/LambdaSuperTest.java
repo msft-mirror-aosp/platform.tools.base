@@ -16,14 +16,16 @@
 package com.android.tools.deploy.liveedit;
 
 import com.google.common.io.ByteStreams;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.File;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class LambdaSuperTest {
     private static final String TEST_CLASS = "com/android/tools/deploy/liveedit/LambdasKt";
@@ -95,5 +97,13 @@ public class LambdaSuperTest {
         Assert.assertEquals(
                 expected,
                 LiveEditStubs.stubI(TEST_CLASS, "testFunctionReference", "()I", new Object[2]));
+    }
+
+    @Test
+    public void testAdaptedFunctionReference() throws Exception {
+        int expected = LambdasKt.testAdaptedReference();
+        Assert.assertEquals(
+                expected,
+                LiveEditStubs.stubI(TEST_CLASS, "testAdaptedReference", "()I", new Object[2]));
     }
 }

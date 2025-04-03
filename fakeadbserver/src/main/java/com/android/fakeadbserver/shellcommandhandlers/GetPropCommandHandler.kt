@@ -19,6 +19,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
+import com.android.fakeadbserver.services.StatusWriter
 
 /**
  * A [SimpleShellHandler] that outputs a hard-coded list of lines that follows the format

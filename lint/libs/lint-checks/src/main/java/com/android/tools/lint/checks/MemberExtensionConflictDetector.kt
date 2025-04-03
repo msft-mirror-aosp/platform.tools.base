@@ -35,6 +35,8 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundVariableAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaDeclarationSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
+import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
+import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
@@ -62,6 +64,7 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
             is found at: https://issuetracker.google.com/issues/350432371
           """,
         implementation = IMPLEMENTATION,
+        enabledByDefault = false,
       )
   }
 
@@ -106,15 +109,33 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
             // Only applicable candidates
             .filterIsInstance<KaApplicableCallCandidateInfo>()
         if (candidates.size <= 1) return
-        val (extensions, members) =
-          candidates.partition { candidateInfo ->
-            val symbol =
-              (candidateInfo.candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
-            symbol?.extensionReceiver != null
+        val (extensions, members) = candidates.partition { it.hasExtensionReceiver() }
+        val filteredExtensions =
+          extensions.filterNot { ext ->
+            ext.isNullableExtensionReceiver() && ext.isFromKotlinBuiltIns()
           }
-        if (extensions.isNotEmpty() && members.isNotEmpty()) {
-          reportConflict(this, node, members, extensions)
+        if (filteredExtensions.isNotEmpty() && members.isNotEmpty()) {
+          reportConflict(this, node, members, filteredExtensions)
         }
+      }
+
+      private fun KaApplicableCallCandidateInfo.hasExtensionReceiver(): Boolean {
+        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
+        return symbol?.extensionReceiver != null
+      }
+
+      private fun KaApplicableCallCandidateInfo.isNullableExtensionReceiver(): Boolean {
+        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
+        return symbol?.signature?.receiverType?.nullability == KaTypeNullability.NULLABLE
+      }
+
+      private fun KaApplicableCallCandidateInfo.isFromKotlinBuiltIns(): Boolean {
+        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
+        return symbol
+          ?.signature
+          ?.callableId
+          ?.packageName
+          ?.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME) == true
       }
 
       private fun reportConflict(

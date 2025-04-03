@@ -16,15 +16,16 @@
 
 package com.android.tools.idea.wizard.template.impl.other.customView.src.app_package
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.renderIf
 
 
 fun customViewKt(
   applicationPackage: String?,
-  kotlinEscapedPackageName: String,
+  packageName: String,
   viewClass: String
 ) = """
-package ${kotlinEscapedPackageName}
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.content.Context
 import android.graphics.Canvas
@@ -34,7 +35,7 @@ import android.graphics.drawable.Drawable
 import android.text.TextPaint
 import android.util.AttributeSet
 import android.view.View
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 
 /**
  * TODO: document your custom view class.

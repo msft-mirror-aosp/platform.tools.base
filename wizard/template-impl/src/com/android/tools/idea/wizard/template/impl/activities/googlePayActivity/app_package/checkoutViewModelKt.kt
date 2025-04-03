@@ -40,7 +40,7 @@ import com.google.android.gms.wallet.PaymentData
 import com.google.android.gms.wallet.PaymentDataRequest
 import com.google.android.gms.wallet.PaymentsClient
 
-import $packageName.util.PaymentsUtil
+import ${escapeKotlinIdentifier(packageName)}.util.PaymentsUtil
 
 class $viewModelClass(application: Application) : AndroidViewModel(application) {
 

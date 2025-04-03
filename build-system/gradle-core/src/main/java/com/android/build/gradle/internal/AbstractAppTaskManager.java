@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig;
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.component.VariantCreationConfig;
 import com.android.build.gradle.internal.feature.BundleAllClasses;
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService;

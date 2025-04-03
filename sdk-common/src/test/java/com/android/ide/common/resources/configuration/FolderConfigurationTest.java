@@ -16,7 +16,6 @@
 package com.android.ide.common.resources.configuration;
 
 import static com.android.ide.common.resources.configuration.FolderConfigurationSubject.assertThat;
-import static com.android.ide.common.resources.configuration.VersionQualifier.DEFAULT_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
@@ -226,7 +225,7 @@ public class FolderConfigurationTest {
         doTestNormalizeByAddingImpliedVersionQualifier(18, "sw42dp", "v18");
 
         // finally test that in some cases it won't add a -v# value.
-        doTestNormalizeByAddingImpliedVersionQualifier(DEFAULT_VERSION, "port");
+        doTestNormalizeByAddingImpliedVersionQualifier(VersionQualifier.DEFAULT.getVersion(), "port");
     }
 
     @Test
@@ -447,7 +446,7 @@ public class FolderConfigurationTest {
         assertThat(config).isNotNull();
 
         config.normalizeByAddingImpliedVersionQualifier();
-        if (expectedVersion == DEFAULT_VERSION) {
+        if (expectedVersion == VersionQualifier.DEFAULT.getVersion()) {
             assertThat(config).hasNoVersion();
         } else {
             assertThat(config).hasVersion(expectedVersion);

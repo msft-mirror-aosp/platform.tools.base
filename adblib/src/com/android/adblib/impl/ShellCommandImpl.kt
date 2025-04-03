@@ -24,7 +24,9 @@ import com.android.adblib.INFINITE_DURATION
 import com.android.adblib.ShellCollector
 import com.android.adblib.ShellCommand
 import com.android.adblib.ShellCommand.Protocol
+import com.android.adblib.ShellOptions
 import com.android.adblib.ShellV2Collector
+import com.android.adblib.ShellWindowSize
 import com.android.adblib.adbLogger
 import com.android.adblib.availableFeatures
 import com.android.adblib.deviceProperties
@@ -38,9 +40,12 @@ import kotlinx.coroutines.flow.map
 import java.time.Duration
 
 internal class ShellCommandImpl<T>(
-  override val session: AdbSession,
-  private val device: DeviceSelector,
-  private val command: String,
+    override val session: AdbSession,
+    private val device: DeviceSelector,
+    /**
+     * Note: Command is the empty string for an "interactive" shell
+     */
+    private val command: String,
 ) : ShellCommand<T> {
 
     private val logger = adbLogger(session)
@@ -56,6 +61,8 @@ internal class ShellCommandImpl<T>(
     private var stdinChannel: AdbInputChannel? = null
     private var _shutdownOutputForLegacyShell: Boolean = true
     private var bufferSize: Int = session.property(AdbLibProperties.DEFAULT_SHELL_BUFFER_SIZE)
+    private var shellOptions: ShellOptions? = null
+    private var windowSizeFlow: Flow<ShellWindowSize>? = null
 
     override fun <U> withCollector(collector: ShellV2Collector<U>): ShellCommand<U> {
         @Suppress("UNCHECKED_CAST")
@@ -85,6 +92,16 @@ internal class ShellCommandImpl<T>(
 
     override fun withCommandOutputTimeout(timeout: Duration): ShellCommand<T> {
         this.commandOutputTimeout = timeout
+        return this
+    }
+
+    override fun withShellOptions(options: ShellOptions?): ShellCommand<T> {
+        this.shellOptions = options
+        return this
+    }
+
+    override fun withWindowSizeFlow(flow: Flow<ShellWindowSize>?): ShellCommand<T> {
+        this.windowSizeFlow = flow
         return this
     }
 
@@ -190,10 +207,13 @@ internal class ShellCommandImpl<T>(
                             commandOutputTimeout = commandOutputTimeout,
                             bufferSize = bufferSize,
                             stripCrLf = false,
-                            shutdownOutput = false
+                            shutdownOutput = false,
+                            shellOptions = shellOptions,
+                            windowSizeFlow = windowSizeFlow,
                         )
                     ).createFlow()
                 }
+
                 Protocol.EXEC -> {
                     LegacyExecWithIdleMonitoring(
                         Parameters(
@@ -206,10 +226,13 @@ internal class ShellCommandImpl<T>(
                             commandOutputTimeout = commandOutputTimeout,
                             bufferSize = bufferSize,
                             stripCrLf = false,
-                            shutdownOutput = _shutdownOutputForLegacyShell
+                            shutdownOutput = _shutdownOutputForLegacyShell,
+                            shellOptions = shellOptions,
+                            windowSizeFlow = windowSizeFlow
                         )
                     ).createFlow()
                 }
+
                 Protocol.SHELL -> {
                     LegacyShellWithIdleMonitoring(
                         Parameters(
@@ -222,7 +245,9 @@ internal class ShellCommandImpl<T>(
                             commandOutputTimeout = commandOutputTimeout,
                             bufferSize = bufferSize,
                             stripCrLf = stripCrLf.value(),
-                            shutdownOutput = _shutdownOutputForLegacyShell
+                            shutdownOutput = _shutdownOutputForLegacyShell,
+                            shellOptions = shellOptions,
+                            windowSizeFlow = windowSizeFlow
                         )
                     ).createFlow()
                 }
@@ -235,11 +260,14 @@ internal class ShellCommandImpl<T>(
                         device = device,
                         command = command,
                         shellCollector = collector,
+                        shellOptions = shellOptions,
                         stdinChannel = stdinChannel,
+                        windowSizeFlow = windowSizeFlow,
                         commandTimeout = commandTimeout,
-                        bufferSize = bufferSize
+                        bufferSize = bufferSize,
                     )
                 }
+
                 Protocol.EXEC -> {
                     session.deviceServices.exec(
                         device = device,
@@ -251,11 +279,13 @@ internal class ShellCommandImpl<T>(
                         shutdownOutput = _shutdownOutputForLegacyShell
                     )
                 }
+
                 Protocol.SHELL -> {
                     session.deviceServices.shell(
                         device = device,
                         command = command,
                         shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
+                        shellOptions = shellOptions,
                         stdinChannel = stdinChannel,
                         commandTimeout = commandTimeout,
                         bufferSize = bufferSize,
@@ -278,10 +308,14 @@ internal class ShellCommandImpl<T>(
         }
         val protocol = when {
             _allowShellV2 && shellV2Supported.value() -> Protocol.SHELL_V2
-            _allowLegacyExec && execSupported.value() -> Protocol.EXEC
+            _allowLegacyExec && !isInteractiveSession() && execSupported.value() -> Protocol.EXEC
             _allowLegacyShell -> Protocol.SHELL
             else -> throw IllegalArgumentException("No compatible shell protocol is supported or allowed")
         }
         return protocol
+    }
+
+    private fun isInteractiveSession(): Boolean {
+        return command.isEmpty()
     }
 }

@@ -19,8 +19,8 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
+import com.android.fakeadbserver.services.StatusWriter
 import com.android.fakeadbserver.shellcommandhandlers.ShellHandler
-import com.android.fakeadbserver.shellcommandhandlers.StatusWriter
 import com.android.processmonitor.agenttracker.AgentProcessTracker.Companion.AGENT_DIR
 
 private const val CMD = "mkdir -p $AGENT_DIR; chmod 755 $AGENT_DIR; chown shell:shell $AGENT_DIR"

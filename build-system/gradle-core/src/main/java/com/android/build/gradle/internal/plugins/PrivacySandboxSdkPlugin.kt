@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.dependency.configureKotlinPlatformAttri
 import com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension
 import com.android.build.gradle.internal.dsl.PrivacySandboxSdkExtensionImpl
 import com.android.build.gradle.internal.fusedlibrary.configureElements
+import com.android.build.gradle.internal.fusedlibrary.configureTransformsForFusedLibrary
 import com.android.build.gradle.internal.fusedlibrary.createTasks
 import com.android.build.gradle.internal.fusedlibrary.getDslServices
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
@@ -83,6 +84,7 @@ import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.JvmEcosystemPlugin
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.build.event.BuildEventsListenerRegistry
+import org.gradle.internal.extensions.stdlib.filterKeysByPrefix
 import java.util.Locale
 import javax.inject.Inject
 
@@ -406,7 +408,7 @@ class PrivacySandboxSdkPlugin @Inject constructor(
     }
 
     private fun configureTransforms(project: Project) {
-        com.android.build.gradle.internal.fusedlibrary.configureTransformsForFusedLibrary(
+        configureTransformsForFusedLibrary(
             project,
             projectServices
         )
@@ -425,6 +427,7 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                     { false },
                     false
                 ),
+                variantScope.experimentalProperties.apply { disallowChanges() }.get()
             )
     }
 

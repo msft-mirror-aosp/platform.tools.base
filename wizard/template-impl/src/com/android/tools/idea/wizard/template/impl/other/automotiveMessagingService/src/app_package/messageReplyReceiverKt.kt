@@ -16,15 +16,15 @@
 
 package com.android.tools.idea.wizard.template.impl.other.automotiveMessagingService.src.app_package
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
-import kotlin.math.truncate
 
 fun messageReplyReceiverKt(
-  kotlinEscapedPackageName: String,
+  packageName: String,
   replyReceiverName: String,
   useAndroidX: Boolean
 ) = """
-package ${kotlinEscapedPackageName}
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.content.BroadcastReceiver
 import android.content.Context

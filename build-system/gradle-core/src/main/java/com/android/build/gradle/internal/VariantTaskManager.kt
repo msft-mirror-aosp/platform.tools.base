@@ -30,9 +30,11 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dependency.AndroidXDependencySubstitution
+import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
 import com.android.build.gradle.internal.lint.LintTaskManager
@@ -61,6 +63,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AnalyzeDependenciesTask
 import com.android.build.gradle.tasks.registerDataBindingOutputs
 import com.android.builder.core.ComponentType
+import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.utils.usLocaleCapitalize
 import com.google.common.base.MoreObjects
@@ -129,8 +132,11 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         }
 
         // Create tasks for all variants (main, testFixtures and tests)
-        for (variant in variants) {
-            createTasksForVariant(variant)
+        for (variantInfo: ComponentInfo<VariantBuilderT, VariantT> in variants) {
+            createTasksForVariant(variantInfo)
+            for (testSuite in variantInfo.variant.testSuites) {
+                TestSuiteTaskManager(project, globalConfig).createTasks(testSuite)
+            }
         }
         for (testFixturesComponent in testFixturesComponents) {
             testFixturesTaskManager.createTasks(testFixturesComponent)
@@ -295,12 +301,14 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     }
 
     /** Create tasks for the specified variant.  */
-    private fun createTasksForTest(testVariant: TestComponentCreationConfig) {
+    private fun createTasksForTest(
+        testVariant: TestComponentCreationConfig,
+    ) {
         createAssembleTask(testVariant)
         val testedVariant = testVariant.mainVariant
-        val variantDependencies = testVariant.variantDependencies
         if (testedVariant.renderscriptCreationConfig?.renderscript?.supportModeEnabled?.get()
             == true) {
+            val variantDependencies = testVariant.variantDependencies
             project.dependencies
                 .add(
                     variantDependencies.compileClasspath.name,
@@ -313,6 +321,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         }
         if (testVariant.componentType.isApk) { // ANDROID_TEST
             if ((testVariant as ApkCreationConfig).dexing.dexingType.isLegacyMultiDex) {
+                val variantDependencies = testVariant.variantDependencies
                 val multiDexInstrumentationDep = if (testVariant
                         .services
                         .projectOptions[BooleanOption.USE_ANDROID_X])
@@ -331,7 +340,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         } else if (testVariant.componentType.isForScreenshotPreview) {
             // SCREENSHOT_TEST
             screenshotTestTaskManager.createTasks(testVariant as HostTestCreationConfig)
-        } else {
+        } else if (testVariant.componentType == ComponentTypeImpl.UNIT_TEST){
             // UNIT_TEST
             unitTestTaskManager.createTasks(testVariant as HostTestCreationConfig)
         }

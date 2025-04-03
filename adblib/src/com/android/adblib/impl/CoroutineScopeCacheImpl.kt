@@ -238,12 +238,12 @@ internal class CoroutineScopeCacheImpl(
     companion object {
 
         private fun closeAll(toClose: List<AutoCloseable>) {
-            val closeExceptions = SuppressedExceptions.init()
+            var closeExceptions = SuppressedExceptions.init()
             toClose.forEach {
                 runCatching {
                     it.close()
                 }.onFailure {
-                    SuppressedExceptions.add(closeExceptions, it)
+                    closeExceptions = SuppressedExceptions.add(closeExceptions, it)
                 }
             }
             if (closeExceptions.isNotEmpty()) {

@@ -17,6 +17,7 @@
 package com.android.tools.idea.wizard.template.impl.other.appWidget.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -36,7 +37,7 @@ fun appWidgetConfigureActivityKt(
   """ else "setContentView(R.layout.$layout)"
 
   return """
-package $packageName
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.app.Activity
 import android.appwidget.AppWidgetManager
@@ -45,7 +46,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.EditText
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layout, Language.Kotlin)}
 
 /**

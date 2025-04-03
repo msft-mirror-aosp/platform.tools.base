@@ -15,7 +15,9 @@
  */
 package com.android.ide.common.resources.configuration
 
+import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -31,28 +33,59 @@ class VersionQualifierTest {
   fun defaultVersion() {
     val vq = VersionQualifier()
 
-    assertThat(vq.version).isEqualTo(VersionQualifier.DEFAULT_VERSION)
+    assertThat(vq.version).isEqualTo(VersionQualifier.DEFAULT.version)
+    assertThat(vq.androidApiLevel).isNull()
     assertThat(vq.isValid).isFalse()
     assertThat(vq.folderSegment).isEqualTo("")
     assertThat(vq.shortDisplayValue).isEqualTo("")
     assertThat(vq.longDisplayValue).isEqualTo("")
+
+    assertThat(vq).isEqualTo(VersionQualifier(-1))
+  }
+
+  @Test
+  fun nonZeroMinorVersionMustBeIncluded() {
+    assertThrows(IllegalArgumentException::class.java) {
+      VersionQualifier(AndroidApiLevel(37, 1), includeMinorVersion = false)
+    }
   }
 
   @Test
   fun majorVersionOnly() {
-    val vq = VersionQualifier(15)
+    val vq = VersionQualifier(AndroidApiLevel(15))
 
     assertThat(vq.version).isEqualTo(15)
+    assertThat(vq.androidApiLevel).isEqualTo(AndroidApiLevel(15))
     assertThat(vq.isValid).isTrue()
     assertThat(vq.folderSegment).isEqualTo("v15")
     assertThat(vq.shortDisplayValue).isEqualTo("API 15")
     assertThat(vq.longDisplayValue).isEqualTo("API Level 15")
+
+    assertThat(vq).isEqualTo(VersionQualifier(15))
+    assertThat(vq).isEqualTo(VersionQualifier(AndroidApiLevel(15), false))
+  }
+
+  @Test
+  fun majorAndMinorVersion() {
+    val vq = VersionQualifier(AndroidApiLevel(37, 1))
+
+    assertThat(vq.version).isEqualTo(37)
+    assertThat(vq.androidApiLevel).isEqualTo(AndroidApiLevel(37, 1))
+    assertThat(vq.isValid).isTrue()
+    assertThat(vq.folderSegment).isEqualTo("v37.1")
+    assertThat(vq.shortDisplayValue).isEqualTo("API 37.1")
+    assertThat(vq.longDisplayValue).isEqualTo("API Level 37.1")
+
+    assertThat(vq).isNotEqualTo(VersionQualifier(37))
   }
 
   @Test
   fun getQualifier() {
-    assertThat(VersionQualifier.getQualifier("v15")).isEqualTo(VersionQualifier(15))
-    assertThat(VersionQualifier.getQualifier("v36")).isEqualTo(VersionQualifier(36))
+    assertThat(VersionQualifier.getQualifier("v15")?.folderSegment).isEqualTo("v15")
+    assertThat(VersionQualifier.getQualifier("v36")?.folderSegment).isEqualTo("v36")
+    assertThat(VersionQualifier.getQualifier("v36.0")?.folderSegment).isEqualTo("v36.0")
+    assertThat(VersionQualifier.getQualifier("v36.1")?.folderSegment).isEqualTo("v36.1")
+
     assertThat(VersionQualifier.getQualifier("")).isNull()
     assertThat(VersionQualifier.getQualifier("15")).isNull()
     assertThat(VersionQualifier.getQualifier("abdscdsa")).isNull()
@@ -60,15 +93,37 @@ class VersionQualifierTest {
   }
 
   @Test
+  fun getFolderSegment() {
+    assertThat(VersionQualifier.DEFAULT.getFolderSegment()).isEqualTo("")
+    assertThat(VersionQualifier(AndroidApiLevel(15)).getFolderSegment()).isEqualTo("v15")
+
+    assertThat(VersionQualifier(AndroidApiLevel(36)).getFolderSegment()).isEqualTo("v36.0")
+    assertThat(VersionQualifier(AndroidApiLevel(36), false).getFolderSegment()).isEqualTo("v36")
+    assertThat(VersionQualifier(AndroidApiLevel(36), true).getFolderSegment()).isEqualTo("v36.0")
+    assertThat(VersionQualifier(AndroidApiLevel(36, 1)).getFolderSegment()).isEqualTo("v36.1")
+  }
+
+  @Test
   fun checkAndSet() {
     val mockFolderConfiguration: FolderConfiguration = mock()
 
     VersionQualifier().checkAndSet("v15", mockFolderConfiguration)
-    verify(mockFolderConfiguration).setVersionQualifier(VersionQualifier(15))
+    verify(mockFolderConfiguration)
+      .setVersionQualifier(VersionQualifier(AndroidApiLevel(15), false))
     reset(mockFolderConfiguration)
 
     VersionQualifier().checkAndSet("v36", mockFolderConfiguration)
-    verify(mockFolderConfiguration).setVersionQualifier(VersionQualifier(36))
+    verify(mockFolderConfiguration)
+      .setVersionQualifier(VersionQualifier(AndroidApiLevel(36), false))
+    reset(mockFolderConfiguration)
+
+    VersionQualifier().checkAndSet("v36.0", mockFolderConfiguration)
+    verify(mockFolderConfiguration).setVersionQualifier(VersionQualifier(AndroidApiLevel(36), true))
+    reset(mockFolderConfiguration)
+
+    VersionQualifier().checkAndSet("v36.1", mockFolderConfiguration)
+    verify(mockFolderConfiguration)
+      .setVersionQualifier(VersionQualifier(AndroidApiLevel(36, 1), true))
     reset(mockFolderConfiguration)
 
     VersionQualifier().checkAndSet("", mockFolderConfiguration)
@@ -91,39 +146,77 @@ class VersionQualifierTest {
   @Test
   fun validateEquals() {
     val defaultVQ = VersionQualifier()
-    val api15VQ = VersionQualifier(15)
-    val api36VQ = VersionQualifier(36)
+    val api15VQ = VersionQualifier(AndroidApiLevel(15))
+    val api36VQ = VersionQualifier(AndroidApiLevel(36), true)
+    val api36VQNoMinor = VersionQualifier(AndroidApiLevel(36), false)
 
     assertThat(VersionQualifier()).isEqualTo(defaultVQ)
     assertThat(VersionQualifier()).isNotEqualTo(api15VQ)
     assertThat(VersionQualifier()).isNotEqualTo(api36VQ)
+    assertThat(VersionQualifier()).isNotEqualTo(api36VQNoMinor)
 
-    assertThat(VersionQualifier(15)).isNotEqualTo(defaultVQ)
-    assertThat(VersionQualifier(15)).isEqualTo(api15VQ)
-    assertThat(VersionQualifier(15)).isNotEqualTo(api36VQ)
+    assertThat(VersionQualifier(AndroidApiLevel(15))).isNotEqualTo(defaultVQ)
+    assertThat(VersionQualifier(AndroidApiLevel(15))).isEqualTo(api15VQ)
+    assertThat(VersionQualifier(AndroidApiLevel(15))).isNotEqualTo(api36VQ)
+    assertThat(VersionQualifier(AndroidApiLevel(15))).isNotEqualTo(api36VQNoMinor)
 
-    assertThat(VersionQualifier(36)).isNotEqualTo(defaultVQ)
-    assertThat(VersionQualifier(36)).isNotEqualTo(api15VQ)
-    assertThat(VersionQualifier(36)).isEqualTo(api36VQ)
+    assertThat(VersionQualifier(AndroidApiLevel(36))).isNotEqualTo(defaultVQ)
+    assertThat(VersionQualifier(AndroidApiLevel(36))).isNotEqualTo(api15VQ)
+    assertThat(VersionQualifier(AndroidApiLevel(36))).isEqualTo(api36VQ)
+    assertThat(VersionQualifier(AndroidApiLevel(36))).isNotEqualTo(api36VQNoMinor)
+
+    assertThat(VersionQualifier(AndroidApiLevel(36), false)).isNotEqualTo(defaultVQ)
+    assertThat(VersionQualifier(AndroidApiLevel(36), false)).isNotEqualTo(api15VQ)
+    assertThat(VersionQualifier(AndroidApiLevel(36), false)).isNotEqualTo(api36VQ)
+    assertThat(VersionQualifier(AndroidApiLevel(36), false)).isEqualTo(api36VQNoMinor)
   }
 
   @Test
   fun validateHashCode() {
     val defaultVQ = VersionQualifier()
-    val api15VQ = VersionQualifier(15)
-    val api36VQ = VersionQualifier(36)
+    val api15VQ = VersionQualifier(AndroidApiLevel(15))
+    val api36VQ = VersionQualifier(AndroidApiLevel(36), true)
+    val api36VQNoMinor = VersionQualifier(AndroidApiLevel(36), false)
+    val api361VQ = VersionQualifier(AndroidApiLevel(36, 1))
 
     assertThat(VersionQualifier().hashCode()).isEqualTo(defaultVQ.hashCode())
     assertThat(VersionQualifier().hashCode()).isNotEqualTo(api15VQ.hashCode())
     assertThat(VersionQualifier().hashCode()).isNotEqualTo(api36VQ.hashCode())
+    assertThat(VersionQualifier().hashCode()).isNotEqualTo(api36VQNoMinor.hashCode())
+    assertThat(VersionQualifier().hashCode()).isNotEqualTo(api361VQ.hashCode())
 
-    assertThat(VersionQualifier(15).hashCode()).isNotEqualTo(defaultVQ.hashCode())
-    assertThat(VersionQualifier(15).hashCode()).isEqualTo(api15VQ.hashCode())
-    assertThat(VersionQualifier(15).hashCode()).isNotEqualTo(api36VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(15)).hashCode()).isNotEqualTo(defaultVQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(15)).hashCode()).isEqualTo(api15VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(15)).hashCode()).isNotEqualTo(api36VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(15)).hashCode())
+      .isNotEqualTo(api36VQNoMinor.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(15)).hashCode()).isNotEqualTo(api361VQ.hashCode())
 
-    assertThat(VersionQualifier(36).hashCode()).isNotEqualTo(defaultVQ.hashCode())
-    assertThat(VersionQualifier(36).hashCode()).isNotEqualTo(api15VQ.hashCode())
-    assertThat(VersionQualifier(36).hashCode()).isEqualTo(api36VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36)).hashCode()).isNotEqualTo(defaultVQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36)).hashCode()).isNotEqualTo(api15VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36)).hashCode()).isEqualTo(api36VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36)).hashCode())
+      .isNotEqualTo(api36VQNoMinor.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36)).hashCode()).isNotEqualTo(api361VQ.hashCode())
+
+    assertThat(VersionQualifier(AndroidApiLevel(36), false).hashCode())
+      .isNotEqualTo(defaultVQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36), false).hashCode())
+      .isNotEqualTo(api15VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36), false).hashCode())
+      .isNotEqualTo(api36VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36), false).hashCode())
+      .isEqualTo(api36VQNoMinor.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36), false).hashCode())
+      .isNotEqualTo(api361VQ.hashCode())
+
+    assertThat(VersionQualifier(AndroidApiLevel(36, 1)).hashCode())
+      .isNotEqualTo(defaultVQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36, 1)).hashCode()).isNotEqualTo(api15VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36, 1)).hashCode()).isNotEqualTo(api36VQ.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36, 1)).hashCode())
+      .isNotEqualTo(api36VQNoMinor.hashCode())
+    assertThat(VersionQualifier(AndroidApiLevel(36, 1)).hashCode()).isEqualTo(api361VQ.hashCode())
   }
 
   @Test
@@ -131,8 +224,9 @@ class VersionQualifierTest {
     val vq = VersionQualifier()
 
     assertThat(vq.isMatchFor(VersionQualifier())).isTrue()
-    assertThat(vq.isMatchFor(VersionQualifier(15))).isTrue()
-    assertThat(vq.isMatchFor(VersionQualifier(36))).isTrue()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(15)))).isTrue()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(36)))).isTrue()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(36, 1)))).isTrue()
 
     val otherResourceQualifier: ResourceQualifier = mock()
     assertThat(vq.isMatchFor(otherResourceQualifier)).isFalse()
@@ -140,12 +234,18 @@ class VersionQualifierTest {
 
   @Test
   fun isMatchFor_specifiedVersion() {
-    val vq = VersionQualifier(15)
+    val vq = VersionQualifier(AndroidApiLevel(37, 1))
 
     assertThat(vq.isMatchFor(VersionQualifier())).isTrue()
-    assertThat(vq.isMatchFor(VersionQualifier(14))).isFalse()
-    assertThat(vq.isMatchFor(VersionQualifier(15))).isTrue()
-    assertThat(vq.isMatchFor(VersionQualifier(16))).isTrue()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(36)))).isFalse()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(36, 4)))).isFalse()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(37)))).isFalse()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(37, 0)))).isFalse()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(37, 1)))).isTrue()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(37, 2)))).isTrue()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(38)))).isTrue()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(38, 0)))).isTrue()
+    assertThat(vq.isMatchFor(VersionQualifier(AndroidApiLevel(38, 1)))).isTrue()
 
     val otherResourceQualifier: ResourceQualifier = mock()
     assertThat(vq.isMatchFor(otherResourceQualifier)).isFalse()
@@ -155,29 +255,103 @@ class VersionQualifierTest {
   fun isBetterMatchThan_referenceIsDefaultVersion() {
     val reference = VersionQualifier()
 
-    assertThat(VersionQualifier().isBetterMatchThan(null, reference)).isTrue()
-    assertThat(VersionQualifier().isBetterMatchThan(VersionQualifier(), reference)).isFalse()
-    assertThat(VersionQualifier().isBetterMatchThan(VersionQualifier(15), reference)).isTrue()
+    val vqDefault = VersionQualifier()
+    val vq36 = VersionQualifier(AndroidApiLevel(36))
 
-    assertThat(VersionQualifier(15).isBetterMatchThan(null, reference)).isTrue()
-    assertThat(VersionQualifier(15).isBetterMatchThan(VersionQualifier(), reference)).isFalse()
-    assertThat(VersionQualifier(15).isBetterMatchThan(VersionQualifier(14), reference)).isTrue()
-    assertThat(VersionQualifier(15).isBetterMatchThan(VersionQualifier(15), reference)).isFalse()
-    assertThat(VersionQualifier(15).isBetterMatchThan(VersionQualifier(16), reference)).isFalse()
+    assertThat(vqDefault.isBetterMatchThan(null, reference)).isTrue()
+    assertThat(vqDefault.isBetterMatchThan(VersionQualifier(), reference)).isFalse()
+    assertThat(vqDefault.isBetterMatchThan(VersionQualifier(AndroidApiLevel(36)), reference))
+      .isTrue()
+    assertThat(vqDefault.isBetterMatchThan(VersionQualifier(AndroidApiLevel(36, 1)), reference))
+      .isTrue()
+
+    assertThat(vq36.isBetterMatchThan(null, reference)).isTrue()
+    assertThat(vq36.isBetterMatchThan(VersionQualifier(), reference)).isFalse()
+    assertThat(vq36.isBetterMatchThan(VersionQualifier(AndroidApiLevel(35)), reference)).isTrue()
+    assertThat(vq36.isBetterMatchThan(VersionQualifier(AndroidApiLevel(36)), reference)).isFalse()
+    assertThat(vq36.isBetterMatchThan(VersionQualifier(AndroidApiLevel(37)), reference)).isFalse()
   }
 
   @Test
-  fun isBetterMatchThan_referenceIsApi15() {
-    val reference = VersionQualifier(15)
+  fun isBetterMatchThan_referenceIsApi361() {
+    val reference = VersionQualifier(AndroidApiLevel(36, 1))
 
-    assertThat(VersionQualifier().isBetterMatchThan(null, reference)).isTrue()
-    assertThat(VersionQualifier().isBetterMatchThan(VersionQualifier(), reference)).isFalse()
-    assertThat(VersionQualifier().isBetterMatchThan(VersionQualifier(15), reference)).isFalse()
+    val vqDefault = VersionQualifier()
+    val vq361 = VersionQualifier(AndroidApiLevel(36, 1))
 
-    assertThat(VersionQualifier(15).isBetterMatchThan(null, reference)).isTrue()
-    assertThat(VersionQualifier(15).isBetterMatchThan(VersionQualifier(), reference)).isTrue()
-    assertThat(VersionQualifier(15).isBetterMatchThan(VersionQualifier(14), reference)).isTrue()
-    assertThat(VersionQualifier(15).isBetterMatchThan(VersionQualifier(15), reference)).isFalse()
-    assertThat(VersionQualifier(15).isBetterMatchThan(VersionQualifier(16), reference)).isTrue()
+    assertThat(vqDefault.isBetterMatchThan(null, reference)).isTrue()
+    assertThat(vqDefault.isBetterMatchThan(VersionQualifier(), reference)).isFalse()
+    assertThat(vqDefault.isBetterMatchThan(VersionQualifier(AndroidApiLevel(36)), reference))
+      .isFalse()
+    assertThat(vqDefault.isBetterMatchThan(VersionQualifier(AndroidApiLevel(36, 1)), reference))
+      .isFalse()
+    assertThat(vqDefault.isBetterMatchThan(VersionQualifier(AndroidApiLevel(36, 2)), reference))
+      .isFalse()
+
+    assertThat(vq361.isBetterMatchThan(null, reference)).isTrue()
+    assertThat(vq361.isBetterMatchThan(VersionQualifier(), reference)).isTrue()
+    assertThat(vq361.isBetterMatchThan(VersionQualifier(AndroidApiLevel(35)), reference)).isTrue()
+    assertThat(vq361.isBetterMatchThan(VersionQualifier(AndroidApiLevel(36)), reference)).isTrue()
+    assertThat(vq361.isBetterMatchThan(VersionQualifier(AndroidApiLevel(36, 1)), reference))
+      .isFalse()
+    assertThat(vq361.isBetterMatchThan(VersionQualifier(AndroidApiLevel(37)), reference)).isTrue()
+  }
+
+  @Test
+  fun isBetterMatchThan_referenceHasMinorVersionZeroNotIncluded() {
+    val reference = VersionQualifier(AndroidApiLevel(36, 0), false)
+
+    val vq36 = VersionQualifier(AndroidApiLevel(36, 0), false)
+    val vq360 = VersionQualifier(AndroidApiLevel(36, 0), true)
+
+    val vq35 = VersionQualifier(AndroidApiLevel(35))
+    val vq37 = VersionQualifier(AndroidApiLevel(37, 0), false)
+    val vq370 = VersionQualifier(AndroidApiLevel(37, 0), true)
+
+    assertThat(vq36.isBetterMatchThan(vq360, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq36, reference)).isFalse()
+
+    assertThat(vq35.isBetterMatchThan(vq36, reference)).isFalse()
+    assertThat(vq35.isBetterMatchThan(vq360, reference)).isFalse()
+    assertThat(vq37.isBetterMatchThan(vq36, reference)).isFalse()
+    assertThat(vq37.isBetterMatchThan(vq360, reference)).isFalse()
+    assertThat(vq370.isBetterMatchThan(vq36, reference)).isFalse()
+    assertThat(vq370.isBetterMatchThan(vq360, reference)).isFalse()
+
+    assertThat(vq360.isBetterMatchThan(vq35, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq37, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq370, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq35, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq37, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq370, reference)).isTrue()
+  }
+
+  @Test
+  fun isBetterMatchThan_referenceHasMinorVersionZeroIncluded() {
+    val reference = VersionQualifier(AndroidApiLevel(36, 0), true)
+
+    val vq36 = VersionQualifier(AndroidApiLevel(36, 0), false)
+    val vq360 = VersionQualifier(AndroidApiLevel(36, 0), true)
+
+    val vq35 = VersionQualifier(AndroidApiLevel(35))
+    val vq37 = VersionQualifier(AndroidApiLevel(37, 0), false)
+    val vq370 = VersionQualifier(AndroidApiLevel(37, 0), true)
+
+    assertThat(vq36.isBetterMatchThan(vq360, reference)).isFalse()
+    assertThat(vq360.isBetterMatchThan(vq36, reference)).isTrue()
+
+    assertThat(vq35.isBetterMatchThan(vq36, reference)).isFalse()
+    assertThat(vq35.isBetterMatchThan(vq360, reference)).isFalse()
+    assertThat(vq37.isBetterMatchThan(vq36, reference)).isFalse()
+    assertThat(vq37.isBetterMatchThan(vq360, reference)).isFalse()
+    assertThat(vq370.isBetterMatchThan(vq36, reference)).isFalse()
+    assertThat(vq370.isBetterMatchThan(vq360, reference)).isFalse()
+
+    assertThat(vq360.isBetterMatchThan(vq35, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq37, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq370, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq35, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq37, reference)).isTrue()
+    assertThat(vq360.isBetterMatchThan(vq370, reference)).isTrue()
   }
 }

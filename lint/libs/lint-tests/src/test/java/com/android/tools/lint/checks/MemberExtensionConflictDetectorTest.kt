@@ -248,4 +248,78 @@ src/ListWrapper.kt:11: Warning: Conflict applicable candidates of member and ext
       .run()
       .expectClean()
   }
+
+  fun testNullableExtensionReceiver() {
+    // Collecting multiple applicable candidates only work for K2 AA
+    if (!useFirUast()) {
+      return
+    }
+    // b/406935594
+    lint()
+      .files(
+        kotlin(
+            """
+            package another.pkg
+
+            import test.pkg.Foo
+
+            fun Foo?.bar() { this?.baz() }
+          """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            import another.pkg.bar
+
+            class Foo {
+              fun bar() {}
+              fun baz() {}
+            }
+
+            fun test(foo: Foo) {
+              foo.bar() // Member
+              (foo as? Foo?).bar() // Extension
+              (foo as Foo?)?.bar() // Member
+            }
+          """
+          )
+          .indented(),
+      )
+      // Some test modes change the function signature of interest
+      .skipTestModes(TestMode.JVM_OVERLOADS, TestMode.TYPE_ALIAS)
+      .run()
+      .expect(
+        """
+src/test/pkg/Foo.kt:11: Warning: Conflict applicable candidates of member and extension: members {fun bar()}, extensions {fun test.pkg.Foo?.bar()} [MemberExtensionConflict]
+  foo.bar() // Member
+  ~~~~~~~~~
+src/test/pkg/Foo.kt:13: Warning: Conflict applicable candidates of member and extension: members {fun bar()}, extensions {fun test.pkg.Foo?.bar()} [MemberExtensionConflict]
+  (foo as Foo?)?.bar() // Member
+  ~~~~~~~~~~~~~~~~~~~~
+0 errors, 2 warnings
+        """
+      )
+  }
+
+  fun testNullableToString() {
+    // b/406935594
+    lint()
+      .files(
+        kotlin(
+            """
+            fun test() {
+              42.toString()
+              // Any?.toString() extension
+              (0 as Int?).toString()
+              (0 as Int?)?.toString()
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
 }

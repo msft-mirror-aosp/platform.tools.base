@@ -17,15 +17,24 @@
 package com.android.tools.deployer.devices;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.fakeadbserver.CommandHandler;
 import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler;
+import com.android.fakeadbserver.services.ShellCommandOutput;
+import com.android.fakeadbserver.services.StatusWriter;
 import com.android.tools.deployer.devices.shell.Arguments;
 import com.android.tools.deployer.devices.shell.Cmd;
+
 import com.google.common.base.Charsets;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+
+import kotlin.jvm.functions.Function0;
+
+import kotlinx.coroutines.CoroutineScope;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,7 +45,6 @@ import java.nio.ByteOrder;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import kotlinx.coroutines.CoroutineScope;
 
 public class FakeDeviceHandler extends DeviceCommandHandler {
     //@GuardedBy("devices")
@@ -61,7 +69,9 @@ public class FakeDeviceHandler extends DeviceCommandHandler {
             @NonNull Socket socket,
             @NonNull DeviceState deviceState,
             @NonNull String command,
-            @NonNull String args) {
+            @NonNull String args,
+            @NonNull StatusWriter statusWriter,
+            @Nullable Function0<? extends ShellCommandOutput> shellCommandOutputProvider) {
         try {
             synchronized (devices) {
                 for (FakeDevice device : devices) {

@@ -16,6 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.listFragment.src.app_package
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.renderIf
 
@@ -25,10 +26,10 @@ fun listFragmentKt(
   columnCount: Int,
   fragmentClass: String,
   fragment_layout_list: String,
-  kotlinEscapedPackageName: String,
+  packageName: String,
   useAndroidX: Boolean
 ) = """
-package ${kotlinEscapedPackageName}
+package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
 import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)}
@@ -38,8 +39,8 @@ import ${getMaterialComponentName("android.support.v7.widget.RecyclerView", useA
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
-import ${kotlinEscapedPackageName}.placeholder.PlaceholderContent
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
+import ${escapeKotlinIdentifier(packageName)}.placeholder.PlaceholderContent
 
 /**
  * A fragment representing a list of Items.

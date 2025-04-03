@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import org.junit.Rule
 import org.junit.Test
 
@@ -34,5 +35,54 @@ class KotlinMultiplatformAndroidVitalsTest {
     @Test
     fun kotlinMultiplatformPluginIsAppliedFirst() {
         rule.build.executor.run(":shared:androidPrebuild")
+    }
+
+    @Test
+    fun `fail when another android plugin is applied before kmp android`() {
+        val build = rule.build {
+            androidKotlinMultiplatformLibrary(":kmpModule") {
+                // Android lib plugin has to be applied before the kotlin multiplatform lib plugin
+                applyPlugin(PluginType.ANDROID_LIB, applyFirst = true)
+            }
+        }
+        val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
+        result.assertErrorContains(
+            "'com.android.kotlin.multiplatform.library' and 'com.android.library' plugins cannot be applied in the same project."
+        )
+    }
+
+    @Test
+    fun creatingTwoUnitTestCompilationsShouldFail() {
+        val build = rule.build {
+            androidKotlinMultiplatformLibrary(":kmpModule") {
+                androidLibrary {
+                    withHostTest {}
+                }
+                androidLibrary {
+                    withHostTest {}
+                }
+            }
+        }
+
+        val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
+        result.assertErrorContains(
+            "Android host tests have already been enabled, and a corresponding compilation (`hostTest`) has already been created."
+        )
+    }
+
+    @Test
+    fun creatingArbitraryCompilationShouldFail() {
+        val build = rule.build {
+            androidKotlinMultiplatformLibrary(":kmpModule") {
+                androidLibrary {
+                    compilations.create("randomCompilationName") { }
+                }
+            }
+        }
+
+        val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
+        result.assertErrorContains(
+            "Kotlin multiplatform android plugin doesn't support creating arbitrary compilations."
+        )
     }
 }

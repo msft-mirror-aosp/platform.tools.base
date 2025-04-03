@@ -59,7 +59,7 @@ import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-${renderIf(applicationPackage != null) { "import ${applicationPackage}.R" }}
+${renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }}
 
 class $fragmentClass : Fragment() {
 

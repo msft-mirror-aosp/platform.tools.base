@@ -91,7 +91,8 @@ class PrivacySandboxSdkVariantScopeImpl(
         get() = internalServices.mapPropertyOf(
             String::class.java,
             Any::class.java,
-            extension.experimentalProperties
+            extension.experimentalProperties,
+            false
         )
     override val aarOrJarTypeToConsume: AarOrJarTypeToConsume
         get() = getAarOrJarTypeToConsume(

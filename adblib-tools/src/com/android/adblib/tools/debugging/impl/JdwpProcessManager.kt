@@ -668,7 +668,7 @@ private class JdwpProcessDelegate(
         private val device: ConnectedDevice
             get() = process.device
 
-        private val proxyStatusMutableFlow = MutableStateFlow(JdwpProxySocketServerStatus())
+        private val proxyStatusMutableFlow = MutableStateFlow(JdwpProxySocketServerStatus(process.pid))
 
         private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
             forwardStateFlowFromDelegateProcess()

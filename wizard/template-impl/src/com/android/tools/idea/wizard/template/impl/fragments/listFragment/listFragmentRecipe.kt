@@ -74,12 +74,12 @@ fun RecipeExecutor.listFragmentRecipe(
       isViewBindingSupported = isViewBindingSupported
     )
     Language.Kotlin -> recyclerViewAdapterKt(
-      adapterClassName = adapterClassName,
-      applicationPackage = applicationPackage,
-      fragmentLayout = fragmentLayout,
-      kotlinEscapedPackageName = packageName,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
+        adapterClassName = adapterClassName,
+        applicationPackage = applicationPackage,
+        fragmentLayout = fragmentLayout,
+        packageName = packageName,
+        useAndroidX = useAndroidX,
+        isViewBindingSupported = isViewBindingSupported
     )
   }
   save(recyclerViewAdapter, srcOut.resolve("${adapterClassName}.${ktOrJavaExt}"))

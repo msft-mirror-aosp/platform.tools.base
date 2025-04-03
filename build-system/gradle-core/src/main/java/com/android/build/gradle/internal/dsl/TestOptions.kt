@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
-import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 import com.android.build.gradle.internal.services.DslServices
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.apiVersionFromString
@@ -40,11 +39,6 @@ import javax.inject.Inject
 abstract class TestOptions @Inject constructor(
     private val dslServices: DslServices
 ) : com.android.build.api.dsl.TestOptions {
-
-    @WithLazyInitialization
-    protected fun lazyInit() {
-        suites.registerBinding(AgpTestSuite::class.java, AgpTestSuiteImpl::class.java)
-    }
 
     private val executionConverter = HelpfulEnumConverter<Execution>(Execution::class.java)
 
@@ -197,5 +191,13 @@ abstract class TestOptions @Inject constructor(
                      RuntimeException("targetSdkPreview is set as $value in testOptions for non library module"))
             }
             targetSdkApiVersion = apiVersionFromString(value)
+        }
+
+    override val suites: ExtensiblePolymorphicDomainObjectContainer< AgpTestSuite> =
+        dslServices.polymorphicDomainObjectContainer( AgpTestSuite::class.java).apply {
+            registerBinding(
+                AgpTestSuite::class.java,
+                AgpTestSuiteImpl::class.java
+            )
         }
 }

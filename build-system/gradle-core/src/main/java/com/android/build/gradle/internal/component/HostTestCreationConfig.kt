@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.component
 
 import com.android.build.api.variant.HostTest
-import com.android.builder.core.ComponentType
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 

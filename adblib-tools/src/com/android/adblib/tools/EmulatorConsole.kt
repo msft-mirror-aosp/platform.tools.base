@@ -18,7 +18,6 @@ package com.android.adblib.tools
 import com.android.adblib.AdbChannel
 import com.android.adblib.AdbServerChannelProvider
 import com.android.adblib.AdbSession
-import com.android.adblib.adbLogger
 import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.toChannelReader
 import com.android.adblib.utils.ResizableBuffer
@@ -27,7 +26,6 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CancellationException
@@ -35,9 +33,7 @@ import java.util.concurrent.CancellationException
 /**
  * A connection to an emulator's console, allowing control of the emulator.
  */
-class EmulatorConsole constructor(
-    private val adbChannel: AdbChannel,
-) : AutoCloseable {
+class EmulatorConsole(private val adbChannel: AdbChannel) : AutoCloseable {
 
     private val workBuffer = ResizableBuffer()
     private val channelReader =
@@ -176,7 +172,7 @@ private const val EMULATOR_CONSOLE_NEWLINE = "\r\n"
  * Attempts to connect to an emulator console at the supplied address, authenticating
  * if required.
  *
- * @throws IOExeception if we're unable to read the auth token
+ * @throws IOException if we're unable to read the auth token
  * @throws EmulatorCommandException if authentication fails
  */
 suspend fun AdbSession.openEmulatorConsole(address: InetSocketAddress): EmulatorConsole {

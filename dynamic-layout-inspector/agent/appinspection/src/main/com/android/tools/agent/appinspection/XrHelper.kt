@@ -47,24 +47,10 @@ private const val IS_HIDDEN_METHOD = "isHidden"
 private const val SURFACE_CONTROL_VIEW_HOST_FIELD = "surfaceControlViewHost"
 private const val M_SURFACE_CONTROL_VIEW_HOST_FIELD = "mSurfaceControlViewHost"
 private const val RT_PANEL_ENTITY_FIELD = "rtPanelEntity"
-private const val RUNTIME_ACTIVITY_FIELD = "runtimeActivity"
+private const val RUNTIME_ACTIVITY_FIELD = "mRuntimeActivity"
 
 class XrHelper(private val environment: InspectorEnvironment) {
     var enabled = false
-    private var hasExtension: Boolean? = null
-
-    fun hasXrExtension(): Boolean {
-        if (hasExtension == null) {
-            try {
-                loadClass(PANEL_ENTITY_CLASS_ANDROIDX, PANEL_ENTITY_CLASS)
-                hasExtension = true
-            }
-            catch (_: Throwable) {
-                hasExtension = false
-            }
-        }
-        return hasExtension!!
-    }
 
     /** Get all the views from XR. */
     fun getXrViews(): List<View> {

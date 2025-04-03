@@ -20,11 +20,12 @@ import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.gradle.Version
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinJvmFactory
 
 /**
- * Services related to the built-in Kotlin plugin, to be used when
+ * Services related to the built-in Kotlin support, to be used when
  * [com.android.build.gradle.internal.component.ComponentCreationConfig.useBuiltInKotlinSupport] == true.
  */
 interface BuiltInKotlinServices {
@@ -33,10 +34,16 @@ interface BuiltInKotlinServices {
     val factory: KotlinJvmFactory
     val kotlinBaseApiVersion: KotlinBaseApiVersion
 
+    val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension
+
     companion object {
 
-        fun createFromPlugin(plugin: KotlinBaseApiPlugin): BuiltInKotlinServices {
-            getKotlinPluginVersionFromPlugin(plugin)?.let {
+        fun createFromPlugin(
+            kotlinBaseApiPlugin: KotlinBaseApiPlugin,
+            kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
+            projectName: String
+        ): BuiltInKotlinServices {
+            getKotlinPluginVersionFromPlugin(kotlinBaseApiPlugin)?.let {
                 if (Version.parse(it) < Version.parse(MINIMUM_BUILT_IN_KOTLIN_VERSION)) {
                     val message =
                         """
@@ -54,9 +61,10 @@ interface BuiltInKotlinServices {
             }
 
             return object : BuiltInKotlinServices {
-                override val kgpVersion: String = plugin.pluginVersion
-                override val factory: KotlinJvmFactory = plugin
+                override val kgpVersion: String = kotlinBaseApiPlugin.pluginVersion
+                override val factory: KotlinJvmFactory = kotlinBaseApiPlugin
                 override val kotlinBaseApiVersion = kgpVersion.kotlinBaseApiVersion()
+                override val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension = kotlinAndroidProjectExtension
             }
         }
     }

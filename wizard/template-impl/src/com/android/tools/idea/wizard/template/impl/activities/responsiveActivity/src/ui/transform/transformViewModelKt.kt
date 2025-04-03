@@ -15,12 +15,14 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.responsiveActivity.src.ui.transform
 
+import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+
 fun transformViewModelKt(
   packageName: String,
   navFragmentPrefix: String,
   navViewModelClass: String
 ) = """
-package ${packageName}.ui.${navFragmentPrefix}
+package ${escapeKotlinIdentifier(packageName)}.ui.${navFragmentPrefix}
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

@@ -32,7 +32,7 @@ import android.util.Patterns
 import ${escapeKotlinIdentifier(packageName)}.data.LoginRepository
 import ${escapeKotlinIdentifier(packageName)}.data.Result
 
-import ${packageName}.R
+import ${escapeKotlinIdentifier(packageName)}.R
 
 class LoginViewModel(private val loginRepository: LoginRepository) : ViewModel() {
 

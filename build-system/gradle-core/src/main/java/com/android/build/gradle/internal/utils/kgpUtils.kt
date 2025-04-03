@@ -24,7 +24,7 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
-import com.android.build.gradle.internal.scope.ProjectInfo
+import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.ide.common.gradle.Version
 import com.android.utils.appendCapitalized
@@ -418,7 +418,8 @@ fun findKaptOrKspConfigurationsForVariant(
  */
 internal fun maybeAddKotlinStdlibDependency(
     project: Project,
-    creationConfig: ComponentCreationConfig
+    creationConfig: ComponentCreationConfig,
+    kotlinServices: BuiltInKotlinServices
 ) {
     // Honor "kotlin.stdlib.default.dependency=false"
     val kotlinStdlibDefaultDependencyProperty =
@@ -427,9 +428,7 @@ internal fun maybeAddKotlinStdlibDependency(
         return
     }
 
-    val kotlinStdlibVersion =
-        creationConfig.global.kotlinAndroidProjectExtension?.coreLibrariesVersion
-            ?: creationConfig.services.builtInKotlinServices.kgpVersion
+    val kotlinStdlibVersion = kotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion
 
     fun Configuration.hasKotlinStdlibDependency(): Boolean {
         val externalDependencies = this.allDependencies.matching { it !is ProjectDependency }
@@ -444,7 +443,7 @@ internal fun maybeAddKotlinStdlibDependency(
         }
         // Use kotlin-stdlib-jdk8 if < Kotlin 1.9.20 (Same behavior as KGP)
         val moduleName =
-            if (kotlinStdlibVersion?.let {Version.parse(it) < Version.parse("1.9.20") } == true) {
+            if (Version.parse(kotlinStdlibVersion) < Version.parse("1.9.20")) {
                 "kotlin-stdlib-jdk8"
             } else {
                 "kotlin-stdlib"

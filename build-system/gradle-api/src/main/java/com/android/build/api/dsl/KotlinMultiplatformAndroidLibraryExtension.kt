@@ -289,7 +289,6 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * }
      * ```
      */
-    @Incubating
     fun withHostTestBuilder(
         action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit
     ): HasConfigurableValue<KotlinMultiplatformAndroidHostTest>
@@ -360,7 +359,6 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * }
      * ```
      */
-    @Incubating
     fun withDeviceTestBuilder(
         action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit
     ): HasConfigurableValue<KotlinMultiplatformAndroidDeviceTest>

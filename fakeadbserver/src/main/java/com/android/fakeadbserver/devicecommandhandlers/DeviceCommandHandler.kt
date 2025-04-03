@@ -18,6 +18,9 @@ package com.android.fakeadbserver.devicecommandhandlers
 import com.android.fakeadbserver.CommandHandler
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
+import com.android.fakeadbserver.services.DefaultStatusWriter
+import com.android.fakeadbserver.services.ShellCommandOutput
+import com.android.fakeadbserver.services.StatusWriter
 import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
 
@@ -37,7 +40,9 @@ open class DeviceCommandHandler(@JvmField protected val command: String) : Comma
         socket: Socket,
         device: DeviceState,
         command: String,
-        args: String
+        args: String,
+        statusWriter: StatusWriter = DefaultStatusWriter(socket),
+        shellCommandOutputProvider: (() -> ShellCommandOutput)? = null
     ): Boolean {
         return if (this.command == command) {
             try {

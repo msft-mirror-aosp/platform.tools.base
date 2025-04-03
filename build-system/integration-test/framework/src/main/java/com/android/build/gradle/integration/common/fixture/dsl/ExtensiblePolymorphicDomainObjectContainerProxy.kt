@@ -157,8 +157,18 @@ class ExtensiblePolymorphicDomainObjectContainerProxy<T>(
     override fun create(
         name: String,
         configureAction: Action<in T>
-    ): T & Any {
-        throw RuntimeException("Not Supported")
+    ): T {
+        dslRecorder.runNestedBlock(
+            name = "create",
+            parameters = listOf(name),
+            instanceProvider = { DslProxy.createProxy(theInterface, it) }
+        ) {
+            configureAction.execute(this)
+        }
+
+        // the returned object should not be used so we use a custom proxy for this that will
+        // prevent usage
+        return UnusableObjectProxy.createProxy(theInterface)
     }
 
     override fun configure(configureClosure: Closure<*>): NamedDomainObjectContainer<T?> {

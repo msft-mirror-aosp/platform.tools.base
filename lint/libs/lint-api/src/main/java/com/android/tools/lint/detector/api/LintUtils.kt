@@ -133,6 +133,8 @@ import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtExpressionWithLabel
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 import org.jetbrains.uast.UArrayAccessExpression
 import org.jetbrains.uast.UBinaryExpression
@@ -1678,6 +1680,32 @@ fun prevNonWhitespace(element: PsiElement?): PsiElement? {
   }
 
   return current
+}
+
+fun KtElement.firstLabelableParent(): KtExpressionWithLabel? {
+  // Even though @Suppress can be applied to expression, it could make
+  // the parser confused if the expression can accept the label.
+  // For example,
+  //   return sth
+  // ~>
+  //   return @Suppress(...) sth
+  // will complain:
+  //   PsiErrorElement:There should be no space or comments before '@' in label reference
+  //
+  // One caveat: anonymous object expression can make the PSI tree deeper,
+  //   return object : Type { // Not feasible
+  //     fun someFunction: Type2 {
+  //       val ... // Feasible!
+  //       return sth // Not feasible
+  //     }
+  //   }
+  // So, a simple upward tree traversal may end up with too much bail out.
+  return PsiTreeUtil.findFirstParent(this) { parent ->
+    // Main kind we're looking for
+    parent is KtExpressionWithLabel ||
+      // But not beyond expression, e.g., declarations inside an anonymous object
+      parent !is KtExpression
+  } as? KtExpressionWithLabel
 }
 
 fun isString(type: PsiType): Boolean {

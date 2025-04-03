@@ -4790,7 +4790,12 @@ class GradleDetectorTest : AbstractCheckTest() {
             "}\n" +
             "\n" +
             "android {\n" +
-            "    compileSdkVersion($HIGHEST_KNOWN_STABLE_API)\n" +
+            // In a real KTS file, this call has a receiver of type
+            //    KotlinUFunctionCallExpression$KotlinUImplicitLambdaReceiver@0
+            // which wasn't handled correctly by the location machinery. We don't
+            // create the same PSI environment from CLI, so this is tested in
+            // AndroidLintGradleTest.testCompileSdkLocation instead.
+            "    compileSdkVersion(34)\n" +
             "\n" +
             "    defaultConfig {\n" +
             "        minSdkVersion(7)\n" +
@@ -4824,16 +4829,19 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                build.gradle.kts:3: Warning: 'android' is deprecated; use 'com.android.application' instead [GradleDeprecated]
-                    id("android") version "2.3.3"
-                       ~~~~~~~~~
-                build.gradle.kts:4: Warning: 'android' is deprecated; use 'com.android.application' instead [GradleDeprecated]
-                    id("android") version "2.3.3" apply true
-                       ~~~~~~~~~
-                build.gradle.kts:12: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
-                        minSdkVersion(7)
-                        ~~~~~~~~~~~~~~~~
-                0 errors, 3 warnings
+        build.gradle.kts:3: Warning: 'android' is deprecated; use 'com.android.application' instead [GradleDeprecated]
+            id("android") version "2.3.3"
+               ~~~~~~~~~
+        build.gradle.kts:4: Warning: 'android' is deprecated; use 'com.android.application' instead [GradleDeprecated]
+            id("android") version "2.3.3" apply true
+               ~~~~~~~~~
+        build.gradle.kts:9: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            compileSdkVersion(34)
+            ~~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:12: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+                minSdkVersion(7)
+                ~~~~~~~~~~~~~~~~
+        0 errors, 4 warnings
                 """
       )
       .expectFixDiffs(
@@ -4846,6 +4854,10 @@ class GradleDetectorTest : AbstractCheckTest() {
                 @@ -4 +4
                 -     id("android") version "2.3.3" apply true
                 +     id("com.android.application") version "2.3.3" apply true
+                Fix for build.gradle.kts line 9: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+                @@ -9 +9
+                -     compileSdkVersion(34)
+                +     compileSdkVersion($HIGHEST_KNOWN_STABLE_API)
                 Fix for build.gradle.kts line 12: Update minSdkVersion to $LOWEST_ACTIVE_API:
                 @@ -12 +12
                 -         minSdkVersion(7)
@@ -8871,6 +8883,39 @@ class GradleDetectorTest : AbstractCheckTest() {
           0 errors, 3 warnings
           """
         }
+      )
+  }
+
+  fun testIncludedFilesWithProjectReference() {
+    // Like testIncludedFiles, but include $project variable in path
+    lint()
+      .files(
+        gradle(
+            "../buildscripts/toml-updater-config.gradle",
+            """
+            android {
+                compileSdk 30 // ERROR 1
+            }
+            """,
+          )
+          .indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            apply("＄{project.rootDir}/buildscripts/toml-updater-config.gradle")
+            """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+        toml-updater-config.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: 35 [GradleDependency]
+            compileSdk 30 // ERROR 1
+            ~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
       )
   }
 

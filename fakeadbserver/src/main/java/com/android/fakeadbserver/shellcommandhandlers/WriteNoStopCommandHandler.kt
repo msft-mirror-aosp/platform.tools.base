@@ -19,6 +19,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
+import com.android.fakeadbserver.services.StatusWriter
 
 /** shell:write-no-stop continuously write to the output stream without stopping.  */
 class WriteNoStopCommandHandler(shellProtocolType: ShellProtocolType?) : SimpleShellHandler(
