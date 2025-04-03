@@ -1172,17 +1172,17 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract int secondsValid;
   }
 
-  @org.gradle.api.Incubating public interface EmulatorSnapshots {
-    method public boolean getCompressSnapshots();
-    method public boolean getEnableForTestFailures();
-    method public int getMaxSnapshotsForTestFailures();
-    method public void retainAll();
-    method public void setCompressSnapshots(boolean);
-    method public void setEnableForTestFailures(boolean);
-    method public void setMaxSnapshotsForTestFailures(int);
-    property public abstract boolean compressSnapshots;
-    property public abstract boolean enableForTestFailures;
-    property public abstract int maxSnapshotsForTestFailures;
+  @Deprecated @org.gradle.api.Incubating public interface EmulatorSnapshots {
+    method @Deprecated public boolean getCompressSnapshots();
+    method @Deprecated public boolean getEnableForTestFailures();
+    method @Deprecated public int getMaxSnapshotsForTestFailures();
+    method @Deprecated public void retainAll();
+    method @Deprecated public void setCompressSnapshots(boolean);
+    method @Deprecated public void setEnableForTestFailures(boolean);
+    method @Deprecated public void setMaxSnapshotsForTestFailures(int);
+    property @Deprecated public abstract boolean compressSnapshots;
+    property @Deprecated public abstract boolean enableForTestFailures;
+    property @Deprecated public abstract int maxSnapshotsForTestFailures;
   }
 
   public interface ExternalNativeBuild {
@@ -2180,15 +2180,11 @@ package com.android.build.api.dsl {
 
   public interface TestOptions {
     method @org.gradle.api.Incubating public void emulatorControl(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void emulatorSnapshots(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots,kotlin.Unit> action);
-    method @Deprecated @org.gradle.api.Incubating public void failureRetention(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.FailureRetention,kotlin.Unit> action);
     method public boolean getAnimationsDisabled();
     method @Deprecated @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> getDeviceGroups();
     method @Deprecated @org.gradle.api.Incubating public org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> getDevices();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorControl getEmulatorControl();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorSnapshots getEmulatorSnapshots();
     method public String getExecution();
-    method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.FailureRetention getFailureRetention();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.ManagedDevices getManagedDevices();
     method public String? getReportDir();
     method public String? getResultsDir();
@@ -2207,9 +2203,7 @@ package com.android.build.api.dsl {
     property @Deprecated @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> deviceGroups;
     property @Deprecated @org.gradle.api.Incubating public abstract org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> devices;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorSnapshots emulatorSnapshots;
     property public abstract String execution;
-    property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.FailureRetention failureRetention;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ManagedDevices managedDevices;
     property public abstract String? reportDir;
     property public abstract String? resultsDir;

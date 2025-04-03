@@ -3,6 +3,17 @@ Deprecated Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
+Deprecated from AGP 8.11.0
+  * com.android.build.api.dsl.EmulatorSnapshots
+  * com.android.build.api.dsl.EmulatorSnapshots.getCompressSnapshots: boolean ()
+  * com.android.build.api.dsl.EmulatorSnapshots.getEnableForTestFailures: boolean ()
+  * com.android.build.api.dsl.EmulatorSnapshots.getMaxSnapshotsForTestFailures: int ()
+  * com.android.build.api.dsl.EmulatorSnapshots.retainAll: void ()
+  * com.android.build.api.dsl.EmulatorSnapshots.setCompressSnapshots: void (boolean)
+  * com.android.build.api.dsl.EmulatorSnapshots.setEnableForTestFailures: void (boolean)
+  * com.android.build.api.dsl.EmulatorSnapshots.setMaxSnapshotsForTestFailures: void (int)
+  * com.android.build.api.dsl.TestOptions.emulatorSnapshots: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots, kotlin.Unit>)
+  * com.android.build.api.dsl.TestOptions.getEmulatorSnapshots: com.android.build.api.dsl.EmulatorSnapshots ()
 Deprecated from AGP 8.9.0
   * com.android.build.api.variant.GeneratesApkBuilder.getDebuggable: boolean ()
 Deprecated from AGP 8.8.0
