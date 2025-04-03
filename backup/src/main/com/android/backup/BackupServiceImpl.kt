@@ -60,6 +60,9 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     val adbServices = factory.createAdbServices(serialNumber, listener, BACKUP_STEPS)
     return try {
       with(adbServices) {
+        if (!isInstalled(applicationId)) {
+          throw BackupException(APP_NOT_INSTALLED, "Application '$applicationId' is not installed")
+        }
         // Backup is always handled by the D2D transport
         withSetup(TRANSPORT_DTD) {
           reportProgress("Initializing backup transport")

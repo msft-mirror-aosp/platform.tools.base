@@ -73,6 +73,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -122,6 +123,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -171,6 +173,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -220,6 +223,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "settings put secure backup_enable_testing_flows 1",
@@ -232,6 +236,23 @@ class BackupServiceImplTest {
         "settings put secure backup_enable_testing_flows 0",
       )
       .inOrder()
+  }
+
+  @Test
+  fun backup_appNotInstalled(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.addCommandOverride(Output("pm list packages com.app", ""))
+      }
+    val backupServices = BackupServiceImpl(adbServicesFactory)
+
+    val result = backupServices.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
+
+    val adbServices = adbServicesFactory.adbServices
+    val error = result as Error
+    assertThat(error.errorCode).isEqualTo(APP_NOT_INSTALLED)
+    assertThat(adbServices.getCommands()).containsExactly("pm list packages com.app")
   }
 
   @Test
@@ -249,6 +270,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
+        "pm list packages com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
