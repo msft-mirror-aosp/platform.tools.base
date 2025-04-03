@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
@@ -45,7 +44,7 @@ class WearTileScreenshotTest {
         .withProfileOutput()
         .from {
             androidApplication {
-                applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS)
+                applyPlugin(PluginType.KOTLIN_ANDROID)
                 applyPlugin(
                     PluginType.Custom(
                         id = "com.android.compose.screenshot",
@@ -63,6 +62,7 @@ class WearTileScreenshotTest {
                     experimentalProperties["android.experimental.enableScreenshotTest"] = true
                 }
                 dependencies {
+                    screenshotTestImplementation("com.android.tools.screenshot:screenshot-validation-api:+")
                     testImplementation("junit:junit:4.13.2")
                     implementation("androidx.wear.tiles:tiles:$TILES_VERSION")
                     implementation("androidx.wear.tiles:tiles-material:$TILES_VERSION")
@@ -148,18 +148,22 @@ class WearTileScreenshotTest {
                           import androidx.wear.tiles.tooling.preview.Preview
                           import androidx.wear.tiles.tooling.preview.TilePreviewData
                           import androidx.wear.tooling.preview.devices.WearDevices
+                          import com.android.tools.screenshot.PreviewTest
 
                           class ExampleTest {
+                              @PreviewTest
                               @Preview(name = "simple tile")
                               fun simpleTilePreview(context: Context) = TilePreviewData({ resources() }) {
                                   tile(it, context)
                               }
 
+                              @PreviewTest
                               @Preview(name = "simple tile 2", device = WearDevices.LARGE_ROUND)
                               fun simpleTilePreview2(context: Context) = TilePreviewData({ resources() }) {
                                   tile(it, context)
                               }
 
+                              @PreviewTest
                               @Preview(name = "small", device = WearDevices.SMALL_ROUND)
                               @Preview(name = "large", device = WearDevices.LARGE_ROUND)
                               fun multiplePreviewsTest(context: Context) = TilePreviewData({ resources() }) {
@@ -178,7 +182,9 @@ class WearTileScreenshotTest {
                           import androidx.wear.tiles.tooling.preview.Preview
                           import androidx.wear.tiles.tooling.preview.TilePreviewData
                           import androidx.wear.tooling.preview.devices.WearDevices
+                          import com.android.tools.screenshot.PreviewTest
 
+                          @PreviewTest
                           @Preview
                           fun simpleTilePreview3(context: Context) = TilePreviewData({ resources() }) {
                               tile(it, context)

@@ -16,9 +16,11 @@
 
 package com.android.tools.screenshot.resolver
 
+import com.android.tools.screenshot.PreviewTest
 import com.android.tools.screenshot.descriptor.ClassDescriptor
 import org.junit.platform.commons.support.HierarchyTraversalMode
-import org.junit.platform.commons.support.ReflectionSupport
+import org.junit.platform.commons.support.ReflectionSupport.findMethods
+import org.junit.platform.commons.util.AnnotationUtils.isAnnotated
 import org.junit.platform.engine.discovery.ClassSelector
 import org.junit.platform.engine.discovery.DiscoverySelectors
 import org.junit.platform.engine.support.discovery.SelectorResolver
@@ -26,11 +28,8 @@ import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
 import java.util.Optional
 
-class ClassSelectorResolver(private val previewClasses: Set<String>) : SelectorResolver {
+class ClassSelectorResolver : SelectorResolver {
     override fun resolve(selector: ClassSelector, context: SelectorResolver.Context): Resolution {
-        if (!previewClasses.contains(selector.className)) {
-            return Resolution.unresolved()
-        }
         return context.addToParent { parent ->
             Optional.of(
                 ClassDescriptor(
@@ -40,7 +39,11 @@ class ClassSelectorResolver(private val previewClasses: Set<String>) : SelectorR
             )
         }.map { classContainerDescriptor ->
             Resolution.match(Match.exact(classContainerDescriptor) {
-                ReflectionSupport.findMethods(selector.javaClass, { true }, HierarchyTraversalMode.TOP_DOWN)
+                findMethods(
+                    selector.javaClass,
+                    { isAnnotated(it, PreviewTest::class.java) },
+                    HierarchyTraversalMode.TOP_DOWN
+                )
                     .asSequence()
                     .map { DiscoverySelectors.selectMethod(selector.javaClass, it) }
                     .toMutableSet()

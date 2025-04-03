@@ -31,23 +31,6 @@ import org.junit.platform.engine.support.discovery.EngineDiscoveryRequestResolve
 import org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine
 
 class PreviewScreenshotTestEngine : HierarchicalTestEngine<PreviewScreenshotExecutionContext>() {
-    private val previewMethodFinder = PreviewMethodFinder(
-        PreviewScreenshotTestEngineInput.screenshotTestDirectory,
-        PreviewScreenshotTestEngineInput.screenshotTestJars,
-        PreviewScreenshotTestEngineInput.mainDirectory,
-        PreviewScreenshotTestEngineInput.mainJars,
-        PreviewScreenshotTestEngineInput.dependencyJars,
-    )
-    private val previewMethods = previewMethodFinder.findAllPreviewMethods()
-
-    /**
-     * A set of fully-qualified class name which has at least one preview method.
-     */
-    private val previewClasses = previewMethods.asSequence().map {
-        it.method.methodFqn.substringBeforeLast(".")
-    }.toSet()
-
-    private val methodNameToPreview = previewMethods.asSequence().associateBy { it.method.methodFqn }
 
     override fun getId(): String {
         return "preview-screenshot-test-engine"
@@ -57,11 +40,9 @@ class PreviewScreenshotTestEngine : HierarchicalTestEngine<PreviewScreenshotExec
         val engineDescriptor = PreviewScreenshotTestEngineDescriptor(uniqueId, "Preview Screenshot Test Engine")
 
         EngineDiscoveryRequestResolver.builder<EngineDescriptor>()
-            .addClassContainerSelectorResolver { testClass ->
-                previewClasses.contains(testClass.name)
-            }
-            .addSelectorResolver(ClassSelectorResolver(previewClasses))
-            .addSelectorResolver(MethodSelectorResolver(methodNameToPreview))
+            .addClassContainerSelectorResolver { true }
+            .addSelectorResolver(ClassSelectorResolver())
+            .addSelectorResolver(MethodSelectorResolver())
             .addTestDescriptorVisitor { _ ->
                 TestDescriptor.Visitor { it.prune() }
             }
@@ -87,8 +68,18 @@ class PreviewScreenshotTestEngine : HierarchicalTestEngine<PreviewScreenshotExec
         } else {
             executionRequest.engineExecutionListener
         }
+
+        val methodNameToPreview = PreviewMethodFinder(
+            PreviewScreenshotTestEngineInput.screenshotTestDirectory,
+            PreviewScreenshotTestEngineInput.screenshotTestJars,
+            PreviewScreenshotTestEngineInput.mainDirectory,
+            PreviewScreenshotTestEngineInput.mainJars,
+            PreviewScreenshotTestEngineInput.dependencyJars,
+        ).findAllPreviewMethods().asSequence().associateBy { it.method.methodFqn }
+
         return PreviewScreenshotExecutionContext(
             listener,
+            methodNameToPreview,
             PreviewScreenshotTestEngineInput.previewImageOutputDir,
             PreviewScreenshotTestEngineInput.previewDiffImageOutputDir,
             PreviewScreenshotTestEngineInput.referenceImageDir

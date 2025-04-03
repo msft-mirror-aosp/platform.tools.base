@@ -16,6 +16,7 @@
 
 package com.android.tools.screenshot
 
+import com.android.tools.preview.multipreview.PreviewMethod
 import com.android.tools.render.Renderer
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
@@ -23,6 +24,7 @@ import java.io.File
 
 data class PreviewScreenshotExecutionContext(
     val executionListener: EngineExecutionListener,
+    val methodNameToPreview: Map<String, PreviewMethod>,
     val previewImageOutputDir: File,
     val previewDiffImageOutputDir: File,
     val referenceImageDir: File,
