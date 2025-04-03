@@ -56,10 +56,12 @@ import com.android.fakeadbserver.shellcommandhandlers.DumpsysCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.EchoCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.GetPropCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.InteractiveShellV2Handler
+import com.android.fakeadbserver.shellcommandhandlers.ExitCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.LogcatCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.PackageManagerCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.PingCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.RmCommandHandler
+import com.android.fakeadbserver.shellcommandhandlers.ScreenRecordCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.ServiceCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.SetPropCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.ShellProtocolEchoCommandHandler
@@ -596,6 +598,12 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
             addDeviceHandler(UnRootCommandHandler())
             addDeviceHandler(InteractiveShellHandler())
             addDeviceHandler(InteractiveShellV2Handler())
+            addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.EXEC))
+            addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.SHELL))
+            addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.SHELL_V2))
+            addDeviceHandler(ExitCommandHandler(ShellProtocolType.EXEC))
+            addDeviceHandler(ExitCommandHandler(ShellProtocolType.SHELL))
+            addDeviceHandler(ExitCommandHandler(ShellProtocolType.SHELL_V2))
             return this
         }
 

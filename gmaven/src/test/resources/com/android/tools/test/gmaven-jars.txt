@@ -122,6 +122,7 @@ com/android/tools/adblib/adblib-tools
   com/android/adblib/tools/debugging/processinventory/protos/
   com/android/adblib/tools/debugging/processinventory/server/
   com/android/adblib/tools/debugging/utils/
+  com/android/adblib/tools/impl/
   com/android/adblib/tools/tcpserver/
   com/android/adblib/tools/tcpserver/impl/
 

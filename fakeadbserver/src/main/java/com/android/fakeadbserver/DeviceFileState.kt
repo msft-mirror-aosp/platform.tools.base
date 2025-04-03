@@ -15,6 +15,8 @@
  */
 package com.android.fakeadbserver
 
+import java.nio.file.attribute.PosixFilePermission
+
 class DeviceFileState(
     val path: String,
     /** UNIX-style permissions bits */
@@ -22,6 +24,13 @@ class DeviceFileState(
     val modifiedDate: Int,
     val bytes: ByteArray
 ) {
+    constructor(
+        path: String,
+        permissions: Array<out PosixFilePermission>,
+        modifiedDate: Int,
+        bytes: ByteArray
+    ) : this(path, modeBitsFromPosixFilePermissions(permissions), modifiedDate, bytes)
+
     fun isOwnerWritable(): Boolean =
         (permission and (2 shl 6)) > 0
 
@@ -34,5 +43,30 @@ class DeviceFileState(
 
     override fun hashCode(): Int {
         return path.hashCode()
+    }
+
+    companion object {
+        private fun modeBitsFromPosixFilePermissions(posixPermissions: Array<out PosixFilePermission>): Int {
+            var modeBits = 0
+            posixPermissions.forEach { permission ->
+                modeBits = modeBits or modeBitFromPosixFilePermission(permission)
+            }
+            return modeBits
+        }
+
+        private fun modeBitFromPosixFilePermission(permission: PosixFilePermission): Int {
+            return when (permission) {
+                PosixFilePermission.OWNER_READ -> 256
+                PosixFilePermission.OWNER_WRITE -> 128
+                PosixFilePermission.OWNER_EXECUTE -> 64
+                PosixFilePermission.GROUP_READ -> 32
+                PosixFilePermission.GROUP_WRITE -> 16
+                PosixFilePermission.GROUP_EXECUTE -> 8
+                PosixFilePermission.OTHERS_READ -> 4
+                PosixFilePermission.OTHERS_WRITE -> 2
+                PosixFilePermission.OTHERS_EXECUTE -> 1
+                else -> 0
+            }
+        }
     }
 }
