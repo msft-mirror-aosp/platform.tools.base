@@ -18,13 +18,13 @@ package com.android.tools.lint
 import com.android.testutils.TestUtils
 import com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS
 import com.android.tools.lint.checks.AbstractCheckTest.SUPPORT_ANNOTATIONS_JAR
+import com.android.tools.lint.checks.infrastructure.LintDetectorTest.manifest
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestLintTask.lint
 import com.android.tools.lint.checks.infrastructure.dos2unix
 import com.google.common.io.Files
 import java.io.File
-import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 import org.junit.After
 import org.junit.Assume
@@ -281,6 +281,76 @@ class UastEnvironmentSourceSetTest {
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
     MainTest.checkDriver(
       "No issues found.", // `foo` not resolved due to conflict, so error not detected
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+      { it.dos2unix() },
+      null,
+    )
+  }
+
+  @Test
+  fun testPackageInfo() {
+    // Regression test for b/406902458
+    // Mimic ApiDetectorTest#testPackageInfoMinSdk
+    // Intentional to run for both K1 and K2
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          manifest().minSdk(14),
+          SUPPORT_ANNOTATIONS_JAR,
+          java(
+              "src/test/pkg/package-info.java",
+              """
+              @RequiresApi(21)
+              package test.pkg;
+
+              import androidx.annotation.RequiresApi;
+            """,
+            )
+            .indented(),
+          java(
+              "src/test/pkg/Foo.java",
+              """
+              package test.pkg;
+
+              import androidx.annotation.RequiresApi;
+
+              public class Foo {
+                @RequiresApi(21)
+                public static void requires21() {}
+
+                public void test() {
+                    requires21();
+                }
+              }
+            """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+
+    @Language("XML")
+    val descriptor =
+      """
+        <project>
+          <sdk dir='${TestUtils.getSdk()}'/>
+          <module name="app" android="true" library="false" compute_source_roots="false">
+            <classpath jar="libs/support-annotations.jar" />
+            <src file="src/test/pkg/package-info.java" />
+            <src file="src/test/pkg/Foo.java" />
+          </module>
+        </project>
+      """
+
+    Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
+    MainTest.checkDriver(
+      "No issues found.", // if the annotation in package-info is propagated
       "",
 
       // Expected exit code

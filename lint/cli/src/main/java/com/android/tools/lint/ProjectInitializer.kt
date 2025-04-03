@@ -674,7 +674,12 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val sourceRoots: List<File>
     val testSourceRoots: List<File>
     val generatedSourceRoots: List<File>
-    if (computeSourceRoots) {
+    // In K2, [KotlinStandaloneProjectStructureProvider.allSourceFiles] automatically
+    // computes [PsiDirectory] for (filtered) [PsiJavaFile] so that [JvmDependenciesIndexImpl]
+    // can walk through directories/packages, including package-info.java
+    // Alas, in K1, there is no counterpart inside compiler environment initialization.
+    // That is, this computation of source roots is the key for K1: b/406902458.
+    if (computeSourceRoots || !useFirUast()) {
       sourceRoots = computeSourceRoots(sources)
       testSourceRoots = computeUniqueSourceRoots("test", testSources, sourceRoots)
       generatedSourceRoots = computeUniqueSourceRoots("generated", generatedSources, sourceRoots)
