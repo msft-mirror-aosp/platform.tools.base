@@ -1,0 +1,32 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+apply plugin: 'com.android.tools.java-library'
+apply plugin: 'com.android.tools.kotlin'
+apply plugin: 'com.android.tools.publish'
+
+group = 'com.android.tools.backup'
+if (findProperty("release")?.toBoolean()) {
+    version = '0.0.1-alpha01'
+} else {
+    version = '0.0.1-dev'
+}
+
+dependencies {
+    implementation libs.junit_platform_commons
+}
+
+project.ext.pomName = 'backup-test-api'
+project.ext.pomDesc = 'API for backup and restore testing.'
