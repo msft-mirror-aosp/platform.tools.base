@@ -3779,9 +3779,17 @@ class LintDriver(
         return
       }
 
+      val associated = getAssociatedDetector(throwable, driver)
+
       if (LintClient.isStudio) {
         // In the IDE, log to idea.log.
-        driver.client.log(Severity.ERROR, throwable, null)
+        val detectorClass = associated?.first ?: ""
+        // Only log severity error for our own bugs since
+        // these get uploaded to the server
+        val severity =
+          if (detectorClass.startsWith("com.android.tools.lint.checks.")) Severity.ERROR
+          else Severity.WARNING
+        driver.client.log(severity, throwable.rootCause(), null)
         return
       }
 
@@ -3797,7 +3805,6 @@ class LintDriver(
         sb.append("Message: ${TextFormat.TEXT.convertTo(throwableMessage, TextFormat.RAW)}\n")
       }
 
-      val associated = getAssociatedDetector(throwable, driver)
       if (associated != null) {
         sb.append("\n")
         sb.append("The crash seems to involve the detector `${associated.first}`.\n")
@@ -3892,6 +3899,17 @@ class LintDriver(
       if (driver.client.printInternalErrorStackTrace) {
         throwable.printStackTrace()
       }
+    }
+
+    private fun Throwable.rootCause(): Throwable {
+      var curr = this
+      var depth = 0
+      while (depth++ < 20) {
+        val cause = curr.cause
+        if (cause == null || cause == curr) return curr
+        curr = cause
+      }
+      return curr
     }
 
     /**
