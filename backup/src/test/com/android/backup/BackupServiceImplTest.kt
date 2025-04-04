@@ -823,6 +823,39 @@ class BackupServiceImplTest {
     assertThat(result)
       .isEqualTo(BACKUP_NOT_ACTIVATED.asBackupResult("Backup is not activated on this device"))
   }
+
+  @Test
+  fun isBackupEnabled_enabled(): Unit = runBlocking {
+    val adbServicesFactory =
+      FakeAdbServicesFactory(("com.app")) {
+        it.addCommandOverride(Output("pm dumpsys package com.app", "pkgFlags=[ ALLOW_BACKUP ]"))
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    assertThat(backupService.isBackupEnabled("serial", "com.app")).isTrue()
+  }
+
+  @Test
+  fun isBackupEnabled_disabled(): Unit = runBlocking {
+    val adbServicesFactory =
+      FakeAdbServicesFactory(("com.app")) {
+        it.addCommandOverride(Output("pm dumpsys package com.app", "pkgFlags=[  ]"))
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    assertThat(backupService.isBackupEnabled("serial", "com.app")).isFalse()
+  }
+
+  @Test
+  fun isBackupEnabled_noFlags(): Unit = runBlocking {
+    val adbServicesFactory =
+      FakeAdbServicesFactory(("com.app")) {
+        it.addCommandOverride(Output("pm dumpsys package com.app", ""))
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    assertThat(backupService.isBackupEnabled("serial", "com.app")).isFalse()
+  }
 }
 
 private fun Path.unzip(): Map<String, String> {

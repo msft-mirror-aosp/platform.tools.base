@@ -41,6 +41,7 @@ private const val DUMPSYS_ACTIVITY = "dumpsys activity activities"
 private const val LIST_PACKAGES = "pm list packages"
 private const val CHECK_PLAY_STORE = "pm resolve-activity market://details?id=com.android.vending"
 private const val CLEAR_APP_DATA = "pm clear "
+private const val DUMPSYS_PACKAGE = "dumpsys package "
 
 /** A fake [com.android.backup.AdbServices] */
 class FakeAdbServices(
@@ -117,6 +118,7 @@ class FakeAdbServices(
         command == LAUNCH_PLAY_STORE -> handleLaunchPlayStore()
         command == DUMPSYS_ACTIVITY -> handleDumpsysActivity()
         command.startsWith(CLEAR_APP_DATA) -> handleClearAppData()
+        command.startsWith(DUMPSYS_PACKAGE) -> handleDumpsysApp()
         else -> throw NotImplementedError("Command '$command' is not implemented")
       }
     return out
@@ -234,6 +236,16 @@ class FakeAdbServices(
 
   private fun handleClearAppData(): AdbOutput {
     return "Success".asStdout()
+  }
+
+  private fun handleDumpsysApp(): AdbOutput {
+    return """
+      Packages:
+        Package [com.example.myapplication] (a4101a8):
+          pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]
+    """
+      .trimIndent()
+      .asStdout()
   }
 
   private fun handleCheckPlayStore(): AdbOutput {
