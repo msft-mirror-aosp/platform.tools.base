@@ -247,7 +247,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * [withHostTestBuilder] instead):
      *
      * * compilation name is "hostTest"
-     * * default sourceSet name is "androidTestOnJvm" (sources would be located at `$project/src/androidTestOnJvm`)
+     * * default sourceSet name is "androidHostTest" (sources would be located at `$project/src/androidHostTest`)
      * * sourceSet tree is `test`, which means that the `commonTest` sourceSet would be included in
      *   the compilation.
      *
@@ -256,7 +256,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * ```
      * kotlin {
      *   androidLibrary {
-     *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvm::class.java) {
+     *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java) {
      *       // configure options
      *     }
      *   }
@@ -294,7 +294,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * ```
      * kotlin {
      *   androidLibrary {
-     *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvm::class.java) {
+     *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java) {
      *       // configure options
      *     }
      *   }
@@ -317,7 +317,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * object with the following defaults:
      *
      * * compilation name is "deviceTest"
-     * * default sourceSet name is "androidTestOnDevice" (sources would be located at `$project/src/androidTestOnDevice`)
+     * * default sourceSet name is "androidDeviceTest" (sources would be located at `$project/src/androidDeviceTest`)
      * * sourceSet tree is `null`, which means that the `commonTest` sourceSet will **not** be included in
      *   the compilation.
      *
@@ -326,7 +326,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * ```
      * kotlin {
      *   androidLibrary {
-     *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest::class.java) {
+     *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation::class.java) {
      *       // configure options
      *     }
      *   }
@@ -364,7 +364,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * ```
      * kotlin {
      *   androidLibrary {
-     *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest::class.java) {
+     *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation::class.java) {
      *       // configure options
      *     }
      *   }
