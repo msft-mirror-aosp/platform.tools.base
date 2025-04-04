@@ -1400,9 +1400,8 @@ DATA = [
 ]
 
 REMOTE_REPOS = {
-    "Maven Central": "https://repo1.maven.org/maven2/",
-    "JCenter": "https://jcenter.bintray.com/",
     "Google": "https://maven.google.com/",
+    "Maven Central": "https://repo1.maven.org/maven2/",
     "Gradle Libs": "https://repo.gradle.org/gradle/libs-releases/",
     "GradlePlugins": "https://plugins.gradle.org/m2",
     "Kotlin dev": "https://packages.jetbrains.team/maven/p/kt/dev/",
