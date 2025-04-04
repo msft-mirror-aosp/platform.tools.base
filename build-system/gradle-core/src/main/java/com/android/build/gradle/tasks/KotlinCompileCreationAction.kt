@@ -29,8 +29,10 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
+import org.gradle.api.JavaVersion
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
@@ -113,6 +115,36 @@ class KotlinCompileCreationAction(
         if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
             task.applyCompilerOptions(kotlinServices.kotlinAndroidProjectExtension.compilerOptions)
         }
+
+        task.ensureConsistentJvmTargetWithJavaCompileTask()
+    }
+
+    private fun KotlinJvmCompile.ensureConsistentJvmTargetWithJavaCompileTask() {
+        val javaCompileJvmTarget = creationConfig.global.compileOptions.targetCompatibility.toJvmTarget()
+
+        // Set `javaCompileJvmTarget` as the default JVM target for Kotlin compile tasks
+        // (see b/408242956)
+        creationConfig.services.builtInKotlinServices.kotlinAndroidProjectExtension.compilerOptions
+            .jvmTarget.convention(javaCompileJvmTarget)
+
+        // Also ensure that the user doesn't set a different JVM target for Kotlin compile tasks.
+        // This check needs to run at execution time as `kotlinCompileJvmTarget` may not be finalized yet.
+        inputs.property("javaCompileJvmTarget", javaCompileJvmTarget)
+        doFirst {
+            val kotlinCompileJvmTarget = compilerOptions.jvmTarget.get()
+            check(javaCompileJvmTarget == kotlinCompileJvmTarget) {
+                """
+                Inconsistent JVM targets between Java and Kotlin compile tasks: ${javaCompileJvmTarget.target} and ${kotlinCompileJvmTarget.target}.
+                To fix this issue, use the same JVM target for both tasks.
+                For more details, see https://issuetracker.google.com/408242956.
+                """.trimIndent()
+            }
+        }
+    }
+
+    private fun JavaVersion.toJvmTarget(): JvmTarget {
+        // JvmTarget.fromTarget() can recognize "1.8" but not "8" so we need to special-case it
+        return JvmTarget.fromTarget(if (majorVersion == "8") "1.8" else majorVersion)
     }
 }
 

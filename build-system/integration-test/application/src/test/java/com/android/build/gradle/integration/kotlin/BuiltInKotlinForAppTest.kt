@@ -20,10 +20,10 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
 
@@ -382,5 +382,21 @@ class BuiltInKotlinForAppTest {
             .assertErrorContains(
                 "Could not find androidx.compose.ui"
             )
+    }
+
+    @Test
+    fun `test inconsistent JVM targets between Java and Kotlin compile tasks`() { // b/408242956
+        val build = rule.build {
+            androidApplication {
+                kotlin {
+                    compilerOptions {
+                        jvmTarget.set(JvmTarget.JVM_17)
+                    }
+                }
+            }
+        }
+        build.executor.expectFailure()
+            .run(":app:compileDebugJavaWithJavac")
+            .assertErrorContains("Inconsistent JVM targets between Java and Kotlin compile tasks: 1.8 and 17.")
     }
 }
