@@ -8914,23 +8914,23 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(
         if (useFirUast()) {
           """
-          ../common.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: 35 [GradleDependency]
+          ../common.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 30 // ERROR 1
               ~~~~~~~~~~~~~
-          ../common2.gradle:2: Warning: A newer version of compileSdkVersion than 32 is available: 35 [GradleDependency]
+          ../common2.gradle:2: Warning: A newer version of compileSdkVersion than 32 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 32 // ERROR 2
               ~~~~~~~~~~~~~
           0 errors, 2 warnings
           """
         } else {
           """
-          ../common.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: 35 [GradleDependency]
+          ../common.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 30 // ERROR 1
               ~~~~~~~~~~~~~
-          ../common2.gradle:2: Warning: A newer version of compileSdkVersion than 32 is available: 35 [GradleDependency]
+          ../common2.gradle:2: Warning: A newer version of compileSdkVersion than 32 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 32 // ERROR 2
               ~~~~~~~~~~~~~
-          ../common3.gradle.kts:2: Warning: A newer version of compileSdkVersion than 33 is available: 35 [GradleDependency]
+          ../common3.gradle.kts:2: Warning: A newer version of compileSdkVersion than 33 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk = 33 // ERROR 3
               ~~~~~~~~~~~~~~~
           0 errors, 3 warnings
@@ -8964,7 +8964,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        toml-updater-config.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: 35 [GradleDependency]
+        toml-updater-config.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
             compileSdk 30 // ERROR 1
             ~~~~~~~~~~~~~
         0 errors, 1 warning

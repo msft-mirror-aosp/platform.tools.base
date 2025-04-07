@@ -35,7 +35,6 @@ import com.android.ide.common.repository.NetworkCache
 import com.android.io.CancellableFileIo
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.SdkVersionInfo
-import com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_STABLE_API
 import com.android.sdklib.SdkVersionInfo.LOWEST_ACTIVE_API
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.GOOGLE_PLAY_SDK_INDEX_KEY
 import com.android.tools.lint.checks.GooglePlaySdkIndex.Companion.GOOGLE_PLAY_SDK_INDEX_URL
@@ -773,16 +772,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     includeFix: Boolean = true,
     fixCookie: Any? = null,
   ) {
-    if (version < HIGHEST_KNOWN_STABLE_API) {
+    if (version < HIGHEST_KNOWN_STABLE_ANDROID_API) {
       val message =
-        "A newer version of `compileSdkVersion` than $version is available: $HIGHEST_KNOWN_STABLE_API"
+        "A newer version of `compileSdkVersion` than $version is available: $HIGHEST_KNOWN_STABLE_ANDROID_API"
       val fix =
         if (includeFix) {
           fix()
-            .name("Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API")
+            .name("Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_ANDROID_API")
             .replace()
             .text(version.toString())
-            .with(HIGHEST_KNOWN_STABLE_API.toString())
+            .with(HIGHEST_KNOWN_STABLE_ANDROID_API.toString())
             .apply {
               if (fixCookie is LintTomlValue) {
                 range(fixCookie.getLocation())
@@ -2837,6 +2836,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
 
     /** Calendar to use to look up the current time (used by tests to set specific time). */
     var calendar: Calendar? = null
+
+    const val HIGHEST_KNOWN_STABLE_ANDROID_API: Int = SdkVersionInfo.HIGHEST_KNOWN_STABLE_API
 
     const val GRADLE_PLUGIN_ARTIFACT_SUFFIX = ".gradle.plugin"
     const val KEY_COORDINATE = "coordinate"
