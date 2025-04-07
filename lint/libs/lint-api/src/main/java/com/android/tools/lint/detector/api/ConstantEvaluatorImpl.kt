@@ -247,6 +247,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                           else -> null
                         }
                       }
+                    "code" == selector.identifier -> (evaluate(receiver) as? Char)?.code
                     resolved is PsiMethod -> node.evaluate() ?: evaluate(resolved)
                     else -> node.evaluate()
                   }
