@@ -26,13 +26,6 @@ import java.nio.charset.Charset
 import studio.network.inspection.NetworkInspectorProtocol
 
 /**
- * The initial capacity of the buffer that stores payload data. It is automatically expanded when
- * capacity is reached.
- */
-private const val INITIAL_BUFFER_SIZE = 1024
-private const val MAX_BUFFER_SIZE = 10 * 1024 * 1024
-
-/**
  * A class that reports on [java.io.InputStream] and [java.io.OutputStream]. It records the payload
  * that is sent/received in a temporary buffer before reporting it to Studio.
  */
@@ -56,6 +49,10 @@ constructor(
 
   fun addOneByte(byte: Int) {
     addBytes(ByteArray(1) { byte.toByte() }, 0, 1)
+  }
+
+  fun addBytes(bytes: ByteArray) {
+    addBytes(bytes, 0, bytes.size)
   }
 
   fun addBytes(bytes: ByteArray, offset: Int, len: Int) {
@@ -161,5 +158,15 @@ constructor(
       buffer.write(bytes, offset, len)
 
     override fun toByteString(buffer: Output): ByteString = buffer.toByteString()
+  }
+
+  companion object {
+    /**
+     * The initial capacity of the buffer that stores payload data. It is automatically expanded
+     * when capacity is reached.
+     */
+    private const val INITIAL_BUFFER_SIZE = 1024
+
+    const val MAX_BUFFER_SIZE = 10 * 1024 * 1024
   }
 }
