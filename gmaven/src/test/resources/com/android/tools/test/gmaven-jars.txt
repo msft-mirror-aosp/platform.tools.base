@@ -2432,7 +2432,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/analysis/api/
   org/jetbrains/kotlin/analysis/api/annotations/
   org/jetbrains/kotlin/analysis/api/base/
-  org/jetbrains/kotlin/analysis/api/calls/
   org/jetbrains/kotlin/analysis/api/compile/
   org/jetbrains/kotlin/analysis/api/components/
   org/jetbrains/kotlin/analysis/api/contracts/
