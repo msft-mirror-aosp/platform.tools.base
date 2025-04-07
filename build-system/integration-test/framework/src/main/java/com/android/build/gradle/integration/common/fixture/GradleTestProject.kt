@@ -339,7 +339,7 @@ open class GradleTestProject @JvmOverloads constructor(
                 GRADLE_TEST_VERSION = if (USE_LATEST_NIGHTLY_GRADLE_VERSION) {
                     computeLatestGradleCheckedIn() ?: error("Failed to find latest nightly version.")
                 } else {
-                    VersionCheckPlugin.GRADLE_MIN_VERSION.toString()
+                    VersionCheckPlugin.GRADLE_MIN_VERSION.version
                 }
 
                 // These are some properties that we use in the integration test projects, when generating

@@ -33,9 +33,23 @@ class GradleVersionCheckTest {
     fun testGradleVersionCheck() {
         // Run the build twice, it should fail with the same message (regression test for b/265296706)
         repeat(2) {
-            val result = rule.build.executor.expectFailure().run("help")
-            result.assertErrorContains("Minimum supported Gradle version is $GRADLE_LATEST_VERSION. Current version is $OLD_GRADLE_VERSION.")
+            rule.build.executor
+                .expectFailure().run("help")
+                .assertErrorContains(ERROR_MESSAGE)
         }
+    }
+
+    @Test
+    fun `test Gradle version check is skipped for Gradle wrapper task`() {
+        // When the Gradle wrapper task is running, we should skip the Gradle version check
+        // (see b/372269616). Note that the task may succeed or may still fail because the old
+        // version of Gradle still tries to load the plugins
+        // (https://github.com/gradle/gradle/issues/30908).
+        // In this specific test, the build happens to fail, but the important thing to check is
+        // that it should not fail due to the Gradle version check.
+        rule.build.executor
+            .expectFailure().run("wrapper")
+            .assertErrorDoesNotContain(ERROR_MESSAGE)
     }
 }
 
@@ -46,3 +60,5 @@ class GradleVersionCheckTest {
  * b/243592738.)
  */
 private const val OLD_GRADLE_VERSION = "8.4"
+
+private const val ERROR_MESSAGE = "Minimum supported Gradle version is $GRADLE_LATEST_VERSION. Current version is $OLD_GRADLE_VERSION."
