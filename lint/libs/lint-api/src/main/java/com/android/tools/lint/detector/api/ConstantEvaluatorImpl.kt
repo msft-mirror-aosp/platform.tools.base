@@ -849,6 +849,9 @@ private value class ArgList<out X>(val values: List<X>) {
       else -> null
     }
 
+  fun <T : Any> mapOrNull(transform: (X) -> T?): ArgList<T>? =
+    ArgList(values.map { transform(it) ?: return@mapOrNull null })
+
   inline fun <reified T> ifAny(): ArgList<X>? = takeIf { values.any { it is T } }
 
   inline fun <reified T> ifAll(): ArgList<T>? =
@@ -895,7 +898,7 @@ private fun ArgList<Any?>.reduceAsNumbers(
   opLong: (Long, Long) -> Long,
   opInt: (Int, Int) -> Int,
 ): Number? =
-  ifAll<Number>()?.let {
+  mapOrNull(::tryCoerceToNum)?.let {
     it.ifAny<Double>()?.reduceOn(Number::toDouble, opDouble)
       ?: it.ifAny<Float>()?.reduceOn(Number::toFloat, opFloat)
       ?: it.ifAny<Long>()?.reduceOn(Number::toLong, opLong)
@@ -906,7 +909,7 @@ private fun ArgList<Any?>.reduceAsInts(
   opLong: (Long, Long) -> Long,
   opInt: (Int, Int) -> Int,
 ): Number? =
-  ifAll<Number>()?.let {
+  mapOrNull(::tryCoerceToNum)?.let {
     it.ifAny<Long>()?.reduceOn(Number::toLong, opLong)
       ?: it.ifAny<Int>()?.reduceOn(Number::toInt, opInt)
   }
@@ -915,7 +918,7 @@ private inline fun ArgList<Any?>.isOrdered(
   onDouble: (Double, Double) -> Boolean,
   onLong: (Long, Long) -> Boolean,
 ) =
-  ifAll<Number>()?.let {
+  mapOrNull(::tryCoerceToNum)?.let {
     (it.ifAny<Float>() ?: it.ifAny<Double>())?.isOrderedOn(Number::toDouble, onDouble)
       ?: (it.ifAny<Int>() ?: it.ifAny<Long>())?.isOrderedOn(Number::toLong, onLong)
   }
@@ -945,6 +948,15 @@ private fun Any?.tryUnaryMinus() =
     is Short -> -this
     is Char -> -this.code
     is Byte -> -this
+    else -> null
+  }
+
+private fun tryCoerceToNum(value: Any?): Number? =
+  when (value) {
+    is Number -> value
+    // Java coerces characters to integers as needed.
+    // We don't need to worry about mismatching with Kotlin's behavior, which rules out such uses.
+    is Char -> value.code
     else -> null
   }
 
@@ -1002,7 +1014,7 @@ private fun ArgList<Any?>.shr() = shift(Long::shr, Int::shr)
 private fun ArgList<Any?>.ushr() = shift(Long::ushr, Int::ushr)
 
 private fun ArgList<Any?>.shift(onLong: (Long, Int) -> Long, onInt: (Int, Int) -> Int) =
-  ifAll<Number>()?.split { n, ns ->
+  mapOrNull(::tryCoerceToNum)?.split { n, ns ->
     when (n) {
       is Long -> ns.foldOn(Number::toInt, n, onLong)
       is Int -> ns.foldOn(Number::toInt, n, onInt)

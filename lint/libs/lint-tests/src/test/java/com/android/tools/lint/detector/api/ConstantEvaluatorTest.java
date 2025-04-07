@@ -508,6 +508,7 @@ public class ConstantEvaluatorTest extends TestCase {
         checkExpression(-2, "1 + -3");
         checkExpression(null, "1 / 0");
         checkExpression(null, "1 % 0");
+        checkExpression(99, "'a' + 2");
 
         checkExpression(false, "11 == 5");
         checkExpression(true, "11 == 11");
@@ -521,6 +522,8 @@ public class ConstantEvaluatorTest extends TestCase {
         checkExpression(false, "5 >= 11");
         checkExpression(false, "11 <= 5");
         checkExpression(true, "5 <= 11");
+        checkExpression(true, "'c' <= 'e'");
+        checkExpression(false, "'0' > 100");
 
         checkExpression(3.5f, "1.0f + 2.5f");
     }
@@ -606,6 +609,12 @@ public class ConstantEvaluatorTest extends TestCase {
                         + "}\n"
                         + "var y = z;\n",
                 "y");
+    }
+
+    public void testShiftingJavaCharacters() {
+        checkExpression(1599098439, "('_' << 24) | ('P' << 16) | ('N' << 8) | 'G'");
+        checkExpression(47, "'_' >> 1");
+        checkExpression(0L, "9999L >> '0';");
     }
 
     public void testIndirectConstants() {
