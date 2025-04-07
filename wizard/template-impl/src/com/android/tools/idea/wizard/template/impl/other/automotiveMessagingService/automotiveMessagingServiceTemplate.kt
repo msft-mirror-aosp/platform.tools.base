@@ -41,7 +41,7 @@ val automotiveMessagingServiceTemplate
 
     category = Category.Automotive
     formFactor = FormFactor.Automotive
-    screens = listOf(WizardUiContext.NewProject, WizardUiContext.MenuEntry, WizardUiContext.NewModule)
+    screens = listOf(WizardUiContext.MenuEntry, WizardUiContext.NewModule)
 
     val serviceName = stringParameter {
       name = "Service class name"
