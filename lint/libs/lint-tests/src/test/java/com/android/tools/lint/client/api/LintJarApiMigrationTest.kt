@@ -1642,7 +1642,7 @@ class LintJarApiMigrationTest {
       -  IFNULL L24
       -  INVOKESTATIC org/jetbrains/kotlin/analysis/api/calls/KtCallKt.singleFunctionCallOrNull (Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;)Lorg/jetbrains/kotlin/analysis/api/calls/KtFunctionCall;
       +  IFNULL L23
-      +  INVOKESTATIC org/jetbrains/kotlin/analysis/api/calls/KaCallKt.singleFunctionCallOrNull (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall;
+      +  INVOKESTATIC org/jetbrains/kotlin/analysis/api/resolution/KaCallInfoKt.singleFunctionCallOrNull (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall;
       @@ -110 +105
       -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
       @@ -112 +106
