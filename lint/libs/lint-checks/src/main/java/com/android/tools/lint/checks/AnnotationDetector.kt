@@ -117,6 +117,7 @@ import org.jetbrains.uast.USwitchClauseExpression
 import org.jetbrains.uast.USwitchExpression
 import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.UastFacade
+import org.jetbrains.uast.evaluateString
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.namePsiElement
@@ -264,7 +265,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           if (v is String) {
             checkSuppressLint(annotation, v)
           }
-        } else if (value != null && value.isArrayInitializer()) {
+        } else if (value.isArrayInitializer()) {
           for (element in (value as UCallExpression).valueArguments) {
             val ex = element.skipParenthesizedExprDown()
             if (ex is ULiteralExpression) {
@@ -496,6 +497,82 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
               )
             }
           }
+        }
+        type == KeepRuleDetector.USES_REFLECTION_TO_ACCESS_METHOD_FQN ||
+          type == KeepRuleDetector.USES_REFLECTION_TO_ACCESS_FIELD_FQN ||
+          type == KeepRuleDetector.USES_REFLECTION_TO_CONSTRUCT_FQN -> {
+          checkKeepAnnotations(annotation, type)
+        }
+      }
+    }
+
+    private fun enforceAlternativeAttributes(
+      annotation: UAnnotation,
+      type: String,
+      attribute1: String,
+      attribute2: String,
+      required: Boolean,
+    ) {
+      val classConstant = annotation.findDeclaredAttributeValue(attribute1)
+      val className = annotation.findDeclaredAttributeValue(attribute2)
+      val specifiesClassConstant = classConstant != null
+      val specifiesClassName = className != null
+      if (required && !specifiesClassConstant && !specifiesClassName) {
+        context.report(
+          ANNOTATION_USAGE,
+          annotation,
+          context.getLocation(annotation),
+          "`@${type.substringAfterLast('.')}` must specify either a `$attribute1` or a `$attribute2` attribute",
+        )
+        return
+      }
+
+      if (specifiesClassConstant && specifiesClassName) {
+        context.report(
+          ANNOTATION_USAGE,
+          annotation,
+          context.getLocation(classConstant).withSecondary(context.getLocation(className), ""),
+          "Specify only one of `$attribute1` or `$attribute2`",
+        )
+        return
+      }
+
+      if (className?.evaluateString() == "TODO" && !context.driver.isIsolated()) {
+        context.report(
+          ANNOTATION_USAGE,
+          annotation,
+          context.getLocation(className),
+          "Specify a real `$attribute2`",
+        )
+      }
+    }
+
+    private fun checkKeepAnnotations(annotation: UAnnotation, type: String) {
+      enforceAlternativeAttributes(annotation, type, "classConstant", "className", required = true)
+      if (type == KeepRuleDetector.USES_REFLECTION_TO_ACCESS_FIELD_FQN) {
+        enforceAlternativeAttributes(
+          annotation,
+          type,
+          "fieldType",
+          "fieldTypeName",
+          required = false,
+        )
+      } else {
+        enforceAlternativeAttributes(
+          annotation,
+          type,
+          "parameterTypes",
+          "parameterTypeNames",
+          required = false,
+        )
+        if (type == KeepRuleDetector.USES_REFLECTION_TO_ACCESS_METHOD_FQN) {
+          enforceAlternativeAttributes(
+            annotation,
+            type,
+            "returnType",
+            "returnTypeName",
+            required = false,
+          )
         }
       }
     }
@@ -970,7 +1047,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       }
       val initializers = (value as UCallExpression).valueArguments
       val valueToIndex: MutableMap<Number, Int> = Maps.newHashMapWithExpectedSize(initializers.size)
-      val flag = getAnnotationBooleanValue(node, TYPE_DEF_FLAG_ATTRIBUTE) === java.lang.Boolean.TRUE
+      val flag = getAnnotationBooleanValue(node, TYPE_DEF_FLAG_ATTRIBUTE) == true
       if (flag) {
         ensureUsingFlagStyle(initializers)
       }
@@ -983,7 +1060,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
           val prevLocationLabel: String
           val prevIndex = valueToIndex[number] ?: continue
           val prevConstant = initializers[prevIndex]
-          val constant1 = expression!!.asSourceString()
+          val constant1 = expression.asSourceString()
           val constant2 = prevConstant.asSourceString()
           if (constant1 == constant2) {
             message = "Constant `$constant1` has already been included"
@@ -1424,7 +1501,7 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
 
     /**
      * Feature temporarily disabled while we settle whether we expect people to specify all
-     * extension levels or whether specifying the lowest one impliest the other dessert extensions.
+     * extension levels or whether specifying the lowest one implies the other dessert extensions.
      */
     const val WARN_ABOUT_EXTENSION_LEVEL_GAPS = false
 

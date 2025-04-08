@@ -262,6 +262,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           JavaPerformanceDetector.USE_VALUE_OF,
           JavaScriptInterfaceDetector.ISSUE,
           JobSchedulerDetector.ISSUE,
+          KeepRuleDetector.ISSUE,
           KeyboardNavigationDetector.ISSUE,
           KotlinNullnessAnnotationDetector.ISSUE,
           KotlincFE10Detector.ISSUE,
