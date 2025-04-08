@@ -16,10 +16,6 @@
 @file:JvmName("AndroidVersionUtils")
 package com.android.sdklib
 
-@Deprecated("Use AndroidVersion.getApiStringWithExtension instead",
-            replaceWith = ReplaceWith("getApiStringWithExtension"))
-val AndroidVersion.displayApiString: String get() = getApiStringWithExtension()
-
 /**
  * A pair of strings describing an Android version.
  *
