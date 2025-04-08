@@ -61,6 +61,7 @@ import com.android.tools.idea.wizard.template.impl.other.broadcastReceiver.broad
 import com.android.tools.idea.wizard.template.impl.other.contentProvider.contentProviderTemplate
 import com.android.tools.idea.wizard.template.impl.other.customView.customViewTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.aidlFile.aidlFileTemplate
+import com.android.tools.idea.wizard.template.impl.other.files.journeyFile.journeyFileTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.layoutResourceFile.layoutResourceFileTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.shortcutResourceFile.shortcutsResourceFileTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.valueResourceFile.valueResourceFileTemplate
@@ -127,6 +128,7 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
     aidlFileTemplate,
     layoutResourceFileTemplate,
     shortcutsResourceFileTemplate,
-    valueResourceFileTemplate
+    valueResourceFileTemplate,
+    journeyFileTemplate,
   )
 }
