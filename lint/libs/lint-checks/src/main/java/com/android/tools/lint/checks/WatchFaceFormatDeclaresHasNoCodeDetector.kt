@@ -16,13 +16,12 @@
 package com.android.tools.lint.checks
 
 import com.android.SdkConstants.ANDROID_URI
-import com.android.SdkConstants.FD_RES_RAW
-import com.android.SdkConstants.TAG_PROPERTY
-import com.android.SdkConstants.TAG_WATCH_FACE
 import com.android.SdkConstants.VALUE_FALSE
 import com.android.SdkConstants.WATCH_FACE_FORMAT_VERSION_PROPERTY
 import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.resources.ResourceUrl
+import com.android.tools.lint.checks.WatchFaceFormatUtils.hasDeclarativeWatchFaceFile
+import com.android.tools.lint.checks.WatchFaceFormatUtils.hasWatchFaceFormatVersionProperty
 import com.android.tools.lint.client.api.ResourceRepositoryScope
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
@@ -34,13 +33,9 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
 import com.android.utils.XmlUtils
-import com.android.utils.subtags
 import com.android.xml.AndroidManifest.ATTRIBUTE_HASCODE
-import com.android.xml.AndroidManifest.ATTRIBUTE_NAME
 import com.android.xml.AndroidManifest.NODE_APPLICATION
-import com.google.common.io.Files
 import org.w3c.dom.Attr
-import org.w3c.dom.Element
 
 /**
  * Detector that checks that the `android:hasCode` application attribute is set to false when we
@@ -55,7 +50,12 @@ class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
     val xmlContext = context as? XmlContext ?: return
     val root = xmlContext.document.documentElement
     val application = XmlUtils.getFirstSubTagByName(root, NODE_APPLICATION) ?: return
-    if (!hasWatchFaceFormatVersion(application) && !hasDeclarativeWatchFaceFile(context)) return
+    if (
+      !hasWatchFaceFormatVersionProperty(application) &&
+        !hasDeclarativeWatchFaceFile(context.project)
+    ) {
+      return
+    }
 
     val hasCodeAttribute = application.getAttributeNodeNS(ANDROID_URI, ATTRIBUTE_HASCODE)
     if (hasCodeAttribute != null && hasCodeAttribute.isFalse(context)) return
@@ -84,24 +84,6 @@ class WatchFaceFormatDeclaresHasNoCodeDetector : WearDetector(), XmlScanner {
       .mapNotNull { it.resourceValue?.value }
       .all { it == VALUE_FALSE }
   }
-
-  private fun hasWatchFaceFormatVersion(application: Element): Boolean =
-    application.subtags(TAG_PROPERTY).asSequence().any {
-      it.getAttributeNS(ANDROID_URI, ATTRIBUTE_NAME) == WATCH_FACE_FORMAT_VERSION_PROPERTY
-    }
-
-  private fun hasDeclarativeWatchFaceFile(context: Context) =
-    context.project.resourceFolders
-      .flatMap { it.listFiles().toList() }
-      .filter { it.name.startsWith(FD_RES_RAW) }
-      .any { rawFolder ->
-        rawFolder.listFiles().any {
-          val xml = Files.asCharSource(it, Charsets.UTF_8).read()
-          val document = XmlUtils.parseDocumentSilently(xml, false)
-          val rootTag = document?.documentElement?.tagName
-          rootTag == TAG_WATCH_FACE
-        }
-      }
 
   companion object {
     @JvmField
