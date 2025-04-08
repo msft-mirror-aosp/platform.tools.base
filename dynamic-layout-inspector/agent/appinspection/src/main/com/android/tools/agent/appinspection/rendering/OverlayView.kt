@@ -176,7 +176,7 @@ class OverlayView(
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         val point = ev.toScreenCoordinates()
-        Log.w(SPAM_LOG_TAG, "OverlayView $rootId onTouchEvent: $point")
+        Log.w(SPAM_LOG_TAG, "OverlayView $rootId onTouchEvent: $point, interceptTouchEvents: $interceptTouchEvents")
 
         if (ev.action == MotionEvent.ACTION_DOWN) {
             val currentTouchTimeMs = timeProviderMs()
@@ -200,7 +200,7 @@ class OverlayView(
 
     override fun onHoverEvent(ev: MotionEvent): Boolean {
         val point = ev.toScreenCoordinates()
-        Log.w(SPAM_LOG_TAG, "OverlayView $rootId hover event: $point")
+        Log.w(SPAM_LOG_TAG, "OverlayView $rootId hover event: $point, interceptTouchEvents: $interceptTouchEvents")
         viewModel.onHoverEvent(rootId, point)
         return interceptTouchEvents || super.onHoverEvent(ev)
     }
