@@ -16,11 +16,8 @@
 @file:JvmName("AndroidVersionUtils")
 package com.android.sdklib
 
-/**
- * A short summary string of the API level of the given Android version.
- *
- * The same as [AndroidVersion.getApiStringWithExtension].
- */
+@Deprecated("Use AndroidVersion.getApiStringWithExtension instead",
+            replaceWith = ReplaceWith("getApiStringWithExtension"))
 val AndroidVersion.displayApiString: String get() = getApiStringWithExtension()
 
 /**

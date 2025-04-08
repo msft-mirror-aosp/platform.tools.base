@@ -349,17 +349,4 @@ class AndroidVersionUtilsTest : TestCase() {
             )
         )
     }
-
-    fun testDisplayApiString() {
-        assertThat(AndroidVersion(35, 0).displayApiString).isEqualTo("35")
-        assertThat(AndroidVersion(36, 0).displayApiString).isEqualTo("36.0")
-        assertThat(AndroidVersion(36, 1).displayApiString).isEqualTo("36.1")
-        assertThat(AndroidVersion(36, 1).displayApiString).isEqualTo("36.1")
-        assertThat(AndroidVersion(36, 1, null, 18, false).displayApiString).isEqualTo("36.1-ext18")
-        assertThat(AndroidVersion(37, 0).displayApiString).isEqualTo("37.0")
-        assertThat(AndroidVersion(37, 1).displayApiString).isEqualTo("37.1")
-        assertThat(AndroidVersion(35, "Baklava").displayApiString).isEqualTo("Baklava")
-        assertThat(AndroidVersion(36, "BaklavaSomething").displayApiString).isEqualTo("BaklavaSomething")
-        assertThat(AndroidVersion(36, 1, "BaklavaSomethingElse", null, true).displayApiString).isEqualTo("BaklavaSomethingElse")
-    }
 }
