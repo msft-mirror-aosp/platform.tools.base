@@ -11,6 +11,7 @@ maven_library(
     version = BACKUP_TEST_API_VERSION,
     visibility = ["//visibility:public"],
     deps = [
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.junit.platform.junit-platform-commons",
     ],
 )
