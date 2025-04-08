@@ -34,14 +34,17 @@ class AndroidManifestInTestTest {
         project.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
             manifestAsNodes().node("manifest").apply {
                 node("permission-group")
-                    .attributes()
-                    .contains("http://schemas.android.com/apk/res/android:name=\"foo.permission-group.COST_MONEY\"")
+                    .containsAttributeAndValue(
+                        "http://schemas.android.com/apk/res/android:name",
+                        "\"foo.permission-group.COST_MONEY\"")
+
                 node("application")
-                    .attributes()
-                    .contains("http://schemas.android.com/apk/res/android:debuggable=true")
+                    .containsAttributeAndValue(
+                        "http://schemas.android.com/apk/res/android:debuggable",
+                        "true"
+                    )
                 node("instrumentation")
-                    .nodes()
-                    .contains("meta-data")
+                    .containsNode("meta-data")
             }
         }
     }

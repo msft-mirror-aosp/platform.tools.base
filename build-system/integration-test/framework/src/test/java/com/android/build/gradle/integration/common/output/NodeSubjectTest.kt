@@ -28,8 +28,7 @@ class NodeSubjectTest {
     fun namespaces() {
         Truth.assertAbout(NodeSubject.nodes())
             .that(parseManifestToNodes(MANIFEST_EXAMPLE_1.split("\n")))
-            .namespaces()
-            .containsExactly(
+            .containsExactlyNamespaces(
                 "android=http://schemas.android.com/apk/res/android",
                 "dist=http://schemas.android.com/apk/distribution"
             )
@@ -39,7 +38,7 @@ class NodeSubjectTest {
     fun mainNodes() {
         Truth.assertAbout(NodeSubject.nodes())
             .that(parseManifestToNodes(MANIFEST_EXAMPLE_1.split("\n")))
-            .nodes().containsExactly("manifest")
+            .containsExactlyNodes("manifest")
     }
 
     @Test
@@ -48,7 +47,7 @@ class NodeSubjectTest {
             .that(parseManifestToNodes(MANIFEST_EXAMPLE_1.split("\n")))
             .node("manifest")
 
-        node.attributes().containsExactly(
+        node.containsExactlyAttributesAndValues(
             "http://schemas.android.com/apk/res/android:compileSdkVersion=35",
             "http://schemas.android.com/apk/res/android:versionCode=1",
             "http://schemas.android.com/apk/res/android:compileSdkVersionCodename=\"15\"",
@@ -57,9 +56,9 @@ class NodeSubjectTest {
             "platformBuildVersionName=15",
         )
 
-        node.nodes().containsExactly("uses-sdk", "application")
+        node.containsExactlyNodes("uses-sdk", "application")
 
-        node.namespaces().isEmpty()
+        node.hasNoNamespaces()
     }
 
     @Test
@@ -69,9 +68,9 @@ class NodeSubjectTest {
             .node("manifest")
             .node("application")
             .node("profileable")
-            .attributes()
-            .contains(
-                "http://schemas.android.com/apk/res/android:enabled=true",
+            .containsAttributeAndValue(
+                "http://schemas.android.com/apk/res/android:enabled",
+                "true",
             )
     }
 
@@ -85,9 +84,9 @@ class NodeSubjectTest {
             .nodeByNameAndAttribute(
                 "uses-sdk-library",
                 "com.example.privacysandboxsdk"
-            ).attributes()
-            .contains(
-                "http://schemas.android.com/apk/res/android:name=\"com.example.privacysandboxsdk\""
+            ).containsAttributeAndValue(
+                "http://schemas.android.com/apk/res/android:name",
+                "\"com.example.privacysandboxsdk\""
             )
 
         // test failure

@@ -60,6 +60,9 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     val adbServices = factory.createAdbServices(serialNumber, listener, BACKUP_STEPS)
     return try {
       with(adbServices) {
+        if (!isInstalled(applicationId)) {
+          throw BackupException(APP_NOT_INSTALLED, "Application '$applicationId' is not installed")
+        }
         // Backup is always handled by the D2D transport
         withSetup(TRANSPORT_DTD) {
           reportProgress("Initializing backup transport")
@@ -148,6 +151,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
 
   override suspend fun isInstalled(serialNumber: String, applicationId: String): Boolean {
     return factory.createAdbServices(serialNumber, null, 1).isInstalled(applicationId)
+  }
+
+  override suspend fun isBackupEnabled(serialNumber: String, applicationId: String): Boolean {
+    return factory.createAdbServices(serialNumber, null, 1).isBackupEnabled(applicationId)
   }
 
   override suspend fun isPlayStoreInstalled(serialNumber: String): Boolean {

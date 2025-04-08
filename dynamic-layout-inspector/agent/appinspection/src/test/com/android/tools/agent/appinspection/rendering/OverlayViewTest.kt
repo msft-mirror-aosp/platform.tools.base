@@ -327,17 +327,20 @@ class OverlayViewTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
+        var currentTime = 0L
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
         val root = ViewGroup(context)
-        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel, timeProviderMs = { currentTime })
         overlayView.onAttachedToWindow()
 
-        assertThat(overlayView.onTouchEvent(MotionEvent(1f, 1f))).isFalse()
+        assertThat(overlayView.onTouchEvent(leftClick(1f, 1f))).isFalse()
+        currentTime += DOUBLE_TAP_TIMEOUT_MS
 
         viewModel.setInterceptTouchEvents(true)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.onTouchEvent(MotionEvent(2f, 2f))).isTrue()
+        assertThat(overlayView.onTouchEvent(leftClick(2f, 2f))).isTrue()
+        currentTime += DOUBLE_TAP_TIMEOUT_MS
 
         viewModel.setInterceptTouchEvents(false)
         testScheduler.advanceUntilIdle()
@@ -364,17 +367,21 @@ class OverlayViewTest {
         val testDispatcher = StandardTestDispatcher(testScheduler)
         val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
 
+        var currentTime = 0L
+
         val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
         val root = ViewGroup(context)
-        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel, timeProviderMs = { currentTime })
         overlayView.onAttachedToWindow()
 
         assertThat(overlayView.onTouchEvent(rightClick(1f, 1f))).isFalse()
+        currentTime += DOUBLE_TAP_TIMEOUT_MS
 
         viewModel.setInterceptTouchEvents(true)
         testScheduler.advanceUntilIdle()
 
         assertThat(overlayView.onTouchEvent(rightClick(2f, 2f))).isTrue()
+        currentTime += DOUBLE_TAP_TIMEOUT_MS
 
         viewModel.setInterceptTouchEvents(false)
         testScheduler.advanceUntilIdle()
@@ -382,15 +389,61 @@ class OverlayViewTest {
         assertThat(overlayView.onTouchEvent(rightClick(3f, 3f))).isFalse()
 
         val rootId = root.uniqueDrawingId
-        val expectedSelectionEvent = buildUserInputEventProto(
-            rootId = rootId, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION
-        ).toByteArray()
         val expectedRightClickEvent = buildUserInputEventProto(
             rootId = rootId, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.RIGHT_CLICK
         ).toByteArray()
-        assertThat(receivedEvents).hasSize(2)
+        assertThat(receivedEvents).hasSize(1)
         assertThat(receivedEvents[0]).isEqualTo(expectedRightClickEvent)
-        assertThat(receivedEvents[1]).isEqualTo(expectedSelectionEvent)
+    }
+
+    @Test
+    fun testTouchEventsDoubleClick() = runTest {
+        val receivedEvents = mutableListOf<ByteArray>()
+        val connection = object : Connection() {
+            override fun sendEvent(data: ByteArray) {
+                receivedEvents.add(data)
+            }
+        }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+
+        var currentTime = 0L
+
+        val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel, timeProviderMs = { currentTime })
+        overlayView.onAttachedToWindow()
+
+        assertThat(overlayView.onTouchEvent(leftClick(1f, 1f))).isFalse()
+        currentTime += DOUBLE_TAP_TIMEOUT_MS
+
+        viewModel.setInterceptTouchEvents(true)
+        testScheduler.advanceUntilIdle()
+
+        assertThat(overlayView.onTouchEvent(leftClick(2f, 2f))).isTrue()
+        currentTime += DOUBLE_TAP_TIMEOUT_MS / 2
+        assertThat(overlayView.onTouchEvent(leftClick(2f, 2f))).isTrue()
+        currentTime += DOUBLE_TAP_TIMEOUT_MS
+        assertThat(overlayView.onTouchEvent(leftClick(2f, 2f))).isTrue()
+        currentTime += DOUBLE_TAP_TIMEOUT_MS
+
+        viewModel.setInterceptTouchEvents(false)
+        testScheduler.advanceUntilIdle()
+
+        assertThat(overlayView.onTouchEvent(leftClick(3f, 3f))).isFalse()
+
+        val rootId = root.uniqueDrawingId
+        val expectedSelectionEvent = buildUserInputEventProto(
+            rootId = rootId, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.SELECTION
+        ).toByteArray()
+        val expectedDoubleClickEvent = buildUserInputEventProto(
+            rootId = rootId, x = 2f, y = 2f, type = LayoutInspectorViewProtocol.UserInputEvent.Type.DOUBLE_CLICK
+        ).toByteArray()
+        assertThat(receivedEvents).hasSize(3)
+        assertThat(receivedEvents[0]).isEqualTo(expectedSelectionEvent)
+        assertThat(receivedEvents[1]).isEqualTo(expectedDoubleClickEvent)
+        assertThat(receivedEvents[2]).isEqualTo(expectedSelectionEvent)
     }
 
     @Test
@@ -410,17 +463,17 @@ class OverlayViewTest {
         val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
         overlayView.onAttachedToWindow()
 
-        assertThat(overlayView.onHoverEvent(MotionEvent(1f, 1f))).isFalse()
+        assertThat(overlayView.onHoverEvent(leftClick(1f, 1f))).isFalse()
 
         viewModel.setInterceptTouchEvents(true)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.onHoverEvent(MotionEvent(2f, 2f))).isTrue()
+        assertThat(overlayView.onHoverEvent(leftClick(2f, 2f))).isTrue()
 
         viewModel.setInterceptTouchEvents(false)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.onHoverEvent(MotionEvent(3f, 3f))).isFalse()
+        assertThat(overlayView.onHoverEvent(leftClick(3f, 3f))).isFalse()
 
         val rootId = root.uniqueDrawingId
         val expectedHoverEvent = buildUserInputEventProto(
@@ -458,6 +511,12 @@ class OverlayViewTest {
         assertThat(overlayView.measuredWidth).isEqualTo(315)
         assertThat(overlayView.measuredHeight).isEqualTo(210)
     }
+}
+
+private fun leftClick(x: Float, y: Float): MotionEvent {
+    val action = MotionEvent.ACTION_DOWN
+    val buttonState = MotionEvent.BUTTON_PRIMARY
+    return MotionEvent(x, y, action, buttonState)
 }
 
 private fun rightClick(x: Float, y: Float): MotionEvent {

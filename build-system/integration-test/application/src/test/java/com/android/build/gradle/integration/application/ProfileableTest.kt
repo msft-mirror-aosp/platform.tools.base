@@ -124,14 +124,13 @@ class ProfileableTest {
                 .run("assembleRelease")
 
         project.getSubproject("app").assertApk(ApkSelector.RELEASE_SIGNED) {
+            // should not contain 'android:enabled'
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
                 .node("profileable")
-                .attributes()
-                .containsExactly(
-                    // should not contain 'enabled=true'
-                    "http://schemas.android.com/apk/res/android:shell=true"
+                .containsExactlyAttributes(
+                    "http://schemas.android.com/apk/res/android:shell"
                 )
         }
     }
@@ -149,15 +148,12 @@ class ProfileableTest {
                 .with(BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG, true)
                 .run("assembleRelease")
         project.getSubproject("app").assertApk(ApkSelector.RELEASE_SIGNED) {
+            // should not contain 'android:enabled'
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
                 .node("profileable")
-                .attributes()
-                .containsExactly(
-                    // should not contain 'enabled=true'
-                    "http://schemas.android.com/apk/res/android:shell=true"
-                )
+                .containsExactlyAttributes("http://schemas.android.com/apk/res/android:shell")
         }
     }
 
@@ -173,8 +169,7 @@ class ProfileableTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .nodes()
-                .isEmpty()
+                .hasNoNodes()
         }
 
         result.stdout.use { out ->
@@ -205,8 +200,7 @@ class ProfileableTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .nodes()
-                .isEmpty()
+                .hasNoNodes()
         }
 
         result.stdout.use { out ->
@@ -336,8 +330,7 @@ class ProfileableTest {
                 .node("manifest")
                 .node("application")
                 .node("profileable")
-                .attributes()
-                .containsExactly(
+                .containsExactlyAttributesAndValues(
                     "http://schemas.android.com/apk/res/android:enabled=true",
                     "http://schemas.android.com/apk/res/android:shell=true"
                 )

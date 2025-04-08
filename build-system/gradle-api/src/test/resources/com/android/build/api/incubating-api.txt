@@ -489,7 +489,9 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getEmulatorControl: com.android.build.api.dsl.EmulatorControl ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getMultidex: com.android.build.api.dsl.MultiDexConfig ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.multidex: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MultiDexConfig, kotlin.Unit>)
+  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.androidResources: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryAndroidResources, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.dependencyVariantSelection: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection, kotlin.Unit>)
+  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getAndroidResources: com.android.build.api.dsl.LibraryAndroidResources ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getDependencyVariantSelection: com.android.build.api.dsl.DependencyVariantSelection ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getOptimization: com.android.build.api.dsl.KmpOptimization ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization, kotlin.Unit>)
@@ -498,6 +500,8 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTargetKt.androidLibrary: void (org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnDeviceCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
   * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvmCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
+  * com.android.build.api.dsl.LibraryAndroidResources.getEnable: boolean ()
+  * com.android.build.api.dsl.LibraryAndroidResources.setEnable: void (boolean)
   * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension implements com.android.build.api.variant.AndroidComponentsExtension
   * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant, kotlin.Unit>)
   * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant>)

@@ -111,11 +111,13 @@ class ProcessApplicationManifestTest {
         project.executor().run("assembleReleaseAndroidTest")
 
         project.getSubproject(":app").assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
+            // should not contain android:debuggable
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .attributes()
-                .containsExactly("http://schemas.android.com/apk/res/android:extractNativeLibs=false")
+                .containsExactlyAttributes(
+                    "http://schemas.android.com/apk/res/android:extractNativeLibs"
+                )
         }
     }
 
@@ -144,8 +146,10 @@ class ProcessApplicationManifestTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .attributes()
-                .contains("http://schemas.android.com/apk/res/android:debuggable=true")
+                .containsAttributeAndValue(
+                    "http://schemas.android.com/apk/res/android:debuggable",
+                    "true"
+                )
         }
     }
 }

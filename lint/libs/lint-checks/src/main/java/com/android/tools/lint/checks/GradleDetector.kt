@@ -4033,7 +4033,13 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             }
           cache.getMetadata()
         } else {
-          readUrlData(client, baseUrl + relative, 10000, 0L).data?.let { ByteArrayInputStream(it) }
+          try {
+            readUrlData(client, baseUrl + relative, 10000, 0L).data?.let {
+              ByteArrayInputStream(it)
+            }
+          } catch (_: IOException) {
+            null
+          }
         }
 
       inputStream ?: return null
@@ -4153,7 +4159,13 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       gmavenRepository: GoogleMavenRepository? = null,
       includeJitpack: Boolean = true,
     ): AvailableVersions? {
-      if (gmavenRepository != null && gmavenRepository.hasGroupId(groupId)) {
+      if (
+        gmavenRepository != null &&
+          gmavenRepository.hasGroupId(groupId) &&
+          // Don't look for KSP on gmaven; those versions are old, it's now maintained on maven
+          // central
+          groupId != "com.google.devtools.ksp"
+      ) {
         val versions = gmavenRepository.getVersions(groupId, artifactId).asSequence()
         return getMavenMetadataVersions(versions, version, groupId, artifactId)
       }

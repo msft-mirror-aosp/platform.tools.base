@@ -45,7 +45,6 @@ kotlin {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}")
     androidTestImplementation("androidx.test:core:1.4.0-alpha06")
     androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
     androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")

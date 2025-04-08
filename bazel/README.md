@@ -170,42 +170,53 @@ In order to fetch new Maven artifacts into the local Maven repository under
 `//prebuilts/tools/common/m2/`, follow these steps:
 
 
-1. Add the dependency to the `ARTIFACTS` or `DATA` in
-the `tools/base/bazel/maven/artifacts.bzl` file.
+1. Add the dependency to
+   `DATA` in  `tools/base/bazel/maven/data.bzl` or
+   `ARTIFACTS` in
+   `tools/base/bazel/maven/artifacts.bzl`
 
-  * In most cases, it should be added to `DATA`. For instance, if the artifact
-    is only used in the `data` section of rules (e.g., it's used as a Gradle
-    dependency artifact in tests), or if the artifact is going to
-    be used to build Android Studio (i.e., added to an IntelliJ IDEA library
-    either in `.idea/libraries/*.xml`, or an inline library in `*.iml` files),
-    then use `DATA`. Note that the Android Studio build case requires running
-    `iml_to_build` which generates a `java_import` rule that wraps the files
-    listed in the library.
+    * In most cases, it should be added to `DATA`. For instance, if the
+      artifact is only used in the `data` section of rules (e.g., it's
+      used as a Gradle dependency artifact in tests), or if the artifact
+      is going to be used to build Android Studio (i.e., added to an
+      IntelliJ IDEA library either in `.idea/libraries/*.xml`, or an
+      inline library in `*.iml` files), then use `DATA`.
 
-  * If you need to use the artifact directly in the `deps` or `runtime_deps` section
-    of a `(maven|kotlin|java)_library` rule, then add it to `ARTIFACTS`. This
-    will bring the artifact, and all of its transitive depdendencies to the
-    Java classpath of such rules that depend on it.
+      > Note that the Android Studio build case requires running
+      > `iml_to_build` which generates a `java_import` rule that wraps
+      > the files listed in the library.
+
+    * If you need to use the artifact directly in the `deps` or
+      `runtime_deps` section of a `(maven|kotlin|java)_library` rule,
+      then add it to `ARTIFACTS`. This does all the same work that
+      adding the library to DATA_ARTIFACTS would do, but additionally
+      resolves and validates the entire graph, and generates an import
+      rule (without the version suffix) which can be used in the `deps`
+      or `runtime_deps` and models the resolved transitive dependencies.
 
 2. Use the following script to download the artifacts and update the
    `BUILD.maven` file.
 
-> Note that it's worth checking that your prebuilts/tools/common/m2/repository
-> is clean before you start. You can clean it with `git clean -fdx`
+    > Note that it's worth checking that your
+      prebuilts/tools/common/m2/repository
+      is clean before you start. You can clean it with `git clean -fdx`
 
-```
-tools/base/bazel/maven/maven_fetch.sh
-```
+    ```
+    tools/base/bazel/maven/maven_fetch.sh
+    ```
 
-3. In order to use the new artifact, use `@maven//:` prefix. If you added
-   your  artifact to `artifacts`, then do not add the artifact version,
-   if you added your artifact to `data`, then use the artifact version.
-   E.g., `@maven//:com.google.guava.guava" (for artifacts)
+3. In order to use the new artifact, use `@maven//:` prefix. If you
+   added  your artifact to `artifacts`, then do not add the artifact
+   version, if you added your artifact to `data`, then use the artifact
+   version.
+
+   E.g., `@maven//:com.google.guava.guava` (for artifacts)
+
    `@maven//:com.google.guava.guava_30.1-jre` (for data).
 
-   * The `@maven//` prefix points to a dynamically generated Bazel-external
-     repository. You can access the generated file at
-     `$REPO/bazel-studio-main/external/maven/BUILD`.
+    * The `@maven//` prefix points to a dynamically generated
+      Bazel-external repository. You can access the generated file at
+      `$REPO/bazel-studio-main/external/maven/BUILD`.
 
 4. Check-in your new artifact (and any new transitive dependencies)
    under `//prebuilts/tools/common/m2/`.
@@ -221,8 +232,8 @@ types and classifiers (e.g., `linux-x86_64`).
 
 ## Updating Library Versions
 
-Find the existing library in `tools/base/bazel/maven/artifacts.bzl` and update it
-to the new version.
+Find the existing library in `tools/base/bazel/maven/resolved_artifacts.bzl`
+and update it to the new version.
 
 For some dependencies (those used by AGP) you'll **also** need to go and update
 `tools/buildSrc/base/dependencies.properties`.

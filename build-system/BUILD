@@ -591,13 +591,11 @@ maven_repository(
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.dokka.dokka-core",
         "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-common_2.1.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.21",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.20",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",
         "@maven//:org.jetbrains.markdown",
@@ -678,6 +676,7 @@ maven_repository(
         "@maven//:com.android.tools.metalava.metalava_1.0.0-alpha12",
         "@maven//:ch.randelshofer.fastdoubleparser_0.8.0",
         "@maven//:com.google.protobuf.protobuf-bom_3.19.3",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0",
     ],
 )
 

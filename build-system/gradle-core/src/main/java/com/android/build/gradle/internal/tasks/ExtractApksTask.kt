@@ -96,9 +96,6 @@ abstract class ExtractApksTask : NonIncrementalTask() {
     @get:Input
     abstract val setIncludeMetadata: Property<Boolean>
 
-    @get:Input
-    abstract val enablePrivacySandboxSdkConsumption: Property<Boolean>
-
     override fun doTaskAction() {
         workerExecutor.noIsolation().submit(BundleToolRunnable::class.java) {
             it.initializeFromBaseTask(this)
@@ -114,7 +111,6 @@ abstract class ExtractApksTask : NonIncrementalTask() {
             it.variantName.set(variantName)
             it.optionalListOfDynamicModulesToInstall.set(dynamicModulesToInstall.orElse(listOf()))
             it.setIncludeMetadata.set(setIncludeMetadata)
-            it.enablePrivacySandboxSdkConsumption.set(enablePrivacySandboxSdkConsumption)
         }
     }
 
@@ -128,8 +124,6 @@ abstract class ExtractApksTask : NonIncrementalTask() {
         abstract val variantName: Property<String>
         abstract val optionalListOfDynamicModulesToInstall: ListProperty<String>
         abstract val setIncludeMetadata: Property<Boolean>
-        abstract val enablePrivacySandboxSdkConsumption: Property<Boolean>
-
     }
 
     abstract class BundleToolRunnable : ProfileAwareWorkAction<Params>() {
@@ -142,12 +136,6 @@ abstract class ExtractApksTask : NonIncrementalTask() {
             Files.newBufferedReader(parameters.deviceConfig.get().toPath(), Charsets.UTF_8).use {
                 JsonFormat.parser().merge(it, builder)
             }
-            if (parameters.enablePrivacySandboxSdkConsumption.get() && builder.codename == "TiramisuPrivacySandbox" && builder.sdkVersion == 32) {
-                // Bundle tool changed this behavior to use the 'feature version', but Studio
-                // doesn't use bundle tool to generate the device config
-                // so to unblock b/235469089 just hard code this special case
-                builder.sdkVersion = 33
-            }
 
             val command = ExtractApksCommand
                 .builder()
@@ -158,7 +146,7 @@ abstract class ExtractApksTask : NonIncrementalTask() {
                 .also {
                     if (parameters.optionalListOfDynamicModulesToInstall.get().isNotEmpty()) {
                         it.setModules(
-                                parameters.optionalListOfDynamicModulesToInstall.get().toImmutableSet()
+                            parameters.optionalListOfDynamicModulesToInstall.get().toImmutableSet()
                         )
                         it.setIncludeMetadata(parameters.setIncludeMetadata.get())
                     }
@@ -196,7 +184,7 @@ abstract class ExtractApksTask : NonIncrementalTask() {
                 }
                 reader.endObject()
                 deliveryTypeMap.forEach { elementList.add(BuiltArtifactImpl.make(outputFile = parameters.outputDir.asFile.get().absolutePath + "/" + it.key,
-                        attributes = mapOf("deliveryType" to it.value))) }
+                    attributes = mapOf("deliveryType" to it.value))) }
 
                 fileReader.close()
                 FileUtils.deleteIfExists(metadataJson)
@@ -210,7 +198,7 @@ abstract class ExtractApksTask : NonIncrementalTask() {
                     parameters.outputDir.asFileTree.files.forEach { elementList.add(BuiltArtifactImpl.make(outputFile = it.absolutePath)) }
                     elementList
                 }
-            else elementList
+                else elementList
 
             ).saveToFile(parameters.apksFromBundleIdeModel.asFile.get())
         }
@@ -235,8 +223,8 @@ abstract class ExtractApksTask : NonIncrementalTask() {
                 ExtractApksTask::outputDir)
                 .on(InternalArtifactType.EXTRACTED_APKS)
             creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    ExtractApksTask::apksFromBundleIdeModel)
+                taskProvider,
+                ExtractApksTask::apksFromBundleIdeModel)
                 .withName(BuiltArtifactsImpl.METADATA_FILE_NAME)
                 .on(InternalArtifactType.APK_FROM_BUNDLE_IDE_MODEL)
         }
@@ -266,7 +254,6 @@ abstract class ExtractApksTask : NonIncrementalTask() {
             }
             task.dynamicModulesToInstall.disallowChanges()
             task.setIncludeMetadata.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.ENABLE_LOCAL_TESTING])
-            task.enablePrivacySandboxSdkConsumption.setDisallowChanges(creationConfig.privacySandboxCreationConfig != null)
         }
     }
 }

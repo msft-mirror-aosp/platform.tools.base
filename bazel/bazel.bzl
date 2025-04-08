@@ -985,25 +985,16 @@ def split_srcs(src_dirs, res_dirs, exclude):
     Returns:
         A struct representing groups of source files.
     """
-    roots = src_dirs + res_dirs
-    exts = ["java", "kt", "groovy", "DS_Store", "flex"]
-    excludes = []
-    for root in roots:
-        excludes += [root + "/**/*." + ext for ext in exts]
+    javas = native.glob([src + "/**/*.java" for src in src_dirs], exclude)
+    kotlins = native.glob([src + "/**/*.kt" for src in src_dirs], exclude)
+    resources = native.glob([src + "/**" for src in res_dirs], exclude + ["**/.DS_Store"])
 
-    resources = native.glob(
-        include = [src + "/**" for src in roots],
-        exclude = excludes,
-    )
     groovies = native.glob([src + "/**/*.groovy" for src in src_dirs], exclude)
     if groovies:
         fail("Groovy is not supported")
 
-    javas = native.glob([src + "/**/*.java" for src in src_dirs], exclude)
-    kotlins = native.glob([src + "/**/*.kt" for src in src_dirs], exclude)
-
     return struct(
-        roots = roots,
+        roots = src_dirs + res_dirs,
         resources = resources,
         javas = javas,
         kotlins = kotlins,

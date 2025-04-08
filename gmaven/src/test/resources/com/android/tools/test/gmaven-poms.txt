@@ -52,7 +52,7 @@ androidx.databinding:databinding-ktx
     androidx.lifecycle:lifecycle-service (compile)
     androidx.lifecycle:lifecycle-viewmodel (compile)
     androidx.databinding:databinding-runtime (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 androidx.databinding:databinding-runtime
   pomName=
@@ -461,7 +461,7 @@ com.android.tools.build:aaptcompiler
     com.android.tools:common (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.google.guava:guava (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.build:apksig
   pomName=com.android.tools.build.apksig
@@ -496,7 +496,7 @@ com.android.tools.build:builder
     com.android.tools.analytics-library:protos (runtime)
     com.android.tools.analytics-library:tracker (runtime)
     com.android.tools.layoutlib:layoutlib-api (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     org.bouncycastle:bcpkix-jdk18on (runtime)
     org.bouncycastle:bcprov-jdk18on (runtime)
     javax.inject:javax.inject (runtime)
@@ -507,7 +507,7 @@ com.android.tools.build:builder-model
   description=Model for the Builder library.
   dependencies:
     com.android.tools:annotations (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.build:builder-test-api
   pomName=com.android.tools.build.builder-test-api
@@ -550,7 +550,7 @@ com.android.tools.build:gradle
     com.android.tools.utp:android-test-plugin-host-logcat-proto (runtime)
     com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
     com.android.tools.utp:android-test-plugin-result-listener-gradle-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.android.tools.build:transform-api (runtime)
     org.apache.httpcomponents:httpmime (runtime)
     commons-io:commons-io (runtime)
@@ -585,13 +585,13 @@ com.android.tools.build:gradle-api
     org.ow2.asm:asm (compile)
     com.android.tools.build:builder-test-api (runtime)
     com.google.guava:guava (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.build:gradle-kotlin
   pomName=com.android.tools.build.gradle-kotlin
   description=Gradle plugin to register and configure Kotlin tasks for Android projects.
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     org.jetbrains.kotlin:kotlin-gradle-plugin (runtime)
 
 com.android.tools.build:gradle-settings
@@ -599,13 +599,13 @@ com.android.tools.build:gradle-settings
   description=Gradle Settings plug-in to build Android applications.
   dependencies:
     com.android.tools.build:gradle-settings-api (compile)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.build:gradle-settings-api
   pomName=com.android.tools.build.gradle-settings-api
   description=Gradle Settings API to build Android applications.
   dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.build:manifest-merger
   pomName=com.android.tools.build.manifest-merger
@@ -615,7 +615,7 @@ com.android.tools.build:manifest-merger
     com.android.tools:sdklib (runtime)
     com.android.tools:sdk-common (runtime)
     com.google.code.gson:gson (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.chunkio:chunkio
   pomName=ChunkIO
@@ -814,8 +814,8 @@ com.android.tools.utp:android-device-provider-ddmlib
     com.google.protobuf:protobuf-java (runtime)
     com.android.tools.utp:android-device-provider-ddmlib-proto (runtime)
     com.android.tools.utp:android-device-provider-profile (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
     com.google.testing.platform:core-proto (runtime)
     com.google.testing.platform:android-device-provider-local (runtime)
 
@@ -830,7 +830,7 @@ com.android.tools.utp:android-device-provider-gradle
   description=A UTP plugin to provide a Gradle managed virtual Android device
   dependencies:
     com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.android.tools.utp:android-device-provider-gradle-proto (runtime)
     com.android.tools.utp:android-device-provider-profile (runtime)
@@ -865,7 +865,7 @@ com.android.tools.utp:android-test-plugin-host-additional-test-output
     com.android.tools:common (runtime)
     com.android.tools.utp:utp-common (runtime)
     com.android.tools.utp:android-test-plugin-host-additional-test-output-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.google.testing.platform:android-device-provider-local (runtime)
 
@@ -880,7 +880,7 @@ com.android.tools.utp:android-test-plugin-host-apk-installer
   description=A UTP plugin to install test APKs on Android devices
   dependencies:
     com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
     com.google.testing.platform:android-device-provider-local (runtime)
@@ -898,7 +898,7 @@ com.android.tools.utp:android-test-plugin-host-coverage
   dependencies:
     com.android.tools:common (runtime)
     com.android.tools.utp:android-test-plugin-host-coverage-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.google.testing.platform:android-device-provider-local (runtime)
 
@@ -913,7 +913,7 @@ com.android.tools.utp:android-test-plugin-host-device-info
   description=A UTP plugin to export additional Android device information
   dependencies:
     com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.android.tools.utp:utp-common (runtime)
     com.android.tools.utp:android-test-plugin-host-device-info-proto (runtime)
@@ -930,8 +930,8 @@ com.android.tools.utp:android-test-plugin-host-emulator-control
   description=A UTP plugin that provides access to the gRPC endpoint of the emulator.
   dependencies:
     com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
     commons-io:commons-io (runtime)
     com.google.code.gson:gson (runtime)
     com.google.protobuf:protobuf-java (runtime)
@@ -956,7 +956,7 @@ com.android.tools.utp:android-test-plugin-host-logcat
     com.android.tools:common (runtime)
     com.android.tools.utp:utp-common (runtime)
     com.android.tools.utp:android-test-plugin-host-logcat-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.google.testing.platform:android-device-provider-local (runtime)
 
@@ -972,8 +972,8 @@ com.android.tools.utp:android-test-plugin-result-listener-gradle
   dependencies:
     com.android.tools:common (runtime)
     com.android.tools.utp:android-test-plugin-result-listener-gradle-proto (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
-    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
     com.google.code.gson:gson (runtime)
     io.grpc:grpc-core (runtime)
     io.grpc:grpc-protobuf (runtime)

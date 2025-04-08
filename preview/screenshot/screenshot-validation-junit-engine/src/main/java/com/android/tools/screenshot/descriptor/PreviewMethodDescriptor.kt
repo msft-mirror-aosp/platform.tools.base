@@ -16,7 +16,6 @@
 
 package com.android.tools.screenshot.descriptor
 
-import com.android.tools.preview.multipreview.PreviewMethod
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.TestSource
@@ -30,7 +29,6 @@ class PreviewMethodDescriptor(
     parentId: UniqueId,
     private val className: String,
     private val methodName: String,
-    private val preview: PreviewMethod
 )
     : AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, methodName), methodName), Node<PreviewScreenshotExecutionContext> {
     companion object {
@@ -49,6 +47,9 @@ class PreviewMethodDescriptor(
         context: PreviewScreenshotExecutionContext,
         dynamicTestExecutor: Node.DynamicTestExecutor
     ): PreviewScreenshotExecutionContext {
+        val preview = requireNotNull(context.methodNameToPreview["${className}.${methodName}"]) {
+            "@Preview annotation is required for @PreviewTest"
+        }
         preview.previewAnnotations.forEach { previewAnnotation ->
             val childNode = PreviewAnnotationDescriptor(
                 uniqueId, className, methodName, preview, previewAnnotation,

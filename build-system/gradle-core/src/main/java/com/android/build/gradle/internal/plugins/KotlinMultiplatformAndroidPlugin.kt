@@ -69,6 +69,7 @@ import com.android.build.gradle.internal.multiplatform.KotlinMultiplatformAndroi
 import com.android.build.gradle.internal.multiplatform.KotlinMultiplatformAndroidHandlerImpl
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.KotlinMultiplatformBuildFeaturesValuesImpl
+import com.android.build.gradle.internal.scope.KotlinMultiplatformHostTestBuildFeaturesValuesImpl
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
@@ -552,6 +553,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             dslInfo = dslInfo,
             internalServices = variantServices,
             buildFeatures = KotlinMultiplatformBuildFeaturesValuesImpl(
+                androidExtension.androidResources,
                 ModulePropertyKey.BooleanWithDefault.KMP_ANDROID_RESOURCES_ENABLED.getValue(
                     dslInfo.experimentalProperties
                 )
@@ -601,8 +603,9 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         return KmpHostTestImpl(
             dslInfo = dslInfo,
             internalServices = variantServices,
-            buildFeatures = KotlinMultiplatformBuildFeaturesValuesImpl(
-                androidResources = global.unitTestOptions.isIncludeAndroidResources
+            buildFeatures = KotlinMultiplatformHostTestBuildFeaturesValuesImpl(
+                androidExtension.androidResources,
+                global.unitTestOptions.isIncludeAndroidResources,
             ),
             variantDependencies = createVariantDependencies(project, dslInfo, kotlinCompilation, androidTarget),
             paths = paths,
@@ -667,6 +670,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             dslInfo = dslInfo,
             internalServices = variantServices,
             buildFeatures = KotlinMultiplatformBuildFeaturesValuesImpl(
+                androidExtension.androidResources,
                 ModulePropertyKey.BooleanWithDefault.KMP_ANDROID_RESOURCES_ENABLED.getValue(
                     mainVariant.dslInfo.experimentalProperties
                 )

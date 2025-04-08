@@ -7,6 +7,7 @@ import com.android.tools.appinspection.network.reporters.StreamReporter.BufferHe
 import com.android.tools.appinspection.network.reporters.StreamReporter.InputStreamReporter
 import com.android.tools.appinspection.network.reporters.StreamReporter.OutputStreamReporter
 import com.android.tools.appinspection.network.testing.FakeConnection
+import com.android.tools.appinspection.network.testing.TestStreamReporter
 import com.android.tools.appinspection.network.testing.getLogLines
 import com.android.tools.idea.protobuf.ByteString
 import com.google.common.truth.Truth.assertThat
@@ -146,20 +147,6 @@ class StreamReporterTest {
         throw OutOfMemoryError()
       }
       return buffer.toByteString()
-    }
-  }
-
-  private class TestStreamReporter(
-    connection: Connection,
-    threadReporter: ThreadReporter,
-    connectionId: Long,
-    maxBufferSize: Int?,
-    bufferHelper: BufferHelper?,
-  ) : StreamReporter(connection, threadReporter, connectionId, maxBufferSize, bufferHelper) {
-    var data: String? = null
-
-    override fun onClosed(data: ByteString) {
-      this.data = data.toStringUtf8()
     }
   }
 

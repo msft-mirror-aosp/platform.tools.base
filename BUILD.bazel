@@ -55,17 +55,15 @@ maven_repository(
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.dokka.dokka-core",
         "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-common_2.1.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.20",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlin.kotlin-test-junit",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android_1.6.4",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.4.1",
-        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.6.4",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.8.0",
         "@maven//:org.jetbrains.markdown",
         "@maven//:org.junit.junit-bom_5.10.2",
         "@maven//:org.junit.junit-bom_5.9.2",
@@ -87,6 +85,7 @@ maven_repository(
         "//tools/base/firebase/testlab/testlab-gradle-plugin:__pkg__",
         "//tools/base/journeys:__subpackages__",
         "//tools/base/preview/screenshot/screenshot-test-gradle-plugin:__pkg__",
+        "//tools/base/utp:__subpackages__",
     ],
 )
 
@@ -150,6 +149,7 @@ AGP_TEST_ARTIFACTS = [
     "//tools/base/lint/cli",  # TODO(b/143864616): Only used for tests
     "//tools/base/lint:tools.lint-api",  # TODO(b/143864616): Only used for tests
     "//tools/base/lint:tools.lint-checks",  # TODO(b/143864616): Only used for tests
+    "//tools/base/preview/screenshot/screenshot-validation-api",  # Used for preview screenshot testing
     "//tools/base/preview/screenshot/screenshot-validation-junit-engine",  # Used for preview screenshot testing
     "//tools/base/standalone-render/compose-cli:compose-preview-renderer",  # Used for preview screenshot testing
     "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",  # Used for preview screenshot testing

@@ -30,7 +30,9 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.ApplicationBuildFeaturesImpl
 import com.android.build.gradle.internal.dsl.ApplicationExtensionImpl
+import com.android.build.gradle.internal.errors.AndroidProblemReporterProvider
 import com.android.build.gradle.internal.errors.SyncIssueReporterImpl
+import com.android.build.gradle.internal.fixtures.FakeAndroidProblemsReporter
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeLogger
 import com.android.build.gradle.internal.fixtures.ProjectFactory
@@ -72,7 +74,8 @@ class ModelBuilderTest {
 
     private val project: Project = ProjectFactory.project
     private val projectServices: ProjectServices = createProjectServices(
-        issueReporter = SyncIssueReporterImpl(SyncOptions.EvaluationMode.IDE, SyncOptions.ErrorFormatMode.HUMAN_READABLE, FakeLogger())
+        issueReporter = SyncIssueReporterImpl(SyncOptions.EvaluationMode.IDE, SyncOptions.ErrorFormatMode.HUMAN_READABLE, FakeLogger(),
+            FakeAndroidProblemsReporter())
     )
 
     @Before
@@ -218,9 +221,12 @@ class ModelBuilderTest {
             variantInputModel
         )
 
+        val androidProblemReporterProvider = AndroidProblemReporterProvider.RegistrationAction(project, false).execute()
+
         // make sure the global issue reporter is registered
         SyncIssueReporterImpl.GlobalSyncIssueService.RegistrationAction(
-            project, SyncOptions.EvaluationMode.IDE, SyncOptions.ErrorFormatMode.MACHINE_PARSABLE
+            project, SyncOptions.EvaluationMode.IDE, SyncOptions.ErrorFormatMode.MACHINE_PARSABLE,
+            androidProblemReporterProvider
         ).execute()
 
         return ModelBuilder(project, createVariantModel(), extension)

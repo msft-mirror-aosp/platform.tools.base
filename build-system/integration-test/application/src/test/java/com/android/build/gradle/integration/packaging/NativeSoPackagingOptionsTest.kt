@@ -161,8 +161,10 @@ class NativeSoPackagingOptionsTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .attributes()
-                .contains("http://schemas.android.com/apk/res/android:extractNativeLibs=true")
+                .containsAttributeAndValue(
+                    "http://schemas.android.com/apk/res/android:extractNativeLibs",
+                    "true"
+                )
 
         }
 
@@ -196,8 +198,10 @@ class NativeSoPackagingOptionsTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .attributes()
-                .contains("http://schemas.android.com/apk/res/android:extractNativeLibs=false")
+                .containsAttributeAndValue(
+                    "http://schemas.android.com/apk/res/android:extractNativeLibs",
+                    "false"
+                )
         }
 
         appSubProject.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {

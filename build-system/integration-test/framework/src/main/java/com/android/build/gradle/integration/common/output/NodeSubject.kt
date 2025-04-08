@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.output
 
 import com.google.common.truth.FailureMetadata
-import com.google.common.truth.IterableSubject
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Subject
 
@@ -159,39 +158,162 @@ class NodeSubject(
     }
 
     /**
-     * Returns an iterable subject for all the children nodes. The collection only contains the
-     * node names.
+     * Validates whether the current node contains the given node.
+     */
+    fun containsNode(name: String) {
+        setActualAsCurrentNode()
+        check("containsNode($name)").that(actual().children.map { it.name }).contains(name)
+    }
+
+    /**
+     * Validates whether the current node contains the given nodes.
      *
      * Note that there may be duplicates
      */
-    fun nodes(): IterableSubject {
+    fun containsAtLeastNodes(vararg names: String) {
         setActualAsCurrentNode()
-        return check("nodes()").that(actual().children.map { it.name })
+        check("containsAtLeastNodes()").that(actual().children.map { it.name }).containsAtLeastElementsIn(names)
     }
 
+    /**
+     * Validates whether the current node contains exactly the given nodes.
+     */
+    fun containsExactlyNodes(vararg names: String) {
+        setActualAsCurrentNode()
+        check("containsExactlyNodes()").that(actual().children.map { it.name }).containsExactly(*names)
+    }
+
+    /**
+     * Validates that there are no sub-nodes.
+     */
     fun hasNoNodes() {
         setActualAsCurrentNode()
         return check("hasNoNodes").that(actual().children).isEmpty()
     }
 
     /**
-     * Returns an iterable subject for all the attributes.
+     * Validates whether the given attribute is present.
      *
-     * Each attribute is in the format `[namespace:]name=value`
+     * @param name the name of the attribute, without the value
      */
-    fun attributes(): IterableSubject {
+    fun containsAttribute(name: String) {
         setActualAsCurrentNode()
-        return check("attributes()").that(actual().attributes)
+
+        // go through the attributes and extract the attribute name only (all attributes are
+        // in the name=value format)
+        val attributeNames = actual().attributes.map {
+            it.split('=')[0]
+        }
+
+        check("containsAttribute($name)").that(attributeNames).contains(name)
     }
 
     /**
-     * Returns the list of registered namespaces as an iterable subject
+     * Validates whether the given attributes are present.
+     *
+     * @param names the names of the attributes, without the values
+     */
+    fun containsAtLeastAttributes(vararg names: String) {
+        setActualAsCurrentNode()
+
+        // go through the attributes and extract the attribute name only (all attributes are
+        // in the name=value format)
+        val attributeNames = actual().attributes.map {
+            it.split('=')[0]
+        }
+
+        check("containsAtLeastAttributes()").that(attributeNames).containsAtLeastElementsIn(names)
+    }
+
+    /**
+     * Validates whether the given attributes are an exact match for the current node attributes.
+     *
+     * @param names the names of the attributes, without the values
+     */
+    fun containsExactlyAttributes(vararg names: String) {
+        setActualAsCurrentNode()
+
+        // go through the attributes and extract the attribute name only (all attributes are
+        // in the name=value format)
+        val attributeNames = actual().attributes.map {
+            it.split('=')[0]
+        }
+
+        check("containsAtLeastAttributes()").that(attributeNames).containsExactly(*names)
+    }
+
+    /**
+     * Validates whether the given attribute is present with the given value
+     *
+     * @param name the name of the attribute
+     * @param value the value of the attribute
+     */
+    fun containsAttributeAndValue(name: String, value: String) {
+        setActualAsCurrentNode()
+
+        // go through each attribute searching for the matching names, and record values along the
+        // way. There should not be be more than one match.
+        var matchValue: String? = null
+        val attributeNames = actual().attributes.map {
+            val splits = it.split('=')
+            if (splits[0] == name) matchValue = splits[1]
+            splits[0]
+        }
+
+        check("containsAttribute($name)").that(attributeNames).contains(name)
+
+        // at this point value should be set unless we've failed above while testing the fixture
+        value?.let {
+            check("containsAttributeAndValue($name, $value).value()").that(matchValue).isEqualTo(value)
+        }
+    }
+
+    /**
+     * Validates whether the given attributes, with values, are present.
+     *
+     * @param namesAndValues the names and values for each attribute, in the format `name=value`.
+     */
+    fun containsAtLeastAttributesAndValues(vararg namesAndValues: String) {
+        setActualAsCurrentNode()
+        check("containsAtLeastAttributesAndValues()")
+            .that(actual().attributes)
+            .containsAtLeastElementsIn(namesAndValues)
+    }
+
+    /**
+     * Validates whether the given attributes, with values, are an exact match for the current node attributes.
+     *
+     * @param namesAndValues the names and values for each attribute, in the format `name=value`.
+     */
+    fun containsExactlyAttributesAndValues(vararg namesAndValues: String) {
+        setActualAsCurrentNode()
+        check("containsExactlyAttributesAndValues()")
+            .that(actual().attributes)
+            .containsExactly(*namesAndValues)
+    }
+
+    /**
      *
      * Note that this is only valid for the root node.
      */
-    fun namespaces(): IterableSubject {
+    fun containsNamespace(namespace: String) {
         setActualAsCurrentNode()
-        return check("namespaces()").that(actual().namespace)
+        check("containsNamespace($namespace)").that(actual().namespace).contains(namespace)
+    }
+
+    fun containsNamespaces(vararg namespaces: String) {
+        setActualAsCurrentNode()
+        check("containsNamespaces()").that(actual().namespace).containsAtLeastElementsIn(namespaces)
+    }
+
+    fun containsExactlyNamespaces(vararg namespaces: String) {
+        setActualAsCurrentNode()
+        check("containsExactlyNamespaces()").that(actual().namespace).containsExactlyElementsIn(namespaces)
+    }
+
+    fun hasNoNamespaces() {
+        setActualAsCurrentNode()
+        check("hasNoNamespaces()").that(actual().namespace).isEmpty()
     }
 
     /**
@@ -211,6 +333,7 @@ class NodeSubject(
         (actual() as NodeImpl).setAsCurrent()
     }
 }
+
 
 interface Node {
     val name: String

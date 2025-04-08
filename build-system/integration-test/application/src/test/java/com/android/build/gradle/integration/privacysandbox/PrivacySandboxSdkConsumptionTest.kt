@@ -161,7 +161,7 @@ class PrivacySandboxSdkConsumptionTest {
                     .nodeByNameAndAttribute("uses-sdk-library", "com.example.privacysandboxsdk")
                     .apply {
                         certDigest = getAttributeValue("http://schemas.android.com/apk/res/android:certDigest")
-                        attributes().containsExactly(
+                        containsExactlyAttributesAndValues(
                             "http://schemas.android.com/apk/res/android:name=\"com.example.privacysandboxsdk\"",
                             "http://schemas.android.com/apk/res/android:certDigest=$certDigest",
                             "http://schemas.android.com/apk/res/android:versionMajor=10002"
@@ -171,7 +171,7 @@ class PrivacySandboxSdkConsumptionTest {
                 // we want to validate that the internet permission is not present.
                 // validate the number of permissions, and then verify each permission to
                 // not be internet
-                nodes().containsExactly(
+                containsExactlyNodes(
                     "uses-sdk",
                     "uses-permission",
                     "uses-permission",
@@ -210,8 +210,7 @@ class PrivacySandboxSdkConsumptionTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .nodes()
-                .containsExactly("meta-data")
+                .containsExactlyNodes("meta-data")
         }
 
         ApkSubject.assertThat(baseMaster3Apk) {
@@ -296,10 +295,11 @@ class PrivacySandboxSdkConsumptionTest {
                 .node("application")
                 .nodeByNameAndAttribute("uses-sdk-library", "com.example.privacysandboxsdk")
                 .apply {
-                    attributes()
-                        .contains("http://schemas.android.com/apk/res/android:versionMajor=10002")
-                    attribute("http://schemas.android.com/apk/res/android:certDigest")
-                        .isNotEmpty()
+                    containsAttributeAndValue(
+                        "http://schemas.android.com/apk/res/android:versionMajor",
+                        "10002"
+                    )
+                    containsAttribute("http://schemas.android.com/apk/res/android:certDigest")
                 }
 
             // validate RuntimeEnabledSdkTable.xml is not present.
@@ -331,8 +331,7 @@ class PrivacySandboxSdkConsumptionTest {
             manifestAsNodes()
                 .node("manifest")
                 .node("application")
-                .nodes()
-                .isEmpty()
+                .hasNoNodes()
         }
     }
 
@@ -417,13 +416,14 @@ class PrivacySandboxSdkConsumptionTest {
 
         ApkSubject.assertThat(extractedSdkApks.single { it.name == "example-app-debug-injected-privacy-sandbox-compat.apk" }) {
             manifestAsNodes().node("manifest").apply {
-                attributes().containsAtLeast(
+                containsAtLeastAttributesAndValues(
                     "http://schemas.android.com/apk/res/android:isFeatureSplit=true",
                     "split=\"exampleappdebuginjectedprivacysandboxcompat\""
                 )
-                node("application")
-                    .attributes()
-                    .contains("http://schemas.android.com/apk/res/android:hasCode=false")
+                node("application").containsAttributeAndValue(
+                    "http://schemas.android.com/apk/res/android:hasCode",
+                    "false"
+                )
             }
 
             javaResources().containsExactly(

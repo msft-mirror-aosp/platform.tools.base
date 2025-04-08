@@ -41,7 +41,7 @@ class LintTextOutputTest {
                         """
                             android {
                                 lintOptions {
-                                    disable 'AllowBackup', 'MissingApplicationIcon'
+                                    disable 'AllowBackup', 'MissingApplicationIcon', 'GradleDependency'
                                     error 'Fake'
                                     textOutput 'stdout'
                                 }

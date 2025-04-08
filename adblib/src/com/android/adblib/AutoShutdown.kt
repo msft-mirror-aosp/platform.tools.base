@@ -36,3 +36,18 @@ interface AutoShutdown : AutoCloseable {
      */
     suspend fun shutdown()
 }
+
+/**
+ * Executes the given [block] function on this [AutoShutdown] resource, then executes
+ * [AutoShutdown.shutdown] on success, and then executes [java.lang.AutoCloseable.close]
+ * whether an exception is thrown or not.
+ */
+suspend inline fun <T: AutoShutdown, R> T.useShutdown(block: (T) -> R): R {
+    // Call `close` unconditionally
+    return use {
+        block(this).also {
+            // Call `shutdown` only on successful termination of `block`
+            shutdown()
+        }
+    }
+}

@@ -6928,6 +6928,59 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testKspVersionSuggestions() {
+    lint()
+      .files(
+        gradleToml(
+            """
+            [versions]
+            ksp = "1.5.30-1.0.0"
+
+            [plugins]
+            ksp = { id = "com.google.devtools.ksp", version.ref = "ksp"}
+            """
+          )
+          .indented(),
+        gradle(
+            """
+            plugins {
+                alias(libs.plugins.ksp)
+            }
+            """
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY, REMOTE_VERSION)
+      .networkData(
+        "https://plugins.gradle.org/m2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml",
+        """
+        <metadata>
+          <groupId>com.google.devtools.ksp</groupId>
+          <artifactId>com.google.devtools.ksp.gradle.plugin</artifactId>
+          <versioning>
+            <versions>
+              <version>1.5.21-1.0.0-beta07</version>
+              <version>1.6.0-1.0.1</version>
+              <version>1.6.0-1.0.2</version>
+              <version>1.8.22-1.0.11</version>
+              <version>2.1.20-1.0.32</version>
+            </versions>
+          </versioning>
+        </metadata>
+        """
+          .trimIndent(),
+      )
+      .run()
+      .expect(
+        """
+        ../gradle/libs.versions.toml:2: Warning: A newer version of com.google.devtools.ksp than 1.5.30-1.0.0 is available: 2.1.20-1.0.32 [NewerVersionAvailable]
+        ksp = "1.5.30-1.0.0"
+              ~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
   fun testKaptToKspMigration() {
     lint()
       .files(

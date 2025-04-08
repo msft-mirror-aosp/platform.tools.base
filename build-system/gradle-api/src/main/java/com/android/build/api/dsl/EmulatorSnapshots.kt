@@ -24,6 +24,7 @@ import org.gradle.api.Incubating
  * When enabled, Android Test Retention automatically takes emulator snapshots on test failures.
  */
 @Incubating
+@Deprecated("This feature is no longer developed and supported. API will be removed in AGP 9.0")
 interface EmulatorSnapshots {
     /** Enables automated test failure snapshots. Default to false. */
     var enableForTestFailures: Boolean

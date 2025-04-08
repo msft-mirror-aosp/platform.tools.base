@@ -16,8 +16,9 @@
 
 package com.android.tools.screenshot.resolver
 
-import com.android.tools.preview.multipreview.PreviewMethod
+import com.android.tools.screenshot.PreviewTest
 import com.android.tools.screenshot.descriptor.PreviewMethodDescriptor
+import org.junit.platform.commons.util.AnnotationUtils.isAnnotated
 import org.junit.platform.engine.discovery.DiscoverySelectors
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.support.discovery.SelectorResolver
@@ -25,10 +26,11 @@ import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
 import java.util.Optional
 
-class MethodSelectorResolver(private val methodNameToPreview: Map<String, PreviewMethod>) : SelectorResolver {
+class MethodSelectorResolver : SelectorResolver {
     override fun resolve(selector: MethodSelector, context: SelectorResolver.Context): Resolution {
-        val preview = methodNameToPreview["${selector.className}.${selector.methodName}"]
-            ?: return Resolution.unresolved()
+        if (!isAnnotated(selector.javaMethod, PreviewTest::class.java)) {
+            return Resolution.unresolved()
+        }
         return context.addToParent(
             { DiscoverySelectors.selectClass(selector.className) },
             { parent -> Optional.of(
@@ -36,7 +38,6 @@ class MethodSelectorResolver(private val methodNameToPreview: Map<String, Previe
                     parent.uniqueId,
                     selector.className,
                     selector.methodName,
-                    preview
                 )
             )
             }

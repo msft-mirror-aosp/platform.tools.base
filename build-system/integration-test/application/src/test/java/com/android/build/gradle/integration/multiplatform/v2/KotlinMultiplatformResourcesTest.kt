@@ -18,13 +18,10 @@ package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
-import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.output.JarSubject
-import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.truth.PathSubject
-import com.android.testutils.truth.ZipFileSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Before
@@ -44,7 +41,9 @@ class KotlinMultiplatformResourcesTest {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
                 kotlin.androidLibrary {
-                    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+                    androidResources {
+                        enable = true
+                    }
                 }
             """.trimIndent()
         )

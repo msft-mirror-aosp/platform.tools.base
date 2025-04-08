@@ -427,6 +427,8 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
+    ENABLE_PROBLEMS_API("android.enableProblemsAPI", false, FeatureStage.Experimental),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */

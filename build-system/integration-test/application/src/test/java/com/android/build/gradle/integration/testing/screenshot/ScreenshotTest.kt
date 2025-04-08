@@ -80,7 +80,15 @@ class ScreenshotTest {
     val temporaryFolder = TemporaryFolder()
 
     private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.setupProject(addEmptyJarToClassPath: Boolean = true) {
-        applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS)
+        applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.KOTLIN_VERSION_FOR_TESTS)
+        applyPlugin(
+            PluginType.Custom(
+                id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
+                version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+                artifact = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin",
+                hasMarker = false,
+            )
+        )
         applyPlugin(
             PluginType.Custom(
                 id = "com.android.compose.screenshot",
@@ -114,6 +122,7 @@ class ScreenshotTest {
             experimentalProperties["android.experimental.enableScreenshotTest"] = true
         }
         dependencies {
+            screenshotTestImplementation("com.android.tools.screenshot:screenshot-validation-api:+")
             testImplementation("junit:junit:4.13.2")
             implementation("androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}")
             implementation("androidx.compose.ui:ui-tooling-preview:${TaskManager.COMPOSE_UI_VERSION}")
@@ -179,20 +188,24 @@ class ScreenshotTest {
                     import androidx.compose.ui.tooling.preview.Preview
                     import androidx.compose.ui.tooling.preview.PreviewParameter
                     import androidx.compose.runtime.Composable
+                    import com.android.tools.screenshot.PreviewTest
 
                     class ExampleTest {
+                        @PreviewTest
                         @Preview(name = "simpleComposable", showBackground = true)
                         @Composable
                         fun simpleComposableTest() {
                             SimpleComposable()
                         }
 
+                        @PreviewTest
                         @Preview(name = "simpleComposable", widthDp = 800, heightDp = 800)
                         @Composable
                         fun simpleComposableTest2() {
                             SimpleComposable()
                         }
 
+                        @PreviewTest
                         @Preview(name = "with_Background", showBackground = true)
                         @Preview(name = "withoutBackground", showBackground = false)
                         @Composable
@@ -200,6 +213,7 @@ class ScreenshotTest {
                             SimpleComposable()
                         }
 
+                        @PreviewTest
                         @Preview(name = "simplePreviewParameterProvider")
                         @Composable
                         fun parameterProviderTest(
@@ -208,6 +222,7 @@ class ScreenshotTest {
                            SimpleComposable(data)
                         }
 
+                        @PreviewTest
                         @Preview(name = "invalid/File/Name")
                         @Composable
                         fun previewNameCannotBeUsedAsFileNameTest() {
@@ -225,7 +240,9 @@ class ScreenshotTest {
                     import androidx.compose.ui.tooling.preview.Preview
                     import androidx.compose.ui.tooling.preview.PreviewParameter
                     import androidx.compose.runtime.Composable
+                    import com.android.tools.screenshot.PreviewTest
 
+                    @PreviewTest
                     @Preview(showBackground = true)
                     @Composable
                     fun simpleComposableTest_3() {
@@ -570,6 +587,42 @@ class ScreenshotTest {
 
         val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
         assertThat(indexHtmlReport).exists()
+    }
+
+    @Test
+    fun runPreviewScreenshotTestWithNoPreviewAnnotation() {
+        val build = rule.build {
+            androidApplication {
+                // Comment out preview tests so that source files exist with no previews to test
+                files {
+                    add(
+                        "src/screenshotTest/java/com/PreviewTestWithoutPreview.kt",
+                        //language=kotlin
+                        """
+                        package pkg.name
+
+                        import com.android.tools.screenshot.PreviewTest
+
+                        @PreviewTest
+                        fun previewTestWithoutPreview() {}
+                        """.trimIndent()
+                    )
+                }
+            }
+        }
+        val appProject = build.androidApplication()
+
+        // Gradle test tasks fail when there are source files but no tests are executed starting in Gradle 9.0
+        build.sstExecutor()
+            .expectFailure()
+            .run(":app:validateDebugScreenshotTest")
+
+        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+        assertThat(indexHtmlReport).exists()
+
+        val xmlReport = appProject.buildDir.resolve("test-results/validateDebugScreenshotTest/TEST-preview-screenshot-test-engine.xml")
+        assertThat(xmlReport).exists()
+        assertThat(xmlReport.readText()).contains("@Preview annotation is required for @PreviewTest")
     }
 
     @Test

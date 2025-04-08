@@ -270,6 +270,7 @@ message UserInputEvent {
         SELECTION = 0;
         HOVER = 1;
         RIGHT_CLICK = 2;
+        DOUBLE_CLICK = 3;
     }
 
     int64 root_id = 1;

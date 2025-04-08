@@ -32,9 +32,13 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaCallCandidateInfo
 import org.jetbrains.kotlin.analysis.api.resolution.KaCallableMemberCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundArrayAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaCompoundVariableAccessCall
+import org.jetbrains.kotlin.analysis.api.resolution.KaPartiallyAppliedSymbol
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaDeclarationSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.name
 import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
 import org.jetbrains.kotlin.builtins.StandardNames
 import org.jetbrains.kotlin.psi.KtElement
@@ -108,78 +112,91 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
             .resolveToCallCandidates()
             // Only applicable candidates
             .filterIsInstance<KaApplicableCallCandidateInfo>()
-        if (candidates.size <= 1) return
+        // Early bail-out: no conflicts
+        if (candidates.size <= 1) {
+          return
+        }
         val (extensions, members) = candidates.partition { it.hasExtensionReceiver() }
+        // Another bail-out: no members
+        if (members.isEmpty()) {
+          return
+        }
+        // Member is chosen over extension.
+        // So, one of candidate members must be the "best" candidate.
+        val filteredMember = members.singleOrNull { it.isInBestCandidates }
+        // Otherwise, extension (along with explicit import) is chosen. Hence, no conflict.
+        if (filteredMember == null) {
+          return
+        }
         val filteredExtensions =
           extensions.filterNot { ext ->
-            ext.isNullableExtensionReceiver() && ext.isFromKotlinBuiltIns()
+            // E.g., kotlin.Any?.toString(), kotlin.text.StringBuilder.append(kotlin.Any?)
+            ext.isFromKotlinBuiltIns() &&
+              (ext.hasNullableExtensionReceiver() || ext.hasNullableValueParameters())
           }
-        if (filteredExtensions.isNotEmpty() && members.isNotEmpty()) {
-          reportConflict(this, node, members, filteredExtensions)
+        // Yet another bail-out: no extensions
+        if (filteredExtensions.isEmpty()) {
+          return
         }
+        // Just pick the first extension to report.
+        reportConflict(node, filteredMember, filteredExtensions.first())
+      }
+
+      private fun KaApplicableCallCandidateInfo.partialSymbol(): KaPartiallyAppliedSymbol<*, *>? {
+        return (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
       }
 
       private fun KaApplicableCallCandidateInfo.hasExtensionReceiver(): Boolean {
-        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
-        return symbol?.extensionReceiver != null
+        return partialSymbol()?.extensionReceiver != null
       }
 
-      private fun KaApplicableCallCandidateInfo.isNullableExtensionReceiver(): Boolean {
-        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
-        return symbol?.signature?.receiverType?.nullability == KaTypeNullability.NULLABLE
+      private fun KaApplicableCallCandidateInfo.hasNullableExtensionReceiver(): Boolean {
+        return partialSymbol()?.signature?.receiverType?.nullability == KaTypeNullability.NULLABLE
+      }
+
+      private fun KaApplicableCallCandidateInfo.hasNullableValueParameters(): Boolean {
+        val valueParameters =
+          (partialSymbol()?.symbol as? KaFunctionSymbol)?.valueParameters ?: return false
+        return valueParameters.all { it.returnType.nullability == KaTypeNullability.NULLABLE }
       }
 
       private fun KaApplicableCallCandidateInfo.isFromKotlinBuiltIns(): Boolean {
-        val symbol = (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
-        return symbol
+        return partialSymbol()
           ?.signature
           ?.callableId
           ?.packageName
           ?.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME) == true
       }
 
-      private fun reportConflict(
-        session: KaSession,
+      private fun KaSession.reportConflict(
         node: UElement,
-        members: List<KaCallCandidateInfo>,
-        extensions: List<KaCallCandidateInfo>,
+        member: KaCallCandidateInfo,
+        extension: KaCallCandidateInfo,
       ) {
+        val mem = member.candidate.symbol()
+        val ext = extension.candidate.symbol() as? KaCallableSymbol ?: return
         val message = buildString {
-          append(MSG)
-          append(": members ")
-          members.joinTo(this, prefix = "{", postfix = "}") { info ->
-            info.candidate.symbols().joinToString { symbol ->
-              with(session) {
-                (symbol as? KaDeclarationSymbol)?.render() ?: symbol.psi?.toString() ?: ""
-              }
-            }
-          }
-          append(", extensions ")
-          extensions.joinTo(this, prefix = "{", postfix = "}") { info ->
-            info.candidate.symbols().joinToString { symbol ->
-              with(session) {
-                (symbol as? KaDeclarationSymbol)?.render() ?: symbol.psi?.toString() ?: ""
-              }
-            }
-          }
+          append("`${mem.name?.asString() ?: "<unnamed>"}`")
+          append(" is defined both as a member in class ")
+          val classSymbol = mem.containingDeclaration as? KaClassSymbol
+          append("`${classSymbol?.classId?.asFqNameString() ?: "<unknown>"}`")
+          append(" and an extension in package ")
+          append("`${ext.callableId?.packageName?.asString() ?: "<unknown>"}`. ")
+          append("The defined behavior for this is to use the member, ")
+          append("but since the extension is explicitly imported into this file, ")
+          append("there's a chance that this was not expected. ")
+          append("(One common way this happens is for members to be added to a class ")
+          append("after code was already written to use an extension).")
         }
         context.report(ISSUE, node, context.getLocation(node), message)
       }
 
-      private fun KaCall.symbols(): List<KaSymbol> =
+      private fun KaCall.symbol(): KaSymbol =
         when (this) {
           is KaCompoundVariableAccessCall ->
-            listOfNotNull(
-              variablePartiallyAppliedSymbol.symbol,
-              compoundOperation.operationPartiallyAppliedSymbol.symbol,
-            )
-          is KaCompoundArrayAccessCall ->
-            listOfNotNull(
-              getPartiallyAppliedSymbol.symbol,
-              setPartiallyAppliedSymbol.symbol,
-              compoundOperation.operationPartiallyAppliedSymbol.symbol,
-            )
-          is KaCallableMemberCall<*, *> -> listOf(symbol)
+            compoundOperation.operationPartiallyAppliedSymbol.symbol
+          is KaCompoundArrayAccessCall -> compoundOperation.operationPartiallyAppliedSymbol.symbol
+          is KaCallableMemberCall<*, *> -> symbol
         }
     }
 }

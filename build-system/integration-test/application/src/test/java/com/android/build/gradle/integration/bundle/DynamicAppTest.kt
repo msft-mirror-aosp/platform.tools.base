@@ -1217,11 +1217,6 @@ class DynamicAppTest {
                 .node("manifest")
                 .node("application")
                 .nodeByNameAndAttribute("meta-data", "local_testing_dir")
-                .attributes()
-                .containsExactly(
-                    "http://schemas.android.com/apk/res/android:name=\"local_testing_dir\"",
-                    "http://schemas.android.com/apk/res/android:value=\"local_testing\""
-                )
         }
     }
 

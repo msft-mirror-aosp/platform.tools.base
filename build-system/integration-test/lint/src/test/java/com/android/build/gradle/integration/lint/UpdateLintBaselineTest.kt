@@ -156,7 +156,7 @@ class UpdateLintBaselineTest {
             """
                 android {
                     lint {
-                        disable 'MissingApplicationIcon'
+                        disable 'MissingApplicationIcon', 'GradleDependency'
                         baseline = file('lint-baseline.xml')
                     }
                 }

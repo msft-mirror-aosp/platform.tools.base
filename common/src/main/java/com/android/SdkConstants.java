@@ -2256,9 +2256,6 @@ public final class SdkConstants {
     /** Extension of native debug symbol table files, i.e. "sym" */
     public static final String EXT_SYM = "sym";
 
-    /** Extension of journey test files, i.e. "journey.xml" */
-    public static final String EXT_JOURNEY = "journey" + DOT_XML;
-
     private static final String DOT = ".";
 
     /** Dot-Extension of the Application package Files, i.e. ".apk". */

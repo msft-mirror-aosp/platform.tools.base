@@ -16,11 +16,14 @@
 
 package com.android.build.gradle.internal.plugins;
 
+import java.util.stream.Stream;
+
 import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
 import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
 import static com.android.builder.core.BuilderConstants.FD_REPORTS;
 
 import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.build.gradle.internal.errors.AndroidProblemReporterProvider;
 import com.android.build.gradle.internal.errors.DeprecationReporterImpl;
 import com.android.build.gradle.internal.errors.SyncIssueReporterImpl;
 import com.android.build.gradle.internal.lint.LintFromMaven;
@@ -38,11 +41,8 @@ import com.android.build.gradle.options.ProjectOptionService;
 import com.android.build.gradle.options.ProjectOptions;
 import com.android.build.gradle.options.SyncOptions;
 import com.android.utils.FileUtils;
-
 import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaBasePlugin;
-
-import java.util.stream.Stream;
 
 /**
  * Gradle plugin class for 'reporting' projects.
@@ -54,7 +54,6 @@ class ReportingPlugin implements org.gradle.api.Plugin<Project> {
 
     private TestOptions extension;
 
-    public ReportingPlugin() {}
 
     @Override
     public void apply(final Project project) {
@@ -67,12 +66,18 @@ class ReportingPlugin implements org.gradle.api.Plugin<Project> {
                         .execute()
                         .get()
                         .getProjectOptions();
-
+        AndroidProblemReporterProvider androidProblemReporterProvider
+                = new AndroidProblemReporterProvider.RegistrationAction(project, projectOptions)
+                        .execute()
+                        .get();
         SyncIssueReporterImpl syncIssueHandler =
                 new SyncIssueReporterImpl(
                         SyncOptions.getModelQueryMode(projectOptions),
                         SyncOptions.getErrorFormatMode(projectOptions),
-                        project.getLogger());
+                        project.getLogger(),
+                        androidProblemReporterProvider.reporter()
+                );
+
 
         DeprecationReporterImpl deprecationReporter =
                 new DeprecationReporterImpl(syncIssueHandler, projectOptions, project.getPath());

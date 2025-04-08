@@ -166,32 +166,16 @@ public class FakeAdbTestRule extends ExternalResource {
         return state;
     }
 
-    public static ClientImpl launchAndWaitForProcess(DeviceState device, boolean waitingForDebugger)
+    public static Client launchAndWaitForProcess(DeviceState device, boolean waitingForDebugger)
             throws Exception {
         return launchAndWaitForProcess(device, PID, CLIENT_PACKAGE_NAME, waitingForDebugger);
     }
 
-    public static ClientImpl launchAndWaitForProcess(
+    public static Client launchAndWaitForProcess(
             DeviceState device, int pid, String packageName, boolean waitingForDebugger)
             throws Exception {
-        CountDownLatch latch = new CountDownLatch(2);
-        ClientImpl[] launchedClient = new ClientImpl[1];
-        AndroidDebugBridge.IDeviceChangeListener deviceListener =
-                new AndroidDebugBridge.IDeviceChangeListener() {
-                    @Override
-                    public void deviceConnected(@NonNull IDevice device) { }
-
-                    @Override
-                    public void deviceDisconnected(@NonNull IDevice device) { }
-
-                    @Override
-                    public void deviceChanged(@NonNull IDevice changedDevice, int changeMask) {
-                        if ((changeMask & IDevice.CHANGE_CLIENT_LIST)
-                            == IDevice.CHANGE_CLIENT_LIST) {
-                            latch.countDown();
-                        }
-                    }
-                };
+        CountDownLatch latch = new CountDownLatch(1);
+        Client[] launchedClient = new Client[1];
         // If the client is waiting for debugger attachment then we wait for the debugger status
         // change, otherwise we just wait for the
         // application ID to be returned
@@ -201,16 +185,15 @@ public class FakeAdbTestRule extends ExternalResource {
                 (client, changeMask) -> {
                     if (changeMask == desiredEvent) {
                         assertThat(client.isValid()).isTrue();
-                        launchedClient[0] = (ClientImpl) client;
+                        launchedClient[0] = client;
                         latch.countDown();
                     }
                 };
         AndroidDebugBridge.addClientChangeListener(clientListener);
-        AndroidDebugBridge.addDeviceChangeListener(deviceListener);
+
         device.startClient(pid, 4321, packageName, waitingForDebugger);
         assertThat(latch.await(TEST_TIMEOUT_MS, TimeUnit.HOURS)).isTrue();
         AndroidDebugBridge.removeClientChangeListener(clientListener);
-        AndroidDebugBridge.removeDeviceChangeListener(deviceListener);
         return launchedClient[0];
     }
 

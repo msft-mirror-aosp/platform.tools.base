@@ -209,6 +209,27 @@ abstract class AbstractAdbServices(
     }
   }
 
+  override suspend fun isBackupEnabled(applicationId: String): Boolean {
+    try {
+      val lines = executeCommand("pm dumpsys package $applicationId").stdout.lines()
+      val flags =
+        (lines
+          .find { it.trim().startsWith("pkgFlags=") }
+          ?.substringAfter('[')
+          ?.substringBefore(']')
+          ?.trim()
+          ?.split(' ') ?: emptyList())
+      return flags.contains("ALLOW_BACKUP")
+    } catch (e: BackupException) {
+      // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
+      // problem.
+      if (e.errorCode != DEVICE_DISCONNECTED) {
+        logger.warn(e.message, e)
+      }
+      return false
+    }
+  }
+
   override suspend fun isPlayStoreInstalled(): Boolean {
     try {
       val output =

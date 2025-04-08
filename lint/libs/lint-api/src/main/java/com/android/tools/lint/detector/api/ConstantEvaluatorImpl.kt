@@ -80,7 +80,6 @@ import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.UResolvable
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.UVariable
-import org.jetbrains.uast.UVariableEx
 import org.jetbrains.uast.UastBinaryExpressionWithTypeKind
 import org.jetbrains.uast.UastBinaryOperator
 import org.jetbrains.uast.UastFacade
@@ -116,7 +115,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             else -> null
           }
         }
-
       node is UIfExpression ->
         when (node.getExpressionType()) {
           null -> null
@@ -127,7 +125,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
               else -> null
             }
         }
-
       node is UParenthesizedExpression -> evaluate(node.expression)
       node is UPolyadicExpression ->
         node.operands.map(::evaluate).let(::ArgList).let { operands ->
@@ -141,7 +138,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             operands.values.size == 1 && node.sourcePsi is KtStringTemplateExpression -> {
               operands.values.single()
             }
-
             else ->
               when (node.operator) {
                 UastBinaryOperator.LOGICAL_OR -> operands.logicalOr()
@@ -149,10 +145,8 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                 // TODO Wrong below. ConstantEvaluator can't be used to check referential equality.
                 UastBinaryOperator.IDENTITY_EQUALS,
                 UastBinaryOperator.EQUALS -> operands.ifAll<Any>()?.isOrdered(Any::equals)
-
                 UastBinaryOperator.IDENTITY_NOT_EQUALS,
                 UastBinaryOperator.NOT_EQUALS -> operands.tryOn(Any::notEquals)
-
                 UastBinaryOperator.BITWISE_OR -> operands.bitwiseOr()
                 UastBinaryOperator.BITWISE_XOR -> operands.bitwiseXor()
                 UastBinaryOperator.BITWISE_AND -> operands.bitwiseAnd()
@@ -172,15 +166,12 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
               }
           }
         }
-
       node is UBinaryExpressionWithType ->
         when (node.operationKind) {
           UastBinaryExpressionWithTypeKind.TypeCast.INSTANCE ->
             evaluate(node.operand).tryToNum(node.type)
-
           else -> null
         }
-
       node is UReferenceExpression ->
         node.resolve().let { resolved ->
           when {
@@ -210,15 +201,13 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                       else -> value ?: resolved.initializer?.let(::evaluate)
                     }
                   }
-
                 resolved.name == "length" -> // It's an array.length expression
-                  node
+                node
                     .tryOn(UQualifiedReferenceExpression::receiver)
                     ?.takeIf(UExpression::getExpressionType then { it is PsiArrayType })
                     ?.let(::evaluate)
                     ?.let(::getArraySize)
                     ?.takeUnless { it == -1 }
-
                 else ->
                   resolved.computeConstantValue()
                     ?: resolved.getAllowedInitializer()?.let(::evaluate)?.takeUnless {
@@ -227,7 +216,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                     ?: (resolved as? KtLightField)?.let(::evaluate)
               }
             }
-
             node is UQualifiedReferenceExpression -> {
               fun UExpression.simpleRefId(): String? =
                 tryOn(USimpleNameReferenceExpression::identifier)
@@ -242,8 +230,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                       when {
                         // "kotlin.<N>Array".size ?
                         r is UQualifiedReferenceExpression &&
-                            r.receiver.simpleRefId() == "kotlin" -> r.selector
-
+                          r.receiver.simpleRefId() == "kotlin" -> r.selector
                         else -> r
                       }
                     }
@@ -255,29 +242,20 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                           "Array",
                           in kotlinPrimArrayFixedArgConstructors,
                           "arrayOfNulls" -> evaluateFirstArg(receiver).tryOn(Number::toInt)
-
                           "arrayOf",
                           in kotlinPrimArrayVarargConstructors -> receiver.valueArgumentCount
-
                           else -> null
                         }
                       }
-
-                    else -> {
-                      if (resolved is PsiMethod)
-                        node.evaluate() ?: evaluate(resolved)
-                      else
-                        node.evaluate()
-                    }
+                    resolved is PsiMethod -> node.evaluate() ?: evaluate(resolved)
+                    else -> node.evaluate()
                   }
                 }
-
                 selector is UCallExpression -> {
                   val receiver = node.receiver
                   when {
                     selector.methodName == "trimIndent" ->
                       evaluate(receiver).tryOn(String::trimIndent)
-
                     selector.methodName == "trimMargin" ->
                       evaluate(receiver)?.tryOn { s: String ->
                         val prefix =
@@ -291,8 +269,8 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                     // In theory we could also evaluate all the arguments and try passing them
                     // in but there's some risk of invalid formatting string combinations.
                     selector.methodName == "format" &&
-                        evaluator.allowUnknown &&
-                        selector.valueArguments.size >= 2 -> {
+                      evaluator.allowUnknown &&
+                      selector.valueArguments.size >= 2 -> {
                       val (first, second) = selector.valueArguments
                       evaluate(
                         when (first.getExpressionType()?.canonicalText) {
@@ -301,20 +279,16 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                         }
                       )
                     }
-
                     else -> node.evaluate()
                   }
                 }
-
                 else -> node.evaluate()
               }
             }
-
             resolved is PsiMethod -> node.evaluate() ?: evaluate(resolved)
             else -> node.evaluate()
           }
         }
-
       node.isNewArrayWithDimensions() -> {
         val call = node as UCallExpression
         val arrayType = call.getExpressionType()
@@ -327,7 +301,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
           } else null
         }
       }
-
       node.isNewArrayWithInitializer() -> evalAsArray(node as UCallExpression)
       node is UCallExpression ->
         getMethodName(node)?.let { name ->
@@ -338,7 +311,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             when (val type = node.getExpressionType()) {
               is PsiArrayType ->
                 withFixedSize { freshArray(type.deepComponentType, it, type.arrayDimensions) }
-
               else -> null
             }
           when {
@@ -348,11 +320,9 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             name == "Array" -> freshObjArray()
             name in kotlinPrimArrayFixedArgConstructors ->
               withFixedSize { n -> freshArray(kotlinPrimArrayTypeByConstructor[name]!!, n, 1) }
-
             else -> null
           }
         }
-
       node is UArrayAccessExpression -> {
         val indices = node.indices
         if (indices.size == 1) {
@@ -409,7 +379,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
           ?: (node as? KtLightElementBase)?.kotlinOrigin?.let { origin ->
             (convertElement(origin, null, UExpression::class.java) as? UExpression)?.evaluate()
           }
-
       is PsiPrefixExpression ->
         evaluate(node.operand)?.let { operand ->
           when (node.operationTokenType) {
@@ -420,14 +389,12 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             else -> null
           }
         }
-
       is PsiConditionalExpression ->
         when (evaluate(node.condition)) {
           true -> node.thenExpression?.let(::evaluate)
           false -> node.elseExpression?.let(::evaluate)
           else -> null
         }
-
       is PsiParenthesizedExpression -> node.expression?.let(::evaluate)
       is PsiPolyadicExpression ->
         ArgList(node.operands.map(::evaluate)).let { operands ->
@@ -454,10 +421,8 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             else -> null
           }
         }
-
       is PsiTypeCastExpression ->
         evaluate(node.operand).let { v -> node.castType?.type?.let(v::tryToNum) ?: v }
-
       is PsiReference ->
         when (val resolved = (node as PsiReference).resolve()) {
           is PsiField ->
@@ -470,7 +435,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                   ?.let(::evaluate)
                   ?.let(::getArraySize)
                   ?.takeUnless { it == -1 }
-
               else ->
                 resolved.computeConstantValue() ?: resolved.getAllowedInitializer()?.let(::evaluate)
             }
@@ -478,27 +442,24 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
           is PsiLocalVariable -> findLastAssignment(node, resolved)?.let(::evaluate)
           else -> null
         }
-
       is PsiNewExpression ->
         when (val type = node.type) {
           is PsiArrayType ->
             when (val initializer = node.arrayInitializer) {
-              null ->
-                node.arrayDimensions.firstOrNull()?.let(::evaluate)?.tryOn(Number::toInt)?.let { size ->
-                  // something like "new byte[3]" but with no initializer.
-                  // Look up the size and only if small, use it. E.g. if it was byte[3]
-                  // we return a byte[3] array, but if it's say byte[1024*1024] we don't
-                  // want to do that.
-                  freshArray(type.deepComponentType, size, type.getArrayDimensions())
-                }
-
+              null -> {
+                val sizeExpr = node.arrayDimensions.firstOrNull() ?: return null
+                val size = evaluate(sizeExpr)?.tryOn(Number::toInt) ?: return null
+                // something like "new byte[3]" but with no initializer.
+                // Look up the size and only if small, use it. E.g. if it was byte[3]
+                // we return a byte[3] array, but if it's say byte[1024*1024] we don't
+                // want to do that.
+                freshArray(type.deepComponentType, size, type.getArrayDimensions())
+              }
               else ->
                 evalAsArray(initializer.initializers.asList(), type.deepComponentType, ::evaluate)
             }
-
           else -> null
         }
-
       is KtLiteralStringTemplateEntry -> node.getText()
       is KtStringTemplateExpression ->
         node.entries
@@ -511,7 +472,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
           }
           .takeIf { it.isNotEmpty() }
           ?.joinToString(separator = "")
-
       is KtEscapeStringTemplateEntry -> node.unescapedValue
       // If we resolve to a "val" in Kotlin, if it's not a const val but in reality is a val
       // (because it has a constant expression and no getters and setters
@@ -521,27 +481,26 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
       is KtProperty -> valueFromProperty(node)
       is KtExpression -> node.toUElement()?.let(::evaluate)
       else -> null
-      // TODO: Check for MethodInvocation and perform some common operations -
-      // Math.* methods, String utility methods like notNullize, etc
+    // TODO: Check for MethodInvocation and perform some common operations -
+    // Math.* methods, String utility methods like notNullize, etc
     }
 
   private fun valueFromProperty(origin: KtDeclaration?): Any? =
     when {
       (origin is KtProperty) &&
-          (evaluator.allowFieldInitializers ||
-              // Property with no custom getter or setter? If it has an initializer
-              // it might be
-              // No setter: might be a constant not declared as such
-              (!origin.isVar && origin.getter == null && origin.setter == null)) ->
+        (evaluator.allowFieldInitializers ||
+          // Property with no custom getter or setter? If it has an initializer
+          // it might be
+          // No setter: might be a constant not declared as such
+          (!origin.isVar && origin.getter == null && origin.setter == null)) ->
         origin.initializer?.let(::evaluate)
-
       else -> null
     }
 
   private fun PsiVariable.getAllowedInitializer() =
     initializer?.takeIf {
       evaluator.allowFieldInitializers ||
-          (hasModifierProperty(PsiModifier.STATIC) && hasModifierProperty(PsiModifier.FINAL))
+        (hasModifierProperty(PsiModifier.STATIC) && hasModifierProperty(PsiModifier.FINAL))
     }
 
   private data class PrimArrayType(
@@ -648,7 +607,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             is PsiLocalVariable -> isArrayLiteral(findLastAssignment(node, resolved))
             else -> false
           }
-
         is PsiNewExpression -> node.arrayInitializer != null || node.type is PsiArrayType
         is PsiParenthesizedExpression -> isArrayLiteral(node.expression)
         is PsiTypeCastExpression -> isArrayLiteral(node.operand)
@@ -664,7 +622,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             is PsiVariable -> isArrayLiteral(findLastAssignment(resolved, node))
             else -> false
           }
-
         node.isNewArrayWithDimensions() -> true
         node.isNewArrayWithInitializer() -> true
         node is UParenthesizedExpression -> isArrayLiteral(node.expression)
@@ -700,7 +657,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
           when (stm) {
             is PsiDeclarationStatement ->
               variable.initializer.takeIf { variable in stm.declaredElements }?.let(::Exact)
-
             is PsiExpressionStatement ->
               (stm.expression as? PsiAssignmentExpression)
                 ?.let { expression ->
@@ -711,7 +667,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                   }
                 }
                 ?.let(::Exact)
-
             is PsiIfStatement -> {
               fun find(stm: PsiBlockStatement): Exact<PsiExpression?>? =
                 stm.codeBlock.statements.lastOrNull()?.let { last ->
@@ -721,7 +676,6 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                 }
               stm.thenBranch.tryOn(::find) ?: stm.elseBranch.tryOn(::find)
             }
-
             else -> null
           }
 
@@ -761,7 +715,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
       kotlinPrimArrayTypes.map(PrimArrayType::varargConstructorName)
     private val kotlinPrimArrayTypeByConstructor =
       kotlinPrimArrayTypes.associate { (k, _, t) -> k to t } +
-          kotlinPrimArrayTypes.associate { (_, k, t) -> k to t }
+        kotlinPrimArrayTypes.associate { (_, k, t) -> k to t }
   }
 
   internal class LastAssignmentFinder(
@@ -831,8 +785,8 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
 
     private fun UElement.hasLevel() =
       this !is UBlockExpression &&
-          this !is UDeclarationsExpression &&
-          this !is UParenthesizedExpression
+        this !is UDeclarationsExpression &&
+        this !is UParenthesizedExpression
   }
 }
 
@@ -895,6 +849,9 @@ private value class ArgList<out X>(val values: List<X>) {
       else -> null
     }
 
+  fun <T : Any> mapOrNull(transform: (X) -> T?): ArgList<T>? =
+    ArgList(values.map { transform(it) ?: return@mapOrNull null })
+
   inline fun <reified T> ifAny(): ArgList<X>? = takeIf { values.any { it is T } }
 
   inline fun <reified T> ifAll(): ArgList<T>? =
@@ -941,7 +898,7 @@ private fun ArgList<Any?>.reduceAsNumbers(
   opLong: (Long, Long) -> Long,
   opInt: (Int, Int) -> Int,
 ): Number? =
-  ifAll<Number>()?.let {
+  mapOrNull(::tryCoerceToNum)?.let {
     it.ifAny<Double>()?.reduceOn(Number::toDouble, opDouble)
       ?: it.ifAny<Float>()?.reduceOn(Number::toFloat, opFloat)
       ?: it.ifAny<Long>()?.reduceOn(Number::toLong, opLong)
@@ -952,7 +909,7 @@ private fun ArgList<Any?>.reduceAsInts(
   opLong: (Long, Long) -> Long,
   opInt: (Int, Int) -> Int,
 ): Number? =
-  ifAll<Number>()?.let {
+  mapOrNull(::tryCoerceToNum)?.let {
     it.ifAny<Long>()?.reduceOn(Number::toLong, opLong)
       ?: it.ifAny<Int>()?.reduceOn(Number::toInt, opInt)
   }
@@ -961,7 +918,7 @@ private inline fun ArgList<Any?>.isOrdered(
   onDouble: (Double, Double) -> Boolean,
   onLong: (Long, Long) -> Boolean,
 ) =
-  ifAll<Number>()?.let {
+  mapOrNull(::tryCoerceToNum)?.let {
     (it.ifAny<Float>() ?: it.ifAny<Double>())?.isOrderedOn(Number::toDouble, onDouble)
       ?: (it.ifAny<Int>() ?: it.ifAny<Long>())?.isOrderedOn(Number::toLong, onLong)
   }
@@ -991,6 +948,15 @@ private fun Any?.tryUnaryMinus() =
     is Short -> -this
     is Char -> -this.code
     is Byte -> -this
+    else -> null
+  }
+
+private fun tryCoerceToNum(value: Any?): Number? =
+  when (value) {
+    is Number -> value
+    // Java coerces characters to integers as needed.
+    // We don't need to worry about mismatching with Kotlin's behavior, which rules out such uses.
+    is Char -> value.code
     else -> null
   }
 
@@ -1048,7 +1014,7 @@ private fun ArgList<Any?>.shr() = shift(Long::shr, Int::shr)
 private fun ArgList<Any?>.ushr() = shift(Long::ushr, Int::ushr)
 
 private fun ArgList<Any?>.shift(onLong: (Long, Int) -> Long, onInt: (Int, Int) -> Int) =
-  ifAll<Number>()?.split { n, ns ->
+  mapOrNull(::tryCoerceToNum)?.split { n, ns ->
     when (n) {
       is Long -> ns.foldOn(Number::toInt, n, onLong)
       is Int -> ns.foldOn(Number::toInt, n, onInt)
@@ -1113,7 +1079,6 @@ private fun freshArray(type: PsiType, size: Int, dimensions: Int): Any =
             else -> ArrayReference.of(className, size, dimensions)
           }
       }
-
     else ->
       when (type) {
         PsiTypes.byteType() -> ArrayReference.of(java.lang.Byte.TYPE, size, dimensions)
