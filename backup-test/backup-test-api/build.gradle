@@ -16,13 +16,9 @@
 apply plugin: 'com.android.tools.java-library'
 apply plugin: 'com.android.tools.kotlin'
 apply plugin: 'com.android.tools.publish'
+apply from: '../release_version.gradle'
 
 group = 'com.android.tools.backup'
-if (findProperty("release")?.toBoolean()) {
-    version = '0.0.1-alpha01'
-} else {
-    version = '0.0.1-dev'
-}
 
 dependencies {
     implementation libs.junit_platform_commons
