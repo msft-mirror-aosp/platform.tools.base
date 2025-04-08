@@ -403,6 +403,12 @@ open class LintCliFixPerformer(
       sb.append(source.substring(index, if (next == -1) source.length else next))
       if (next == -1) {
         break
+      } else if (next > 0 && source[next - 1] == '"') {
+        // Don't substitute fully qualified names in strings, such as fully
+        // qualified names in @UsesReflection annotation arguments
+        sb.append(prefix)
+        index = next + prefix.length
+        continue
       }
       index = next + prefix.length
       if (isWildcard) {

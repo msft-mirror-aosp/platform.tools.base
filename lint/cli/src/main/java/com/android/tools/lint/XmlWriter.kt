@@ -621,8 +621,9 @@ open class XmlWriter(
         emitFixSharedAttributes(lintFix, indented)
         writeAttribute(writer, indented, ATTR_SOURCE, lintFix.annotation)
         if (lintFix.replace) {
-          writeAttribute(writer, indented, ATTR_REPLACE, lintFix.replace.toString())
+          writeAttribute(writer, indented, ATTR_REPLACE, VALUE_TRUE)
         }
+        lintFix.selectPattern?.let { writeAttribute(writer, indented, ATTR_SELECT_PATTERN, it) }
         val range = lintFix.range
         if (range != null) {
           writer.write(">\n")

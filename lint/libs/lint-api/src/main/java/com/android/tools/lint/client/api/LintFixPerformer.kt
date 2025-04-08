@@ -365,20 +365,6 @@ abstract class LintFixPerformer(
     return false
   }
 
-  private fun isValid(
-    file: PendingEditFile,
-    edits: List<PendingEdit>,
-    checker: (PendingEditFile, PendingEdit) -> Boolean,
-  ): Boolean {
-    return edits.all { checker(file, it) }
-  }
-
-  private fun isValid(file: PendingEditFile, edits: List<PendingEdit>, contents: String): Boolean {
-    return isValid(file, edits) { _, edit ->
-      contents.startsWith(edit.replacement, edit.startOffset)
-    }
-  }
-
   private fun addEdits(
     fileProvider: FileProvider,
     fileMap: MutableMap<File, PendingEditFile>,
@@ -1095,7 +1081,7 @@ abstract class LintFixPerformer(
       // Skip comments
       var oldText = INSERT_BEGINNING
       if (range?.start != null && contents != null) {
-        val start = range.start!!
+        val start = range.start
         val startOffset = start.offset
         val isKotlin = range.file.path.endsWith(DOT_KT) || range.file.path.endsWith(DOT_KTS)
         var offset =
@@ -1151,7 +1137,7 @@ abstract class LintFixPerformer(
         replacement += "\n"
         // Add indent?
         if (range != null && contents != null && range.start != null) {
-          val start = range.start!!
+          val start = range.start
           val startOffset = start.offset
           var lineBegin = startOffset
           while (lineBegin > 0) {
@@ -1161,7 +1147,13 @@ abstract class LintFixPerformer(
             } else if (c == '\n' || lineBegin == 1) {
               if (startOffset > lineBegin) {
                 val indent = contents.substring(lineBegin, startOffset)
-                replacement = annotation + "\n" + indent
+                val separator = "\n" + indent
+                replacement =
+                  if (annotation.contains("\n")) {
+                    annotation.lines().joinToString(separator) + separator
+                  } else {
+                    annotation + separator
+                  }
               }
               break
             } else lineBegin--
@@ -1176,7 +1168,7 @@ abstract class LintFixPerformer(
         range != null &&
           range.end?.offset != null &&
           range.start?.offset != null &&
-          range.end!!.offset >= range.start!!.offset
+          range.end.offset >= range.start.offset
       ) {
         replaceFixBuilder.range(range)
       } else {
@@ -1191,6 +1183,11 @@ abstract class LintFixPerformer(
           )
         }
       }
+
+      if (fix.selectPattern != null) {
+        replaceFixBuilder.select(fix.selectPattern)
+      }
+
       return replaceFixBuilder.build() as ReplaceString
     }
 

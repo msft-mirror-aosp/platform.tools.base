@@ -544,6 +544,7 @@ protected constructor(
     private val replace: Boolean,
     private val context: Context? = null,
     private val element: PsiElement? = null,
+    private var selectPattern: String? = null,
   ) {
     private val annotation: String = if (annotation.startsWith("@")) annotation else "@$annotation"
     private var range: Location? =
@@ -611,6 +612,15 @@ protected constructor(
       return this
     }
 
+    /**
+     * Sets a pattern to select; if it contains parentheses, group(1) will be selected. To just set
+     * the caret, use an empty group.
+     */
+    fun select(@RegExp selectPattern: String?): AnnotateBuilder {
+      this.selectPattern = selectPattern
+      return this
+    }
+
     /** Creates a fix from this builder */
     fun build(): LintFix {
       val desc: String
@@ -632,7 +642,16 @@ protected constructor(
           }
         desc = "Annotate with $simpleName"
       }
-      return AnnotateFix(desc, familyName, annotation, replace, range, robot, independent)
+      return AnnotateFix(
+        desc,
+        familyName,
+        annotation,
+        replace,
+        range,
+        selectPattern,
+        robot,
+        independent,
+      )
     }
   }
 
@@ -1767,6 +1786,8 @@ protected constructor(
      * applying in a wider range than the highlighted problem range.
      */
     range: Location?,
+    /** Pattern to select; if it contains parentheses, group(1) will be selected */
+    val selectPattern: String?,
     robot: Boolean,
     independent: Boolean,
   ) : LintFix(displayName, familyName, range) {
