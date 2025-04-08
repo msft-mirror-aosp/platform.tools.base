@@ -115,7 +115,7 @@ private const val ATTR_MODEL = "model"
 private const val ATTR_PARTIAL_RESULTS_DIR = "partial-results-dir"
 private const val ATTR_KIND = "kind"
 private const val ATTR_COMPUTE_SOURCE_ROOTS = "compute_source_roots"
-private const val ATTR_PLATFORM = "platform"
+private const val ATTR_KOTLIN_PLATFORMS = "kotlinPlatforms"
 
 /**
  * Compute a list of lint [Project] instances from the given XML descriptor files. Each descriptor
@@ -512,7 +512,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val buildApi: String = moduleElement.getAttribute(ATTR_COMPILE_SDK_VERSION)
     val desugaring = handleDesugaring(moduleElement) ?: this.desugaring
     val computeSourceRoots = moduleElement.getAttribute(ATTR_COMPUTE_SOURCE_ROOTS) != VALUE_FALSE
-    val platform: String? = moduleElement.getAttribute(ATTR_PLATFORM)
+    val kotlinPlatforms: String? = moduleElement.getAttribute(ATTR_KOTLIN_PLATFORMS)
 
     if (android) {
       this.android = true
@@ -585,7 +585,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
         testSources,
         generatedSources,
         model?.defaultVariant(),
-        platform,
+        kotlinPlatforms,
       )
     modules[name] = module
 
@@ -1121,7 +1121,7 @@ fun findPackage(source: String, file: File): String? {
  * A special subclass of lint's [Project] class which can be manually configured with custom source
  * locations, custom library types, etc.
  */
-private class ManualProject(
+internal class ManualProject(
   client: LintClient,
   dir: File,
   name: String,
@@ -1131,7 +1131,7 @@ private class ManualProject(
   private val testFiles: List<File>,
   private val generatedFiles: List<File>,
   private val variant: LintModelVariant? = null,
-  private val platform: String? = null,
+  val kotlinPlatforms: String? = null,
 ) : Project(client, dir, dir, partialResultsDir) {
 
   init {
@@ -1153,8 +1153,6 @@ private class ManualProject(
   }
 
   override fun isAndroidProject(): Boolean = android
-
-  override fun getPlatform() = platform
 
   override fun isGradleProject(): Boolean = false
 
