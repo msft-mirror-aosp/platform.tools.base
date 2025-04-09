@@ -252,6 +252,9 @@ abstract class R8Task @Inject constructor(
     @get:InputFiles
     abstract val packageList: RegularFileProperty
 
+    @get:Input
+    abstract val failOnMissingProguardFiles: Property<Boolean>
+
     class PrivacySandboxSdkCreationAction(
         val creationConfig: PrivacySandboxSdkVariantScope,
         addCompileRClass: Boolean,
@@ -321,6 +324,12 @@ abstract class R8Task @Inject constructor(
                 it.r8OutputType.setDisallowChanges(R8OutputType.DEX)
             }
             task.proguardConfigurations = proguardConfigurations
+
+            task.failOnMissingProguardFiles.setDisallowChanges(
+                creationConfig.services.projectOptions.get(
+                    BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES
+                )
+            )
 
             task.baseJar.disallowChanges()
             task.featureClassJars.disallowChanges()
@@ -488,6 +497,12 @@ abstract class R8Task @Inject constructor(
                 creationConfig.global.settingsOptions.executionProfile?.r8Options)
 
             task.proguardConfigurations = proguardConfigurations
+
+            task.failOnMissingProguardFiles.setDisallowChanges(
+                creationConfig.services.projectOptions.get(
+                    BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES
+                )
+            )
 
             if (creationConfig is ApkCreationConfig) {
                 // options applicable only when building APKs, do not apply with AARs
@@ -695,7 +710,10 @@ abstract class R8Task @Inject constructor(
                         finalListOfConfigurationFiles,
                         LoggerWrapper.getLogger(R8Task::class.java),
                         LibraryArtifactType.KEEP_RULES),
-                    extractedDefaultProguardFile))
+                    extractedDefaultProguardFile,
+                    failOnMissingProguardFiles.get()
+                )
+            )
             it.inputProguardMapping.set(
                 if (testedMappingFile.isEmpty) {
                     null

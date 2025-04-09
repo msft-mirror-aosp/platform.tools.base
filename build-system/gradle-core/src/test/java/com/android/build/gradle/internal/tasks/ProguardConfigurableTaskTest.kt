@@ -36,6 +36,7 @@ import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 import java.io.File
 import javax.inject.Inject
+import kotlin.test.assertFailsWith
 
 internal class ProguardConfigurableTaskTest {
 
@@ -75,7 +76,7 @@ internal class ProguardConfigurableTaskTest {
             task.reconcileDefaultProguardFile(
                 fileCollection,
                 FakeGradleProvider(project.layout.projectDirectory.dir(
-                    folder.absolutePath)))
+                    folder.absolutePath)), false)
         ).isEmpty()
     }
 
@@ -93,7 +94,7 @@ internal class ProguardConfigurableTaskTest {
         val result = task.reconcileDefaultProguardFile(
             fileCollection,
             FakeGradleProvider(project.layout.projectDirectory.dir(
-                folder.absolutePath)))
+                folder.absolutePath)), false)
         Truth.assertThat(result).hasSize(1)
         Truth.assertThat(result.single()).isEqualTo(
             file1
@@ -125,7 +126,7 @@ internal class ProguardConfigurableTaskTest {
         val result = task.reconcileDefaultProguardFile(
             fileCollection,
             FakeGradleProvider(project.layout.projectDirectory.dir(
-                finalDefaultFolder.absolutePath)))
+                finalDefaultFolder.absolutePath)), false)
         Truth.assertThat(result).hasSize(3)
         val substitutedFile = result.find {
             it.name.equals(defaultFile.name)
@@ -161,7 +162,7 @@ internal class ProguardConfigurableTaskTest {
         val result = task.reconcileDefaultProguardFile(
             fileCollection,
             FakeGradleProvider(project.layout.projectDirectory.dir(
-                finalDefaultFolder.absolutePath)))
+                finalDefaultFolder.absolutePath)), false)
         Truth.assertThat(result).hasSize(3)
         val substitutedFile = result.find {
             it.name.equals(defaultFile.name)
@@ -190,8 +191,61 @@ internal class ProguardConfigurableTaskTest {
         val result = task.reconcileDefaultProguardFile(
                 fileCollection,
                 FakeGradleProvider(project.layout.projectDirectory.dir(
-                        finalDefaultFolder.absolutePath)))
+                        finalDefaultFolder.absolutePath)), false)
         Truth.assertThat(result).hasSize(1)
         Truth.assertThat(result.find { it.name.equals("user1.txt") }).isNotNull()
+    }
+
+    @Test
+    fun `test missing file throws runtime exception`() {
+        Truth.assertThat(task).isNotNull()
+        val fileCollection = mock<FileCollection>()
+        val srcFolder = temporaryFolder.newFolder("proguard_files")
+        val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
+
+        val file1 = spy(File(srcFolder, "user1.txt"))
+        whenever(file1.isFile).thenReturn(false)
+
+        whenever(fileCollection.files).thenReturn(
+            setOf(
+                file1,
+            )
+        )
+        task.componentType.set(ComponentTypeImpl.BASE_APK)
+        assertFailsWith<RuntimeException> {
+            task.reconcileDefaultProguardFile(
+                fileCollection,
+                FakeGradleProvider(
+                    project.layout.projectDirectory.dir(
+                        finalDefaultFolder.absolutePath
+                    )
+                ), true
+            )
+        }
+    }
+
+    @Test
+    fun `test directory throws runtime exception`() {
+        Truth.assertThat(task).isNotNull()
+        val fileCollection = mock<FileCollection>()
+        val srcFolder = temporaryFolder.newFolder("proguard_files")
+        val finalDefaultFolder = temporaryFolder.newFolder("default_proguard_files")
+
+        whenever(fileCollection.files).thenReturn(
+            setOf(
+                srcFolder,
+            )
+        )
+        task.componentType.set(ComponentTypeImpl.BASE_APK)
+        assertFailsWith<RuntimeException> {
+            task.reconcileDefaultProguardFile(
+                fileCollection,
+                FakeGradleProvider(
+                    project.layout.projectDirectory.dir(
+                        finalDefaultFolder.absolutePath
+                    )
+                ), true
+            )
+        }
     }
 }
