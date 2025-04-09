@@ -47,4 +47,9 @@ constructor(val majorVersion: Int, val minorVersion: Int = 0) :
       "$majorVersion.$minorVersion"
     else majorVersion.toString()
   }
+
+  /** Returns a text representation of the API level without the minor version if it is zero. */
+  fun toShortString(): String {
+    return if (minorVersion > 0) "$majorVersion.$minorVersion" else majorVersion.toString()
+  }
 }
