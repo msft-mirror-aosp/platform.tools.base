@@ -66,4 +66,12 @@ class PersistentCollectionUtilsTest {
     val m = persistentMapOf(0 to "foo", 1 to "bar")
     Truth.assertThat(m.mapValues { _, w -> w.length }).isEqualTo(persistentMapOf(0 to 3, 1 to 3))
   }
+
+  @Test
+  fun `map merging works`() {
+    Truth.assertThat(
+        persistentMapOf(1 to "foo", 2 to "bar") + persistentMapOf(1 to "qux", 3 to "word")
+      )
+      .isEqualTo(persistentMapOf(1 to "qux", 2 to "bar", 3 to "word"))
+  }
 }
