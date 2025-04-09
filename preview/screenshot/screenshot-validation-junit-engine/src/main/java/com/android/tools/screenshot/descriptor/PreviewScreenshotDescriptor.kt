@@ -19,8 +19,8 @@ package com.android.tools.screenshot.descriptor
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput.ImageDifferInput
-import com.android.tools.screenshot.differ.ImageDiffer
 import com.android.tools.screenshot.differ.ImageVerifier
+import com.android.tools.screenshot.differ.PixelPerfect
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.TestSource
 import org.junit.platform.engine.UniqueId
@@ -65,7 +65,7 @@ class PreviewScreenshotDescriptor(
         }
 
         try {
-            ImageVerifier(ImageDiffer.PixelPerfect(ImageDifferInput.threshold)).verify(
+            ImageVerifier(PixelPerfect(ImageDifferInput.threshold)).verify(
                 newImagePath, refImagePath, diffImagePath
             )
         } finally {
