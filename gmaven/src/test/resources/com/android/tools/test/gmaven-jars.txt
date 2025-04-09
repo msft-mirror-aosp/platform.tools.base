@@ -3355,6 +3355,7 @@ com/android/tools/lint/lint-checks
   com/android/tools/lint/
   com/android/tools/lint/checks/
   com/android/tools/lint/checks/fx/
+  com/android/tools/lint/checks/fx/analysis/
   com/android/tools/lint/checks/fx/result/
   com/android/tools/lint/checks/fx/utils/
   com/android/tools/lint/checks/optional/
