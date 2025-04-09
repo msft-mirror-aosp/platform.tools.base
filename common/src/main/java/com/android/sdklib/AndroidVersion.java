@@ -307,10 +307,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     /**
      * Creates an {@link AndroidVersion} from a string that may be an integer API level or a string
-     * codename. <Em>Important</em>: An important limitation of this method is that it cannot
+     * codename. <em>Important</em>: An important limitation of this method is that it cannot
      * possibly recreate the API level integer from a pure string codename. This is only OK to use
      * if the caller can guarantee that only {@link #getApiString()} will be used later.
-     * {@link #getApiLevel()} will return 0.
+     * {@link #getAndroidApiLevel()#getApiLevel()} will return 0.
      *
      * <p>SdkVersionInfo.getVersion() can be used to get a valid AndroidVersion from known
      * codenames, and should be preferred.
@@ -337,7 +337,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
         String codename = sanitizeCodename(apiString);
         if (codename == null || !PREVIEW_PATTERN.matcher(codename).matches()) {
-            throw new IllegalArgumentException("Invalid android API or codename " + apiString);
+            throw new IllegalArgumentException("Invalid Android API or codename " + apiString);
         }
 
         return new AndroidVersion(0, codename);
@@ -451,8 +451,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
             return getApiStringWithoutExtension();
         }
 
-        return String.format(
-                Locale.US, "%1$s-ext%2$d", getApiStringWithoutExtension(), mExtensionLevel);
+        return getApiStringWithoutExtension() + "-ext" + mExtensionLevel;
     }
 
     /**
@@ -491,9 +490,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return mIsBaseExtension;
     }
 
-    /**
-     * Returns whether or not the version is a preview version.
-     */
+    /** Returns whether the version is a preview version. */
     public boolean isPreview() {
         return mCodename != null;
     }
@@ -554,10 +551,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     public String toString() {
         String s = "API " + mAndroidApiLevel.toString();
         if (isPreview()) {
-            s += String.format(Locale.US, ", %1$s preview", mCodename);
+            s += String.format(Locale.ROOT, ", %1$s preview", mCodename);
         }
         if (mExtensionLevel != null) {
-            s += String.format(Locale.US, ", extension level %1$s", mExtensionLevel);
+            s += String.format(Locale.ROOT, ", extension level %1$s", mExtensionLevel);
         }
         return s;
     }
@@ -632,7 +629,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      * release.
      */
     public static int getBaseExtensionLevel(AndroidApiLevel api) {
-
         ApiBaseExtension[] values = ApiBaseExtension.values();
         for (ApiBaseExtension value : values) {
             if (value.getApi().equals(api)) {
