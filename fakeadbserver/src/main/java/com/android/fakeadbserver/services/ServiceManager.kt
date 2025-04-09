@@ -36,6 +36,9 @@ class ServiceManager(private val deviceState: DeviceState) {
     }
 
     fun processCommand(args: List<String>, output: ShellCommandOutput) {
+        // First argument should be the service name
+        assert(args.isNotEmpty()) { "Service name not specified" }
+
         // We log received commands to allow tests to inspect call history
         log.add(Collections.unmodifiableList(args))
 
