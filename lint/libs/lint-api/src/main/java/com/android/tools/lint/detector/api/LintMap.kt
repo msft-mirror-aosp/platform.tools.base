@@ -36,7 +36,7 @@ import org.jetbrains.annotations.Contract
  */
 class LintMap : Iterable<String> {
   /** Internal untyped map storage. */
-  private var map: MutableMap<String, Any> = HashMap()
+  private val map: MutableMap<String, Any> = HashMap()
 
   /**
    * Simple string get operator to be able to use Kotlin array syntax; this is short for [getString]
@@ -155,17 +155,17 @@ class LintMap : Iterable<String> {
 
   /** Returns a map previously stored by [put] */
   fun getMap(key: String): LintMap? {
-    @Suppress("UNCHECKED_CAST") return map[key] as? LintMap
+    return map[key] as? LintMap
   }
 
   /** Returns an incident previously stored by [put] */
   fun getIncident(key: String): Incident? {
-    @Suppress("UNCHECKED_CAST") return map[key] as? Incident
+    return map[key] as? Incident
   }
 
   /** Returns a condition previously stored by [put] */
   fun getConstraint(key: String): Constraint? {
-    @Suppress("UNCHECKED_CAST") return map[key] as? Constraint
+    return map[key] as? Constraint
   }
 
   /** Returns a severity previously stored by [put] */
