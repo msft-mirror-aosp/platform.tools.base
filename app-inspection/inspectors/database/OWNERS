@@ -1,5 +1,5 @@
 # Route bugs created from test failures to L2 triage.
-# Bug component: 1613127
+# Bug component:
 # See go/studio-test-owners for more.
 
 aalbert@google.com
