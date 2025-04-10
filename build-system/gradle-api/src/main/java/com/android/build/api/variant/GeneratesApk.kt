@@ -49,7 +49,6 @@ interface GeneratesApk {
     /**
      * Min SDK version for this variant
      */
-    @get:Incubating
     val minSdk: AndroidVersion
 
     /**
