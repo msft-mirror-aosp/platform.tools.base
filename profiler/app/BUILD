@@ -80,9 +80,9 @@ java_jarjar(
 
 dex_library(
     name = "perfa",
+    aars = ["//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0"],
     jars = [
         ":perfa_java",
-        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/base/app-inspection/agent",
     ],
 )

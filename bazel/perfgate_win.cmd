@@ -15,6 +15,8 @@ set SCRIPTDIR=%~dp0
 CALL :NORMALIZE_PATH "%SCRIPTDIR%..\..\.."
 set BASEDIR=%RETVAL%
 
+set PATH=%PATH%;%BASEDIR%\prebuilts\studio\jdk\jbr-next\windows\bin
+
 @rem Generate a UUID for use as the Bazel invocation ID
 FOR /F "tokens=*" %%F IN ('uuidgen') DO (
 SET INVOCATIONID=%%F
