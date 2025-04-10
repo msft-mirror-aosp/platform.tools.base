@@ -22,11 +22,14 @@ DATA = [
     "android.arch.navigation:navigation-fragment:1.0.0",
     "android.arch.navigation:navigation-ui:1.0.0",
     "android.arch.persistence.room:runtime:1.0.0",
+    "androidx.activity:activity:1.10.1",
+    "androidx.activity:activity-compose:1.10.1",
     "androidx.activity:activity-compose:1.5.1",  # Still needed from //tools/base/build-system/integration-tests
     "androidx.activity:activity-compose:1.6.1",  # Dependency of architecture-samples
     "androidx.activity:activity-compose:1.7.2",  # Still needed from //tools/base/android-templates/BUILD
     "androidx.activity:activity-compose:1.8.0",
     "androidx.activity:activity-compose:1.9.3",
+    "androidx.activity:activity-ktx:1.10.1",
     "androidx.activity:activity-ktx:1.4.0",
     "androidx.activity:activity-ktx:1.6.0",  # Still needed from navigation-fragment-ktx:2.5.3
     "androidx.activity:activity-ktx:1.7.0",
@@ -68,6 +71,7 @@ DATA = [
     "androidx.compose:compose-bom:pom:2023.03.00",
     "androidx.compose:compose-bom:pom:2023.06.00",
     "androidx.compose:compose-bom:pom:2024.09.00",
+    "androidx.compose:compose-bom:pom:2025.02.00",
     "androidx.compose.foundation:foundation:1.3.0",
     "androidx.compose.foundation:foundation:1.3.1",  # Dependency of architecture-samples
     "androidx.compose.foundation:foundation:1.5.0-beta01",  # Necessary for Compose for TV.
@@ -79,7 +83,8 @@ DATA = [
     "androidx.compose.material:material:1.3.0",  # Needed by //tools/base/build-system/integration-test/...
     "androidx.compose.material:material:1.4.3",  # Necessary for Compose for TV.
     "androidx.compose.material:material:1.5.0-alpha04",
-    "androidx.compose.material:material:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.material:material:1.7.0",
+    "androidx.compose.material:material:1.7.8",  # Compose BOM 2024.09.00
     "androidx.compose.material:material:1.8.0-alpha06",
     "androidx.compose.material:material-icons-core:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.material:material-icons-extended:1.3.0",
@@ -142,6 +147,7 @@ DATA = [
     "androidx.constraintlayout:constraintlayout:1.1.3",
     "androidx.constraintlayout:constraintlayout:2.1.3",
     "androidx.constraintlayout:constraintlayout:2.1.4",
+    "androidx.core:core:1.16.0",
     "androidx.core:core:1.5.0-beta01",
     "androidx.core:core:1.5.0-rc02",
     "androidx.core:core-ktx:1.0.1",
@@ -155,6 +161,7 @@ DATA = [
     "androidx.core:core-ktx:1.13.0",
     "androidx.core:core-ktx:1.13.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.core:core-ktx:1.15.0",
+    "androidx.core:core-ktx:1.16.0",
     "androidx.core:core-ktx:1.2.0",
     "androidx.core:core-ktx:1.3.0",
     "androidx.core:core-ktx:1.3.2",
@@ -188,11 +195,14 @@ DATA = [
     "androidx.leanback:leanback:1.0.0",
     "androidx.legacy:legacy-support-v13:1.0.0",
     "androidx.legacy:legacy-support-v4:1.0.0",
+    "androidx.lifecycle:lifecycle-common:2.8.7",
     "androidx.lifecycle:lifecycle-common-java8:2.4.0",
     "androidx.lifecycle:lifecycle-common-java8:2.6.1",
     "androidx.lifecycle:lifecycle-common-java8:2.6.2",
     "androidx.lifecycle:lifecycle-common-java8:2.8.3",
     "androidx.lifecycle:lifecycle-common-java8:2.8.7",  # XR template
+    "androidx.lifecycle:lifecycle-common-jvm:2.8.7",
+    "androidx.lifecycle:lifecycle-compiler:2.8.7",
     "androidx.lifecycle:lifecycle-extensions:2.2.0",
     "androidx.lifecycle:lifecycle-livedata:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-livedata:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
@@ -206,19 +216,24 @@ DATA = [
     "androidx.lifecycle:lifecycle-livedata-ktx:2.6.1",
     "androidx.lifecycle:lifecycle-livedata-ktx:2.6.2",
     "androidx.lifecycle:lifecycle-livedata-ktx:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-livedata-ktx:2.8.7",
     "androidx.lifecycle:lifecycle-process:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-process:2.6.1",
     "androidx.lifecycle:lifecycle-process:2.6.2",
     "androidx.lifecycle:lifecycle-process:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-process:2.8.7",
     "androidx.lifecycle:lifecycle-reactivestreams:2.6.2",
+    "androidx.lifecycle:lifecycle-reactivestreams:2.8.7",
+    "androidx.lifecycle:lifecycle-reactivestreams-ktx:2.8.7",
     "androidx.lifecycle:lifecycle-runtime:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-runtime:2.6.1",
     "androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02",  # Needed for kmp consumption test
+    "androidx.lifecycle:lifecycle-runtime:2.8.7",
     "androidx.lifecycle:lifecycle-runtime-android:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-compose:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-runtime-compose:2.6.1",
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-runtime-compose:2.8.7",
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1",
@@ -228,8 +243,10 @@ DATA = [
     "androidx.lifecycle:lifecycle-service:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-service:2.6.1",
     "androidx.lifecycle:lifecycle-service:2.6.2",
+    "androidx.lifecycle:lifecycle-service:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel:2.6.2",
     "androidx.lifecycle:lifecycle-viewmodel:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-viewmodel:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
@@ -240,6 +257,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2",
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.7",
@@ -952,6 +970,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.0.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.1.10",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.0",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.20",  # Used by AGP Compose tests
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.20-RC2",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.41",
@@ -1094,15 +1113,15 @@ DATA = [
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
     "org.jetbrains.skiko:skiko-awt:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.7.16",
     "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64:0.8.18",
+    "org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.7.16",
     "org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.8.18",
     "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.7.16",
     "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.8.18",
     "org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.7.16",
     "org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.7.16",
     "org.jetbrains.skiko:skiko-awt-runtime-windows-arm64:0.8.18",
+    "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.7.16",
     "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.8.18",
     "org.junit:junit-bom:pom:5.10.0",
     "org.junit:junit-bom:pom:5.10.2",
