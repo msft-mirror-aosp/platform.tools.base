@@ -126,9 +126,9 @@ class AdbScreenRecordException(
     val command: String,
 
     /**
-     * The output (`stderr`) of the `screenrecord` command
+     * (Optional) The error message from the `screenrecord` command
      */
-    val stderr: String,
+    val commandError: String?,
 
     /**
      * The exit code of the `screenrecord` command

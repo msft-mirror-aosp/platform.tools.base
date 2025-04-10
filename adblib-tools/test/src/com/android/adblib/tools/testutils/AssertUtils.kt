@@ -20,11 +20,11 @@ import org.junit.Assert
 /**
  * Similar to [Assert.assertThrows] but allows for asserting over a `suspend` function call
  * (i.e. coroutine) as well as asserting the exception type ([expectedException]) and optionally
- * the exception message ([expectedExceptionMessage]).
+ * calling [additionalAssertions] with the actual exception thrown.
  */
 internal suspend fun <T : Throwable> assertSuspendingThrows(
     expectedException: Class<T>,
-    expectedExceptionMessage: String? = null,
+    additionalAssertions: (T) -> Unit = {},
     block: suspend () -> Unit
 ) {
     fun <T: Throwable> Class<T>.reportedName(): String {
@@ -47,9 +47,8 @@ internal suspend fun <T : Throwable> assertSuspendingThrows(
             throw error
         }
 
-        // Check exception message (optional)
-        if (expectedExceptionMessage != null) {
-            Assert.assertEquals("expected exception message is incorrect", expectedExceptionMessage, actualThrown.message)
-        }
+        // Evaluate additional assertions
+        @Suppress("UNCHECKED_CAST")
+        additionalAssertions(actualThrown as T)
     }
 }

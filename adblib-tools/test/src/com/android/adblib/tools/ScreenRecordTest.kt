@@ -34,7 +34,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import org.junit.Assert
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -109,7 +108,12 @@ class ScreenRecordTest {
         stopSignal.cancel("Cancellation from test")
 
         // Assert
-        assertSuspendingThrows(CancellationException::class.java, "Cancellation from test") {
+        assertSuspendingThrows(
+            expectedException = CancellationException::class.java,
+            additionalAssertions = { e ->
+                assertEquals("Cancellation from test", e.message)
+            }
+        ) {
             screenRecorderJob.await()
         }
         val file = fakeDevice.getFile("/sdcard/foo/bar.mp4")
@@ -145,7 +149,12 @@ class ScreenRecordTest {
         stopSignal.completeExceptionally(MyTestException("Exception from test"))
 
         // Assert
-        assertSuspendingThrows(MyTestException::class.java, "Exception from test") {
+        assertSuspendingThrows(
+            expectedException = MyTestException::class.java,
+            additionalAssertions = { e ->
+                assertEquals("Exception from test", e.message)
+            }
+        ) {
             screenRecorderJob.await()
         }
         val file = fakeDevice.getFile("/sdcard/foo/bar.mp4")
@@ -165,7 +174,13 @@ class ScreenRecordTest {
         // Assert
         assertSuspendingThrows(
             expectedException = AdbDeviceFailResponseException::class.java,
-            expectedExceptionMessage = "'No device with serial: 'invalid-id' is connected.' error on device serial #invalid-id executing service 'host-serial:invalid-id:features'"
+            additionalAssertions = { e ->
+                assertEquals(
+                    "'No device with serial: 'invalid-id' is connected.'" +
+                            " error on device serial #invalid-id executing" +
+                            " service 'host-serial:invalid-id:features'", e.message
+                )
+            }
         ) {
             deviceServices.screenRecord(
                 DeviceSelector.fromSerialNumber("invalid-id"),
@@ -188,7 +203,15 @@ class ScreenRecordTest {
         // Assert
         assertSuspendingThrows(
             expectedException = AdbScreenRecordException::class.java,
-            expectedExceptionMessage = "Screen recording terminated with exit code 2. Try to reduce video resolution."
+            additionalAssertions = { e ->
+                assertEquals("Screen recording terminated with the error " +
+                                     "\"Must specify output file (see --help)\" (exit code 2). " +
+                                     "Try to reduce video resolution or unlock the device.",
+                             e.message)
+                assertEquals("screenrecord", e.command)
+                assertEquals("Must specify output file (see --help)", e.commandError)
+                assertEquals(2, e.exitCode)
+            }
         ) {
             deviceServices.screenRecord(
                 connectedDevice.selector,

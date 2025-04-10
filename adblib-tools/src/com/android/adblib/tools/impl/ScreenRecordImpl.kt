@@ -72,12 +72,15 @@ internal object ScreenRecordImpl {
             // this block.
             coroutineScope {
                 // Build the screen record command and send it to the terminal session for execution
-                val command = getScreenRecordCommand(options, remotePath) + " || exit\r"
+                val command = getScreenRecordCommand(options, remotePath)
 
-                // Starts a coroutine that opens terminal session using `terminalSessionPipe` as `stdin`
-                // Note: This coroutine is where the `screenrecord` command runs, which is expected to end when
-                // `Ctrl-C` is received from `stdin`. This job throws if the `screenrecord` command
-                // fails for some reason
+                // Starts a coroutine that opens terminal session using `terminalSessionPipe`
+                // as `stdin`
+                // Note: We use the `Pty` terminal type option so that the `Ctrl-C` we send
+                // on stop is processed correctly as a signal to `screenrecord`.
+                // Note: This coroutine is where the `screenrecord` command runs, which is
+                // expected to end when `Ctrl-C` is received from `stdin`.
+                // This job throws if the `screenrecord` command fails for some reason
                 val terminalSessionJob = async {
                     val commandOutput = deviceServices
                         .shellTerminalSession(device, ShellTerminalType.Pty)
@@ -87,10 +90,22 @@ internal object ScreenRecordImpl {
                         .first()
 
                     if (commandOutput.exitCode != 0) {
+                        // Note: `screenrecord` runs inside a terminal session, so all
+                        // output is redirected to `stdout`, even errors.
+                        // However, we currently search both `stdout` and `stderr` until
+                        // b/409832218 is fixed.
+                        val commandError = extractErrorMessageOrNull(commandOutput.stderr) ?:
+                                extractErrorMessageOrNull(commandOutput.stdout)
+                        val messageTitle = if (commandError == null) {
+                            "Screen recording terminated with exit code ${commandOutput.exitCode}"
+                        } else {
+                            "Screen recording terminated with the error \"$commandError\" " +
+                                    "(exit code ${commandOutput.exitCode})"
+                        }
                         throw AdbScreenRecordException(
-                            message = "Screen recording terminated with exit code ${commandOutput.exitCode}. Try to reduce video resolution.",
+                            message = "$messageTitle. Try to reduce video resolution or unlock the device.",
                             command = command,
-                            stderr = commandOutput.stderr,
+                            commandError = commandError,
                             exitCode = commandOutput.exitCode
                         )
                     }
@@ -100,7 +115,7 @@ internal object ScreenRecordImpl {
                     deviceServices.session.channelFactory.createOutputChannelWriter(terminalSessionPipe.pipeSource)
 
                 // Build the screen record command and send it to the terminal session for execution
-                terminalInput.writeString(command)
+                terminalInput.writeString("$command || exit\r")
 
                 // Coroutine that waits for the caller to tell us to stop the recording
                 // This job throws an exception if `stopSignal` is completed exceptionally
@@ -131,6 +146,24 @@ internal object ScreenRecordImpl {
         }
     }
 
+    private fun extractErrorMessageOrNull(output: String): String? {
+        val lines = output.split('\n')
+
+        // 1) try to find a line starting with "ERROR:"
+        // The `screenrecord` source code shows than many errors are prefixed with "ERROR:"
+        // See https://cs.android.com/android/platform/superproject/main/+/75351138ec610ab0e085108d409fa64d877d4d0b:frameworks/av/cmds/screenrecord/screenrecord.cpp;l=218;bpv=1;bpt=0
+        lines.lastOrNull { line -> line.startsWith("ERROR:") }?.also { line ->
+            return@extractErrorMessageOrNull line.substring(6).trim().trimEnd('.')
+        }
+
+        // 2) Look for the first non-empty from the end
+        lines.lastOrNull { line -> line.isNotEmpty() }?.also { line ->
+            return@extractErrorMessageOrNull line.trim().trimEnd('.')
+        }
+
+        return null
+    }
+
     internal fun getScreenRecordCommand(options: ScreenRecordOptions, path: String): String {
         val buf = StringBuilder("screenrecord")
         options.physicalDisplayId?.also {
@@ -151,7 +184,9 @@ internal object ScreenRecordImpl {
         if (options.bugreport) {
             buf.append(" --bugreport")
         }
-        buf.append(' ').append(ShellCommand.escapeDevicePath(path))
+        if (path.isNotEmpty()) {
+            buf.append(' ').append(ShellCommand.escapeDevicePath(path))
+        }
         return buf.toString()
     }
 
