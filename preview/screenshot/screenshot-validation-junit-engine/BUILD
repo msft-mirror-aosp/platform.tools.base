@@ -36,6 +36,7 @@ kotlin_test(
     deps = [
         ":screenshot-validation-junit-engine",
         "//tools/base/common:tools.common",
+        "//tools/base/preview/screenshot/screenshot-validation-api",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",

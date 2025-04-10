@@ -828,7 +828,7 @@ class BackupServiceImplTest {
   fun isBackupEnabled_enabled(): Unit = runBlocking {
     val adbServicesFactory =
       FakeAdbServicesFactory(("com.app")) {
-        it.addCommandOverride(Output("pm dumpsys package com.app", "pkgFlags=[ ALLOW_BACKUP ]"))
+        it.addCommandOverride(Output("dumpsys package com.app", "pkgFlags=[ ALLOW_BACKUP ]"))
       }
     val backupService = BackupServiceImpl(adbServicesFactory)
 
@@ -839,7 +839,7 @@ class BackupServiceImplTest {
   fun isBackupEnabled_disabled(): Unit = runBlocking {
     val adbServicesFactory =
       FakeAdbServicesFactory(("com.app")) {
-        it.addCommandOverride(Output("pm dumpsys package com.app", "pkgFlags=[  ]"))
+        it.addCommandOverride(Output("dumpsys package com.app", "pkgFlags=[  ]"))
       }
     val backupService = BackupServiceImpl(adbServicesFactory)
 
@@ -850,7 +850,7 @@ class BackupServiceImplTest {
   fun isBackupEnabled_noFlags(): Unit = runBlocking {
     val adbServicesFactory =
       FakeAdbServicesFactory(("com.app")) {
-        it.addCommandOverride(Output("pm dumpsys package com.app", ""))
+        it.addCommandOverride(Output("dumpsys package com.app", ""))
       }
     val backupService = BackupServiceImpl(adbServicesFactory)
 

@@ -80102,6 +80102,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.skiko.skiko-awt-runtime-linux-arm64_0.8.18",
+    pom = "repository/org/jetbrains/skiko/skiko-awt-runtime-linux-arm64/0.8.18/skiko-awt-runtime-linux-arm64-0.8.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/skiko/skiko-awt-runtime-linux-arm64/0.8.18",
+    deps = [
+        "org.jetbrains.skiko.skiko-awt_0.8.18",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.skiko.skiko-awt-runtime-linux-x64_0.7.16",
     pom = "repository/org/jetbrains/skiko/skiko-awt-runtime-linux-x64/0.7.16/skiko-awt-runtime-linux-x64-0.7.16.pom",
     repo_root_path = "repository",
@@ -80152,6 +80163,17 @@ maven_artifact(
     pom = "repository/org/jetbrains/skiko/skiko-awt-runtime-macos-x64/0.8.18/skiko-awt-runtime-macos-x64-0.8.18.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/skiko/skiko-awt-runtime-macos-x64/0.8.18",
+    deps = [
+        "org.jetbrains.skiko.skiko-awt_0.8.18",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.skiko.skiko-awt-runtime-windows-arm64_0.8.18",
+    pom = "repository/org/jetbrains/skiko/skiko-awt-runtime-windows-arm64/0.8.18/skiko-awt-runtime-windows-arm64-0.8.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/skiko/skiko-awt-runtime-windows-arm64/0.8.18",
     deps = [
         "org.jetbrains.skiko.skiko-awt_0.8.18",
     ],

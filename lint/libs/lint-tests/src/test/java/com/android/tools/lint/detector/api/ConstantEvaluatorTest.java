@@ -617,6 +617,12 @@ public class ConstantEvaluatorTest extends TestCase {
         checkExpression(0L, "9999L >> '0';");
     }
 
+    public void testShiftingKotlinCharacters() {
+      checkKotlinExpression(1599098439, "('_'.code shl 24) or ('P'.code shl 16) or ('N'.code shl 8) or 'G'.code", true);
+      checkKotlinExpression(47, "'_'.code shr 1", true);
+      checkKotlinExpression(0L, "9999L shr '0'.code", true);
+    }
+
     public void testIndirectConstants() {
         // Scenario reduced from VersionChecksTest#testMinorVersionsOperators under
         // TestMode.FULLY_QUALIFIED

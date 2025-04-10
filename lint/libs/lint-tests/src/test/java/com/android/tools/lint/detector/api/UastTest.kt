@@ -44,6 +44,7 @@ import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.impl.source.PsiImmediateClassType
 import junit.framework.TestCase
+import kotlin.test.assertContains
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaSession
@@ -1815,6 +1816,83 @@ class UastTest : TestCase() {
                 """
           .trimIndent(),
         file.asSourceString().dos2unix(),
+      )
+    }
+  }
+
+  fun testParameterNameFromBinary() {
+    // b/401248402
+    // https://youtrack.jetbrains.com/issue/IDEA-370420
+    val testFiles =
+      arrayOf(
+        kotlin(
+            """
+            package another.pkg
+            import test.pkg.function
+
+            fun test() {
+              // Binary
+              function("foo", "bar", "baz")
+              // Source
+              function(false, "local")
+            }
+
+            fun function(native: Boolean, void: Any) {}
+          """
+          )
+          .indented(),
+        bytecode(
+          "lib/test.jar",
+          kotlin(
+              """
+              package test.pkg
+
+              fun function(void: Any, native: Any, transient: Any) {}
+            """
+            )
+            .indented(),
+          0x54e2ce5c,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuLiKEktLtEryE4XYgsBsrxLlBi0
+                GAAvgr4WLAAAAA==
+                """,
+          """
+                test/pkg/TestKt.class:
+                H4sIAAAAAAAA/41RTW/TQBSc53w5plDXoUADhEJb2gLCbYWEUMUBISFZhBRo
+                lUtOG2cbNnHWyN5YHPuXuCEOqGd+FOJtElEEEuIyM/v85nn27fcfX78BeIJd
+                wrKRuQk/jofhCYvXpgYi+CNRiDARehge9Ucy5mqJ4J5OdWxUqgnPdtp/thz+
+                T2W3S9hop9kwHEnTz4TSeSi0To2wc/Owk5rONEkOCeUiVQMXLqE1Tk2idDgq
+                JqHSRmZaJGGkTcZmFec1eITV+IOMxwv3W5GJieRGwva/cx7bIUNOtYQlXPZw
+                CVcIVc1hCunCJ9RNJvgvUhsXASH4exphpb0I+EYaMRBGcM2ZFCXeMFmoWwCB
+                xlY4/PGTsmqP1WCf8PT8zPfOzzzHd+ZkwXWaLRZNZ48Oqr7DXGIuL7hi2doP
+                yE6u2Td8PDa8tZfpQPKjtpWWnemkL7MT0U+kTZ7GIumKTNnzorj5fqqNmshI
+                FypXXPq1uRcXb0LwjtNpFstXynrWFp7u3PFbI/bhoIz5ZddQQZXPG3x6x2wv
+                3HgQ1L9g+WGwwvgoaDB+thvBJmOVTQG3bbFen7fDxdXZuAZ8VjRTASsH960u
+                2avP/naBDrZneA87zM+5uspJrvVQinA9wo2IkzUj3MStCLfR6oFy3MF6D9Uc
+                lRx3c7gz9HMEPwFeb2T2JwMAAA==
+                """,
+        ),
+      )
+    // TODO: when the fix for IDEA-370420 is available, lack of "transient"
+    //  will make the test assertion failed. Also, at that point, param names
+    //  like p, p1, etc. should not be allowed.
+    //  val expected = arrayOf("void", "native", "transient")
+    val expected = arrayOf("p", "p1", "p2", "void", "native")
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            val txt = node.sourcePsi?.text
+            val resolved = node.resolve()
+            assertNotNull(txt, resolved)
+            val params = resolved!!.parameterList.parameters
+            for (p in params) {
+              assertContains(expected, p.name, txt)
+            }
+            return super.visitCallExpression(node)
+          }
+        }
       )
     }
   }

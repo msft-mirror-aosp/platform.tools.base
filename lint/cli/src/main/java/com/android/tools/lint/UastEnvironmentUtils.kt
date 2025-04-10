@@ -23,7 +23,6 @@ import com.android.tools.idea.gradle.dcl.lang.psi.DeclarativeASTFactory
 import com.android.tools.idea.gradle.dcl.lang.psi.DeclarativeFileType
 import com.android.tools.lint.UastEnvironment.Companion.getKlibPaths
 import com.android.tools.lint.UastEnvironment.Configuration.Companion.isKMP
-import com.android.tools.lint.UastEnvironment.Module.Variant.Companion.toTargetPlatform
 import com.android.tools.lint.detector.api.GraphUtils
 import com.android.tools.lint.detector.api.LintModelModuleLibraryProject
 import com.android.tools.lint.detector.api.Project
@@ -180,7 +179,7 @@ internal fun configureAnalysisApiProjectStructure(
   val projectsWithNoSource = mutableSetOf<Project>()
   for (proj in uastEnvModuleOrder) {
     val m = uastEnvModuleByProject[proj]!!
-    val mPlatform = m.variant.toTargetPlatform()
+    val mPlatform = m.platforms
 
     // NB: this walks through the entire directories as source roots and build scripts
     // Therefore, we call this only once here and use them with necessary filtering at use-site.

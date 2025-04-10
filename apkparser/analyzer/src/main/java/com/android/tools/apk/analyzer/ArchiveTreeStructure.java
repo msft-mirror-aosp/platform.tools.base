@@ -215,6 +215,28 @@ public class ArchiveTreeStructure {
                                 data.setDownloadFileSize(sizeOfAllChildren);
                             }
                         });
+
+        // Compute page alignment issues and roll up to parent.
+        ArchiveTreeStream.postOrderStream(root)
+                .forEach(
+                        node -> {
+                            ArchiveEntry data = node.getData();
+                            long loadSectionAlignment = data.getElfMinimumLoadSectionAlignment();
+                            if (loadSectionAlignment != -1
+                                    && !data.isFileCompressed()
+                                    && loadSectionAlignment % (16L * 1024) != 0L) {
+                                data.setSelfOrChildLoadSectionIncompatible(true);
+                                return;
+                            }
+
+                            for (ArchiveNode childNode : node.getChildren()) {
+                                ArchiveEntry childData = childNode.getData();
+                                if (childData.getSelfOrChildLoadSectionIncompatible()) {
+                                    data.setSelfOrChildLoadSectionIncompatible(true);
+                                    return;
+                                }
+                            }
+                        });
     }
 
     public static void sort(

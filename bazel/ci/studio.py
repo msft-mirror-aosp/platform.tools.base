@@ -148,6 +148,9 @@ def copy_bazel_logs(build_env: bazel.BuildEnv) -> None:
   shutil.copy2(server_log, dest_path / 'java.log')
   result = build_env.bazel_info('output_base')
   output_base = pathlib.Path(result.stdout.decode('utf-8').strip())
+  jvm_out = output_base / 'server' / 'jvm.out'
+  if jvm_out.exists():
+    shutil.copy2(jvm_out, dest_path / 'jvm.out')
   worker_logs = output_base / 'bazel-workers'
   for path in worker_logs.glob('*.log'):
     shutil.copy2(path, dest_path / path.name)

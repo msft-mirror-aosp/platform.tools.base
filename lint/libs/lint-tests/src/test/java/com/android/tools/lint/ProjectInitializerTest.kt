@@ -3209,7 +3209,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           <sdk dir='${TestUtils.getSdk()}'/>
           <root dir="$root" />
 
-          <module name="project2" android="true" library="false" compile-sdk-version='18' platform='android'>
+          <module name="project2" android="true" library="false" compile-sdk-version='18' kotlinPlatforms='JVM [1.8]'>
             <manifest file="project2/src/main/AndroidManifest.xml" />
             <resource file="project2/src/main/res/values/styles.xml" />
             <src file="project2/src/main/java/pkg/android/MainActivity.kt" />
@@ -3219,13 +3219,13 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             <dep module="project1" kind="dependsOn" />
           </module>
 
-          <module name="project3" android="false" library="false" platform='ios'>
+          <module name="project3" android="false" library="false" kotlinPlatforms='Native [general]'>
             <src file="project3/iosApp/ContentView.swift" />
             <src file="project3/iosApp/iOSApp.swift" />
             <dep module="project1" kind="dependsOn"/>
           </module>
 
-          <module name="project1" android="false" platform='common'>
+          <module name="project1" android="false" kotlinPlatforms='Native [general]/JVM [1.8]'>
             <src file="project1/src/commonMain/kotlin/pkg/Platform.kt" />
             <src file="project1/src/androidMain/kotlin/pkg/Platform.kt" />
             <src file="project1/src/iosMain/kotlin/pkg/Platform.kt" />
@@ -3235,7 +3235,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       """
         .trimIndent()
 
-    val projects = lint().projects(shared, androidApp, iosApp).createProjects(root)
+    lint().projects(shared, androidApp, iosApp).createProjects(root)
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(

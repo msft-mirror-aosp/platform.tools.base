@@ -370,6 +370,12 @@ class LintJarApiMigration(private val client: LintClient) {
         "org/jetbrains/kotlin/analysis/api/components/KaSubstitutorBuilder"
       "org/jetbrains/kotlin/analysis/api/components/KtSubtypingErrorTypePolicy" ->
         "org/jetbrains/kotlin/analysis/api/components/KaSubtypingErrorTypePolicy"
+      // Migrated without @Deprecated at 20966dc85a6ab00b0f851581d4fee8732975c6a3
+      "org/jetbrains/kotlin/analysis/api/components/KtSymbolDeclarationOverridesProvider" ->
+        "org/jetbrains/kotlin/analysis/api/components/KaSymbolRelationProvider"
+      // Migrated without @Deprecated at 20966dc85a6ab00b0f851581d4fee8732975c6a3
+      "org/jetbrains/kotlin/analysis/api/components/KtSymbolDeclarationOverridesProviderMixIn" ->
+        "org/jetbrains/kotlin/analysis/api/components/KaSymbolRelationProviderMixIn"
       "org/jetbrains/kotlin/analysis/api/components/KtTypeBuilder" ->
         "org/jetbrains/kotlin/analysis/api/components/KaTypeBuilder"
       "org/jetbrains/kotlin/analysis/api/components/KtTypeParameterTypeBuilder" ->
@@ -2172,6 +2178,11 @@ class LintJarApiMigration(private val client: LintClient) {
     return curr.name == name && curr.owner == owner && (desc == null || curr.desc == desc)
   }
 
+  private fun AbstractInsnNode.isCall(owner: String, desc: String? = null): Boolean {
+    val curr = this as? MethodInsnNode ?: return false
+    return curr.owner == owner && (desc == null || curr.desc == desc)
+  }
+
   private fun AbstractInsnNode.isVirtualCall(
     name: String,
     owner: String,
@@ -2186,6 +2197,10 @@ class LintJarApiMigration(private val client: LintClient) {
     desc: String? = null,
   ): Boolean {
     return opcode == Opcodes.INVOKESTATIC && isCall(name, owner, desc)
+  }
+
+  private fun AbstractInsnNode.isStaticCall(owner: String, desc: String? = null): Boolean {
+    return opcode == Opcodes.INVOKESTATIC && isCall(owner, desc)
   }
 
   @Suppress("UNUSED_VARIABLE")
@@ -2483,6 +2498,25 @@ class LintJarApiMigration(private val client: LintClient) {
         instructions.remove(next)
 
         curr = end
+        modified = true
+      } else if (
+        curr.isStaticCall(
+          "org/jetbrains/kotlin/analysis/api/calls/KtCallKt"
+          // (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall;
+        )
+      ) {
+        val curr = curr as? MethodInsnNode ?: break
+        val newOwner =
+          if (curr.name == "getSymbol") {
+            // The following util is the only one migrated to ...resolution/KaCallKt.
+            // public val <S : ...Symbol, C : ...Signature<S>> ...MemberCall<S, C>.symbol: S
+            //    get() = partiallyAppliedSymbol.symbol
+            "org/jetbrains/kotlin/analysis/api/resolution/KaCallKt"
+          } else {
+            // Everything else is migrated to ...resolution/KaCallInfoKt.
+            "org/jetbrains/kotlin/analysis/api/resolution/KaCallInfoKt"
+          }
+        curr.owner = newOwner
         modified = true
       } else {
         curr = curr.next ?: break

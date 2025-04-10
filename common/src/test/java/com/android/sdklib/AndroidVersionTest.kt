@@ -52,9 +52,9 @@ class AndroidVersionTest {
             return assertThat(AndroidVersion.fromString(from).getApiStringWithExtension())
                 .named("AndroidVersion.fromString(\"%s\").getApiStringWithExtension()", from)
         }
-        assertAndroidVersionNormalized("36").isEqualTo("36")
-        assertAndroidVersionNormalized("36.0").isEqualTo("36")
-        assertAndroidVersionNormalized("36.00").isEqualTo("36")
+        assertAndroidVersionNormalized("36").isEqualTo("36.0")
+        assertAndroidVersionNormalized("36.0").isEqualTo("36.0")
+        assertAndroidVersionNormalized("36.00").isEqualTo("36.0")
         assertAndroidVersionNormalized("36.1").isEqualTo("36.1")
         assertAndroidVersionNormalized("36.01").isEqualTo("36.1")
         assertAndroidVersionNormalized("37").isEqualTo("37.0")
@@ -69,7 +69,7 @@ class AndroidVersionTest {
         fun assertAndroidVersionToString(from: String) =
             assertThat(AndroidVersion.fromString(from).toString())
                 .named("AndroidVersion.fromString(\"%s\").toString()", from)
-        assertAndroidVersionToString("36").isEqualTo("API 36")
+        assertAndroidVersionToString("36.0").isEqualTo("API 36.0")
         assertAndroidVersionToString("36.1").isEqualTo("API 36.1")
         assertAndroidVersionToString("37").isEqualTo("API 37.0")
         assertAndroidVersionToString("37.1").isEqualTo("API 37.1")

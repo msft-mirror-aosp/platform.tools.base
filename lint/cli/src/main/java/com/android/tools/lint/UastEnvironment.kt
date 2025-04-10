@@ -18,7 +18,6 @@ package com.android.tools.lint
 
 import com.android.SdkConstants
 import com.android.SdkConstants.EXT_JAR
-import com.android.tools.lint.UastEnvironment.Module.Variant.Companion.toModuleVariant
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Project.DependencyKind
 import com.intellij.core.CoreApplicationEnvironment
@@ -35,6 +34,7 @@ import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageVersionSettings
+import org.jetbrains.kotlin.config.deserializeTargetPlatformByComponentPlatforms
 import org.jetbrains.kotlin.config.languageVersionSettings
 import org.jetbrains.kotlin.konan.library.KLIB_INTEROP_IR_PROVIDER_IDENTIFIER
 import org.jetbrains.kotlin.library.CompilerSingleFileKlibResolveAllowingIrProvidersStrategy
@@ -109,7 +109,7 @@ interface UastEnvironment {
       }
 
       internal val Configuration.isKMP: Boolean
-        get() = modules.mapTo(mutableSetOf()) { it.variant }.size > 1
+        get() = modules.flatMapTo(mutableSetOf()) { it.platforms }.size > 1
     }
 
     val modules: Collection<Module>
@@ -229,61 +229,33 @@ interface UastEnvironment {
     isUnitTest: Boolean,
   ) {
 
-    enum class Variant {
-      UNKNOWN, // e.g. test project
-      COMMON,
-      JVM,
-      ANDROID,
-      NATIVE,
-      JS,
-      WASM;
-
-      companion object {
-        fun String.toModuleVariant(): Variant {
-          // https://kotlinlang.org/docs/multiplatform-dsl-reference.html#targets
-          // https://kotlinlang.org/docs/multiplatform-hierarchy.html#target-shortcuts
-          return when {
-            startsWith("common") -> COMMON
-            startsWith("jvm") -> JVM
-            startsWith("android") -> {
-              // androidNative v.s. everything else
-              if (endsWith("Native")) NATIVE else ANDROID
-            }
-            startsWith("ios") -> NATIVE
-            startsWith("linux") -> NATIVE
-            startsWith("macos") -> NATIVE
-            startsWith("mingw") -> NATIVE
-            startsWith("tvos") -> NATIVE
-            startsWith("js") -> JS
-            startsWith("wasm") -> WASM
-            else -> UNKNOWN
-          }
-        }
-
-        fun Variant.toTargetPlatform(): TargetPlatform {
-          return when (this) {
-            COMMON -> CommonPlatforms.defaultCommonPlatform
-            NATIVE -> NativePlatforms.unspecifiedNativePlatform
-            JS -> JsPlatforms.defaultJsPlatform
-            WASM -> WasmPlatforms.Default
-            else -> JvmPlatforms.defaultJvmPlatform
-          }
-        }
-      }
-    }
-
-    val variant: Variant
+    // TODO: This is very unreliable because source set names can be anything; the names below
+    //  are just conventions.
+    private val String.targetPlatformFromSourceSetNameConvention: TargetPlatform
       get() =
-        if (project.isAndroidProject) {
-          Variant.ANDROID
-        } else {
-          // From explicit attribute
-          project.platform?.toModuleVariant()?.takeIf { it != Variant.UNKNOWN }
-            // From AGP model's build variant
-            ?: project.buildVariant?.name?.toModuleVariant()
-            // From the module name in project.xml
-            ?: project.name.toModuleVariant()
+        when {
+          startsWith("common") -> CommonPlatforms.defaultCommonPlatform
+          startsWith("jvm") -> JvmPlatforms.defaultJvmPlatform
+          startsWith("android") -> {
+            // androidNative v.s. everything else
+            if (endsWith("Native")) NativePlatforms.unspecifiedNativePlatform
+            else JvmPlatforms.defaultJvmPlatform
+          }
+          startsWith("ios") -> NativePlatforms.unspecifiedNativePlatform
+          startsWith("linux") -> NativePlatforms.unspecifiedNativePlatform
+          startsWith("macos") -> NativePlatforms.unspecifiedNativePlatform
+          startsWith("mingw") -> NativePlatforms.unspecifiedNativePlatform
+          startsWith("tvos") -> NativePlatforms.unspecifiedNativePlatform
+          startsWith("js") -> JsPlatforms.defaultJsPlatform
+          startsWith("wasm") -> WasmPlatforms.Default
+          else -> JvmPlatforms.defaultJvmPlatform
         }
+
+    internal val platforms: TargetPlatform =
+      // TODO: Support reading the Kotlin target platforms from Gradle projects.
+      (project as? ManualProject)?.kotlinPlatforms?.deserializeTargetPlatformByComponentPlatforms()
+        ?: project.buildVariant?.name?.targetPlatformFromSourceSetNameConvention
+        ?: project.name.targetPlatformFromSourceSetNameConvention
 
     val sourceRoots: Set<File> =
       with(project) {

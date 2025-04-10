@@ -129,9 +129,6 @@ class PreviewAnnotationDescriptor(
                     previewId = previewId
                 )
             }
-            else -> {
-                error("Unsupported PreviewMethod $preview")
-            }
         }
 
         render(previewScreenshot, context.previewImageOutputDir.absolutePath, context.renderer).forEachIndexed { idx, result ->

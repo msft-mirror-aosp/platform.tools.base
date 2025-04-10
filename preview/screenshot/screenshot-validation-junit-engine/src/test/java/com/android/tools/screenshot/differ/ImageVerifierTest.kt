@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.android.tools.screenshot
+package com.android.tools.screenshot.differ
 
-import com.android.tools.screenshot.differ.ImageDiffer
-import com.android.tools.screenshot.differ.ImageVerifier
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -37,7 +35,7 @@ class ImageVerifierTest {
 
     @Test
     fun assertMatchReference_missingReference() {
-        val imageVerifier = ImageVerifier(ImageDiffer.MSSIMMatcher())
+        val imageVerifier = ImageVerifier(MSSIMMatcher())
         val diffImage = File(diffDir, "diff.png")
         val error = assertThrows(FileNotFoundException::class.java) {
             imageVerifier.verify(
@@ -52,7 +50,7 @@ class ImageVerifierTest {
 
     @Test
     fun assertMatchReference_passed() {
-        val imageVerifier = ImageVerifier(ImageDiffer.MSSIMMatcher())
+        val imageVerifier = ImageVerifier(MSSIMMatcher())
         val diffImage = File(diffDir, "diff.png")
         imageVerifier.verify(
             createImageFile("circle", newDir),
@@ -64,7 +62,7 @@ class ImageVerifierTest {
 
     @Test
     fun assertMatchReferenceWithThreshold_passed() {
-        val imageVerifier = ImageVerifier(ImageDiffer.MSSIMMatcher(imageDiffThreshold = 0.9f))
+        val imageVerifier = ImageVerifier(MSSIMMatcher(imageDiffThreshold = 0.9f))
         val diffImage = File(diffDir, "diff.png")
         imageVerifier.verify(
             createImageFile("circle", newDir),
@@ -76,7 +74,7 @@ class ImageVerifierTest {
 
     @Test
     fun assertMatchReference_failed() {
-        val imageVerifier = ImageVerifier(ImageDiffer.MSSIMMatcher())
+        val imageVerifier = ImageVerifier(MSSIMMatcher())
         val diffImage = File(diffDir, "diff.png")
         val error = assertThrows(ImageVerifier.ImageComparisonAssertionError::class.java) {
             imageVerifier.verify(
@@ -95,7 +93,7 @@ class ImageVerifierTest {
 
     @Test
     fun assertMatchReference_sizeMismatch() {
-        val imageVerifier = ImageVerifier(ImageDiffer.MSSIMMatcher())
+        val imageVerifier = ImageVerifier(MSSIMMatcher())
         val diffImage = File(diffDir, "diff.png")
         val error = assertThrows(ImageVerifier.ImageComparisonAssertionError::class.java) {
             imageVerifier.verify(

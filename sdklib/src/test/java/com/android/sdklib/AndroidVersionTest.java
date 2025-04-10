@@ -17,6 +17,7 @@
 package com.android.sdklib;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -49,12 +50,12 @@ public class AndroidVersionTest {
     @Test
     public void withBaseExtensionLevel() {
         assertThat(new AndroidVersion(30).withBaseExtensionLevel())
-            .isEqualTo(new AndroidVersion(30, null, null, true));
+                .isEqualTo(new AndroidVersion(30, null, null, true));
         assertThat(new AndroidVersion(33).withBaseExtensionLevel())
-            .isEqualTo(new AndroidVersion(33, null, 3, true));
+                .isEqualTo(new AndroidVersion(33, null, 3, true));
         assertThat(new AndroidVersion(33).withBaseExtensionLevel().getExtensionLevel()).isEqualTo(3);
-        assertThat( new AndroidVersion(36, 1).withBaseExtensionLevel())
-            .isEqualTo(new AndroidVersion(36, 1, null, null, true));
+        assertThat(new AndroidVersion(36, 1).withBaseExtensionLevel())
+                .isEqualTo(new AndroidVersion(36, 1, null, null, true));
     }
 
     @Test
@@ -238,7 +239,7 @@ public class AndroidVersionTest {
                 AndroidVersion.fromString(s);
                 fail("Invalid code name '" + s + "': Expected to fail. Actual: did not fail.");
             } catch (IllegalArgumentException e) {
-                assertEquals("Invalid android API or codename " + s, e.getMessage());
+                assertEquals("Invalid Android API or codename " + s, e.getMessage());
             }
         }
     }

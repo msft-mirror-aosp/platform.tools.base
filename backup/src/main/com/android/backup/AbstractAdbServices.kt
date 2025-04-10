@@ -211,7 +211,7 @@ abstract class AbstractAdbServices(
 
   override suspend fun isBackupEnabled(applicationId: String): Boolean {
     try {
-      val lines = executeCommand("pm dumpsys package $applicationId").stdout.lines()
+      val lines = executeCommand("dumpsys package $applicationId").stdout.lines()
       val flags =
         (lines
           .find { it.trim().startsWith("pkgFlags=") }
