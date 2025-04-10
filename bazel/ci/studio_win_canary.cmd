@@ -11,6 +11,8 @@ set PATH=c:\tools\msys64\usr\bin;%PATH%
 set SCRIPTDIR=%~dp0
 call :normalize_path "%SCRIPTDIR%..\..\..\.." BASEDIR
 
+set PATH=%BASEDIR%\prebuilts\studio\jdk\jbr-next\windows\bin;%PATH%
+
 @rem Expected arguments:
 set OUTDIR=%1
 set DISTDIR=%2
