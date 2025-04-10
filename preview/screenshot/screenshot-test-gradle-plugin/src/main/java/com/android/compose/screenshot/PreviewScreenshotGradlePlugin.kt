@@ -245,7 +245,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         }
                         task.namespace.set(variant.namespace)
                         task.layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
-                        task.referenceImageDir.set(project.layout.projectDirectory.dir("src/${variantName}ScreenshotTest/reference"))
+                        task.referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
                         task.previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
                         task.diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
                     }
