@@ -23,6 +23,8 @@ import com.android.backup.ErrorCode.UNEXPECTED_ERROR
 sealed class BackupResult {
   data object Success : BackupResult()
 
+  data object WithoutAppData : BackupResult()
+
   data class Error(val errorCode: ErrorCode, val throwable: Throwable) : BackupResult()
 }
 

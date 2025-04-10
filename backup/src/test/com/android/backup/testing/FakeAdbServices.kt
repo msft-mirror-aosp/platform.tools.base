@@ -77,6 +77,7 @@ class FakeAdbServices(
   }
 
   private val commandOverrides = mutableMapOf<String, CommandOverride>()
+  private val contentOverrides = mutableMapOf<String, String>()
 
   var bmgrEnabled = false
   var failReadWriteContent = false
@@ -129,7 +130,8 @@ class FakeAdbServices(
     if (failReadWriteContent) {
       throw IOException()
     }
-    outputStream.write(uri.toByteArray())
+    val content = contentOverrides[uri] ?: uri
+    outputStream.write(content.toByteArray())
   }
 
   override suspend fun writeContent(inputStream: InputStream, uri: String) {
@@ -141,6 +143,11 @@ class FakeAdbServices(
 
   fun addCommandOverride(override: CommandOverride): FakeAdbServices {
     commandOverrides[override.command] = override
+    return this
+  }
+
+  fun addContentOverride(uri: String, content: String): FakeAdbServices {
+    contentOverrides[uri] = content
     return this
   }
 
