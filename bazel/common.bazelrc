@@ -24,10 +24,6 @@ build --jvmopt='-XX:+UseG1GC'
 build --jvmopt='-XX:+ErrorFileToStderr'
 build --verbose_failures
 
-# Needed by rules_android.
-common --experimental_google_legacy_api
-common --experimental_enable_android_migration_apis
-
 # TODO(b/270757509) remove after tests switched to flags from product-info.json (//tools/adt/idea/studio:default_user_jvm_args)
 build --jvmopt='-XX:CompileCommand=quiet -XX:CompileCommand=exclude,com/intellij/openapi/vfs/impl/FilePartNodeRoot,trieDescend'
 

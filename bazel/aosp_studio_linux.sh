@@ -16,8 +16,6 @@ readonly SCRIPT_NAME="$(basename "$0")"
 
 readonly CONFIG_OPTIONS="--config=ci --config=without_vendor --no//tools/base/bazel:studio-release"
 
-export ANDROID_HOME="${TMPDIR:-/tmp}/android-sdk"
-
 ####################################
 # Copies bazel artifacts to an output directory named 'artifacts'.
 # Globals:
@@ -39,19 +37,6 @@ function copy_bazel_artifacts() {(
   mkdir ${repository}
   unzip -d ${repository} ${gmaven_without_vendor_zip}
 )}
-
-####################################
-# Stub the directories expected by rules_android.
-# These are required by the Bazel module when initializing, but
-# since the build does not depend on any android rules, the
-# android-sdk is not truly needed.
-# Globals:
-#   ANDROID_HOME
-####################################
-function stub_android_home_sdk() {
-  mkdir -p "${ANDROID_HOME}/platforms/android-35"
-  mkdir -p "${ANDROID_HOME}/build-tools/35.0.0"
-}
 
 ####################################
 # Generates flag values and runs bazel test.
@@ -107,7 +92,6 @@ function copy_bazel_worker_logs() {
   cp "${output_base}/bazel-workers/*.log" "${worker_log_dir}"
 }
 
-stub_android_home_sdk
 run_bazel_build
 readonly BAZEL_STATUS=$?
 

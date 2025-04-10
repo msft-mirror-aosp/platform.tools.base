@@ -1,9 +1,3 @@
-"""Android rules"""
-
-load("@rules_android//providers:providers.bzl", "AndroidLibraryResourceClassJarProvider")
-load("@rules_android//rules:android_split_transition.bzl", "android_split_transition")
-load("@rules_java//java:defs.bzl", "JavaInfo")
-
 def _jni_library_impl(ctx):
     inputs = []
     for cpu, deps in ctx.split_attr.deps.items():
@@ -58,26 +52,11 @@ _android_cc_binary = rule(
         "filename": attr.string(),
         "binary": attr.label(
             allow_files = True,
-            cfg = android_split_transition,
+            cfg = android_common.multi_cpu_configuration,
         ),
         "outs": attr.output_list(),
     },
     implementation = _android_cc_binary_impl,
-)
-
-def _aar_to_jar_impl(ctx):
-    jars = []
-    for aar in ctx.attr.aars:
-        jars.append(aar[JavaInfo].java_outputs[0].class_jar)
-    return [DefaultInfo(files = depset(jars))]
-
-_aars_to_jars = rule(
-    attrs = {
-        "aars": attr.label_list(
-            providers = [[AndroidLibraryResourceClassJarProvider, JavaInfo]],
-        ),
-    },
-    implementation = _aar_to_jar_impl,
 )
 
 def android_cc_binary(name, binary, filename, **kwargs):
@@ -100,7 +79,7 @@ def android_cc_binary(name, binary, filename, **kwargs):
 jni_library = rule(
     attrs = {
         "deps": attr.label_list(
-            cfg = android_split_transition,
+            cfg = android_common.multi_cpu_configuration,
             allow_files = True,
         ),
         "_zipper": attr.label(
@@ -141,14 +120,7 @@ def aidl_library(name, srcs = [], **kwargs):
     for src in srcs:
         gen_name = name + "_gen_" + _name(src).replace(".", "_")
         java_file = _aidl_to_java(src, gen_dir)
-        cmd = "$(location @androidsdk//:aidl_binary)"
-        # Add the include path. Without this, aidl will fail and say
-        # "directory '$include_dir' is not found in any of the import paths"
-        basename = src[0:src.rfind("/aidl/")]
-        include_dir = native.package_name() + "/" + basename + "/aidl"
-        cmd += " -I " + include_dir
-
-        cmd += " $< -o$(RULEDIR)/" + gen_dir
+        cmd = "$(location @androidsdk//:aidl_binary) $< -o$(RULEDIR)/" + gen_dir
         native.genrule(
             name = gen_name,
             srcs = [src],
@@ -163,17 +135,10 @@ def aidl_library(name, srcs = [], **kwargs):
     native.java_library(
         name = name,
         srcs = intermediates,
-        **kwargs
+        **kwargs,
     )
 
-def dex_library(name, jars = [], aars = [], output = None, visibility = None, tags = [], flags = []):
-    if aars:
-        _aars_to_jars(
-            name = name + "_aar_jars",
-            aars = aars,
-        )
-        jars = jars + [":" + name + "_aar_jars"]
-
+def dex_library(name, jars = [], output = None, visibility = None, tags = [], flags = []):
     native.genrule(
         name = name,
         srcs = jars,

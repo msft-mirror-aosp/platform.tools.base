@@ -2,6 +2,7 @@
 # Linux
 #
 common:linux --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/linux/ndk/27.0.12077973
+common:linux --repo_env=ANDROID_HOME=prebuilts/studio/sdk/linux
 
 build:linux --bes_keywords=linux
 build:linux --host_platform=//tools/base/bazel/platforms:linux
@@ -15,6 +16,7 @@ build:linux --workspace_status_command="prebuilts/python/linux-x86/bin/python3 t
 # Windows
 #
 common:windows --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/windows/ndk/27.0.12077973
+common:windows --repo_env=ANDROID_HOME=prebuilts/studio/sdk/windows
 
 build:windows --bes_keywords=windows
 build:windows --host_platform=//tools/base/bazel/platforms:windows
@@ -36,6 +38,7 @@ build:windows --workspace_status_command="tools/base/bazel/workspace.cmd"
 # Mac
 #
 common:macos --repo_env=ANDROID_NDK_HOME=$WORKSPACE_ROOT/prebuilts/studio/sdk/darwin/ndk/27.0.12077973
+common:macos --repo_env=ANDROID_HOME=prebuilts/studio/sdk/darwin
 
 # supports_dynamic_linker cannot be used on MacOS, or will cause thread-local
 # failures in protobuf. Other libraries (grpc) have encountered this issue,

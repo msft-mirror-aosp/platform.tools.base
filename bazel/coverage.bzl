@@ -1,8 +1,3 @@
-load(
-    "@rules_android//android:rules.bzl",
-    "android_local_test",
-)
-
 def coverage_java_test(name, data = [], jvm_flags = [], visibility = None, test_excluded_packages = {}, **kwargs):
     jacoco_jvm_agent = "//prebuilts/tools/common/jacoco:agent"
 
@@ -108,7 +103,7 @@ def coverage_android_local_test(
     elif "//visibility:public" not in visibility:
         visibility += ["@results//:__pkg__"]
 
-    android_local_test(
+    native.android_local_test(
         name = name,
         data = data + select({
             "//tools/base/bazel:agent_coverage": [jacoco_jvm_agent],
