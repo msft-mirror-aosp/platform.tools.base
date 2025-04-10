@@ -3091,4 +3091,7 @@ public final class SdkConstants {
      */
     public static final String WATCH_FACE_FORMAT_VERSION_PROPERTY =
             "com.google.wear.watchface.format.version";
+
+    /** The default Watch Face Format to use if the user hasn't specified it yet. */
+    public static final String WATCH_FACE_FORMAT_DEFAULT_VERSION = "1";
 }
