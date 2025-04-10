@@ -121,6 +121,7 @@ def aidl_library(name, srcs = [], **kwargs):
         gen_name = name + "_gen_" + _name(src).replace(".", "_")
         java_file = _aidl_to_java(src, gen_dir)
         cmd = "$(location @androidsdk//:aidl_binary) $< -o$(RULEDIR)/" + gen_dir
+        cmd += " -p$(location //prebuilts/studio/sdk:platforms/latest/framework.aidl)"
         native.genrule(
             name = gen_name,
             srcs = [src],
@@ -128,14 +129,14 @@ def aidl_library(name, srcs = [], **kwargs):
             cmd = cmd,
             tags = kwargs.get("tags", []),
             target_compatible_with = kwargs.get("target_compatible_with", []),
-            tools = ["@androidsdk//:aidl_binary"],
+            tools = ["@androidsdk//:aidl_binary", "//prebuilts/studio/sdk:platforms/latest/framework.aidl"],
         )
 
     intermediates = [_aidl_to_java(src, gen_dir) for src in srcs]
     native.java_library(
         name = name,
         srcs = intermediates,
-        **kwargs,
+        **kwargs
     )
 
 def dex_library(name, jars = [], output = None, visibility = None, tags = [], flags = []):
