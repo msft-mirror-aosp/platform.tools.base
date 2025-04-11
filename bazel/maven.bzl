@@ -4,6 +4,8 @@ load(":jvm_import.bzl", "jvm_import")
 load(":kotlin.bzl", "kotlin_library")
 load(":merge_archives.bzl", "run_singlejar")
 load(":utils.bzl", "is_release")
+load("@rules_android//rules:rules.bzl", "aar_import")
+load("@rules_android//providers:providers.bzl", "AndroidIdeInfo", "AndroidLibraryResourceClassJarProvider", "AndroidNativeLibsInfo")
 
 def generate_pom(
         ctx,
@@ -155,13 +157,14 @@ def maven_artifact(
 
 def _maven_import_impl(ctx):
     jars = []
-    infos = []
-    for java_dep in ctx.attr.java_deps:
-        info = java_dep[JavaInfo]
-        infos.append(info)
+    java_infos = []
+    aar_dep = ctx.attr.aar_dep
+    for dep in ctx.attr.java_deps + ([aar_dep] if aar_dep else []):
+        info = dep[JavaInfo]
+        java_infos.append(info)
         jars.extend([java_out.class_jar for java_out in info.outputs.jars])
 
-    infos += [dep[JavaInfo] for dep in ctx.attr.exports]
+    java_infos += [dep[JavaInfo] for dep in ctx.attr.exports]
 
     data_deps = []
     data_deps += ctx.attr.deps if ctx.attr.deps else []
@@ -179,6 +182,13 @@ def _maven_import_impl(ctx):
             name = jar.basename[:-len(jar.extension) - 1]
         names.append(name)
 
+    aar_providers = []
+    if ctx.attr.aar_dep:
+        aar_providers = [
+            aar_dep[AndroidIdeInfo],
+            aar_dep[AndroidLibraryResourceClassJarProvider],
+            aar_dep[AndroidNativeLibsInfo],
+        ]
     return struct(
         providers = [
             DefaultInfo(files = depset(jars)),
@@ -187,8 +197,8 @@ def _maven_import_impl(ctx):
                 files = files,
                 transitive = depset(direct = files, transitive = [info.transitive for info in mavens]),
             ),
-            java_common.merge(infos),
-        ],
+            java_common.merge(java_infos),
+        ] + aar_providers,
         notice = struct(
             file = ctx.attr.notice,
             name = ",".join(names),
@@ -200,7 +210,8 @@ _maven_import = rule(
 Imports java dependencies to be used by Maven rules.
 
 Args:
-  java_deps: The list of java deps provided by this target.
+  java_deps: The list of java deps provided by this target (if any).
+  aar_dep: The aar dependency provided by this target (if any).
   files: A list of maven files to make available.
   deps: The list of Maven deps required by this target.
   repo_path: A path prefix used for all files.
@@ -215,6 +226,12 @@ Args:
     implementation = _maven_import_impl,
     attrs = {
         "java_deps": attr.label_list(providers = [JavaInfo]),
+        "aar_dep": attr.label(providers = [
+            AndroidIdeInfo,
+            AndroidLibraryResourceClassJarProvider,
+            AndroidNativeLibsInfo,
+            JavaInfo,
+        ]),
         "files": attr.label_list(allow_files = True),
         "deps": attr.label_list(providers = [MavenInfo]),
         "exports": attr.label_list(providers = [MavenInfo]),
@@ -231,6 +248,7 @@ Args:
 def maven_import(
         name,
         jars = [],
+        aar = None,
         deps = [],
         original_deps = [],
         repo_root_path = "",
@@ -242,7 +260,9 @@ def maven_import(
         **kwargs):
     """Imports jars with a pom and parent attributes for use with Maven rules.
 
-    A jvm_import target, ${name}_jars, is generated to import all jars.
+    A jvm_import target, ${name}_jars, is generated to import all jars and classes
+    from aars. If an aar is specified, an aar_import target, ${name}_aar, is also
+    generated.
 
     Files at repo_root_path and repo_path are included in the _maven_import target.
     This includes the NOTICE file.
@@ -257,6 +277,7 @@ def maven_import(
     Args:
         name: The name for the maven_import target.
         jars: The list of jars to import.
+        aar: The aar (if any) to import.
         deps: The list of deps the imported jars depend on.
         original_deps: Additional targets to provide to users of this rule.
         repo_root_path: The root repository path, for globbing additional files.
@@ -269,15 +290,22 @@ def maven_import(
         exports: The exported dependencies of this library.
         **kwargs: See arguments for _maven_import.
     """
-    import_name = name + "_jars"
+    java_import_name = name + "_jars"
+    aar_import_name = name + "_aar"
     renamed_deps = {d: d + "_for_" + name if d in deps_with_exclusions else d for d in deps}
     renamed_exports = {e: e + "_for_" + name if e in deps_with_exclusions else e for e in exports}
 
     jvm_import(
-        name = import_name,
+        name = java_import_name,
         jars = jars,
         deps = renamed_deps.values(),
     )
+    if aar:
+        aar_import(
+            name = aar_import_name,
+            aar = aar,
+            deps = renamed_deps.values(),
+        )
 
     for parent, exclusions in exclusions_for_parents.items():
         jvm_import(
@@ -285,11 +313,18 @@ def maven_import(
             jars = jars,
             deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
         )
+        if aar:
+            aar_import(
+                name = name + "_for_" + parent + "_aar",
+                aar = aar,
+                deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
+            )
 
     artifact_dir = _get_artifact_dir(repo_root_path, repo_path)
     _maven_import(
         name = name,
-        java_deps = [":" + import_name],
+        java_deps = [":" + java_import_name],
+        aar_dep = (":" + aar_import_name) if aar else None,
         deps = renamed_deps.values(),
         original_deps = original_deps,
         repo_path = repo_path,
@@ -308,6 +343,7 @@ def maven_import(
         _maven_import(
             name = name + "_for_" + parent,
             java_deps = [":" + name + "_for_" + parent + "_jars"],
+            aar_dep = (":" + name + "_for_" + parent + "_aar") if aar else None,
             deps = [renamed for (d, renamed) in renamed_deps.items() if d not in exclusions],
             original_deps = original_deps,
             repo_path = repo_path,

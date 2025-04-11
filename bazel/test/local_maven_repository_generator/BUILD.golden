@@ -64,9 +64,7 @@ maven_artifact(
 maven_import(
     name = "com.google.example.aa",
     classifiers = [],
-    jars = [
-        "repository/com/google/example/aa/3/aa-3.jar"
-    ],
+    aar = "repository/com/google/example/aa/3/aa-3.aar",
     original_deps = [],
     pom = "repository/com/google/example/aa/3/aa-3.pom",
     repo_root_path = "repository",
@@ -262,8 +260,6 @@ maven_artifact(
 maven_import(
     name = "com.google.example.h",
     classifiers = [],
-    jars = [
-    ],
     exports = [
         "com.google.example.i",
     ],
@@ -584,8 +580,6 @@ maven_artifact(
 maven_import(
     name = "com.google.example.v",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/com/google/example/v/2/v-2.pom",
     repo_root_path = "repository",
@@ -656,8 +650,6 @@ maven_artifact(
 maven_import(
     name = "com.google.example.y",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/com/google/example/y/1/y-1.pom",
     repo_root_path = "repository",
@@ -676,8 +668,6 @@ maven_artifact(
 maven_import(
     name = "com.google.example.z",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/com/google/example/z/2/z-2.pom",
     repo_root_path = "repository",

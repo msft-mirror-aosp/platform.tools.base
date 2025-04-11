@@ -314,8 +314,7 @@ maven_artifact(
 maven_import(
     name = "androidx.test.espresso.espresso-idling-resource",
     classifiers = [],
-    jars = [
-    ],
+    aar = "repository/androidx/test/espresso/espresso-idling-resource/3.6.1/espresso-idling-resource-3.6.1.aar",
     original_deps = [],
     pom = "repository/androidx/test/espresso/espresso-idling-resource/3.6.1/espresso-idling-resource-3.6.1.pom",
     repo_root_path = "repository",
@@ -339,8 +338,7 @@ maven_artifact(
 maven_import(
     name = "androidx.test.monitor",
     classifiers = [],
-    jars = [
-    ],
+    aar = "repository/androidx/test/monitor/1.7.2/monitor-1.7.2.aar",
     original_deps = [],
     pom = "repository/androidx/test/monitor/1.7.2/monitor-1.7.2.pom",
     repo_root_path = "repository",
@@ -2612,8 +2610,6 @@ maven_artifact(
 maven_import(
     name = "com.google.protobuf.protobuf-bom",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/com/google/protobuf/protobuf-bom/3.25.5/protobuf-bom-3.25.5.pom",
     repo_root_path = "repository",
@@ -2790,8 +2786,6 @@ maven_artifact(
 maven_import(
     name = "com.google.protobuf.protobuf-parent",
     classifiers = [],
-    jars = [
-    ],
     exports = [
         "com.google.protobuf.protobuf-bom",
     ],
@@ -2817,8 +2811,6 @@ maven_import(
     name = "com.google.protobuf.protoc.linux-x86_64",
     classifiers = [],
     parent = "com.google.google_5",
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
     repo_root_path = "repository",
@@ -2830,8 +2822,6 @@ maven_import(
     name = "com.google.protobuf.protoc.osx-aarch_64",
     classifiers = [],
     parent = "com.google.google_5",
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
     repo_root_path = "repository",
@@ -2843,8 +2833,6 @@ maven_import(
     name = "com.google.protobuf.protoc.osx-x86_64",
     classifiers = [],
     parent = "com.google.google_5",
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
     repo_root_path = "repository",
@@ -2856,8 +2844,6 @@ maven_import(
     name = "com.google.protobuf.protoc.windows-x86_64",
     classifiers = [],
     parent = "com.google.google_5",
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/com/google/protobuf/protoc/3.22.3/protoc-3.22.3.pom",
     repo_root_path = "repository",
@@ -5215,8 +5201,6 @@ maven_artifact(
 maven_import(
     name = "io.grpc.protoc-gen-grpc-java.linux-x86_64",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/io/grpc/protoc-gen-grpc-java/1.57.0/protoc-gen-grpc-java-1.57.0.pom",
     repo_root_path = "repository",
@@ -5227,8 +5211,6 @@ maven_import(
 maven_import(
     name = "io.grpc.protoc-gen-grpc-java.osx-aarch_64",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/io/grpc/protoc-gen-grpc-java/1.57.0/protoc-gen-grpc-java-1.57.0.pom",
     repo_root_path = "repository",
@@ -5239,8 +5221,6 @@ maven_import(
 maven_import(
     name = "io.grpc.protoc-gen-grpc-java.osx-x86_64",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/io/grpc/protoc-gen-grpc-java/1.57.0/protoc-gen-grpc-java-1.57.0.pom",
     repo_root_path = "repository",
@@ -5251,8 +5231,6 @@ maven_import(
 maven_import(
     name = "io.grpc.protoc-gen-grpc-java.windows-x86_64",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/io/grpc/protoc-gen-grpc-java/1.57.0/protoc-gen-grpc-java-1.57.0.pom",
     repo_root_path = "repository",
@@ -8643,8 +8621,6 @@ maven_artifact(
 maven_import(
     name = "org.codehaus.groovy.groovy-all",
     classifiers = [],
-    jars = [
-    ],
     exports = [
         "org.codehaus.groovy.groovy",
         "org.codehaus.groovy.groovy-ant",
@@ -10461,8 +10437,6 @@ maven_artifact(
 maven_import(
     name = "org.jacoco.org.jacoco.build",
     classifiers = [],
-    jars = [
-    ],
     exports = [
         "org.ow2.asm.asm-bom",
     ],
@@ -10669,8 +10643,6 @@ maven_artifact(
 maven_import(
     name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin",
     classifiers = [],
-    jars = [
-    ],
     exports = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin",
     ],
@@ -11414,8 +11386,6 @@ maven_artifact(
 maven_import(
     name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.1.20/kotlin-gradle-plugins-bom-2.1.20.pom",
     repo_root_path = "repository",
@@ -12129,8 +12099,6 @@ maven_artifact(
 maven_import(
     name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.8.0/kotlinx-coroutines-bom-1.8.0.pom",
     repo_root_path = "repository",
@@ -12349,8 +12317,6 @@ maven_artifact(
 maven_import(
     name = "org.jetbrains.markdown",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/org/jetbrains/markdown/0.2.1/markdown-0.2.1.pom",
     repo_root_path = "repository",
@@ -12636,8 +12602,6 @@ maven_artifact(
 maven_import(
     name = "org.junit.junit-bom",
     classifiers = [],
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/org/junit/junit-bom/5.12.0/junit-bom-5.12.0.pom",
     repo_root_path = "repository",
@@ -12948,8 +12912,6 @@ maven_import(
     name = "org.ow2.asm.asm-bom",
     classifiers = [],
     parent = "org.ow2.ow2_1.5.1",
-    jars = [
-    ],
     original_deps = [],
     pom = "repository/org/ow2/asm/asm-bom/9.7/asm-bom-9.7.pom",
     repo_root_path = "repository",
