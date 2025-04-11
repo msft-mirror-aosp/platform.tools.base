@@ -117,7 +117,8 @@ build:nice --worker_max_instances=1
 build:nice --jobs=HOST_CPUS*.5
 
 # Optimize c/c++ compilation.
-# See tools/base/bazel/toolchains/clang.BUILD for flags added in opt mode
+# See opt_feature in build/bazel/toolchains/cc/*/features.bzl
+# to see flags added in opt mode.
 build:release -c opt
 build:release --strip=always
 build:release --//tools/base/bazel:studio-release

@@ -39,12 +39,6 @@ new_local_repository(
 )
 
 new_local_repository(
-    name = "native_toolchain",
-    build_file = "//tools/base/bazel/toolchains:clang.BUILD",
-    path = "prebuilts/clang",
-)
-
-new_local_repository(
     name = "slicer",
     build_file = "//tools/base/profiler:native/external/slicer.BUILD",
     path = "external/dexter/slicer",
