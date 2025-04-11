@@ -184,7 +184,6 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.dexing.DexingType
-import com.android.builder.errors.IssueReporter
 import com.android.utils.appendCapitalized
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings

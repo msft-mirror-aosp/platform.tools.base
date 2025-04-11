@@ -63,6 +63,8 @@ import com.android.build.gradle.internal.publishing.VariantPublishingInfo
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.scope.getDirectories
+import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
+import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -137,8 +139,8 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
     override val minSdk: AndroidVersion
         get() = dslInfo.minSdkVersion
 
-    final override val useBuiltInKotlinSupport = false
-    final override val useBuiltInKaptSupport = false
+    final override val builtInKotlinSupportMode = BuiltInKotlinSupportMode.NotSupported.KmpPluginApplied
+    final override val builtInKaptSupportMode = BuiltInKaptSupportMode.NotSupported.KmpPluginApplied
 
     override val sources = KmpSourcesImpl(
         dslInfo,
