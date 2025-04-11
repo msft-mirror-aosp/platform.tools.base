@@ -66,10 +66,6 @@ dependencies {
     compileOnly libs.com.android.tools.analyticsLibrary.protos
     compileOnly libs.com.android.tools.analyticsLibrary.shared
     compileOnly libs.com.android.tools.common
-    implementation("com.android.tools.compose:compose-preview-renderer-model:$version")
-    implementation libs.com.android.tools.compose.composePreviewDetector
-    implementation libs.gson
-    implementation libs.kxml
     testImplementation libs.junit
     testImplementation libs.truth
     testImplementation libs.truth_java8_extension
