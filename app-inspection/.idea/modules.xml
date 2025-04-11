@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app-inspection.iml" filepath="$PROJECT_DIR$/app-inspection.iml" />
+      <module fileurl="file://$PROJECT_DIR$/agent/app-inspection.agent.iml" filepath="$PROJECT_DIR$/agent/app-inspection.agent.iml" />
       <module fileurl="file://$PROJECT_DIR$/inspectors/backgroundtask/app-inspection.inspectors.backgroundtask.iml" filepath="$PROJECT_DIR$/inspectors/backgroundtask/app-inspection.inspectors.backgroundtask.iml" />
       <module fileurl="file://$PROJECT_DIR$/inspectors/common/app-inspection.inspectors.common.iml" filepath="$PROJECT_DIR$/inspectors/common/app-inspection.inspectors.common.iml" />
       <module fileurl="file://$PROJECT_DIR$/inspectors/database/app-inspection.inspectors.database.iml" filepath="$PROJECT_DIR$/inspectors/database/app-inspection.inspectors.database.iml" />
