@@ -2,6 +2,7 @@
 @rem Invoked by Android Build Launchcontrol for continuous builds.
 @rem Windows Android Studio Remote Bazel Execution Script.
 setlocal enabledelayedexpansion
+set PATH=%cd%\prebuilts\studio\jdk\jbr-next\win\bin;%PATH%
 
 @rem Expected arguments:
 set OUTDIR=%1
@@ -14,8 +15,6 @@ set TESTTAGFILTERS=ci:perfgate-win,-no_windows
 set SCRIPTDIR=%~dp0
 CALL :NORMALIZE_PATH "%SCRIPTDIR%..\..\.."
 set BASEDIR=%RETVAL%
-
-set PATH=%PATH%;%BASEDIR%\prebuilts\studio\jdk\jbr-next\windows\bin
 
 @rem Generate a UUID for use as the Bazel invocation ID
 FOR /F "tokens=*" %%F IN ('uuidgen') DO (
