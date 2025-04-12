@@ -16,6 +16,7 @@
 package com.android.zipflinger;
 
 import com.android.annotations.NonNull;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -32,7 +33,11 @@ class LocalFileHeader {
     public static final short COMPRESSION_NONE = 0;
     public static final short COMPRESSION_DEFLATE = 8;
 
-    static final long VIRTUAL_ENTRY_MAX_SIZE = LOCAL_FILE_HEADER_SIZE + Ints.USHRT_MAX;
+    // See zip specs
+    // The length of the file name, extra field, and comment fields respectively.
+    // The combined length of any directory record and these three fields SHOULD NOT
+    // generally exceed 65,535 bytes.
+    static final long VIRTUAL_ENTRY_MAX_SIZE = Ints.USHRT_MAX - VIRTUAL_HEADER_SIZE;
     static final long OFFSET_TO_NAME = 26;
 
     // Zip64 extra payload must only include uncompressed size and compressed size. It differs
