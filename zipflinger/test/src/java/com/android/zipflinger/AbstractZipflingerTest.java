@@ -16,6 +16,12 @@
 package com.android.zipflinger;
 
 import com.android.testutils.TestUtils;
+
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -27,9 +33,6 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 public abstract class AbstractZipflingerTest {
     protected static final long[] ALIGNMENTS = {
@@ -96,6 +99,29 @@ public abstract class AbstractZipflingerTest {
                     "Entry " + name + " match size", e.getCompressedSize(), o.getCompressedSize());
             Assert.assertEquals(
                     "Entry " + name + " match usize", e.getUncompressedSize(), o.getSize());
+        }
+
+        // As of version 24, the JDK enforces the following recommendation as an error. Even though
+        // it is incorrect we still try to not break users.
+        try (var zipInputStream = new ZipInputStream(new FileInputStream(archiveFile.toFile()))) {
+            var entry = zipInputStream.getNextEntry();
+            while (entry != null) {
+                int size = LocalFileHeader.LOCAL_FILE_HEADER_SIZE;
+                if (entry.getComment() != null) {
+                    size += entry.getComment().length();
+                }
+                if (entry.getName() != null) {
+                    size += entry.getName().length();
+                }
+                if (entry.getExtra() != null) {
+                    size += entry.getExtra().length;
+                }
+                Assert.assertTrue(
+                        "Bad entry size, max=" + Ints.USHRT_MAX + " actual=" + size,
+                        size <= Ints.USHRT_MAX);
+                entry = zipInputStream.getNextEntry();
+            }
+            ;
         }
 
         return bottomUpEntries;
