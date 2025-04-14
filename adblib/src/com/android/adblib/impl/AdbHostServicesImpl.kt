@@ -13,6 +13,7 @@ import com.android.adblib.DeviceState
 import com.android.adblib.ForwardSocketList
 import com.android.adblib.MdnsCheckResult
 import com.android.adblib.MdnsServiceList
+import com.android.adblib.MdnsServices
 import com.android.adblib.PairResult
 import com.android.adblib.ServerStatus
 import com.android.adblib.SocketSpec
@@ -22,6 +23,7 @@ import com.android.adblib.adbLogger
 import com.android.adblib.impl.services.AdbServiceRunner
 import com.android.adblib.impl.services.OkayDataExpectation
 import com.android.adblib.impl.services.TrackDevicesService
+import com.android.adblib.impl.services.TrackMdnsService
 import com.android.server.adb.protos.DevicesProto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -42,6 +44,7 @@ internal class AdbHostServicesImpl(
     private val mdnsCheckParser = MdnsCheckParser()
     private val mdnsServicesParser = MdnsServiceListParser()
     private val trackDevicesService = TrackDevicesService(serviceRunner)
+    private val trackMdnsService = TrackMdnsService(serviceRunner)
     private val forwardSocketListParser = ForwardSocketListParser()
 
     override suspend fun version(): Int {
@@ -124,6 +127,10 @@ internal class AdbHostServicesImpl(
         val service = "host:mdns:services"
         val outputString = serviceRunner.runHostQuery(service, tracker)
         return mdnsServicesParser.parse(outputString)
+    }
+
+    override fun trackMdnsServices(): Flow<MdnsServices> {
+        return trackMdnsService.invoke(timeout, unit)
     }
 
     override suspend fun pair(deviceAddress: DeviceAddress, pairingCode: String): PairResult {

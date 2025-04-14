@@ -76,4 +76,12 @@ object AdbFeatures {
      * Note: "server-status" was added in adb v35.0.2
      */
     const val SERVER_STATUS = "server_status"
+
+    /**
+     * If the result of [AdbHostServices.features] contains this value, the
+     * [AdbHostServices.trackMdnsServices] invocation is supported by the host.
+     * Note: "track_mdns" was added in adb vx
+     * TODO(b/412571872) add version
+     */
+    const val TRACK_MDNS_SERVICE = "track_mdns"
 }

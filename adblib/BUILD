@@ -106,6 +106,7 @@ java_proto_library(
         "proto/am_capabilities.proto",
         "proto/app_processes.proto",
         "proto/devices.proto",
+        "proto/mdns.proto",
     ],
     visibility = ["//visibility:public"],
 )

@@ -104,6 +104,20 @@ interface AdbHostServices {
     suspend fun mdnsServices(): MdnsServiceList
 
     /**
+     *
+     * TODO(b/412571872) remove the adblib warning.
+     * At the time of this writing (May 2025), the underlying ADB Server implementation and protobuf
+     * are not final, so don't rely on this until b/412571872 is fixed.
+     *
+     * Returns a [Flow] that emits a new [MdnsServices] everytime a mdns service change
+     * is detected by the ADB Host ("host:track-mdns-services" query). The flow is active until
+     * an exception is thrown or cancellation is requested by the flow consumer.
+     *
+     * @see [com.android.adblib.AdbFeatures.TRACK_MDNS_SERVICE]
+     */
+    fun trackMdnsServices(): Flow<MdnsServices>
+
+        /**
      * Pairs this ADB server with a device given its [deviceAddress] and a [pairingCode].
      */
     suspend fun pair(deviceAddress: DeviceAddress, pairingCode: String): PairResult

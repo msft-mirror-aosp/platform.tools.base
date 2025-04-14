@@ -25,6 +25,7 @@ import com.android.adblib.DeviceState
 import com.android.adblib.ForwardSocketList
 import com.android.adblib.MdnsCheckResult
 import com.android.adblib.MdnsServiceList
+import com.android.adblib.MdnsServices
 import com.android.adblib.PairResult
 import com.android.adblib.ServerStatus
 import com.android.adblib.SocketSpec
@@ -164,6 +165,10 @@ class FakeAdbHostServices(override val session: AdbSession) : AdbHostServices, C
     }
 
     override suspend fun mdnsServices(): MdnsServiceList {
+        throw NotImplementedError("An operation is not implemented")
+    }
+
+    override fun trackMdnsServices(): Flow<MdnsServices> {
         throw NotImplementedError("An operation is not implemented")
     }
 
