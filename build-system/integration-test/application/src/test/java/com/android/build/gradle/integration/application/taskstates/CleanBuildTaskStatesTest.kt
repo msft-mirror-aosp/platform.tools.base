@@ -41,6 +41,7 @@ class CleanBuildTaskStatesTest {
                 ":app:checkDebugAarMetadata",
                 ":app:checkDebugDuplicateClasses",
                 ":app:compileDebugJavaWithJavac",
+                ":app:compileDebugNavigationResources",
                 ":app:compileDebugUnitTestJavaWithJavac",
                 ":app:compressDebugAssets",
                 ":app:createDebugApkListingFileRedirect",
@@ -70,6 +71,7 @@ class CleanBuildTaskStatesTest {
                 ":app:testDebugUnitTest",
                 ":app:validateSigningDebug",
                 ":app:writeDebugAppMetadata",
+                ":app:processDebugNavigationResources",
                 ":app:writeDebugSigningConfigVersions"
             ).plus(
                 if (BooleanOption.GENERATE_MANIFEST_CLASS.defaultValue) {

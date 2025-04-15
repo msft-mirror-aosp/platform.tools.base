@@ -446,6 +446,28 @@ class MergeResourcesTest {
             .runEnforceUniquePkg(":app:assembleDebug")
     }
 
+    @Test
+    fun mergeResourceOmitsNavigationXml() {
+        val build = project.build
+        val app = build.androidApplication()
+        app.files.add(
+            "src/main/res/navigation/nav_graph.xml",
+            //language=xml
+            """
+            <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
+            </navigation>
+            """.trimIndent()
+        )
+
+        build.executor.runEnforceUniquePkg(":app:mergeDebugResources")
+
+        val resourcesFolder = app
+            .resolve(MERGED_RES)
+            .resolve("debug/mergeDebugResources").toFile()
+        assertThat(File(resourcesFolder, "navigation_nav_graph.xml.flat")).doesNotExist()
+        assertThat(File(resourcesFolder, "layout_main.xml.flat")).exists()
+    }
+
     // Regression test for http://issuetracker.google.com/65829618
     @Test
     fun testIncrementalBuildWithShrinkResources() {

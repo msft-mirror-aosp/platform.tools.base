@@ -173,6 +173,10 @@ abstract class BundleAar : Zip(), VariantTask {
                 artifacts.get(InternalArtifactType.PACKAGED_RES),
                 prependToCopyPath(SdkConstants.FD_RES)
             )
+            task.from(
+                artifacts.get(InternalArtifactType.UPDATED_NAVIGATION_XML),
+                prependToCopyPath(SdkConstants.FD_RES)
+            )
 
             if (!creationConfig.global.namespacedAndroidResources) {
                 // In non-namespaced projects bundle the library manifest straight to the AAR.

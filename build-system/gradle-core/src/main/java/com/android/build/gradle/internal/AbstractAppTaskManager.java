@@ -41,6 +41,7 @@ import com.android.build.gradle.internal.tasks.CompressAssetsTask;
 import com.android.build.gradle.internal.tasks.ExtractNativeDebugMetadataTask;
 import com.android.build.gradle.internal.tasks.ExtractProfilerNativeDependenciesTask;
 import com.android.build.gradle.internal.tasks.ModuleMetadataWriterTask;
+import com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask;
 import com.android.build.gradle.internal.tasks.StripDebugSymbolsTask;
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig;
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryUtils;
@@ -49,6 +50,7 @@ import com.android.build.gradle.internal.tasks.featuresplit.PackagedDependencies
 import com.android.build.gradle.internal.variant.ComponentInfo;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
+import com.android.build.gradle.tasks.CompileNavigationXmlTask;
 import com.android.build.gradle.tasks.ExtractDeepLinksTask;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.builder.core.ComponentType;
@@ -123,6 +125,9 @@ public abstract class AbstractAppTaskManager<
 
         // Add a task to merge the resource folders
         createMergeResourcesTasks(creationConfig);
+
+        // Add tasks to substitute navigation placeholders and then package
+        createNavigationProcessingTasks(creationConfig);
 
         // Add tasks to compile shader
         createShaderTask(creationConfig);
@@ -283,6 +288,13 @@ public abstract class AbstractAppTaskManager<
                     ImmutableSet.of(),
                     null);
         }
+    }
+
+    private void createNavigationProcessingTasks(@NonNull ApkCreationConfig creationConfig) {
+        taskFactory.register(
+                new ProcessNavigationXmlTask.ApplicationCreationAction(creationConfig));
+
+        taskFactory.register(new CompileNavigationXmlTask.CreationAction(creationConfig));
     }
 
     private boolean isTestApkCompileRClassEnabled(

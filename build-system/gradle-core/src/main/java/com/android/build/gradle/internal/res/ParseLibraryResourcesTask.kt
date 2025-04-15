@@ -42,6 +42,7 @@ import com.android.ide.common.symbols.shouldBeParsed
 import com.android.resources.FolderTypeRelationship
 import com.android.resources.ResourceFolderType
 import com.android.utils.FileUtils
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
@@ -87,6 +88,11 @@ abstract class ParseLibraryResourcesTask : NewIncrementalTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val inputResourcesDir: DirectoryProperty
 
+    @get:Incremental
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val inputNavigationResourcesDir: DirectoryProperty
+
     @get:Input
     abstract val validateResources: Property<Boolean>
 
@@ -110,7 +116,7 @@ abstract class ParseLibraryResourcesTask : NewIncrementalTask() {
         }
         workerExecutor.noIsolation().submit(ParseResourcesRunnable::class.java) {
             it.initializeFromBaseTask(this)
-            it.inputResDir.set(inputResourcesDir)
+            it.inputResDirs.set(listOf(inputResourcesDir.get(), inputNavigationResourcesDir.get()))
             it.platformAttrsRTxt.set(platformAttrRTxt.get().singleFile)
             it.librarySymbolsFile.set(librarySymbolsFile)
             it.incremental.set(incremental)
@@ -122,7 +128,7 @@ abstract class ParseLibraryResourcesTask : NewIncrementalTask() {
     }
 
     abstract class ParseResourcesParams: ProfileAwareWorkAction.Parameters() {
-        abstract val inputResDir: DirectoryProperty
+        abstract val inputResDirs: ListProperty<Directory>
         abstract val platformAttrsRTxt: RegularFileProperty
         abstract val librarySymbolsFile: RegularFileProperty
         abstract val incremental: Property<Boolean>
@@ -191,6 +197,11 @@ abstract class ParseLibraryResourcesTask : NewIncrementalTask() {
                     task.inputResourcesDir
             )
 
+            creationConfig.artifacts.setTaskInputToFinalProduct(
+                InternalArtifactType.UPDATED_NAVIGATION_XML,
+                task.inputNavigationResourcesDir
+            )
+
             task.validateResources.setDisallowChanges(
                     !creationConfig.services.projectOptions[
                             BooleanOption.DISABLE_RESOURCE_VALIDATION])
@@ -212,11 +223,14 @@ internal fun doFullTaskAction(parseResourcesParams: ParseLibraryResourcesTask.Pa
                 parseResourcesParams.platformAttrsRTxt.asFile.get())
         val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
         val resourceFileSymbolTables: SortedSet<SymbolTableWithContextPath> =
+            parseResourcesParams.inputResDirs.get().map {
                 getResourceDirectorySymbolTables(
-                        parseResourcesParams.inputResDir.asFile.get(),
-                        androidPlatformAttrSymbolTable,
-                        documentBuilder,
-                        parseResourcesParams.validateResources.get())
+                    it.asFile,
+                    androidPlatformAttrSymbolTable,
+                    documentBuilder,
+                    parseResourcesParams.validateResources.get()
+                )
+            }.reduce{ acc, next -> acc.addAll(next); acc }
         writeSymbolTablesToPartialRFiles(resourceFileSymbolTables, partialRDirectory)
         // Write in the format of R-def.txt since the IDs do not matter. The symbols will be
         // written in a deterministic way (sorted by type, then by canonical name).
@@ -225,13 +239,16 @@ internal fun doFullTaskAction(parseResourcesParams: ParseLibraryResourcesTask.Pa
     } else {
         // IDs do not matter as we will merge all symbols and re-number them in the
         // GenerateLibraryRFileTask anyway. Give a fake package for the same reason.
-        val symbolTable = parseResourceSourceSetDirectory(
-                parseResourcesParams.inputResDir.asFile.get(),
-                IdProvider.constant(),
-                getAndroidAttrSymbols(parseResourcesParams.platformAttrsRTxt.asFile.get()),
-                "local",
-                parseResourcesParams.validateResources.get()
-        )
+        val symbolTable =
+            parseResourcesParams.inputResDirs.get().map {
+                parseResourceSourceSetDirectory(
+                    it.asFile,
+                    IdProvider.constant(),
+                    getAndroidAttrSymbols(parseResourcesParams.platformAttrsRTxt.asFile.get()),
+                    "local",
+                    parseResourcesParams.validateResources.get()
+                )
+            }.reduce { acc, next -> acc.merge(next) }
         // Write in the format of R-def.txt since the IDs do not matter. The symbols will be
         // written in a deterministic way (sorted by type, then by canonical name).
         SymbolIo.writeRDef(symbolTable, parseResourcesParams.librarySymbolsFile.asFile.get().toPath())

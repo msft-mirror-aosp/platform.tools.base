@@ -22,12 +22,10 @@ import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.LibraryVariantBuilder
 import com.android.build.api.variant.ScopedArtifacts
-import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dependency.ConfigurationVariantMapping
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType
@@ -49,6 +47,7 @@ import com.android.build.gradle.internal.tasks.LibraryJniLibsTask.ProjectOnlyCre
 import com.android.build.gradle.internal.tasks.MergeConsumerProguardFilesTask
 import com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction
 import com.android.build.gradle.internal.tasks.PackageRenderscriptTask
+import com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask
 import com.android.build.gradle.internal.tasks.StripDebugSymbolsTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
@@ -66,6 +65,8 @@ import com.android.build.gradle.tasks.ExtractSupportedLocalesTask
 import com.android.build.gradle.tasks.JavaDocGenerationTask
 import com.android.build.gradle.tasks.JavaDocJarTask
 import com.android.build.gradle.tasks.MergeResources
+import com.android.build.gradle.tasks.CompileNavigationXmlTask
+import com.android.build.gradle.tasks.ExtractDeepLinksTask.CreationAction
 import com.android.build.gradle.tasks.ProcessLibraryArtProfileTask
 import com.android.build.gradle.tasks.ProcessLibraryManifest
 import com.android.build.gradle.tasks.SourceJarTask
@@ -104,7 +105,9 @@ class LibraryTaskManager(
         createDependencyStreams(libraryVariant)
         if (buildFeatures.androidResources) {
             createGenerateResValuesTask(libraryVariant)
-            taskFactory.register(ExtractDeepLinksTask.CreationAction(libraryVariant))
+            // first registration is for library as part of application
+            // second one is when library is published  as AAR
+            taskFactory.register(CreationAction(libraryVariant))
             taskFactory.register(AarCreationAction(libraryVariant))
         } else { // Resource processing is disabled.
             // TODO(b/147579629): add a warning for manifests containing resource references.
@@ -133,6 +136,7 @@ class LibraryTaskManager(
         if (buildFeatures.androidResources) {
             createMergeResourcesTasks(libraryVariant)
             createCompileLibraryResourcesTask(libraryVariant)
+            createNavigationProcessingTasks(libraryVariant)
         }
         createShaderTask(libraryVariant)
 
@@ -273,6 +277,16 @@ class LibraryTaskManager(
         }
 
         createBundleTask(libraryVariant)
+    }
+
+    private fun createNavigationProcessingTasks(creationConfig: LibraryCreationConfig) {
+        taskFactory.register(
+            ProcessNavigationXmlTask.LibraryCreationAction(creationConfig)
+        )
+
+        taskFactory.register(
+            CompileNavigationXmlTask.CreationAction(creationConfig)
+        )
     }
 
     private fun createBundleTask(variant: LibraryCreationConfig) {

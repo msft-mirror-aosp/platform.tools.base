@@ -149,8 +149,8 @@ abstract class ShrinkProtoResourcesAction @Inject constructor() :
             val dexRecorders = parameters.dex.files.map { DexUsageRecorder(it.toPath()) }
             val manifestRecorder =
                 ProtoAndroidManifestUsageRecorder(fs.getPath("AndroidManifest.xml"))
-            val toolsRecorder =
-                ToolsAttributeUsageRecorder(config.mergedNotCompiledResourcesInputDir.toPath())
+            val toolsRecorders =
+                config.mergedNotCompiledResourcesInputDirs.map{ ToolsAttributeUsageRecorder(it.toPath()) }
             val gatherer = ProtoResourceTableGatherer(fs.getPath("resources.pb"))
             val graphBuilder = ProtoResourcesGraphBuilder(
                 resourceRoot = fs.getPath("res"),
@@ -162,7 +162,7 @@ abstract class ShrinkProtoResourcesAction @Inject constructor() :
             ResourceShrinkerImpl(
                 resourcesGatherers = listOf(gatherer),
                 obfuscationMappingsRecorder = obfuscationMappings,
-                usageRecorders = dexRecorders + manifestRecorder + toolsRecorder,
+                usageRecorders = dexRecorders + manifestRecorder + toolsRecorders,
                 graphBuilders = listOf(graphBuilder),
                 debugReporter = LoggerAndFileDebugReporter(
                     logDebug = { debugMessage ->

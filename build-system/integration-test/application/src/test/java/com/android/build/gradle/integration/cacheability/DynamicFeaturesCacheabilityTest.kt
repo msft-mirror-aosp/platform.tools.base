@@ -65,6 +65,7 @@ class DynamicFeaturesCacheabilityTest {
                 FROM_CACHE to setOf(
                     ":app:checkDebugLibraries",
                     ":app:compileDebugJavaWithJavac",
+                    ":app:compileDebugNavigationResources",
                     ":app:compressDebugAssets",
                     ":app:desugarDebugFileDependencies",
                     ":app:dexBuilderDebug",
@@ -81,9 +82,11 @@ class DynamicFeaturesCacheabilityTest {
                     ":app:processDebugMainManifest",
                     ":app:processDebugManifest",
                     ":app:processDebugManifestForPackage",
+                    ":app:processDebugNavigationResources",
                     ":app:processDebugResources", /* Bug 141301405 */
 
                     ":feature1:compileDebugJavaWithJavac",
+                    ":feature1:compileDebugNavigationResources",
                     ":feature1:compressDebugAssets",
                     ":feature1:desugarDebugFileDependencies",
                     ":feature1:dexBuilderDebug",
@@ -102,9 +105,11 @@ class DynamicFeaturesCacheabilityTest {
                     ":feature1:processDebugManifestForPackage",
                     ":feature1:processDebugResources",
                     ":feature1:processManifestDebugForFeature",
+                    ":feature1:processDebugNavigationResources",
 
                     ":feature2:checkDebugAarMetadata",
                     ":feature2:compileDebugJavaWithJavac",
+                    ":feature2:compileDebugNavigationResources",
                     ":feature2:compressDebugAssets",
                     ":feature2:desugarDebugFileDependencies",
                     ":feature2:dexBuilderDebug",
@@ -123,6 +128,7 @@ class DynamicFeaturesCacheabilityTest {
                     ":feature2:processDebugManifestForPackage",
                     ":feature2:processDebugResources",
                     ":feature2:processManifestDebugForFeature",
+                    ":feature2:processDebugNavigationResources",
                 ).plus(
                     if (BooleanOption.GENERATE_MANIFEST_CLASS.defaultValue) {
                         setOf(
