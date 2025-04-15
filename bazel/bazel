@@ -24,6 +24,8 @@ def main():
     android_home = f'{workspace}/prebuilts/studio/sdk/windows'
   else:
     sys.exit('Platform %s is not yet supported.' % sys.platform)
+  if not os.path.exists(android_home):
+    android_home = os.environ.get('ANDROID_HOME')
 
   env = {k: v for k, v in os.environ.items()}
   env['USE_BAZEL_VERSION'] = os.environ.get('USE_BAZEL_VERSION', '')
@@ -45,7 +47,7 @@ def main():
   args = sys.argv[1:]
 
   env['TERM'] = os.environ.get('TERM', '')
-  env['ANDROID_HOME'] = os.environ.get('ANDROID_HOME', android_home)
+  env['ANDROID_HOME'] = android_home
   env['MAVEN_FETCH'] = os.environ.get('MAVEN_FETCH', '')
   env['SHELL'] = os.environ.get('SHELL', '')
   env['HOME'] = os.environ.get('HOME', '')
