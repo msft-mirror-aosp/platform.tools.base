@@ -160,6 +160,9 @@ abstract class LinkAndroidResForBundleTask : NonIncrementalTask() {
             dependentFeatures = featurePackagesBuilder.build(),
             resourceDirs = ImmutableList.Builder<File>().addAll(compiledDependenciesResourcesDirs)
                 .add(
+                    checkNotNull(getCompiledNavigationResources().orNull?.asFile)
+                )
+                .add(
                     checkNotNull(getInputResourcesDir().orNull?.asFile)
                 ).build(),
             resourceConfigs = ImmutableSet.copyOf(resConfig),
@@ -221,6 +224,11 @@ abstract class LinkAndroidResForBundleTask : NonIncrementalTask() {
         return compiledDependenciesResources?.artifactFiles
     }
 
+    @Optional
+    @InputFiles
+    @PathSensitive(PathSensitivity.RELATIVE)
+    abstract fun getCompiledNavigationResources(): DirectoryProperty
+
     @get:Input
     var minSdkVersion: Int = 1
         private set
@@ -272,6 +280,11 @@ abstract class LinkAndroidResForBundleTask : NonIncrementalTask() {
             creationConfig.artifacts.setTaskInputToFinalProduct(
                 InternalArtifactType.MERGED_RES,
                 task.getInputResourcesDir()
+            )
+
+            creationConfig.artifacts.setTaskInputToFinalProduct(
+                InternalArtifactType.COMPILED_NAVIGATION_RES,
+                task.getCompiledNavigationResources()
             )
 
             creationConfig.artifacts.setTaskInputToFinalProduct(

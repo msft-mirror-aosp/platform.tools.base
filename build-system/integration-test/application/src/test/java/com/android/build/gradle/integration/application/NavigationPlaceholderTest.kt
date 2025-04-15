@@ -27,11 +27,10 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
-import com.google.common.truth.Truth.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
-import kotlin.io.path.name
 
 class NavigationPlaceholderTest {
 
@@ -128,13 +127,26 @@ class NavigationPlaceholderTest {
                     .subproject(":app", app)
                     .subproject(":lib", lib)
                     .dependency(app, lib)
+                    .dependency(app, "androidx.navigation:navigation-fragment:2.5.2")
+                    .dependency(lib, "androidx.navigation:navigation-fragment:2.5.2")
                     .build()
             )
             .create()
 
+    @Before
+    fun setUp() {
+        TestFileUtils.appendToFile(
+            project.gradlePropertiesFile,
+            """
+                android.useAndroidX=true
+            """.trimIndent()
+        )
+    }
+
+
     @Test
     fun testNavigationPlaceholders() {
-        project.executor().run(":app:processDebugMainManifest")
+        project.executor().run(":app:assembleDebug")
         val mergedManifest =
             project.file(
                 "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
@@ -148,6 +160,42 @@ class NavigationPlaceholderTest {
                     expectedMetaDataLibValue = "libFoo"
                 )
             )
+        val navigationJsonLib =
+            project.file(
+                "lib/build/${SdkConstants.FD_INTERMEDIATES}/navigation_json/debug/extractDeepLinksDebug/navigation.json"
+            )
+        PathSubject.assertThat(navigationJsonLib).contains("\"libScheme\"")
+        PathSubject.assertThat(navigationJsonLib).contains("\"path\": \"/$appIdPlaceholder\"")
+        PathSubject.assertThat(navigationJsonLib).contains("\"host\": \"lib.example.com\"")
+
+        val navigationJson =
+            project.file(
+                "app/build/${SdkConstants.FD_INTERMEDIATES}/navigation_json/debug/extractDeepLinksDebug/navigation.json"
+            )
+        PathSubject.assertThat(navigationJson).contains("\"appScheme\"")
+        PathSubject.assertThat(navigationJson).contains("\"path\": \"/com.example.app\"")
+        PathSubject.assertThat(navigationJson).contains("\"host\": \"app.example.com\"")
+
+        // navigation lib when mergeResources the library - having all substitutions except applicationId
+        val navigationLib =
+            project.file(
+                "lib/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_lib.xml"
+            )
+        PathSubject.assertThat(navigationLib).contains("app:uri=\"libScheme://lib.example.com/$appIdPlaceholder\" />")
+
+        // app navigation - all substitutions are done including applicationId
+        val navigation =
+            project.file(
+                "app/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_app.xml"
+            )
+        PathSubject.assertThat(navigation).contains("app:uri=\"appScheme://app.example.com/com.example.app\" />")
+
+        // lib navigation we collect during app mergeResources - all substitutions are done including applicationId
+        val navigationLibFromApp =
+            project.file(
+                "app/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_lib.xml"
+            )
+        PathSubject.assertThat(navigationLibFromApp).contains("app:uri=\"libScheme://lib.example.com/com.example.app\" />")
     }
 
     @Test
@@ -164,7 +212,7 @@ class NavigationPlaceholderTest {
             """.trimMargin(),
             ""
         )
-        project.executor().run(":app:processDebugMainManifest")
+        project.executor().run(":app:assembleDebug")
         val mergedManifest =
             project.file(
                 "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
@@ -178,6 +226,25 @@ class NavigationPlaceholderTest {
                     expectedMetaDataLibValue = "appFoo"
                 )
             )
+        // does not have variables to substitute placeholder in lib xml when merging lib resources
+        val navigationLib =
+            project.file(
+                "lib/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_lib.xml"
+            )
+        PathSubject.assertThat(navigationLib).contains("app:uri=\"$schemePlaceholder://$hostPlaceholder/$appIdPlaceholder\" />")
+
+
+        val navigation =
+            project.file(
+                "app/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_app.xml"
+            )
+        PathSubject.assertThat(navigation).contains("app:uri=\"appScheme://app.example.com/com.example.app\" />")
+
+        val navigationLibFromApp =
+            project.file(
+                "app/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_lib.xml"
+            )
+        PathSubject.assertThat(navigationLibFromApp).contains("app:uri=\"appScheme://app.example.com/com.example.app\" />")
     }
 
     /**
@@ -197,7 +264,9 @@ class NavigationPlaceholderTest {
         // Build AAR, check that it has expected navigation.json entry, and copy it to libAarDir.
         project.executor().run(":lib:assembleDebug")
         project.getSubproject("lib").assertAar(AarSelector.DEBUG) {
-            textFile(FN_NAVIGATION_JSON).isNotEmpty()
+            textFile(FN_NAVIGATION_JSON).contains("\"libScheme\"")
+            textFile(FN_NAVIGATION_JSON).contains("\"path\": \"/$appIdPlaceholder\"")
+            textFile(FN_NAVIGATION_JSON).contains("\"host\": \"lib.example.com\"")
         }
         val aarPath = project.getSubproject("lib").getAarLocationForCopy(AarSelector.DEBUG)
         FileUtils.copyFile(aarPath.toFile(), File(libAarDir, "lib.aar"))
@@ -211,7 +280,7 @@ class NavigationPlaceholderTest {
         TestFileUtils.appendToFile(project.settingsFile, "include ':lib-aar'")
 
         // Finally, create the app merged manifest and check its contents.
-        project.executor().run(":app:processDebugMainManifest")
+        project.executor().run(":app:assembleDebug")
         val mergedManifest =
             project.file(
                 "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
@@ -224,6 +293,20 @@ class NavigationPlaceholderTest {
                     expectedMetaDataLibValue = "libFoo"
                 )
             )
+        val navigation =
+            project.file(
+                "app/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_app.xml"
+            )
+        PathSubject.assertThat(navigation).exists()
+        PathSubject.assertThat(navigation).contains("app:uri=\"appScheme://app.example.com/com.example.app\" />")
+
+        val navigationLibFromApp =
+            project.file(
+                "app/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_lib.xml"
+            )
+        PathSubject.assertThat(navigationLibFromApp).exists()
+        PathSubject.assertThat(navigationLibFromApp).contains("app:uri=\"libScheme://lib.example.com/com.example.app\" />")
+
     }
 
     // b/206665657 this test is to ensure that the correct error is thrown when a non-XML file is
@@ -235,7 +318,7 @@ class NavigationPlaceholderTest {
         txtFile.createNewFile()
         txtFile.writeText("text")
 
-        val result = project.executor().expectFailure().run(":app:packageDebugResources")
+        val result = project.executor().expectFailure().run(":app:processDebugNavigationResources")
         ScannerSubject.assertThat(result.stderr).contains("The file name must end with .xml")
     }
 
@@ -255,6 +338,7 @@ class NavigationPlaceholderTest {
                     android:targetSdkVersion="14" />
 
                 <application
+                    android:appComponentFactory="androidx.core.app.CoreComponentFactory"
                     android:debuggable="true"
                     android:extractNativeLibs="true" >
                     <activity android:name="com.example.app.MyActivity" >
@@ -286,6 +370,13 @@ class NavigationPlaceholderTest {
                     <meta-data
                         android:name="lib"
                         android:value="$expectedMetaDataLibValue" />
+
+                    <uses-library
+                        android:name="androidx.window.extensions"
+                        android:required="false" />
+                    <uses-library
+                        android:name="androidx.window.sidecar"
+                        android:required="false" />
                 </application>
 
             </manifest>

@@ -71,6 +71,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":app:processDebugMainManifest",
                             ":app:processDebugManifest",
                             ":app:processDebugManifestForPackage",
+                            ":app:processDebugNavigationResources",
                             ":app:processDebugResources",
                             ":app:validateSigningDebug",
                             ":app:writeDebugAppMetadata",
@@ -104,6 +105,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":lib:prepareDebugArtProfile",
                             ":lib:prepareLintJarForPublish",
                             ":lib:processDebugManifest",
+                            ":lib:processDebugNavigationResources",
                             ":lib:syncDebugLibJars",
                             ":lib:writeDebugAarMetadata",
                         )

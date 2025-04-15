@@ -50,6 +50,10 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
 
     @get:Input
     @get:Optional
+    abstract val navigationUpdatedFolder: Property<String>
+
+    @get:Input
+    @get:Optional
     abstract val generatedResDir: Property<String>
 
     @get:Input
@@ -84,7 +88,8 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
             generatedResDir.orNull,
             renderscriptResOutputDir.orNull,
             mergeResourcesOutputDir.orNull,
-            mergedNotCompiledDir.orNull
+            mergedNotCompiledDir.orNull,
+            navigationUpdatedFolder.orNull
         )
         writeIdentifiedSourceSetsFile(
             resourceSourceSets = listConfigurationSourceSets(uncreatedSourceSets, allGeneratedRes.get()),
@@ -100,7 +105,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
     ): List<File> {
         val uncreatedSourceSets = listOfNotNull(
             getPathIfPresentOrNull(incrementalMergedDir, listOf(SdkConstants.FD_MERGED_DOT_DIR)),
-            getPathIfPresentOrNull(incrementalMergedDir, listOf(SdkConstants.FD_STRIPPED_DOT_DIR))
+            getPathIfPresentOrNull(incrementalMergedDir, listOf(SdkConstants.FD_STRIPPED_DOT_DIR)),
         )
         return localResources.get().map { it.asFile }.asSequence()
             .plus(librarySourceSets.files)
@@ -211,6 +216,13 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
                     }
                 )
             }
+
+            task.navigationUpdatedFolder.setDisallowChanges(
+                (creationConfig.artifacts.get(InternalArtifactType.UPDATED_NAVIGATION_XML)
+                        as FileSystemLocationProperty).locationOnly.map {
+                    it.asFile.absolutePath
+                }
+            )
         }
     }
 }

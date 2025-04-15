@@ -76,6 +76,7 @@ class DataBindingCachingTest(private val withKotlin: Boolean) {
         ":processDebugMainManifest" to FROM_CACHE,
         ":processDebugManifest" to FROM_CACHE,
         ":processDebugManifestForPackage" to FROM_CACHE,
+        ":processDebugNavigationResources" to FROM_CACHE,
         ":processDebugResources" to FROM_CACHE
     ).plus(
         if (withKotlin) {
