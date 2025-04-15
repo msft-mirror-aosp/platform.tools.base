@@ -141,23 +141,21 @@ def aidl_library(name, srcs = [], **kwargs):
     for src in srcs:
         gen_name = name + "_gen_" + _name(src).replace(".", "_")
         java_file = _aidl_to_java(src, gen_dir)
-        cmd = "$(location @androidsdk//:aidl_binary)"
-        cmd += " -p$(location //prebuilts/studio/sdk:platforms/latest/framework.aidl)"
         # Add the include path. Without this, aidl will fail and say
         # "directory '$include_dir' is not found in any of the import paths"
         basename = src[0:src.rfind("/aidl/")]
         include_dir = native.package_name() + "/" + basename + "/aidl"
-        cmd += " -I " + include_dir
-
-        cmd += " $< -o$(RULEDIR)/" + gen_dir
+        cmd = ("$(location @androidsdk//:aidl_binary)" +
+               " -p$(location //prebuilts/studio/sdk:platforms/latest/framework.aidl)" +
+               " -I " + include_dir + " $(location " + src + ") -o$(RULEDIR)/" + gen_dir)
         native.genrule(
             name = gen_name,
-            srcs = [src],
+            srcs = srcs + ["//prebuilts/studio/sdk:platforms/latest/framework.aidl"],
             outs = [java_file],
             cmd = cmd,
             tags = kwargs.get("tags", []),
             target_compatible_with = kwargs.get("target_compatible_with", []),
-            tools = ["@androidsdk//:aidl_binary", "//prebuilts/studio/sdk:platforms/latest/framework.aidl"],
+            tools = ["@androidsdk//:aidl_binary"]
         )
 
     intermediates = [_aidl_to_java(src, gen_dir) for src in srcs]
