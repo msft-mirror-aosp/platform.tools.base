@@ -76,7 +76,7 @@ public class SdkVersionInfo {
      * The highest known API level for Wearables. Note the tools at the downloadable system images
      * for wearables to see if there are more recent versions.
      */
-    public static final int HIGHEST_KNOWN_API_WEAR = 35;
+    public static final int HIGHEST_KNOWN_API_WEAR = 36;
 
     /**
      * The lowest active api for wearables. This number will change over time as the distribution of
