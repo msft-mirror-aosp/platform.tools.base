@@ -1,11 +1,11 @@
-load(":coverage.bzl", "coverage_baseline")
-load(":functions.bzl", "create_option_file", "explicit_target")
+load("@rules_android//providers:providers.bzl", "AndroidIdeInfo", "AndroidLibraryResourceClassJarProvider", "AndroidNativeLibsInfo")
+load("@rules_android//rules:rules.bzl", "aar_import")
+load("@rules_java//java:defs.bzl", "JavaInfo", "java_common")
+load(":functions.bzl", "create_option_file")
 load(":jvm_import.bzl", "jvm_import")
 load(":kotlin.bzl", "kotlin_library")
 load(":merge_archives.bzl", "run_singlejar")
 load(":utils.bzl", "is_release")
-load("@rules_android//rules:rules.bzl", "aar_import")
-load("@rules_android//providers:providers.bzl", "AndroidIdeInfo", "AndroidLibraryResourceClassJarProvider", "AndroidNativeLibsInfo")
 
 def generate_pom(
         ctx,
@@ -29,7 +29,7 @@ def generate_pom(
     # Input file to take as base
     if source:
         args += ["-i", source.path]
-        inputs += [source]
+        inputs.append(source)
 
     # Output file
     args += ["-o", output_pom.path]
@@ -49,7 +49,7 @@ def generate_pom(
         args += ["--pom_name", pom_name]
     if properties:
         args += ["--properties", properties.path]
-        inputs += [properties]
+        inputs.append(properties)
     if properties_files:
         args += ["--properties", ":".join([file.path for file in properties_files])]
         inputs += properties_files
@@ -75,7 +75,7 @@ def generate_pom(
 
 def _zipper(actions, zipper, desc, map_file, files, out):
     zipper_args = ["c", out.path]
-    zipper_args += ["@" + map_file.path]
+    zipper_args.append("@" + map_file.path)
     actions.run(
         inputs = files + [map_file],
         outputs = [out],
@@ -603,17 +603,17 @@ _maven_library = rule(
         "exports": attr.label_list(providers = [MavenInfo]),
         "_zipper": attr.label(
             default = Label("@bazel_tools//tools/zip:zipper"),
-            cfg = "host",
+            cfg = "exec",
             executable = True,
         ),
         "_singlejar": attr.label(
             default = Label("@bazel_tools//tools/jdk:singlejar"),
-            cfg = "host",
+            cfg = "exec",
             executable = True,
         ),
         "_pom": attr.label(
             executable = True,
-            cfg = "host",
+            cfg = "exec",
             default = Label("//tools/base/bazel:pom_generator"),
             allow_files = True,
         ),
