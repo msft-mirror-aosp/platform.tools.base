@@ -119,6 +119,7 @@ import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.api.artifact.impl.ArtifactsLocationsReportTask
+import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.tasks.MergePackageListsForR8Task
@@ -184,9 +185,11 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.dexing.DexingType
+import com.android.builder.errors.IssueReporter
 import com.android.utils.appendCapitalized
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings
+import com.google.common.base.Throwables
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -207,6 +210,7 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
+import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.CompilerPluginOptions
 import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
@@ -214,6 +218,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.Callable
+import kotlin.math.min
 
 /**
  * Abstract class containing tasks creation logic that is shared between variants and components.
@@ -989,16 +994,18 @@ abstract class TaskManager(
             }
 
         val kotlinCompilation = BuiltInKotlinJvmAndroidCompilation(
-            creationConfig.name,
-            kotlinServices.kotlinAndroidProjectExtension.target,
-            kotlinCompileTaskProvider
+            project = project,
+            compilationName = creationConfig.name,
+            compileTaskProvider = kotlinCompileTaskProvider,
+            kotlinServices = kotlinServices,
+            kotlinSourceDirectories = creationConfig.sources.kotlin!!.directories,
         )
         if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
             // Ensure "kotlin-extension" configuration exists here, because the Compose
             // Compiler Gradle plugin assumes it will have been created already.
             maybeCreateKotlinExtensionConfiguration()
         }
-        addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
+        addSubpluginOptionsForBuiltInKotlin(creationConfig, kotlinCompilation, kaptGenerateStubsProvider)
     }
 
     /**
@@ -1034,21 +1041,52 @@ abstract class TaskManager(
         }
     }
 
-    // Allowlist for Kotlin compiler plugins supported by AGP's built-in Kotlin support. We need an
-    // allowlist until BuiltInKotlinJvmAndroidCompilation has been fully implemented.
-    private val builtInKotlinCompilerPluginIdAllowlist =
-        listOf("androidx.compose.compiler.plugins.kotlin")
-
     // Similar to SubpluginEnvironment.addSubpluginOptions in KGP
     private fun addSubpluginOptionsForBuiltInKotlin(
+        creationConfig: ComponentCreationConfig,
         kotlinCompilation: BuiltInKotlinJvmAndroidCompilation,
         kaptGenerateStubsTaskProvider: TaskProvider<out KaptGenerateStubs>?
     ) {
+        // Since support for Kotlin compiler plugins is not yet complete, invoking the plugins' code
+        // may fail. If the users are using the built-in Kotlin plugin, their alternative is to use
+        // the legacy `kotlin-android` plugin. However, if the users are already using the legacy
+        // `kotlin-android` plugin (e.g., when they're using the screenshot-test or test-fixtures
+        // feature), they will have no alternatives. Therefore, in those cases, we will show a
+        // warning instead of failing the build to avoid breaking users.
+        // Once the support is complete (tracked by b/409528883), we should remove this code.
+        fun <T> runPluginCodeThatMayFail(pluginId: String, returnValueIfFails: T, action: () -> T): T {
+            return if (creationConfig.builtInKotlinSupportMode in setOf(
+                    BuiltInKotlinSupportMode.Supported.ScreenshotTestAndKgpApplied,
+                    BuiltInKotlinSupportMode.Supported.TestFixturesSupportEnabledAndKgpApplied
+                )
+            ) {
+                try {
+                    action()
+                } catch (e: Throwable) {
+                    creationConfig.services.issueReporter.reportWarning(
+                        IssueReporter.Type.GENERIC,
+                        "Failed to invoke Kotlin compiler Gradle plugin: $pluginId.\n" +
+                                "Please report this issue at https://issuetracker.google.com/409528883.\n" +
+                                "Stack trace: " + Throwables.getStackTraceAsString(Throwables.getRootCause(e)).lines().let { it.subList(0, min(it.size, 10)).joinToString("\n") }
+                    )
+                    returnValueIfFails
+                }
+            } else {
+                action()
+            }
+        }
+
         val appliedSubplugins =
             project.plugins
                 .filterIsInstance<KotlinCompilerPluginSupportPlugin>()
-                .filter { it.getCompilerPluginId() in builtInKotlinCompilerPluginIdAllowlist }
-                .filter { it.isApplicable(kotlinCompilation) }
+                // The `org.jetbrains.kotlin.kapt3` plugin will try to create tasks, but the
+                // built-in Kapt support is already doing that, so we should filter out this plugin.
+                .filterNot { kaptGenerateStubsTaskProvider != null && it.getCompilerPluginId() == "org.jetbrains.kotlin.kapt3" }
+                .filter {
+                    runPluginCodeThatMayFail(pluginId = it.getCompilerPluginId(), returnValueIfFails = false) {
+                        it.isApplicable(kotlinCompilation)
+                    }
+                }
 
         // Similar to addMavenDependency function in SubpluginEnvironment in KGP
         fun Project.addMavenDependency(configuration: String, artifact: SubpluginArtifact) {
@@ -1086,7 +1124,13 @@ abstract class TaskManager(
 
             project.addMavenDependency(pluginConfigurationName, subplugin.getPluginArtifact())
 
-            val subpluginOptionsProvider = subplugin.applyToCompilation(kotlinCompilation)
+            val subpluginOptionsProvider: Provider<List<SubpluginOption>> =
+                runPluginCodeThatMayFail(
+                    pluginId = subplugin.getCompilerPluginId(),
+                    returnValueIfFails = creationConfig.services.provider { emptyList() }
+                ) {
+                    subplugin.applyToCompilation(kotlinCompilation)
+                }
             val compilerOptions = subpluginOptionsProvider.map { subpluginOptions ->
                 val options = CompilerPluginOptions()
                 subpluginOptions.forEach { opt -> options.addPluginArgument(subpluginId, opt) }

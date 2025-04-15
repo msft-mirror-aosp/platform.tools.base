@@ -23,8 +23,6 @@ import com.android.build.gradle.internal.utils.GradleEnvironmentProviderImpl
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.services.BuildServiceRegistry
-import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
-import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import java.io.File
 
 /**
@@ -52,11 +50,6 @@ open class BaseServicesImpl(protected val projectServices: ProjectServices):
     final override val projectInfo: ProjectInfo
         get() = projectServices.projectInfo
 
-    override val builtInKotlinServices: BuiltInKotlinServices by lazy {
-        BuiltInKotlinServices.createFromPlugin(
-            kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
-            kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
-            projectName = projectInfo.name
-        )
-    }
+    final override val builtInKotlinServices: BuiltInKotlinServices
+        get() = projectServices.builtInKotlinServices
 }

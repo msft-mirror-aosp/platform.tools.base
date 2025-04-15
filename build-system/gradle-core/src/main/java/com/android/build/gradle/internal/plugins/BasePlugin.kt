@@ -703,7 +703,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         extension.disableWrite()
 
         @Suppress("DEPRECATION")
-        syncAgpAndKgpSources(project, extension.sourceSets)
+        syncAgpAndKgpSources(project, projectServices, extension.sourceSets)
 
         val projectBuilder = configuratorService.getProjectBuilder(
             project.path
