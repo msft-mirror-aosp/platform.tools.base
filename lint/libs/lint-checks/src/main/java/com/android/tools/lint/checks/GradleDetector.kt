@@ -1659,14 +1659,19 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       val ideMajor = ideGradleCompatibleVersion.major ?: return null
       val ideMinor = ideGradleCompatibleVersion.minor ?: return null
       return Predicate { v ->
-        // Any higher IDE version that matches major and minor
-        // (e.g. from 3.3.0 offer 3.3.2 but not 3.4.0)
         val major = v.major ?: Integer.MAX_VALUE
-        val minor = v.major ?: Integer.MAX_VALUE
-        major < ideMajor ||
-          major == ideMajor && minor <= ideMinor ||
-          // Also allow matching latest current existing major/minor version
-          (v.major == version.major && v.minor == version.minor)
+        val minor = v.minor ?: Integer.MAX_VALUE
+        if (ideGradleCompatibleVersion.isPreview && major == ideMajor && minor == ideMinor) {
+          // For canary versions, we must have an exact match
+          v == ideGradleCompatibleVersion
+        } else {
+          // Any higher IDE version that matches major and minor
+          // (e.g. from 3.3.0 offer 3.3.2 but not 3.4.0)
+          major < ideMajor ||
+            major == ideMajor && minor <= ideMinor ||
+            // Also allow matching latest current existing major/minor version
+            v.major == version.major && v.minor == version.minor
+        }
       }
     }
 
