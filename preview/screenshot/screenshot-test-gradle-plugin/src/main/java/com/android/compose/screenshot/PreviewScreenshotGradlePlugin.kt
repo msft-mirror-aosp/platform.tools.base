@@ -248,6 +248,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         task.testEngineInput.referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
                         task.testEngineInput.previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
                         task.testEngineInput.diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
+                        task.testEngineInput.junitXmlOutputDirectory.set(project.provider { task.reports.junitXml.outputLocation.get() })
                     }
 
                     variant.artifacts
