@@ -32,6 +32,7 @@ import com.android.build.gradle.api.AndroidBasePlugin
 import com.android.compose.screenshot.gradle.ScreenshotTestOptionsImpl
 import com.android.compose.screenshot.layoutlibExtractor.LayoutlibDataFromMaven
 import com.android.compose.screenshot.services.AnalyticsService
+import com.android.compose.screenshot.tasks.PreviewScreenshotTestEngineInput
 import com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -39,9 +40,11 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 import java.util.Locale
 import java.util.Properties
 import java.util.UUID
@@ -163,15 +166,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
             val buildDir = project.layout.buildDirectory
 
-            // this will be provided by AGP at some point.
-            fun Variant.computePathSegments(): String {
-                return buildType?.let { bt ->
-                    flavorName?.let { fn ->
-                        "$bt/$fn"
-                    } ?: bt
-                } ?: flavorName ?: ""
-            }
-
             componentsExtension.beforeVariants {
                 val extension = project.extensions.getByType(CommonExtension::class.java)
                 val screenshotSourceSetEnabledInModule = extension.experimentalProperties[ST_SOURCE_SET_ENABLED]
@@ -227,67 +221,96 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             task.project.configurations.getByName(layoutlibJarConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,
                         )
-
-                        // Need to use project.providers as a workaround to gradle issue:
-                        // https://github.com/gradle/gradle/issues/12388
-                        val sdkFonts = project.providers.provider {
-                            val subDir = sdkDirectory.get().asFile.resolve(SdkConstants.SDK_DL_FONTS_FOLDER)
-                            if (subDir.exists()) {
-                                sdkDirectory.get().dir(SdkConstants.SDK_DL_FONTS_FOLDER)
-                            } else {
-                                null
-                            }
-                        }
-                        task.testEngineInput.sdkFontsDir.set(sdkFonts)
-
-                        getResourceApk(screenshotTestComponent.artifacts)?.let {
-                            task.testEngineInput.resourceApkFile.set(it)
-                        }
-                        task.testEngineInput.namespace.set(variant.namespace)
-                        task.testEngineInput.layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
-                        task.testEngineInput.referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
-                        task.testEngineInput.previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
-                        task.testEngineInput.diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
-                        task.testEngineInput.junitXmlOutputDirectory.set(project.provider { task.reports.junitXml.outputLocation.get() })
                     }
 
-                    variant.artifacts
-                        .forScope(ScopedArtifacts.Scope.ALL)
-                        .use(previewScreenshotTestTask)
-                        .toGet(
-                            ScopedArtifact.CLASSES,
-                            { it.testEngineInput.mainRuntimeJars },
-                            { it.testEngineInput.mainRuntimeClassDirs },
-                        )
-                    variant.artifacts
-                        .forScope(ScopedArtifacts.Scope.PROJECT)
-                        .use(previewScreenshotTestTask)
-                        .toGet(
-                            ScopedArtifact.CLASSES,
-                            { it.testEngineInput.mainProjectJars },
-                            { it.testEngineInput.mainProjectClassDirs },
-                        )
-                    screenshotTestComponent.artifacts
-                        .forScope(ScopedArtifacts.Scope.ALL)
-                        .use(previewScreenshotTestTask)
-                        .toGet(
-                            ScopedArtifact.CLASSES,
-                            { it.testEngineInput.testRuntimeJars },
-                            { it.testEngineInput.testRuntimeClassDirs },
-                        )
-                    screenshotTestComponent.artifacts
-                        .forScope(ScopedArtifacts.Scope.PROJECT)
-                        .use(previewScreenshotTestTask)
-                        .toGet(
-                            ScopedArtifact.CLASSES,
-                            { it.testEngineInput.testProjectJars },
-                            { it.testEngineInput.testProjectClassDirs },
-                        )
+                    previewScreenshotTestTask.configureTestEngineInput(
+                        project, variant, screenshotTestComponent, layoutlibDataFromMaven,
+                        sdkDirectory,
+                        { reports.junitXml.outputLocation.get() },
+                        { testEngineInput }
+                    )
 
                     validateAllTask.configure { it.dependsOn(previewScreenshotTestTask) }
                 }
             }
         }
+    }
+
+    // This will be provided by AGP at some point.
+    private fun Variant.computePathSegments(): String {
+        return buildType?.let { bt ->
+            flavorName?.let { fn ->
+                "$bt/$fn"
+            } ?: bt
+        } ?: flavorName ?: ""
+    }
+
+    private fun <T: Task> TaskProvider<T>.configureTestEngineInput(
+        project: Project,
+        variant: Variant, screenshotTestComponent: HostTest,
+        layoutlibDataFromMaven: LayoutlibDataFromMaven,
+        sdkDirectory: Provider<Directory>,
+        junitXmlOutputDirectoryProvider: T.() -> Directory,
+        getTestEngineInput: T.() -> PreviewScreenshotTestEngineInput) {
+        val buildDir = project.layout.buildDirectory
+        val variantName = variant.name
+        configure { task ->
+            getTestEngineInput(task).apply {
+                namespace.set(variant.namespace)
+                layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
+                referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
+                previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
+                diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
+                junitXmlOutputDirectory.set(project.provider { junitXmlOutputDirectoryProvider(task) })
+                getResourceApk(screenshotTestComponent.artifacts)?.let {
+                    resourceApkFile.set(it)
+                }
+
+                // Need to use project.providers as a workaround to gradle issue:
+                // https://github.com/gradle/gradle/issues/12388
+                val sdkFonts = project.providers.provider {
+                    val subDir = sdkDirectory.get().asFile.resolve(SdkConstants.SDK_DL_FONTS_FOLDER)
+                    if (subDir.exists()) {
+                        sdkDirectory.get().dir(SdkConstants.SDK_DL_FONTS_FOLDER)
+                    } else {
+                        null
+                    }
+                }
+                sdkFontsDir.set(sdkFonts)
+            }
+        }
+        variant.artifacts
+            .forScope(ScopedArtifacts.Scope.ALL)
+            .use(this)
+            .toGet(
+                ScopedArtifact.CLASSES,
+                { getTestEngineInput(it).mainRuntimeJars },
+                { getTestEngineInput(it).mainRuntimeClassDirs },
+            )
+        variant.artifacts
+            .forScope(ScopedArtifacts.Scope.PROJECT)
+            .use(this)
+            .toGet(
+                ScopedArtifact.CLASSES,
+                { getTestEngineInput(it).mainProjectJars },
+                { getTestEngineInput(it).mainProjectClassDirs },
+            )
+        screenshotTestComponent.artifacts
+            .forScope(ScopedArtifacts.Scope.ALL)
+            .use(this)
+            .toGet(
+                ScopedArtifact.CLASSES,
+                { getTestEngineInput(it).testRuntimeJars },
+                { getTestEngineInput(it).testRuntimeClassDirs },
+            )
+        screenshotTestComponent.artifacts
+            .forScope(ScopedArtifacts.Scope.PROJECT)
+            .use(this)
+            .toGet(
+                ScopedArtifact.CLASSES,
+                { getTestEngineInput(it).testProjectJars },
+                { getTestEngineInput(it).testProjectClassDirs },
+            )
     }
 
     private fun getResourceApk(screenshotTestComponentArtifacts: Artifacts): Provider<RegularFile>? {
