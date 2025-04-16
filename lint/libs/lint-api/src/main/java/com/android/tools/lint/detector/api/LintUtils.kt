@@ -1609,6 +1609,31 @@ fun guessGradleLocationForFile(client: LintClient, gradle: File, string: String?
 }
 
 /**
+ * Given a project directory in a Gradle project, searches upwards until it finds the root Gradle
+ * directory in the project.
+ */
+fun findGradleRootDir(projectDir: File): File? {
+  // Workaround: we need the root project; it's not yet part of the model,
+  // and adding it now would clash with simultaneous edits to decouple Gradle
+  // and lint
+  var parent = projectDir
+  while (true) {
+    // The settings file is the best marker for the root of the
+    // Gradle project.
+    if (
+      File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() ||
+        File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists() ||
+        File(parent, SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE).exists()
+    ) {
+      return parent
+    }
+    parent = parent.parentFile ?: break
+  }
+
+  return null
+}
+
+/**
  * Returns true if the given element is the null literal
  *
  * @param element the element to check

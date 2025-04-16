@@ -17,6 +17,8 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradleToml
+import com.android.tools.lint.checks.infrastructure.TestLintClient
+import com.android.tools.lint.client.api.LintClient.Companion.CLIENT_STUDIO
 import com.android.tools.lint.detector.api.Detector
 
 class PageAlignmentDetectorTest : AbstractCheckTest() {
@@ -185,6 +187,48 @@ class PageAlignmentDetectorTest : AbstractCheckTest() {
         build/intermediates/exploded-aar/org.tensorflow/tensorflow-lite2/2.16.1/jni/arm64-v8a/libtensorflowlite_jni.so: Warning: The native library arm64-v8a/libtensorflowlite_jni.so (from org.tensorflow:tensorflow-lite2:2.16.1) is not 16 KB aligned [Aligned16KB]
         build/intermediates/exploded-aar/org.tensorflow/tensorflow-lite/2.16.1/jni/arm64-v8a/libtensorflowlite_jni.so: Warning: The native library arm64-v8a/libtensorflowlite_jni.so (from org.tensorflow:tensorflow-lite:2.16.1) is not 16 KB aligned [Aligned16KB]
         0 errors, 2 warnings
+        """
+      )
+  }
+
+  fun test410936202() {
+    // Like test395836302 but act as if running inside the IDE; make sure we redirect
+    // dependencies to a local gradle file
+    val clientFactory = { TestLintClient(CLIENT_STUDIO) }
+
+    lint()
+      .projects(
+        project(
+            gradle(
+                "build.gradle",
+                """
+                dependencies {
+                    implementation 'my.indirect.dependency:myname:1.2.3'
+                }
+                """,
+              )
+              .indented(),
+            jniLibArm64v8a,
+            jniLibx86_64,
+            jniLibArmeAbiv7a,
+            jniLibX86,
+          )
+          .withDependencyGraph(
+            """
+            +--- my.indirect.dependency:myname:1.2.3
+            |    +--- org.tensorflow:tensorflow-lite:2.16.1
+            |    \--- org.tensorflow:tensorflow-lite2:2.16.1
+            +--- commons-logging:commons-logging:1.2
+            """
+              .trimIndent()
+          )
+      )
+      .clientFactory(clientFactory)
+      .run()
+      .expect(
+        """
+        build.gradle: Warning: The native library arm64-v8a/libtensorflowlite_jni.so (from org.tensorflow:tensorflow-lite:2.16.1) is not 16 KB aligned [Aligned16KB]
+        0 errors, 1 warning
         """
       )
   }

@@ -1681,19 +1681,19 @@ class GradleDetectorTest : AbstractCheckTest() {
         ../gradle/libs.versions.toml:16: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
         android-compileSdk = "34"  # ERROR 11
                              ~~~~
-        build.gradle.kts:5: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        build.gradle.kts:5: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
                 minSdk = libs.versions.keys.msv.get().toInt() // ERROR 14
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ../gradle/libs.versions.toml:3: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        ../gradle/libs.versions.toml:3: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
         min_sdk_version = "15"     # ERROR 2
                           ~~~~
-        ../gradle/libs.versions.toml:7: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        ../gradle/libs.versions.toml:7: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
         minSdkVersion = "15"       # ERROR 5
                         ~~~~
-        ../gradle/libs.versions.toml:11: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        ../gradle/libs.versions.toml:11: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
         minSdk = "15"              # ERROR 8
                  ~~~~
-        ../gradle/libs.versions.toml:15: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        ../gradle/libs.versions.toml:15: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
         android-minSdk = "15"      # ERROR 10
                          ~~~~
         0 errors, 15 warnings
@@ -2724,10 +2724,10 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testMinSdkVersion() {
     val expected =
       "" +
-        "build.gradle:8: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
+        "build.gradle:8: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
         "        minSdkVersion 7\n" +
         "        ~~~~~~~~~~~~~~~\n" +
-        "build.gradle:9: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
+        "build.gradle:9: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
         "        minSdk 7\n" +
         "        ~~~~~~~~\n" +
         "0 errors, 2 warnings"
@@ -4919,7 +4919,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         build.gradle.kts:9: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
             compileSdkVersion(34)
             ~~~~~~~~~~~~~~~~~~~~~
-        build.gradle.kts:12: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        build.gradle.kts:12: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
                 minSdkVersion(7)
                 ~~~~~~~~~~~~~~~~
         0 errors, 4 warnings

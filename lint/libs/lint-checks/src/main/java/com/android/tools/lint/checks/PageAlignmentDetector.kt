@@ -15,7 +15,9 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.SdkConstants.FD_GRADLE
 import com.android.SdkConstants.FD_JNI
+import com.android.SdkConstants.FN_VERSION_CATALOG
 import com.android.ide.common.gradle.Dependency
 import com.android.ide.common.gradle.Version
 import com.android.ide.common.pagealign.hasElfMagicNumber
@@ -41,6 +43,8 @@ import com.android.tools.lint.detector.api.Scope.Companion.GRADLE_AND_TOML_SCOPE
 import com.android.tools.lint.detector.api.Scope.Companion.GRADLE_SCOPE
 import com.android.tools.lint.detector.api.Scope.Companion.TOML_SCOPE
 import com.android.tools.lint.detector.api.Severity
+import com.android.tools.lint.detector.api.findGradleRootDir
+import com.android.tools.lint.detector.api.guessGradleLocation
 import com.android.tools.lint.model.LintModelAndroidLibrary
 import com.android.tools.lint.model.LintModelMavenName
 import java.io.File
@@ -105,10 +109,45 @@ class PageAlignmentDetector : Detector(), GradleScanner, TomlScanner {
 
   override fun afterCheckRootProject(context: Context) {
     // Handle any incidents we didn't find dependency declarations for
-    val targets = reportCoordinates ?: return
+    var targets = reportCoordinates ?: return
     if (targets.isEmpty()) {
       return
     }
+
+    if (LintClient.isStudio) {
+      // We have dependencies we weren't able to map to a build file dependency
+      // declaration. We normally just point to the actual shared library
+      // file. However, inside the IDE, reporting an error on a file outside
+      // the project root means it gets filtered out of the Inspections view.
+      // Therefore, try a little harder to look up a suitable location for the
+      // errors here. In the worst case, we'll just point to the project root
+      // directory.
+      val client = context.client
+      var location: Location? = null
+      val gradleRoot = findGradleRootDir(context.project.dir)
+      if (gradleRoot != null) {
+        val catalog = File(gradleRoot, "$FD_GRADLE/$FN_VERSION_CATALOG")
+        if (catalog.isFile) {
+          location = Location.create(catalog)
+
+          // Also try looking in the TOML file; in the IDE, we may encounter the TOML
+          // file *before* having recorded dependencies, since the IDE sync machinery
+          // creates a root project holding the TOML file, without a dependency
+          // graph.
+          val contents = client.readFile(catalog)
+          val document = client.getTomlParser().parse(catalog, contents)
+          checkTomlDocument(context, document)
+          targets = reportCoordinates ?: return
+        }
+      }
+      if (location == null) {
+        location = guessGradleLocation(context.project)
+      }
+      for ((_, incident) in targets) {
+        incident.location = location
+      }
+    }
+
     val iterator = targets.iterator()
     while (iterator.hasNext()) {
       val (_, incident) = iterator.next()
@@ -158,6 +197,10 @@ class PageAlignmentDetector : Detector(), GradleScanner, TomlScanner {
   }
 
   override fun visitTomlDocument(context: TomlContext, document: LintTomlDocument) {
+    checkTomlDocument(context, document)
+  }
+
+  private fun checkTomlDocument(context: Context, document: LintTomlDocument) {
     val targets = reportCoordinates
     if (!context.driver.isIsolated() && targets == null) {
       return

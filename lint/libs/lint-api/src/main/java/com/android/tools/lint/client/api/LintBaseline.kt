@@ -511,6 +511,7 @@ class LintBaseline(
           stringsEquivalent(old, new)
         }
       }
+      "MinSdkTooLow" -> true // Normally unique per file, we don't have to match on the current one
       "WebpUnsupported",
       "OverrideAbstract",
       "GetLocales" ->

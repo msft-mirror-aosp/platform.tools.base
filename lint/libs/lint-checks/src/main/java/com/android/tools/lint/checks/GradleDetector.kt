@@ -991,7 +991,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   ) {
     if (version in 1 until LOWEST_ACTIVE_API) {
       val message =
-        "The value of minSdkVersion is too low. It can be incremented " +
+        "The value of minSdkVersion ($version) is too low. It can be incremented " +
           "without noticeably reducing the number of supported devices."
 
       val label = "Update minSdkVersion to $LOWEST_ACTIVE_API"
@@ -3209,7 +3209,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         category = Category.CORRECTNESS,
         priority = 4,
         severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
+        implementation = IMPLEMENTATION_WITH_TOML,
         androidSpecific = true,
         enabledByDefault = false,
       )
