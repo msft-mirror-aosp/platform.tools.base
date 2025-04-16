@@ -196,7 +196,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         "validate${variantName.capitalized()}ScreenshotTest",
                         PreviewScreenshotValidationTask::class.java) { task ->
                         task.analyticsService.set(analyticsServiceProvider)
-                        task.threshold.set(screenshotExtension.imageDifferenceThreshold)
+                        task.testEngineInput.threshold.set(screenshotExtension.imageDifferenceThreshold)
                         task.usesService(analyticsServiceProvider)
                         task.description = "Run screenshot tests for the $variantName build."
                         task.group = JavaBasePlugin.VERIFICATION_GROUP
@@ -238,16 +238,16 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                                 null
                             }
                         }
-                        task.sdkFontsDir.set(sdkFonts)
+                        task.testEngineInput.sdkFontsDir.set(sdkFonts)
 
                         getResourceApk(screenshotTestComponent.artifacts)?.let {
-                            task.resourceApkFile.set(it)
+                            task.testEngineInput.resourceApkFile.set(it)
                         }
-                        task.namespace.set(variant.namespace)
-                        task.layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
-                        task.referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
-                        task.previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
-                        task.diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
+                        task.testEngineInput.namespace.set(variant.namespace)
+                        task.testEngineInput.layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
+                        task.testEngineInput.referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
+                        task.testEngineInput.previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
+                        task.testEngineInput.diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
                     }
 
                     variant.artifacts
@@ -255,32 +255,32 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         .use(previewScreenshotTestTask)
                         .toGet(
                             ScopedArtifact.CLASSES,
-                            PreviewScreenshotValidationTask::mainRuntimeJars,
-                            PreviewScreenshotValidationTask::mainRuntimeClassDirs,
+                            { it.testEngineInput.mainRuntimeJars },
+                            { it.testEngineInput.mainRuntimeClassDirs },
                         )
                     variant.artifacts
                         .forScope(ScopedArtifacts.Scope.PROJECT)
                         .use(previewScreenshotTestTask)
                         .toGet(
                             ScopedArtifact.CLASSES,
-                            PreviewScreenshotValidationTask::mainProjectJars,
-                            PreviewScreenshotValidationTask::mainProjectClassDirs,
+                            { it.testEngineInput.mainProjectJars },
+                            { it.testEngineInput.mainProjectClassDirs },
                         )
                     screenshotTestComponent.artifacts
                         .forScope(ScopedArtifacts.Scope.ALL)
                         .use(previewScreenshotTestTask)
                         .toGet(
                             ScopedArtifact.CLASSES,
-                            PreviewScreenshotValidationTask::testRuntimeJars,
-                            PreviewScreenshotValidationTask::testRuntimeClassDirs,
+                            { it.testEngineInput.testRuntimeJars },
+                            { it.testEngineInput.testRuntimeClassDirs },
                         )
                     screenshotTestComponent.artifacts
                         .forScope(ScopedArtifacts.Scope.PROJECT)
                         .use(previewScreenshotTestTask)
                         .toGet(
                             ScopedArtifact.CLASSES,
-                            PreviewScreenshotValidationTask::testProjectJars,
-                            PreviewScreenshotValidationTask::testProjectClassDirs,
+                            { it.testEngineInput.testProjectJars },
+                            { it.testEngineInput.testProjectClassDirs },
                         )
 
                     validateAllTask.configure { it.dependsOn(previewScreenshotTestTask) }
