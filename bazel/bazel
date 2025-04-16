@@ -60,6 +60,18 @@ def main():
   env['BUILD_TARGET_NAME'] = os.environ.get('BUILD_TARGET_NAME', '')
   env['DIST_DIR'] = os.environ.get('DIST_DIR', '')
   if sys.platform == 'darwin':
+    java_path = os.path.join(
+        workspace,
+        'prebuilts',
+        'studio',
+        'jdk',
+        'jbr-next',
+        'mac-arm64' if plat.machine() == 'arm64' else 'mac',
+        'Contents',
+        'Home',
+        'bin',
+    )
+    env['PATH'] = f'{java_path}:{env["PATH"]}'
     if not os.path.exists('/Library/Developer/CommandLineTools'):
       print(
           '/Library/Developer/CommandLineTools does not exist. Please install'
@@ -69,7 +81,9 @@ def main():
     # This is needed for bazel to set itself up, even though we aren't using gcc.
     env['CC'] = os.environ.get('GCC', '/usr/bin/gcc')
   elif sys.platform == 'win32':
-    java_path = os.path.join(workspace, 'prebuilts', 'studio', 'jdk', 'jbr-next', 'win', 'bin')
+    java_path = os.path.join(
+        workspace, 'prebuilts', 'studio', 'jdk', 'jbr-next', 'win', 'bin'
+    )
     env['PATH'] = f'{java_path};{env["PATH"]}'
     command = bazel_command(args)
     # We don't need the tools to be installed locally if you're building remotely.
