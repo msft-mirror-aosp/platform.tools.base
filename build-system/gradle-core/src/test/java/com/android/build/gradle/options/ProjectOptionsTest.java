@@ -17,19 +17,24 @@
 package com.android.build.gradle.options;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.fixtures.FakeProviderFactory;
 import com.android.tools.analytics.AnalyticsSettings;
 import com.android.tools.analytics.AnalyticsSettingsData;
+
 import com.google.common.collect.ImmutableMap;
+
 import groovy.util.Eval;
+
+import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Test;
 
 public class ProjectOptionsTest {
 
@@ -257,10 +262,38 @@ public class ProjectOptionsTest {
         assertThat(projectOptions.isAnalyticsEnabled()).isTrue();
 
         settingsData.setOptedIn(true);
-        projectOptions = new ProjectOptions(
-                ImmutableMap.of(),
-                new FakeProviderFactory(
-                        FakeProviderFactory.getFactory(), ImmutableMap.of()));
+        projectOptions =
+                new ProjectOptions(
+                        ImmutableMap.of(),
+                        new FakeProviderFactory(
+                                FakeProviderFactory.getFactory(), ImmutableMap.of()));
         assertThat(projectOptions.isAnalyticsEnabled()).isTrue();
+    }
+
+    @Test
+    public void checkSimulatedAgpVersionTest() {
+        ProjectOptions projectOptions =
+                new ProjectOptions(
+                        ImmutableMap.of(),
+                        new FakeProviderFactory(
+                                FakeProviderFactory.getFactory(),
+                                ImmutableMap.of("android.simulateAgpVersionBehavior", "9.0.0")));
+        assertThat(projectOptions.get(BooleanOption.TEST_SIMULATE_AGP_VERSION_BEHAVIOR)).isFalse();
+
+        projectOptions =
+                new ProjectOptions(
+                        ImmutableMap.of(),
+                        new FakeProviderFactory(
+                                FakeProviderFactory.getFactory(),
+                                ImmutableMap.of("android.simulateAgpVersionBehavior", "10.0.0")));
+        assertThat(projectOptions.get(BooleanOption.TEST_SIMULATE_AGP_VERSION_BEHAVIOR)).isTrue();
+
+        projectOptions =
+                new ProjectOptions(
+                        ImmutableMap.of(),
+                        new FakeProviderFactory(
+                                FakeProviderFactory.getFactory(),
+                                ImmutableMap.of("android.simulateAgpVersionBehavior", "11.0.0")));
+        assertThat(projectOptions.get(BooleanOption.TEST_SIMULATE_AGP_VERSION_BEHAVIOR)).isTrue();
     }
 }

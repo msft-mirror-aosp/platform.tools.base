@@ -157,6 +157,12 @@ enum class StringOption(
     // An override for the Jacoco version to be set per module
     JACOCO_TOOL_VERSION("com.android.test.jacocoVersion", ApiStage.Experimental),
 
+    /**
+     * If a value is set, all version-gated [Option] with a minimum AGP version less than or equal
+     * to this value will be enabled.
+     */
+    SIMULATE_AGP_VERSION_BEHAVIOR("android.simulateAgpVersionBehavior", ApiStage.Experimental),
+
     /* ---------------
      * DEPRECATED APIs
      */

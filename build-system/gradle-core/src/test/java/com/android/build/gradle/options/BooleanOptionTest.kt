@@ -116,4 +116,18 @@ class BooleanOptionTest {
                 requirement = "Experimental, deprecated, or removed features must have default value `false`."
         )
     }
+
+    @Test
+    fun `check that each Boolean option's futureStage is unique`() {
+
+        val violatingOptions = BooleanOption.entries.filter {
+            it.futureStage != null
+                    && it.defaultValue == it.futureStage.defaultValue
+                    && it.stage::class == it.futureStage.stage::class
+        }
+        checkViolatingProjectOptions(
+            violatingOptions = violatingOptions,
+            requirement = "Future Stage must be unique compared to the default option or null."
+        )
+    }
 }
