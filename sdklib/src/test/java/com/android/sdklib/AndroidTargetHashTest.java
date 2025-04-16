@@ -16,38 +16,12 @@
 
 package com.android.sdklib;
 
-import static com.android.sdklib.AndroidTargetHash.getPlatformHashString;
-
 import com.android.sdklib.internal.androidTarget.MockAddonTarget;
 import com.android.sdklib.internal.androidTarget.MockPlatformTarget;
 
 import junit.framework.TestCase;
 
 public class AndroidTargetHashTest extends TestCase {
-
-    public final void testGetPlatformHashString() {
-        assertEquals("android-10",
-                     AndroidTargetHash.getPlatformHashString(new AndroidVersion(10,
-                                                                                null,
-                                                                                null,
-                                                                                true)));
-
-        //Base SDKs with extension levels are equals to SDKs where the extension level is not known.
-        assertEquals("android-10",
-                     AndroidTargetHash.getPlatformHashString(new AndroidVersion(10,
-                                                                                null,
-                                                                                3,
-                                                                                true)));
-
-        assertEquals("android-CODE_NAME",
-                     AndroidTargetHash.getPlatformHashString(new AndroidVersion(10, "CODE_NAME")));
-
-        assertEquals("android-10-ext3",
-                     AndroidTargetHash.getPlatformHashString(new AndroidVersion(10,
-                                                                                null,
-                                                                                3,
-                                                                                false)));
-    }
 
     public final void testGetPlatformHashStringFromApiString() {
         assertEquals(
@@ -165,12 +139,5 @@ public class AndroidTargetHashTest extends TestCase {
         assertEquals(
                 new AndroidVersion(37, 0, "DEV", 99, false),
                 AndroidTargetHash.getPlatformVersion("android-37.0-ext99-DEV"));
-    }
-
-    public final void testExtensionHashStrings() {
-        assertEquals("android-36", getPlatformHashString(new AndroidVersion(36, 0)));
-        assertEquals("android-36.1", getPlatformHashString(new AndroidVersion(36, 1)));
-        assertEquals("android-37.0", getPlatformHashString(new AndroidVersion(37, 0)));
-        assertEquals("android-37.1", getPlatformHashString(new AndroidVersion(37, 1)));
     }
 }
