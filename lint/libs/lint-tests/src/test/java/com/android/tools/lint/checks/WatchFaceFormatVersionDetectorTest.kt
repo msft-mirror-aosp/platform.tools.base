@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.SdkConstants.WATCH_FACE_FORMAT_VERSION_PROPERTY
 import com.android.tools.lint.checks.infrastructure.TestFile
 
 class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
@@ -22,7 +23,7 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-      .files(manifest(withWFFVersion = false), declarativeWatchFaceFile())
+      .files(manifestWithoutProperty(), declarativeWatchFaceFile())
       .run()
       .expect(
         """
@@ -38,15 +39,47 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
   fun `test the WFF version property is not required when there are no declarative watch face files`() {
     lint()
       .files(
-        manifest(withWFFVersion = false)
+        manifestWithoutProperty()
         // no DWF file
       )
       .run()
       .expectClean()
   }
 
-  fun `test the WFF version is set`() {
-    lint().files(manifest(withWFFVersion = true), declarativeWatchFaceFile()).run().expectClean()
+  fun `test the WFF version property is set`() {
+    lint()
+      .files(manifestWith(watchFaceFormatVersionProperty(value = "1")), declarativeWatchFaceFile())
+      .run()
+      .expectClean()
+  }
+
+  fun `test the WFF version property value is missing`() {
+    lint()
+      .files(
+        manifestWith(watchFaceFormatVersionProperty(value = null))
+        // this should work even when there is no DWF file
+      )
+      .run()
+      .expect(
+        """
+          AndroidManifest.xml:9: Error: The android:value attribute is missing [WatchFaceFormatMissingVersion]
+                  <property android:name="$WATCH_FACE_FORMAT_VERSION_PROPERTY" />
+                   ~~~~~~~~
+          1 error
+      """
+          .trimIndent()
+      )
+      .expectFixDiffs(
+        """
+          Fix for AndroidManifest.xml line 9: Set value="1":
+          @@ -13 +13
+          -         <property android:name="com.google.wear.watchface.format.version" />
+          +         <property
+          +             android:name="com.google.wear.watchface.format.version"
+          +             android:value="1" />
+        """
+          .trimIndent()
+      )
   }
 
   private fun declarativeWatchFaceFile() =
@@ -57,31 +90,26 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
         """,
     )
 
-  private fun manifest(withWFFVersion: Boolean): TestFile? {
-    val watchFaceFormatVersionProperty =
-      if (withWFFVersion) {
-        // language=XML
+  private fun manifestWithoutProperty() = manifestWith(null)
+
+  private fun manifestWith(watchFaceFormatVersionProperty: String?): TestFile =
+    manifest(
         """
-        <property
-            android:name="com.google.wear.watchface.format.version"
-            android:value="1" />
-      """
-      } else ""
-    return manifest(
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="test.pkg">
+              <uses-sdk android:minSdkVersion="33" />
+              <uses-feature android:name="android.hardware.type.watch" />
+              <application
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="@string/app_name"
+                  android:hasCode="false">
+                  ${watchFaceFormatVersionProperty ?: ""}
+              </application>
+          </manifest>
         """
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                package="test.pkg">
-                <uses-sdk android:minSdkVersion="33" />
-                <uses-feature android:name="android.hardware.type.watch" />
-                <application
-                    android:icon="@mipmap/ic_launcher"
-                    android:label="@string/app_name"
-                    android:hasCode="false">
-                    $watchFaceFormatVersionProperty
-                </application>
-            </manifest>
-          """
       )
       .indented()
-  }
+
+  private fun watchFaceFormatVersionProperty(value: String? = "1") =
+    "<property android:name=\"$WATCH_FACE_FORMAT_VERSION_PROPERTY\" ${value?.let { "android:value=\"$value\" " } ?: ""}/>"
 }
