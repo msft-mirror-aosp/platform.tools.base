@@ -1,4 +1,6 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+load("//tools/base/bazel:utils.bzl", "fileset")
 
 # managed by go/iml_to_build
 iml_module(
@@ -11,6 +13,25 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "//tools/base/common:studio.android.sdktools.common",
+    ],
+)
+
+fileset(
+    name = "wear-wff-schema.resources",
+    srcs = glob(["resources/**"]),
+    mappings = {
+        "resources/": "",
+    },
+)
+
+kotlin_library(
+    name = "wear-wff-schema",
+    srcs = glob(["src/**"]),
+    resource_strip_prefix = "tools/base/wear-wff-schema",
+    resources = [":wear-wff-schema.resources"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/base/common:tools.common",
     ],
 )
 

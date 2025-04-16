@@ -173,6 +173,7 @@ iml_module(
         "@intellij//:org.jetbrains.kotlin",
         "//tools/base/lint:studio.android.sdktools.lint-api",
         "//tools/base/lint:liblint-checks-proto",
+        "//tools/base/wear-wff-schema:studio.intellij.android.wear-wff-schema",
     ],
 )
 
@@ -183,6 +184,9 @@ maven_library(
         "libs/lint-checks/src/main/java/**/*.kt",
         "libs/lint-checks/src/main/java/**/*.java",
     ]),
+    bundled_deps = [
+        "//tools/base/wear-wff-schema:wear-wff-schema",
+    ],
     coordinates = "com.android.tools.lint:lint-checks",
     description = "Checks for Android Lint",
     kotlinc_opts = [
