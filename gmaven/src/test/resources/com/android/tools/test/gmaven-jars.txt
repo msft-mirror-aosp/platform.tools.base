@@ -4065,6 +4065,7 @@ com/android/tools/sdk-common
   versions-offline/org/jetbrains/
   versions-offline/org/jetbrains/kotlin/
   versions-offline/org/jetbrains/kotlin/group-index.xml
+  versions-offline/packages-v0.1.json.gz
   versions-offline/tools/
   versions-offline/tools/base/
   versions-offline/tools/base/build-system/

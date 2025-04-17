@@ -17,7 +17,11 @@ package com.android.ide.common.repository
 
 import com.android.ide.common.gradle.Dependency
 import com.android.ide.common.gradle.Version
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.io.InputStream
 import java.util.function.Predicate
+import java.util.zip.GZIPInputStream
 
 /**
  * Represents the repository that provides access to metadata about packages (aka groups),
@@ -25,63 +29,120 @@ import java.util.function.Predicate
  */
 interface GoogleMavenRepositoryV2 {
 
-    /**
-     * Returns [Version] for a given group, artifact and [Predicate].
-     */
-    fun findVersion(
-        groupId: String,
-        artifactId: String,
-        filter: Predicate<Version>?,
-        allowPreview: Boolean = false
-    ): Version?
+  /**
+   * Returns [Version] for a given group, artifact and [Predicate].
+   */
+  fun findVersion(
+    groupId: String,
+    artifactId: String,
+    filter: Predicate<Version>?,
+    allowPreview: Boolean = false
+  ): Version?
 
-    /**
-     * Returns [Version] for a given group, artifact and filter.
-     */
-    fun findVersion(
-        groupId: String,
-        artifactId: String,
-        filter: ((Version) -> Boolean)? = null,
-        allowPreview: Boolean = false
-    ): Version?
+  /**
+   * Returns [Version] for a given group, artifact and filter.
+   */
+  fun findVersion(
+    groupId: String,
+    artifactId: String,
+    filter: ((Version) -> Boolean)? = null,
+    allowPreview: Boolean = false
+  ): Version?
 
-    /**
-     * Returns [Dependency]s for a given group, artifact and [Version].
-     */
-    fun findCompileDependencies(
-        groupId: String,
-        artifactId: String,
-        version: Version
-    ): List<Dependency>
+  /**
+   * Returns [Dependency]s for a given group, artifact and [Version].
+   */
+  fun findCompileDependencies(
+    groupId: String,
+    artifactId: String,
+    version: Version
+  ): List<Dependency>
 
-    companion object {
+  companion object {
 
-        /** Creates an instance of [GoogleMavenRepositoryV2]. */
-        fun create(): GoogleMavenRepositoryV2 {
-            return GoogleMavenRepositoryV2Impl()
-        }
+    /** Creates an instance of [GoogleMavenRepositoryV2]. */
+    fun create(host: GoogleMavenRepositoryV2Host): GoogleMavenRepositoryV2 {
+      return GoogleMavenRepositoryV2Impl(host)
     }
+  }
 }
 
 private class GoogleMavenRepositoryV2Impl : GoogleMavenRepositoryV2 {
 
-    override fun findVersion(
-        groupId: String,
-        artifactId: String,
-        filter: Predicate<Version>?,
-        allowPreview: Boolean
-    ): Version? = null
+  private val lorryNetworkCache: NetworkCache
+  private val localGroups: Set<Package> by lazy {
+    lorryNetworkCache.findData("packages-v0.1.json.gz")?.use {
+      val root: Root = Gson().fromJson(GZIPInputStream(it).reader(), object : TypeToken<Root>() {})
+      root.packages
+    } ?: throw IllegalStateException("Failed to load groups from Lorry")
+  }
 
-    override fun findVersion(
-        groupId: String,
-        artifactId: String,
-        filter: ((Version) -> Boolean)?,
-        allowPreview: Boolean
-    ): Version? = null
+  constructor(host: GoogleMavenRepositoryV2Host) {
+    this.lorryNetworkCache = object : NetworkCache(
+      "https://dl.google.com/android/studio/gmaven/index/release/v0.1/",
+      host.cacheDir,
+      host.networkTimeoutMs,
+      host.cacheExpiryHours,
+      host.useNetwork
+    ) {
+      override fun readUrlData(
+        url: String,
+        timeout: Int,
+        lastModified: Long
+      ): ReadUrlDataResult = host.readUrlData(url, timeout, lastModified)
 
-    override fun findCompileDependencies(
-        groupId: String,
-        artifactId: String,
-        version: Version
-    ): List<Dependency> = emptyList()
+      override fun readDefaultData(relative: String): InputStream? =
+        host.readDefaultData(relative)
+
+      override fun error(throwable: Throwable, message: String?) =
+        host.error(throwable, message)
+    }
+  }
+
+  override fun findVersion(
+    groupId: String,
+    artifactId: String,
+    filter: Predicate<Version>?,
+    allowPreview: Boolean
+  ): Version? = findVersion(groupId, artifactId, { filter?.test(it) != false }, allowPreview)
+
+  override fun findVersion(
+    groupId: String,
+    artifactId: String,
+    filter: ((Version) -> Boolean)?,
+    allowPreview: Boolean
+  ): Version? {
+    val group = localGroups.firstOrNull { it.packageId == groupId } ?: return null
+    val artifact = group.artifacts.firstOrNull { it.artifactId == artifactId } ?: return null
+    return artifact.versions
+      .map { Version.parse(it.version) }
+      .filter { (filter == null || filter(it)) && (allowPreview || !it.isPreview) }
+      .maxOrNull()
+  }
+
+  override fun findCompileDependencies(
+    groupId: String,
+    artifactId: String,
+    version: Version
+  ): List<Dependency> = emptyList()
 }
+
+data class VersionProperties(
+  val minCompileSdk: String? = null,
+  val aarMetadataVersion: String? = null,
+  val aarFormatVersion: String? = null,
+  val minAndroidGradlePluginVersion: String? = null,
+  val minCompileSdkExtension: String? = null
+)
+
+private data class GMavenVersion(val version: String, val properties: VersionProperties?)
+
+private data class Artifact(val artifactId: String, val versions: Set<GMavenVersion>)
+
+private data class Package(val packageId: String, val artifacts: Set<Artifact>)
+
+/**
+ * Acts as the container for the [Package]s, [Artifact]s and [GMavenVersion]s. The overall structure matches the schema of
+ * "packages-v0.1.json.gz" so that it can be deserialized by Gson.
+ */
+private data class Root(val packages: Set<Package>)

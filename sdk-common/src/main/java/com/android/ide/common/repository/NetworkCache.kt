@@ -137,7 +137,7 @@ abstract class NetworkCache(
      *                         URL, which can't be represented directly on the filesystem.
      */
     @Slow
-    protected open fun findData(relative: String, treatAsDirectory: Boolean = false): InputStream? {
+    open fun findData(relative: String, treatAsDirectory: Boolean = false): InputStream? {
         if (cacheDir != null) {
             var lastModified = 0L
 
