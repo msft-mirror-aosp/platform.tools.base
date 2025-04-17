@@ -11,6 +11,7 @@ maven_repository(
         "//tools/base/preview/screenshot/screenshot-validation-junit-engine",
         "//tools/base/standalone-render/compose-cli:compose-preview-renderer",
         "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",
+        "@maven//:org.junit.platform.junit-platform-console-standalone_1.12.0",
     ],
 )
 

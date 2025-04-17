@@ -52,6 +52,7 @@ abstract class PreviewScreenshotValidationTask : Test() {
         testClassesDirs = objectFactory.fileCollection().apply {
             from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs)
         }
+        testEngineInput.recordingModeEnabled.set(false)
     }
 
     override fun getClasspath(): ConfigurableFileCollection {

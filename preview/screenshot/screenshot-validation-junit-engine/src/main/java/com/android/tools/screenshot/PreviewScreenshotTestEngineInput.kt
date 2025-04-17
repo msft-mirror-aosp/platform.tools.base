@@ -29,6 +29,11 @@ object PreviewScreenshotTestEngineInput {
     val previewDiffImageOutputDir: File = getFileFromSystemProperty("previewDiffImageOutputDir")
     val referenceImageDir: File = getFileFromSystemProperty("referenceImageDir")
 
+    object TestOption {
+        val recordingModeEnabled: Boolean =
+            getSystemProperty("TestOption.recordingModeEnabled", "false").toBoolean()
+    }
+
     object RendererInput {
         val fontsPath: File = getFileFromSystemProperty("Renderer.fontsPath")
         val resourceApkPath: File = getFileFromSystemProperty("Renderer.resourceApkPath")
@@ -45,6 +50,7 @@ object PreviewScreenshotTestEngineInput {
     }
 
     object XmlReportInput {
+        val isEnabled: Boolean = getSystemProperty("XmlReportInput.isEnabled").toBoolean()
         val outputDirectory: File = getFileFromSystemProperty("XmlReportInput.outputDirectory")
     }
 
@@ -56,8 +62,8 @@ object PreviewScreenshotTestEngineInput {
     }
 }
 
-private fun getSystemProperty(propertyName: String): String {
-    return System.getProperty("PreviewScreenshotTestEngineInput.$propertyName", "")
+private fun getSystemProperty(propertyName: String, defaultValue: String = ""): String {
+    return System.getProperty("PreviewScreenshotTestEngineInput.$propertyName", defaultValue)
 }
 
 private fun getFileFromSystemProperty(propertyName: String): File {

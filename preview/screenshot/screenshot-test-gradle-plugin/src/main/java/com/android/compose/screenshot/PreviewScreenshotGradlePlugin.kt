@@ -33,6 +33,7 @@ import com.android.compose.screenshot.gradle.ScreenshotTestOptionsImpl
 import com.android.compose.screenshot.layoutlibExtractor.LayoutlibDataFromMaven
 import com.android.compose.screenshot.services.AnalyticsService
 import com.android.compose.screenshot.tasks.PreviewScreenshotTestEngineInput
+import com.android.compose.screenshot.tasks.PreviewScreenshotUpdateTask
 import com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -149,12 +150,21 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
             createLayoutlibConfiguration(project)
             createLayoutlibResourcesConfiguration(project)
             maybeCreateScreenshotTestConfiguration(project, validationEngineVersion)
+            maybeCreateJunitStandaloneLauncherConfiguration(project)
 
             val layoutlibDataFromMaven = LayoutlibDataFromMaven.create(
                 project,
                 LAYOUTLIB_VERSION,
                 project.configurations.getByName(layoutlibResourcesConfigurationName)
             )
+
+            val updateAllTask = project.tasks.register(
+                "updateScreenshotTest",
+                Task::class.java
+            ) { task ->
+                task.description = "Update screenshots for all variants."
+                task.group = JavaBasePlugin.VERIFICATION_GROUP
+            }
 
             val validateAllTask = project.tasks.register(
                 "validateScreenshotTest",
@@ -186,11 +196,38 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
                     variant.runtimeConfiguration.checkToolingPresent(screenshotTestComponent)
 
+                    val updateTask = project.tasks.register(
+                        "update${variantName.capitalized()}ScreenshotTest",
+                        PreviewScreenshotUpdateTask::class.java
+                    ) { task ->
+                        task.description = "Update screenshots for the $variantName build."
+                        task.group = JavaBasePlugin.VERIFICATION_GROUP
+                        task.analyticsService.set(analyticsServiceProvider)
+                        task.usesService(analyticsServiceProvider)
+
+                        task.mainClass.set("org.junit.platform.console.ConsoleLauncher")
+                        task.args("execute", "--disable-banner",
+                            "--include-engine=preview-screenshot-test-engine",
+                            "--include-classname=.*","--details=none")
+                        task.classpath.from(
+                            task.project.configurations.getByName(junitStandaloneLauncherConfigurationName),
+                            task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
+                            task.project.configurations.getByName(layoutlibJarConfigurationName),
+                            componentsExtension.sdkComponents.bootClasspath,
+                        )
+                    }
+
+                    updateTask.configureTestEngineInput(
+                        project, variant, screenshotTestComponent, layoutlibDataFromMaven,
+                        sdkDirectory, screenshotExtension, null, { testEngineInput }
+                    )
+
+                    updateAllTask.configure { it.dependsOn(updateTask) }
+
                     val previewScreenshotTestTask = project.tasks.register(
                         "validate${variantName.capitalized()}ScreenshotTest",
                         PreviewScreenshotValidationTask::class.java) { task ->
                         task.analyticsService.set(analyticsServiceProvider)
-                        task.testEngineInput.threshold.set(screenshotExtension.imageDifferenceThreshold)
                         task.usesService(analyticsServiceProvider)
                         task.description = "Run screenshot tests for the $variantName build."
                         task.group = JavaBasePlugin.VERIFICATION_GROUP
@@ -225,7 +262,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
                     previewScreenshotTestTask.configureTestEngineInput(
                         project, variant, screenshotTestComponent, layoutlibDataFromMaven,
-                        sdkDirectory,
+                        sdkDirectory, screenshotExtension,
                         { reports.junitXml.outputLocation.get() },
                         { testEngineInput }
                     )
@@ -250,18 +287,24 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         variant: Variant, screenshotTestComponent: HostTest,
         layoutlibDataFromMaven: LayoutlibDataFromMaven,
         sdkDirectory: Provider<Directory>,
-        junitXmlOutputDirectoryProvider: T.() -> Directory,
+        screenshotExtension: ScreenshotTestOptionsImpl,
+        junitXmlOutputDirectoryProvider: (T.() -> Directory)?,
         getTestEngineInput: T.() -> PreviewScreenshotTestEngineInput) {
         val buildDir = project.layout.buildDirectory
         val variantName = variant.name
         configure { task ->
             getTestEngineInput(task).apply {
+                threshold.set(screenshotExtension.imageDifferenceThreshold)
                 namespace.set(variant.namespace)
                 layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
                 referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
                 previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
                 diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
-                junitXmlOutputDirectory.set(project.provider { junitXmlOutputDirectoryProvider(task) })
+                if (junitXmlOutputDirectoryProvider != null) {
+                    junitXmlOutputDirectory.set(project.provider {
+                        junitXmlOutputDirectoryProvider(task)
+                    })
+                }
                 getResourceApk(screenshotTestComponent.artifacts)?.let {
                     resourceApkFile.set(it)
                 }
@@ -335,6 +378,23 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val resourceFileProvider = artifactsImplGet(artifactImplObject, instance) as? Provider<RegularFile>
 
         return resourceFileProvider
+    }
+
+    private fun maybeCreateJunitStandaloneLauncherConfiguration(project: Project) {
+        val container = project.configurations
+        val dependencies = project.dependencies
+        if (container.findByName(junitStandaloneLauncherConfigurationName) == null) {
+            container.create(junitStandaloneLauncherConfigurationName).apply {
+                isVisible = false
+                isTransitive = true
+                isCanBeConsumed = false
+                description = "A configuration to resolve junit standalone launcher dependencies."
+            }
+
+            dependencies.add(
+                junitStandaloneLauncherConfigurationName,
+                "org.junit.platform:junit-platform-console-standalone:1.12.0")
+        }
     }
 
     private fun maybeCreateScreenshotTestConfiguration(project: Project, validationEngineVersion: String) {
@@ -457,6 +517,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
     }
 }
 
+private const val junitStandaloneLauncherConfigurationName = "_internal-junit-engine-standalone-launcher"
 private const val previewScreenshotTestEngineConfigurationName = "_internal-screenshot-validation-junit-engine"
 private const val layoutlibJarConfigurationName = "_internal-screenshot-test-task-layoutlib"
 private const val layoutlibResourcesConfigurationName = "_internal-screenshot-test-task-layoutlib-res"
