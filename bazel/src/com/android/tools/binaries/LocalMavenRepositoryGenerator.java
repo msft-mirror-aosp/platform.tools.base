@@ -42,6 +42,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -423,7 +424,7 @@ public class LocalMavenRepositoryGenerator {
         Path repoPath = null;
         boolean verbose = false;
         boolean fetch = !Strings.isNullOrEmpty(System.getenv("MAVEN_FETCH"));
-        Map<String, String> remoteRepositories = new TreeMap<>();
+        Map<String, String> remoteRepositories = new LinkedHashMap<>();
         String outputFile = "output.BUILD";
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
