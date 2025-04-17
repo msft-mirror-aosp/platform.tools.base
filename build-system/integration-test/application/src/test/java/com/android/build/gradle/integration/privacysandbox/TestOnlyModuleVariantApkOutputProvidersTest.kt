@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.JavaVersion
 import org.gradle.api.provider.Property
@@ -36,7 +37,7 @@ class TestOnlyModuleVariantApkOutputProvidersTest {
         .withProfileOutput()
         .from {
             androidApplication {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
+                applyPlugin(PluginType.KOTLIN_ANDROID, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
                 android {
                     namespace = "com.example.privacysandboxsdk.consumer"
                     defaultConfig.minSdk = 23
@@ -65,7 +66,7 @@ class TestOnlyModuleVariantApkOutputProvidersTest {
                 )
             }
             androidTest(":app-test", createMinimumProject = false) {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
+                applyPlugin(PluginType.KOTLIN_ANDROID, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
                 android {
                     compileSdk = DEFAULT_COMPILE_SDK_VERSION
                     namespace = "com.example.privacysandboxsdk.consumer.test"

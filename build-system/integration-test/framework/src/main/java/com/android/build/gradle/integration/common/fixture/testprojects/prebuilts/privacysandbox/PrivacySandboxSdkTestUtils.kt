@@ -41,8 +41,8 @@ fun GradleBuildDefinition.privacySandboxSdkLibraryProject(
     action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
 ) {
     androidLibrary(path, createMinimumProject = false) {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
-        applyPlugin(PluginType.KSP)
+        applyPlugin(PluginType.KOTLIN_ANDROID, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
+        applyPlugin(PluginType.KSP, version = KSP_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
         android {
             compileSdk = DEFAULT_COMPILE_SDK_VERSION
             compileOptions {

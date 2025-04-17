@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSdkLibraryProject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
@@ -82,7 +83,7 @@ class PrivacySandboxMediatorSdkTest {
             └───────────────────────────────────────────┘
              */
             androidApplication(":app") {
-                applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+                applyPlugin(PluginType.KOTLIN_ANDROID, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
                 android {
                     namespace = "com.example.privacysandboxsdk.consumer"
                     defaultConfig {
@@ -228,7 +229,7 @@ class PrivacySandboxMediatorSdkTest {
                     """.trimIndent())
             }
             androidLibrary(":android-lib", createMinimumProject = false) {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
+                applyPlugin(PluginType.KOTLIN_ANDROID, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
                 android {
                     namespace = "com.example.androidlib"
                     compileSdk = DEFAULT_COMPILE_SDK_VERSION
