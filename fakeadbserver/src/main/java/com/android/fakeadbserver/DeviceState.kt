@@ -577,35 +577,27 @@ class DeviceState internal constructor(
     }
 
     companion object {
-
         private fun initFeatures(sdk: String): Set<String> {
             val features: MutableSet<String> =
                 HashSet(mutableListOf("push_sync", "fixed_push_mkdir", "apex"))
-            try {
-                val api = sdk.toInt()
-                if (api >= 24) {
-                    features.add("cmd")
-                    features.add("shell_v2")
-                    features.add("stat_v2")
-                }
-                if (api >= 30) {
-                    features.add("abb")
-                    features.add("abb_exec")
-                }
-                if (api >= 31) {
-                    features.add("track_app")
-                }
-                if (api >= 34) {
-                    features.add("support_boot_stages")
-                }
-                if (api >= 36) {
-                    features.add("app_info")
-                }
-            } catch (e: NumberFormatException) {
-                // Cannot add more features based on API level since it is not the expected integer
-                // This is expected in many of our test that don't pass a correct value but instead
-                // pass "sdk". In such case, we return the default set of features.
-                // TODO: Fix adblist test to not send "sdk" and delete this catch.
+            val api = sdk.toInt()
+            if (api >= 24) {
+                features.add("cmd")
+                features.add("shell_v2")
+                features.add("stat_v2")
+            }
+            if (api >= 30) {
+                features.add("abb")
+                features.add("abb_exec")
+            }
+            if (api >= 31) {
+                features.add("track_app")
+            }
+            if (api >= 34) {
+                features.add("support_boot_stages")
+            }
+            if (api >= 36) {
+                features.add("app_info")
             }
             return Collections.unmodifiableSet(features)
         }

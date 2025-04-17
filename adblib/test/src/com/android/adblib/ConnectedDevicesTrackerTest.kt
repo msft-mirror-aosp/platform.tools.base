@@ -54,7 +54,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -75,7 +75,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -98,7 +98,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -126,7 +126,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -155,7 +155,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -205,7 +205,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -242,7 +242,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -278,7 +278,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

@@ -50,7 +50,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -69,7 +69,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.BOOTLOADER
@@ -120,7 +120,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -201,7 +201,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         val fakeDevice2 = fakeAdb.connectDevice(
@@ -209,7 +209,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
 

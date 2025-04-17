@@ -64,12 +64,14 @@ class AdbHostServicesTest {
     @Test
     fun testConnect() {
         // Prepare
-        fakeAdb.registerNetworkDevice("localhost:12345",
-                                      "1234",
-                                      "test1",
-                                      "test2",
-                                      "model",
-                                      "sdk")
+        fakeAdb.registerNetworkDevice(
+            "localhost:12345",
+            "1234",
+            "test1",
+            "test2",
+            "model",
+            sdk = "23",
+        )
 
         // Act
         runBlocking { hostServices.connect(DeviceAddress("localhost:12345")) }
@@ -86,12 +88,14 @@ class AdbHostServicesTest {
     @Test
     fun testDisconnect() {
         // Prepare
-        fakeAdb.registerNetworkDevice("localhost:12345",
-                                      "1234",
-                                      "test1",
-                                      "test2",
-                                      "model",
-                                      "sdk")
+        fakeAdb.registerNetworkDevice(
+            "localhost:12345",
+            "1234",
+            "test1",
+            "test2",
+            "model",
+            sdk = "23",
+        )
         runBlocking { hostServices.connect(DeviceAddress("localhost:12345")) }
 
         // Act
@@ -184,7 +188,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -214,7 +218,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -244,7 +248,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -284,7 +288,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -424,7 +428,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -447,7 +451,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -470,7 +474,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -494,7 +498,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -518,7 +522,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -542,7 +546,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -591,7 +595,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -618,7 +622,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -654,7 +658,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -689,7 +693,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -723,7 +727,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -754,7 +758,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -791,7 +795,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -826,7 +830,7 @@ class AdbHostServicesTest {
             manufacturer = "test1",
             deviceModel = "test2",
             release = "model",
-            sdk = "sdk",
+            sdk = "23",
             hostConnectionType = DeviceState.HostConnectionType.USB
         ).also {
             it.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -846,7 +850,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

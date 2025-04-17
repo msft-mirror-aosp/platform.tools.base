@@ -144,7 +144,7 @@ class AdbSessionTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -183,7 +183,7 @@ class AdbSessionTest {
             "manufacturer",
             "deviceModel",
             "FakePixel device",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB,
             maxSpeedMbps = maxSpeed,
             negotiatedSpeedMbps = negotiatedSpeed,
@@ -215,7 +215,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -290,7 +290,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -347,7 +347,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -418,7 +418,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -464,7 +464,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -499,7 +499,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -542,7 +542,7 @@ class AdbSessionTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         val deviceSelector = DeviceSelector.fromSerialNumber("abcd")
@@ -575,7 +575,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -652,7 +652,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = "23",
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -730,7 +730,7 @@ class AdbSessionTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = "23",
             DeviceState.HostConnectionType.USB
         )
         val deviceSelector = DeviceSelector.fromSerialNumber(deviceId)
