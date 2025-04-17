@@ -20,6 +20,7 @@ import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
 import com.android.adblib.AdbSession
 import com.android.adblib.INFINITE_DURATION
+import com.android.adblib.INFINITE_TIMEOUT
 import com.android.adblib.adbLogger
 import com.android.adblib.isTrackerConnecting
 import com.android.adblib.isTrackerDisconnected
@@ -56,6 +57,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.guava.asListenableFuture
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.io.IOException
@@ -382,7 +384,7 @@ class AdbLibAndroidDebugBridge(
         }
 
         val rem = TimeoutRemainder(timeout, unit)
-        stopIDeviceManager()
+        stopIDeviceManager(rem.remainingNanos, TimeUnit.NANOSECONDS)
 
         if (!stopAdb(rem.remainingNanos, TimeUnit.NANOSECONDS)) {
             return false
@@ -863,10 +865,25 @@ class AdbLibAndroidDebugBridge(
             AdbLibIDeviceManagerFactory(session).createIDeviceManager(bridgeInstance)
     }
 
-    private fun stopIDeviceManager() {
+    private fun stopIDeviceManager(
+        timeout: Long = INFINITE_TIMEOUT, unit: TimeUnit = TimeUnit.MILLISECONDS
+    ) {
         assert(lock.isHeldByCurrentThread)
 
         adblibCompatDeviceManager?.let {
+            try {
+                runBlocking {
+                    withTimeout(unit.toMillis(timeout)) {
+                        val adbLibIDeviceManager =
+                            adblibCompatDeviceManager as? AdbLibIDeviceManager
+                                ?: throw IllegalStateException("adblibCompatDeviceManager should be of type AdbLibIDeviceManager")
+                        adbLibIDeviceManager.shutdown()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(ADB, "Could not shutdown IDeviceManager:")
+                Log.e(ADB, e)
+            }
             try {
                 it.close()
             } catch (e: Exception) {

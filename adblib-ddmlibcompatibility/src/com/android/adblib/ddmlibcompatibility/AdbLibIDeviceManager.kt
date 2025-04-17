@@ -20,7 +20,6 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceState
 import com.android.adblib.adbLogger
 import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.ddmlibcompatibility.debugging.AdbLibDeviceClientManager
 import com.android.adblib.ddmlibcompatibility.debugging.AdblibIDeviceWrapper
 import com.android.adblib.serialNumber
 import com.android.adblib.utils.createChildScope
@@ -38,7 +37,7 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import java.util.IdentityHashMap
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.ConcurrentHashMap
 
 internal class AdbLibIDeviceManager(
     private val session: AdbSession,
@@ -49,10 +48,10 @@ internal class AdbLibIDeviceManager(
     private val logger = adbLogger(session)
 
     private val scope = session.scope.createChildScope(isSupervisor = true)
+    private var deviceTrackingJob: Job
 
-    private val deviceList = AtomicReference<List<IDevice>>(emptyList())
-    private val ddmlibEventQueue =
-        AdbLibDeviceClientManager.DdmlibEventQueue(logger, "DeviceUpdates")
+    private val externallyVisibleDeviceList = ExternallyVisibleDevices()
+    private val ddmlibEventQueue = DdmlibEventQueueWithShutdown(logger, "DeviceUpdates")
     private var initialDeviceListDone = false
 
     init {
@@ -61,7 +60,7 @@ internal class AdbLibIDeviceManager(
             ddmlibEventQueue.runDispatcher()
         }
 
-        scope.launch {
+        deviceTrackingJob = scope.launch {
             // Using `IdentityHashMap` as `connectedDevicesTracker.connectedDevices` guarantees
             // to return the same instance for the same device
             val deviceMap = IdentityHashMap<ConnectedDevice, AdblibIDeviceWrapper>()
@@ -84,7 +83,7 @@ internal class AdbLibIDeviceManager(
                     }
 
                     // Process removed devices
-                    val removed = deviceMap.keys.filter { !value.contains(it)}
+                    val removed = deviceMap.keys.filter { !value.contains(it) }
                     val removedIDevices = mutableListOf<IDevice>()
                     for (key in removed) {
                         deviceInfoTrackingJobs.remove(key)?.also {
@@ -97,7 +96,6 @@ internal class AdbLibIDeviceManager(
                         }
                     }
 
-                    deviceList.set(deviceMap.values.toList())
                     // flag the fact that we have build the list at least once
                     initialDeviceListDone = true
 
@@ -108,6 +106,7 @@ internal class AdbLibIDeviceManager(
                             iDevice.deviceStateHolder.update(addedConnectedDevice.deviceInfoFlow.value.deviceState)
                         }
                         postAndWaitForCompletion(scope, "devices added") {
+                            externallyVisibleDeviceList.addAll(addedIDevices)
                             iDeviceManagerListener.addedDevices(addedIDevices)
                         }
 
@@ -135,6 +134,7 @@ internal class AdbLibIDeviceManager(
 
                     if (removedIDevices.isNotEmpty()) {
                         postAndWaitForCompletion(scope, "devices removed") {
+                            externallyVisibleDeviceList.removeAll(removedIDevices)
                             iDeviceManagerListener.removedDevices(removedIDevices)
                         }
                     }
@@ -143,12 +143,26 @@ internal class AdbLibIDeviceManager(
         }
     }
 
+    suspend fun shutdown() {
+        deviceTrackingJob.cancel("${this::class.simpleName} is being shutdown")
+        deviceTrackingJob.join()
+
+        // At this time, no new events will be added to `ddmlibEventQueue` and so it's ok to
+        // shut it down. The queue receiver will process elements currently in queue.
+        ddmlibEventQueue.shutdown()
+
+        // To match ddmlib implementation, we need to inform listeners about devices
+        // being disconnected when terminating adb connection.
+        iDeviceManagerListener.removedDevices(externallyVisibleDeviceList.getDeviceList())
+        externallyVisibleDeviceList.clear()
+    }
+
     override fun close() {
         scope.cancel("${this::class.simpleName} has been closed")
     }
 
-    override fun getDevices(): MutableList<IDevice> {
-        return deviceList.get().toMutableList()
+    override fun getDevices(): List<IDevice> {
+        return externallyVisibleDeviceList.getDeviceList()
     }
 
     override fun hasInitialDeviceList(): Boolean {
@@ -172,6 +186,39 @@ internal class AdbLibIDeviceManager(
             return getUserDataOrNull(deviceStateHolderKey)
                 ?: throw AssertionError("IDevice instance should have a DeviceStateHolder value")
         }
+
+    /**
+     * Container of the list [IDevices] that are externally visible from
+     * `IDevice` interface. Must be thread-safe.
+     */
+    private class ExternallyVisibleDevices {
+        private val concurrentSet = ConcurrentHashMap.newKeySet<IDevice>()
+        @Volatile
+        private var tempLazyList: List<IDevice>? = null
+
+        fun addAll(list: List<IDevice>) {
+            concurrentSet.addAll(list)
+            tempLazyList = null
+        }
+
+        fun removeAll(list: List<IDevice>) {
+            concurrentSet.removeAll(list)
+            tempLazyList = null
+        }
+
+        fun clear() {
+            concurrentSet.clear()
+            tempLazyList = null
+        }
+
+        fun getDeviceList(): List<IDevice> {
+            // Allocate list only once per list of devices to alleviate
+            // GC pressure of `IDevice.getDevices()`
+            return tempLazyList ?: run {
+                concurrentSet.toList().also { tempLazyList = it }
+            }
+        }
+    }
 
     companion object {
 

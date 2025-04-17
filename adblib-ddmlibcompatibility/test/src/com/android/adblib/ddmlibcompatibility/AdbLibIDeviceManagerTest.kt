@@ -1,5 +1,6 @@
 package com.android.adblib.ddmlibcompatibility
 
+import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManagerTest.TestIDeviceManagerListener.EventType
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
@@ -230,6 +231,38 @@ class AdbLibIDeviceManagerTest {
             "There were more than one concurrent call to the listener, meaning calls were not serialized as expected",
             1,
             iDeviceManagerListener.maxConcurrentCalls
+        )
+    }
+
+    @Test
+    fun testAndroidDebugBridgeRemovedEventIsTriggered_onShutdown() = runBlockingWithTimeout {
+        // Prepare
+        val iDeviceManagerListener = TestIDeviceManagerListener()
+        val deviceManager =
+            AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
+        val fakeDevice = fakeAdb.connectDevice(
+            "dev1234",
+            "test1",
+            "test2",
+            "model",
+            sdk = AndroidApiLevel(23),
+            DeviceState.HostConnectionType.USB
+        )
+        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+
+        // Act / Assert
+        yieldUntil { deviceManager.devices.size == 1 }
+        delay(50)
+        assertEquals("dev1234", deviceManager.devices[0].serialNumber)
+        assertArrayEquals(arrayOf(EventType.Added), iDeviceManagerListener.events.toTypedArray())
+
+        // Act / Assert
+        deviceManager.shutdown()
+        assertTrue(deviceManager.devices.isEmpty())
+        assertArrayEquals(
+            arrayOf(
+                EventType.Added, EventType.Removed
+            ), iDeviceManagerListener.events.toTypedArray()
         )
     }
 
