@@ -120,51 +120,6 @@ def select_android(android, default = []):
         "//conditions:default": default,
     })
 
-def _aidl_to_java(filename, output_dir):
-    """Converts the name of an .aidl file to the name of a generated .java file by replacing
-       the file extension and the directory prefix up to the "aidl" segment with the value of
-       the output_dir parameter."""
-
-    if filename.endswith(".aidl"):
-        filename = filename[:-len(".aidl")] + ".java"
-    segments = filename.split("/")
-    return output_dir + "/" + "/".join(segments[segments.index("aidl") + 1:])
-
-def _name(file):
-    """Returns the name of the file."""
-
-    return file.split("/")[-1]
-
-def aidl_library(name, srcs = [], **kwargs):
-    """Builds a Java library out of .aidl files."""
-    gen_dir = name + "_gen_aidl"
-    for src in srcs:
-        gen_name = name + "_gen_" + _name(src).replace(".", "_")
-        java_file = _aidl_to_java(src, gen_dir)
-        # Add the include path. Without this, aidl will fail and say
-        # "directory '$include_dir' is not found in any of the import paths"
-        basename = src[0:src.rfind("/aidl/")]
-        include_dir = native.package_name() + "/" + basename + "/aidl"
-        cmd = ("$(location @androidsdk//:aidl_binary)" +
-               " -p$(location //prebuilts/studio/sdk:platforms/latest/framework.aidl)" +
-               " -I " + include_dir + " $(location " + src + ") -o$(RULEDIR)/" + gen_dir)
-        native.genrule(
-            name = gen_name,
-            srcs = srcs + ["//prebuilts/studio/sdk:platforms/latest/framework.aidl"],
-            outs = [java_file],
-            cmd = cmd,
-            tags = kwargs.get("tags", []),
-            target_compatible_with = kwargs.get("target_compatible_with", []),
-            tools = ["@androidsdk//:aidl_binary"]
-        )
-
-    intermediates = [_aidl_to_java(src, gen_dir) for src in srcs]
-    native.java_library(
-        name = name,
-        srcs = intermediates,
-        **kwargs
-    )
-
 def dex_library(name, jars = [], aars = [], output = None, visibility = None, tags = [], flags = []):
     if aars:
         _aars_to_jars(
