@@ -23,6 +23,7 @@ import com.android.ddmlib.SyncException
 import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -510,7 +511,7 @@ class AdblibIDeviceWrapperTest {
                 "test1",
                 "test2",
                 "model",
-                "30",
+                AndroidApiLevel(30),
                 "x86_64",
                 mapOf(Pair(PROP_DEVICE_DENSITY, "120")),
                 DeviceState.HostConnectionType.USB
@@ -648,7 +649,7 @@ class AdblibIDeviceWrapperTest {
     fun getProfileableClients() = runBlockingWithTimeout {
         // Prepare
         val (connectedDevice, deviceState) = createConnectedDevice(
-            "device1", sdk = "31" // required for "track-app"
+            "device1", sdk = AndroidApiLevel(31) // required for "track-app"
         )
         val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
         deviceState.startProfileableProcess(25, "x86", "a.b.c")
@@ -1001,7 +1002,7 @@ class AdblibIDeviceWrapperTest {
                 "test1",
                 "test2",
                 "model",
-                "30",
+                AndroidApiLevel(30),
                 "x86_64",
                 mapOf(Pair(PROP_DEVICE_DENSITY, "120")),
                 DeviceState.HostConnectionType.USB,
@@ -1093,7 +1094,7 @@ class AdblibIDeviceWrapperTest {
     private suspend fun createConnectedDevice(
         serialNumber: String,
         deviceStatus: DeviceState.DeviceStatus = DeviceState.DeviceStatus.ONLINE,
-        sdk: String = "30",
+        sdk: AndroidApiLevel = AndroidApiLevel(30),
         delayStdout: Duration = Duration.ZERO
     ): Pair<ConnectedDevice, DeviceState> {
         val fakeDevice = fakeAdb.connectDevice(

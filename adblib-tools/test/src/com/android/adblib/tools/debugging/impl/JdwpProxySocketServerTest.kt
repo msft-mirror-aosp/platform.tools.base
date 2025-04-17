@@ -24,6 +24,7 @@ import com.android.adblib.tools.debugging.proxyStatus
 import com.android.adblib.tools.testutils.AdbLibToolsJdwpTestBase
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.transformWhile
@@ -44,7 +45,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -171,7 +172,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -204,7 +205,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "36", // Use `app_info`
+                AndroidApiLevel(36), // Use `app_info`
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

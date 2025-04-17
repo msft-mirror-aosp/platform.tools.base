@@ -9,6 +9,7 @@ import com.android.ddmlib.IDevice
 import com.android.ddmlib.idevicemanager.IDeviceManagerListener
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -50,7 +51,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            sdk = "23",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -69,7 +70,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            sdk = "23",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.BOOTLOADER
@@ -120,7 +121,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            sdk = "23",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -201,7 +202,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            sdk = "23",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         val fakeDevice2 = fakeAdb.connectDevice(
@@ -209,7 +210,7 @@ class AdbLibIDeviceManagerTest {
             "test1",
             "test2",
             "model",
-            sdk = "23",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
 

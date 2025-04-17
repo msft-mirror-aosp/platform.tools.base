@@ -39,6 +39,7 @@ import com.android.ddmlib.clientmanager.DeviceClientManager
 import com.android.ddmlib.clientmanager.DeviceClientManagerListener
 import com.android.ddmlib.testing.FakeAdbRule
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.readLengthPrefixedString
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -655,7 +656,7 @@ class AdbLibDeviceClientManagerTest {
         val session = fakeAdb.createAdbSession(closeables)
         val clientManager = AdbLibClientManager(session)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice(sdk = "27")
+        val (device, deviceState) = fakeAdb.connectTestDevice(sdk = AndroidApiLevel(27))
         val deviceClientManager =
             clientManager.createDeviceClientManager(
                 fakeAdb.bridge,

@@ -26,6 +26,7 @@ import com.android.fakeadbserver.DeviceState.HostConnectionType.USB
 import com.android.processmonitor.common.DeviceEvent.DeviceDisconnected
 import com.android.processmonitor.common.DeviceEvent.DeviceOnline
 import com.android.processmonitor.testutils.toChannel
+import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.deviceprovisioner.DeviceProvisioner
 import com.android.sdklib.deviceprovisioner.DeviceState
 import com.android.sdklib.deviceprovisioner.testing.DeviceProvisionerRule
@@ -110,7 +111,7 @@ class DeviceTrackerAdblibTest {
         serialNumber: String,
         status: DeviceStatus = ONLINE
     ) {
-        connectDevice(serialNumber, "", "", "13", "33", USB).apply {
+        connectDevice(serialNumber, "", "", "13", AndroidApiLevel(33), USB).apply {
             deviceStatus = status
         }
     }

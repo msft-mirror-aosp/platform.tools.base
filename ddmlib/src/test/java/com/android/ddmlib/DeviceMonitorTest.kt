@@ -18,6 +18,7 @@ package com.android.ddmlib
 import com.android.ddmlib.internal.DeviceListMonitorTask
 import com.android.ddmlib.internal.DeviceMonitor.DeviceListComparisonResult
 import com.android.ddmlib.testing.FakeAdbRule
+import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -72,7 +73,7 @@ class DeviceMonitorTest {
 
     @Test
     fun testDeviceUpdate() {
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", "29")
+        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
         val device: IDevice = adbRule.bridge.devices.single()
         assertThat(device.avdName).isNull()
         assertThat(device.avdPath).isNull()
@@ -89,7 +90,7 @@ class DeviceMonitorTest {
             "Google",
             "Pixel",
             "29",
-            "29",
+            AndroidApiLevel(29),
             avdName = "MyAvd",
             avdPath = pathAsString
         )

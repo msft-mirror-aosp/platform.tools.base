@@ -47,6 +47,7 @@ import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.waitForDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
@@ -69,7 +70,7 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

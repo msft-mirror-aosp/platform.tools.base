@@ -20,6 +20,7 @@ import com.android.fakeadbserver.services.ServiceManager
 import com.android.fakeadbserver.statechangehubs.ClientStateChangeHandlerFactory
 import com.android.fakeadbserver.statechangehubs.ClientStateChangeHub
 import com.android.fakeadbserver.statechangehubs.StateChangeQueue
+import com.android.sdklib.AndroidApiLevel
 import com.google.common.collect.ImmutableMap
 import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
@@ -36,7 +37,7 @@ class DeviceState internal constructor(
     val manufacturer: String,
     val model: String,
     val buildVersionRelease: String,
-    val buildVersionSdk: String,
+    val buildVersionSdk: AndroidApiLevel,
     val cpuAbi: String,
     properties: Map<String, String>,
     val hostConnectionType: HostConnectionType,
@@ -125,11 +126,8 @@ class DeviceState internal constructor(
     private val deviceCommandTracker = DeviceCommandTracker(deviceId)
 
     val apiLevel: Int
-        get() = try {
-            buildVersionSdk.toInt()
-        } catch (e: NumberFormatException) {
-            1
-        }
+        get() = buildVersionSdk.majorVersion
+
     var deviceStatus: DeviceStatus
         get() = mDeviceStatus
         set(status) {
@@ -577,10 +575,10 @@ class DeviceState internal constructor(
     }
 
     companion object {
-        private fun initFeatures(sdk: String): Set<String> {
+        private fun initFeatures(sdk: AndroidApiLevel): Set<String> {
             val features: MutableSet<String> =
                 HashSet(mutableListOf("push_sync", "fixed_push_mkdir", "apex"))
-            val api = sdk.toInt()
+            val api = sdk.majorVersion
             if (api >= 24) {
                 features.add("cmd")
                 features.add("shell_v2")
@@ -607,7 +605,7 @@ class DeviceState internal constructor(
             manufacturer: String,
             model: String,
             release: String,
-            sdk: String,
+            sdk: AndroidApiLevel,
             cpuAbi: String,
             properties: Map<String, String>
         ): Map<String, String> {
@@ -616,7 +614,10 @@ class DeviceState internal constructor(
             combined["ro.product.manufacturer"] = manufacturer
             combined["ro.product.model"] = model
             combined["ro.build.version.release"] = release
-            combined["ro.build.version.sdk"] = sdk
+            combined["ro.build.version.sdk"] = sdk.majorVersion.toString()
+            if (sdk.majorVersion > 35) {
+                combined["ro.build.version.sdk_full"] = sdk.toString()
+            }
             combined["ro.product.cpu.abi"] = cpuAbi
             return combined
         }

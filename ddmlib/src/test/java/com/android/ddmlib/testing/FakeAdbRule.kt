@@ -27,6 +27,7 @@ import com.android.fakeadbserver.hostcommandhandlers.HostCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
+import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Uninterruptibles
 import kotlinx.coroutines.CoroutineScope
@@ -122,7 +123,7 @@ class FakeAdbRule : ExternalResource() {
       manufacturer: String,
       model: String,
       release: String,
-      sdk: String,
+      sdk: AndroidApiLevel,
       abi: String = "x86_64",
       properties: Map<String, String> = emptyMap(),
       hostConnectionType: DeviceState.HostConnectionType = DeviceState.HostConnectionType.USB,

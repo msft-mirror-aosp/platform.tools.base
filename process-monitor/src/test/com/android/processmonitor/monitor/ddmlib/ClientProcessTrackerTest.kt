@@ -25,6 +25,7 @@ import com.android.processmonitor.common.ProcessEvent.ProcessAdded
 import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
 import com.android.processmonitor.monitor.SharedProcessTracker
 import com.android.processmonitor.testutils.toChannel
+import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Futures
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -127,7 +128,7 @@ class ClientProcessTrackerTest {
 }
 
 private fun FakeAdbRule.setupDevice(serialNumber: String): DeviceState {
-    return attachDevice(serialNumber, "", "", "13", "33")
+    return attachDevice(serialNumber, "", "", "13", AndroidApiLevel(33))
 }
 
 private fun DeviceState.startClient(

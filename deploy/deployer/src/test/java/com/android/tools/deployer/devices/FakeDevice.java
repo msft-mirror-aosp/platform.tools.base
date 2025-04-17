@@ -19,6 +19,7 @@ package com.android.tools.deployer.devices;
 import com.android.annotations.Nullable;
 import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.testutils.TestUtils;
 import com.android.tools.deployer.devices.shell.Shell;
 import com.android.tools.deployer.model.ApkParser;
@@ -180,7 +181,7 @@ public class FakeDevice {
                                 manufacturer,
                                 model,
                                 version,
-                                String.valueOf(api),
+                                new AndroidApiLevel(api),
                                 DeviceState.HostConnectionType.USB)
                         .get();
         deviceState.setDeviceStatus(DeviceState.DeviceStatus.ONLINE);

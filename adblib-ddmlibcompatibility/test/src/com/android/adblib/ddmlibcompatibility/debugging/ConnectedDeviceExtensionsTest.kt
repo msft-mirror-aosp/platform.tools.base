@@ -27,6 +27,7 @@ import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.runBlocking
@@ -88,7 +89,7 @@ class ConnectedDeviceExtensionsTest {
 
     private suspend fun createConnectedDevice(
         serialNumber: String,
-        sdk: String = "29"
+        sdk: AndroidApiLevel = AndroidApiLevel(29)
     ): ConnectedDevice {
         val fakeDevice =
             fakeAdb.connectDevice(

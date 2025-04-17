@@ -15,6 +15,7 @@
  */
 package com.android.fakeadbserver
 
+import com.android.sdklib.AndroidApiLevel
 import org.junit.Ignore
 import org.junit.Test
 
@@ -48,6 +49,6 @@ class FakeAdbServerTest {
         private const val MANUFACTURER = "Google"
         private const val MODEL = "Nexus Silver"
         private const val RELEASE = "8.0"
-        private const val SDK = "26"
+        private val SDK = AndroidApiLevel(26)
     }
 }

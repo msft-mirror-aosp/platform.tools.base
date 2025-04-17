@@ -25,6 +25,7 @@ import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.processmonitor.agenttracker.AgentProcessTracker.Companion.AGENT_PATH
 import com.android.processmonitor.common.ProcessEvent.ProcessAdded
 import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
+import com.android.sdklib.AndroidApiLevel
 import com.android.testutils.TestResources
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -120,7 +121,7 @@ internal class AgentProcessTrackerTest {
     }
 
     private fun setupDevice(serialNumber: String): DeviceState =
-        fakeAdbRule.fakeAdb.connectDevice(serialNumber, "", "", "13", "33", USB)
+        fakeAdbRule.fakeAdb.connectDevice(serialNumber, "", "", "13", AndroidApiLevel(33), USB)
 
     private fun agentProcessTracker(
         serialNumber: String,

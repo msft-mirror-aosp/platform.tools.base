@@ -63,6 +63,7 @@ kotlin_test(
     deps = [
         ":tools.fakeadbserver",
         "//tools/base/annotations",
+        "//tools/base/common:tools.common",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.guava.guava",
         "@maven//:junit.junit",

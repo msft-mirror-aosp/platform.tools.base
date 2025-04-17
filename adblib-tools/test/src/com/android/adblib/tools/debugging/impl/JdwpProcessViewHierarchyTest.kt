@@ -24,6 +24,7 @@ import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.nio.ByteBuffer
@@ -92,7 +93,7 @@ class JdwpProcessViewHierarchyTest : AdbLibToolsTestBase() {
     private suspend fun createJdwpProcessViewHierarchy(fakeAdb: FakeAdbServerProvider): JdwpProcessViewHierarchy {
         val deviceID = "1234"
         val fakeDevice = fakeAdb.connectDevice(
-            deviceID, "test1", "test2", "model", "30", DeviceState.HostConnectionType.USB
+            deviceID, "test1", "test2", "model", AndroidApiLevel(30), DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)

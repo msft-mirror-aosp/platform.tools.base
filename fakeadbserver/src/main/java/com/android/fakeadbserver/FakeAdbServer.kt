@@ -69,6 +69,7 @@ import com.android.fakeadbserver.shellcommandhandlers.StatCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.WindowManagerCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.WriteNoStopCommandHandler
 import com.android.fakeadbserver.statechangehubs.DeviceStateChangeHub
+import com.android.sdklib.AndroidApiLevel
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
@@ -258,7 +259,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
         manufacturer: String,
         deviceModel: String,
         release: String,
-        sdk: String,
+        sdk: AndroidApiLevel,
         cpuAbi: String,
         properties: Map<String, String>,
         hostConnectionType: HostConnectionType,
@@ -306,7 +307,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
         manufacturer: String,
         deviceModel: String,
         release: String,
-        sdk: String,
+        sdk: AndroidApiLevel,
         hostConnectionType: HostConnectionType,
         maxSpeedMbps: Long = DEFAULT_SPEED,
         negotiatedSpeedMbps: Long = DEFAULT_SPEED,
@@ -336,7 +337,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
         manufacturer: String,
         deviceModel: String,
         release: String,
-        sdk: String,
+        sdk: AndroidApiLevel,
         hostConnectionType: HostConnectionType,
         isRoot: Boolean = false,
         maxSpeedMbps: Long,

@@ -24,6 +24,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -92,7 +93,7 @@ class JdwpProcessChangeFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -188,7 +189,7 @@ class JdwpProcessChangeFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
             val connectedDevice = hostServices.session.connectedDevicesTracker.connectedDevices
@@ -279,7 +280,7 @@ class JdwpProcessChangeFlowTest {
             "test1",
             "test2",
             "model",
-            "31", // SDK >= 31 is required for track_app feature.
+            AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

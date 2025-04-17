@@ -28,6 +28,7 @@ import com.android.processmonitor.common.ProcessEvent
 import com.android.processmonitor.common.ProcessEvent.ProcessAdded
 import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
 import com.android.processmonitor.testutils.toChannel
+import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
@@ -176,7 +177,7 @@ class JdwpProcessTrackerTest {
     }
 
     private fun setupDevice(serialNumber: String, sdk: Int) =
-        fakeAdbRule.fakeAdb.connectDevice(serialNumber, "", "", "13", sdk.toString(), USB).apply {
+        fakeAdbRule.fakeAdb.connectDevice(serialNumber, "", "", "13", AndroidApiLevel(sdk), USB).apply {
             deviceStatus = ONLINE
         }
 

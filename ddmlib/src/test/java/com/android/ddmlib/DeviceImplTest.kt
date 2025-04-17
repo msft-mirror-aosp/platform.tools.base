@@ -16,6 +16,7 @@
 package com.android.ddmlib
 
 import com.android.ddmlib.testing.FakeAdbRule
+import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -29,7 +30,7 @@ class DeviceImplTest {
     @Test
     fun testComputeUserDataIfPresent() {
         // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", "29")
+        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
         val device: IDevice = adbRule.bridge.devices.single()
         val key = IUserDataMap.Key<MyClass>()
 
@@ -44,7 +45,7 @@ class DeviceImplTest {
     @Test
     fun testComputeUserDataIfPresentDoesNotAllowNull() {
         // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", "29")
+        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
         val device: IDevice = adbRule.bridge.devices.single()
         val key = IUserDataMap.Key<MyClass>()
 
@@ -57,7 +58,7 @@ class DeviceImplTest {
     @Test
     fun testGetUserDataOrNullReturnsValueIfPresent() {
         // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", "29")
+        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
         val device: IDevice = adbRule.bridge.devices.single()
         val key = IUserDataMap.Key<MyClass>()
         device.computeUserDataIfAbsent(key) { myKey -> MyClass(myKey) }
@@ -73,7 +74,7 @@ class DeviceImplTest {
     @Test
     fun testGetUserDataOrNullReturnsNullIfNotPresent() {
         // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", "29")
+        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
         val device: IDevice = adbRule.bridge.devices.single()
         val key = IUserDataMap.Key<MyClass>()
 
@@ -87,7 +88,7 @@ class DeviceImplTest {
     @Test
     fun testRemoveUserData() {
         // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", "29")
+        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
         val device: IDevice = adbRule.bridge.devices.single()
         val key = IUserDataMap.Key<MyClass>()
         val value = device.computeUserDataIfAbsent(key) { myKey -> MyClass(myKey) }

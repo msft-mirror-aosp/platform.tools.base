@@ -28,6 +28,7 @@ import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.MultiLineReceiver
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import org.junit.Assert
@@ -115,7 +116,7 @@ class ShellTest {
     @Test
     fun executeAbbCommandShouldWork() = runBlockingWithTimeout {
         // Prepare
-        val device = createConnectedDevice("42", sdk = "30")
+        val device = createConnectedDevice("42", sdk = AndroidApiLevel(30))
         val receiver = ListReceiver()
 
         // Act
@@ -141,7 +142,7 @@ class ShellTest {
     fun executeAbbCommandOnUnsupportedDeviceShouldThrow() = runBlockingWithTimeout {
         // Prepare
         // Create a device that doesn't support ABB
-        val device = createConnectedDevice("42", sdk = "20")
+        val device = createConnectedDevice("42", sdk = AndroidApiLevel(20))
         val receiver = ListReceiver()
 
         // Act
@@ -193,7 +194,7 @@ class ShellTest {
     @Test
     fun executeAbbCommand_doesntCallReceiverConcurrently() = runBlockingWithTimeout {
         // Prepare
-        val device = createConnectedDevice("42", sdk = "30")
+        val device = createConnectedDevice("42", sdk = AndroidApiLevel(30))
         val receiver = ConcurrencyTrackingIShellOutputReceiver()
 
         // Act
@@ -219,7 +220,7 @@ class ShellTest {
 
     private suspend fun createConnectedDevice(
         serialNumber: String,
-        sdk: String = "29"
+        sdk: AndroidApiLevel = AndroidApiLevel(29)
     ): ConnectedDevice {
         val fakeDevice =
             fakeAdb.connectDevice(

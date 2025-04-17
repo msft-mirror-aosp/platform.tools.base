@@ -28,6 +28,7 @@ import com.android.adblib.tools.testutils.asyncNoThrow
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.shellcommandhandlers.ScreenRecordCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
@@ -328,7 +329,7 @@ class ScreenRecordTest {
                 "test1",
                 "test2",
                 "model",
-                sdkApi.toString(),
+                AndroidApiLevel(sdkApi),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

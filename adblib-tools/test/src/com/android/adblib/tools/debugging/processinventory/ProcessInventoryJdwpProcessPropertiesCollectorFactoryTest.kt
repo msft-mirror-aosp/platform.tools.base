@@ -31,6 +31,7 @@ import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -273,7 +274,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             manufacturer = "test1",
             deviceModel = "test2",
             release = "model",
-            sdk = "30",
+            sdk = AndroidApiLevel(30),
             hostConnectionType = com.android.fakeadbserver.DeviceState.HostConnectionType.USB
         ).also {
             it.deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE

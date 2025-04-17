@@ -31,6 +31,7 @@ import com.android.ddmlib.JdwpHandshake;
 import com.android.ddmlib.idevicemanager.IDeviceManagerFactory;
 import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.sdklib.AndroidVersion;
 
 import org.junit.rules.ExternalResource;
@@ -62,19 +63,23 @@ public class FakeAdbTestRule extends ExternalResource {
 
     private FakeAdbServer myServer;
 
-    private final String sdk;
+    private final AndroidApiLevel sdk;
     private Supplier<IDeviceManagerFactory> iDeviceManagerFactoryFactory;
 
     public FakeAdbTestRule() {
-        this("26");
+        this(new AndroidApiLevel(26));
     }
 
-    public FakeAdbTestRule(String sdk) {
+    public FakeAdbTestRule(AndroidApiLevel sdk) {
         this.sdk = sdk;
     }
 
+    public FakeAdbTestRule(String sdk) {
+        this(new AndroidApiLevel(Integer.parseInt(sdk)));
+    }
+
     public FakeAdbTestRule(AndroidVersion androidVersion) {
-        this(Integer.toString(androidVersion.getApiLevel()));
+        this(androidVersion.getAndroidApiLevel());
     }
 
     public FakeAdbTestRule withIDeviceManagerFactoryFactory(

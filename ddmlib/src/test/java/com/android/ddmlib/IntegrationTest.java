@@ -34,6 +34,7 @@ import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.fakeadbserver.PortForwarder;
 import com.android.fakeadbserver.shellcommandhandlers.PingCommandHandler;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.testutils.TestResources;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
@@ -70,7 +71,7 @@ public class IntegrationTest {
 
     private static final String RELEASE = "8.0";
 
-    private static final String SDK = "30";
+    private static final AndroidApiLevel SDK = new AndroidApiLevel(30);
 
     private static final int REASONABLE_TIMEOUT_S = 5;
 
