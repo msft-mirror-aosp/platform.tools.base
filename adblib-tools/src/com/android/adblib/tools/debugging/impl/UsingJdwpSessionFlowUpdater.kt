@@ -29,12 +29,14 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_DURATION
 import com.android.adblib.tools.debugging.AtomicStateFlow
+import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.fromLegacyDescription
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollector.Companion.filterFakeName
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
@@ -61,6 +63,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
@@ -79,33 +82,29 @@ import java.nio.channels.InterruptedByTimeoutException
  * Reads [JdwpProcessProperties] from a JDWP connection.
  */
 internal class UsingJdwpSessionFlowUpdater(
-    private val device: ConnectedDevice,
-    private val pid: Int,
-    private val jdwpSessionProvider: SharedJdwpSessionProvider,
-    private val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
+    private val process: JdwpProcess
 ) : JdwpProcessPropertiesFlowUpdater {
 
     private val session: AdbSession
         get() = device.session
 
-    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
+    private val device: ConnectedDevice
+        get() = process.device
 
-    private lateinit var processScope: CoroutineScope
+    private val logger = adbLogger(session).withProcessPrefix(device, process.pid)
+
+    private val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
+        get() = process.jdwpProxySocketServer.proxyStatusFlow
 
     /**
-     * Collects [JdwpProcessProperties] for the process [pid] emits them to [stateFlow],
+     * Collects [JdwpProcessProperties] for the [process] and emits them to [stateFlow],
      * retrying as many times as necessary if there is contention on acquiring JDWP sessions
      * to the process.
      */
-    override fun execute(
-        processScope: CoroutineScope,
-        stateFlow: AtomicStateFlow<JdwpProcessProperties>
-    ) {
-        // Store scope for downstream methods in this class
-        this.processScope = processScope
-        processScope.launch {
+    override suspend fun execute(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+        coroutineScope {
             runCatching {
-                executeWorker(stateFlow)
+                executeWorker(this, stateFlow)
             }.onFailure { t ->
                 logger.logIOCompletionErrors(t)
                 stateFlow.update { current ->
@@ -115,7 +114,10 @@ internal class UsingJdwpSessionFlowUpdater(
         }
     }
 
-    private suspend fun executeWorker(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+    private suspend fun executeWorker(
+        processScope: CoroutineScope,
+        stateFlow: AtomicStateFlow<JdwpProcessProperties>
+    ) {
         // Delay opening the JDWP session for a small amount of time in case
         // another instance wants to go first.
         delay(
@@ -136,7 +138,7 @@ internal class UsingJdwpSessionFlowUpdater(
             val collectState = CollectState(stateFlow)
             try {
                 withTimeout(session.property(PROCESS_PROPERTIES_READ_TIMEOUT).toMillis()) {
-                    collect(collectState)
+                    collect(processScope, collectState)
                 }
 
                 // We reached EOF, which can happen for at least 2 common cases:
@@ -238,11 +240,12 @@ internal class UsingJdwpSessionFlowUpdater(
     }
 
     /**
-     * Collects [JdwpProcessProperties] from a new JDWP session to the process [pid]
+     * Collects [JdwpProcessProperties] from a new JDWP session to the [process]
      * and emits them to [CollectState.propertiesFlow].
      */
-    private suspend fun collect(collectState: CollectState) {
-        jdwpSessionProvider.withSharedJdwpSession { jdwpSession ->
+    private suspend fun collect(processScope: CoroutineScope, collectState: CollectState) {
+        process.withJdwpSession {
+            val jdwpSession = this
             collectWithSession(jdwpSession, collectState)
 
             if (collectState.hasCollectedEverything) {
@@ -251,7 +254,7 @@ internal class UsingJdwpSessionFlowUpdater(
                     // debugger attaches to the Android process, because a JDWP session in a
                     // `WAIT` state needs to remain open until at least one "real" JDWP command
                     // is sent to eh Android debugger.
-                    launchJdwpSessionHolder(collectState.propertiesFlow)
+                    launchJdwpSessionHolder(processScope, collectState.propertiesFlow)
                 }
             }
         }
@@ -480,11 +483,14 @@ internal class UsingJdwpSessionFlowUpdater(
         return packet
     }
 
-    private suspend fun launchJdwpSessionHolder(propertiesFlow: AtomicStateFlow<JdwpProcessProperties>) {
+    private suspend fun launchJdwpSessionHolder(
+        processScope: CoroutineScope,
+        propertiesFlow: AtomicStateFlow<JdwpProcessProperties>
+    ) {
         logger.debug { "JDWP session holder: launching coroutine" }
         val deferred = CompletableDeferred<Unit>()
         processScope.launch {
-            jdwpSessionProvider.withSharedJdwpSession {
+            process.withJdwpSession {
                 logger.debug { "JDWP session holder: JDWP session has been acquired" }
 
                 // Ok to exit function now, as session has been acquired
@@ -616,4 +622,3 @@ private fun Throwable.toAdbUsageTrackerFailureType(): AdbUsageTracker.JdwpProces
         else -> AdbUsageTracker.JdwpProcessPropertiesCollectorFailureType.OTHER_ERROR
     }
 }
-

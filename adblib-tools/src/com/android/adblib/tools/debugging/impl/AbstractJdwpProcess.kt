@@ -32,12 +32,6 @@ internal abstract class AbstractJdwpProcess : JdwpProcess, AutoCloseable {
     abstract val jdwpSessionActivationCount: StateFlow<Int>
 
     /**
-     * Starts monitoring the JDWP process (in a separate coroutine) and emitting
-     * values to [propertiesFlow]
-     */
-    abstract fun startMonitoring()
-
-    /**
      * Waits until this [process][AbstractJdwpProcess] is ready to be [closed][close].
      * This allows shutting down the process "cleanly" in the absence of forcible
      * cancellation.

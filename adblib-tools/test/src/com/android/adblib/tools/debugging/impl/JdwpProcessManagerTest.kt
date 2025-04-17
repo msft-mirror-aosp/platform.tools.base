@@ -29,6 +29,7 @@ import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import com.android.adblib.tools.debugging.packets.payloadLength
 import com.android.adblib.tools.debugging.packets.withPayload
 import com.android.adblib.tools.debugging.properties
+import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.testutils.AdbLibToolsJdwpTestBase
 import com.android.adblib.waitForDevice

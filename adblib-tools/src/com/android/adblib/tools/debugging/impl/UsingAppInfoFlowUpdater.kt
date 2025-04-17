@@ -24,6 +24,7 @@ import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
+import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
@@ -34,6 +35,7 @@ import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -44,13 +46,27 @@ import java.io.IOException
  * Reads [JdwpProcessProperties] from [ConnectedDevice.trackAppStateFlow] entries
  */
 internal class UsingAppInfoFlowUpdater(
-    private val device: ConnectedDevice,
-    private val pid: Int,
+    private val process: JdwpProcess
 ) : JdwpProcessPropertiesFlowUpdater {
+
+    private val device: ConnectedDevice
+        get() = process.device
+
+    private val pid: Int
+        get() = process.pid
 
     private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
-    override fun execute(processScope: CoroutineScope, stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+    override suspend fun execute(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+        coroutineScope {
+            executeWorker(this, stateFlow)
+        }
+    }
+
+    private fun executeWorker(
+        processScope: CoroutineScope,
+        stateFlow: AtomicStateFlow<JdwpProcessProperties>
+    ) {
         // Collect device specific properties into the process properties flow
         processScope.launch {
             kotlin.runCatching {
@@ -69,7 +85,7 @@ internal class UsingAppInfoFlowUpdater(
                     // capabilities, the `VmInfoRetriever` should also be able to retrieve the
                     // `VmInfo`.
                     throw IOException(
-                        "The `${VmInfoRetriever.VmInfo::class.simpleName}` for " +
+                        "The `${VmInfo::class.simpleName}` for " +
                                 "the device is `null`, this is not expected"
                     )
                 }
@@ -133,9 +149,9 @@ internal class UsingAppInfoFlowUpdater(
         logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
         stateFlow.update { current ->
             current.copy(
-                processName = JdwpProcessPropertiesCollector.filterFakeName(appProcessEntry.processName)
+                processName = JdwpProcessPropertiesCollectorImpl.filterFakeName(appProcessEntry.processName)
                     ?: current.processName,
-                packageName = JdwpProcessPropertiesCollector.filterFakeName(appProcessEntry.packageNames?.firstOrNull())
+                packageName = JdwpProcessPropertiesCollectorImpl.filterFakeName(appProcessEntry.packageNames?.firstOrNull())
                     ?: current.packageName,
                 userId = appProcessEntry.userId32 ?: current.userId,
                 instructionSet = appProcessEntry.instructionSet,

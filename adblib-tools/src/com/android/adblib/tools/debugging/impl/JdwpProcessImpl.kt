@@ -15,25 +15,18 @@
  */
 package com.android.adblib.tools.debugging.impl
 
-import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
-import com.android.adblib.tools.debugging.AtomicStateFlow
-import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.appProcessTracker
-import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollectorFactoryList
 import com.android.adblib.tools.debugging.jdwpProcessTracker
-import com.android.adblib.tools.debugging.jdwpProxySocketServer
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withPrefix
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 /**
  * Implementation of [AbstractJdwpProcess] performing the actual JDWP connection.
@@ -50,14 +43,7 @@ internal class JdwpProcessImpl(
 
     private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
 
-    private val session: AdbSession
-        get() = device.session
-
-    private val propertiesAtomicStateFlow = AtomicStateFlow(MutableStateFlow(JdwpProcessProperties(pid)))
-
     override val cache = CoroutineScopeCache.create(device.scope, processDescription)
-
-    override val propertiesFlow = propertiesAtomicStateFlow.asStateFlow()
 
     /**
      * Provides concurrent and on-demand access to the `jdwp` session of the device.
@@ -80,44 +66,8 @@ internal class JdwpProcessImpl(
      */
     private val sharedJdwpSessionProvider = SharedJdwpSessionProvider.create(device, pid)
 
-    private val propertyCollector = JdwpProcessPropertiesCollector(device, scope, pid, sharedJdwpSessionProvider)
-
-    private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        logger.debug { "Start monitoring" }
-
-        val localCollectorJob = scope.launch(session.ioDispatcher) {
-            runCatching {
-                propertyCollector.execute(propertiesAtomicStateFlow, jdwpProxySocketServer.proxyStatusFlow)
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-            }
-        }
-
-        // Launch external collectors (e.g. out of process inventory) if available
-        scope.launch(session.ioDispatcher) {
-            session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { factory ->
-                factory.create(this@JdwpProcessImpl)
-            }.forEach { externalCollector ->
-                runCatching {
-                    val handler = ExternalPropertiesCollectorHandler(
-                        externalCollector,
-                        localCollectorJob,
-                        propertiesAtomicStateFlow
-                    )
-                    handler.execute()
-                }.onFailure { throwable ->
-                    logger.logIOCompletionErrors(throwable)
-                }
-            }
-        }
-    }
-
     override val jdwpSessionActivationCount: StateFlow<Int>
         get() = sharedJdwpSessionProvider.activationCount
-
-    override fun startMonitoring() {
-        lazyStartMonitoring
-    }
 
     override suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T {
         return sharedJdwpSessionProvider.withSharedJdwpSession {

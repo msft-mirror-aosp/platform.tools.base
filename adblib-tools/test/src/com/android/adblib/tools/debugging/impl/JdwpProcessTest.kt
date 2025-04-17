@@ -35,6 +35,7 @@ import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import com.android.adblib.tools.debugging.packets.payloadLength
 import com.android.adblib.tools.debugging.packets.withPayload
 import com.android.adblib.tools.debugging.properties
+import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
@@ -46,7 +47,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -116,7 +116,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun startMonitoringWorks() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorStartsAutomatically() = runBlockingWithTimeout {
         // Prepare
         val (_, _, process) = createJdwpProcess()
         setHostPropertyValue(
@@ -125,8 +125,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             Duration.ofSeconds(2)
         )
 
-        // Act
-        process.startMonitoring()
+        // Act: Start collecting properties by accessing `properties`
         yieldUntil { process.properties.completed }
 
         // Assert
@@ -136,7 +135,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
 
     @Test
-    fun startMonitoringWorksWithAppInfo() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorUsesAppInfoIfAvailable() = runBlockingWithTimeout {
         // Prepare
         val (_, _, process) = createJdwpProcess(
             // Note: 36 is required for `app_info` support
@@ -144,7 +143,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         )
 
         // Act
-        process.startMonitoring()
         yieldUntil { process.properties.completed }
 
         // Assert
@@ -154,7 +152,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun startMonitoringUsesDefaultDelayByDefault() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorUsesDefaultDelayByDefault() = runBlockingWithTimeout {
         // Prepare
         val (_, _, process) = createJdwpProcess()
         val delay = Duration.ofSeconds(2)
@@ -171,7 +169,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
         // Act
         val start = Instant.now()
-        process.startMonitoring()
         yieldUntil { process.properties.processName != null }
         val waitTime = Duration.between(start, Instant.now())
 
@@ -180,7 +177,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun startMonitoringUsesShortDelayAccordingToUseShortDelayPropertyValue() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorUsesDelayAccordingToUseShortDelayPropertyValue() = runBlockingWithTimeout {
             // Prepare
             val (_, _, process) = createJdwpProcess()
             val delay = Duration.ofSeconds(2)
@@ -202,7 +199,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
             // Act
             val start = Instant.now()
-            process.startMonitoring()
             yieldUntil { process.properties.processName != null }
             val waitTime = Duration.between(start, Instant.now())
 
@@ -210,36 +206,11 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             assertTrue(timeoutExceeded(waitTime, delay))
         }
 
-    @Suppress("unused")
-    //@Test // Disabled because of b/271466829
-    fun startMonitoringEndsEarlyIfWaitForDebugger() = runBlockingWithTimeout {
-        // Prepare
-        val (_, _, process) = createJdwpProcess(waitForDebugger = true)
-
-        // Act:
-        // When the AndroidVM sends a "WAIT" packet, collecting the process properties
-        // should complete fast, i.e. in a much shorter time than the max. timeout
-        // specified in PROCESS_PROPERTIES_READ_TIMEOUT
-        val longTimeout = Duration.ofSeconds(50)
-        val shortTimeout = Duration.ofSeconds(15)
-        setHostPropertyValue(
-            process.device.session.host,
-            AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
-            longTimeout
-        )
-        process.startMonitoring()
-        yieldUntil(shortTimeout) { process.properties.completed }
-
-        // Assert
-        val properties = process.properties
-        assertProcessPropertiesComplete(properties)
-    }
-
     /**
      * Regression test for [b/271466829](https://issuetracker.google.com/issues/271466829)
      */
     @Test
-    fun startMonitoringDoesNotReleaseJdwpSessionIfWaitForDebugger() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorDoesNotReleaseJdwpSessionIfWaitForDebugger() = runBlockingWithTimeout {
         // Prepare
         val (_, _, process) = createJdwpProcess(waitForDebugger = true)
 
@@ -250,7 +221,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
             Duration.ofSeconds(60) // long timeout
         )
-        process.startMonitoring()
         yieldUntil { process.properties.completed }
         delay(500) // give JDWP session holder time to launch
 
@@ -259,7 +229,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun startMonitoringNeverEndsIfLongTimeoutAndNoWaitPacket() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorNeverEndsIfLongTimeoutAndNoWaitPacket() = runBlockingWithTimeout {
         // Prepare
         val (_, _, process) = createJdwpProcess(waitForDebugger = false)
 
@@ -272,7 +242,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
             longTimeout
         )
-        process.startMonitoring()
         yieldUntil {
             process.properties.processName != null &&
                     process.properties.features.isNotEmpty()
@@ -285,7 +254,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun startMonitoringDoesRetryWhenProcessNotAvailable() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorDoesRetryWhenProcessNotAvailable() = runBlockingWithTimeout {
         // Prepare
         val (_, _, firstProcess) = createJdwpProcess(waitForDebugger = false)
         setHostPropertyValue(
@@ -293,7 +262,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
             Duration.ofSeconds(50)
         )
-        firstProcess.startMonitoring() // collect properties for a very long time (50 seconds)
+        // Start collecting properties for a very long time (50 seconds)
         yieldUntil { firstProcess.properties.processName != null }
 
         // Act: Set short timeout and observe we get a timeout exception
@@ -317,8 +286,9 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
                 )
             )
 
-        // This will time out and retry because there is another process collecting properties
-        process.startMonitoring()
+        // Start collecting properties on the 2nd process, but this time out and retry because
+        // there is already another process collecting properties
+        process.propertiesFlow.first()
 
         // Close the other process so that it frees up the JDWP session
         launch {
@@ -334,7 +304,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun startMonitoringStopsOnEOF() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorStopsOnEOF() = runBlockingWithTimeout {
         // Prepare
         val (fakeAdb, _, process) = createJdwpProcess(waitForDebugger = false)
         setHostPropertyValue(
@@ -342,7 +312,8 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
             Duration.ofSeconds(50)
         )
-        process.startMonitoring() // collect properties for a very long time (50 seconds)
+        // Start collecting properties for a very long time (50 seconds)
+        process.propertiesFlow.first()
 
         // Act: Stop process before timeout expires (they will send EOF to
         // the process properties collector)
@@ -377,7 +348,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun startProcessMonitoringLogsUsageStats() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorLogsUsageStats() = runBlockingWithTimeout {
         // Prepare
         val (_, device, firstProcess) = createJdwpProcess(waitForDebugger = false)
         setHostPropertyValue(
@@ -387,7 +358,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         )
 
         // Act
-        firstProcess.startMonitoring() // collect properties for a very long time (100 seconds)
+        // Start collecting properties for a very long time (50 seconds)
         yieldUntil { firstProcess.properties.processName != null }
 
         // Prepare/Act: Create a second `JdwpProcessImpl` to monitor the same process. Set the
@@ -411,8 +382,10 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
                 )
             )
 
-        // This will time out and retry because there is another process collecting properties
-        process.startMonitoring()
+        // We collect the `propertiesFlow` to force the process to try to open a JDWP
+        // session to collect properties. This will time out and retry because there
+        // is another process collecting properties
+        process.propertiesFlow.first()
         yieldUntil {
             ((session.host.usageTracker as? TestingAdbUsageTracker)?.loggedEvents?.size ?: 0) > 0
         }

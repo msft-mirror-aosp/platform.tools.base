@@ -24,6 +24,7 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECT
 import com.android.adblib.tools.debugging.AppProcess
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.isAppInfoSupported
+import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.tools.debugging.scope
 import com.android.adblib.withProcessPrefix

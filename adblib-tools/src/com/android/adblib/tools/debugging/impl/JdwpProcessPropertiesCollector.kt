@@ -21,54 +21,89 @@ import com.android.adblib.adbLogger
 import com.android.adblib.property
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.AtomicStateFlow
+import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
+import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollectorFactoryList
 import com.android.adblib.tools.debugging.isAppInfoSupported
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
+import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 /**
- * A [JdwpProcessPropertiesCollector] is responsible for collecting properties of a given JDWP
- * process [pid] running on a given [device].
- *
- * * [processScope] is a [CoroutineScope] this [JdwpProcessPropertiesCollector] can use
- * to launch asynchronous coroutines, and is guaranteed to be cancelled when the
- * process [pid] is terminated on the device.
- * * [jdwpSessionProvider] provides access to a JDWP session for the process if needed.
+ * Implementation of [JdwpProcessPropertiesCollector], responsible for collecting properties of
+ * a given [JdwpProcess] in a [StateFlow] of [JdwpProcessProperties].
  */
-internal class JdwpProcessPropertiesCollector(
-    private val device: ConnectedDevice,
-    private val processScope: CoroutineScope,
-    private val pid: Int,
-    private val jdwpSessionProvider: SharedJdwpSessionProvider
-) {
+internal class JdwpProcessPropertiesCollectorImpl(
+    override val process: JdwpProcess,
+) : JdwpProcessPropertiesCollector {
+
+    private val device: ConnectedDevice
+        get() = process.device
+
+    private val pid: Int
+        get() = process.pid
+
+    private val processScope: CoroutineScope
+        get() = process.scope
 
     private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
-    /**
-     * Collects [JdwpProcessProperties] for the process [pid] emits them to [stateFlow],
-     * retrying as many times as necessary if there is contention on acquiring JDWP sessions
-     * to the process.
-     */
-    suspend fun execute(
-        stateFlow: AtomicStateFlow<JdwpProcessProperties>,
-        proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>) {
-        createFlowUpdater(proxyStatusFlow).execute(processScope, stateFlow)
+    private val propertiesAtomicStateFlow =
+        AtomicStateFlow(MutableStateFlow(JdwpProcessProperties(pid)))
+
+    override val stateFlow: StateFlow<JdwpProcessProperties> =
+        propertiesAtomicStateFlow.asStateFlow()
+        get() {
+            lazyStartMonitoring
+            return field
+        }
+
+    private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        logger.debug { "Start monitoring" }
+
+        val localCollectorJob = processScope.launch(device.session.ioDispatcher) {
+            runCatching {
+                createFlowUpdater().execute(propertiesAtomicStateFlow)
+            }.onFailure { throwable ->
+                logger.logIOCompletionErrors(throwable)
+            }
+        }
+
+        // Launch external collectors (e.g. out of process inventory) if available
+        processScope.launch(device.session.ioDispatcher) {
+            device.session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { factory ->
+                factory.create(process)
+            }.forEach { externalCollector ->
+                runCatching {
+                    val handler = ExternalPropertiesCollectorHandler(
+                        externalCollector,
+                        localCollectorJob,
+                        propertiesAtomicStateFlow
+                    )
+                    handler.execute()
+                }.onFailure { throwable ->
+                    logger.logIOCompletionErrors(throwable)
+                }
+            }
+        }
     }
 
-    private suspend fun createFlowUpdater(
-        proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
-    ): JdwpProcessPropertiesFlowUpdater {
+    private suspend fun createFlowUpdater(): JdwpProcessPropertiesFlowUpdater {
         val useAppInfo =
             device.session.property(AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE) &&
                     device.isAppInfoSupported()
         return if (useAppInfo) {
             logger.debug { "${AdbFeatures.APP_INFO} is supported, using TRACK_APP collector" }
-            return UsingAppInfoFlowUpdater(device, pid)
+            UsingAppInfoFlowUpdater(process)
         } else {
             logger.debug { "${AdbFeatures.APP_INFO} is not supported or active, using JDWP collector" }
-            UsingJdwpSessionFlowUpdater(device, pid, jdwpSessionProvider, proxyStatusFlow)
+            UsingJdwpSessionFlowUpdater(process)
         }
     }
 

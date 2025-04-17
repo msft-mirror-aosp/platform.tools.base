@@ -17,7 +17,6 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import kotlinx.coroutines.CoroutineScope
 
 /**
  * A component that asynchronously updates an [AtomicStateFlow] of [JdwpProcessProperties]
@@ -25,11 +24,11 @@ import kotlinx.coroutines.CoroutineScope
 internal interface JdwpProcessPropertiesFlowUpdater {
 
     /**
-     * Asynchronously updates [stateFlow] with incremental updates to [JdwpProcessProperties]
-     * of a given [process][JdwpProcessProperties.pid].
+     * Updates [stateFlow] with incremental updates to [JdwpProcessProperties]
+     * of a given JDWP [process][JdwpProcessProperties.pid].
      *
-     * [processScope] is a [CoroutineScope] that is guaranteed to be cancelled
-     * when (or slightly after) the corresponding process on the device is terminated.
+     * The caller is responsible for cancelling this coroutine function when no
+     * more updates are needed, typically when the JDWP process is terminated.
      */
-    fun execute(processScope: CoroutineScope, stateFlow: AtomicStateFlow<JdwpProcessProperties>)
+    suspend fun execute(stateFlow: AtomicStateFlow<JdwpProcessProperties>)
 }

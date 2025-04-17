@@ -30,11 +30,12 @@ import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.allocationTracker
 import com.android.adblib.tools.debugging.executeGarbageCollector
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
-import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.profiler
 import com.android.adblib.tools.debugging.properties
+import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.proxyStatus
+import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.debugging.toByteBuffer
 import com.android.adblib.tools.debugging.viewHierarchy

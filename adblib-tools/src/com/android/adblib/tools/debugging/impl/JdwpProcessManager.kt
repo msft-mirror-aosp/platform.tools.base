@@ -28,15 +28,13 @@ import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_MANAGER_REFRESH_DELAY
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
 import com.android.adblib.tools.debugging.CustomJdwpProxySocketServerProvider
-import com.android.adblib.tools.debugging.JdwpPacketReceiver
 import com.android.adblib.tools.debugging.JdwpProcess
-import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.isTrackAppSupported
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
-import com.android.adblib.tools.debugging.packets.JdwpPacketView
+import com.android.adblib.tools.debugging.scope
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.debugging.trackJdwpStateFlow
 import com.android.adblib.tools.debugging.utils.JobTracker
@@ -234,9 +232,7 @@ private class JdwpProcessManagerImpl(
             // Update our map given the process IDs we received as parameter
             jdwpProcessMap.addProcesses(processIds)
             processIds.map { pid ->
-                jdwpProcessMap.getProcessOrNull(pid)?.also {
-                    it.startMonitoring()
-                } ?: run {
+                jdwpProcessMap.getProcessOrNull(pid)?: run {
                     // A `null` result should never happen, given we called `addProcesses` above
                     throwProcessNotFoundInternalError(pid)
                 }
@@ -547,9 +543,8 @@ private class JdwpProcessDelegate(
 ) : AbstractJdwpProcess(), CustomJdwpProxySocketServerProvider {
 
     private val processDescription = "${device.session} - $device - pid=$pid"
-    private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
 
-    private val propertiesMutableFlow = MutableStateFlow(JdwpProcessProperties(pid))
+    private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
 
     private val withJdwpSessionTracker = BlockActivationTracker()
 
@@ -557,8 +552,6 @@ private class JdwpProcessDelegate(
         get() = withJdwpSessionTracker.activationCount
 
     override val cache = CoroutineScopeCache.create(device.scope, processDescription)
-
-    override val propertiesFlow = propertiesMutableFlow.asStateFlow()
 
     private val deferredDelegateProcess: Deferred<AbstractJdwpProcess> =
         cache.scope.async {
@@ -580,23 +573,6 @@ private class JdwpProcessDelegate(
             // operation will be cancelled.
             delegateDevice.jdwpProcessManagerImpl.waitForProcess(pid)
         }
-
-    override fun startMonitoring() {
-        scope.launch {
-            runCatching {
-                deferredDelegateProcess.await().also { delegateProcess ->
-                    logger.debug { "Acquired delegate process, starting monitoring" }
-                    delegateProcess.startMonitoring()
-                    delegateProcess.propertiesFlow.collect { properties ->
-                        logger.debug { "Updating properties flow from delegate process: $properties" }
-                        propertiesMutableFlow.value = properties
-                    }
-                }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-            }
-        }
-    }
 
     override suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T {
         return withJdwpSessionTracker.track {
@@ -634,29 +610,13 @@ private class JdwpProcessDelegate(
      */
     private class SharedJdwpSessionDelegate(
         override val device: ConnectedDevice,
-        private val delegate: SharedJdwpSession,
-    ) : SharedJdwpSession {
+        private val delegateJdwpSession: SharedJdwpSession,
+    ) : SharedJdwpSession by delegateJdwpSession
 
-        override val pid: Int
-            get() = delegate.pid
-
-        override suspend fun sendPacket(packet: JdwpPacketView) {
-            delegate.sendPacket(packet)
-        }
-
-        override suspend fun newPacketReceiver(): JdwpPacketReceiver {
-            return delegate.newPacketReceiver()
-        }
-
-        override fun nextPacketId(): Int {
-            return delegate.nextPacketId()
-        }
-
-        override suspend fun addReplayPacket(packet: JdwpPacketView) {
-            delegate.addReplayPacket(packet)
-        }
-    }
-
+    /**
+     * Delegates [JdwpProxySocketServer] methods while exposing a custom [process] property passed
+     * as constructor parameter.
+     */
     private class JdwpProxySocketServerDelegate(
         override val process: JdwpProcessDelegate
     ) : JdwpProxySocketServer {
