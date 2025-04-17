@@ -119,11 +119,8 @@ kotlin_library(
         "//tools/base/build-system:gradle-api",
         "//tools/base/build-system/gradle-core",
         "//tools/base/common:tools.common",
-        "//tools/base/multipreview-asm:tools.compose-preview-detector",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",
         "//tools/base/testutils:tools.testutils",
-        "@maven//:net.sf.kxml.kxml2",
     ],
 )

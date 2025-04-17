@@ -71,11 +71,11 @@ public abstract class ArchiveEntry {
         return -1L;
     }
 
-    public boolean getSelfOrChildLoadSectionIncompatible() {
+    public boolean getSelfOrChild16kbIncompatible() {
         return false;
     }
 
-    public void setSelfOrChildLoadSectionIncompatible(Boolean value) {}
+    public void setSelfOrChild16kbIncompatible(Boolean value) {}
 
     public void setIsElf(boolean isElf) {}
 

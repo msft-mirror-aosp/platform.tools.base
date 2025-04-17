@@ -209,9 +209,6 @@ https://issuetracker.google.com/328748770
   * com.android.build.api.variant.AnnotationProcessor.getArgumentProviders: java.util.List<org.gradle.process.CommandLineArgumentProvider> ()
   * com.android.build.api.variant.AnnotationProcessor.getArguments: org.gradle.api.provider.MapProperty<java.lang.String, java.lang.String> ()
   * com.android.build.api.variant.AnnotationProcessor.getClassNames: org.gradle.api.provider.ListProperty<java.lang.String> ()
-https://issuetracker.google.com/328748772
-  * com.android.build.api.variant.KotlinMultiplatformAndroidVariant implements com.android.build.api.variant.LibraryVariant
-  * com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder implements com.android.build.api.variant.LibraryVariantBuilder
 https://issuetracker.google.com/328748780
   * com.android.build.api.dsl.AssetPackBundleExtension.countrySet: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleCountrySet, kotlin.Unit>)
   * com.android.build.api.dsl.AssetPackBundleExtension.getCountrySet: com.android.build.api.dsl.BundleCountrySet ()
@@ -502,7 +499,6 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvmCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
   * com.android.build.api.dsl.LibraryAndroidResources.getEnable: boolean ()
   * com.android.build.api.dsl.LibraryAndroidResources.setEnable: void (boolean)
-  * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension implements com.android.build.api.variant.AndroidComponentsExtension
   * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant, kotlin.Unit>)
   * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant>)
 https://issuetracker.google.com/328749318
@@ -620,8 +616,6 @@ https://issuetracker.google.com/357083708
   * com.android.build.api.variant.HasDeviceTestsBuilder.getDeviceTests: java.util.Map<java.lang.String, com.android.build.api.variant.DeviceTestBuilder> ()
 https://issuetracker.google.com/361880963
   * com.android.build.api.variant.DeviceTestBuilder implements com.android.build.api.variant.GeneratesTestApkBuilder
-https://issuetracker.google.com/362870092
-  * com.android.build.api.variant.GeneratesApk.getMinSdk: com.android.build.api.variant.AndroidVersion ()
 https://issuetracker.google.com/362941219
   * com.android.build.api.variant.ApkOutputProviders
   * com.android.build.api.variant.ApkOutputProviders.provideApkOutputToTask: void (org.gradle.api.tasks.TaskProvider<TaskT>, kotlin.jvm.functions.Function1<? super TaskT, ? extends org.gradle.api.provider.Property<com.android.build.api.variant.ApkOutput>>, com.android.build.api.variant.DeviceSpec)

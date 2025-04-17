@@ -1,6 +1,7 @@
 #!/bin/bash -x
 #
 # Build a nightly release of Android Studio.
+export PATH="${PATH}:$(pwd)/prebuilts/studio/jdk/jbr-next/linux/bin/"
 
 readonly ARGV=("$@")
 

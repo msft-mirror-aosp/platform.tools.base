@@ -10,5 +10,6 @@
     <orderEntry type="library" name="android" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="app-inspection" level="project" />
     <orderEntry type="library" name="androidx-annotations" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="androidx-inspection" level="project" />
   </component>
 </module>

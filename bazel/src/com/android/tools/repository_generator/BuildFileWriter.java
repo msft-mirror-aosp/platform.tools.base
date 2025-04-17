@@ -178,12 +178,17 @@ public class BuildFileWriter {
                 String parentRuleName = getMavenArtifactRuleName(dep.parentCoord);
                 fileWriter.append(String.format("    parent = \"%s\",\n", parentRuleName));
             }
-            fileWriter.append("    jars = [\n");
             if (dep.file.endsWith(".jar")) {
+                fileWriter.append("    jars = [\n");
                 fileWriter.append(
                         String.format("        \"%s/%s\"\n", repoPrefix, pathToString(dep.file)));
+                fileWriter.append("    ],\n");
             }
-            fileWriter.append("    ],\n");
+            if (dep.file.endsWith(".aar")) {
+                fileWriter.append(
+                        String.format(
+                                "    aar = \"%s/%s\",\n", repoPrefix, pathToString(dep.file)));
+            }
             for (Map.Entry<String, List<String>> scopedDeps : dep.directDependencies.entrySet()) {
                 String scope = scopedDeps.getKey();
                 List<String> deps = scopedDeps.getValue();

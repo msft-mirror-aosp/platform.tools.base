@@ -23,6 +23,7 @@ import com.android.fakeadbserver.services.NoOperationStatusWriter
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.ShellCommandOutputWithCachedExitCode
 import com.android.fakeadbserver.services.StatusWriter
+import com.android.fakeadbserver.shellcommandhandlers.ExitCommandHandler
 import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
 import java.nio.ByteBuffer
@@ -118,7 +119,7 @@ class InteractiveShellHandler : DeviceCommandHandler("") {
                 break
             }
             val commands = bytes.toCommands()
-            executeCommands(
+            val result = executeCommands(
                 commands,
                 shellCommandOutput,
                 ShellProtocolType.SHELL,
@@ -127,6 +128,9 @@ class InteractiveShellHandler : DeviceCommandHandler("") {
                 socket,
                 device
             )
+            if (result == ExecuteCommandsResult.Exit) {
+                break
+            }
         }
     }
 }
@@ -219,11 +223,32 @@ class InteractiveShellV2Handler : DeviceCommandHandler("") {
             ShellProtocolType.SHELL_V2.createServiceOutput(socket, device)
         )
         while (true) {
+            // (Optionally) handle leftover bytes from the previous `STDIN` packet first
+            val stdinAvailable = shellCommandOutput.availableStdinByteCount()
+            if (stdinAvailable > 0) {
+                val stdinBytes = ByteArray(stdinAvailable)
+                shellCommandOutput.readStdin(stdinBytes, 0, stdinAvailable)
+                val commands = stdinBytes.toCommands()
+                val result = executeCommands(
+                    commands,
+                    shellCommandOutput,
+                    ShellProtocolType.SHELL_V2,
+                    server,
+                    socketScope,
+                    socket,
+                    device
+                )
+                if (result == ExecuteCommandsResult.Exit) {
+                    break
+                }
+            }
+
+            // Handle next V2 protocol packet
             val packet = protocol.readPacket()
             when (packet.kind) {
                 ShellV2Protocol.PacketKind.STDIN -> {
                     val commands = packet.bytes.toCommands()
-                    executeCommands(
+                    val result = executeCommands(
                         commands,
                         shellCommandOutput,
                         ShellProtocolType.SHELL_V2,
@@ -232,6 +257,9 @@ class InteractiveShellV2Handler : DeviceCommandHandler("") {
                         socket,
                         device
                     )
+                    if (result == ExecuteCommandsResult.Exit) {
+                        break
+                    }
                 }
 
                 ShellV2Protocol.PacketKind.CLOSE_STDIN -> {
@@ -253,12 +281,20 @@ class InteractiveShellV2Handler : DeviceCommandHandler("") {
                 }
             }
         }
+
+        // Write "EXIT_CODE" packet before closing connection
+        protocol.writeExitCode(shellCommandOutput.exitCode)
     }
 }
 
 private fun ByteArray.toCommands(): List<String> {
     val commandsString = String(ADB_CHARSET.decode(ByteBuffer.wrap(this)).array())
     return commandsString.trim().split("\r", "\n").toList().filter { it.isNotEmpty() }
+}
+
+private enum class ExecuteCommandsResult {
+    Exit,
+    Continue,
 }
 
 private fun executeCommands(
@@ -269,9 +305,18 @@ private fun executeCommands(
     socketScope: CoroutineScope,
     socket: Socket,
     device: DeviceState
-) {
-    for (command in commands) {
-        shellCommandOutput.writeStdout("$ $command\n")
+): ExecuteCommandsResult {
+    for (rawCommand in commands) {
+        shellCommandOutput.writeStdout("$ $rawCommand\n")
+        // Special case: if command ends with `|| exit`, force shell session to terminate
+        // TODO: see b/409350504 for proper handling of pipes
+        val exitOnCommandFailure = rawCommand.endsWith("|| exit")
+        val command = if (exitOnCommandFailure) {
+            rawCommand.removeSuffix("|| exit")
+        } else {
+            rawCommand
+        }
+
         var commandHandled = false
         for (handler in server.handlers) {
             val accepted = handler.accept(
@@ -285,6 +330,13 @@ private fun executeCommands(
                 { shellCommandOutput }
             )
             if (accepted) {
+                if (exitOnCommandFailure && shellCommandOutput.exitCode != null && shellCommandOutput.exitCode != 0) {
+                    return ExecuteCommandsResult.Exit
+                }
+                // Special case: `exit` forces the shell session to terminate
+                if (handler is ExitCommandHandler) {
+                    return ExecuteCommandsResult.Exit
+                }
                 commandHandled = true
                 break
             }
@@ -293,6 +345,7 @@ private fun executeCommands(
             throw IllegalStateException("Couldn't find command handler for `$command` while in interactive terminal session")
         }
     }
+    return ExecuteCommandsResult.Continue
 }
 
 private fun isShellV1Command(command: String): Boolean {

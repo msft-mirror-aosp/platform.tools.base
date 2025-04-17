@@ -18,6 +18,7 @@ package com.android.backup
 
 import com.android.backup.BackupResult.Error
 import com.android.backup.BackupResult.Success
+import com.android.backup.BackupResult.WithoutAppData
 import com.android.backup.BackupType.CLOUD
 import com.android.backup.BackupType.CLOUD_UNENCRYPTED
 import com.android.backup.BackupType.DEVICE_TO_DEVICE
@@ -26,6 +27,7 @@ import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
 import com.android.backup.ErrorCode.BACKUP_NOT_ALLOWED
+import com.android.backup.ErrorCode.BACKUP_NOT_ENABLED
 import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
 import com.android.backup.ErrorCode.GMSCORE_NOT_FOUND
@@ -86,6 +88,7 @@ class BackupServiceImplTest {
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
+        "dumpsys package com.app",
       )
       .inOrder()
     val files = backupFile.unzip()
@@ -136,6 +139,7 @@ class BackupServiceImplTest {
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
+        "dumpsys package com.app",
       )
       .inOrder()
     assertThat(adbServices.testMode).isEqualTo(0)
@@ -186,6 +190,7 @@ class BackupServiceImplTest {
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
+        "dumpsys package com.app",
       )
       .inOrder()
     assertThat(adbServices.testMode).isEqualTo(0)
@@ -212,6 +217,43 @@ class BackupServiceImplTest {
   }
 
   @Test
+  fun backup_backupDisabled_withAuth(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.addCommandOverride(Output("dumpsys package com.app", ""))
+        it.addContentOverride(
+          "content://com.google.android.gms.fileprovider/backup_testing_flows/auth_backup",
+          "valid",
+        )
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
+
+    assertThat(result).isEqualTo(WithoutAppData)
+  }
+
+  @Test
+  fun backup_backupDisabled_withoutAuth(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.addCommandOverride(Output("dumpsys package com.app", ""))
+        it.addContentOverride(
+          "content://com.google.android.gms.fileprovider/backup_testing_flows/auth_backup",
+          "",
+        )
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
+
+    val error = result as Error
+    assertThat(error.errorCode).isEqualTo(BACKUP_NOT_ENABLED)
+  }
+
+  @Test
   fun backup_bmgrAlreadyEnabled(): Unit = runBlocking {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val adbServicesFactory = FakeAdbServicesFactory("com.app") { it.bmgrEnabled = true }
@@ -234,6 +276,7 @@ class BackupServiceImplTest {
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
+        "dumpsys package com.app",
       )
       .inOrder()
   }
@@ -282,6 +325,7 @@ class BackupServiceImplTest {
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
+        "dumpsys package com.app",
       )
       .inOrder()
   }

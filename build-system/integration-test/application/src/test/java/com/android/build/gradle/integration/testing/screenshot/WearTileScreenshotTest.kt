@@ -218,7 +218,7 @@ class WearTileScreenshotTest {
 
         val previewDir = build.directory.resolve(
             "$projectName/build/outputs/screenshotTest-results/preview/$buildType/$flavor/rendered").toFile()
-        val refDir = build.directory.resolve("$projectName/src/${variantName}ScreenshotTest/reference").toFile()
+        val refDir = build.directory.resolve("$projectName/src/screenshotTest${variantName.usLocaleCapitalize()}/reference").toFile()
 
         assertTrue(
             "Failed to update reference images",
@@ -235,8 +235,8 @@ class WearTileScreenshotTest {
         // Generate screenshots to be tested against
         updateReferenceImage()
 
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
-        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
+        val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
+        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
             "multiplePreviewsTest_small_dfcc4c35_0.png",
             "simpleTilePreview_simple tile_7cfb9daa_0.png",

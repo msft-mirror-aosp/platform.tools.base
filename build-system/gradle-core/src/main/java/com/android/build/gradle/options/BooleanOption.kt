@@ -429,6 +429,15 @@ enum class BooleanOption(
 
     ENABLE_PROBLEMS_API("android.enableProblemsAPI", false, FeatureStage.Experimental),
 
+    /**
+     * As of AGP 9.0 missing proguard files will throw a runtime exception.
+     */
+    FAIL_ON_MISSING_PROGUARD_FILES(
+        "android.proguard.failOnMissingFiles",
+        false,
+        FeatureStage.Experimental
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */

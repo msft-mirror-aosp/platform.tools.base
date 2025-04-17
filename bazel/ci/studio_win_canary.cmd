@@ -5,6 +5,7 @@
 @rem we can be highly confident testing works since all tests are executed
 @rem remotely.
 setlocal enabledelayedexpansion
+set PATH=%cd%\prebuilts\studio\jdk\jbr-next\win\bin;%PATH%
 set PATH=c:\tools\msys64\usr\bin;%PATH%
 
 @rem The current directory the executing script is in.

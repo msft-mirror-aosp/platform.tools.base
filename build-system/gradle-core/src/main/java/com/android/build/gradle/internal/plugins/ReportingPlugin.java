@@ -57,6 +57,8 @@ class ReportingPlugin implements org.gradle.api.Plugin<Project> {
 
     @Override
     public void apply(final Project project) {
+        project.getLogger()
+                .warn("android-reporting plugin is deprecated and is set to be removed in AGP 9.0");
         // make sure this project depends on the evaluation of all sub projects so that
         // it's evaluated last.
         project.evaluationDependsOnChildren();

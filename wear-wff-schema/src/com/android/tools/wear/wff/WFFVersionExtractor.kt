@@ -36,11 +36,7 @@ class WFFVersionExtractor {
       properties.asSequence().firstOrNull {
         it.getAttributeNS(ANDROID_URI, ATTR_NAME) == WATCH_FACE_FORMAT_VERSION_PROPERTY
       } ?: return null
-    return when (wffVersionProperty.getAttributeNS(ANDROID_URI, ATTR_VALUE)) {
-      "1" -> WFFVersion1
-      "2" -> WFFVersion2
-      "3" -> WFFVersion3
-      else -> null
-    }
+    val wffVersion = wffVersionProperty.getAttributeNS(ANDROID_URI, ATTR_VALUE)
+    return WFFVersion.entries.firstOrNull { it.version == wffVersion }
   }
 }

@@ -139,7 +139,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     public static final Pattern PREVIEW_PATTERN = Pattern.compile("^[A-Z][0-9A-Za-z_]*$");
     public static final Pattern API_LEVEL_PATTERN =
-            Pattern.compile("(\\d+)(\\.(\\d+))?(-ext(\\d+))?");
+            Pattern.compile("(\\d+)(\\.(\\d+))?(-ext(\\d+))?(-([A-Z][0-9A-Za-z_]*))?");
 
     private static final long serialVersionUID = 1L;
 
@@ -327,11 +327,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
                 int minorVersion = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
                 Integer extensionLevel = matcher.group(5) != null ? Integer.parseInt(matcher.group(5)) : null;
                 boolean isBaseExtension = extensionLevel == null || extensionLevel <= getBaseExtensionLevel(majorVersion);
+                String codename = matcher.group(7);
                 return new AndroidVersion(
-                        majorVersion, minorVersion,
-                        null,
-                        extensionLevel,
-                        isBaseExtension);
+                        majorVersion, minorVersion, codename, extensionLevel, isBaseExtension);
             }
         } catch (NumberFormatException ignore) {}
 
@@ -465,14 +463,21 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      */
     @NonNull
     public String getPlatformHashString() {
-        // The platform hash string for API 36 has to be "android-36" instead of "android-36.0".
-        if (mAndroidApiLevel.getMajorVersion() == 36 && mAndroidApiLevel.getMinorVersion() == 0 &&
-                mCodename == null) {
-            return mIsBaseExtension ?
-                   PLATFORM_HASH_PREFIX + "36" :
-                   PLATFORM_HASH_PREFIX + "36-ext" + mExtensionLevel;
+        // Prior to API 36, we only use either API level or codename.
+        if (mAndroidApiLevel.getMajorVersion() < 36) {
+            return PLATFORM_HASH_PREFIX + getApiStringWithExtension();
         }
-        return PLATFORM_HASH_PREFIX + getApiStringWithExtension();
+
+        // Starting with API 36, we include both the API level and the codename (for previews).
+        // The platform hash string for API 36 has to be "android-36" instead of "android-36.0".
+        String version =
+                mAndroidApiLevel.getMajorVersion() == 36 && mAndroidApiLevel.getMinorVersion() == 0
+                        ? "36"
+                        : mAndroidApiLevel.toString();
+        String extension = mIsBaseExtension ? "" : "-ext" + mExtensionLevel;
+        String codename = mCodename == null ? "" : "-" + mCodename;
+
+        return PLATFORM_HASH_PREFIX + version + extension + codename;
     }
 
     /**

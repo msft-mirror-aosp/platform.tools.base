@@ -344,7 +344,7 @@ class ScreenshotTest {
 
         val previewDir = build.directory.resolve(
             "$projectName/build/outputs/screenshotTest-results/preview/$buildType/$flavor/rendered").toFile()
-        val refDir = build.directory.resolve("$projectName/src/${variantName}ScreenshotTest/reference").toFile()
+        val refDir = build.directory.resolve("$projectName/src/screenshotTest${variantName.usLocaleCapitalize()}/reference").toFile()
 
         assertTrue(
             "Failed to update reference images",
@@ -363,7 +363,7 @@ class ScreenshotTest {
                 "$projectName/build/outputs/screenshotTest-results/preview/$variantName/rendered"
             ).toFile()
             val refDir =
-                build.directory.resolve("$projectName/src/${variantName}ScreenshotTest/reference")
+                build.directory.resolve("$projectName/src/screenshotTest${variantName.usLocaleCapitalize()}/reference")
                     .toFile()
 
             assertTrue(
@@ -382,8 +382,8 @@ class ScreenshotTest {
         // Generate screenshots to be tested against
         updateReferenceImage()
 
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
-        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
+        val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
+        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleComposableTest_simpleComposable_c5877f71_0.png",
             "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
@@ -694,8 +694,8 @@ class ScreenshotTest {
         updateReferenceImage("debug", "flavor2")
 
         // Verify that reference images are created for both flavors
-        val flavor1ReferenceScreenshotDir = appProject.resolve("src/flavor1DebugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
-        val flavor2ReferenceScreenshotDir = appProject.resolve("src/flavor2DebugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
+        val flavor1ReferenceScreenshotDir = appProject.resolve("src/screenshotTestFlavor1Debug/reference/pkg/name/TopLevelPreviewTestKt")
+        val flavor2ReferenceScreenshotDir = appProject.resolve("src/screenshotTestFlavor2Debug/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(flavor1ReferenceScreenshotDir.listDirectoryEntries().single().name)
             .isEqualTo("simpleComposableTest_3_748aa731_0.png")
         assertThat(flavor2ReferenceScreenshotDir.listDirectoryEntries().single().name)
@@ -743,8 +743,8 @@ class ScreenshotTest {
 
         // Generate screenshots to be tested against
         updateReferenceImage()
-        val exampleTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/ExampleTest")
-        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/debugScreenshotTest/reference/pkg/name/TopLevelPreviewTestKt")
+        val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
+        val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleComposableTest_simpleComposable_c5877f71_0.png",
             "simpleComposableTest2_simpleComposable_7362dd6b_0.png",

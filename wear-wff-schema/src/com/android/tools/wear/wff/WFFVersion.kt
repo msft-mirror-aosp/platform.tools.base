@@ -22,10 +22,11 @@ import java.net.URL
  *
  * @see <a href="https://developer.android.com/training/wearables/wff">Watch Face Format</a>
  */
-sealed class WFFVersion(version: String) {
-    val schemaUrl: URL = checkNotNull(this::class.java.getResource("/specification/documents/$version/watchface.xsd"))
-}
+enum class WFFVersion(val version: String) {
+    WFFVersion1("1"),
+    WFFVersion2("2"),
+    WFFVersion3("3");
 
-object WFFVersion1 : WFFVersion("1")
-object WFFVersion2 : WFFVersion("2")
-object WFFVersion3 : WFFVersion("3")
+    val schemaUrl: URL =
+        checkNotNull(this::class.java.getResource("/specification/documents/$version/watchface.xsd"))
+}

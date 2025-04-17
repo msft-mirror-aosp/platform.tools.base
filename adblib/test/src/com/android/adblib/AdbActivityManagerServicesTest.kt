@@ -157,9 +157,47 @@ class AdbActivityManagerServicesTest {
     }
 
     @Test
-    fun testCapabilitiesThrows_whenOlderDevice(): Unit = runBlockingWithTimeout {
+    fun testCapabilitiesThrows_whenCapabilitiesIsNotSupported(): Unit = runBlockingWithTimeout {
         // Prepare
         val device = addFakeDevice(fakeAdb, sdk = 30)
+        val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+
+        // Act
+        val result = runCatching { activityManagerServices.capabilities(deviceSelector) }
+
+        // Assert
+        result.onFailure { throwable ->
+            Assert.assertTrue(throwable is AdbActivityManagerException)
+            Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
+            Assert.assertFalse(throwable.isServiceNotRunning)
+        }.onSuccess {
+            Assert.fail("Command should have failed")
+        }
+    }
+
+    @Test
+    fun testCapabilitiesThrows_whenCapabilitiesIsNotSupportedOnDeviceWithOlderAmImplementation(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val device = addFakeDevice(fakeAdb, sdk = 24)
+        val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+
+        // Act
+        val result = runCatching { activityManagerServices.capabilities(deviceSelector) }
+
+        // Assert
+        result.onFailure { throwable ->
+            Assert.assertTrue(throwable is AdbActivityManagerException)
+            Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
+            Assert.assertFalse(throwable.isServiceNotRunning)
+        }.onSuccess {
+            Assert.fail("Command should have failed")
+        }
+    }
+
+    @Test
+    fun testCapabilitiesThrows__whenCapabilitiesIsNotSupportedOnDeviceWithOlderAmImplementationWithoutShellV2Support(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val device = addFakeDevice(fakeAdb, sdk = 22)
         val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
 
         // Act

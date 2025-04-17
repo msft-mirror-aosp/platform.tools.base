@@ -294,7 +294,7 @@ class UastEnvironmentSourceSetTest {
   }
 
   @Test
-  fun testPackageInfo() {
+  fun testPackageInfo_SystemProperty() {
     // Regression test for b/406902458
     // Mimic ApiDetectorTest#testPackageInfoMinSdk
     // Intentional to run for both K1 and K2
@@ -358,6 +358,76 @@ class UastEnvironmentSourceSetTest {
 
       // Args
       arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
+      { it.dos2unix() },
+      null,
+    )
+  }
+
+  @Test
+  fun testPackageInfo_explicitArg() {
+    // Regression test for b/406902458
+    // Mimic ApiDetectorTest#testPackageInfoMinSdk
+    Assume.assumeTrue(useFirUast())
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          manifest().minSdk(14),
+          SUPPORT_ANNOTATIONS_JAR,
+          java(
+              "src/test/pkg/package-info.java",
+              """
+              @RequiresApi(21)
+              package test.pkg;
+
+              import androidx.annotation.RequiresApi;
+            """,
+            )
+            .indented(),
+          java(
+              "src/test/pkg/Foo.java",
+              """
+              package test.pkg;
+
+              import androidx.annotation.RequiresApi;
+
+              public class Foo {
+                @RequiresApi(21)
+                public static void requires21() {}
+
+                public void test() {
+                    requires21();
+                }
+              }
+            """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+
+    @Language("XML")
+    val descriptor =
+      """
+        <project>
+          <sdk dir='${TestUtils.getSdk()}'/>
+          <module name="app" android="true" library="false" compute_source_roots="false">
+            <classpath jar="libs/support-annotations.jar" />
+            <src file="src/test/pkg/package-info.java" />
+            <src file="src/test/pkg/Foo.java" />
+          </module>
+        </project>
+      """
+
+    Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
+    MainTest.checkDriver(
+      "No issues found.", // if the annotation in package-info is propagated
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      arrayOf("--XuseK2Uast", "--check", "NewApi", "--project", File(root, "project.xml").path),
       { it.dos2unix() },
       null,
     )

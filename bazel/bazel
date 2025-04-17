@@ -12,14 +12,20 @@ def main():
   workspace = find_workspace(os.path.dirname(os.path.realpath(__file__)))
   if not workspace:
     sys.exit('Must run %s within a workspace.' % os.path.basename(sys.argv[0]))
+
   if sys.platform.startswith('linux'):
     platform = 'linux-x86_64'
+    android_home = f'{workspace}/prebuilts/studio/sdk/linux'
   elif sys.platform == 'darwin':
     platform = 'darwin-arm64' if plat.machine() == 'arm64' else 'darwin-x86_64'
+    android_home = f'{workspace}/prebuilts/studio/sdk/darwin'
   elif sys.platform == 'win32':
     platform = 'windows-x86_64'
+    android_home = f'{workspace}/prebuilts/studio/sdk/windows'
   else:
     sys.exit('Platform %s is not yet supported.' % sys.platform)
+  if not os.path.exists(android_home):
+    android_home = os.environ.get('ANDROID_HOME')
 
   env = {k: v for k, v in os.environ.items()}
   env['USE_BAZEL_VERSION'] = os.environ.get('USE_BAZEL_VERSION', '')
@@ -41,6 +47,7 @@ def main():
   args = sys.argv[1:]
 
   env['TERM'] = os.environ.get('TERM', '')
+  env['ANDROID_HOME'] = android_home
   env['MAVEN_FETCH'] = os.environ.get('MAVEN_FETCH', '')
   env['SHELL'] = os.environ.get('SHELL', '')
   env['HOME'] = os.environ.get('HOME', '')
@@ -53,6 +60,18 @@ def main():
   env['BUILD_TARGET_NAME'] = os.environ.get('BUILD_TARGET_NAME', '')
   env['DIST_DIR'] = os.environ.get('DIST_DIR', '')
   if sys.platform == 'darwin':
+    java_path = os.path.join(
+        workspace,
+        'prebuilts',
+        'studio',
+        'jdk',
+        'jbr-next',
+        'mac-arm64' if plat.machine() == 'arm64' else 'mac',
+        'Contents',
+        'Home',
+        'bin',
+    )
+    env['PATH'] = f'{java_path}:{env["PATH"]}'
     if not os.path.exists('/Library/Developer/CommandLineTools'):
       print(
           '/Library/Developer/CommandLineTools does not exist. Please install'
@@ -62,6 +81,10 @@ def main():
     # This is needed for bazel to set itself up, even though we aren't using gcc.
     env['CC'] = os.environ.get('GCC', '/usr/bin/gcc')
   elif sys.platform == 'win32':
+    java_path = os.path.join(
+        workspace, 'prebuilts', 'studio', 'jdk', 'jbr-next', 'win', 'bin'
+    )
+    env['PATH'] = f'{java_path};{env["PATH"]}'
     command = bazel_command(args)
     # We don't need the tools to be installed locally if you're building remotely.
     # This isn't really the correct check, since --config=remote is just an alias for a bunch of other

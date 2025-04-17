@@ -19,15 +19,9 @@ package com.android.build.gradle.internal.services
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.utils.GradleEnvironmentProvider
-import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
-import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
-import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
-import com.android.ide.common.gradle.Version
 import org.gradle.api.services.BuildServiceRegistry
-import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
-import org.jetbrains.kotlin.gradle.plugin.KotlinJvmFactory
 import java.io.File
 
 /**

@@ -224,15 +224,17 @@ public class ArchiveTreeStructure {
                             long loadSectionAlignment = data.getElfMinimumLoadSectionAlignment();
                             if (loadSectionAlignment != -1
                                     && !data.isFileCompressed()
-                                    && loadSectionAlignment % (16L * 1024) != 0L) {
-                                data.setSelfOrChildLoadSectionIncompatible(true);
+                                    && (loadSectionAlignment % (16L * 1024) != 0L
+                                            || data.getFileAlignment()
+                                                    != ZipEntryInfo.Alignment.ALIGNMENT_16K)) {
+                                data.setSelfOrChild16kbIncompatible(true);
                                 return;
                             }
 
                             for (ArchiveNode childNode : node.getChildren()) {
                                 ArchiveEntry childData = childNode.getData();
-                                if (childData.getSelfOrChildLoadSectionIncompatible()) {
-                                    data.setSelfOrChildLoadSectionIncompatible(true);
+                                if (childData.getSelfOrChild16kbIncompatible()) {
+                                    data.setSelfOrChild16kbIncompatible(true);
                                     return;
                                 }
                             }

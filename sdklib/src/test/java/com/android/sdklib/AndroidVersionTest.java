@@ -245,6 +245,70 @@ public class AndroidVersionTest {
     }
 
     @Test
+    public void fromString_codenameWithVersion() {
+        AndroidVersion v = AndroidVersion.fromString("36.1-DEV");
+        assertEquals(new AndroidApiLevel(36, 1), v.getAndroidApiLevel());
+        assertEquals("DEV", v.getCodename());
+        assertEquals("DEV", v.getApiStringWithExtension());
+        assertTrue(v.isPreview());
+    }
+
+    @Test
+    public void platformHashString_base() {
+        assertEquals("android-35", new AndroidVersion(35, 0).getPlatformHashString());
+        assertEquals("android-36", new AndroidVersion(36, 0).getPlatformHashString());
+        assertEquals("android-36.1", new AndroidVersion(36, 1).getPlatformHashString());
+        assertEquals("android-37.0", new AndroidVersion(37, 0).getPlatformHashString());
+    }
+
+    @Test
+    public void platformHashString_previews() {
+        assertEquals(
+                "android-Baklava",
+                new AndroidVersion(35, 0, "Baklava", null, true).getPlatformHashString());
+        assertEquals(
+                "android-36-Baklava",
+                new AndroidVersion(36, 0, "Baklava", null, true).getPlatformHashString());
+        assertEquals(
+                "android-36.1-Baklava",
+                new AndroidVersion(36, 1, "Baklava", null, true).getPlatformHashString());
+        assertEquals(
+                "android-37.0-DEV",
+                new AndroidVersion(37, 0, "DEV", null, true).getPlatformHashString());
+    }
+
+    @Test
+    public void platformHashString_extensions() {
+        assertEquals(
+                "android-35-ext99",
+                new AndroidVersion(35, 0).withExtensionLevel(99).getPlatformHashString());
+        assertEquals(
+                "android-36-ext99",
+                new AndroidVersion(36, 0).withExtensionLevel(99).getPlatformHashString());
+        assertEquals(
+                "android-36.1-ext99",
+                new AndroidVersion(36, 1).withExtensionLevel(99).getPlatformHashString());
+        assertEquals(
+                "android-37.0-ext99",
+                new AndroidVersion(37, 0).withExtensionLevel(99).getPlatformHashString());
+    }
+
+    @Test
+    public void platformHashString_previewExtensions() {
+        assertEquals(
+                "android-DEV", new AndroidVersion(35, 0, "DEV", 99, false).getPlatformHashString());
+        assertEquals(
+                "android-36-ext99-DEV",
+                new AndroidVersion(36, 0, "DEV", 99, false).getPlatformHashString());
+        assertEquals(
+                "android-36.1-ext99-DEV",
+                new AndroidVersion(36, 1, "DEV", 99, false).getPlatformHashString());
+        assertEquals(
+                "android-37.0-ext99-DEV",
+                new AndroidVersion(37, 0, "DEV", 99, false).getPlatformHashString());
+    }
+
+    @Test
     public void testGetFeatureLevel() {
         assertEquals(1, AndroidVersion.DEFAULT.getFeatureLevel());
 

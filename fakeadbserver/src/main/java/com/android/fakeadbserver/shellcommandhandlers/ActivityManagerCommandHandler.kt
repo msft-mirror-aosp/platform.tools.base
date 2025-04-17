@@ -32,19 +32,14 @@ class ActivityManagerCommandHandler(shellProtocolType: ShellProtocolType) : Simp
       shellCommand: String,
       shellCommandArgs: String?
     ) {
-        if (shellCommandArgs == null) {
-            statusWriter.writeFail()
-            return
-        }
-
         statusWriter.writeOk()
 
         // Save command to logs so tests can consult them.
-        device.addAmLog(shellCommandArgs)
+        device.addAmLog(shellCommandArgs ?: "")
 
         // Create a service request
         val params = mutableListOf("activity")
-        params.addAll(shellCommandArgs.split(" "))
+        params.addAll(shellCommandArgs?.split(" ") ?: emptyList())
         device.serviceManager.processCommand(params, shellCommandOutput)
     }
 }

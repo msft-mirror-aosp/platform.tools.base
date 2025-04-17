@@ -2,6 +2,7 @@
 @rem Invoked by Android Build Launchcontrol for continuous builds.
 @rem Windows Android Studio Remote Bazel Execution Script.
 setlocal enabledelayedexpansion
+set PATH=%cd%\prebuilts\studio\jdk\jbr-next\win\bin;%PATH%
 
 @rem Expected arguments:
 set OUTDIR=%1

@@ -41,8 +41,11 @@ private const val MAIN_PANEL_ENTITY_CLASS_ANDROIDX =
     "androidx.xr.scenecore.impl.MainPanelEntityImpl"
 private const val JXR_CORE_SESSION_CLASS_ANDROIDX = "androidx.xr.scenecore.Session"
 
+private const val JXR_CORE_SESSION_CLASS_ANDROIDX_RUNTIME = "androidx.xr.runtime.Session"
+
 private const val GET_ENTITIES_OF_TYPE_METHOD = "getEntitiesOfType"
 private const val IS_HIDDEN_METHOD = "isHidden"
+private const val GET_SCENE_METHOD = "getScene"
 
 private const val SURFACE_CONTROL_VIEW_HOST_FIELD = "surfaceControlViewHost"
 private const val M_SURFACE_CONTROL_VIEW_HOST_FIELD = "mSurfaceControlViewHost"
@@ -69,7 +72,11 @@ class XrHelper(private val environment: InspectorEnvironment) {
     }
 
     private fun getXrSessions(): List<Any> {
-        val sessionClass = loadClass(JXR_CORE_SESSION_CLASS_ANDROIDX, JXR_CORE_SESSION_CLASS)
+        val sessionClass = loadClass(
+            JXR_CORE_SESSION_CLASS_ANDROIDX,
+            JXR_CORE_SESSION_CLASS,
+            JXR_CORE_SESSION_CLASS_ANDROIDX_RUNTIME
+        )
         return environment.artTooling().findInstances(sessionClass)
     }
 
@@ -159,18 +166,26 @@ class XrHelper(private val environment: InspectorEnvironment) {
     }
 
     private fun getPanelEntities(session: Any, panelEntityClass: Class<out Any>): List<*> {
-        // First try to get the panels by calling the method on the Session class
-        val panels =
-            runCatching { getPanelEntitiesUsingSessionMethod(session, panelEntityClass) }
-                .getOrNull()
+        // Attempt 1: Try to get the panels using a method defined on the Session class.
+        val sessionMethodEntities = runCatching {
+            getPanelEntitiesUsingSessionMethod(session, panelEntityClass)
+        }.getOrDefault(emptyList<Any>())
 
-        return if (panels.isNullOrEmpty()) {
-            // If no panel was found, get the panels by using the extension method on Session.
-            // This is a change made on later versions of the SceneCore library.
-            getPanelEntitiesUsingExtMethod(session, panelEntityClass)
-        } else {
-            panels
+        if (sessionMethodEntities.isNotEmpty()) {
+            return sessionMethodEntities
         }
+
+        // Attempt 2: Try to get the panels using the extension method on Session.
+        val extensionMethodEntities = runCatching {
+            getPanelEntitiesUsingExtMethod(session, panelEntityClass)
+        }.getOrDefault(emptyList<Any>())
+
+        if (extensionMethodEntities.isNotEmpty()) {
+            return extensionMethodEntities
+        }
+
+        // Attempt 3: If extension method returned a non-empty list, get the panels using the scene method.
+        return getPanelEntitiesUsingScene(session, panelEntityClass)
     }
 
     private fun getPanelEntitiesUsingSessionMethod(
@@ -199,6 +214,28 @@ class XrHelper(private val environment: InspectorEnvironment) {
             )
 
         return getEntitiesOfTypeMethod.invoke(null, session, panelEntityClass) as List<*>
+    }
+
+    private fun getPanelEntitiesUsingScene(
+        session: Any,
+        panelEntityClass: Class<out Any>
+    ): List<*> {
+        // Get the synthetic class where Kotlin places extension functions
+        val sessionExtClass = loadClass(SESSION_EXT_CLASS_ANDROIDX, SESSION_EXT_CLASS)
+
+        // Get the static method representing the extension function
+        val getSceneMethod = sessionExtClass.getDeclaredMethod(GET_SCENE_METHOD, session.javaClass)
+        getSceneMethod.isAccessible = true
+
+        // Invoke the static method to get the Scene object.
+        val scene = getSceneMethod.invoke(null, session)
+
+        // Find the method "getEntitiesOfType" on the scene instance.
+        val sceneClass = scene.javaClass
+        val getEntitiesMethod = sceneClass.getDeclaredMethod(GET_ENTITIES_OF_TYPE_METHOD, Class::class.java)
+        getEntitiesMethod.isAccessible = true
+
+        return getEntitiesMethod.invoke(scene, panelEntityClass) as? List<*> ?: emptyList<Any>()
     }
 
     private fun <T> Any.mapAllFields(block: (filed: Field) -> T): List<T> {
@@ -236,14 +273,23 @@ class XrHelper(private val environment: InspectorEnvironment) {
         return results
     }
 
-    private fun loadClass(androidXClassName: String, google3ClassName: String): Class<*> =
-        try {
-            // Try to load the AndroidX class first.
-            XrHelper::class.java.classLoader!!.loadClass(google3ClassName)
-        } catch (_: ClassNotFoundException) {
-            // As a fallback try to load the class from com.google.vr.
-            XrHelper::class.java.classLoader!!.loadClass(androidXClassName)
+    /**
+     * Attempts to load a class using three possible class name variations.
+     */
+    private fun loadClass(vararg classNames: String): Class<*> {
+        val classLoader = XrHelper::class.java.classLoader
+            ?: throw IllegalStateException("ClassLoader not available.")
+
+        for (name in classNames) {
+            try {
+                return classLoader.loadClass(name)
+            } catch (_: ClassNotFoundException) {
+            }
         }
+
+        // None of the classes could be loaded.
+        throw ClassNotFoundException("Unable to load any of the provided classes: $classNames")
+    }
 
     private fun loadMethod(clazz: Class<*>, name: String, vararg args: Class<*>): Method {
         return clazz.getDeclaredMethod(name, *args).apply { isAccessible = true }

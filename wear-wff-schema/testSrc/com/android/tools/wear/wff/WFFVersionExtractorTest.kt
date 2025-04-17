@@ -15,6 +15,9 @@
  */
 package com.android.tools.wear.wff
 
+import com.android.tools.wear.wff.WFFVersion.WFFVersion1
+import com.android.tools.wear.wff.WFFVersion.WFFVersion2
+import com.android.tools.wear.wff.WFFVersion.WFFVersion3
 import com.android.utils.XmlUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test

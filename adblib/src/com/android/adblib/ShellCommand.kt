@@ -29,6 +29,7 @@ import java.nio.CharBuffer
 import java.nio.charset.Charset
 import java.time.Duration
 import java.util.concurrent.TimeoutException
+import java.util.regex.Pattern
 
 /**
  * Supports customization of various aspects of the execution of a shell command on a device,
@@ -207,6 +208,58 @@ interface ShellCommand<T> {
         SHELL_V2,
         SHELL,
         EXEC
+    }
+
+    companion object {
+
+        const val FILE_SEPARATOR: String = "/"
+
+        /**
+         * Pattern to escape filenames for shell command consumption.
+         * This pattern identifies any special characters that need to be escaped with a
+         * backslash.
+         */
+        private val devicePathEscapePattern: Pattern = Pattern.compile("([\\\\()*+?\"'&$#/\\s])")
+
+        /**
+         * Returns an escaped version of [path] for using in shell commands
+         */
+        fun escapeDevicePath(path: String): String {
+            return mapDevicePathSegments(path) { escapeDeviceFileName(it) }
+        }
+
+        /**
+         * Returns an escaped version of [filename] for using in shell commands
+         */
+        fun escapeDeviceFileName(filename: String): String {
+            return devicePathEscapePattern.matcher(filename).replaceAll("\\\\$1")
+        }
+
+        fun mapDevicePathSegments(path: String, transform: (String) -> String): String {
+            fun StringBuilder.appendSubString(previousSeparatorIndex: Int, separatorIndex: Int) {
+                val startIndex = if (previousSeparatorIndex < 0) 0 else previousSeparatorIndex + 1
+                val endIndex = if (separatorIndex < 0) path.length else separatorIndex
+                val replacement = transform(path.substring(startIndex, endIndex))
+                append(replacement)
+            }
+
+            val result = StringBuilder()
+            var previousSeparatorIndex = -1
+            var offset = 0
+            while (offset < path.length) {
+                val separatorIndex = path.indexOf(FILE_SEPARATOR, offset)
+                result.appendSubString(previousSeparatorIndex, separatorIndex)
+                if (separatorIndex < 0) {
+                    // We are done, exit the loop
+                    break
+                } else {
+                    result.append(FILE_SEPARATOR)
+                    previousSeparatorIndex = separatorIndex
+                    offset = separatorIndex + 1
+                }
+            }
+            return result.toString()
+        }
     }
 }
 

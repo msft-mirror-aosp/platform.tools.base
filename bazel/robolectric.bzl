@@ -33,12 +33,7 @@ def robolectric_test(
         coverage_baseline_enabled = False,
         friends = friends,
         testonly = True,
-        deps = depset(
-            deps +
-            [
-                "//prebuilts/tools/common/m2:androidx-monitor",
-            ],
-        ).to_list(),
+        deps = deps,
         **kwargs
     )
 

@@ -1,6 +1,6 @@
 #!/bin/bash -x
 # Invoked by Android Build Launchcontrol for continuous builds.
-
+export PATH="${PATH}:$(pwd)/prebuilts/studio/jdk/jbr-next/linux/bin/"
 readonly BAZEL_EXITCODE_TEST_FAILURES=3
 export BAZEL_INVOCATION_TIMEOUT="2h"
 

@@ -5,7 +5,7 @@
   <groupId>com.google.example</groupId>
   <artifactId>aa</artifactId>
   <version>3</version>
-  <packaging>jar</packaging>
+  <packaging>aar</packaging>
   <name>AA library</name>
   <dependencies>
   </dependencies>

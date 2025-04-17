@@ -30,6 +30,7 @@ import kotlin.time.DurationUnit
  * that can deal with the simplified stdin/stdout protocol, or the full [ShellV2Protocol].
  */
 interface ShellCommandOutput {
+    val exitCode: Int?
 
     fun writeStdout(bytes: ByteArray)
     fun writeStderr(bytes: ByteArray)
@@ -45,6 +46,20 @@ interface ShellCommandOutput {
     fun writeExitCode(exitCode: Int)
 
     fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int
+
+    /**
+     * Returns number of bytes available in `stdin`, or `-1` if unknown
+     */
+    fun availableStdinByteCount(): Int
+}
+
+fun ShellCommandOutput.readStdinByte(): Int {
+    val temp = ByteArray(1)
+    val count = this.readStdin(temp, 0, 1)
+    if (count < 1) {
+        throw EOFException("stdin has been closed")
+    }
+    return temp[0].toInt()
 }
 
 /**
@@ -78,7 +93,7 @@ class ShellCommandOutputWithDefaultExitCode(val delegate: ShellCommandOutput):
 class ShellCommandOutputWithCachedExitCode(private val delegate: ShellCommandOutput):
     ShellCommandOutput by delegate {
 
-    internal var exitCode = 0
+    override var exitCode = 0
 
     override fun writeExitCode(exitCode: Int) {
         this.exitCode = exitCode
@@ -91,6 +106,9 @@ class ShellCommandOutputWithCachedExitCode(private val delegate: ShellCommandOut
  * the legacy "shell:" ADB service works.
  */
 class LegacyShellOutput(socket: Socket, val device: DeviceState) : ShellCommandOutput {
+
+    override val exitCode: Int?
+        get() = null
 
     private val input = socket.getInputStream()
     private val output = socket.getOutputStream()
@@ -112,6 +130,10 @@ class LegacyShellOutput(socket: Socket, val device: DeviceState) : ShellCommandO
 
     override fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int {
         return input.read(bytes, offset, length)
+    }
+
+    override fun availableStdinByteCount(): Int {
+        return -1
     }
 }
 
@@ -126,6 +148,9 @@ class ExecOutput(socket: Socket, val device: DeviceState) :
     private val input = socket.getInputStream()
     private val output = socket.getOutputStream()
 
+    override val exitCode: Int?
+        get() = null
+
     override fun writeStdout(bytes: ByteArray) {
         if (device.delayStdout != Duration.ZERO) {
             Thread.sleep(device.delayStdout.toLong(DurationUnit.MILLISECONDS))
@@ -143,6 +168,10 @@ class ExecOutput(socket: Socket, val device: DeviceState) :
 
     override fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int {
         return input.read(bytes, offset, length)
+    }
+
+    override fun availableStdinByteCount(): Int {
+        return -1
     }
 }
 
@@ -176,6 +205,8 @@ class ShellV2Output(socket: Socket, val device: DeviceState) : ShellCommandOutpu
     private var currentStdinPacket: ShellV2Protocol.Packet? = null
     private var currentStdinPacketOffset = 0
 
+    override var exitCode: Int? = null
+
     override fun writeStdout(bytes: ByteArray) {
         if (device.delayStdout != Duration.ZERO) {
             Thread.sleep(device.delayStdout.toLong(DurationUnit.MILLISECONDS))
@@ -188,6 +219,7 @@ class ShellV2Output(socket: Socket, val device: DeviceState) : ShellCommandOutpu
     }
 
     override fun writeExitCode(exitCode: Int) {
+        this.exitCode = exitCode
         protocol.writeExitCode(exitCode)
     }
 
@@ -226,5 +258,11 @@ class ShellV2Output(socket: Socket, val device: DeviceState) : ShellCommandOutpu
                 return -1
             }
         }
+    }
+
+    override fun availableStdinByteCount(): Int {
+        return currentStdinPacket?.let {
+            it.bytes.size - currentStdinPacketOffset
+        } ?: -1
     }
 }

@@ -17,6 +17,7 @@ package com.android.zipflinger;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -282,7 +283,9 @@ public class ZipArchive implements Archive {
                 entrySize = spaceToFill;
             } else {
                 // Consume as much as possible while leaving enough for the next LFH entry.
-                entrySize = Ints.USHRT_MAX;
+                entrySize =
+                        LocalFileHeader.VIRTUAL_ENTRY_MAX_SIZE
+                                - LocalFileHeader.VIRTUAL_HEADER_SIZE;
             }
             int size = Math.toIntExact(entrySize);
             ByteBuffer virtualEntry = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);

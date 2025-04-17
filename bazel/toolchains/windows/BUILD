@@ -1,4 +1,6 @@
-load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
+load("@rules_java//java:defs.bzl", "java_runtime")
+load("@rules_python//python:py_runtime.bzl", "py_runtime")
+load("@rules_python//python:py_runtime_pair.bzl", "py_runtime_pair")
 
 package(default_visibility = ["//visibility:public"])
 

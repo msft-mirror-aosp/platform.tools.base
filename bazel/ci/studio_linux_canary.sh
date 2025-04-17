@@ -2,6 +2,7 @@
 #
 # This script runs 'bazel build' as a canary check to validate the continuous
 # integreation system is configurated properly and builds successfully.
+export PATH="${PATH}:$(pwd)/prebuilts/studio/jdk/jbr-next/linux/bin/"
 
 readonly BUILD_NUMBER="${BUILD_NUMBER:-SNAPSHOT}"
 readonly SCRIPT_DIR="$(dirname "$0")/.."

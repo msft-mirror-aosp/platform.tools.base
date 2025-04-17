@@ -15,6 +15,9 @@
  */
 package com.android.zipflinger;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,8 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.zip.Deflater;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ZipFlingerTest extends AbstractZipflingerTest {
     private static final int COMP_SPED = Deflater.BEST_SPEED;
@@ -472,6 +473,41 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         }
 
         verifyArchive(file);
+    }
+
+    // Make sure extra max size strictly obeys the specs.
+    //
+    // The combined length of any
+    // directory record and these three fields SHOULD NOT
+    // generally exceed 65,535 bytes.
+    @Test
+    public void testStrictVirtualEntry() throws IOException {
+        Path path = getTestPath("testStrictVirtualEntry.zip");
+        try (ZipArchive archive = new ZipArchive(path)) {
+            BytesSource source;
+
+            source =
+                    new BytesSource(
+                            new byte
+                                    [(int) Ints.USHRT_MAX
+                                            + LocalFileHeader.LOCAL_FILE_HEADER_SIZE
+                                            - 60],
+                            "1",
+                            COMP_NONE);
+            archive.add(source);
+
+            source = new BytesSource(new byte[1_000], "foo", COMP_NONE);
+            archive.add(source);
+
+            archive.delete("1");
+        }
+
+        // We now have an archive starting with a virtual entry. A hole of USHRT_MAX +
+        // LOCAL_FILE_HEADER_SIZE
+        // should have been filled with a virtual entry at the beginning of the archive. Make sure
+        // it is
+        // compliant.
+        verifyArchive(path);
     }
 
     @Test

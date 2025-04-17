@@ -29,7 +29,7 @@ public class ArchivePathEntry extends ArchiveEntry {
     private long loadAlignment = -1;
     private boolean isCompressed = false;
     private boolean isElf = false;
-    private boolean isSelfOrChildLoadSectionIncompatible = false;
+    private boolean isSelfOrChild16kbIncompatible = false;
 
     public ArchivePathEntry(
             @NonNull Archive archive, @NonNull Path path, @NonNull String pathPrefix) {
@@ -62,13 +62,13 @@ public class ArchivePathEntry extends ArchiveEntry {
     }
 
     @Override
-    public boolean getSelfOrChildLoadSectionIncompatible() {
-        return isSelfOrChildLoadSectionIncompatible;
+    public boolean getSelfOrChild16kbIncompatible() {
+        return isSelfOrChild16kbIncompatible;
     }
 
     @Override
-    public void setSelfOrChildLoadSectionIncompatible(Boolean value) {
-        isSelfOrChildLoadSectionIncompatible = value;
+    public void setSelfOrChild16kbIncompatible(Boolean value) {
+        isSelfOrChild16kbIncompatible = value;
     }
 
     @Override

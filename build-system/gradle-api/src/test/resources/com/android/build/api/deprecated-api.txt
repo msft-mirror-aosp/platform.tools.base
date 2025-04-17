@@ -14,6 +14,8 @@ Deprecated from AGP 8.11.0
   * com.android.build.api.dsl.EmulatorSnapshots.setMaxSnapshotsForTestFailures: void (int)
   * com.android.build.api.dsl.TestOptions.emulatorSnapshots: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots, kotlin.Unit>)
   * com.android.build.api.dsl.TestOptions.getEmulatorSnapshots: com.android.build.api.dsl.EmulatorSnapshots ()
+  * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant, kotlin.Unit>)
+  * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant>)
 Deprecated from AGP 8.9.0
   * com.android.build.api.variant.GeneratesApkBuilder.getDebuggable: boolean ()
 Deprecated from AGP 8.8.0

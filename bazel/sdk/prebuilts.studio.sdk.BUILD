@@ -182,6 +182,12 @@ filegroup(
 )
 
 filegroup(
+    name = "platforms/latest/framework.aidl",
+    srcs = ["@androidsdk//:platforms/android-34/framework.aidl"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "patcher/v4",
     srcs = glob(
         include = ["*/patcher/v4/**"],

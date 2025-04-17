@@ -17,6 +17,7 @@
 package com.android.backup
 
 import com.android.backup.BackupResult.Success
+import com.android.backup.BackupResult.WithoutAppData
 import com.android.backup.BackupService.Companion.APP_DATA_FILE
 import com.android.backup.BackupService.Companion.AUTH_DATA_FILE
 import com.android.backup.BackupService.Companion.METADATA_FILE
@@ -27,9 +28,11 @@ import com.android.backup.BackupService.Companion.TOKEN_FILE
 import com.android.backup.BackupService.Companion.getMetaData
 import com.android.backup.BackupService.Companion.getRestoreToken
 import com.android.backup.ErrorCode.APP_NOT_INSTALLED
+import com.android.backup.ErrorCode.BACKUP_NOT_ENABLED
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
 import com.android.backup.ErrorCode.READ_CONTENT_FAILED
 import com.android.backup.ErrorCode.WRITE_CONTENT_FAILED
+import com.intellij.util.io.delete
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -60,6 +63,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     val adbServices = factory.createAdbServices(serialNumber, listener, BACKUP_STEPS)
     return try {
       with(adbServices) {
+        val tempFile = Files.createTempFile("", ".backup")
         if (!isInstalled(applicationId)) {
           throw BackupException(APP_NOT_INSTALLED, "Application '$applicationId' is not installed")
         }
@@ -69,19 +73,33 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
           initializeTransport(TRANSPORT_DTD)
           try {
             reportProgress("Running backup")
-            adbServices.backupNow(applicationId, type)
+            backupNow(applicationId, type)
             reportProgress("Fetching backup")
-            val tempFile = Files.createTempFile("", ".backup")
             pullBackup(adbServices, BackupMetadata(applicationId, type), tempFile)
-            backupFile.parent.createDirectories()
-            Files.move(tempFile, backupFile, REPLACE_EXISTING)
           } finally {
             reportProgress("Cleaning up")
           }
         }
         reportProgress("Done")
+        val result =
+          when {
+            isBackupEnabled(applicationId) -> Success
+            tempFile.hasAuthData() -> WithoutAppData
+            else ->
+              BackupException(
+                  BACKUP_NOT_ENABLED,
+                  "No data was generated in backup since allowBackup property is false",
+                )
+                .toBackupResult()
+          }
+        if (result is BackupResult.Error) {
+          tempFile.delete()
+        } else {
+          backupFile.parent.createDirectories()
+          Files.move(tempFile, backupFile, REPLACE_EXISTING)
+        }
+        result
       }
-      Success
     } catch (e: Throwable) {
       e.toBackupResult()
     }
@@ -229,4 +247,8 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     const val BACKUP_STEPS = 10
     const val RESTORE_STEPS = 10
   }
+}
+
+private fun Path.hasAuthData(): Boolean {
+  return ZipFile(this.pathString).use { it.getEntry(AUTH_DATA_FILE).size > 0 }
 }

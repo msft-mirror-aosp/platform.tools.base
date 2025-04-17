@@ -1,5 +1,6 @@
 #!/bin/bash -x
 # Invoked by Android Build Launchcontrol for continuous builds.
+export PATH="${PATH}:$(pwd)/prebuilts/studio/jdk/jbr-next/linux/bin/"
 
 # Expected arguments:
 readonly out_dir="$1"
