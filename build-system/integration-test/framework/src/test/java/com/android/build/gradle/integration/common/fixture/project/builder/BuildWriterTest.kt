@@ -69,6 +69,20 @@ class BuildWriterTest {
     }
 
     @Test
+    fun dclStrings() {
+        val p = Person("John", "Doe")
+        val writer =  p.writeBlock(dcl)
+
+        Truth.assertThat(writer.toString()).isEqualTo("""
+            Person {
+              name = "John"
+              surname = "Doe"
+            }
+
+        """.trimIndent())
+    }
+
+    @Test
     fun testPlugins() {
         testWriterOutput(expected = """
             id("plugin1") version "3.2"
@@ -134,6 +148,18 @@ class BuildWriterTest {
         }
     }
 
+    @Test
+    fun testNamedMethodsInDcl() {
+        testWriterOutput(expected = """
+            foo(bar = 12, something = false)
+            foo(bar = 12, something = bar(value = 12))
+
+        """.trimIndent(), dcl) {
+            method("foo", listOf("bar" to 12, "something" to false))
+            method("foo", listOf("bar" to 12, "something" to rawMethod("bar", listOf("value" to 12))))
+        }
+    }
+
     private fun testWriterOutput(expected: String, writer: BuildWriter = kts, action: BuildWriter.() -> Unit) {
         action(writer)
         Truth.assertThat(writer.toString()).isEqualTo(expected)
@@ -143,5 +169,7 @@ class BuildWriterTest {
         get() = KtsBuildWriter()
     private val groovy: BuildWriter
         get() = GroovyBuildWriter()
+    private val dcl: BuildWriter
+        get() = DeclarativeBuildWriter()
 
 }

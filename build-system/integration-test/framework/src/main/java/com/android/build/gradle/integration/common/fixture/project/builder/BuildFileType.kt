@@ -25,4 +25,7 @@ sealed class BuildFileType private constructor(val extension: String) {
     data object KTS: BuildFileType(".kts") {
         override fun getNewWriter(): BuildWriter = KtsBuildWriter()
     }
+    data object DCL: BuildFileType(".dcl") {
+        override fun getNewWriter(): BuildWriter = DeclarativeBuildWriter()
+    }
 }

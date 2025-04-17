@@ -438,6 +438,52 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
         get() = "settings.gradle.kts"
 }
 
+internal class DeclarativeBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
+    override fun newBuilder(indentLevel: Int): BaseBuildWriter = DeclarativeBuildWriter(indentLevel)
+
+    override fun quoteString(value: String): String {
+        return "\"$value\""
+    }
+
+    override fun namedParam(name: String): String = "$name = "
+
+    override fun applyPluginFromClass(pluginClass: String) {
+        throw RuntimeException("Declarative cannot apply plugin by plugin class without version")
+    }
+
+    override fun applyPluginByName(pluginName: String) {
+        throw RuntimeException("Declarative cannot apply plugin by plugin name without version")
+    }
+
+    override fun listOf(value: String): String {
+        return "listOf($value)"
+    }
+
+    override fun setOf(value: String): String {
+        return "setOf($value)"
+    }
+
+    override fun arrayOf(value: String): String {
+        return "arrayOf($value)"
+    }
+
+    override fun mapOf(value: Map<*, *>): String {
+        val mapDeclarationContent = value.entries.joinToString(separator = ", ") { (key, value) ->
+            "${key.toFormattedString()} to ${value.toFormattedString()}"
+        }
+        return "mapOf($mapDeclarationContent)"
+    }
+
+    override fun toIsBooleanName(name: String): String = name
+
+    override fun Class<*>.toClassName() = "${name}::class.java"
+
+    override val buildFileName: String
+        get() = "build.gradle.dcl"
+    override val settingsFileName: String
+        get() = "settings.gradle.dcl"
+}
+
 internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
     override fun newBuilder(indentLevel: Int): BaseBuildWriter = GroovyBuildWriter(indentLevel)
 
