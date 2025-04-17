@@ -99,6 +99,15 @@ class AndroidVersionUtilsTest : TestCase() {
         )
 
         assertEquals(
+            NameDetails("API 36", "\"Baklava\"; Android 16.0"),
+            AndroidVersion(36, 0).getApiNameAndDetails(
+                includeReleaseName = true,
+                includeCodeName = true,
+                includeMinorVersion = false,
+            )
+        )
+
+        assertEquals(
             NameDetails("API 36.0 ext. 31", "\"Baklava\"; Android 16.0"),
             AndroidVersion(36, 0).withExtensionLevel(31).getApiNameAndDetails(
                 includeReleaseName = true,

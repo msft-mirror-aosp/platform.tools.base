@@ -56,8 +56,9 @@ data class NameDetails(
 fun AndroidVersion.getFullApiName(
     includeReleaseName: Boolean = false,
     includeCodeName: Boolean = false,
+    includeMinorVersion: Boolean = true,
 ): String {
-    val nameDetails = getApiNameAndDetails(includeReleaseName, includeCodeName)
+    val nameDetails = getApiNameAndDetails(includeReleaseName, includeCodeName, includeMinorVersion)
 
     if (nameDetails.details != null) {
         return "${nameDetails.name} (${nameDetails.details})"
@@ -95,6 +96,7 @@ fun AndroidVersion.getFullApiName(
 fun AndroidVersion.getApiNameAndDetails(
     includeReleaseName: Boolean = false,
     includeCodeName: Boolean = false,
+    includeMinorVersion: Boolean = true,
 ): NameDetails {
     // See http://source.android.com/source/build-numbers.html
 
@@ -103,7 +105,11 @@ fun AndroidVersion.getApiNameAndDetails(
     }
 
     val name = StringBuilder("API ")
-    name.append(getApiStringWithoutExtension())
+    if (includeMinorVersion) {
+        name.append(getApiStringWithoutExtension())
+    } else {
+        name.append(androidApiLevel.majorVersion)
+    }
     if (!isBaseExtension) {
         name.append(" ext. ").append(extensionLevel)
     }
