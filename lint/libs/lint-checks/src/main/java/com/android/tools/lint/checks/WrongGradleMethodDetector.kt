@@ -91,22 +91,14 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
       val thisType = getTypeReceiverType(ktCall) as? KaClassType ?: return
       if (!thisType.isSubtypeOf(parentType)) {
         val thisTypeString = thisType.classId.asSingleFqName().asString()
-        val parentTypeString = parentType.classId.asSingleFqName().asString()
-
-        // Hotfix for b/405442664
-        if (
-          thisTypeString == "org.gradle.api.NamedDomainObjectContainer" &&
-            parentTypeString == "org.gradle.api.NamedDomainObjectProvider"
-        ) {
-          val thisTypeParameterType = thisType.typeArguments.firstOrNull()?.type
-          val parentParameterType = parentType.typeArguments.firstOrNull()?.type
-          if (thisTypeParameterType == parentParameterType) {
-            return
-          }
-        }
 
         if (statement == FIREBASE_APP_DISTRIBUTION_NAME) {
           reportFirebaseAppDistributionMistake(context, ktCall)
+          return
+        }
+
+        if (!thisTypeString.startsWith("com.android.build.api.dsl.")) {
+          // Limit to our own APIs; see b/405442664 for difficulties in general.
           return
         }
 
