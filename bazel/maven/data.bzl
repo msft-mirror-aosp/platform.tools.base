@@ -1127,6 +1127,7 @@ DATA = [
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.9.2",
     "org.junit:junit-bom:pom:5.9.3",
+    "org.junit.platform:junit-platform-console-standalone:1.12.0",
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
     "org.ow2.asm:asm:9.6",
     "org.ow2.asm:asm-commons:9.6",

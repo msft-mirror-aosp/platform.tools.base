@@ -81003,6 +81003,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.platform.junit-platform-console-standalone_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-console-standalone/1.12.0/junit-platform-console-standalone-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-console-standalone/1.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.platform.junit-platform-engine_1.7.0",
     pom = "repository/org/junit/platform/junit-platform-engine/1.7.0/junit-platform-engine-1.7.0.pom",
     repo_root_path = "repository",
