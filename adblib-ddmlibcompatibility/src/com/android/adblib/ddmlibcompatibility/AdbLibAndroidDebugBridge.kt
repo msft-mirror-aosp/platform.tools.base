@@ -44,7 +44,6 @@ import com.android.ddmlib.TimeoutRemainder
 import com.android.ddmlib.clientmanager.ClientManager
 import com.android.ddmlib.idevicemanager.IDeviceManager
 import com.android.ddmlib.idevicemanager.IDeviceManagerFactory
-import com.android.ddmlib.idevicemanager.IDeviceManagerUtils
 import com.google.common.base.Preconditions
 import com.google.common.base.Throwables
 import com.google.common.collect.ImmutableMap
@@ -861,10 +860,7 @@ class AdbLibAndroidDebugBridge(
         assert(lock.isHeldByCurrentThread)
 
         adblibCompatDeviceManager =
-            AdbLibIDeviceManagerFactory(session).createIDeviceManager(
-                bridgeInstance,
-                IDeviceManagerUtils.createIDeviceManagerListener()
-            )
+            AdbLibIDeviceManagerFactory(session).createIDeviceManager(bridgeInstance)
     }
 
     private fun stopIDeviceManager() {
