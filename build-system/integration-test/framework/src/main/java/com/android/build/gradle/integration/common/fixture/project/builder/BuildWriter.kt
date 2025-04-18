@@ -402,11 +402,15 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
     override fun namedParam(name: String): String = "$name = "
 
     override fun applyPluginFromClass(pluginClass: String) {
-        indent().put("apply plugin: ").put(pluginClass).endLine()
+        val updatedClassString = if(pluginClass.contains("\$"))
+            pluginClass.substringBeforeLast(".") + ".`" + pluginClass.substringAfterLast(".") + "`"
+            else pluginClass
+
+        indent().put("apply<").put(updatedClassString).put(">()").endLine()
     }
 
     override fun applyPluginByName(pluginName: String) {
-        indent().put("apply plugin: ").put(quoteString(pluginName)).endLine()
+        indent().put("id(\"").put(quoteString(pluginName)).put("\")").endLine()
     }
 
     override fun listOf(value: String): String {

@@ -192,6 +192,58 @@ class GradleBuildDefinitionTest {
     }
 
     @Test
+    fun testKtsPlugins() {
+        val folder = writeBuild {
+            buildFileType = BuildFileType.KTS
+            androidApplication { }
+            genericProject(":library") {
+                applyPlugin(PluginType.JAVA_LIBRARY)
+            }
+        }
+
+        checkFile(
+            folder.resolve("build.gradle.kts"),
+            "root build file presence",
+            """
+                plugins {
+                  id("com.android.application") version "${Version.ANDROID_GRADLE_PLUGIN_VERSION}" apply false
+                }
+
+
+            """.trimIndent()
+        )
+
+        checkFile(
+            folder.resolve("app/build.gradle.kts"),
+            "app build file presence",
+            """
+                plugins {
+                  id("com.android.application")
+                }
+
+                android {
+                  namespace = "pkg.name.app"
+                  compileSdk = $DEFAULT_COMPILE_SDK_VERSION
+                }
+
+
+            """.trimIndent()
+        )
+
+        checkFile(
+            folder.resolve("library/build.gradle.kts"),
+            "library build file presence",
+            """
+                plugins {
+                  id("java-library")
+                }
+
+
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun testDependencies() {
         val folder = writeBuild {
             genericProject(":app") {

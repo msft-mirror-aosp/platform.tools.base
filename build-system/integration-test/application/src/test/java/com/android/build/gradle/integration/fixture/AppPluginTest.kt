@@ -20,8 +20,8 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -30,16 +30,27 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.io.File
 
 /**
  * A test that validates injecting custom plugins into a test project via the
  * [GradleRule] fixture.
  */
-class AppPluginTest {
+@RunWith(Parameterized::class)
+class AppPluginTest(private val currentBuildFileType: BuildFileType) {
+
+    companion object {
+        @Suppress("unused") // Used by JUnit via reflection
+        @JvmStatic
+        @get:Parameterized.Parameters(name = "{0}")
+        val modes = listOf(BuildFileType.KTS, BuildFileType.GROOVY)
+    }
 
     @get:Rule
     val rule = GradleRule.from {
+        buildFileType = currentBuildFileType
         androidApplication {
             pluginCallbacks += AppCallback::class.java
 
