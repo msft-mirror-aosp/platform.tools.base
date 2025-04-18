@@ -15,6 +15,7 @@
  */
 package com.android.adblib
 
+import com.android.adblib.CoroutineScopeCache.Key
 import com.android.adblib.impl.CoroutineScopeCacheImpl
 import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.ConcurrentMap
@@ -24,18 +25,18 @@ import java.util.concurrent.ConcurrentMap
  * to a [CoroutineScope].
  *
  * Values can optionally implement [AutoCloseable], in which case these values are
- * [closed][AutoCloseable.close] when removed from the cache or when the cache is
+ * [closed][java.lang.AutoCloseable.close] when removed from the cache or when the cache is
  * closed.
  */
 @IsThreadSafe
-interface CoroutineScopeCache : AutoCloseable {
+abstract class CoroutineScopeCache : AutoCloseable {
 
     /**
      * The scope that defines the lifecycle of this cache, i.e. if the [scope] is
-     * cancelled, the cache is cleared and [AutoCloseable.close] is called
+     * cancelled, the cache is cleared and [java.lang.AutoCloseable.close] is called
      * on all values implementing [AutoCloseable].
      */
-    val scope: CoroutineScope
+    abstract val scope: CoroutineScope
 
     /**
      * Returns the value for the given [key]. If the key is not found in the map,
@@ -49,11 +50,21 @@ interface CoroutineScopeCache : AutoCloseable {
      * **Note**: [getOrPut] and [getOrPutSuspending] use separate in-memory caches
      * internally to prevent conflicting behavior between suspending and
      * non-suspending computations.
-
-     * @see [ConcurrentMap.getOrPut]
      *
+     * @see [ConcurrentMap.getOrPut]
      */
-    fun <T> getOrPut(key: Key<T>, defaultValue: () -> T): T
+    inline fun <T> getOrPut(
+        key: Key<T>,
+        crossinline defaultValue: () -> T
+    ): T {
+        val valueNotPresent = noValueSingleton<T>()
+        val value = getOrDefault(key, valueNotPresent)
+        return if (value === valueNotPresent) {
+            getOrPutWorker(key) { defaultValue() }
+        } else {
+            value
+        }
+    }
 
     /**
      * Suspending version of [getOrPut]: returns the value for the given [key].
@@ -72,10 +83,18 @@ interface CoroutineScopeCache : AutoCloseable {
      * internally to prevent conflicting behavior between suspending and
      * non-suspending computations.
      */
-    suspend fun <T> getOrPutSuspending(
+    suspend inline fun <T> getOrPutSuspending(
         key: Key<T>,
-        defaultValue: suspend CoroutineScope.() -> T
-    ): T
+        crossinline defaultValue: suspend CoroutineScope.() -> T
+    ): T {
+        val noValue = noValueSingleton<T>()
+        val value = getOrSuspendingDefault(key, noValue)
+        return if (value === noValue) {
+            getOrPutSuspendingWorker(key) { defaultValue() }
+        } else {
+            value
+        }
+    }
 
     /**
      * Suspending version of [getOrPut]: returns the value for the given [key].
@@ -95,11 +114,56 @@ interface CoroutineScopeCache : AutoCloseable {
      * internally to prevent conflicting behavior between suspending and
      * non-suspending computations.
      */
-    fun <T> getOrPutSuspending(
+    inline fun <T> getOrPutSuspending(
+        key: Key<T>,
+        crossinline fastDefaultValue: () -> T,
+        crossinline defaultValue: suspend CoroutineScope.() -> T
+    ): T {
+        val noValue = noValueSingleton<T>()
+        val value = getOrSuspendingDefault(key, noValue)
+        return if (value === noValue) {
+            getOrPutSuspendingWorker(key, { fastDefaultValue() }, { defaultValue() })
+        } else {
+            value
+        }
+    }
+
+    /**
+     * Helper method for the [getOrPut] inline extension function
+     */
+    @PublishedApi
+    internal abstract fun <T> getOrPutWorker(key: Key<T>, defaultValue: () -> T): T
+
+    /**
+     * Helper method for the [getOrPutSuspending] inline extension function
+     */
+    @PublishedApi
+    internal abstract suspend fun <T> getOrPutSuspendingWorker(
+        key: Key<T>,
+        defaultValue: suspend CoroutineScope.() -> T
+    ): T
+
+    /**
+     * Helper method for the [getOrPutSuspending] inline extension function
+     */
+    @PublishedApi
+    internal abstract fun <T> getOrPutSuspendingWorker(
         key: Key<T>,
         fastDefaultValue: () -> T,
         defaultValue: suspend CoroutineScope.() -> T
     ): T
+
+    /**
+     * Helper method for the [getOrPut] inline extension function
+     */
+    @PublishedApi
+    internal abstract fun <T> getOrDefault(key: Key<T>, defaultValue: T): T
+
+    /**
+     * Helper method for the [getOrPutSuspending] inline extension function
+     */
+    @PublishedApi
+    internal abstract fun <T> getOrSuspendingDefault(key: Key<T>, defaultValue: T): T
 
     /**
      * Key type for the [CoroutineScopeCache]. Keys should implement [equals] and [hashCode].
@@ -111,7 +175,6 @@ interface CoroutineScopeCache : AutoCloseable {
         val name: String
     )
 
-
     companion object {
         fun create(parentScope: CoroutineScope, description: String): CoroutineScopeCache {
             return CoroutineScopeCacheImpl(parentScope, description)
@@ -122,14 +185,15 @@ interface CoroutineScopeCache : AutoCloseable {
 /**
  * Same as [getOrPut], but guarantees [defaultValue] is executed only once
  */
-fun <T> CoroutineScopeCache.getOrPutSynchronized(
-    key: CoroutineScopeCache.Key<T>,
-    defaultValue: () -> T): T {
-
+inline fun <T: Any> CoroutineScopeCache.getOrPutSynchronized(
+    key: Key<T>,
+    crossinline defaultValue: () -> T
+): T {
     // Note: Using unsafe cast for the "key" is ok, as the "Key" never stores any "T" value, as
     //  "T" is only used as a "marker" to make the "getOrPut" API type safe.
     @Suppress("UNCHECKED_CAST")
-    return getOrPut(key as CoroutineScopeCache.Key<RunOnlyOnce<T>>) {
+    val uncheckedKey = key as Key<RunOnlyOnce<T>>
+    return getOrPut(uncheckedKey) {
         // Note: "getOrPut" may run this block multiple times (in case of concurrent access),
         // but will always a single unique instance of "RunOnlyOnce" (the other ones are
         // discarded).
@@ -137,11 +201,30 @@ fun <T> CoroutineScopeCache.getOrPutSynchronized(
     }.runOnlyOnce(defaultValue)
 }
 
-private class RunOnlyOnce<T>: AutoCloseable {
-    @Volatile
-    private var lazyValue: T? = null
+private val NO_VALUE = Any()
 
-    fun runOnlyOnce(block: () -> T): T {
+@PublishedApi
+internal fun <T> noValueSingleton(): T {
+    // Note: This is a "safe" cast in the sense the default value is just used
+    // as a custom object reference to check if there is an actual value for `key`
+    // in the case. The only requirement is for the default value to never be
+    // present as an actual value.
+    @Suppress("UNCHECKED_CAST")
+    return NO_VALUE as T
+}
+
+@PublishedApi
+internal class RunOnlyOnce<T: Any>: AutoCloseable {
+    @Volatile
+    @PublishedApi
+    internal var lazyValue: T? = null
+
+    inline fun runOnlyOnce(crossinline block: () -> T): T {
+        return lazyValue ?: runOnlyOnceSlow { block() }
+    }
+
+    @PublishedApi
+    internal fun runOnlyOnceSlow(block: () -> T): T {
         // Use "double check locking" to ensure the code is run only once
         // See https://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java
         var localValue = lazyValue
