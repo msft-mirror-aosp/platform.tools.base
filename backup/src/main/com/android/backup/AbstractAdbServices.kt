@@ -245,6 +245,14 @@ abstract class AbstractAdbServices(
     }
   }
 
+  override suspend fun grantPermission(applicationId: String, permission: String) {
+    try {
+      executeCommand("pm grant $applicationId $permission")
+    } catch (e: BackupException) {
+      logger.warn("Failed to restore permission $permission on $applicationId", e)
+    }
+  }
+
   private suspend fun withTestMode(block: suspend () -> Unit) {
     reportProgress("Enabling test mode")
     enableTestMode(true)

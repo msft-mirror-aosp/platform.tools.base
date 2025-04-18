@@ -84,6 +84,8 @@ interface AdbServices {
 
   suspend fun isPlayStoreInstalled(): Boolean
 
+  suspend fun grantPermission(applicationId: String, permission: String)
+
   class AdbOutput(val stdout: String, val stderr: String) {
     val out =
       """

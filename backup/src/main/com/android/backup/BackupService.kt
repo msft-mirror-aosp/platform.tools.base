@@ -58,6 +58,7 @@ interface BackupService {
     const val PM_DATA_FILE = "pm_backup"
     const val APP_DATA_FILE = "app_backup"
     const val AUTH_DATA_FILE = "auth_backup"
+    const val PERMISSIONS_FILE = "permissions"
     const val METADATA_FILE = "metadata.txt"
     const val PROPERTY_APPLICATION_ID = "application-id"
     const val PROPERTY_BACKUP_TYPE = "backup-type"

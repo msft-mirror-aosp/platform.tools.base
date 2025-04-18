@@ -21,6 +21,7 @@ import com.android.backup.BackupResult.WithoutAppData
 import com.android.backup.BackupService.Companion.APP_DATA_FILE
 import com.android.backup.BackupService.Companion.AUTH_DATA_FILE
 import com.android.backup.BackupService.Companion.METADATA_FILE
+import com.android.backup.BackupService.Companion.PERMISSIONS_FILE
 import com.android.backup.BackupService.Companion.PM_DATA_FILE
 import com.android.backup.BackupService.Companion.PROPERTY_APPLICATION_ID
 import com.android.backup.BackupService.Companion.PROPERTY_BACKUP_TYPE
@@ -137,6 +138,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
               clearAppData(applicationId)
               reportProgress("Restoring $applicationId")
               restore(token, applicationId, metadata.backupType)
+              reportProgress("Restoring $applicationId permissions")
+              zip.getPermissions().forEach { permission ->
+                grantPermission(applicationId, permission)
+              }
             }
           }
         } catch (e: IOException) {
@@ -190,6 +195,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
       adbServices.pullFileIntoZip(zip, APP_DATA_FILE)
       try {
         adbServices.pullFileIntoZip(zip, AUTH_DATA_FILE)
+        adbServices.pullFileIntoZip(zip, PERMISSIONS_FILE)
       } catch (e: BackupException) {
         // older versions of GmsCore may not have AUTH backup support
         if (e.errorCode != READ_CONTENT_FAILED) {
@@ -245,10 +251,18 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   companion object {
 
     const val BACKUP_STEPS = 10
-    const val RESTORE_STEPS = 10
+    const val RESTORE_STEPS = 11
   }
 }
 
 private fun Path.hasAuthData(): Boolean {
   return ZipFile(this.pathString).use { it.getEntry(AUTH_DATA_FILE).size > 0 }
+}
+
+internal fun ZipFile.getPermissions(): List<String> {
+  return try {
+    getInputStream(getEntry(PERMISSIONS_FILE)).reader().readLines()
+  } catch (_: Exception) {
+    emptyList()
+  }
 }
