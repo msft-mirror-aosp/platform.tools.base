@@ -102,4 +102,6 @@ interface AdbServices {
   }
 
   suspend fun setTransport(transport: String, verify: Boolean): String
+
+  suspend fun getDebuggableApps(): List<String>
 }

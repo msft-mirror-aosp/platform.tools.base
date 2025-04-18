@@ -945,6 +945,41 @@ class BackupServiceImplTest {
 
     assertThat(backupService.isBackupEnabled("serial", "com.app")).isFalse()
   }
+
+  @Test
+  fun getDebuggableApps(): Unit = runBlocking {
+    val adbServicesFactory =
+      FakeAdbServicesFactory(("com.app")) {
+        it.addCommandOverride(
+          Output(
+            "dumpsys package",
+            """
+              Packages:
+                Package [app1] (3c318f1):
+                  ...
+                  pkgFlags=[ foo bar ]
+                  ...
+                Package [app2] (3c318f1):
+                  ...
+                  pkgFlags=[ foo DEBUGGABLE bar ]
+                  ...
+                Package [app3] (3c318f1):
+                  ...
+                  pkgFlags=[ DEBUGGABLE bar ]
+                  ...
+                Package [app4] (3c318f1):
+                  ...
+                  pkgFlags=[ foo DEBUGGABLE ]
+                  ...
+            """
+              .trimIndent(),
+          )
+        )
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    assertThat(backupService.getDebuggableApps("serial")).containsExactly("app2", "app3", "app4")
+  }
 }
 
 private fun Path.unzip(): Map<String, String> {
