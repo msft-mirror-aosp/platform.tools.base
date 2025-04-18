@@ -101,11 +101,16 @@ internal class UsingJdwpSessionFlowUpdater(
      * retrying as many times as necessary if there is contention on acquiring JDWP sessions
      * to the process.
      */
-    override suspend fun execute(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+    override suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
         coroutineScope {
-            runCatching {
-                executeWorker(this, stateFlow)
-            }.onFailure { t ->
+            // Capture the current scope so that is can be used to launch the coroutine used
+            // to keep the JDWP connection open in case a WAIT packet is received.
+            // (see `launchJdwpSessionHolder`).
+            val processScope = this
+
+            try {
+                collectUpdatesWorker(processScope, stateFlow)
+            } catch (t: Throwable) {
                 logger.logIOCompletionErrors(t)
                 stateFlow.update { current ->
                     current.copy(exception = current.addException(t))
@@ -114,7 +119,7 @@ internal class UsingJdwpSessionFlowUpdater(
         }
     }
 
-    private suspend fun executeWorker(
+    private suspend fun collectUpdatesWorker(
         processScope: CoroutineScope,
         stateFlow: AtomicStateFlow<JdwpProcessProperties>
     ) {
@@ -186,10 +191,12 @@ internal class UsingJdwpSessionFlowUpdater(
                 }
 
                 if (collectState.shouldRetryCollecting) {
-                    logUsage(isSuccess = false,
-                             throwable = throwable,
-                             previouslyFailedCount = previouslyFailedCollectingCount++,
-                             previouslyFailedThrowable = previouslyFailedThrowable)
+                    logUsage(
+                        isSuccess = false,
+                        throwable = throwable,
+                        previouslyFailedCount = previouslyFailedCollectingCount++,
+                        previouslyFailedThrowable = previouslyFailedThrowable
+                    )
                     previouslyFailedThrowable = throwable
 
                     // Delay and retry if we did not collect all properties we want
@@ -199,10 +206,12 @@ internal class UsingJdwpSessionFlowUpdater(
                                 "because previous attempt failed with an error ('${throwable.message}')"
                     }
                 } else {
-                    logUsage(isSuccess = true,
-                             throwable = null, // Do not record a throwable since property collection was successful
-                             previouslyFailedCount = previouslyFailedCollectingCount,
-                             previouslyFailedThrowable = previouslyFailedThrowable)
+                    logUsage(
+                        isSuccess = true,
+                        throwable = null, // Do not record a throwable since property collection was successful
+                        previouslyFailedCount = previouslyFailedCollectingCount,
+                        previouslyFailedThrowable = previouslyFailedThrowable
+                    )
                     collectState.propertiesFlow.update {
                         it.copy(
                             completed = true,

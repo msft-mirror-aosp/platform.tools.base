@@ -24,11 +24,12 @@ import com.android.adblib.tools.debugging.JdwpProcessProperties
 internal interface JdwpProcessPropertiesFlowUpdater {
 
     /**
-     * Updates [stateFlow] with incremental updates to [JdwpProcessProperties]
-     * of a given JDWP [process][JdwpProcessProperties.pid].
+     * Updates [stateFlow] with incremental changes to [JdwpProcessProperties]
+     * of a given JDWP [process][JdwpProcessProperties.pid] for as long as the process
+     * is active.
      *
      * The caller is responsible for cancelling this coroutine function when no
      * more updates are needed, typically when the JDWP process is terminated.
      */
-    suspend fun execute(stateFlow: AtomicStateFlow<JdwpProcessProperties>)
+    suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>)
 }
