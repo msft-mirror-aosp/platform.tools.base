@@ -23,6 +23,7 @@ import com.android.adblib.shellCommand
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE
 import com.android.adblib.tools.debugging.AppProcess
 import com.android.adblib.tools.debugging.JdwpProcess
+import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.rethrowCancellation
@@ -70,7 +71,7 @@ internal class AppProcessNameRetriever(private val process: AppProcess) {
         return withContext(process.scope.coroutineContext) {
             // Wait for the process name to be valid (i.e. not empty)
             val processName = jdwpProcess.propertiesFlow.mapNotNull { props ->
-                val name = props.processName
+                val name = props.processName.getOrNull()
                 if (name.isNullOrEmpty()) {
                     null
                 } else {

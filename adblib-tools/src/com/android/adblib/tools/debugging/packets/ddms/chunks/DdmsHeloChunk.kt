@@ -64,9 +64,9 @@ internal data class DdmsHeloChunk(
      */
     val jvmFlags: String? = null,
     /**
-     * Whether the process is debuggable using native debugger. Always [Boolean.false] if not available.
+     * Whether the process is debuggable using native debugger, or `null` if not available.
      */
-    val isNativeDebuggable: Boolean = false,
+    val isNativeDebuggable: Boolean? = null,
     /**
      * Application package name, or `null` if not available
      */
@@ -108,7 +108,7 @@ internal data class DdmsHeloChunk(
 
             // nativeDebuggable was added in 2016:
             // https://cs.android.com/android/_/android/platform/frameworks/base/+/b68bcbdfe755540f3c21186211d4d9d30d4d0c7a
-            val nativeDebuggable = readOptionalByte(buffer) == 1
+            val nativeDebuggable = readOptionalByte(buffer)?.let { it == 1 }
 
             // Package name was added in 2019:
             // https://cs.android.com/android/_/android/platform/frameworks/base/+/ab720ee1611da9fd4579d1adeb0acd6358b4f424

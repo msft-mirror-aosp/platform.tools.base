@@ -17,6 +17,9 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpProcessProperties.Companion.unsupportedByOlderApi
+import com.android.adblib.tools.debugging.OptionalValue
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
 
 /**
  * A component that asynchronously updates an [AtomicStateFlow] of [JdwpProcessProperties]
@@ -32,4 +35,17 @@ internal interface JdwpProcessPropertiesFlowUpdater {
      * more updates are needed, typically when the JDWP process is terminated.
      */
     suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>)
+
+    companion object {
+        /**
+         * Returns an [OptionalValue] for a process or package name, which may contain "fake names
+         * (see [filterFakeName]).
+         */
+        internal fun OptionalValue.Companion.ofFilteredFakeName(name: String?): OptionalValue<String> {
+            return when (name) {
+                null -> OptionalValue.unsupportedByOlderApi()
+                else -> filterFakeName(name)?.let { of(it) } ?: empty()
+            }
+        }
+    }
 }

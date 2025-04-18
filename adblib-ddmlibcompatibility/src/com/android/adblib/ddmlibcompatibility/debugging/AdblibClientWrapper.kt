@@ -25,10 +25,14 @@ import com.android.adblib.tools.debugging.JdwpCommandProgress
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
+import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.ProfilerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.allocationTracker
+import com.android.adblib.tools.debugging.alsoIfValue
 import com.android.adblib.tools.debugging.executeGarbageCollector
+import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.profiler
@@ -109,7 +113,7 @@ internal class AdblibClientWrapper(
         newProperties: JdwpProcessProperties,
         newProxyStatus: JdwpProxySocketServerStatus,
     ) {
-        fun <T> hasChanged(x: T?, y: T?): Boolean {
+        fun <T: Any> hasChanged(x: OptionalValue<T>, y: OptionalValue<T>): Boolean {
             return x != y
         }
 
@@ -139,7 +143,7 @@ internal class AdblibClientWrapper(
         }
 
         // Debugger status change is handled through its own callback
-        if (hasChanged(previousDebuggerStatus, newDebuggerStatus)) {
+        if (previousDebuggerStatus != newDebuggerStatus) {
             this.clientData.debuggerConnectionStatus = newDebuggerStatus
             @Suppress("DeferredResultUnused")
             trackerHost.postClientUpdated(
@@ -155,22 +159,22 @@ internal class AdblibClientWrapper(
         newProxyStatus: JdwpProxySocketServerStatus
     ) {
         val names = ClientData.Names(
-            newProperties.processName ?: "",
-            newProperties.userId,
-            newProperties.packageName
+            newProperties.processName.getOrNull() ?: "",
+            newProperties.userId.getOrNull(),
+            newProperties.packageName.getOrNull()
         )
         // For Android R+ wait for packageName to become available before setting names.
         // This is needed to maintain backwards compatibility.  If we rely on "app-info" for
         // package and process names, the package name often arrives after the process name.
-        if (trackerHost.device.deviceProperties().api() < 30 || newProperties.packageName != null) {
+        if (trackerHost.device.deviceProperties().api() < 30 || newProperties.packageName.hasValue) {
             clientWrapper.clientData.setNames(names)
         }
-        clientWrapper.clientData.vmIdentifier = newProperties.vmIdentifier
-        clientWrapper.clientData.abi = newProperties.instructionSetDescription
-        clientWrapper.clientData.jvmFlags = newProperties.jvmFlags
-        clientWrapper.clientData.isNativeDebuggable = newProperties.isNativeDebuggable
-        if (newProperties.features.isNotEmpty()) {
-            clientWrapper.addFeatures(newProperties.features)
+        clientWrapper.clientData.vmIdentifier = newProperties.vmIdentifier.getOrNull()
+        clientWrapper.clientData.abi = newProperties.instructionSetDescription.getOrNull()
+        clientWrapper.clientData.jvmFlags = newProperties.jvmFlags.getOrNull()
+        clientWrapper.clientData.isNativeDebuggable = newProperties.isNativeDebuggable.getOrDefault(false)
+        newProperties.features.alsoIfValue {
+            clientWrapper.addFeatures(it)
         }
 
         // "DebuggerStatus" is trickier: order is important
@@ -179,10 +183,10 @@ internal class AdblibClientWrapper(
             newProxyStatus.isExternalDebuggerAttached -> ClientData.DebuggerStatus.ATTACHED
 
             // This comes from seeing a DDMS_WAIT packet on the JDWP connection
-            newProperties.isWaitingForDebugger -> ClientData.DebuggerStatus.WAITING
+            newProperties.isWaitingForDebugger.getOrDefault(false) -> ClientData.DebuggerStatus.WAITING
 
             // This comes from any error during process properties polling
-            newProperties.exception != null -> ClientData.DebuggerStatus.ERROR
+            newProperties.exception.getOrNull() != null -> ClientData.DebuggerStatus.ERROR
 
             // This happens when process properties have been collected and also
             // when there is no active jdwp debugger connection

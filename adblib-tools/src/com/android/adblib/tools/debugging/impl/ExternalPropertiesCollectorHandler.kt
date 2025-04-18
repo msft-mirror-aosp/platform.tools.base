@@ -19,6 +19,7 @@ import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.ExternalJdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.mergeWith
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -46,7 +47,7 @@ internal class ExternalPropertiesCollectorHandler(
                 val newProperties = localProperties.mergeWith(externalProperties)
 
                 // Stop local property collector so that it does not hog a JDWP session
-                if (newProperties.completed) {
+                if (newProperties.completed.getOrDefault(false)) {
                     logger.debug { "Cancelling local collector because collection is completed" }
                     localCollectorJob.cancel("Cancellation due to external collector completion")
                 }

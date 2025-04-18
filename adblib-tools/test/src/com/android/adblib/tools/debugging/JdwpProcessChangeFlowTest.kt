@@ -56,7 +56,7 @@ class JdwpProcessChangeFlowTest {
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
             // Wait for all process properties to get populated
-            yieldUntil { processes[0].jdwpProcess!!.properties.completed }
+            yieldUntil { processes[0].jdwpProcess!!.properties.completed.getOrDefault(false) }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
@@ -117,11 +117,11 @@ class JdwpProcessChangeFlowTest {
                 // remaining items in the processUpdatesList should be about property updates
                 yieldUntil {
                     (processUpdatesList.drop(1).last() as? JdwpProcessChange.Updated)?.processInfo
-                        ?.properties?.packageName != null
+                        ?.properties?.packageName?.getOrNull() != null
                 }
                 val lastUpdate = processUpdatesList.last() as JdwpProcessChange.Updated
                 assertTrue(lastUpdate.processInfo.properties.pid == pid10)
-                assertEquals("a.b.c.e", lastUpdate.processInfo.properties.packageName)
+                assertEquals("a.b.c.e", lastUpdate.processInfo.properties.packageName.getOrNull())
                 fakeAdb.disconnectDevice(fakeDevice.deviceId)
             }
 
@@ -142,7 +142,7 @@ class JdwpProcessChangeFlowTest {
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
             // Wait for all process properties to get populated
-            yieldUntil { processes[0].jdwpProcess!!.properties.completed }
+            yieldUntil { processes[0].jdwpProcess!!.properties.completed.getOrDefault(false) }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()

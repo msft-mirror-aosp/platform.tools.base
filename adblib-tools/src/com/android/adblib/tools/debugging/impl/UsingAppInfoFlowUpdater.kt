@@ -25,10 +25,12 @@ import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.addException
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.isAppInfoSupported
+import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
@@ -97,12 +99,13 @@ internal class UsingAppInfoFlowUpdater(
                 logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
                 stateFlow.update { properties ->
                     properties.copy(
-                        processName = filterFakeName(appProcessEntry.processName) ?: properties.processName,
-                        packageName = filterFakeName(appProcessEntry.packageNames?.firstOrNull()) ?: properties.packageName,
-                        userId = appProcessEntry.userId32 ?: properties.userId,
-                        instructionSet = appProcessEntry.instructionSet,
-                        isWaitingForDebugger = appProcessEntry.waitingForDebugger ?: properties.isWaitingForDebugger,
-                        jvmFlags = legacyJvmFlags()
+                        processName = OptionalValue.ofFilteredFakeName(appProcessEntry.processName).orElse(properties.processName),
+                        packageName = OptionalValue.ofFilteredFakeName(appProcessEntry.packageNames?.firstOrNull()).orElse(properties.packageName),
+                        userId = OptionalValue.ofNullable(appProcessEntry.userId32).orElse(properties.userId),
+                        instructionSet = OptionalValue.of(appProcessEntry.instructionSet).orElse(properties.instructionSet),
+                        isWaitingForDebugger = OptionalValue.ofNullable(appProcessEntry.waitingForDebugger).orElse(properties.isWaitingForDebugger),
+                        isNativeDebuggable = OptionalValue.of(false),
+                        jvmFlags = OptionalValue.legacyJvmFlags()
                     )
                 }
             }
@@ -115,8 +118,8 @@ internal class UsingAppInfoFlowUpdater(
                     logger.debug { "Updating process properties with vmInfo=$vmInfo" }
                     stateFlow.update {
                         it.copy(
-                            vmIdentifier = vmInfo.vmIdentifier,
-                            features = vmInfo.features
+                            vmIdentifier = OptionalValue.of(vmInfo.vmIdentifier).orElse(it.vmIdentifier),
+                            features = OptionalValue.of(vmInfo.features).orElse(it.features)
                         )
                     }
                 }
@@ -135,7 +138,9 @@ internal class UsingAppInfoFlowUpdater(
             logger.logIOCompletionErrors(throwable)
             stateFlow.update {
                 it.copy(
-                    exception = it.addException(throwable)
+                    exception = it.addException(throwable),
+                    vmIdentifier =  OptionalValue.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
+                    features = OptionalValue.ofError<List<String>>("Error collecting features from device capabilities").orElse(it.features)
                 )
             }
         }
@@ -145,31 +150,31 @@ internal class UsingAppInfoFlowUpdater(
         // Wait for all properties to be set
         stateFlow.asStateFlow().first { properties ->
             val completed =
-                (properties.processName != null) &&
-                        (properties.packageName != null) &&
-                        (properties.userId != null) &&
-                        (properties.vmIdentifier != null) &&
-                        (properties.jvmFlags != null) &&
-                        (properties.instructionSetDescription != null) &&
-                        (properties.instructionSet != null) &&
-                        (properties.features.isNotEmpty())
+                (properties.processName.hasValue) &&
+                        (properties.packageName.hasValue) &&
+                        (properties.userId.hasValue) &&
+                        (properties.vmIdentifier.hasValue) &&
+                        (properties.jvmFlags.hasValue) &&
+                        (properties.instructionSetDescription.hasValue) &&
+                        (properties.instructionSet.hasValue) &&
+                        (properties.features.hasValue)
 
             completed
         }
 
         logger.debug { "Setting `completed` to `true` as all properties are set" }
-        stateFlow.update { it.copy(completed = true) }
+        stateFlow.update { it.copy(completed = OptionalValue.of(true)) }
     }
 
     /**
      * We need set the [JdwpProcessProperties.jvmFlags] property to its legacy value,
      * which is not supported by `track-app`.
      */
-    private fun legacyJvmFlags(): String {
-        return "CheckJNI=true"
-    }
+    private fun OptionalValue.Companion.legacyJvmFlags(): OptionalValue<String> = legacyJvmFlagsSingleton
 
     companion object {
+        private val legacyJvmFlagsSingleton = OptionalValue.of("CheckJNI=true")
+
         private val VmInfoRetrieverKey = CoroutineScopeCache.Key<VmInfoRetriever>("TrackApp")
 
         private val ConnectedDevice.vmInfoRetriever: VmInfoRetriever

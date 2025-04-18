@@ -32,11 +32,14 @@ import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
+import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.SharedJdwpSession
-import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.fromLegacyDescription
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
+import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.getOrNull
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
+import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
@@ -56,7 +59,6 @@ import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.receiveWhile
 import com.android.adblib.tools.debugging.rethrowCancellation
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CancellationException
@@ -107,15 +109,7 @@ internal class UsingJdwpSessionFlowUpdater(
             // to keep the JDWP connection open in case a WAIT packet is received.
             // (see `launchJdwpSessionHolder`).
             val processScope = this
-
-            try {
-                collectUpdatesWorker(processScope, stateFlow)
-            } catch (t: Throwable) {
-                logger.logIOCompletionErrors(t)
-                stateFlow.update { current ->
-                    current.copy(exception = current.addException(t))
-                }
-            }
+            collectUpdatesWorker(processScope, stateFlow)
         }
     }
 
@@ -214,8 +208,8 @@ internal class UsingJdwpSessionFlowUpdater(
                     )
                     collectState.propertiesFlow.update {
                         it.copy(
-                            completed = true,
-                            exception = exceptionToRecord
+                            completed = OptionalValue.of(true),
+                            exception = exceptionToRecord?.let { OptionalValue.of(exceptionToRecord) } ?: OptionalValue.empty()
                         )
                     }
                     logger.debug { "Successfully retrieved JDWP process properties: ${stateFlow.value}" }
@@ -223,7 +217,7 @@ internal class UsingJdwpSessionFlowUpdater(
                 }
             }
         }
-        assert(stateFlow.value.completed) {
+        assert(stateFlow.value.completed.getOrDefault(false)) {
             "Properties flow should have been set to `completed`"
         }
     }
@@ -376,14 +370,15 @@ internal class UsingJdwpSessionFlowUpdater(
         }
         logger.debug { "`HELO` reply: $heloChunk" }
         collectState.propertiesFlow.update {
+            @Suppress("DEPRECATION")
             it.copy(
-                processName = filterFakeName(heloChunk.processName),
-                userId = heloChunk.userId,
-                packageName = filterFakeName(heloChunk.packageName),
-                vmIdentifier = heloChunk.vmIdentifier,
-                instructionSet = convertLegacyDescriptionToInstructionSet(heloChunk.abi),
-                jvmFlags = heloChunk.jvmFlags,
-                isNativeDebuggable = heloChunk.isNativeDebuggable
+                processName = OptionalValue.ofFilteredFakeName(heloChunk.processName).orElse(it.processName),
+                userId = OptionalValue.ofNullable(heloChunk.userId).orElse(it.userId),
+                packageName = OptionalValue.ofFilteredFakeName(heloChunk.packageName).orElse(it.packageName),
+                vmIdentifier = OptionalValue.of(heloChunk.vmIdentifier).orElse(it.vmIdentifier),
+                instructionSet = OptionalValue.ofNullable(convertLegacyDescriptionToInstructionSet(heloChunk.abi)).orElse(it.instructionSet),
+                jvmFlags = OptionalValue.ofNullable(heloChunk.jvmFlags).orElse(it.jvmFlags),
+                isNativeDebuggable = OptionalValue.ofNullable(heloChunk.isNativeDebuggable).orElse(it.isNativeDebuggable)
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
@@ -403,7 +398,11 @@ internal class UsingJdwpSessionFlowUpdater(
             DdmsFeatChunk.parse(featChunkView, workBuffer)
         }
         logger.debug { "`FEAT` reply: $featChunk" }
-        collectState.propertiesFlow.update { it.copy(features = featChunk.features) }
+        collectState.propertiesFlow.update {
+            it.copy(
+                features = OptionalValue.of(featChunk.features)
+            )
+        }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
     }
 
@@ -417,7 +416,7 @@ internal class UsingJdwpSessionFlowUpdater(
         }
         logger.debug { "`WAIT` command: $waitChunk" }
         collectState.propertiesFlow.update {
-            it.copy(isWaitingForDebugger = true)
+            it.copy(isWaitingForDebugger = OptionalValue.of(true))
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
     }
@@ -433,9 +432,9 @@ internal class UsingJdwpSessionFlowUpdater(
         logger.debug { "`APNM` command: $apnmChunk" }
         collectState.propertiesFlow.update {
             it.copy(
-                processName = filterFakeName(apnmChunk.processName),
-                userId = apnmChunk.userId,
-                packageName = filterFakeName(apnmChunk.packageName)
+                processName = OptionalValue.ofFilteredFakeName(apnmChunk.processName).orElse(it.processName),
+                userId = OptionalValue.ofNullable(apnmChunk.userId).orElse(it.userId),
+                packageName = OptionalValue.ofFilteredFakeName(apnmChunk.packageName).orElse(it.packageName),
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
@@ -512,7 +511,9 @@ internal class UsingJdwpSessionFlowUpdater(
                 // we also release the SharedJdwpSession in case another debug session
                 // needs to be started later on.
                 proxyStatusFlow.waitUntil { isExternalDebuggerAttached }
-                propertiesFlow.update { it.copy(isWaitingForDebugger = false) }
+                propertiesFlow.update {
+                    it.copy(isWaitingForDebugger = OptionalValue.of(false))
+                }
                 proxyStatusFlow.waitWhile { isExternalDebuggerAttached }
 
                 logger.debug { "JDWP session holder: JDWP session about to be released as debugger has detached" }
@@ -564,7 +565,7 @@ internal class UsingJdwpSessionFlowUpdater(
     }
 
     private fun JdwpProcessProperties.summaryForLogging() =
-        "processName=${processName ?: "<not yet received>"}, isWaitingForDebugger=${isWaitingForDebugger}"
+        "processName=${processName.getOrNull() ?: "<not yet received>"}, isWaitingForDebugger=${isWaitingForDebugger}"
 
     /**
      * List of DDMS requests sent to the Android VM.
@@ -605,7 +606,7 @@ internal class UsingJdwpSessionFlowUpdater(
             get() {
                 return heloReplyReceived &&
                         featReplyReceived &&
-                        propertiesFlow.value.processName != null
+                        propertiesFlow.value.processName.hasValue
             }
     }
 }

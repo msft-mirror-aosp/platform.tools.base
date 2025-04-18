@@ -96,7 +96,7 @@ class DdmsHeloChunkTest {
         Assert.assertEquals(null, heloChunk.userId)
         Assert.assertEquals(null, heloChunk.abi)
         Assert.assertEquals(null, heloChunk.jvmFlags)
-        Assert.assertEquals(false, heloChunk.isNativeDebuggable)
+        Assert.assertEquals(null, heloChunk.isNativeDebuggable)
         Assert.assertEquals(null, heloChunk.packageName)
     }
 
@@ -132,7 +132,7 @@ class DdmsHeloChunkTest {
         Assert.assertEquals(10, heloChunk.userId)
         Assert.assertEquals(null, heloChunk.abi)
         Assert.assertEquals(null, heloChunk.jvmFlags)
-        Assert.assertEquals(false, heloChunk.isNativeDebuggable)
+        Assert.assertEquals(null, heloChunk.isNativeDebuggable)
         Assert.assertEquals(null, heloChunk.packageName)
     }
 
@@ -169,7 +169,7 @@ class DdmsHeloChunkTest {
         Assert.assertEquals(10, heloChunk.userId)
         Assert.assertEquals("x64", heloChunk.abi)
         Assert.assertEquals(null, heloChunk.jvmFlags)
-        Assert.assertEquals(false, heloChunk.isNativeDebuggable)
+        Assert.assertEquals(null, heloChunk.isNativeDebuggable)
         Assert.assertEquals(null, heloChunk.packageName)
     }
 
@@ -207,7 +207,7 @@ class DdmsHeloChunkTest {
         Assert.assertEquals(10, heloChunk.userId)
         Assert.assertEquals("x64", heloChunk.abi)
         Assert.assertEquals("blah", heloChunk.jvmFlags)
-        Assert.assertEquals(false, heloChunk.isNativeDebuggable)
+        Assert.assertEquals(null, heloChunk.isNativeDebuggable)
         Assert.assertEquals(null, heloChunk.packageName)
     }
 

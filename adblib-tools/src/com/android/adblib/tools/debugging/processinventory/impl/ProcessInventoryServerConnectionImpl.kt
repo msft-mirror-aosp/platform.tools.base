@@ -25,6 +25,8 @@ import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.OptionalValue
+import com.android.adblib.tools.debugging.alsoIfValue
 import com.android.adblib.tools.debugging.mergeWith
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
@@ -258,20 +260,20 @@ private class ProcessInventoryServerConnectionForDevice(
      * into a [JdwpProcessProperties] for internal use.
      */
     private fun ProcessInventoryServerProto.JdwpProcessInfo.toJdwpProcessProperties(): JdwpProcessProperties {
-        val source = this
+        val sourceProto = this
         return JdwpProcessProperties(
-            pid = source.pid,
-            completed = if (source.completed) source.completed else false,
-            exception = if (source.hasCompletedException()) source.completedException.toThrowable() else null,
-            processName = if (source.hasProcessName()) source.processName else null,
-            packageName = if (source.hasPackageName()) source.packageName else null,
-            userId = if (source.hasUserId()) source.userId else null,
-            vmIdentifier = if (source.hasVmIdentifier()) source.vmIdentifier else null,
-            instructionSet = if (source.hasInstructionSet()) InstructionSet.fromString(source.instructionSet) else null,
-            jvmFlags = if (source.hasJvmFlags()) source.jvmFlags else null,
-            isNativeDebuggable = if (source.hasNativeDebuggable()) source.nativeDebuggable else false,
-            isWaitingForDebugger = if (source.hasWaitingForDebugger()) source.waitingForDebugger else false,
-            features = if (source.hasFeatures()) source.features.featureList else emptyList(),
+            pid = sourceProto.pid,
+            completed = if (sourceProto.completed) OptionalValue.of(sourceProto.completed) else OptionalValue.empty(),
+            exception = if (sourceProto.hasCompletedException()) OptionalValue.of(sourceProto.completedException.toThrowable()) else OptionalValue.empty(),
+            processName = if (sourceProto.hasProcessName()) OptionalValue.of(sourceProto.processName) else OptionalValue.empty(),
+            packageName = if (sourceProto.hasPackageName()) OptionalValue.of(sourceProto.packageName) else OptionalValue.empty(),
+            userId = if (sourceProto.hasUserId()) OptionalValue.of(sourceProto.userId) else OptionalValue.empty(),
+            vmIdentifier = if (sourceProto.hasVmIdentifier()) OptionalValue.of(sourceProto.vmIdentifier) else OptionalValue.empty(),
+            instructionSet = if (sourceProto.hasInstructionSet()) OptionalValue.of(InstructionSet.fromString(sourceProto.instructionSet)) else OptionalValue.empty(),
+            jvmFlags = if (sourceProto.hasJvmFlags()) OptionalValue.of(sourceProto.jvmFlags) else OptionalValue.empty(),
+            isNativeDebuggable = if (sourceProto.hasNativeDebuggable()) OptionalValue.of(sourceProto.nativeDebuggable) else OptionalValue.empty(),
+            isWaitingForDebugger = if (sourceProto.hasWaitingForDebugger()) OptionalValue.of(sourceProto.waitingForDebugger) else OptionalValue.empty(),
+            features = if (sourceProto.hasFeatures()) OptionalValue.of(sourceProto.features.featureList) else OptionalValue.empty(),
         )
     }
 
@@ -280,23 +282,23 @@ private class ProcessInventoryServerConnectionForDevice(
      * [ProcessInventoryServerProto.JdwpProcessInfo] for sending to the inventory server.
      */
     private fun JdwpProcessProperties.toJdwpProcessInfoProto(): ProcessInventoryServerProto.JdwpProcessInfo {
-        val source = this
+        val sourceProperties = this
         return ProcessInventoryServerProto.JdwpProcessInfo
             .newBuilder()
             .also { proto ->
-                source.pid.also { proto.pid = it }
-                source.completed.also { proto.completed = it }
-                source.exception?.also { proto.completedException = it.toExceptionProto() }
-                source.processName?.also { proto.processName = it }
-                source.packageName?.also { proto.packageName = it }
-                source.userId?.also { proto.userId = it }
-                source.vmIdentifier?.also { proto.vmIdentifier = it }
-                source.instructionSet?.also { proto.instructionSet = it.text }
-                source.jvmFlags?.also { proto.jvmFlags = it }
+                sourceProperties.pid.also { proto.pid = it }
+                sourceProperties.completed.alsoIfValue { proto.completed = it }
+                sourceProperties.exception.alsoIfValue { proto.completedException = it.toExceptionProto() }
+                sourceProperties.processName.alsoIfValue { proto.processName = it }
+                sourceProperties.packageName.alsoIfValue { proto.packageName = it }
+                sourceProperties.userId.alsoIfValue { proto.userId = it }
+                sourceProperties.vmIdentifier.alsoIfValue { proto.vmIdentifier = it }
+                sourceProperties.instructionSet.alsoIfValue { proto.instructionSet = it.text }
+                sourceProperties.jvmFlags.alsoIfValue { proto.jvmFlags = it }
                 @Suppress("DEPRECATION")
-                source.isNativeDebuggable.also { proto.nativeDebuggable = it }
-                source.isWaitingForDebugger.also { proto.waitingForDebugger = it }
-                source.features.also {
+                sourceProperties.isNativeDebuggable.alsoIfValue { proto.nativeDebuggable = it }
+                sourceProperties.isWaitingForDebugger.alsoIfValue { proto.waitingForDebugger = it }
+                sourceProperties.features.alsoIfValue {
                     if (it.isNotEmpty()) proto.features =
                         it.toFeaturesProto()
                 }

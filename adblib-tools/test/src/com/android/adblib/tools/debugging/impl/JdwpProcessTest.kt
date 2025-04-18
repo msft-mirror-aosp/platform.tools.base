@@ -28,6 +28,8 @@ import com.android.adblib.testingutils.TestingAdbUsageTracker
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.flow
+import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
@@ -126,7 +128,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         )
 
         // Act: Start collecting properties by accessing `properties`
-        yieldUntil { process.properties.completed }
+        yieldUntil { process.properties.completed.getOrDefault(false) }
 
         // Assert
         val properties = process.properties
@@ -143,7 +145,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         )
 
         // Act
-        yieldUntil { process.properties.completed }
+        yieldUntil { process.properties.completed.getOrDefault(false) }
 
         // Assert
         assertTrue(process.device.isAppInfoSupported())
@@ -169,7 +171,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
         // Act
         val start = Instant.now()
-        yieldUntil { process.properties.processName != null }
+        yieldUntil { process.properties.processName.getOrNull() != null }
         val waitTime = Duration.between(start, Instant.now())
 
         // Assert: We waited (close to) "delay" for "completed" to get set
@@ -199,7 +201,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
             // Act
             val start = Instant.now()
-            yieldUntil { process.properties.processName != null }
+            yieldUntil { process.properties.processName.getOrNull() != null }
             val waitTime = Duration.between(start, Instant.now())
 
             // Assert: We waited (close to) "delay" for "completed" to get set
@@ -221,7 +223,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
             Duration.ofSeconds(60) // long timeout
         )
-        yieldUntil { process.properties.completed }
+        yieldUntil { process.properties.completed.getOrDefault(false) }
         delay(500) // give JDWP session holder time to launch
 
         // Assert: The JDWP session should still be in-use, since we received a `WAIT` packet
@@ -243,14 +245,14 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             longTimeout
         )
         yieldUntil {
-            process.properties.processName != null &&
-                    process.properties.features.isNotEmpty()
+            process.properties.processName.getOrNull() != null &&
+                    process.properties.features.getOrDefault(emptyList()).isNotEmpty()
         }
 
         // Assert
         val properties = process.properties
-        assertNull(properties.exception)
-        assertFalse(properties.completed)
+        assertNull(properties.exception.getOrNull())
+        assertFalse(properties.completed.getOrDefault(false))
     }
 
     @Test
@@ -263,7 +265,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             Duration.ofSeconds(50)
         )
         // Start collecting properties for a very long time (50 seconds)
-        yieldUntil { firstProcess.properties.processName != null }
+        yieldUntil { firstProcess.properties.processName.getOrNull() != null }
 
         // Act: Set short timeout and observe we get a timeout exception
         // Also set a very short retry timeout, so that we retry when the first
@@ -296,7 +298,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             firstProcess.close()
         }
 
-        yieldUntil { process.properties.completed }
+        yieldUntil { process.properties.completed.getOrDefault(false) }
 
         // Assert
         val properties = process.properties
@@ -322,7 +324,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
         // Assert
         val properties = process.properties
-        assertFalse(properties.completed)
+        assertFalse(properties.completed.getOrDefault(false))
     }
 
     @Test
@@ -359,7 +361,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
         // Act
         // Start collecting properties for a very long time (50 seconds)
-        yieldUntil { firstProcess.properties.processName != null }
+        yieldUntil { firstProcess.properties.processName.getOrNull() != null }
 
         // Prepare/Act: Create a second `JdwpProcessImpl` to monitor the same process. Set the
         // timeouts in a such a way that it will quickly timeout the first time and will retry
@@ -395,7 +397,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             firstProcess.close()
         }
 
-        yieldUntil { process.properties.completed }
+        yieldUntil { process.properties.completed.getOrDefault(false) }
 
         // Assert: We should have logged 2 adb usage events from the `process`. Note that
         // we have closed `firstProcess` before it could have logged any adb usage events.
@@ -464,19 +466,19 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         isFromAppInfo: Boolean = false
     ) {
         assertEquals(10, properties.pid)
-        assertEquals("p1", properties.processName)
-        assertEquals(2, properties.userId)
-        assertEquals("pkg", properties.packageName)
+        assertEquals("p1", properties.processName.getOrNull())
+        assertEquals(2, properties.userId.getOrNull())
+        assertEquals("pkg", properties.packageName.getOrNull())
         if (isFromAppInfo) {
-            assertEquals("Dalvik 2.1.0", properties.vmIdentifier)
+            assertEquals("Dalvik 2.1.0", properties.vmIdentifier.getOrNull())
         } else {
-            assertEquals("FakeVM", properties.vmIdentifier)
+            assertEquals("FakeVM", properties.vmIdentifier.getOrNull())
         }
-        assertEquals("64-bit (x86_64)", properties.instructionSetDescription)
-        assertEquals(InstructionSet.X86_64, properties.instructionSet)
-        assertEquals("CheckJNI=true", properties.jvmFlags)
+        assertEquals("64-bit (x86_64)", properties.instructionSetDescription.getOrNull())
+        assertEquals(InstructionSet.X86_64, properties.instructionSet.getOrNull())
+        assertEquals("CheckJNI=true", properties.jvmFlags.getOrNull())
         @Suppress("DEPRECATION")
-        assertFalse(properties.isNativeDebuggable)
+        assertFalse(properties.isNativeDebuggable.getOrDefault(false))
         if (isFromAppInfo) {
             // When using `app_info`, the list of features comes from
             // `am capabilities`
@@ -491,7 +493,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
                     "opengl-tracing",
                     "view-hierarchy",
                     "support_boot_stages",
-                ), properties.features
+                ), properties.features.getOrNull()
             )
         } else {
             assertEquals(
@@ -503,27 +505,27 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
                     "hprof-heap-dump-streaming",
                     "method-trace-profiling-streaming",
                     "opengl-tracing"
-                ), properties.features
+                ), properties.features.getOrNull()
             )
         }
-        assertNull(properties.exception)
-        assertTrue(properties.completed)
+        assertNull(properties.exception.getOrNull())
+        assertTrue(properties.completed.getOrDefault(false))
     }
 
     private fun assertProcessPropertiesIsSkeleton(properties: JdwpProcessProperties) {
         assertEquals(10, properties.pid)
-        assertNull(properties.processName)
-        assertNull(properties.userId)
-        assertNull(properties.packageName)
-        assertNull(properties.vmIdentifier)
-        assertNull(properties.instructionSetDescription)
-        assertNull(properties.instructionSet)
-        assertNull(properties.jvmFlags)
+        assertNull(properties.processName.getOrNull())
+        assertNull(properties.userId.getOrNull())
+        assertNull(properties.packageName.getOrNull())
+        assertNull(properties.vmIdentifier.getOrNull())
+        assertNull(properties.instructionSetDescription.getOrNull())
+        assertNull(properties.instructionSet.getOrNull())
+        assertNull(properties.jvmFlags.getOrNull())
         @Suppress("DEPRECATION")
-        assertFalse(properties.isNativeDebuggable)
-        assertTrue(properties.features.isEmpty())
-        assertNull(properties.exception)
-        assertFalse(properties.completed)
+        assertFalse(properties.isNativeDebuggable.getOrDefault(false))
+        assertTrue(properties.features.getOrDefault(emptyList()).isEmpty())
+        assertNull(properties.exception.getOrNull())
+        assertFalse(properties.completed.getOrDefault(false))
     }
 
     private fun timeoutExceeded(waitTime: Duration, timeout: Duration): Boolean {

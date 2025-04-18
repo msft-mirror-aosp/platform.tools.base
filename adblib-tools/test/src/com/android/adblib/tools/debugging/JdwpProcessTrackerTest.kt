@@ -195,8 +195,8 @@ class JdwpProcessTrackerTest {
                     val process10 = list.first { it.pid == pid10 }
                     val process11 = list.first { it.pid == pid11 }
                     yieldUntil {
-                        (process10.propertiesFlow.value.processName != null) &&
-                                (process11.propertiesFlow.value.processName != null)
+                        (process10.propertiesFlow.value.processName.getOrNull() != null) &&
+                                (process11.propertiesFlow.value.processName.getOrNull() != null)
                     }
                     Pair(process10, process11)
                 } else {
@@ -206,12 +206,12 @@ class JdwpProcessTrackerTest {
 
         // Assert
         Assert.assertEquals(pid10, process10.pid)
-        Assert.assertEquals("a.b.c", process10.propertiesFlow.value.processName)
-        Assert.assertEquals(100, process10.propertiesFlow.value.userId)
+        Assert.assertEquals("a.b.c", process10.propertiesFlow.value.processName.getOrNull())
+        Assert.assertEquals(100, process10.propertiesFlow.value.userId.getOrNull())
 
         Assert.assertEquals(pid11, process11.pid)
-        Assert.assertEquals("a.b.c.e", process11.propertiesFlow.value.processName)
-        Assert.assertEquals(101, process11.propertiesFlow.value.userId)
+        Assert.assertEquals("a.b.c.e", process11.propertiesFlow.value.processName.getOrNull())
+        Assert.assertEquals(101, process11.propertiesFlow.value.userId.getOrNull())
     }
 
     @Test

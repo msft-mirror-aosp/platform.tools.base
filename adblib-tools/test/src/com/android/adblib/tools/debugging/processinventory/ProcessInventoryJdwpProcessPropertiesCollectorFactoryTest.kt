@@ -25,6 +25,8 @@ import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import com.android.adblib.tools.debugging.propertiesFlow
@@ -162,14 +164,14 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
 
             // Assert
             Assert.assertEquals(pid1, props1.pid)
-            Assert.assertEquals(clientState1.processName, props1.processName)
-            Assert.assertEquals(clientState1.packageName, props1.packageName)
-            Assert.assertEquals(clientState1.userId, props1.userId)
-            Assert.assertEquals(clientState1.architecture, props1.instructionSet?.text)
-            Assert.assertEquals(false, props1.isWaitingForDebugger)
-            Assert.assertTrue(props1.features.contains("feat1"))
-            Assert.assertTrue(props1.features.contains("feat2"))
-            Assert.assertTrue(props1.features.contains("feat3"))
+            Assert.assertEquals(clientState1.processName, props1.processName.getOrNull())
+            Assert.assertEquals(clientState1.packageName, props1.packageName.getOrNull())
+            Assert.assertEquals(clientState1.userId, props1.userId.getOrNull())
+            Assert.assertEquals(clientState1.architecture, props1.instructionSet.getOrNull()?.text)
+            Assert.assertEquals(false, props1.isWaitingForDebugger.getOrNull())
+            Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat1"))
+            Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat2"))
+            Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat3"))
 
             with(props2pid1) {
                 assertJdwpPropertiesAreEqual(props1)
@@ -180,14 +182,14 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             }
 
             Assert.assertEquals(pid2, props2pid2.pid)
-            Assert.assertEquals(clientState2.processName, props2pid2.processName)
-            Assert.assertEquals(clientState2.packageName, props2pid2.packageName)
-            Assert.assertEquals(clientState2.userId, props2pid2.userId)
-            Assert.assertEquals(clientState2.architecture, props2pid2.instructionSet?.text)
-            Assert.assertEquals(false, props2pid2.isWaitingForDebugger)
-            Assert.assertTrue(props2pid2.features.contains("feat1"))
-            Assert.assertTrue(props2pid2.features.contains("feat2"))
-            Assert.assertTrue(props2pid2.features.contains("feat3"))
+            Assert.assertEquals(clientState2.processName, props2pid2.processName.getOrNull())
+            Assert.assertEquals(clientState2.packageName, props2pid2.packageName.getOrNull())
+            Assert.assertEquals(clientState2.userId, props2pid2.userId.getOrNull())
+            Assert.assertEquals(clientState2.architecture, props2pid2.instructionSet.getOrNull()?.text)
+            Assert.assertEquals(false, props2pid2.isWaitingForDebugger.getOrNull())
+            Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat1"))
+            Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat2"))
+            Assert.assertTrue(props2pid2.features.getOrDefault(emptyList()).contains("feat3"))
 
             with(props2pid2) {
                 assertJdwpPropertiesAreEqual(props3pid2)
@@ -219,14 +221,14 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
         // Assert
         val props1 = props.first()
         Assert.assertEquals(pid, props1.pid)
-        Assert.assertEquals(clientState.processName, props1.processName)
-        Assert.assertEquals(clientState.packageName, props1.packageName)
-        Assert.assertEquals(clientState.userId, props1.userId)
-        Assert.assertEquals(clientState.architecture, props1.instructionSet?.text)
-        Assert.assertEquals(false, props1.isWaitingForDebugger)
-        Assert.assertTrue(props1.features.contains("feat1"))
-        Assert.assertTrue(props1.features.contains("feat2"))
-        Assert.assertTrue(props1.features.contains("feat3"))
+        Assert.assertEquals(clientState.processName, props1.processName.getOrNull())
+        Assert.assertEquals(clientState.packageName, props1.packageName.getOrNull())
+        Assert.assertEquals(clientState.userId, props1.userId.getOrNull())
+        Assert.assertEquals(clientState.architecture, props1.instructionSet.getOrNull()?.text)
+        Assert.assertEquals(false, props1.isWaitingForDebugger.getOrNull())
+        Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat1"))
+        Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat2"))
+        Assert.assertTrue(props1.features.getOrDefault(emptyList()).contains("feat3"))
 
         props.drop(1).forEach {
             with(it) {
@@ -262,8 +264,8 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             }.first()
 
             val properties = process.propertiesFlow.first {
-                it.packageName == "a.b.c" &&
-                        it.features.isNotEmpty()
+                it.packageName.getOrDefault("") == "a.b.c" &&
+                        it.features.getOrDefault(emptyList()).isNotEmpty()
             }
             properties
         }

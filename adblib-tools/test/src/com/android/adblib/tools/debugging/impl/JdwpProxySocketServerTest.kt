@@ -17,6 +17,7 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
+import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.properties
@@ -181,18 +182,18 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
-        yieldUntil { process.properties.isWaitingForDebugger }
+        yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
 
         // Act
         attachDebuggerSession(process)
         yieldUntil {
             process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached &&
-              !process.properties.isWaitingForDebugger
+              !process.properties.isWaitingForDebugger.getOrDefault(false)
         }
 
         // Assert
         assertTrue(process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached)
-        assertFalse(process.properties.isWaitingForDebugger)
+        assertFalse(process.properties.isWaitingForDebugger.getOrDefault(false))
     }
 
     @Test
@@ -214,17 +215,17 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
-        yieldUntil { process.properties.isWaitingForDebugger }
+        yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
 
         // Act
         attachDebuggerSession(process)
         yieldUntil {
             process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached &&
-              !process.properties.isWaitingForDebugger
+              !process.properties.isWaitingForDebugger.getOrDefault(false)
         }
 
         // Assert
         assertTrue(process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached)
-        assertFalse(process.properties.isWaitingForDebugger)
+        assertFalse(process.properties.isWaitingForDebugger.getOrDefault(false))
     }
 }

@@ -25,8 +25,11 @@ import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProcessPropertiesCollector
+import com.android.adblib.tools.debugging.OptionalValue
+import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollectorFactoryList
 import com.android.adblib.tools.debugging.isAppInfoSupported
+import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
@@ -54,7 +57,7 @@ internal class JdwpProcessPropertiesCollectorImpl(
     private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
     private val propertiesAtomicStateFlow =
-        AtomicStateFlow(MutableStateFlow(JdwpProcessProperties(pid)))
+        AtomicStateFlow(MutableStateFlow(JdwpProcessProperties(pid, isWaitingForDebugger = OptionalValue.of(false))))
 
     override val stateFlow: StateFlow<JdwpProcessProperties> =
         propertiesAtomicStateFlow.asStateFlow()
@@ -71,6 +74,10 @@ internal class JdwpProcessPropertiesCollectorImpl(
                 createFlowUpdater().collectUpdates(propertiesAtomicStateFlow)
             }.onFailure { throwable ->
                 logger.logIOCompletionErrors(throwable)
+                propertiesAtomicStateFlow.update { current ->
+                    current.copy(exception = current.addException(throwable))
+                }
+                propertiesAtomicStateFlow.applyEndOfCollectorErrorIfEmpty()
             }
         }
 
@@ -125,6 +132,35 @@ internal class JdwpProcessPropertiesCollectorImpl(
                 return null
             } else {
                 processOrPackageName
+            }
+        }
+
+        private val endOfCollectorErrorSingleton = OptionalValue.ofError<Any>("Property collector has stopped")
+
+        /**
+         * Ensure all [OptionalValue] of this [JdwpProcessProperties] that are still
+         * [OptionalValue.empty] are updated to [endOfCollectorErrorSingleton]
+         */
+        internal fun AtomicStateFlow<JdwpProcessProperties>.applyEndOfCollectorErrorIfEmpty() {
+            fun <T:Any> OptionalValue<T>.applyEndOfCollectorErrorIfEmpty(): OptionalValue<T> {
+                @Suppress("UNCHECKED_CAST")
+                val error = endOfCollectorErrorSingleton as OptionalValue<T>
+                // Note: Only "replace" this if it is empty (i.e. don't replace values or errors)
+                return error.orElse(this)
+            }
+
+            update {
+                it.copy(
+                    processName = it.processName.applyEndOfCollectorErrorIfEmpty(),
+                    packageName = it.packageName.applyEndOfCollectorErrorIfEmpty(),
+                    userId = it.userId.applyEndOfCollectorErrorIfEmpty(),
+                    vmIdentifier = it.vmIdentifier.applyEndOfCollectorErrorIfEmpty(),
+                    instructionSet = it.instructionSet.applyEndOfCollectorErrorIfEmpty(),
+                    jvmFlags = it.jvmFlags.applyEndOfCollectorErrorIfEmpty(),
+                    isNativeDebuggable = it.isNativeDebuggable.applyEndOfCollectorErrorIfEmpty(),
+                    isWaitingForDebugger = it.isWaitingForDebugger.applyEndOfCollectorErrorIfEmpty(),
+                    features = it.features.applyEndOfCollectorErrorIfEmpty()
+                )
             }
         }
     }
