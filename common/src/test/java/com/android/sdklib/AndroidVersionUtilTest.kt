@@ -117,7 +117,7 @@ class AndroidVersionUtilTest {
       androidVersionFromDeviceProperties(
         mapOf(
           "ro.build.version.sdk" to "36",
-          "ro.build.version.sdk_minor" to "1",
+          "ro.build.version.sdk_full" to "36.1",
           "ro.build.version.codename" to "Baklava",
           "build.version.extensions.r" to "15",
           "build.version.extensions.s" to "15",

@@ -52,4 +52,14 @@ constructor(val majorVersion: Int, val minorVersion: Int = 0) :
   fun toShortString(): String {
     return if (minorVersion > 0) "$majorVersion.$minorVersion" else majorVersion.toString()
   }
+
+  companion object {
+    @JvmStatic
+    fun fromString(s: String): AndroidApiLevel? =
+      API_LEVEL_REGEX.matchEntire(s)?.let {
+        AndroidApiLevel(it.groupValues[1].toInt(), it.groups[3]?.value?.toInt() ?: 0)
+      }
+
+    private val API_LEVEL_REGEX = Regex("(\\d+)(\\.(\\d+))?")
+  }
 }
