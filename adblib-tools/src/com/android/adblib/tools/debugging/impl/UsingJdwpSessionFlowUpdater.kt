@@ -35,7 +35,6 @@ import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.fromLegacyDescription
-import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
@@ -208,7 +207,6 @@ internal class UsingJdwpSessionFlowUpdater(
                     )
                     collectState.propertiesFlow.update {
                         it.copy(
-                            completed = OptionalValue.of(true),
                             exception = exceptionToRecord?.let { OptionalValue.of(exceptionToRecord) } ?: OptionalValue.empty()
                         )
                     }
@@ -217,8 +215,8 @@ internal class UsingJdwpSessionFlowUpdater(
                 }
             }
         }
-        assert(stateFlow.value.completed.getOrDefault(false)) {
-            "Properties flow should have been set to `completed`"
+        assert(stateFlow.value.areAllPropertiesInitialized()) {
+            "Properties flow should have initialized all JDWP process properties"
         }
     }
 
@@ -567,6 +565,19 @@ internal class UsingJdwpSessionFlowUpdater(
     private fun JdwpProcessProperties.summaryForLogging() =
         "processName=${processName.getOrNull() ?: "<not yet received>"}, isWaitingForDebugger=${isWaitingForDebugger}"
 
+
+    private fun JdwpProcessProperties.areAllPropertiesInitialized(): Boolean {
+        @Suppress("DEPRECATION")
+        return !processName.isEmpty &&
+                !userId.isEmpty &&
+                !packageName.isEmpty &&
+                !vmIdentifier.isEmpty &&
+                !instructionSet.isEmpty &&
+                !jvmFlags.isEmpty &&
+                !isNativeDebuggable.isEmpty &&
+                !features.isEmpty &&
+                !isWaitingForDebugger.isEmpty
+    }
     /**
      * List of DDMS requests sent to the Android VM.
      */

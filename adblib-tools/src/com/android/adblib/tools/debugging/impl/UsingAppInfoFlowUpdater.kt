@@ -40,7 +40,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -74,12 +73,7 @@ internal class UsingAppInfoFlowUpdater(
                     // Collect device specific properties
                     collectVmInfo(stateFlow)
                 },
-                async {
-                    // Figure out when to set the `completed` boolean property
-                    waitForCompleted(stateFlow)
-                },
             )
-
             awaitAll(*jobs)
         }
     }
@@ -144,26 +138,6 @@ internal class UsingAppInfoFlowUpdater(
                 )
             }
         }
-    }
-
-    private suspend fun waitForCompleted(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
-        // Wait for all properties to be set
-        stateFlow.asStateFlow().first { properties ->
-            val completed =
-                (properties.processName.hasValue) &&
-                        (properties.packageName.hasValue) &&
-                        (properties.userId.hasValue) &&
-                        (properties.vmIdentifier.hasValue) &&
-                        (properties.jvmFlags.hasValue) &&
-                        (properties.instructionSetDescription.hasValue) &&
-                        (properties.instructionSet.hasValue) &&
-                        (properties.features.hasValue)
-
-            completed
-        }
-
-        logger.debug { "Setting `completed` to `true` as all properties are set" }
-        stateFlow.update { it.copy(completed = OptionalValue.of(true)) }
     }
 
     /**

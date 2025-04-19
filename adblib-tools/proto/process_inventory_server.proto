@@ -151,11 +151,6 @@ message JdwpProcessInfo {
     int32 pid = 1;
 
     /*
-     * Whether all properties have been collected.
-     */
-    bool completed = 2;
-
-    /*
      * Description of the last error encountered when collecting process properties, or `null`
      * if no error occurred. Once [collection_completed] is `true`, this value never changes.
      */

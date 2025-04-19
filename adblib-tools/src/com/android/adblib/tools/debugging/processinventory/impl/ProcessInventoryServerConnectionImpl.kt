@@ -263,7 +263,6 @@ private class ProcessInventoryServerConnectionForDevice(
         val sourceProto = this
         return JdwpProcessProperties(
             pid = sourceProto.pid,
-            completed = if (sourceProto.completed) OptionalValue.of(sourceProto.completed) else OptionalValue.empty(),
             exception = if (sourceProto.hasCompletedException()) OptionalValue.of(sourceProto.completedException.toThrowable()) else OptionalValue.empty(),
             processName = if (sourceProto.hasProcessName()) OptionalValue.of(sourceProto.processName) else OptionalValue.empty(),
             packageName = if (sourceProto.hasPackageName()) OptionalValue.of(sourceProto.packageName) else OptionalValue.empty(),
@@ -287,7 +286,6 @@ private class ProcessInventoryServerConnectionForDevice(
             .newBuilder()
             .also { proto ->
                 sourceProperties.pid.also { proto.pid = it }
-                sourceProperties.completed.alsoIfValue { proto.completed = it }
                 sourceProperties.exception.alsoIfValue { proto.completedException = it.toExceptionProto() }
                 sourceProperties.processName.alsoIfValue { proto.processName = it }
                 sourceProperties.packageName.alsoIfValue { proto.packageName = it }

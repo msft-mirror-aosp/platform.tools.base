@@ -69,7 +69,7 @@ internal class JdwpProcessPropertiesCollectorImpl(
     private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         logger.debug { "Start monitoring" }
 
-        val localCollectorJob = processScope.launch(device.session.ioDispatcher) {
+        processScope.launch(device.session.ioDispatcher) {
             runCatching {
                 createFlowUpdater().collectUpdates(propertiesAtomicStateFlow)
             }.onFailure { throwable ->
@@ -89,7 +89,6 @@ internal class JdwpProcessPropertiesCollectorImpl(
                 runCatching {
                     val handler = ExternalPropertiesCollectorHandler(
                         externalCollector,
-                        localCollectorJob,
                         propertiesAtomicStateFlow
                     )
                     handler.execute()

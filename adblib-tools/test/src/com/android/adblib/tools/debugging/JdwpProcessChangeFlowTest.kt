@@ -22,6 +22,7 @@ import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
+import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
@@ -56,7 +57,7 @@ class JdwpProcessChangeFlowTest {
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
             // Wait for all process properties to get populated
-            yieldUntil { processes[0].jdwpProcess!!.properties.completed.getOrDefault(false) }
+            yieldUntil { processes[0].jdwpProcess!!.properties.areAllPropertiesInitialized() }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
@@ -142,7 +143,7 @@ class JdwpProcessChangeFlowTest {
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
             // Wait for all process properties to get populated
-            yieldUntil { processes[0].jdwpProcess!!.properties.completed.getOrDefault(false) }
+            yieldUntil { processes[0].jdwpProcess!!.properties.areAllPropertiesInitialized() }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()

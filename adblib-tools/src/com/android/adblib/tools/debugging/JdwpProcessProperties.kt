@@ -148,13 +148,6 @@ data class JdwpProcessProperties(
     val features: OptionalValue<List<String>> = OptionalValue.empty(),
 
     /**
-     * Whether this [JdwpProcessProperties] instance is fully populated, i.e. there is no pending
-     * operation to collect more information. See the [exception] property for additional
-     * information about the status.
-     */
-    val completed: OptionalValue<Boolean> = OptionalValue.empty(),
-
-    /**
      * The error related to retrieving properties (other than [pid]), or `null`.
      *
      * This value is only set when [completed] is `true`, and remains `null` unless
@@ -260,7 +253,6 @@ internal fun JdwpProcessProperties.mergeWith(newer: JdwpProcessProperties): Jdwp
         jvmFlags = newer.jvmFlags.orElse(current.jvmFlags),
         isNativeDebuggable = newer.isNativeDebuggable.orElse(current.isNativeDebuggable),
         features = newer.features.orElse(current.features),
-        completed = newer.completed.orElse(current.completed),
         exception = newer.exception.orElse(current.exception),
         isWaitingForDebugger = newer.isWaitingForDebugger.orElse(current.isWaitingForDebugger),
     )

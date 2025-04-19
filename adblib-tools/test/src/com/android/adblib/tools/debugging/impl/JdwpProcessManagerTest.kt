@@ -34,6 +34,7 @@ import com.android.adblib.tools.debugging.properties
 import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.testutils.AdbLibToolsJdwpTestBase
+import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.waitForDevice
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -237,7 +238,7 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
 
         // Act: Collecting properties of the "connected" process should impact the properties
         // of the "delegating" process
-        yieldUntil { delegatingProcess.properties.completed.getOrDefault(false) }
+        yieldUntil { delegatingProcess.properties.areAllPropertiesInitialized() }
 
         // Assert
         val properties = delegatingProcess.properties
@@ -309,10 +310,10 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
         // property collection. As a result `activationCountStateFlow` is incremented
         // by the `JdwpProcessPropertiesCollector`. Wait for properties collector to be done so that
         // `activationCountStateFlow` is decremented.
-        yieldUntil { connectedJdwpProcess.properties.completed.getOrDefault(false) }
-
-        // Assert
-        assertEquals(0, connectedJdwpProcess.jdwpSessionActivationCount.value)
+        yieldUntil {
+            connectedJdwpProcess.properties.areAllPropertiesInitialized() &&
+            connectedJdwpProcess.jdwpSessionActivationCount.value == 0
+        }
     }
 
     @Test
@@ -415,6 +416,6 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
             ), properties.features.getOrNull()
         )
         assertNull(properties.exception.getOrNull())
-        assertTrue(properties.completed.getOrDefault(false))
+        assertTrue(properties.areAllPropertiesInitialized())
     }
 }

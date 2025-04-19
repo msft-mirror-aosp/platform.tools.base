@@ -41,6 +41,7 @@ import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
+import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.ClientState
 import kotlinx.coroutines.delay
@@ -128,7 +129,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         )
 
         // Act: Start collecting properties by accessing `properties`
-        yieldUntil { process.properties.completed.getOrDefault(false) }
+        yieldUntil { process.properties.areAllPropertiesInitialized() }
 
         // Assert
         val properties = process.properties
@@ -145,7 +146,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         )
 
         // Act
-        yieldUntil { process.properties.completed.getOrDefault(false) }
+        yieldUntil { process.properties.areAllPropertiesInitialized() }
 
         // Assert
         assertTrue(process.device.isAppInfoSupported())
@@ -223,7 +224,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
             Duration.ofSeconds(60) // long timeout
         )
-        yieldUntil { process.properties.completed.getOrDefault(false) }
+        yieldUntil { process.properties.areAllPropertiesInitialized() }
         delay(500) // give JDWP session holder time to launch
 
         // Assert: The JDWP session should still be in-use, since we received a `WAIT` packet
@@ -231,7 +232,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    fun jdwpProcessPropertyCollectorNeverEndsIfLongTimeoutAndNoWaitPacket() = runBlockingWithTimeout {
+    fun jdwpProcessPropertyCollectorLeavesConnectionOpenIfLongTimeoutAndNoWaitPacket() = runBlockingWithTimeout {
         // Prepare
         val (_, _, process) = createJdwpProcess(waitForDebugger = false)
 
@@ -252,7 +253,12 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         // Assert
         val properties = process.properties
         assertNull(properties.exception.getOrNull())
-        assertFalse(properties.completed.getOrDefault(false))
+        assertTrue("All JDWP properties should have been retrieved even if " +
+                           "the JDWP session timeout is long",
+                   properties.areAllPropertiesInitialized())
+        assertTrue("There should be at least one JDWP session open " +
+                            "since the timeout is long",
+                    process.jdwpSessionActivationCount.value > 0)
     }
 
     @Test
@@ -298,7 +304,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             firstProcess.close()
         }
 
-        yieldUntil { process.properties.completed.getOrDefault(false) }
+        yieldUntil { process.properties.areAllPropertiesInitialized() }
 
         // Assert
         val properties = process.properties
@@ -324,7 +330,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
         // Assert
         val properties = process.properties
-        assertFalse(properties.completed.getOrDefault(false))
+        assertFalse(properties.areAllPropertiesInitialized())
     }
 
     @Test
@@ -397,7 +403,8 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             firstProcess.close()
         }
 
-        yieldUntil { process.properties.completed.getOrDefault(false) }
+        yieldUntil { process.properties.areAllPropertiesInitialized()
+                && process.jdwpSessionActivationCount.value == 0 }
 
         // Assert: We should have logged 2 adb usage events from the `process`. Note that
         // we have closed `firstProcess` before it could have logged any adb usage events.
@@ -509,7 +516,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
             )
         }
         assertNull(properties.exception.getOrNull())
-        assertTrue(properties.completed.getOrDefault(false))
+        assertTrue(properties.areAllPropertiesInitialized())
     }
 
     private fun assertProcessPropertiesIsSkeleton(properties: JdwpProcessProperties) {
@@ -525,7 +532,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertFalse(properties.isNativeDebuggable.getOrDefault(false))
         assertTrue(properties.features.getOrDefault(emptyList()).isEmpty())
         assertNull(properties.exception.getOrNull())
-        assertFalse(properties.completed.getOrDefault(false))
+        assertFalse(properties.areAllPropertiesInitialized())
     }
 
     private fun timeoutExceeded(waitTime: Duration, timeout: Duration): Boolean {

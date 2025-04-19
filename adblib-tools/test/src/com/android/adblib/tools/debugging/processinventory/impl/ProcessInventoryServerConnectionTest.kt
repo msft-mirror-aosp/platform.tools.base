@@ -31,6 +31,7 @@ import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInv
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
+import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -137,7 +138,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             isNativeDebuggable = OptionalValue.of(true),
             isWaitingForDebugger = OptionalValue.of(true),
             features = OptionalValue.of(listOf("feat1", "feat2")),
-            completed = OptionalValue.of(true),
             exception = OptionalValue.empty()
         )
         serverConnection.withConnectionForDevice(device) {
@@ -148,7 +148,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             processListSnapshots.run {
                 isNotEmpty() &&
                         last().size == 1 &&
-                        last().first().completed.getOrDefault(false) &&
+                        last().first().areAllPropertiesInitialized() &&
                         last().first().isWaitingForDebugger.getOrDefault(false)
             }
         }
@@ -305,7 +305,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isNativeDebuggable.getOrDefault(false))
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -325,7 +325,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isNativeDebuggable.getOrDefault(false))
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -345,7 +345,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isNativeDebuggable.getOrDefault(false))
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -365,7 +365,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isNativeDebuggable.getOrDefault(false))
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -385,7 +385,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isNativeDebuggable.getOrDefault(false))
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -405,7 +405,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isNativeDebuggable.getOrDefault(false))
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -425,7 +425,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isNativeDebuggable.getOrDefault(false))
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -446,7 +446,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertTrue(it.isNativeDebuggable.getOrDefault(false))
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -466,7 +466,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertTrue(it.isNativeDebuggable.getOrDefault(false))
             assertTrue(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
-            assertFalse(it.completed.getOrDefault(false))
+            assertFalse(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -486,27 +486,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertTrue(it.isNativeDebuggable.getOrDefault(false))
             assertTrue(it.isWaitingForDebugger.getOrDefault(false))
             assertEquals(listOf("f1", "f2", "f3"), it.features.getOrDefault(emptyList()))
-            assertFalse(it.completed.getOrDefault(false))
-            assertNull(it.exception.getOrNull())
-        }
-
-        localProperties = localProperties.copy(completed = OptionalValue.of(true))
-        sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.completed.getOrDefault(false)
-        }.also {
-            assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName.getOrNull())
-            assertEquals("Bar", it.packageName.getOrNull())
-            assertEquals(12, it.userId.getOrNull())
-            assertEquals("vm", it.vmIdentifier.getOrNull())
-            assertEquals("32-bit (x86)", it.instructionSetDescription.getOrNull())
-            assertEquals(InstructionSet.X86, it.instructionSet.getOrNull())
-            assertEquals("FooBar", it.jvmFlags.getOrNull())
-            @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable.getOrDefault(false))
-            assertTrue(it.isWaitingForDebugger.getOrDefault(false))
-            assertEquals(listOf("f1", "f2", "f3"), it.features.getOrDefault(emptyList()))
-            assertTrue(it.completed.getOrDefault(false))
+            assertTrue(it.areAllPropertiesInitialized())
             assertNull(it.exception.getOrNull())
         }
 
@@ -526,7 +506,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertTrue(it.isNativeDebuggable.getOrDefault(false))
             assertTrue(it.isWaitingForDebugger.getOrDefault(false))
             assertEquals(listOf("f1", "f2", "f3"), it.features.getOrDefault(emptyList()))
-            assertTrue(it.completed.getOrDefault(false))
+            assertTrue(it.areAllPropertiesInitialized())
             assertEquals("Message", it.exception.getOrNull()?.message)
         }
 
