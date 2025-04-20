@@ -100,9 +100,6 @@ class JourneysGradlePlugin : Plugin<Project> {
                     )
                     task.resultsDir.set(buildDir.dir("outputs/journeysTest/$variantSegments/results"))
                     task.apkDirectories.add(variant.artifacts.get(SingleArtifact.APK))
-                    if (project.hasProperty("journeysFilter")) {
-                        task.journeysFilter.set(project.property("journeysFilter") as String)
-                    }
                     task.applicationId.set(variant.applicationId)
                     task.adbExecutable.set(componentsExtension.sdkComponents.adb)
 
@@ -118,6 +115,10 @@ class JourneysGradlePlugin : Plugin<Project> {
                     }
                     task.testLogging {
                         it.showStandardStreams = true
+                    }
+                    task.reports {
+                        it.junitXml.required.set(true)
+                        it.html.required.set(true)
                     }
 
                     val classesDir = buildDir.file(task.name)
@@ -197,7 +198,7 @@ class JourneysGradlePlugin : Plugin<Project> {
             // TODO(b/405953866): Update with the final name.
             dependencies.add(
                 crawlerApkConfigName,
-                "androidx.test.tools.crawler:crawler-app:1.0.0@apk"
+                "androidx.test:orchestrator:1.5.0-alpha02@apk"
             )
         }
     }

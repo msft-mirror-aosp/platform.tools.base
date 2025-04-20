@@ -66,9 +66,7 @@ gradle_build(
         "//tools/base:agp_dependencies",
     ],
     tasks = [":base:journeys:journeys-gradle-plugin:zipPlugin"],
-    visibility = [
-        "//tools/base/build-system/integration-test:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 gradle_test(
