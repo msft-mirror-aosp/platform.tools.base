@@ -27,6 +27,7 @@ import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeNames
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
@@ -93,7 +94,7 @@ internal class UsingAppInfoFlowUpdater(
                 stateFlow.update { properties ->
                     properties.copy(
                         processName = OptionalValue.ofFilteredFakeName(appProcessEntry.processName).orElse(properties.processName),
-                        packageName = OptionalValue.ofFilteredFakeName(appProcessEntry.packageNames?.firstOrNull()).orElse(properties.packageName),
+                        packageNames = OptionalValue.ofFilteredFakeNames(appProcessEntry.packageNames).orElse(properties.packageNames),
                         userId = OptionalValue.ofNullable(appProcessEntry.userId32).orElse(properties.userId),
                         instructionSet = OptionalValue.of(appProcessEntry.instructionSet).orElse(properties.instructionSet),
                         isWaitingForDebugger = OptionalValue.ofNullable(appProcessEntry.waitingForDebugger).orElse(properties.isWaitingForDebugger),

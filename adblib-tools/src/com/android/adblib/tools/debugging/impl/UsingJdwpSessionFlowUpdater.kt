@@ -37,6 +37,7 @@ import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.fromLegacyDescription
 import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeNames
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
@@ -370,7 +371,7 @@ internal class UsingJdwpSessionFlowUpdater(
             it.copy(
                 processName = OptionalValue.ofFilteredFakeName(heloChunk.processName).orElse(it.processName),
                 userId = OptionalValue.ofNullable(heloChunk.userId).orElse(it.userId),
-                packageName = OptionalValue.ofFilteredFakeName(heloChunk.packageName).orElse(it.packageName),
+                packageNames = OptionalValue.ofFilteredFakeNames(listOf(heloChunk.packageName ?: "")).orElse(it.packageNames),
                 vmIdentifier = OptionalValue.of(heloChunk.vmIdentifier).orElse(it.vmIdentifier),
                 instructionSet = OptionalValue.ofNullable(convertLegacyDescriptionToInstructionSet(heloChunk.abi)).orElse(it.instructionSet),
                 jvmFlags = OptionalValue.ofNullable(heloChunk.jvmFlags).orElse(it.jvmFlags),
@@ -430,7 +431,7 @@ internal class UsingJdwpSessionFlowUpdater(
             it.copy(
                 processName = OptionalValue.ofFilteredFakeName(apnmChunk.processName).orElse(it.processName),
                 userId = OptionalValue.ofNullable(apnmChunk.userId).orElse(it.userId),
-                packageName = OptionalValue.ofFilteredFakeName(apnmChunk.packageName).orElse(it.packageName),
+                packageNames = OptionalValue.ofFilteredFakeNames(listOf(apnmChunk.packageName ?: "")).orElse(it.packageNames),
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }

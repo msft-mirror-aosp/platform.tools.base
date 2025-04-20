@@ -147,7 +147,7 @@ internal class JdwpProcessPropertiesCollectorImpl(
             update {
                 it.copy(
                     processName = it.processName.applyEndOfCollectorErrorIfEmpty(),
-                    packageName = it.packageName.applyEndOfCollectorErrorIfEmpty(),
+                    packageNames = it.packageNames.applyEndOfCollectorErrorIfEmpty(),
                     userId = it.userId.applyEndOfCollectorErrorIfEmpty(),
                     vmIdentifier = it.vmIdentifier.applyEndOfCollectorErrorIfEmpty(),
                     instructionSet = it.instructionSet.applyEndOfCollectorErrorIfEmpty(),

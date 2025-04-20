@@ -263,7 +263,7 @@ private class ProcessInventoryServerConnectionForDevice(
         return JdwpProcessProperties(
             pid = sourceProto.pid,
             processName = sourceProto.processName.toOptionalString(),
-            packageName = sourceProto.packageName.toOptionalString(),
+            packageNames = sourceProto.packageNames.toOptionalStringList(),
             userId = sourceProto.userId.toOptionalInt(),
             vmIdentifier = sourceProto.vmIdentifier.toOptionalString(),
             instructionSet = sourceProto.instructionSet.toOptionalInstructionSet(),
@@ -285,7 +285,7 @@ private class ProcessInventoryServerConnectionForDevice(
             .also { proto ->
                 sourceProperties.pid.also { proto.pid = it }
                 proto.processName = sourceProperties.processName.toOptionalStringProto()
-                proto.packageName = sourceProperties.packageName.toOptionalStringProto()
+                proto.packageNames = sourceProperties.packageNames.toOptionalStringListProto()
                 proto.userId = sourceProperties.userId.toOptionalInt32Proto()
                 proto.vmIdentifier = sourceProperties.vmIdentifier.toOptionalStringProto()
                 proto.instructionSet = sourceProperties.instructionSet.toOptionalInstructionSetProto()
@@ -294,7 +294,7 @@ private class ProcessInventoryServerConnectionForDevice(
                 @Suppress("DEPRECATION")
                 proto.nativeDebuggable = sourceProperties.isNativeDebuggable.toOptionalBoolProto()
                 proto.waitingForDebugger = sourceProperties.isWaitingForDebugger.toOptionalBoolProto()
-                proto.features = sourceProperties.features.toOptionalStringList()
+                proto.features = sourceProperties.features.toOptionalStringListProto()
             }
             .build()
     }
@@ -411,7 +411,7 @@ private class ProcessInventoryServerConnectionForDevice(
                 .build()
         }
 
-        private fun OptionalValue<List<String>>.toOptionalStringList(): ProcessInventoryServerProto.OptionalStringList {
+        private fun OptionalValue<List<String>>.toOptionalStringListProto(): ProcessInventoryServerProto.OptionalStringList {
             return ProcessInventoryServerProto.OptionalStringList
                 .newBuilder()
                 .also { proto ->

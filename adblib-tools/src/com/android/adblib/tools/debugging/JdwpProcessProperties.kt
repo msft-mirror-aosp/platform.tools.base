@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.InstructionSet
-import com.android.adblib.tools.debugging.OptionalValue.Companion.ofError
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsFeatChunk
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsHeloChunk
 
@@ -51,7 +50,8 @@ data class JdwpProcessProperties(
     val processName: OptionalValue<String> = OptionalValue.empty(),
 
     /**
-     * The package name of the process
+     * The list of package names of the package hosted by this process. For simple Android
+     * application, there is typically only one package name (see [packageName]).
      *
      * A value of [OptionalValue.empty] indicates the underlying process discovery
      * mechanism is still trying to retrieve the actual value.
@@ -60,7 +60,7 @@ data class JdwpProcessProperties(
      * indicates the underlying process discovery mechanism could not retrieve the actual value
      * for some reason.
      */
-    val packageName: OptionalValue<String> = OptionalValue.empty(),
+    val packageNames: OptionalValue<List<String>> = OptionalValue.empty(),
 
     /**
      * The User ID this process is running in context of
@@ -149,6 +149,7 @@ data class JdwpProcessProperties(
 
 ) {
     private var _instructionSetDescription: OptionalValue<String>? = null
+    private var _packageName: OptionalValue<String>? = null
 
     /**
      * A description of the [InstructionSet] (e.g. "64-bit (arm64)"), or [unsupportedByOlderApi] if the device does not support retrieving this information.
@@ -162,23 +163,60 @@ data class JdwpProcessProperties(
      */
     val instructionSetDescription: OptionalValue<String>
         get() {
-            return _instructionSetDescription
-                ?: computeInstructionSetDescription().also { _instructionSetDescription = it }
+            return _instructionSetDescription ?: run {
+                computeInstructionSetDescription().also {
+                    _instructionSetDescription = it
+                }
+            }
+        }
+
+    /**
+     * Shortcut for getting the first value [packageNames], useful for "regular" Android app
+     * that typically have a single package name.
+     *
+     * A value of [OptionalValue.empty] indicates the underlying process discovery
+     * mechanism is still trying to retrieve the actual value.
+     *
+     * A value of [OptionalValue.isError], for example [unsupportedByOlderApiSingleton],
+     * indicates the underlying process discovery mechanism could not retrieve the actual value
+     * for some reason.
+     */
+    val packageName: OptionalValue<String>
+        get() {
+            return _packageName ?: run {
+                computePackageName().also {
+                    _packageName = it
+                }
+            }
         }
 
     private fun computeInstructionSetDescription(): OptionalValue<String> {
-        return if (instructionSet.hasValue) {
-            OptionalValue.of(instructionSet.getOrThrow().toLegacyDescription())
-        } else if (instructionSet.isError) {
-            ofError(instructionSet.getErrorMessageOrThrow())
-        } else {
-            OptionalValue.empty()
+        return when {
+          instructionSet.hasValue -> {
+              OptionalValue.of(instructionSet.getOrThrow().toLegacyDescription())
+          }
+          instructionSet.isError -> {
+              OptionalValue.ofError(instructionSet.getErrorMessageOrThrow())
+          }
+          else -> {
+              OptionalValue.empty()
+          }
+        }
+    }
+
+    private fun computePackageName(): OptionalValue<String> {
+        return packageNames.let {
+            when {
+                it.hasValue && it.getOrThrow().isNotEmpty() -> { OptionalValue.of(it.getOrThrow()[0]) }
+                it.isError -> { OptionalValue.ofError(it.getErrorMessageOrThrow()) }
+                else -> { OptionalValue.empty() }
+            }
         }
     }
 
     companion object {
         private val unsupportedByOlderApiSingleton =
-            ofError<Any>("The JDWP process property is not supported by this Android API")
+            OptionalValue.ofError<Any>("The JDWP process property is not supported by this Android API")
 
         /**
          * The [OptionalValue.isError] containing the error specific to a property of
@@ -191,6 +229,7 @@ data class JdwpProcessProperties(
         }
     }
 }
+
 
 /**
  * Convert this [InstructionSet] (typically `"arm64"` or `"arm"`) to the legacy representation
@@ -237,7 +276,7 @@ internal fun JdwpProcessProperties.mergeWith(newer: JdwpProcessProperties): Jdwp
     return current.copy(
         processName = newer.processName.orElse(current.processName),
         userId = newer.userId.orElse(current.userId),
-        packageName = newer.packageName.orElse(current.packageName),
+        packageNames = newer.packageNames.orElse(current.packageNames),
         vmIdentifier = newer.vmIdentifier.orElse(current.vmIdentifier),
         instructionSet = newer.instructionSet.orElse(current.instructionSet),
         jvmFlags = newer.jvmFlags.orElse(current.jvmFlags),

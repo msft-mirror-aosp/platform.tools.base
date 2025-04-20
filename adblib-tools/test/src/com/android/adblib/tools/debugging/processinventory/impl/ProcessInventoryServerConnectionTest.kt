@@ -130,7 +130,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         val localProperties = JdwpProcessProperties(
             pid = 10,
             processName = OptionalValue.of("Foo"),
-            packageName = OptionalValue.of("Bar"),
+            packageNames = OptionalValue.of(listOf("Bar")),
             userId = OptionalValue.of(5),
             vmIdentifier = OptionalValue.of("vm"),
             instructionSet = OptionalValue.of(InstructionSet.X86),
@@ -326,7 +326,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(packageName = OptionalValue.of("Bar"))
+        localProperties = localProperties.copy(packageNames = OptionalValue.of(listOf("Bar")))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
             it.pid == 10 && it.packageName.getOrNull() == "Bar"
         }.also {

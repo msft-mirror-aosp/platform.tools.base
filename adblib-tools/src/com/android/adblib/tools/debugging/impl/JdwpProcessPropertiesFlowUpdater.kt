@@ -47,5 +47,14 @@ internal interface JdwpProcessPropertiesFlowUpdater {
                 else -> filterFakeName(name)?.let { of(it) } ?: empty()
             }
         }
+
+        internal fun OptionalValue.Companion.ofFilteredFakeNames(names: List<String>?): OptionalValue<List<String>> {
+            val goodNames = names?.mapNotNull { filterFakeName(it) } ?: return empty()
+            return if (goodNames.isEmpty()) {
+                empty()
+            } else {
+                of(goodNames)
+            }
+        }
     }
 }

@@ -156,9 +156,9 @@ message JdwpProcessInfo {
     OptionalString process_name = 2;
 
     /*
-     * The package name (see JdwpProcessProperties class)
+     * The list of package names of the packages hosted by this process (see JdwpProcessProperties class)
      */
-    OptionalString package_name = 3;
+    OptionalStringList package_names = 3;
 
     /*
      * The User ID this process is running in context of (see JdwpProcessProperties class)
