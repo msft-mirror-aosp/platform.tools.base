@@ -226,7 +226,6 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
         return JdwpProcessInfo.newBuilder(this)
             .also { proto ->
                 proto.pid = other.pid
-                if (other.hasCompletedException()) proto.completedException = other.completedException
                 if (other.hasProcessName()) proto.processName = other.processName
                 if (other.hasPackageName()) proto.packageName = other.packageName
                 if (other.hasUserId()) proto.userId = other.userId

@@ -205,10 +205,8 @@ internal class UsingJdwpSessionFlowUpdater(
                         previouslyFailedCount = previouslyFailedCollectingCount,
                         previouslyFailedThrowable = previouslyFailedThrowable
                     )
-                    collectState.propertiesFlow.update {
-                        it.copy(
-                            exception = exceptionToRecord?.let { OptionalValue.of(exceptionToRecord) } ?: OptionalValue.empty()
-                        )
+                    exceptionToRecord?.also {
+                        logger.debug(exceptionToRecord) { "Exception when collecting properties" }
                     }
                     logger.debug { "Successfully retrieved JDWP process properties: ${stateFlow.value}" }
                     break

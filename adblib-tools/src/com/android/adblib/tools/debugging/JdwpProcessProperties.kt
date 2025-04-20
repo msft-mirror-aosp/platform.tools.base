@@ -147,16 +147,6 @@ data class JdwpProcessProperties(
      */
     val features: OptionalValue<List<String>> = OptionalValue.empty(),
 
-    /**
-     * The error related to retrieving properties (other than [pid]), or `null`.
-     *
-     * This value is only set when [completed] is `true`, and remains `null` unless
-     * there was an error retrieving some property values.
-     *
-     * For example, it is sometimes not possible to retrieve any information about a process ID
-     * from the Android VM if there is already a JDWP session active for that process.
-     */
-    val exception: OptionalValue<Throwable> = OptionalValue.empty(),
 ) {
     private var _instructionSetDescription: OptionalValue<String>? = null
 
@@ -253,19 +243,6 @@ internal fun JdwpProcessProperties.mergeWith(newer: JdwpProcessProperties): Jdwp
         jvmFlags = newer.jvmFlags.orElse(current.jvmFlags),
         isNativeDebuggable = newer.isNativeDebuggable.orElse(current.isNativeDebuggable),
         features = newer.features.orElse(current.features),
-        exception = newer.exception.orElse(current.exception),
         isWaitingForDebugger = newer.isWaitingForDebugger.orElse(current.isWaitingForDebugger),
     )
-}
-
-/**
- * Adds an [Throwable.suppressedExceptions] to [JdwpProcessProperties.exception]
- */
-internal fun JdwpProcessProperties.addException(throwable: Throwable): OptionalValue<Throwable> {
-    return if (exception.hasValue) {
-        exception.getOrThrow().addSuppressed(throwable)
-        exception
-    } else {
-        OptionalValue.of(throwable)
-    }
 }

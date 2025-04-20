@@ -26,7 +26,6 @@ import com.android.adblib.scope
 import com.android.adblib.serialNumber
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.OptionalValue
-import com.android.adblib.tools.debugging.alsoIfValue
 import com.android.adblib.tools.debugging.mergeWith
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
@@ -263,16 +262,15 @@ private class ProcessInventoryServerConnectionForDevice(
         val sourceProto = this
         return JdwpProcessProperties(
             pid = sourceProto.pid,
-            exception = if (sourceProto.hasCompletedException()) OptionalValue.of(sourceProto.completedException.toThrowable()) else OptionalValue.empty(),
-            processName = if (sourceProto.hasProcessName()) OptionalValue.of(sourceProto.processName) else OptionalValue.empty(),
-            packageName = if (sourceProto.hasPackageName()) OptionalValue.of(sourceProto.packageName) else OptionalValue.empty(),
-            userId = if (sourceProto.hasUserId()) OptionalValue.of(sourceProto.userId) else OptionalValue.empty(),
-            vmIdentifier = if (sourceProto.hasVmIdentifier()) OptionalValue.of(sourceProto.vmIdentifier) else OptionalValue.empty(),
-            instructionSet = if (sourceProto.hasInstructionSet()) OptionalValue.of(InstructionSet.fromString(sourceProto.instructionSet)) else OptionalValue.empty(),
-            jvmFlags = if (sourceProto.hasJvmFlags()) OptionalValue.of(sourceProto.jvmFlags) else OptionalValue.empty(),
-            isNativeDebuggable = if (sourceProto.hasNativeDebuggable()) OptionalValue.of(sourceProto.nativeDebuggable) else OptionalValue.empty(),
-            isWaitingForDebugger = if (sourceProto.hasWaitingForDebugger()) OptionalValue.of(sourceProto.waitingForDebugger) else OptionalValue.empty(),
-            features = if (sourceProto.hasFeatures()) OptionalValue.of(sourceProto.features.featureList) else OptionalValue.empty(),
+            processName = sourceProto.processName.toOptionalString(),
+            packageName = sourceProto.packageName.toOptionalString(),
+            userId = sourceProto.userId.toOptionalInt(),
+            vmIdentifier = sourceProto.vmIdentifier.toOptionalString(),
+            instructionSet = sourceProto.instructionSet.toOptionalInstructionSet(),
+            jvmFlags = sourceProto.jvmFlags.toOptionalString(),
+            isNativeDebuggable = sourceProto.nativeDebuggable.toOptionalBoolean(),
+            isWaitingForDebugger = sourceProto.waitingForDebugger.toOptionalBoolean(),
+            features = sourceProto.features.toOptionalStringList(),
         )
     }
 
@@ -286,75 +284,146 @@ private class ProcessInventoryServerConnectionForDevice(
             .newBuilder()
             .also { proto ->
                 sourceProperties.pid.also { proto.pid = it }
-                sourceProperties.exception.alsoIfValue { proto.completedException = it.toExceptionProto() }
-                sourceProperties.processName.alsoIfValue { proto.processName = it }
-                sourceProperties.packageName.alsoIfValue { proto.packageName = it }
-                sourceProperties.userId.alsoIfValue { proto.userId = it }
-                sourceProperties.vmIdentifier.alsoIfValue { proto.vmIdentifier = it }
-                sourceProperties.instructionSet.alsoIfValue { proto.instructionSet = it.text }
-                sourceProperties.jvmFlags.alsoIfValue { proto.jvmFlags = it }
+                proto.processName = sourceProperties.processName.toOptionalStringProto()
+                proto.packageName = sourceProperties.packageName.toOptionalStringProto()
+                proto.userId = sourceProperties.userId.toOptionalInt32Proto()
+                proto.vmIdentifier = sourceProperties.vmIdentifier.toOptionalStringProto()
+                proto.instructionSet = sourceProperties.instructionSet.toOptionalInstructionSetProto()
+                proto.vmIdentifier = sourceProperties.vmIdentifier.toOptionalStringProto()
+                proto.jvmFlags = sourceProperties.jvmFlags.toOptionalStringProto()
                 @Suppress("DEPRECATION")
-                sourceProperties.isNativeDebuggable.alsoIfValue { proto.nativeDebuggable = it }
-                sourceProperties.isWaitingForDebugger.alsoIfValue { proto.waitingForDebugger = it }
-                sourceProperties.features.alsoIfValue {
-                    if (it.isNotEmpty()) proto.features =
-                        it.toFeaturesProto()
-                }
+                proto.nativeDebuggable = sourceProperties.isNativeDebuggable.toOptionalBoolProto()
+                proto.waitingForDebugger = sourceProperties.isWaitingForDebugger.toOptionalBoolProto()
+                proto.features = sourceProperties.features.toOptionalStringList()
             }
             .build()
     }
 
-    private fun List<String>.toFeaturesProto(): ProcessInventoryServerProto.JdwpProcessInfo.Features {
-        return ProcessInventoryServerProto.JdwpProcessInfo.Features.newBuilder()
-            .addAllFeature(this)
-            .build()
-    }
+    companion object {
 
-    class RemoteException(
-        val className: String,
-        message: String,
-        cause: Throwable?
-    ) : Exception(message, cause)
-
-    private fun Throwable.toExceptionProto(): ProcessInventoryServerProto.Exception {
-        return enumerateCauses().fold<Throwable, ProcessInventoryServerProto.Exception?>(null) { acc, exception ->
-            ProcessInventoryServerProto.Exception.newBuilder().also {
-                it.setClassName(exception::class.java.simpleName)
-                it.setMessage(exception.message)
-                if (acc != null) it.setCause(acc)
-            }.build()
-        }!!
-    }
-
-    private fun Throwable.enumerateCauses(): Sequence<Throwable> = sequence {
-        var current: Throwable? = this@enumerateCauses
-        val first = current
-        while (current != null) {
-            yield(current)
-            current = current.cause
-            if (current === first) {
-                break
+        private fun ProcessInventoryServerProto.OptionalString.toOptionalString(): OptionalValue<String> {
+            return if (hasValue) {
+                OptionalValue.of(stringValue)
+            } else if (isError) {
+                OptionalValue.ofError(errorMessage)
+            } else {
+                OptionalValue.empty()
             }
         }
-    }
 
-    private fun ProcessInventoryServerProto.Exception.toThrowable(): Throwable {
-        return enumerateCausesProto().fold<ProcessInventoryServerProto.Exception, Throwable?>(
-            null
-        ) { acc, exception ->
-            RemoteException(exception.className, exception.message, acc)
-        }!!
-    }
-
-    private fun ProcessInventoryServerProto.Exception.enumerateCausesProto() = sequence {
-        var current: ProcessInventoryServerProto.Exception? = this@enumerateCausesProto
-        while (current != null) {
-            yield(current)
-            current = if (current.hasCause()) {
-                current.cause
+        private fun ProcessInventoryServerProto.OptionalStringList.toOptionalStringList(): OptionalValue<List<String>> {
+            return if (hasValue) {
+                OptionalValue.of(stringsValueList)
+            } else if (isError) {
+                OptionalValue.ofError(errorMessage)
             } else {
-                null
+                OptionalValue.empty()
             }
+        }
+
+        private fun ProcessInventoryServerProto.OptionalInt32.toOptionalInt(): OptionalValue<Int> {
+            return if (hasValue) {
+                    OptionalValue.of(in32Value)
+            } else if (isError) {
+                OptionalValue.ofError(errorMessage)
+            } else {
+                OptionalValue.empty()
+            }
+        }
+
+        private fun ProcessInventoryServerProto.OptionalBool.toOptionalBoolean(): OptionalValue<Boolean> {
+            return if (hasValue) {
+                    OptionalValue.of(boolValue)
+            } else if (isError) {
+                OptionalValue.ofError(errorMessage)
+            } else {
+                OptionalValue.empty()
+            }
+        }
+
+        private fun ProcessInventoryServerProto.OptionalString.toOptionalInstructionSet(): OptionalValue<InstructionSet> {
+            return if (hasValue) {
+                    OptionalValue.of(InstructionSet.fromString(stringValue))
+            } else if (isError) {
+                OptionalValue.ofError(errorMessage)
+            } else {
+                OptionalValue.empty()
+            }
+        }
+
+        private fun OptionalValue<String>.toOptionalStringProto(): ProcessInventoryServerProto.OptionalString {
+            return ProcessInventoryServerProto.OptionalString
+                .newBuilder()
+                .also { proto ->
+                    if (isError) {
+                        proto.isError = true
+                        proto.errorMessage = getErrorMessageOrThrow()
+                    } else if (hasValue) {
+                        proto.hasValue = true
+                        proto.stringValue = getOrThrow()
+                    }
+                }
+                .build()
+        }
+
+        private fun OptionalValue<InstructionSet>.toOptionalInstructionSetProto(): ProcessInventoryServerProto.OptionalString {
+            return ProcessInventoryServerProto.OptionalString
+                .newBuilder()
+                .also { proto ->
+                    if (isError) {
+                        proto.isError = true
+                        proto.errorMessage = getErrorMessageOrThrow()
+                    } else if (hasValue) {
+                        proto.hasValue = true
+                        proto.stringValue = getOrThrow().text
+                    }
+                }
+                .build()
+        }
+
+        private fun OptionalValue<Int>.toOptionalInt32Proto(): ProcessInventoryServerProto.OptionalInt32 {
+            return ProcessInventoryServerProto.OptionalInt32
+                .newBuilder()
+                .also { proto ->
+                    if (isError) {
+                        proto.isError = true
+                        proto.errorMessage = getErrorMessageOrThrow()
+                    } else if (hasValue) {
+                        proto.hasValue = true
+                        proto.in32Value = getOrThrow()
+                    }
+                }
+                .build()
+        }
+
+        private fun OptionalValue<Boolean>.toOptionalBoolProto(): ProcessInventoryServerProto.OptionalBool {
+            return ProcessInventoryServerProto.OptionalBool
+                .newBuilder()
+                .also { proto ->
+                    if (isError) {
+                        proto.isError = true
+                        proto.errorMessage = getErrorMessageOrThrow()
+                    } else if (hasValue) {
+                        proto.hasValue = true
+                        proto.boolValue = getOrThrow()
+                    }
+                }
+                .build()
+        }
+
+        private fun OptionalValue<List<String>>.toOptionalStringList(): ProcessInventoryServerProto.OptionalStringList {
+            return ProcessInventoryServerProto.OptionalStringList
+                .newBuilder()
+                .also { proto ->
+                    if (isError) {
+                        proto.isError = true
+                        proto.errorMessage = getErrorMessageOrThrow()
+                    } else if (hasValue) {
+                        proto.hasValue = true
+                        proto.addAllStringsValue(getOrThrow())
+                    }
+                }
+                .build()
         }
     }
 }

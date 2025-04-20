@@ -138,7 +138,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             isNativeDebuggable = OptionalValue.of(true),
             isWaitingForDebugger = OptionalValue.of(true),
             features = OptionalValue.of(listOf("feat1", "feat2")),
-            exception = OptionalValue.empty()
         )
         serverConnection.withConnectionForDevice(device) {
             sendProcessProperties(localProperties)
@@ -306,7 +305,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(processName = OptionalValue.of("Foo"))
@@ -326,7 +324,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(packageName = OptionalValue.of("Bar"))
@@ -346,7 +343,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(userId = OptionalValue.of(12))
@@ -366,7 +362,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(vmIdentifier = OptionalValue.of("vm"))
@@ -386,7 +381,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(instructionSet = OptionalValue.of(InstructionSet.X86))
@@ -406,7 +400,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(jvmFlags = OptionalValue.of("FooBar"))
@@ -426,7 +419,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(isNativeDebuggable = OptionalValue.of(true))
@@ -447,7 +439,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertFalse(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(isWaitingForDebugger = OptionalValue.of(true))
@@ -467,7 +458,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertTrue(it.isWaitingForDebugger.getOrDefault(false))
             assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
             assertFalse(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
         }
 
         localProperties = localProperties.copy(features = OptionalValue.of(listOf("f1", "f2", "f3")))
@@ -487,27 +477,6 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertTrue(it.isWaitingForDebugger.getOrDefault(false))
             assertEquals(listOf("f1", "f2", "f3"), it.features.getOrDefault(emptyList()))
             assertTrue(it.areAllPropertiesInitialized())
-            assertNull(it.exception.getOrNull())
-        }
-
-        localProperties = localProperties.copy(exception = OptionalValue.of(Exception("Message")))
-        sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.exception.getOrNull()?.message == "Message"
-        }.also {
-            assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName.getOrNull())
-            assertEquals("Bar", it.packageName.getOrNull())
-            assertEquals(12, it.userId.getOrNull())
-            assertEquals("vm", it.vmIdentifier.getOrNull())
-            assertEquals("32-bit (x86)", it.instructionSetDescription.getOrNull())
-            assertEquals(InstructionSet.X86, it.instructionSet.getOrNull())
-            assertEquals("FooBar", it.jvmFlags.getOrNull())
-            @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable.getOrDefault(false))
-            assertTrue(it.isWaitingForDebugger.getOrDefault(false))
-            assertEquals(listOf("f1", "f2", "f3"), it.features.getOrDefault(emptyList()))
-            assertTrue(it.areAllPropertiesInitialized())
-            assertEquals("Message", it.exception.getOrNull()?.message)
         }
 
         collectorJobs.forEach {

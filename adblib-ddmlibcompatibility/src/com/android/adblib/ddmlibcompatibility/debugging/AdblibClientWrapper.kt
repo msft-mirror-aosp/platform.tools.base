@@ -186,7 +186,7 @@ internal class AdblibClientWrapper(
             newProperties.isWaitingForDebugger.getOrDefault(false) -> ClientData.DebuggerStatus.WAITING
 
             // This comes from any error during process properties polling
-            newProperties.exception.getOrNull() != null -> ClientData.DebuggerStatus.ERROR
+            newProperties.processName.isError -> ClientData.DebuggerStatus.ERROR
 
             // This happens when process properties have been collected and also
             // when there is no active jdwp debugger connection

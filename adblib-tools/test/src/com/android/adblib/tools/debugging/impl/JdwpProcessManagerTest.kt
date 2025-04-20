@@ -415,7 +415,6 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
                 "opengl-tracing"
             ), properties.features.getOrNull()
         )
-        assertNull(properties.exception.getOrNull())
         assertTrue(properties.areAllPropertiesInitialized())
     }
 }

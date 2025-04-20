@@ -26,7 +26,6 @@ import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.OptionalValue
-import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollectorFactoryList
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
@@ -74,9 +73,6 @@ internal class JdwpProcessPropertiesCollectorImpl(
                 createFlowUpdater().collectUpdates(propertiesAtomicStateFlow)
             }.onFailure { throwable ->
                 logger.logIOCompletionErrors(throwable)
-                propertiesAtomicStateFlow.update { current ->
-                    current.copy(exception = current.addException(throwable))
-                }
                 propertiesAtomicStateFlow.applyEndOfCollectorErrorIfEmpty()
             }
         }

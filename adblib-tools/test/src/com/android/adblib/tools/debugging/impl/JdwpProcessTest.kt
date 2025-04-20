@@ -252,7 +252,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
         // Assert
         val properties = process.properties
-        assertNull(properties.exception.getOrNull())
         assertTrue("All JDWP properties should have been retrieved even if " +
                            "the JDWP session timeout is long",
                    properties.areAllPropertiesInitialized())
@@ -515,7 +514,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
                 ), properties.features.getOrNull()
             )
         }
-        assertNull(properties.exception.getOrNull())
         assertTrue(properties.areAllPropertiesInitialized())
     }
 
@@ -531,7 +529,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         @Suppress("DEPRECATION")
         assertFalse(properties.isNativeDebuggable.getOrDefault(false))
         assertTrue(properties.features.getOrDefault(emptyList()).isEmpty())
-        assertNull(properties.exception.getOrNull())
         assertFalse(properties.areAllPropertiesInitialized())
     }
 

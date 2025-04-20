@@ -26,7 +26,6 @@ import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.OptionalValue
-import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.isAppInfoSupported
@@ -127,12 +126,9 @@ internal class UsingAppInfoFlowUpdater(
                 )
             }
         } catch (throwable: Throwable) {
-            // We log this error, because a failure here basically means the
-            // JdwpProcessProperties will never reach the "completed" state
             logger.logIOCompletionErrors(throwable)
             stateFlow.update {
                 it.copy(
-                    exception = it.addException(throwable),
                     vmIdentifier =  OptionalValue.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
                     features = OptionalValue.ofError<List<String>>("Error collecting features from device capabilities").orElse(it.features)
                 )

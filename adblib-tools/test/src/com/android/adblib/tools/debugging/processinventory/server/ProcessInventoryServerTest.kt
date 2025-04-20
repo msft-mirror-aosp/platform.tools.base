@@ -171,8 +171,8 @@ class ProcessInventoryServerTest {
             assertEquals(1, response.trackDeviceResponsePayload.processUpdates.processUpdateCount)
             assertTrue(response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).hasProcessUpdated())
             assertEquals(124, response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.pid)
-            assertEquals("foo", response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.processName)
-            assertEquals("bar", response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.packageName)
+            assertEquals("foo", response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.processName.stringValue)
+            assertEquals("bar", response.trackDeviceResponsePayload.processUpdates.getProcessUpdate(0).processUpdated.packageName.stringValue)
         }
     }
 
@@ -345,8 +345,18 @@ class ProcessInventoryServerTest {
             ProcessInventoryServerProto.JdwpProcessInfo
                 .newBuilder()
                 .setPid(pid).also { proto ->
-                    processName?.also { proto.setProcessName(it) }
-                    packageName?.also { proto.setPackageName(it) }
+                    processName?.also {
+                        proto.processName = ProcessInventoryServerProto.OptionalString.newBuilder()
+                            .setHasValue(true)
+                            .setStringValue(it)
+                            .build()
+                    }
+                    packageName?.also {
+                        proto.packageName = ProcessInventoryServerProto.OptionalString.newBuilder()
+                            .setHasValue(true)
+                            .setStringValue(it)
+                            .build()
+                    }
                 }
                 .build()
         )
