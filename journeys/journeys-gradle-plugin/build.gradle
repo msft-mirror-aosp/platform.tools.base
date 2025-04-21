@@ -21,8 +21,7 @@ plugins {
     id 'java-gradle-plugin'
 }
 
-// TODO(b/371012994): This is a tentative package name.
-group = 'com.android.journeys'
+group = 'com.android.tools.journeys'
 version = '0.0.1-dev'
 
 base {
@@ -32,9 +31,8 @@ base {
 gradlePlugin {
     plugins {
         comAndroidJourneys {
-            // TODO(b/371012994): This is a tentative package name.
-            id = "com.android.journeys"
-            implementationClass = "com.android.journeys.JourneysGradlePlugin"
+            id = "com.android.tools.journeys"
+            implementationClass = "com.android.tools.journeys.JourneysGradlePlugin"
         }
     }
 }
