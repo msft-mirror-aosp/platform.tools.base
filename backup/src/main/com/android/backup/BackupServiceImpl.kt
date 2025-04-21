@@ -33,7 +33,6 @@ import com.android.backup.ErrorCode.BACKUP_NOT_ENABLED
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
 import com.android.backup.ErrorCode.READ_CONTENT_FAILED
 import com.android.backup.ErrorCode.WRITE_CONTENT_FAILED
-import com.intellij.util.io.delete
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -94,7 +93,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
                 .toBackupResult()
           }
         if (result is BackupResult.Error) {
-          tempFile.delete()
+          Files.delete(tempFile)
         } else {
           backupFile.parent.createDirectories()
           Files.move(tempFile, backupFile, REPLACE_EXISTING)

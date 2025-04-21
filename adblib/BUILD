@@ -49,6 +49,7 @@ maven_library(
         "//tools/base/adb-proxy:__subpackages__",
         "//tools/base/adblib-ddmlibcompatibility:__subpackages__",
         "//tools/base/adblib-tools:__subpackages__",
+        "//tools/base/backup:__subpackages__",
         "//tools/base/deploy/deployer:__subpackages__",
         "//tools/base/gmaven:__subpackages__",
         "//tools/vendor/google/directaccess-client:__subpackages__",
