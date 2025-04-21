@@ -262,24 +262,25 @@ message Device {
   string serial = 4;       // unique ID for this device
   string version = 5;      // e.g. '5.1.1', '8.0.0'
   int32 api_level = 6;     // e.g. 19, 25
+  int32 api_level_minor = 7;
   // |feature_level| will either be the same as |api_level| or |api_level + 1|
   // if the current device is a preview version. Code should check against
   // |feature_level|, not |api_level|, to see if a feature is available in the
   // framework or not. If |feature_level != api_level|, then |codename| will
   // also be set.
-  int32 feature_level = 7;
-  string codename = 8; // Identifies preview versions by API letter (e.g. 'O'),
+  int32 feature_level = 8;
+  string codename = 9; // Identifies preview versions by API letter (e.g. 'O'),
                        // or '' for release
-  string boot_id = 9;  // unique ID regenerated each boot time
-  bool is_emulator = 10;
-  string build_tags = 11;  // property of IDevice.PROP_BUILD_TAGS
-  string build_type = 12;  // property of IDevice.PROP_BUILD_TYPE
-  string cpu_abi = 13;     // property of IDevice.PROP_DEVICE_CPU_ABI
-  State state = 14;
+  string boot_id = 10;  // unique ID regenerated each boot time
+  bool is_emulator = 11;
+  string build_tags = 12;  // property of IDevice.PROP_BUILD_TAGS
+  string build_type = 13;  // property of IDevice.PROP_BUILD_TYPE
+  string cpu_abi = 14;     // property of IDevice.PROP_DEVICE_CPU_ABI
+  State state = 15;
 
   // Should only be set if the pipeline does not support the device.
   // e.g. pre-Lollipop devices.
-  string unsupported_reason = 15;
+  string unsupported_reason = 16;
 }
 
 message Process {
