@@ -16,8 +16,10 @@
 package com.android.tools.apk.analyzer;
 
 import com.android.annotations.NonNull;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,11 +31,12 @@ import java.util.regex.Pattern;
 
 public class AndroidApplicationInfo {
     public static final AndroidApplicationInfo UNKNOWN =
-            new AndroidApplicationInfo("unknown", "unknown", 0);
+            new AndroidApplicationInfo("unknown", "unknown", 0, false);
 
     @NonNull public final String packageId;
     @NonNull public final String versionName;
     public final long versionCode;
+    public final Boolean extractNativeLibs;
     private final Map<String, String> usesFeature;
     private final Set<String> usesFeatureNotRequired;
 
@@ -41,14 +44,19 @@ public class AndroidApplicationInfo {
             Pattern.compile("uses-implied-feature: name='(.+)' reason='(.+)'");
     private static final Pattern packagePattern =
             Pattern.compile(
-                    "package: name='(.*)' versionCode='(.*)' versionName='(.*)' platformBuildVersionName='(.*)'");
+                    "package: name='(.*)' versionCode='(.*)' versionName='(.*)'"
+                            + " platformBuildVersionName='(.*)'");
     private final Set<String> permissions;
 
     public AndroidApplicationInfo(
-            @NonNull String packageId, @NonNull String versionName, long versionCode) {
+            @NonNull String packageId,
+            @NonNull String versionName,
+            long versionCode,
+            Boolean extractNativeLibs) {
         this.packageId = packageId;
         this.versionName = versionName;
         this.versionCode = versionCode;
+        this.extractNativeLibs = extractNativeLibs;
         usesFeature = ImmutableMap.of();
         usesFeatureNotRequired = ImmutableSet.of();
         permissions = ImmutableSet.of();
@@ -58,12 +66,14 @@ public class AndroidApplicationInfo {
             @NonNull String packageId,
             @NonNull String versionName,
             long versionCode,
+            Boolean extractNativeLibs,
             Map<String, String> usesFeature,
             Set<String> usesFeatureNotRequired,
             Set<String> permissions) {
         this.packageId = packageId;
         this.versionName = versionName;
         this.versionCode = versionCode;
+        this.extractNativeLibs = extractNativeLibs;
         this.usesFeature = usesFeature;
         this.usesFeatureNotRequired = usesFeatureNotRequired;
         this.permissions = permissions;
@@ -74,6 +84,7 @@ public class AndroidApplicationInfo {
         String packageId = null;
         long versionCode = 0;
         String versionName = null;
+        Boolean extractNativeLibs = null;
 
         for (String line : output) {
             line = line.trim();
@@ -109,9 +120,22 @@ public class AndroidApplicationInfo {
                         packageId = line.substring(eqIndex + 2, endQuote);
                     }
                 }
+            } else if (line.startsWith("A: android:extractNativeLibs")) {
+                // e.g: A: android:extractNativeLibs(0x010104ea)=(type 0x12)0x0
+                int eqIndex = line.indexOf('=');
+                if (eqIndex > 0) {
+                    int endParen = line.indexOf(')', eqIndex + 2);
+                    if (endParen > 0) {
+                        String value = line.substring(endParen + 1);
+                        extractNativeLibs = value.equals("0x1");
+                    }
+                }
             }
 
-            if (packageId != null && versionName != null && versionCode != 0) {
+            if (packageId != null
+                    && versionName != null
+                    && versionCode != 0
+                    && extractNativeLibs != null) {
                 break;
             }
         }
@@ -119,7 +143,8 @@ public class AndroidApplicationInfo {
         return new AndroidApplicationInfo(
                 packageId == null ? "unknown" : packageId,
                 versionName == null ? "?" : versionName,
-                versionCode);
+                versionCode,
+                extractNativeLibs);
     }
 
 
@@ -212,6 +237,8 @@ public class AndroidApplicationInfo {
                     packageId == null ? "unknown" : packageId,
                     versionName == null ? "?" : versionName,
                     versionCode,
+                    false, // assume the default for extractNativeLibs. This will show page size
+                    // warnings if applicable.
                     Collections.unmodifiableMap(usesFeature),
                     Collections.unmodifiableSet(usesFeatureNotRequired),
                     Collections.unmodifiableSet(permissions));
