@@ -73,12 +73,16 @@ data class JdwpProxySocketServerStatus(
 
     /**
      * The [InetSocketAddress] (typically on `localhost`) a Java debugger can use to open a
-     * JDWP debugging session with the Android process. If the value is `null`, the debugger
-     * connection is not ready yet.
+     * JDWP debugging session with the Android process.
+     *
+     * A value of [OptionalValue.empty] indicates the debugger proxy connection is not ready yet
+     *
+     * A value of [OptionalValue.isError] indicates an error related to the socket connection or
+     * the proxy server itself.
      *
      * @see JdwpProxySocketServer
      */
-    val socketAddress: InetSocketAddress? = null,
+    val socketAddress: OptionalValue<InetSocketAddress> = OptionalValue.empty(),
 
     /**
      * `true` if there is an active JDWP debugging session on [socketAddress].

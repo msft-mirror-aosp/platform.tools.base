@@ -385,8 +385,8 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
         val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
 
         // Act
-        val proxyAddress = connectedJdwpProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
-        val delegatingProxyAddress = delegatingProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
+        val proxyAddress = connectedJdwpProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress.getOrNull() }.first()
+        val delegatingProxyAddress = delegatingProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress.getOrNull() }.first()
 
         // Assert
         assertSame(proxyAddress, delegatingProxyAddress)

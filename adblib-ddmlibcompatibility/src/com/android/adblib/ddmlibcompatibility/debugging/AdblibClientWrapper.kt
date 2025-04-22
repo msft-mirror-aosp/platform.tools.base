@@ -185,8 +185,8 @@ internal class AdblibClientWrapper(
             // This comes from seeing a DDMS_WAIT packet on the JDWP connection
             newProperties.isWaitingForDebugger.getOrDefault(false) -> ClientData.DebuggerStatus.WAITING
 
-            // This comes from any error during process properties polling
-            newProperties.processName.isError -> ClientData.DebuggerStatus.ERROR
+            // Check for an error in the JDWP proxy socket
+            newProxyStatus.socketAddress.isError -> ClientData.DebuggerStatus.ERROR
 
             // This happens when process properties have been collected and also
             // when there is no active jdwp debugger connection
@@ -251,7 +251,7 @@ internal class AdblibClientWrapper(
      * Android Studio) can connect to open a JDWP session with the process.
      */
     override fun getDebuggerListenPort(): Int {
-        return jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress?.port ?: -1
+        return jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress.getOrNull()?.port ?: -1
     }
 
     /**

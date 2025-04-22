@@ -78,8 +78,8 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", false)
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
         CoroutineTestUtils.yieldUntil {
-             process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress != null &&
-                    process.properties.processName != null
+             process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.hasValue &&
+                    process.properties.processName.hasValue
         }
         val jdwpSession = attachDebuggerSession(process)
         return JdwpProxySessionInfo(
@@ -90,10 +90,10 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
     }
 
     protected suspend fun attachDebuggerSession(process: JdwpProcess): JdwpSession {
-        process.jdwpProxySocketServer.proxyStatusFlow.first { it.socketAddress != null }
+        process.jdwpProxySocketServer.proxyStatusFlow.first { it.socketAddress.hasValue }
         val clientSocket = registerCloseable(
             session.channelFactory.connectSocket(
-                process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress!!
+                process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.getOrThrow()
             )
         )
         return registerCloseable(
