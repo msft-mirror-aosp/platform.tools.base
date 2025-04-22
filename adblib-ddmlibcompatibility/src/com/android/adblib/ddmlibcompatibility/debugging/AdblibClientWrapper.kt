@@ -220,7 +220,7 @@ internal class AdblibClientWrapper(
         //  is a process running on an Android VM.
         // We use vmIdentifier as a proxy for checking a DDM HELO packet has
         // been received.
-        return jdwpProcess.properties.vmIdentifier != null
+        return jdwpProcess.properties.vmIdentifier.hasValue
     }
 
     override fun getClientData(): ClientData {
@@ -243,7 +243,7 @@ internal class AdblibClientWrapper(
      */
     override fun isValid(): Boolean {
         return jdwpProcess.scope.isActive &&
-                jdwpProcess.properties.vmIdentifier != null
+                jdwpProcess.properties.vmIdentifier.hasValue
     }
 
     /**
