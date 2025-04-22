@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.tasks.factory.TaskConfigAction
 import com.android.build.gradle.internal.tasks.factory.TaskProviderCallback
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.tasks.factory.registerTask
+import com.android.build.gradle.tasks.ProcessLibraryArtProfileTask
 import com.android.build.gradle.tasks.BundleAar
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.MergeSourceSetFolders
@@ -179,6 +180,8 @@ class KmpTaskManager(
                 variant
             )
         )
+
+        taskFactory.register(ProcessLibraryArtProfileTask.CreationAction(variant))
 
         if (variant.optimizationCreationConfig.minifiedEnabled) {
             project.tasks.registerTask(
