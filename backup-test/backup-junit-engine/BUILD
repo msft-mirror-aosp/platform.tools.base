@@ -12,6 +12,7 @@ maven_library(
     version = BACKUP_TEST_VERSION,
     visibility = ["//visibility:public"],
     deps = [
+        "//tools/base/backup-test/backup-test-api",
         "//tools/base/common:tools.common",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
