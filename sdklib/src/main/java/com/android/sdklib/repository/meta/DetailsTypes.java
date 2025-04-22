@@ -565,8 +565,7 @@ public final class DetailsTypes {
             String abi) {
         return SdkConstants.FD_SYSTEM_IMAGES
                 + RepoPackage.PATH_SEPARATOR
-                + "android-"
-                + version.getApiStringWithExtension()
+                + version.getPlatformHashString()
                 + RepoPackage.PATH_SEPARATOR
                 + name.getId()
                 + RepoPackage.PATH_SEPARATOR
