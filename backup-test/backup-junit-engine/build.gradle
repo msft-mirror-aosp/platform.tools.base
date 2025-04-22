@@ -22,6 +22,7 @@ apply from: '../release_version.gradle'
 group = 'com.android.tools.backup'
 
 dependencies {
+    implementation(project(":base:backup-test:backup-test-api"))
     implementation libs.com.android.tools.common
     implementation libs.junit_platform_engine
 }
