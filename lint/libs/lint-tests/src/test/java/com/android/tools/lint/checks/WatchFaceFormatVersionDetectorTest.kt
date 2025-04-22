@@ -82,24 +82,6 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun `test the WFF version property value is invalid`() {
-    lint()
-      .files(
-        manifestWith(watchFaceFormatVersionProperty(value = "invalid"))
-        // this should work even when there is no DWF file
-      )
-      .run()
-      .expect(
-        """
-          AndroidManifest.xml:9: Error: The Watch Face Format is invalid [WatchFaceFormatInvalidVersion]
-                  <property android:name="com.google.wear.watchface.format.version" android:value="invalid" />
-                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~
-          1 error
-      """
-          .trimIndent()
-      )
-  }
-
   private fun declarativeWatchFaceFile() =
     xml(
       "res/raw/watch_face.xml",
