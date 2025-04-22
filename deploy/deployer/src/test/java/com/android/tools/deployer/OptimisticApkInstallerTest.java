@@ -16,6 +16,7 @@
 package com.android.tools.deployer;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.mockito.Mockito.when;
 
 import com.android.ddmlib.IDevice;
@@ -27,16 +28,13 @@ import com.android.utils.NullLogger;
 import com.android.zipflinger.BytesSource;
 import com.android.zipflinger.ZipArchive;
 import com.android.zipflinger.ZipInfo;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+
+import kotlin.Unit;
+
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,7 +43,30 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+
 public class OptimisticApkInstallerTest {
+
+    private class TestTerminator extends DeployerApplicationTerminator {
+        public TestTerminator(
+                @NotNull Collection<? extends @NotNull IDevice> devices, @NotNull String appId) {
+            super(
+                    devices,
+                    appId,
+                    (device, s) -> {
+                        killCount++;
+                        return Unit.INSTANCE;
+                    });
+        }
+    }
 
     private static final String TEST_ABI = "x86_64";
     private static final String TEST_PACKAGE = "test-package";
@@ -66,8 +87,10 @@ public class OptimisticApkInstallerTest {
     private AdbClient adb;
     private Installer installer;
     private DeploymentCacheDatabase cache;
+    private DeployerApplicationTerminator terminator;
     private MetricsRecorder metrics;
     private ILogger logger;
+    private int killCount = 0;
 
     @Rule public TemporaryFolder folder = new TemporaryFolder();
 
@@ -90,12 +113,15 @@ public class OptimisticApkInstallerTest {
         cache = new DeploymentCacheDatabase(DeploymentCacheDatabase.DEFAULT_SIZE);
         metrics = new MetricsRecorder();
         logger = new NullLogger();
+        terminator = new TestTerminator(List.of(device), "com.example.app.id");
+        killCount = 0;
     }
 
     @Test
     public void addRemoveOverlayFile() throws IOException, DeployerException {
         OptimisticApkInstaller apkInstaller =
-                new OptimisticApkInstaller(installer, adb, cache, metrics, IWI_ON, logger);
+                new OptimisticApkInstaller(
+                        installer, adb, terminator, cache, metrics, IWI_ON, logger);
         // Populate the cache. To prevent us from having to mock dump, we create a cache entry with
         // an empty overlay, which prevents the cache entry from being treated as a base install.
         Apk installedApk =
@@ -148,12 +174,14 @@ public class OptimisticApkInstallerTest {
                                 "file4", "2"));
         nextId = apkInstaller.install(App.fromApk(TEST_PACKAGE, nextApk), ImmutableList.of());
         assertOverlay(nextId, "base/file4");
+        assertThat(killCount).isEqualTo(1);
     }
 
     @Test
     public void deleteInstalledFile() throws IOException, DeployerException {
         OptimisticApkInstaller apkInstaller =
-                new OptimisticApkInstaller(installer, adb, cache, metrics, IWI_ON, logger);
+                new OptimisticApkInstaller(
+                        installer, adb, terminator, cache, metrics, IWI_ON, logger);
         // Populate the cache. To prevent us from having to mock dump, we create a cache entry with
         // an empty overlay, which prevents the cache entry from being treated as a base install.
         Apk installedApk =
@@ -190,13 +218,18 @@ public class OptimisticApkInstallerTest {
                                 "file1", "0",
                                 "file4", "2"));
         thrown.expect(DeployerException.class);
-        apkInstaller.install(App.fromApk(TEST_PACKAGE, nextApk), ImmutableList.of());
+        try {
+            apkInstaller.install(App.fromApk(TEST_PACKAGE, nextApk), ImmutableList.of());
+        } finally {
+            assertThat(killCount).isEqualTo(1);
+        }
     }
 
     @Test
     public void iwiDisabled() throws IOException, DeployerException {
         OptimisticApkInstaller apkInstaller =
-                new OptimisticApkInstaller(installer, adb, cache, metrics, IWI_OFF, logger);
+                new OptimisticApkInstaller(
+                        installer, adb, terminator, cache, metrics, IWI_OFF, logger);
         // Populate the cache. To prevent us from having to mock dump, we create a cache entry with
         // an empty overlay, which prevents the cache entry from being treated as a base install.
         Apk installedApk =
@@ -218,13 +251,18 @@ public class OptimisticApkInstallerTest {
                                 "file1", "0",
                                 "file2", "99"));
         thrown.expect(DeployerException.class);
-        apkInstaller.install(App.fromApk(TEST_PACKAGE, nextApk), ImmutableList.of());
+        try {
+            apkInstaller.install(App.fromApk(TEST_PACKAGE, nextApk), ImmutableList.of());
+        } finally {
+            assertThat(killCount).isEqualTo(0);
+        }
     }
 
     @Test
     public void filterIncorrectAbis() throws IOException, DeployerException {
         OptimisticApkInstaller apkInstaller =
-                new OptimisticApkInstaller(installer, adb, cache, metrics, IWI_ON, logger);
+                new OptimisticApkInstaller(
+                        installer, adb, terminator, cache, metrics, IWI_ON, logger);
         // Populate the cache. To prevent us from having to mock dump, we create a cache entry with
         // an empty overlay, which prevents the cache entry from being treated as a base install.
         Apk installedApk =
@@ -254,12 +292,14 @@ public class OptimisticApkInstallerTest {
         OverlayId nextId =
                 apkInstaller.install(App.fromApk(TEST_PACKAGE, nextApk), ImmutableList.of());
         assertOverlay(nextId, "base/lib/x86_64/bar", "base/lib/x86_64/not");
+        assertThat(killCount).isEqualTo(1);
     }
 
     @Test
     public void skipTestApks() throws IOException, DeployerException {
         OptimisticApkInstaller apkInstaller =
-                new OptimisticApkInstaller(installer, adb, cache, metrics, IWI_OFF, logger);
+                new OptimisticApkInstaller(
+                        installer, adb, terminator, cache, metrics, IWI_OFF, logger);
         metrics.start("test");
         // Populate the cache. To prevent us from having to mock dump, we create a cache entry with
         // an empty overlay, which prevents the cache entry from being treated as a base install.
@@ -310,13 +350,15 @@ public class OptimisticApkInstallerTest {
             assertThat(metrics.getDeployMetrics().size()).isEqualTo(1);
             assertThat(metrics.getDeployMetrics().get(0).getName()).isEqualTo("test");
             assertThat(metrics.getDeployMetrics().get(0).hasStatus()).isFalse();
+            assertThat(killCount).isEqualTo(0);
         }
     }
 
     @Test
     public void fallBackOnPmFlags() throws IOException, DeployerException {
         OptimisticApkInstaller apkInstaller =
-                new OptimisticApkInstaller(installer, adb, cache, metrics, IWI_OFF, logger);
+                new OptimisticApkInstaller(
+                        installer, adb, terminator, cache, metrics, IWI_OFF, logger);
         // Populate the cache. To prevent us from having to mock dump, we create a cache entry with
         // an empty overlay, which prevents the cache entry from being treated as a base install.
         Apk installedApk =
@@ -338,7 +380,11 @@ public class OptimisticApkInstallerTest {
                                 "file1", "0",
                                 "file2", "99"));
         thrown.expect(DeployerException.class);
-        apkInstaller.install(App.fromApk(TEST_PACKAGE, nextApk), ImmutableList.of("-g"));
+        try {
+            apkInstaller.install(App.fromApk(TEST_PACKAGE, nextApk), ImmutableList.of("-g"));
+        } finally {
+            assertThat(killCount).isEqualTo(0);
+        }
     }
 
     private static void assertOverlay(OverlayId id, String... files) {

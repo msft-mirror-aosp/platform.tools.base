@@ -22,6 +22,7 @@ import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.App;
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.utils.ILogger;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,16 +44,19 @@ class OptimisticApkInstaller {
     private final MetricsRecorder metrics;
     private final DeployerOption options;
     private final ILogger logger;
+    private final DeployerApplicationTerminator terminator;
 
     public OptimisticApkInstaller(
             Installer installer,
             AdbClient adb,
+            DeployerApplicationTerminator terminator,
             DeploymentCacheDatabase cache,
             MetricsRecorder metrics,
             DeployerOption options,
             ILogger logger) {
         this.installer = installer;
         this.adb = adb;
+        this.terminator = terminator;
         this.cache = cache;
         this.metrics = metrics;
         this.options = options;
@@ -176,6 +180,14 @@ class OptimisticApkInstaller {
         metrics.finish();
         metrics.add(response.getAgentLogsList());
 
+        // If the deployer is given the power to terminate, it'll become our responsibility
+        // to terminate here given we are no longer depending on package manager.
+        //
+        // Note that for Apply (Code) Changes with IWI, we don't need to terminate the app.
+        // However, that overlay install path is handled by the OptimisticApkSwapper.
+        if (terminator != null) {
+            terminator.terminate(adb.getDevice());
+        }
         return nextOverlayId;
     }
 

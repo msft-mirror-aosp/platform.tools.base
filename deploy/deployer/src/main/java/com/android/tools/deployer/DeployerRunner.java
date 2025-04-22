@@ -217,23 +217,29 @@ public class DeployerRunner {
                         .useRootPushInstall(parameters.getUseRootPushInstall())
                         .build();
 
-        Deployer deployer =
-                new Deployer(
-                        adb,
-                        cacheDb,
-                        dexDb,
-                        runner,
-                        installer,
-                        this.service,
-                        metrics,
-                        logger,
-                        deployerOption);
         final Deployer.Result deployResult;
         try {
             App app =
                     parameters.hasStrategyJson()
                             ? getAppToInstall(parameters.getStrategyJson(), logger)
                             : getAppToInstall(parameters.getApplicationId(), parameters.getApks());
+
+            Deployer deployer =
+                    new Deployer(
+                            adb,
+                            cacheDb,
+                            dexDb,
+                            runner,
+                            installer,
+                            // This is only need for IWI and we don't support IWI termination
+                            // outside of
+                            // Studio and our own unit testing.
+                            new DeployerRunnerApplicationTerminator(device, app.getAppId()),
+                            this.service,
+                            metrics,
+                            logger,
+                            deployerOption);
+
             if (parameters.getCommands().contains(DeployRunnerParameters.Command.INSTALL)) {
                 InstallOptions.Builder options = defaultInstallOptions.toBuilder();
 
