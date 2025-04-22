@@ -39,14 +39,12 @@ import com.android.build.gradle.internal.res.GenerateApiPublicTxtTask
 import com.android.build.gradle.internal.res.GenerateEmptyResourceFilesTask
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskConfigAction
 import com.android.build.gradle.internal.tasks.factory.TaskProviderCallback
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.tasks.factory.registerTask
-import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.tasks.BundleAar
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.MergeSourceSetFolders
@@ -181,11 +179,6 @@ class KmpTaskManager(
                 variant
             )
         )
-
-        R8D8ThreadPoolBuildService.RegistrationAction(
-            project,
-            variant.services.projectOptions
-        ).execute()
 
         if (variant.optimizationCreationConfig.minifiedEnabled) {
             project.tasks.registerTask(
