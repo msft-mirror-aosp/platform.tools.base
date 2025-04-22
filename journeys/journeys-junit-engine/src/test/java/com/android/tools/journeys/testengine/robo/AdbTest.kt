@@ -21,7 +21,10 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argumentCaptor
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -34,7 +37,7 @@ class AdbTest {
     @Before
     fun setUp() {
         mockExecutor = mock(ProcessExecutor::class.java)
-        adb = Adb("path/to/adb", "device-123", mockExecutor)
+        adb = Adb("path/to/adb", mockExecutor)
     }
 
     @Test
@@ -43,7 +46,7 @@ class AdbTest {
             ProcessResult(0, "Success", "")
         )
 
-        adb.install("test.apk")
+        adb.install("device-123", "test.apk")
 
         verify(mockExecutor).execCmdSync(
             listOf("path/to/adb", "-s", "device-123", "install", "test.apk"),
@@ -57,7 +60,7 @@ class AdbTest {
             ProcessResult(0, "Success", "")
         )
 
-        adb.install("test.apk", listOf("-r", "-d"))
+        adb.install("device-123", "test.apk", listOf("-r", "-d"))
 
         verify(mockExecutor).execCmdSync(
             listOf("path/to/adb", "-s", "device-123", "install", "-r", "-d", "test.apk"),
@@ -72,11 +75,12 @@ class AdbTest {
             ProcessResult(0, "Success", "")
         )
 
-        adb.install(pathWithSpecialChars)
+        adb.install("device-123", pathWithSpecialChars)
 
         val installCaptor = argumentCaptor<List<String>>()
         verify(mockExecutor).execCmdSync(installCaptor.capture(), anyLong())
-        val expectedCommand = listOf("path/to/adb", "-s", "device-123", "install", pathWithSpecialChars)
+        val expectedCommand =
+            listOf("path/to/adb", "-s", "device-123", "install", pathWithSpecialChars)
         assertEquals(expectedCommand, installCaptor.firstValue)
     }
 
@@ -87,7 +91,7 @@ class AdbTest {
         )
 
         val exception = assertThrows(IllegalStateException::class.java) {
-            adb.install("test.apk")
+            adb.install("device-123", "test.apk")
         }
         assertEquals(
             "Command `path/to/adb -s device-123 install test.apk` failed (exit code 1) with output:\n------ stderr ------\nINSTALL_FAILED",
@@ -102,7 +106,7 @@ class AdbTest {
         )
 
         val exception = assertThrows(IllegalStateException::class.java) {
-            adb.install("test.apk")
+            adb.install("device-123", "test.apk")
         }
         assertEquals(
             "Command `path/to/adb -s device-123 install test.apk` failed (exit code 0) with output:\n------ stdout ------\nSomething went wrong",
@@ -116,7 +120,7 @@ class AdbTest {
             ProcessResult(0, "package:/data/app/com.example-1.apk", "")
         )
 
-        adb.uninstall("com.example")
+        adb.uninstall("device-123", "com.example")
 
         verify(mockExecutor).execCmdSync(
             listOf("path/to/adb", "-s", "device-123", "shell", "pm", "path", "com.example"),
@@ -134,7 +138,7 @@ class AdbTest {
             ProcessResult(0, "", "")
         )
 
-        adb.uninstall("com.example")
+        adb.uninstall("device-123", "com.example")
 
         verify(mockExecutor).execCmdSync(
             listOf("path/to/adb", "-s", "device-123", "shell", "pm", "path", "com.example"),
@@ -166,7 +170,7 @@ class AdbTest {
         )
 
         val exception = assertThrows(IllegalStateException::class.java) {
-            adb.uninstall("com.example")
+            adb.uninstall("device-123", "com.example")
         }
         assertEquals(
             "Command `path/to/adb -s device-123 uninstall com.example` failed (exit code 1) with output:\n------ stderr ------\nDELETE_FAILED_INTERNAL_ERROR",
@@ -180,9 +184,8 @@ class AdbTest {
             ProcessResult(0, "30", "")
         )
 
-        assertEquals(30, adb.getDeviceApiLevel())
+        assertEquals(30, adb.getDeviceApiLevel("device-123"))
     }
-
 
     @Test
     fun `getDeviceApiLevel failure non-integer output`() {
@@ -191,7 +194,7 @@ class AdbTest {
         )
 
         val exception = assertThrows(IllegalStateException::class.java) {
-            adb.getDeviceApiLevel()
+            adb.getDeviceApiLevel("device-123")
         }
         assertEquals(
             "Command `path/to/adb -s device-123 shell getprop ro.build.version.sdk` failed (exit code 0) with output:\n------ stdout ------\nthirty",
@@ -205,6 +208,7 @@ class AdbTest {
         `when`(mockExecutor.execCmdAsync(anyList())).thenReturn(mockProcess)
 
         val process = adb.runInstrumentation(
+            "device-123",
             "com.example.test",
             "androidx.test.runner.AndroidJUnitRunner",
             mapOf("class" to "com.example.test.MyTestClass", "arg2" to "value1$# 'quote' ")
@@ -237,6 +241,7 @@ class AdbTest {
         `when`(mockExecutor.execCmdAsync(anyList())).thenReturn(mockProcess)
 
         val process = adb.runInstrumentation(
+            "device-123",
             "com.example.test",
             "androidx.test.runner.AndroidJUnitRunner"
         )
@@ -262,6 +267,7 @@ class AdbTest {
 
         val exception = assertThrows(IllegalStateException::class.java) {
             adb.runInstrumentation(
+                "device-123",
                 "com.example.test",
                 "androidx.test.runner.AndroidJUnitRunner"
             )
@@ -275,7 +281,7 @@ class AdbTest {
             ProcessResult(0, "8080", "")
         )
 
-        adb.forward(8080, 5050)
+        adb.forward("device-123", 8080, 5050)
 
         verify(mockExecutor).execCmdSync(
             listOf("path/to/adb", "-s", "device-123", "forward", "tcp:8080", "tcp:5050"),
@@ -290,7 +296,7 @@ class AdbTest {
         )
 
         val exception = assertThrows(IllegalStateException::class.java) {
-            adb.forward(8080, 5050)
+            adb.forward("device-123", 8080, 5050)
         }
         assertEquals(
             "Command `path/to/adb -s device-123 forward tcp:8080 tcp:5050` failed (exit code 1) with output:\n------ stdout ------\nerror",
@@ -313,7 +319,7 @@ class AdbTest {
             )
         ).thenReturn(ProcessResult(0, "", ""))
 
-        adb.removeForward(8080)
+        adb.removeForward("device-123", 8080)
 
         verify(mockExecutor).execCmdSync(
             listOf("path/to/adb", "-s", "device-123", "forward", "--list"),
@@ -331,7 +337,7 @@ class AdbTest {
             ProcessResult(0, "", "")
         )
 
-        adb.removeForward(8080)
+        adb.removeForward("device-123", 8080)
 
         verify(mockExecutor).execCmdSync(
             listOf("path/to/adb", "-s", "device-123", "forward", "--list"),
@@ -359,7 +365,7 @@ class AdbTest {
         ).thenReturn(ProcessResult(1, "", "error: something went wrong"))
 
         val exception = assertThrows(IllegalStateException::class.java) {
-            adb.removeForward(8080)
+            adb.removeForward("device-123", 8080)
         }
         verify(mockExecutor).execCmdSync(
             listOf("path/to/adb", "-s", "device-123", "forward", "--list"),
@@ -377,7 +383,7 @@ class AdbTest {
             ProcessResult(0, "DUMP OF SERVICE...", "")
         )
 
-        assertEquals("DUMP OF SERVICE...\n", adb.dumpsys("activity"))
+        assertEquals("DUMP OF SERVICE...\n", adb.dumpsys("device-123", "activity"))
     }
 
     @Test
@@ -387,7 +393,7 @@ class AdbTest {
         )
 
         val exception = assertThrows(IllegalStateException::class.java) {
-            adb.dumpsys("nonexistent.service")
+            adb.dumpsys("device-123", "nonexistent.service")
         }
         assertEquals(
             "Command `path/to/adb -s device-123 shell dumpsys activity service nonexistent.service` failed (exit code 1) with output:\n------ stderr ------\nService not found",
@@ -401,10 +407,20 @@ class AdbTest {
             ProcessResult(0, "", "")
         )
 
-        adb.setGlobalSettingsValue("my_key", "my_value")
+        adb.setGlobalSettingsValue("device-123", "my_key", "my_value")
 
         verify(mockExecutor).execCmdSync(
-            listOf("path/to/adb", "-s", "device-123", "shell", "settings", "put", "global", "my_key", "my_value"),
+            listOf(
+                "path/to/adb",
+                "-s",
+                "device-123",
+                "shell",
+                "settings",
+                "put",
+                "global",
+                "my_key",
+                "my_value"
+            ),
             10
         )
     }
@@ -416,7 +432,7 @@ class AdbTest {
         )
 
         val exception = assertThrows(IllegalStateException::class.java) {
-            adb.setGlobalSettingsValue("invalid_key", "invalid_value")
+            adb.setGlobalSettingsValue("device-123", "invalid_key", "invalid_value")
         }
         assertEquals(
             "Command `path/to/adb -s device-123 shell settings put global invalid_key invalid_value` failed (exit code 1) with output:\n------ stderr ------\nInvalid command",

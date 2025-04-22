@@ -20,16 +20,14 @@ import androidx.test.tools.crawler.output.Action
 import androidx.test.tools.crawler.output.DisplayState
 import androidx.test.tools.crawler.output.ModelDetails
 import androidx.test.tools.crawler.output.RoboScriptDetails
-import com.android.tools.journeys.testengine.descriptor.JourneyFileDescriptor
-import com.android.tools.journeys.testengine.descriptor.PromptDescriptor
 
 /**
  * Holds the mutable state associated with processing the crawl results for a single journey
  * file execution.
  *
- * @param journeyFileDescriptor The [JourneyFileDescriptor] representing the journey being executed.
+ * @param prompts The ordered list of prompts in the journey being executed.
  */
-class CrawlProcessingState(private val journeyFileDescriptor: JourneyFileDescriptor) {
+class CrawlProcessingState(private val prompts: List<String>) {
 
     // Stores model details received, keyed by model ID.
     private val modelDetails = mutableMapOf<Int, ModelDetails>()
@@ -46,6 +44,29 @@ class CrawlProcessingState(private val journeyFileDescriptor: JourneyFileDescrip
 
     // Tracks the current roboscript.
     private var currentRoboScript: RoboScriptDetails? = null
+
+    // Tracks an error if a prompt failed.
+    private var journeyError: Throwable? = null
+
+    /**
+     * Obtains a prompt at a given index.
+     *
+     * @param index The index of the prompt to extract.
+     * @return The extracted prompt.
+     */
+    fun getPromptText(index: Int): String {
+        return prompts[index]
+    }
+
+    /**
+     * Provides the complete list of prompts.
+     *
+     * @return The list of all prompts.
+     */
+    fun getAllPrompts(): List<String> {
+        return prompts
+    }
+
 
     /**
      * Adds model details to the state, if not already present for the given ID.
@@ -80,7 +101,6 @@ class CrawlProcessingState(private val journeyFileDescriptor: JourneyFileDescrip
      * @param displayState The [DisplayState] containing the ID and screenshot data.
      */
     fun addScreenshot(displayState: DisplayState) {
-        // Convert ByteString to ByteArray (creates a copy) and store if absent
         displayStateToScreenshot.putIfAbsent(
             displayState.displayStateId,
             displayState.screenshot.toByteArray()
@@ -160,33 +180,18 @@ class CrawlProcessingState(private val journeyFileDescriptor: JourneyFileDescrip
     }
 
     /**
-     * Finds the [PromptDescriptor] corresponding to a given prompt index within the journey.
-     *
-     * @param promptIndex The index of the prompt (corresponds to RoboScript actionIndex).
-     * @return The found [PromptDescriptor], or null if no descriptor exists for that index.
+     * Sets an error to track a prompt failure.
+     * @param throwable The error to track.
      */
-    fun getPromptDescriptor(promptIndex: Int): PromptDescriptor? {
-        val targetUniqueId = journeyFileDescriptor.uniqueId.append(
-            PromptDescriptor.SEGMENT_TYPE,
-            "$promptIndex"
-        )
-        val descriptorOptional = journeyFileDescriptor.findByUniqueId(targetUniqueId)
-
-        return descriptorOptional.orElse(null)?.let { descriptor ->
-            if (descriptor is PromptDescriptor) {
-                descriptor
-            } else {
-                System.err.println("Warning: Found descriptor for $targetUniqueId but it was not a PromptDescriptor.")
-                null
-            }
-        }
+    fun setJourneyError(throwable: Throwable) {
+        journeyError = throwable
     }
 
     /**
-     * Gets the [JourneyFileDescriptor] associated with this state.
-     * @return The [JourneyFileDescriptor].
+     * Retrieves the tracked error if any.
+     * @return A Throwable if a prompt failed or null.
      */
-    fun getJourneyFileDescriptor(): JourneyFileDescriptor {
-        return journeyFileDescriptor
+    fun getJourneyError(): Throwable? {
+        return journeyError
     }
 }

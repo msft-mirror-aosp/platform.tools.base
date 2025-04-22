@@ -20,11 +20,8 @@ import androidx.test.tools.crawler.output.Action
 import androidx.test.tools.crawler.output.ActionDetails
 import androidx.test.tools.crawler.output.Crawl
 import androidx.test.tools.crawler.output.RoboScriptDetails
-import com.android.tools.journeys.testengine.descriptor.PromptDescriptor
 import com.android.tools.journeys.testengine.robo.RoboConfigConstants
-import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.TestExecutionResult
-import org.junit.platform.engine.reporting.ReportEntry
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -53,27 +50,29 @@ data class ModelAction(
 /**
  * Processes [Crawl] results, interprets the sequence of RoboScripts and Actions,
  * updates the [CrawlProcessingState], saves relevant artifacts (screenshots),
- * and reports test execution progress to the JUnit [EngineExecutionListener].
+ * and publishes progress events via a provided callback.
  *
  * @param state The current [CrawlProcessingState] associated with the journey execution.
- * @param listener The JUnit [EngineExecutionListener] to report events to.
  * @param resultsDir The base directory where results (like screenshots) should be saved.
+ * @param reportEntryPublisher A function that accepts a key and value for reporting test metadata and events.
  */
 class ProgressReporter(
     private val state: CrawlProcessingState,
-    private val listener: EngineExecutionListener,
-    private val resultsDir: Path
+    private val resultsDir: Path,
+    private val reportEntryPublisher: (key: String, value: String) -> Unit
 ) {
 
     /**
      * Handles the start of a new RoboScript execution (corresponds to a Prompt).
-     * Reports the start event to the listener.
+     * Reports the start event as an artifact.
      *
      * @param roboScript The details of the RoboScript that started.
      */
     private fun onRoboScriptStarted(roboScript: RoboScriptDetails) {
-        val promptDescriptor = state.getPromptDescriptor(roboScript.actionIndex) ?: return
-        listener.executionStarted(promptDescriptor)
+        reportEntryPublisher(
+            "PromptStarted.prompt${roboScript.actionIndex}",
+            state.getPromptText(roboScript.actionIndex)
+        )
     }
 
     /**
@@ -84,16 +83,16 @@ class ProgressReporter(
      * @param actionSeq The index of the action at which the RoboScript was finished.
      */
     private fun onRoboScriptFinished(roboScript: RoboScriptDetails, actionSeq: Int) {
-        val promptDescriptor = state.getPromptDescriptor(roboScript.actionIndex) ?: return
-        val result = terminationCauseToResult(roboScript)
-        val id = "PromptComplete.prompt${promptDescriptor.getPromptIndex()}"
+        val id = "PromptComplete.prompt${roboScript.actionIndex}"
         val modelDetailsReasoning = state.getModelReasoning(roboScript.modelDetails.id) ?: ""
         // This screenshot is already written as the action was performed for a previous prompt
         // and the display state remained same for the following prompt.
         val screenshotPath = resultsDir.resolve("action$actionSeq.png").toString()
-        promptDescriptor.reportEntry("$id.modelReasoning", modelDetailsReasoning)
-        promptDescriptor.reportEntry("$id.screenshotPath", screenshotPath)
-        listener.executionFinished(promptDescriptor, result)
+        reportEntryPublisher("$id.modelReasoning", modelDetailsReasoning)
+        reportEntryPublisher("$id.screenshotPath", screenshotPath)
+        val result = terminationCauseToResult(roboScript)
+        reportEntryPublisher("$id.result", result.status.name)
+        result.throwable.ifPresent { state.setJourneyError(it) }
     }
 
     /**
@@ -104,40 +103,33 @@ class ProgressReporter(
      * @param roboScript The details of the RoboScript corresponding to the action.
      */
     private fun onActionPerformed(action: Action, roboScript: RoboScriptDetails) {
-        val promptIndex = roboScript.actionIndex
-        val promptDescriptor = state.getPromptDescriptor(promptIndex) ?: return
-
         val actionsToReport = buildList {
             addAll(state.getAccumulatedActions().map { getModelAction(it) })
             add(getModelAction(action, roboScript))
         }
-        handleAllActions(actionsToReport, promptDescriptor)
+        handleAllActions(actionsToReport)
         state.clearAccumulatedActions()
     }
 
     /**
      * Processes a list of [ModelAction]s, dynamically reporting each as a test execution
-     * event under the given [PromptDescriptor].
+     * event.
      *
      * @param actions The list of processed [ModelAction]s to report.
-     * @param promptDescriptor The parent [PromptDescriptor] under which to report these actions.
      */
-    private fun handleAllActions(actions: List<ModelAction>, promptDescriptor: PromptDescriptor) {
+    private fun handleAllActions(actions: List<ModelAction>) {
         actions.filter { action -> shouldReportAction(action.description) }
             .forEach { action ->
                 val id = "ActionPerformed.action${action.index}"
-                promptDescriptor.reportEntry("$id.description", action.description)
-                promptDescriptor.reportEntry(
+                reportEntryPublisher("$id.description", action.description)
+                reportEntryPublisher(
                     "$id.durationInMillis",
                     action.durationInMillis.toString()
                 )
-                promptDescriptor.reportEntry("$id.result", action.result.name)
-                action.reasoning?.let { promptDescriptor.reportEntry("$id.modelReasoning", it) }
+                reportEntryPublisher("$id.result", action.result.name)
+                action.reasoning?.let { reportEntryPublisher("$id.modelReasoning", it) }
                 action.screenshotPath?.let {
-                    promptDescriptor.reportEntry(
-                        "$id.screenshotPath",
-                        it
-                    )
+                    reportEntryPublisher("$id.screenshotPath", it)
                 }
             }
     }
@@ -348,33 +340,16 @@ class ProgressReporter(
     }
 
     /**
-     * Helper method to publish reporting entries to the listener and print the artifact line.
-     *
-     * @param key The key for the entry.
-     * @param value The value for the entry
-     */
-    private fun PromptDescriptor.reportEntry(key: String, value: String) {
-        println("[additionalTestArtifacts]Journeys.$key=$value")
-        if (key.isNotBlank() && value.isNotBlank()) {
-            listener.reportingEntryPublished(this, ReportEntry.from(key, value))
-        }
-    }
-
-    /**
      * Reports all prompts following the currently finished one as skipped.
      * This is called when the crawl terminates early.
      */
     fun reportSkippedPrompts() {
         val lastCompletedIndex = state.getLastCompletedRoboScriptIndex()
-        state.getJourneyFileDescriptor().children.filterIsInstance<PromptDescriptor>()
-            .forEach { child ->
-                if (child.getPromptIndex() > lastCompletedIndex) {
-                    listener.executionSkipped(
-                        child,
-                        "Skipped due to failure at previous step (index $lastCompletedIndex)"
-                    )
-                }
+        state.getAllPrompts().forEachIndexed { index, promptText ->
+            if (index > lastCompletedIndex) {
+                reportEntryPublisher("PromptSkipped.prompt${index}", promptText)
             }
+        }
     }
 
     private companion object {

@@ -103,7 +103,11 @@ class JourneysConnectedTest {
                         project.configurations.getByName("_test-journeys-config") + testTask.classpath
                     val path =
                         project.providers.systemProperty("roboResultsPath").orNull ?: ""
+                    val shouldInduceServerError =
+                        project.providers.systemProperty("shouldInduceServerError").orNull
+                            ?: "false"
                     testTask.jvmArgs("-DFakeCrawlerServiceInput.roboResultsPath=$path")
+                    testTask.jvmArgs("-DFakeCrawlerServiceInput.shouldInduceServerError=$shouldInduceServerError")
                 }
         }
     }
@@ -119,16 +123,19 @@ class JourneysConnectedTest {
         appProject.files.add(
             "src/journeysTest/simpleJourney.xml",
             """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <journey name="My Journeys Test 1">
-                            <actions>
-                                <action>Action 1</action>
-                            </actions>
-                        </journey>
-                    """.trimIndent()
+                <?xml version="1.0" encoding="utf-8"?>
+                <journey name="My Journeys Test 1">
+                    <actions>
+                        <action>Action 1</action>
+                    </actions>
+                </journey>
+            """.trimIndent()
         )
         val result = executor.expectFailure().run(":app:validateDebugJourneysTest")
-        result.assertOutputContains("initializationError")
+        result.assertOutputContains("$DEVICE_SERIAL > simpleJourney.xml FAILED")
+        result.assertOutputContains("[additionalTestArtifacts]deviceId=$DEVICE_SERIAL")
+        result.assertOutputContains("[additionalTestArtifacts]deviceDisplayName=$DEVICE_NAME")
+        result.assertOutputContains("JourneyExecutionException at ProdChannelProviderFactory.kt")
     }
 
     @Test
@@ -196,13 +203,9 @@ class JourneysConnectedTest {
             appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/journey3")
         assertThat(journey3OutputDir).doesNotExist()
 
-        result.assertOutputContains("Journey 1 ($DEVICE_SERIAL) STANDARD_OUT")
-        result.assertOutputContains("Journey 1 ($DEVICE_SERIAL) > Action 1 STANDARD_OUT")
-        result.assertOutputContains("Journey 1 ($DEVICE_SERIAL) > Action 2 STANDARD_OUT")
-        result.assertOutputContains("Journey 2 ($DEVICE_SERIAL) STANDARD_OUT")
-        result.assertOutputContains("Journey 2 ($DEVICE_SERIAL) > Action 1 STANDARD_OUT")
-        result.assertOutputContains("Journey 2 ($DEVICE_SERIAL) > Action 2 STANDARD_OUT")
-        result.assertOutputDoesNotContain("Journey 3")
+        result.assertOutputContains("$DEVICE_SERIAL > journey1.xml STANDARD_OUT")
+        result.assertOutputContains("$DEVICE_SERIAL > journey2.xml STANDARD_OUT")
+        result.assertOutputDoesNotContain("journey3")
     }
 
     @Ignore("b/437851001 Not working with Gradle 9.0.0")
@@ -228,7 +231,7 @@ class JourneysConnectedTest {
                 .withArgument("-PjourneysFilter=journey3.xml, journey4.xml")
                 .run(":app:validateDebugJourneysTest")
 
-        result.assertOutputDoesNotContain("Journey 1")
+        result.assertOutputDoesNotContain("journey1")
     }
 
     @Test
@@ -236,7 +239,7 @@ class JourneysConnectedTest {
         val build = rule.build
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/journey1.xml",
+            "src/journeysTest/malformedJourney.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="Journey 1"></journey>
@@ -248,7 +251,39 @@ class JourneysConnectedTest {
                 .run(":app:validateDebugJourneysTest")
 
         result.assertErrorContains("Execution failed for task ':app:validateDebugJourneysTest'")
-        result.assertOutputDoesNotContain("Journey 1")
+        result.assertOutputContains("[additionalTestArtifacts]deviceId=$DEVICE_SERIAL")
+        result.assertOutputContains("[additionalTestArtifacts]deviceDisplayName=$DEVICE_NAME")
+        result.assertOutputContains("$DEVICE_SERIAL > malformedJourney.xml FAILED")
+        result.assertOutputContains("IllegalStateException at RoboConverter.kt")
+    }
+
+    @Test
+    fun `expect error with server issue`() {
+        val build = rule.build
+        val appProject = build.androidApplication()
+        appProject.files.add(
+            "src/journeysTest/simpleJourney.xml",
+            """
+                <?xml version="1.0" encoding="utf-8"?>
+                <journey name="Journey 1">
+                    <actions>
+                        <action>Action 1</action>
+                    </actions>
+                </journey>
+           """.trimIndent()
+        )
+        val result =
+            executor
+                .expectFailure()
+                .withArgument("-DshouldInduceServerError=true")
+                .run(":app:validateDebugJourneysTest")
+
+        result.assertErrorContains("Execution failed for task ':app:validateDebugJourneysTest'")
+        result.assertOutputContains("[additionalTestArtifacts]deviceId=$DEVICE_SERIAL")
+        result.assertOutputContains("[additionalTestArtifacts]deviceDisplayName=$DEVICE_NAME")
+        result.assertOutputContains("$DEVICE_SERIAL > simpleJourney.xml FAILED")
+        result.assertOutputContains("JourneyExecutionException at Proxy.kt")
+        result.assertOutputContains("Intentionally throwing an error.")
     }
 
     @Test
@@ -284,10 +319,16 @@ class JourneysConnectedTest {
         }
         result.assertOutputContainsPrefixedLinesInOrder(
             listOf(
-                "A simple journey ($DEVICE_SERIAL) STANDARD_OUT",
+                "$DEVICE_SERIAL STANDARD_OUT",
                 "[additionalTestArtifacts]deviceId=$DEVICE_SERIAL",
                 "[additionalTestArtifacts]deviceDisplayName=$DEVICE_NAME",
-                "A simple journey ($DEVICE_SERIAL) > Tap on the search icon and enter 'Compose' into the search bar at the top of the screen STANDARD_OUT",
+                "$DEVICE_SERIAL > simpleJourney.xml STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt0=Tap on the search icon and enter 'Compose' into the search bar at the top of the screen",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt1=Tap on the 'Compose' topic",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt2=Save the first post",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt3=Go to saved posts",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt4=Confirm that there is a single saved post that belongs to the 'Compose' topic",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt0=Tap on the search icon and enter 'Compose' into the search bar at the top of the screen",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action0.description=Launched package com.google.samples.apps.nowinandroid.demo.debug",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action0.durationInMillis=10179",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action0.result=ACTION_SUCCESS",
@@ -314,7 +355,8 @@ class JourneysConnectedTest {
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action4.screenshotPath=$outputDir/action4.png",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt0.modelReasoning=The previous steps involved tapping on the search icon and entering 'Compose' into the search field. So the goal is complete.",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt0.screenshotPath=$outputDir/action5.png",
-                "A simple journey ($DEVICE_SERIAL) > Tap on the 'Compose' topic STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt0.result=SUCCESSFUL",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt1=Tap on the 'Compose' topic",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action5.description=Tap on the 'Compose' topic",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action5.durationInMillis=4036",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action5.result=ACTION_SUCCESS",
@@ -322,7 +364,8 @@ class JourneysConnectedTest {
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action5.screenshotPath=$outputDir/action5.png",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt1.modelReasoning=The previous action was to tap on the 'Compose' topic, which fulfills the current goal.",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt1.screenshotPath=$outputDir/action6.png",
-                "A simple journey ($DEVICE_SERIAL) > Save the first post STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt1.result=SUCCESSFUL",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt2=Save the first post",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action6.description=Save the first post by tapping on the bookmark icon.",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action6.durationInMillis=3941",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action6.result=ACTION_SUCCESS",
@@ -330,7 +373,8 @@ class JourneysConnectedTest {
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action6.screenshotPath=$outputDir/action6.png",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt2.modelReasoning=The current goal is to save the first post, and the bookmark icon is checked, indicating that the first post is saved.",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt2.screenshotPath=$outputDir/action7.png",
-                "A simple journey ($DEVICE_SERIAL) > Go to saved posts STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt2.result=SUCCESSFUL",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt3=Go to saved posts",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action7.description=Tap on the 'Saved' tab to go to saved posts.",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action7.durationInMillis=4903",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action7.result=ACTION_SUCCESS",
@@ -338,11 +382,13 @@ class JourneysConnectedTest {
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action7.screenshotPath=$outputDir/action7.png",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt3.modelReasoning=The previous action of tapping the 'Saved' tab successfully navigated the user to the saved posts screen, thus completing the goal.",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt3.screenshotPath=$outputDir/action8.png",
-                "A simple journey ($DEVICE_SERIAL) > Confirm that there is a single saved post that belongs to the 'Compose' topic STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt3.result=SUCCESSFUL",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt4=Confirm that there is a single saved post that belongs to the 'Compose' topic",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt4.modelReasoning=The screen shows a single saved post, and the tags at the bottom include 'Compose', so the goal is complete.",
-                "[additionalTestArtifacts]Journeys.PromptComplete.prompt4.screenshotPath=$outputDir/action8.png"
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt4.screenshotPath=$outputDir/action8.png",
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt4.result=SUCCESSFUL",
             ),
-            listOf("A simple journey", "[additionalTestArtifacts]")
+            listOf(DEVICE_SERIAL, "[additionalTestArtifacts]")
         )
     }
 
@@ -379,10 +425,16 @@ class JourneysConnectedTest {
         }
         result.assertOutputContainsPrefixedLinesInOrder(
             listOf(
-                "A simple journey ($DEVICE_SERIAL) STANDARD_OUT",
+                "$DEVICE_SERIAL STANDARD_OUT",
                 "[additionalTestArtifacts]deviceId=$DEVICE_SERIAL",
                 "[additionalTestArtifacts]deviceDisplayName=$DEVICE_NAME",
-                "A simple journey ($DEVICE_SERIAL) > Tap on the search icon and enter 'Compose' into the search bar at the top of the screen STANDARD_OUT",
+                "$DEVICE_SERIAL > simpleJourney.xml STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt0=Tap on the search icon and enter 'Compose' into the search bar at the top of the screen",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt1=Tap on the 'Compose' topic",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt2=Save the first post",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt3=Go to saved posts",
+                "[additionalTestArtifacts]Journeys.PromptScheduled.prompt4=Confirm that there is a single saved post that belongs to the 'Compose' topic",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt0=Tap on the search icon and enter 'Compose' into the search bar at the top of the screen",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action0.description=Launched package com.google.samples.apps.nowinandroid.demo.debug",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action0.durationInMillis=10179",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action0.result=ACTION_SUCCESS",
@@ -404,7 +456,8 @@ class JourneysConnectedTest {
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action3.screenshotPath=$outputDir/action3.png",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt0.modelReasoning=The previous steps involved tapping on the search icon and entering 'Compose' into the search field. So the goal is complete.",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt0.screenshotPath=$outputDir/action4.png",
-                "A simple journey ($DEVICE_SERIAL) > Tap on the 'Compose' topic STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt0.result=SUCCESSFUL",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt1=Tap on the 'Compose' topic",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action4.description=Tap on the 'Compose' topic",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action4.durationInMillis=1209",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action4.result=ACTION_SUCCESS",
@@ -412,26 +465,27 @@ class JourneysConnectedTest {
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action4.screenshotPath=$outputDir/action4.png",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt1.modelReasoning=The previous action was to tap on the 'Compose' topic, which fulfills the current goal.",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt1.screenshotPath=$outputDir/action5.png",
-                "A simple journey ($DEVICE_SERIAL) > Save the first post STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt1.result=SUCCESSFUL",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt2=Save the first post",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action5.description=Save the first post by tapping on the bookmark icon.",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action5.durationInMillis=4036",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action5.result=ACTION_SUCCESS",
-                "[additionalTestArtifacts]Journeys.ActionPerformed.action5.modelReasoning=The current goal is to save the first post. The bookmark icon is available on the first post, so I will tap it.",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action5.screenshotPath=$outputDir/action5.png",
-                "[additionalTestArtifacts]Journeys.PromptComplete.prompt2.modelReasoning=The current goal is to save the first post. The bookmark icon is available on the first post, so I will tap it.",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt2.screenshotPath=$outputDir/action6.png",
-                "A simple journey ($DEVICE_SERIAL) > Go to saved posts STANDARD_OUT",
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt2.result=SUCCESSFUL",
+                "[additionalTestArtifacts]Journeys.PromptStarted.prompt3=Go to saved posts",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action6.description=Waited for 2 seconds",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action6.durationInMillis=3941",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action6.result=ACTION_SUCCESS",
                 "[additionalTestArtifacts]Journeys.ActionPerformed.action6.screenshotPath=$outputDir/action6.png",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt3.modelReasoning=The goal was to save the first post. Tapping on the bookmark icon should have saved the post, but it led to a Chrome welcome screen instead. This is unexpected and indicates a problem.",
                 "[additionalTestArtifacts]Journeys.PromptComplete.prompt3.screenshotPath=$outputDir/action7.png",
-                "A simple journey ($DEVICE_SERIAL) > Go to saved posts FAILED"
+                "[additionalTestArtifacts]Journeys.PromptComplete.prompt3.result=FAILED",
+                "[additionalTestArtifacts]Journeys.PromptSkipped.prompt4=Confirm that there is a single saved post that belongs to the 'Compose' topic",
+                "$DEVICE_SERIAL > simpleJourney.xml FAILED",
             ),
-            listOf("A simple journey", "[additionalTestArtifacts]")
+            listOf(DEVICE_SERIAL, "[additionalTestArtifacts]")
         )
-        result.assertOutputDoesNotContain("Confirm that there is a single saved post that belongs to the 'Compose' topic")
     }
 
     private fun createRoboResults(roboResultsResourceName: String, roboResultsPath: Path) {

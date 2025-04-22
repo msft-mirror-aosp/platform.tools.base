@@ -13,24 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.tools.journeys.testengine.selector
 
-package com.android.tools.journeys.testengine.descriptor
+import org.junit.platform.engine.DiscoverySelector
 
-import org.junit.platform.engine.TestDescriptor.Type
-import org.junit.platform.engine.UniqueId
-import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
-
-class PromptDescriptor(
-    parentId: UniqueId,
-    promptText: String,
-    private val promptIndex: Int
-) :
-    AbstractTestDescriptor(parentId.append(SEGMENT_TYPE, "$promptIndex"), promptText) {
-    companion object {
-        const val SEGMENT_TYPE: String = "prompt"
-    }
-
-    override fun getType(): Type = Type.TEST
-
-    fun getPromptIndex(): Int = promptIndex
-}
+data class DeviceSelector(val deviceSerialId: String, val deviceName: String) : DiscoverySelector
