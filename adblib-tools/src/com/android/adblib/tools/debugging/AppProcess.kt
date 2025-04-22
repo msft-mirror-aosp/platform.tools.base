@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbDeviceServices
-import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.InstructionSet
@@ -54,11 +53,11 @@ interface AppProcess {
     val pid: Int
 
     /**
-     * A [StateFlow] that describes the current process information.
+     * A [StateFlow] that [AppProcessProperties] that describes the current process information.
      *
      * Note: once [scope] has completed, the flow stops being updated.
      */
-    val appProcessEntryFlow: StateFlow<AppProcessEntry>
+    val propertiesFlow: StateFlow<AppProcessProperties>
 
     /**
      * The [JdwpProcess] associated to this [AppProcess] if it is [debuggable],
@@ -72,20 +71,20 @@ interface AppProcess {
  * See [JdwpProcess].
  */
 val AppProcess.debuggable: Boolean
-    get() = appProcessEntryFlow.value.debuggable
+    get() = propertiesFlow.value.debuggable.getOrDefault(false)
 
 /**
  * Whether the process is `profileable`, meaning a profiler tool can attach to the process
  * and collect profiling data using custom agent/simpleperf calls.
  */
 val AppProcess.profileable: Boolean
-    get() = appProcessEntryFlow.value.profileable
+    get() = propertiesFlow.value.profileable.getOrDefault(false)
 
 /**
  * The [InstructionSet] used by this process
  */
-val AppProcess.instructionSet: InstructionSet
-    get() = appProcessEntryFlow.value.instructionSet
+val AppProcess.instructionSet: InstructionSet?
+    get() = propertiesFlow.value.instructionSet.getOrNull()
 
 /**
  * The [CoroutineScope] whose lifetime matches the lifetime of the process on the device.
