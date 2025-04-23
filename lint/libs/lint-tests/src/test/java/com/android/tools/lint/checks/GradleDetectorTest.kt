@@ -352,6 +352,29 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testNoStableRelease() {
+    // Tests that we don't upgrade to a lower-stability channel (e.g. from
+    // 1.4.0-rc01 to 1.5.0-alpha01) if there is no stable version of 1.4.0 yet
+    lint()
+      .files(
+        gradleToml(
+            """
+            [versions]
+            window = "1.4.0-rc01"
+
+            [libraries]
+            androidx-window = { module = "androidx.window:window", version.ref = "window"}
+            """
+          )
+          .indented(),
+        gradle(""),
+      )
+      .issues(AGP_DEPENDENCY, DEPENDENCY, REMOTE_VERSION)
+      .mavenMetadata("androidx.window:window", "1.5.0-alpha01", "1.4.0-rc01")
+      .run()
+      .expectClean()
+  }
+
   fun testRemoteVersionsWithTomlVersionCatalogs() {
     // Tests that when using version catalogs, remote dependencies also reports
     // warnings.
