@@ -3229,6 +3229,28 @@ public class ManifestMerger2SmallTest {
         }
     }
 
+    @Test
+    // Regression test for b/409968284
+    public void testHandlesMajorMinorTargetAPIRepresentation() throws Exception {
+        String appInput =
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + "</manifest>";
+
+        MockLog mockLog = new MockLog();
+
+        File appFile = TestUtils.inputAsFile("appManifest", appInput);
+        assertTrue(appFile.exists());
+
+        MergingReport mergingReport =
+                ManifestMerger2.newMerger(appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .setOverride(ManifestSystemProperty.UsesSdk.TARGET_SDK_VERSION, "36.0")
+                        .merge();
+        assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+    }
+
     public static void validateFeatureName(
             ManifestMerger2.Invoker invoker, String featureName, boolean isValid) throws Exception {
         try {
