@@ -32,11 +32,12 @@ import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
+import com.android.adblib.tools.debugging.impl.JdwpProcessManagerImpl.Companion.JdwpProcessIdsFlowEntry.Companion.StartOfFlow
 import com.android.adblib.tools.debugging.isTrackAppSupported
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.scope
-import com.android.adblib.tools.debugging.trackAppStateFlow
-import com.android.adblib.tools.debugging.trackJdwpStateFlow
+import com.android.adblib.tools.debugging.trackApp
+import com.android.adblib.tools.debugging.trackJdwp
 import com.android.adblib.tools.debugging.utils.JobTracker
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.utils.createChildScope
@@ -317,13 +318,13 @@ private class JdwpProcessManagerImpl(
          * [StateFlow] of [JdwpProcessIdsFlowEntry] (see [stateFlow] property).
          *
          * Note: The implementation uses the best available JDWP process ID tracker,
-         * i.e. either [ConnectedDevice.trackJdwpStateFlow] or [ConnectedDevice.trackJdwpStateFlow].
+         * i.e. either [ConnectedDevice.trackApp] or [ConnectedDevice.trackJdwp].
          */
         private class JdwpProcessIdTracker(private val device: ConnectedDevice) {
 
             private val logger = adbLogger(device.session).withDevicePrefix(device)
 
-            private val mutableFlow = MutableStateFlow(JdwpProcessIdsFlowEntry.StartOfFlow)
+            private val mutableFlow = MutableStateFlow(StartOfFlow)
 
             private val trackingJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
                 device.scope.launch {
@@ -347,21 +348,21 @@ private class JdwpProcessManagerImpl(
                     logger.debug { "Starting process ID tracking" }
                     // Use the best available tracking mechanism
                     if (device.isTrackAppSupported()) {
-                        device.trackAppStateFlow().filter { trackAppItem ->
+                        device.trackApp.stateFlow.filter { appProcessEntryList ->
                             // Skip first entry, it is always empty
-                            !trackAppItem.isStartOfFlow
-                        }.map { trackAppItem ->
-                            trackAppItem.entries.filter { it.debuggable }.map { it.pid }.toSet()
+                            !appProcessEntryList.flowStatus.isStartOfFlow
+                        }.map { appProcessEntryList ->
+                            appProcessEntryList.filter { it.debuggable }.map { it.pid }.toSet()
                         }.collect { processIds ->
                             logger.verbose { "Updating (track-app) state flow of process IDS: $processIds" }
                             mutableFlow.value = JdwpProcessIdsFlowEntry(processIds)
                         }
                     } else {
-                        device.trackJdwpStateFlow().filter { trackJdwpItem ->
+                        device.trackJdwp.stateFlow.filter { processIds ->
                             // Skip first entry, it is always empty
-                            !trackJdwpItem.isStartOfFlow
-                        }.map { trackJdwpItem ->
-                            trackJdwpItem.processIds.toSet()
+                            !processIds.flowStatus.isStartOfFlow
+                        }.map { processIds ->
+                            processIds.toSet()
                         }.collect { processIds ->
                             logger.verbose { "Updating (track-jdwp) state flow of process IDS: $processIds" }
                             mutableFlow.value = JdwpProcessIdsFlowEntry(processIds)

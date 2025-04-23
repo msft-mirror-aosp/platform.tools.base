@@ -31,7 +31,7 @@ import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
-import com.android.adblib.tools.debugging.trackAppStateFlow
+import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
 import com.android.adblib.withProcessPrefix
@@ -45,7 +45,7 @@ import java.io.IOException
 
 /**
  * A [JdwpProcessPropertiesFlowUpdater] implementation that collects [JdwpProcessProperties]
- * from [ConnectedDevice.trackAppStateFlow] for a given [JdwpProcess].
+ * from [ConnectedDevice.trackApp] for a given [JdwpProcess].
  *
  * This class should only be used if the device of the [process] supports
  * [ConnectedDevice.isAppInfoSupported]
@@ -80,10 +80,10 @@ internal class UsingAppInfoFlowUpdater(
 
     private suspend fun collectTrackAppUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
         logger.debug { "Monitoring process properties using `track-app` service" }
-        device.trackAppStateFlow()
+        device.trackApp.stateFlow
             .map {
                 // Find process entry with `pid`
-                it.entries.firstOrNull { appProcessEntry ->
+                it.firstOrNull { appProcessEntry ->
                     appProcessEntry.pid == pid
                 }
             }

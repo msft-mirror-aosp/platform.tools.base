@@ -18,9 +18,10 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
-import com.android.adblib.tools.debugging.JdwpProcess
+import com.android.adblib.tools.debugging.StateFlowStatus
+import com.android.adblib.tools.debugging.JdwpProcessList
 import com.android.adblib.tools.debugging.JdwpProcessTracker
-import com.android.adblib.tools.debugging.trackJdwpStateFlow
+import com.android.adblib.tools.debugging.trackJdwp
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.utils.toImmutableList
 import com.android.adblib.withPrefix
@@ -36,7 +37,8 @@ internal class JdwpProcessTrackerImpl(
     private val logger = adbLogger(device.session)
         .withPrefix("${device.session} - $device - ")
 
-    private val processesMutableFlow = MutableStateFlow<List<JdwpProcess>>(emptyList())
+    private val processesMutableFlow = MutableStateFlow(
+        JdwpProcessList(emptyList(), StateFlowStatus.startOfFlow))
 
     private val trackProcessesJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         scope.launch {
@@ -54,12 +56,12 @@ internal class JdwpProcessTrackerImpl(
         }
 
     private suspend fun trackProcesses() {
-        device.trackJdwpStateFlow().collect { trackJdwpItem ->
-            val processIds = trackJdwpItem.processIds.toSet()
+        device.trackJdwp.stateFlow.collect { jdwpProcessIdList ->
+            val processIds = jdwpProcessIdList.toSet()
             val processMap = device.jdwpProcessManager.addProcesses(processIds)
-            processMap.values.toImmutableList().also { jdwpProcessList ->
-                logger.verbose { "Emitting new list of JDWP processes: $jdwpProcessList" }
-                processesMutableFlow.emit(jdwpProcessList)
+            processMap.values.toImmutableList().also { processList ->
+                logger.verbose { "Emitting new list of JDWP processes: $processList" }
+                processesMutableFlow.emit(JdwpProcessList(processList, jdwpProcessIdList.flowStatus))
             }
         }
     }

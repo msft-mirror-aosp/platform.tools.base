@@ -57,7 +57,7 @@ interface JdwpProcessTracker {
      * Note: Once [scope] has completed, this [StateFlow] value is an empty list, and there will
      * be no additional updates to the flow.
      */
-    val processesFlow: StateFlow<List<JdwpProcess>>
+    val processesFlow: StateFlow<JdwpProcessList>
 
     companion object {
 
@@ -72,6 +72,16 @@ interface JdwpProcessTracker {
     }
 }
 
+/**
+ * An entry of the [JdwpProcessTracker.processesFlow], containing the list of [JdwpProcess].
+ *
+ * Use [status] property to get more information about the state of the connection.
+ */
+class JdwpProcessList(
+    list: List<JdwpProcess>,
+    flowStatus: StateFlowStatus
+) : ListWithStateFlowStatus<JdwpProcess>(list, flowStatus)
+
 fun Throwable.rethrowCancellation() {
     if (this is CancellationException) {
         throw this
@@ -81,8 +91,7 @@ fun Throwable.rethrowCancellation() {
 /**
  * Device cache key for [jdwpProcessTracker]
  */
-@Suppress("PrivatePropertyName")
-private val JDWP_PROCESS_TRACKER_KEY = CoroutineScopeCache.Key<JdwpProcessTracker>("JdwpProcessTracker device cache entry")
+private val jdwpProcessTrackerKey = CoroutineScopeCache.Key<JdwpProcessTracker>("JdwpProcessTracker device cache entry")
 
 /**
  * The default [JdwpProcessTracker] for this device, giving access to the list of [JdwpProcess]
@@ -92,10 +101,8 @@ private val JDWP_PROCESS_TRACKER_KEY = CoroutineScopeCache.Key<JdwpProcessTracke
  * the [StateFlow], i.e. a [Flow] that tracks the lifetime of the [ConnectedDevice].
  */
 val ConnectedDevice.jdwpProcessTracker: JdwpProcessTracker
-    get() {
-        return this.cache.getOrPut(JDWP_PROCESS_TRACKER_KEY) {
-            JdwpProcessTracker.create(this)
-        }
+    get() = this.cache.getOrPut(jdwpProcessTrackerKey) {
+        JdwpProcessTracker.create(this)
     }
 
 /**

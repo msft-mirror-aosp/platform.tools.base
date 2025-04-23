@@ -19,19 +19,14 @@ import com.android.adblib.AdbDeviceServices
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.DeviceState
-import com.android.adblib.adbLogger
-import com.android.adblib.deviceProperties
 import com.android.adblib.flowWhenOnline
 import com.android.adblib.property
 import com.android.adblib.scope
-import com.android.adblib.selector
-import com.android.adblib.serialNumber
 import com.android.adblib.tools.AdbLibToolsProperties.APP_PROCESS_TRACKER_RETRY_DELAY
 import com.android.adblib.tools.debugging.impl.AppProcessTrackerImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 
 /**
  * Tracks the list of active [AppProcess] processes on a given [ConnectedDevice].
@@ -66,7 +61,7 @@ interface AppProcessTracker {
      * Note: Once [scope] has completed, this [StateFlow] value is an empty list, and there will
      * be no additional updates to the flow.
      */
-    val appProcessFlow: StateFlow<List<AppProcess>>
+    val appProcessFlow: StateFlow<AppProcessList>
 
     companion object {
 
@@ -81,11 +76,21 @@ interface AppProcessTracker {
     }
 }
 
+
+/**
+ * An entry of the [AppProcessTracker.appProcessFlow], containing the list of [AppProcess].
+ *
+ * Use [status] property to get more information about the state of the connection.
+ */
+class AppProcessList(
+    list: List<AppProcess>,
+    flowStatus: StateFlowStatus
+) : ListWithStateFlowStatus<AppProcess>(list, flowStatus)
+
 /**
  * Device cache key for [appProcessTracker]
  */
-@Suppress("PrivatePropertyName")
-private val APP_PROCESS_TRACKER_KEY =
+private val appProcessTrackerKey =
     CoroutineScopeCache.Key<AppProcessTracker>("AppProcessTracker device cache entry")
 
 /**
@@ -96,7 +101,7 @@ private val APP_PROCESS_TRACKER_KEY =
  * the [StateFlow], i.e. a [Flow] that tracks the lifetime of the [ConnectedDevice].
  */
 val ConnectedDevice.appProcessTracker: AppProcessTracker
-    get() = this.cache.getOrPut(APP_PROCESS_TRACKER_KEY) {
+    get() = this.cache.getOrPut(appProcessTrackerKey) {
         AppProcessTracker.create(this)
     }
 

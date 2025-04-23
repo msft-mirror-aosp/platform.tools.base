@@ -22,7 +22,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.testingutils.TestingAdbSessionHost
-import com.android.adblib.tools.debugging.trackAppStateFlow
+import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -94,13 +95,12 @@ class TrackAppStateFlowTest {
             Assert.assertNull(fakeDevice.getProfileableProcess(pid11))
         }
 
-        val trackAppFlow = connectedDevice.trackAppStateFlow()
+        val trackAppFlow = connectedDevice.trackApp.stateFlow
         // Collecting the flow deterministically is a little tricky, as the list of events
         // in the flow depends on how fast FakeAdbServer emits events from the "track-app"
         // event and how fast adblib collects and emits these events in the app tracker
         // flow.
-        trackAppFlow.takeWhile { item ->
-            val processList = item.entries
+        trackAppFlow.takeWhile { processList ->
 
             // The goal here is to collect 3 list of processes in `listOfProcessList`
             // * One with a single process
@@ -199,7 +199,7 @@ class TrackAppStateFlowTest {
 
         // Act
         val listOfProcessList = CopyOnWriteArrayList<List<AppProcessEntry>>()
-        val trackAppFlow = connectedDevice.trackAppStateFlow()
+        val trackAppFlow = connectedDevice.trackApp.stateFlow
         launch(Dispatchers.Default) {
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             fakeDevice.startClient(pid11, 0, "a.b.c.e", false)
@@ -220,9 +220,9 @@ class TrackAppStateFlowTest {
         }
 
         // Assert
-        trackAppFlow.first { trackAppItem ->
-            listOfProcessList.add(trackAppItem.entries)
-            trackAppItem.isEndOfFlow
+        trackAppFlow.first { appProcessEntryList ->
+            listOfProcessList.add(appProcessEntryList)
+            appProcessEntryList.flowStatus.isEndOfFlow
         }
         // We don't assert anything, the fact we reached this point means the
         // flow was cancelled when the device was disconnected.
@@ -246,11 +246,12 @@ class TrackAppStateFlowTest {
         fakeDevice.startClient(10, 0, "a.b.c", false)
 
         // Act
-        exceptionRule.expect(AdbDeviceFailResponseException::class.java)
-        connectedDevice.trackAppStateFlow()
+        val error = connectedDevice.trackApp.stateFlow.mapNotNull {
+            it.flowStatus.currentError
+        }.first()
 
         // Assert
-        Assert.fail("Should not reach")
+        Assert.assertTrue(error is AdbDeviceFailResponseException)
     }
 
     @Test
@@ -274,7 +275,7 @@ class TrackAppStateFlowTest {
 
         // Act
         val listOfProcessList = CopyOnWriteArrayList<List<AppProcessEntry>>()
-        val trackAppFlow = connectedDevice.trackAppStateFlow()
+        val trackAppFlow = connectedDevice.trackApp.stateFlow
         launch(Dispatchers.Default) {
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             fakeDevice.startClient(pid11, 0, "a.b.c.e", false)
@@ -284,9 +285,9 @@ class TrackAppStateFlowTest {
         }
 
         // Assert
-        trackAppFlow.first { item ->
-            listOfProcessList.add(item.entries)
-            item.isEndOfFlow
+        trackAppFlow.first { appProcessEntryList ->
+            listOfProcessList.add(appProcessEntryList)
+            appProcessEntryList.flowStatus.isEndOfFlow
         }
         // We don't assert anything, the fact we reached this point means the
         // flow was cancelled when the device was disconnected.
@@ -314,7 +315,7 @@ class TrackAppStateFlowTest {
         exceptionRule.expect(Exception::class.java)
         exceptionRule.expectMessage("My Test Exception")
         fakeDevice.startClient(pid10, 0, "a.b.c", false)
-        val appTracker = connectedDevice.trackAppStateFlow()
+        val appTracker = connectedDevice.trackApp.stateFlow
         runBlocking {
             appTracker.collect {
                 throw Exception("My Test Exception")
@@ -347,7 +348,7 @@ class TrackAppStateFlowTest {
         exceptionRule.expect(CancellationException::class.java)
         exceptionRule.expectMessage("My Test Exception")
         fakeDevice.startClient(pid10, 0, "a.b.c", false)
-        val appTracker = connectedDevice.trackAppStateFlow()
+        val appTracker = connectedDevice.trackApp.stateFlow
         runBlocking {
             appTracker.collect {
                 cancel("My Test Exception")
