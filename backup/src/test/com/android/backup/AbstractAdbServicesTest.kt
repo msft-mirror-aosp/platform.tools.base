@@ -30,6 +30,8 @@ private const val DUMPSYS_GMSCORE_CMD = "dumpsys package com.google.android.gms"
 
 private const val LAUNCH_COMMAND = "am start market://details?id=com.google.android.gms"
 private const val DUMPSYS_ACTIVITY = "dumpsys activity activities"
+const val DUMPSYS_PACKAGE = "dumpsys package com.app"
+private const val GET_CURRENT_USER = "am get-current-user"
 private const val LAUNCH_COMMAND_STDOUT_VALID =
   "Starting: Intent { act=android.intent.action.VIEW dat=market://details/... }"
 private const val LAUNCH_COMMAND_STDERR_MISSING_STORE =
@@ -50,6 +52,28 @@ private val DUMPSYS_ACTIVITY_VALID_2 =
     ...
       ResumedActivity: ActivityRecord{cb4266b u0 com.app/.MainActivity} t8}
     ...
+  """
+    .trimIndent()
+
+val DUMPSYS_PACKAGE_OUT =
+  """
+    ...
+    Packages:
+      Package [com.app] (f513cb9):
+        ...
+        User 0: ...
+          ...
+          runtime permissions:
+            permission1: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+            permission2: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+            permission3: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|ONE_TIME]
+        User 10: ...
+          runtime permissions:
+            permission1: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+            permission2: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+            permission3: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+
+    Queries:
   """
     .trimIndent()
 
@@ -222,5 +246,29 @@ class AbstractAdbServicesTest {
     )
 
     assertThat(adbServices.isPlayStoreInstalled()).isFalse()
+  }
+
+  @Test
+  fun getGrantedPermissions_user0(): Unit = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10)
+        .addCommandOverride(Output(GET_CURRENT_USER, "0"))
+        .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
+
+    val permissions = adbServices.getGrantedPermissions("com.app")
+
+    assertThat(permissions).containsExactly("permission2")
+  }
+
+  @Test
+  fun getGrantedPermissions_user10(): Unit = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10)
+        .addCommandOverride(Output(GET_CURRENT_USER, "10"))
+        .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
+
+    val permissions = adbServices.getGrantedPermissions("com.app")
+
+    assertThat(permissions).containsExactly("permission1", "permission3")
   }
 }

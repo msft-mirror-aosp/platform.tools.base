@@ -85,6 +85,8 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "am get-current-user",
+        "dumpsys package com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -137,6 +139,8 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 1",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "am get-current-user",
+        "dumpsys package com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -189,6 +193,8 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 2",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "am get-current-user",
+        "dumpsys package com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -217,6 +223,22 @@ class BackupServiceImplTest {
       .isEqualTo("content://com.google.android.gms.fileprovider/backup_testing_flows/app_backup")
     val metadata = BackupService.getMetadata(backupFile)
     assertThat(metadata).isEqualTo(BackupMetadata("com.app", CLOUD_UNENCRYPTED))
+  }
+
+  @Test
+  fun backup_permissions(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    backupService.backup("serial", "com.app", CLOUD_UNENCRYPTED, backupFile, null)
+
+    assertThat(backupFile.exists()).isTrue()
+    val files = backupFile.unzip()
+    assertThat(files["permissions"]?.lines()).containsExactly("permission2")
   }
 
   @Test
@@ -277,6 +299,8 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "am get-current-user",
+        "dumpsys package com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "dumpsys package com.app",
@@ -326,6 +350,8 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "am get-current-user",
+        "dumpsys package com.app",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
         "dumpsys package com.app",

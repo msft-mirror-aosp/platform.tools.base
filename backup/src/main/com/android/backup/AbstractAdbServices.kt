@@ -253,6 +253,25 @@ abstract class AbstractAdbServices(
     }
   }
 
+  override suspend fun getGrantedPermissions(applicationId: String): List<String> {
+    return try {
+      val user = executeCommand("am get-current-user").stdout.trim()
+      executeCommand("dumpsys package $applicationId")
+        .stdout
+        .lineSequence()
+        .dropWhile { !it.startsWith("  Package [$applicationId] ") }
+        .dropWhile { !it.startsWith("    User $user: ") }
+        .dropWhile { it != "      runtime permissions:" }
+        .drop(1)
+        .takeWhile { it.startsWith("        ") }
+        .filter { it.contains("granted=true") && !it.contains("ONE_TIME") }
+        .mapTo(mutableListOf()) { it.trim().substringBefore(':') }
+    } catch (e: BackupException) {
+      logger.warn("Failed to get granted permissions for $applicationId", e)
+      emptyList()
+    }
+  }
+
   override suspend fun getDebuggableApps(): List<String> {
     return buildList {
       var packageName: String? = null
