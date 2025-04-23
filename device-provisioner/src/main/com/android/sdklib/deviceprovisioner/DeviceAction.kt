@@ -64,6 +64,7 @@ interface DeviceAction {
     val reservationAction: Presentation
     val templateActivationAction: Presentation
     val repairDeviceAction: Presentation
+    val pairDeviceAction: Presentation
   }
 }
 
@@ -236,6 +237,13 @@ interface RepairDeviceAction : DeviceAction {
   suspend fun repair()
 
   override fun DefaultPresentation.fromContext() = repairDeviceAction
+}
+
+interface PairDeviceAction : DeviceAction {
+  /** Attempts to pair the physical device over Wifi. */
+  suspend fun pair()
+
+  override fun DefaultPresentation.fromContext() = pairDeviceAction
 }
 
 /**
