@@ -45,6 +45,15 @@ public final class DefaultApiVersion implements ApiVersion {
         mCodename = codename;
     }
 
+    public DefaultApiVersion(@Nullable Integer apiLevel, @Nullable String codeName) {
+        if (apiLevel == null) {
+            mApiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1;
+        } else {
+            mApiLevel = apiLevel;
+        }
+        mCodename = codeName;
+    }
+
     @NonNull
     public static ApiVersion create(@NonNull Object value) {
         if (value instanceof Integer) {

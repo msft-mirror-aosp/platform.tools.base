@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.fixture.VariantCheckers
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
 import com.android.builder.errors.EvalIssueException
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Project
 import org.junit.Assert
 import org.junit.Before
@@ -155,6 +156,126 @@ class LibraryPluginDslTest {
         }
         debug.isShrinkResources = false
         plugin.createAndroidTasks(project)
+    }
+
+    @Test
+    fun testLegacyCompileSdkVersion() {
+        android.compileSdk = 36
+        android.compileSdkMinor = 0
+        android.compileSdkExtension = 18
+        android.compileSdk {
+            assertThat(version?.apiLevel).isEqualTo(36)
+            assertThat(version?.minorApiLevel).isEqualTo(0)
+            assertThat(version?.sdkExtension).isEqualTo(18)
+        }
+
+        android.compileSdkVersion(30)
+        android.compileSdk {
+            assertThat(version?.apiLevel).isEqualTo(30)
+        }
+
+        android.compileSdkVersion("android-S")
+        android.compileSdk {
+            assertThat(version?.apiLevel).isEqualTo(30)
+            assertThat(version?.codeName).isEqualTo("S")
+        }
+
+        android.compileSdkPreview = "Tiramisu"
+        android.compileSdk {
+            assertThat(version?.apiLevel).isEqualTo(32)
+            assertThat(version?.codeName).isEqualTo("Tiramisu")
+        }
+
+        android.compileSdkAddon("vendor_foo", "name_bar", 30)
+        android.compileSdk {
+            assertThat(version?.apiLevel).isEqualTo(30)
+            assertThat(version?.vendorName).isEqualTo("vendor_foo")
+            assertThat(version?.addonName).isEqualTo("name_bar")
+        }
+    }
+
+    @Test
+    fun testCompileSdkVersion() {
+        android.compileSdk {
+            version = release(20)
+            assertThat(version?.apiLevel).isEqualTo(20)
+
+            // test not assigning to version
+            release(30)
+            assertThat(version?.apiLevel).isEqualTo(20)
+        }
+
+        android.compileSdk {
+            version = release(36) {
+                minorApiLevel = 0
+                sdkExtension = 18
+            }
+            assertThat(version?.apiLevel).isEqualTo(36)
+            assertThat(version?.minorApiLevel).isEqualTo(0)
+            assertThat(version?.sdkExtension).isEqualTo(18)
+        }
+
+        android.compileSdk {
+            version = release(37) {
+                sdkExtension = 20
+            }
+            assertThat(version?.apiLevel).isEqualTo(37)
+            assertThat(version?.minorApiLevel).isEqualTo(null)
+            assertThat(version?.sdkExtension).isEqualTo(20)
+        }
+
+        android.compileSdk {
+            version = preview("Tiramisu")
+            assertThat(version?.apiLevel).isEqualTo(32)
+            assertThat(version?.codeName).isEqualTo("Tiramisu")
+        }
+
+        android.compileSdk {
+            version = addon("vendor_foo", "name_bar", 30)
+            assertThat(version?.apiLevel).isEqualTo(30)
+            assertThat(version?.codeName).isEqualTo(null)
+            assertThat(version?.vendorName).isEqualTo("vendor_foo")
+            assertThat(version?.addonName).isEqualTo("name_bar")
+        }
+    }
+
+    @Test
+    fun testLegacyMinSdkVersion() {
+        android.defaultConfig {
+            minSdk = 20
+            minSdk {
+                assertThat(version?.apiLevel).isEqualTo(20)
+            }
+
+            minSdkVersion(34)
+            minSdk {
+                assertThat(version?.apiLevel).isEqualTo(34)
+            }
+
+            minSdkVersion("S")
+            minSdk {
+                assertThat(version?.apiLevel).isEqualTo(30)
+                assertThat(version?.codeName).isEqualTo("S")
+            }
+
+            minSdkPreview = "Tiramisu"
+            minSdk {
+                assertThat(version?.apiLevel).isEqualTo(32)
+                assertThat(version?.codeName).isEqualTo("Tiramisu")
+            }
+        }
+    }
+
+    @Test
+    fun testMinSdkVersion() {
+        android.defaultConfig.minSdk {
+            version = release(20)
+            assertThat(version?.apiLevel).isEqualTo(20)
+
+            version = preview("Tiramisu")
+            assertThat(version?.apiLevel).isEqualTo(32)
+            assertThat(version?.codeName).isEqualTo("Tiramisu")
+        }
     }
 
     companion object {

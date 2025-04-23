@@ -17,48 +17,17 @@
 package com.android.build.gradle.internal.utils
 
 import com.android.build.api.variant.impl.AndroidVersionImpl
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.builder.core.DefaultApiVersion
 import com.android.sdklib.AndroidVersion
 import com.google.common.base.Splitter
 import java.util.regex.Pattern
 import javax.lang.model.SourceVersion
 
-data class CompileData(
-    val apiLevel: Int? = null,
-    val codeName: String? = null,
-    val sdkExtension: Int? = null,
-    val vendorName: String? = null,
-    val addonName: String? = null,
-    val minorApiLevel: Int? = null
-) {
-    fun isAddon() = vendorName != null && addonName != null
-
-    // Converts to the string representation of the Android version
-    fun toHash(): String? {
-        if (codeName != null) {
-            return "android-$codeName"
-        }
-        if (apiLevel == null) {
-            return null
-        }
-        if (isAddon()) {
-            return "$vendorName:$addonName:$apiLevel"
-        }
-        var compileSdkString = "android-$apiLevel"
-        if (minorApiLevel != null) {
-            compileSdkString += ".$minorApiLevel"
-        }
-        if (sdkExtension != null) {
-            compileSdkString += "-ext$sdkExtension"
-        }
-        return compileSdkString
-    }
-}
-
-fun parseTargetHash(targetHash : String): CompileData  {
+internal fun parseTargetHash(targetHash : String): CompileSdkVersionImpl {
     val apiMatcher = API_PATTERN.matcher(targetHash)
     if (apiMatcher.matches()) {
-        return CompileData(
+        return CompileSdkVersionImpl(
             apiLevel = apiMatcher.group(1).toInt(),
             minorApiLevel = apiMatcher.group(2)?.toIntOrNull(),
             sdkExtension = apiMatcher.group(4)?.toIntOrNull()
@@ -67,12 +36,12 @@ fun parseTargetHash(targetHash : String): CompileData  {
 
     val previewMatcher = FULL_PREVIEW_PATTERN.matcher(targetHash)
     if (previewMatcher.matches()) {
-        return CompileData(codeName = previewMatcher.group(1))
+        return CompileSdkVersionImpl(codeName = previewMatcher.group(1))
     }
 
     val addonMatcher = ADDON_PATTERN.matcher(targetHash)
     if (addonMatcher.matches()) {
-        return CompileData(
+        return CompileSdkVersionImpl(
             vendorName = addonMatcher.group(1),
             addonName = addonMatcher.group(2),
             apiLevel = addonMatcher.group(3).toInt(),
@@ -118,6 +87,15 @@ internal fun createTargetSdkVersion(targetSdk: Int?, targetSdkPreview: String?) 
             targetSdk?.let { DefaultApiVersion(it) } ?: DefaultApiVersion(targetSdkPreview!!)
         apiVersion.run { AndroidVersionImpl(apiLevel, codename) }
     } else null
+
+/**
+ * This function makes calling sdk block without doing `version = xx` has not effects
+ */
+fun <T> updateIfChanged(oldValue: T?, newValue: T?, setter: (T?) -> Unit) {
+    if (oldValue != newValue) {
+        setter(newValue)
+    }
+}
 
 private val API_PATTERN = Pattern.compile("android-(\\d+)(?:\\.(\\d+))?(-ext(\\d+))?")
 private val FULL_PREVIEW_PATTERN = Pattern.compile("android-([A-Z]\\w*)")

@@ -103,29 +103,13 @@ abstract class AbstractProductFlavor(
         this.versionName = versionName
     }
 
-    fun setMinSdkVersion(minSdkVersion: ApiVersion?): ProductFlavor {
-        this.minSdkVersion = minSdkVersion
-        return this
-    }
-
     /** Min SDK version. */
     override var minSdkVersion: ApiVersion? = null
 
     /** Target SDK version. */
     override var targetSdkVersion: ApiVersion? = null
 
-    /** Sets the targetSdkVersion to the given value.  */
-    fun setTargetSdkVersion(targetSdkVersion: ApiVersion?): ProductFlavor {
-        this.targetSdkVersion = targetSdkVersion
-        return this
-    }
-
     override var maxSdkVersion: Int? = null
-
-    fun setMaxSdkVersion(maxSdkVersion: Int?): ProductFlavor {
-        this.maxSdkVersion = maxSdkVersion
-        return this
-    }
 
     override var renderscriptTargetApi: Int? = null
 

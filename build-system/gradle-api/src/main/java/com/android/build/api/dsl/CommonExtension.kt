@@ -833,6 +833,11 @@ interface CommonExtension<
     var compileSdkMinor: Int?
 
     /**
+     * Configures all aspects regarding compile Sdk version, see [CompileSdkSpec] for more details.
+     */
+    fun compileSdk(action: CompileSdkSpec.() -> Unit)
+
+    /**
      * Specify an SDK add-on to compile your project against.
      *
      * This can be set on all Gradle projects with [com.android.build.api.dsl.SettingsExtension.compileSdkAddon]
@@ -843,10 +848,13 @@ interface CommonExtension<
      */
     fun compileSdkAddon(vendor: String, name: String, version: Int)
 
-    @Deprecated("Replaced by compileSdk")
+    @Deprecated(
+        message = "Will be removed in AGP 10.0, replaced by the compileSdk block",
+        replaceWith = ReplaceWith("compileSdk { version = release(apiLevel) }")
+    )
     fun compileSdkVersion(apiLevel: Int)
 
-    @Deprecated("Replaced by compileSdkPreview")
+    @Deprecated("Will be removed in AGP 10.0, replaced by the compileSdk block")
     fun compileSdkVersion(version: String)
 
     /**

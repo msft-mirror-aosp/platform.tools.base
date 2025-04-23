@@ -43,9 +43,21 @@ interface BaseFlavor : VariantDimension {
     @get:Restricted
     var minSdk: Int?
 
-    @Deprecated("Replaced by minSdk property")
+    /**
+     * Configures all aspects regarding minSdk, see [MinSdkSpec] for available options.
+     */
+    fun minSdk(action: MinSdkSpec.() -> Unit)
+
+    @Deprecated(
+        "Will be removed in AGP 10.0, replaced with the minSdk block",
+        replaceWith = ReplaceWith("minSdk { version = release(minSdkVersion) }")
+    )
     fun setMinSdkVersion(minSdkVersion: Int)
-    @Deprecated("Replaced by minSdk property")
+
+    @Deprecated(
+        "Will be removed in AGP 10.0, replaced with the minSdk block",
+        replaceWith = ReplaceWith("minSdk { version = release(minSdkVersion) }")
+    )
     fun minSdkVersion(minSdkVersion: Int)
 
     /**
@@ -56,11 +68,12 @@ interface BaseFlavor : VariantDimension {
      * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
      */
     @get:Restricted
+    @Deprecated("Will be removed in AGP 10.0, replaced with the minSdk block")
     var minSdkPreview: String?
 
-    @Deprecated("Replaced by minSdkPreview property")
+    @Deprecated("Will be removed in AGP 10.0, replaced with the minSdk block")
     fun setMinSdkVersion(minSdkVersion: String?)
-    @Deprecated("Replaced by minSdkPreview property")
+    @Deprecated("Will be removed in AGP 10.0, replaced with the minSdk block")
     fun minSdkVersion(minSdkVersion: String?)
 
     /**

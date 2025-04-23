@@ -37,6 +37,8 @@ import com.android.build.api.dsl.BundleStoreArchive
 import com.android.build.api.dsl.BundleTexture
 import com.android.build.api.dsl.Cmake
 import com.android.build.api.dsl.CompileOptions
+import com.android.build.api.dsl.CompileSdkSpec
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.ConfigurableFiles
 import com.android.build.api.dsl.ConsumerKeepRules
 import com.android.build.api.dsl.DataBinding
@@ -71,6 +73,11 @@ import com.android.build.api.dsl.VcsInfo
 import com.android.build.api.dsl.ViewBinding
 import com.android.build.api.dsl.LibraryAndroidResources
 import com.android.build.api.dsl.LocalDependencySelection
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.MaxSdkVersion
+import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.TargetSdkSpec
+import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.gradle.internal.dsl.AarMetadataImpl
 import com.android.build.gradle.internal.dsl.AbiSplitOptions
 import com.android.build.gradle.internal.dsl.AndroidTestImpl
@@ -127,7 +134,11 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
     SupportedPropertyType.Var.Int,
     SupportedPropertyType.Var.NullableInt,
     SupportedPropertyType.Var.File,
-    SupportedPropertyType.Var.Enum(JavaVersion::class.java),
+    SupportedPropertyType.Var.Custom(JavaVersion::class.java),
+    SupportedPropertyType.Var.Custom(CompileSdkVersion::class.java),
+    SupportedPropertyType.Var.Custom(TargetSdkVersion::class.java),
+    SupportedPropertyType.Var.Custom(MaxSdkVersion::class.java),
+    SupportedPropertyType.Var.Custom(TargetSdkVersion::class.java),
 
     SupportedPropertyType.Collection.List,
     SupportedPropertyType.Collection.Set,
@@ -183,6 +194,10 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
     SupportedPropertyType.Block(VcsInfo::class.java, VcsInfoImpl::class.java),
     SupportedPropertyType.Block(AgpTestSuite::class.java, com.android.build.gradle.internal.dsl.AgpTestSuiteImpl::class.java),
     SupportedPropertyType.Block(JUnitEngineSpec::class.java, com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl::class.java),
+    SupportedPropertyType.Block(CompileSdkSpec::class.java, com.android.build.gradle.internal.dsl.CompileSdkSpecImpl::class.java),
+    SupportedPropertyType.Block(MinSdkSpec::class.java, com.android.build.gradle.internal.dsl.MinSdkSpecImpl::class.java),
+    SupportedPropertyType.Block(MaxSdkSpec::class.java, com.android.build.gradle.internal.dsl.MaxSdkSpecImpl::class.java),
+    SupportedPropertyType.Block(TargetSdkSpec::class.java, com.android.build.gradle.internal.dsl.TargetSdkSpecImpl::class.java),
 
     // FusedLibrary Extensions.
     SupportedPropertyType.Block(PrivacySandboxSdkOptimization::class.java, PrivacySandboxSdkOptimizationImpl::class.java),

@@ -18,6 +18,8 @@ package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationProductFlavor
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.TargetSdkSpec
 
 /**
  * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
@@ -54,6 +56,16 @@ class ApplicationProductFlavorProxy(
             dslRecorder.set("targetSdk", value)
         }
 
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        dslRecorder.runNestedBlock(
+            name = "targetSdk",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(TargetSdkSpec::class.java, it) }
+        ) {
+            action(this)
+        }
+    }
+
     override fun targetSdkVersion(targetSdkVersion: Int) {
         dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
@@ -77,6 +89,16 @@ class ApplicationProductFlavorProxy(
         set(value) {
             dslRecorder.set("maxSdk", value)
         }
+
+    override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
+        dslRecorder.runNestedBlock(
+            name = "maxSdk",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(MaxSdkSpec::class.java, it) }
+        ) {
+            action(this)
+        }
+    }
 
     override fun maxSdkVersion(maxSdkVersion: Int) {
         dslRecorder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)

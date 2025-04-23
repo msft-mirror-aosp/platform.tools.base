@@ -34,8 +34,8 @@ class AbstractProductFlavorTest {
     @Test
     fun testInitWith() {
         val custom = productFlavor("custom")
-        custom.setMinSdkVersion(DefaultApiVersion(42))
-        custom.setTargetSdkVersion(DefaultApiVersion(43))
+        custom.setMinSdkVersion(42)
+        custom.targetSdkVersion = DefaultApiVersion(43)
         custom.renderscriptTargetApi = 17
         custom.setVersionCode(44)
         custom.setVersionName("42.0")

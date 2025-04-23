@@ -82,6 +82,29 @@ class KotlinDslTest {
 
         android.compileSdk = null
         assertThat(androidImpl.compileSdkVersion).isNull()
+
+        android.compileSdk {
+            version = preview("S")
+            assertThat(version?.codeName).isEqualTo("S")
+        }
+        assertThat(androidImpl.compileSdkPreview).isEqualTo("S")
+
+        android.compileSdk {
+            version = release(36)
+            assertThat(version?.apiLevel).isEqualTo(36)
+        }
+
+        android.compileSdk {
+            version = release(36) {
+                minorApiLevel = 1
+                sdkExtension = 18
+            }
+            assertThat(version?.sdkExtension).isEqualTo(18)
+        }
+        // Ensure invoking compileSdk {} won't cause reset
+        android.compileSdk {}
+
+        assertThat(androidImpl.compileSdkVersion).isEqualTo("android-36.1-ext18")
     }
 
     @Test
@@ -157,6 +180,36 @@ class KotlinDslTest {
         assertThat(exception).hasMessageThat().isEqualTo(
             """
                 It is too late to set compileSdk
+                It has already been read to configure this project.
+                Consider either moving this call to be during evaluation,
+                or using the variant API.""".trimIndent()
+        )
+    }
+
+    @Test
+    fun testNewDslLocking() {
+        plugin.createAndroidTasks(project)
+        // check no exception when no assignment to version
+        android.compileSdk {
+            release(32)
+        }
+        android.defaultConfig {
+            maxSdk {
+                release(28)
+            }
+            targetSdk {
+                preview("S")
+            }
+            minSdk {}
+        }
+        val exception = assertFailsWith(AgpDslLockedException::class) {
+            android.defaultConfig.targetSdk {
+                version = release(28)
+            }
+        }
+        assertThat(exception).hasMessageThat().isEqualTo(
+            """
+                It is too late to set targetSdk
                 It has already been read to configure this project.
                 Consider either moving this call to be during evaluation,
                 or using the variant API.""".trimIndent()
@@ -370,6 +423,60 @@ class KotlinDslTest {
             // Check use of overloaded +=
             manifestPlaceholders += mapOf("d" to "D")
             assertThat(manifestPlaceholders).containsExactly("c", 3,"d", "D")
+        }
+    }
+
+    @Test
+    fun `test minSdk in app`() {
+        android.defaultConfig.apply {
+            minSdk = 24
+            assertThat(minSdk).isEqualTo(24)
+
+            minSdk {
+                version = release(36)
+                assertThat(version?.apiLevel).isEqualTo(36)
+            }
+            assertThat(minSdk).isEqualTo(36)
+
+            minSdk {
+                version = preview("S")
+                assertThat(version?.codeName).isEqualTo("S")
+            }
+            assertThat(minSdkPreview).isEqualTo("S")
+        }
+    }
+
+    @Test
+    fun `test maxSdk in app`() {
+        android.defaultConfig.apply {
+            maxSdk = 24
+            assertThat(maxSdk).isEqualTo(24)
+
+            maxSdk {
+                version = release(36)
+                assertThat(version?.apiLevel).isEqualTo(36)
+            }
+            assertThat(maxSdk).isEqualTo(36)
+        }
+    }
+
+    @Test
+    fun `test targetSdk in app`() {
+        android.defaultConfig.apply {
+            targetSdk = 24
+            assertThat(targetSdk).isEqualTo(24)
+
+            targetSdk {
+                version = release(36)
+                assertThat(version?.apiLevel).isEqualTo(36)
+            }
+            assertThat(targetSdk).isEqualTo(36)
+
+            targetSdk {
+                version = preview("S")
+                assertThat(version?.codeName).isEqualTo("S")
+            }
+            assertThat(targetSdkPreview).isEqualTo("S")
         }
     }
 

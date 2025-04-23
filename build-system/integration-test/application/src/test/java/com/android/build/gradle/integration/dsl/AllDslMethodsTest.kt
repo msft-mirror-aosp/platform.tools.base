@@ -20,6 +20,7 @@ import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.ApplicationDefaultConfig
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.BaselineProfile
+import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
@@ -27,6 +28,10 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.LibraryDefaultConfig
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.MaxSdkVersion
+import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -336,6 +341,8 @@ private class DslScriptGenerator(
                 )
             }
             JavaVersion::class.java -> { listOf(JavaVersion::class.java.name + ".VERSION_11") }
+            MinSdkVersion::class.java, MaxSdkVersion::class.java -> {
+                listOf("null") } // implementation class not visible for testing
             else -> throw RuntimeException(valueType.name)
         }
     }
@@ -369,7 +376,10 @@ private class DslScriptGenerator(
             "withAndroidTestOnDevice" to KotlinMultiplatformAndroidDeviceTest::class.java,
             "withHostTest" to KotlinMultiplatformAndroidHostTest::class.java,
             "withDeviceTest" to KotlinMultiplatformAndroidDeviceTest::class.java,
-            "baselineProfile" to BaselineProfile::class.java
+            "baselineProfile" to BaselineProfile::class.java,
+            "minSdk" to MinSdkSpec::class.java,
+            "maxSdk" to MaxSdkSpec::class.java,
+            "compileSdk" to CompileSdkSpec::class.java,
         )
 
         private val endPoints = listOf(
@@ -467,6 +477,12 @@ private class DslScriptGenerator(
 
             "public abstract com.android.build.api.dsl.PostProcessing com.android.build.api.dsl.BuildType.getPostprocessing()",
             "public abstract void com.android.build.api.dsl.BuildType.postprocessing(kotlin.jvm.functions.Function1)",
+
+            "public abstract com.android.build.api.dsl.MinSdkVersion com.android.build.api.dsl.MinSdkSpec.preview(java.lang.String)",
+            "public abstract com.android.build.api.dsl.MinSdkVersion com.android.build.api.dsl.MinSdkSpec.release(int)",
+            "public abstract com.android.build.api.dsl.MaxSdkVersion com.android.build.api.dsl.MaxSdkSpec.release(int)",
+            "public abstract void com.android.build.api.dsl.ApplicationBaseFlavor.targetSdk(kotlin.jvm.functions.Function1)",
+            "public abstract void com.android.build.api.dsl.CommonExtension.compileSdk(kotlin.jvm.functions.Function1)",
         )
 
         private val nullableGetters = listOf(

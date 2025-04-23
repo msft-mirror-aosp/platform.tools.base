@@ -3,6 +3,9 @@ Deprecated Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
+Deprecated from AGP 8.12.0
+  * com.android.build.api.dsl.BaseFlavor.getMinSdkPreview: java.lang.String ()
+  * com.android.build.api.dsl.BaseFlavor.setMinSdkPreview: void (java.lang.String)
 Deprecated from AGP 8.11.0
   * com.android.build.api.dsl.DependencyVariantSelection
   * com.android.build.api.dsl.DependencyVariantSelection.getBuildTypes: org.gradle.api.provider.ListProperty<java.lang.String> ()

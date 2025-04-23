@@ -36,11 +36,12 @@ interface LibraryBaseFlavor :
      *
      * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
      */
-    @Deprecated("Will be removed from library DSL in v9.0. "+
+    @Deprecated("Will be removed from library DSL in AGP 9.0. "+
             "Use testOptions.targetSdk or/and lint.targetSdk instead")
     var targetSdk: Int?
 
-    @Deprecated("Replaced by targetSdk property")
+    @Deprecated("Will be removed from library DSL in AGP 9.0. "+
+            "Use testOptions.targetSdk or/and lint.targetSdk instead")
     fun targetSdkVersion(targetSdkVersion: Int)
 
     /**
@@ -54,12 +55,14 @@ interface LibraryBaseFlavor :
      *
      * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
      */
-    @Deprecated("Will be removed from library DSL in v9.0")
+    @Deprecated("Will be removed from library DSL in AGP 9.0")
     var targetSdkPreview: String?
 
-    @Deprecated("Replaced by targetSdkPreview property")
+    @Deprecated("Will be removed from library DSL in AGP 9.0. "+
+            "Use testOptions.targetSdk or/and lint.targetSdk instead")
     fun setTargetSdkVersion(targetSdkVersion: String?)
 
-    @Deprecated("Replaced by targetSdkPreview property")
+    @Deprecated("Will be removed from library DSL in AGP 9.0. "+
+            "Use testOptions.targetSdk or/and lint.targetSdk instead")
     fun targetSdkVersion(targetSdkVersion: String?)
 }

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.dsl
 
 
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.Packaging
@@ -97,4 +98,5 @@ interface InternalCommonExtension<
     fun testCoverage(action: Action<TestCoverage>)
     fun testOptions(action: Action<TestOptionsImpl>)
     fun setFlavorDimensions(flavorDimensions: List<String>)
+    fun compileSdk(action: Action<CompileSdkSpec>)
 }
