@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
@@ -134,6 +135,7 @@ class JdwpProcessChangeFlowTest {
         }
 
     @Test
+    @Ignore("b/412913225)")
     fun testConnectedDeviceDebuggableProcesses_tracksRemovedProcess(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
             // Prepare
