@@ -30,6 +30,7 @@ import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import org.hamcrest.CoreMatchers
@@ -86,7 +87,7 @@ open class AdbLibToolsTestBase {
                 "test1",
                 "test2",
                 "model",
-                api.toString(),
+                AndroidApiLevel(api),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

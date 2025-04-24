@@ -18,7 +18,9 @@ package com.android.tools.screenshot.descriptor
 
 import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
+import com.android.tools.screenshot.PreviewScreenshotTestEngineInput
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput.ImageDifferInput
+import com.android.tools.screenshot.differ.ImageUpdater
 import com.android.tools.screenshot.differ.ImageVerifier
 import com.android.tools.screenshot.differ.PixelPerfect
 import org.junit.platform.engine.TestDescriptor
@@ -65,9 +67,13 @@ class PreviewScreenshotDescriptor(
         }
 
         try {
-            ImageVerifier(PixelPerfect(ImageDifferInput.threshold)).verify(
-                newImagePath, refImagePath, diffImagePath
-            )
+            if (PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled) {
+                ImageUpdater(PixelPerfect(ImageDifferInput.threshold))
+                    .updateIfDifferent(newImagePath, refImagePath)
+            } else {
+                ImageVerifier(PixelPerfect(ImageDifferInput.threshold))
+                    .verify(newImagePath, refImagePath, diffImagePath)
+            }
         } finally {
             if (File(newImagePath).exists()) {
                 context.executionListener.reportingEntryPublished(

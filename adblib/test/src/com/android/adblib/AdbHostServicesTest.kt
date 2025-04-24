@@ -24,6 +24,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.MdnsService
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.FaultyVersionCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -64,12 +65,14 @@ class AdbHostServicesTest {
     @Test
     fun testConnect() {
         // Prepare
-        fakeAdb.registerNetworkDevice("localhost:12345",
-                                      "1234",
-                                      "test1",
-                                      "test2",
-                                      "model",
-                                      "sdk")
+        fakeAdb.registerNetworkDevice(
+            "localhost:12345",
+            "1234",
+            "test1",
+            "test2",
+            "model",
+            sdk = AndroidApiLevel(23),
+        )
 
         // Act
         runBlocking { hostServices.connect(DeviceAddress("localhost:12345")) }
@@ -86,12 +89,14 @@ class AdbHostServicesTest {
     @Test
     fun testDisconnect() {
         // Prepare
-        fakeAdb.registerNetworkDevice("localhost:12345",
-                                      "1234",
-                                      "test1",
-                                      "test2",
-                                      "model",
-                                      "sdk")
+        fakeAdb.registerNetworkDevice(
+            "localhost:12345",
+            "1234",
+            "test1",
+            "test2",
+            "model",
+            sdk = AndroidApiLevel(23),
+        )
         runBlocking { hostServices.connect(DeviceAddress("localhost:12345")) }
 
         // Act
@@ -184,7 +189,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -214,7 +219,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -244,7 +249,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -284,7 +289,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -424,7 +429,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -447,7 +452,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -470,7 +475,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -494,7 +499,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -518,7 +523,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -542,7 +547,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -565,7 +570,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -591,7 +596,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -618,7 +623,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -654,7 +659,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -689,7 +694,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -723,7 +728,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -754,7 +759,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -791,7 +796,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -826,7 +831,7 @@ class AdbHostServicesTest {
             manufacturer = "test1",
             deviceModel = "test2",
             release = "model",
-            sdk = "sdk",
+            sdk = AndroidApiLevel(23),
             hostConnectionType = DeviceState.HostConnectionType.USB
         ).also {
             it.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -846,7 +851,7 @@ class AdbHostServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

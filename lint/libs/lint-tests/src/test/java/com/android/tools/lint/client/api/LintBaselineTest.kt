@@ -29,6 +29,7 @@ import com.android.tools.lint.checks.ApiDetector
 import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.checks.DuplicateIdDetector
 import com.android.tools.lint.checks.FontDetector
+import com.android.tools.lint.checks.GradleDetector
 import com.android.tools.lint.checks.HardcodedValuesDetector
 import com.android.tools.lint.checks.IconDetector
 import com.android.tools.lint.checks.LayoutConsistencyDetector
@@ -383,6 +384,18 @@ class LintBaselineTest {
         PxUsageDetector.SMALL_SP_ISSUE,
         "Avoid using sizes smaller than 12sp: 11sp",
         "Avoid using sizes smaller than 11sp: 11sp",
+      )
+    )
+  }
+
+  @Test
+  fun tolerateMinSdkTooLowChanges() {
+    val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
+    assertTrue(
+      baseline.sameMessage(
+        GradleDetector.MIN_SDK_TOO_LOW,
+        "The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices.",
+        "The value of minSdkVersion (14) is too low. It can be incremented without noticeably reducing the number of supported devices.",
       )
     )
   }

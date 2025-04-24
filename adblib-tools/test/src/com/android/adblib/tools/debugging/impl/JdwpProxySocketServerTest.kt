@@ -17,6 +17,7 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
+import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.properties
@@ -24,6 +25,7 @@ import com.android.adblib.tools.debugging.proxyStatus
 import com.android.adblib.tools.testutils.AdbLibToolsJdwpTestBase
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.transformWhile
@@ -44,7 +46,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -54,7 +56,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         // Act
         val process = connectedDevice.jdwpProcessManager.getProcess(10)
         yieldUntil {
-            process.jdwpProxySocketServer.proxyStatus.socketAddress != null
+            process.jdwpProxySocketServer.proxyStatus.socketAddress.hasValue
         }
 
         // Assert
@@ -93,7 +95,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         // Prepare
         val jdwpSessionInfo = createJdwpProxySession(pid = 11)
         val jdwpProcess = jdwpSessionInfo.process
-        val debuggerSocketAddress = jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress
+        val debuggerSocketAddress = jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress.getOrThrow()
 
         // Act
         val jdwpSession1 = jdwpSessionInfo.debuggerJdwpSession
@@ -104,7 +106,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         yieldUntil {
             !jdwpProcess.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached
         }
-        val debuggerSocketAddress2 = jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress
+        val debuggerSocketAddress2 = jdwpProcess.jdwpProxySocketServer.proxyStatus.socketAddress.getOrThrow()
 
         // Open 2nd session
         val jdwpSession2 = attachDebuggerSession(jdwpProcess)
@@ -171,7 +173,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -180,18 +182,18 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
-        yieldUntil { process.properties.isWaitingForDebugger }
+        yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
 
         // Act
         attachDebuggerSession(process)
         yieldUntil {
             process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached &&
-              !process.properties.isWaitingForDebugger
+              !process.properties.isWaitingForDebugger.getOrDefault(false)
         }
 
         // Assert
         assertTrue(process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached)
-        assertFalse(process.properties.isWaitingForDebugger)
+        assertFalse(process.properties.isWaitingForDebugger.getOrDefault(false))
     }
 
     @Test
@@ -204,7 +206,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "36", // Use `app_info`
+                AndroidApiLevel(36), // Use `app_info`
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -213,17 +215,17 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
-        yieldUntil { process.properties.isWaitingForDebugger }
+        yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
 
         // Act
         attachDebuggerSession(process)
         yieldUntil {
             process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached &&
-              !process.properties.isWaitingForDebugger
+              !process.properties.isWaitingForDebugger.getOrDefault(false)
         }
 
         // Assert
         assertTrue(process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached)
-        assertFalse(process.properties.isWaitingForDebugger)
+        assertFalse(process.properties.isWaitingForDebugger.getOrDefault(false))
     }
 }

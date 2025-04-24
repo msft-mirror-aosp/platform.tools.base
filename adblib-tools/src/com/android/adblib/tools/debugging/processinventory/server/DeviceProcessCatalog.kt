@@ -226,10 +226,8 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
         return JdwpProcessInfo.newBuilder(this)
             .also { proto ->
                 proto.pid = other.pid
-                proto.completed = other.completed
-                if (other.hasCompletedException()) proto.completedException = other.completedException
                 if (other.hasProcessName()) proto.processName = other.processName
-                if (other.hasPackageName()) proto.packageName = other.packageName
+                if (other.hasPackageNames()) proto.packageNames = other.packageNames
                 if (other.hasUserId()) proto.userId = other.userId
                 if (other.hasInstructionSet()) proto.instructionSet = other.instructionSet
                 if (other.hasVmIdentifier()) proto.vmIdentifier = other.vmIdentifier

@@ -22,6 +22,7 @@ import com.android.adblib.tools.debugging.ExternalJdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
+import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.flow.Flow
@@ -41,7 +42,7 @@ internal class ProcessInventoryJdwpProcessPropertiesCollector(
 
     init {
         process.scope.launch {
-            kotlin.runCatching {
+            runCatching {
                 process.propertiesFlow.collect { properties ->
                     logger.debug { "Process properties changed to $properties" }
                     serverConnection.withConnectionForDevice(process.device) {

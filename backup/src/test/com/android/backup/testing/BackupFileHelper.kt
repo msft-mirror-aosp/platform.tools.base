@@ -32,6 +32,7 @@ class BackupFileHelper(private val temporaryFolder: TemporaryFolder) {
     token: String,
     backupType: BackupType = CLOUD,
     withAuth: Boolean = true,
+    permissions: List<String> = emptyList(),
   ): Path {
     val files =
       buildList {
@@ -51,6 +52,7 @@ class BackupFileHelper(private val temporaryFolder: TemporaryFolder) {
           if (withAuth) {
             add(FileInfo("auth_backup", ""))
           }
+          add(FileInfo("permissions", permissions.joinToString("\n") { it }))
         }
         .toTypedArray()
     return createZipFile(*files)

@@ -59,13 +59,6 @@ interface JdwpProcess {
     val cache: CoroutineScopeCache
 
     /**
-     * A [StateFlow] that describes the current process information.
-     *
-     * Note: once [scope] has completed, the flow stops being updated.
-     */
-    val propertiesFlow: StateFlow<JdwpProcessProperties>
-
-    /**
      * Invokes [block] on the [SharedJdwpSession] corresponding to this process.
      * The [SharedJdwpSession] is opened if needed before [block] is invoked, and closed
      * after [block] exits (if needed, i.e. if there are no other active blocks).
@@ -94,16 +87,6 @@ suspend fun JdwpProcess.sendDdmsExit(status: Int) {
         sendDdmsExit(status)
     }
 }
-
-/**
- * Returns a snapshot of the current [JdwpProcessProperties] for this process.
- *
- * Note: This is a shortcut for [processPropertiesFlow.value][JdwpProcess.propertiesFlow].
- *
- * @see JdwpProcess.propertiesFlow
- */
-val JdwpProcess.properties: JdwpProcessProperties
-    get() = this.propertiesFlow.value
 
 /**
  * Sends a DDMS command to the AndroidVM to run the garbage collector in this [JdwpProcess]

@@ -20,6 +20,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
@@ -55,7 +56,7 @@ class JdwpProcessTrackerTest {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -174,7 +175,7 @@ class JdwpProcessTrackerTest {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -194,8 +195,8 @@ class JdwpProcessTrackerTest {
                     val process10 = list.first { it.pid == pid10 }
                     val process11 = list.first { it.pid == pid11 }
                     yieldUntil {
-                        (process10.propertiesFlow.value.processName != null) &&
-                                (process11.propertiesFlow.value.processName != null)
+                        (process10.propertiesFlow.value.processName.getOrNull() != null) &&
+                                (process11.propertiesFlow.value.processName.getOrNull() != null)
                     }
                     Pair(process10, process11)
                 } else {
@@ -205,12 +206,12 @@ class JdwpProcessTrackerTest {
 
         // Assert
         Assert.assertEquals(pid10, process10.pid)
-        Assert.assertEquals("a.b.c", process10.propertiesFlow.value.processName)
-        Assert.assertEquals(100, process10.propertiesFlow.value.userId)
+        Assert.assertEquals("a.b.c", process10.propertiesFlow.value.processName.getOrNull())
+        Assert.assertEquals(100, process10.propertiesFlow.value.userId.getOrNull())
 
         Assert.assertEquals(pid11, process11.pid)
-        Assert.assertEquals("a.b.c.e", process11.propertiesFlow.value.processName)
-        Assert.assertEquals(101, process11.propertiesFlow.value.userId)
+        Assert.assertEquals("a.b.c.e", process11.propertiesFlow.value.processName.getOrNull())
+        Assert.assertEquals(101, process11.propertiesFlow.value.userId.getOrNull())
     }
 
     @Test
@@ -222,7 +223,7 @@ class JdwpProcessTrackerTest {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -262,7 +263,7 @@ class JdwpProcessTrackerTest {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -294,7 +295,7 @@ class JdwpProcessTrackerTest {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

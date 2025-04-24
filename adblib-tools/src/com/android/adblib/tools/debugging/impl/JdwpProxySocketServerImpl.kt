@@ -26,6 +26,7 @@ import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.JdwpSession
 import com.android.adblib.tools.debugging.JdwpSessionPipeline
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
+import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.jdwpSessionPipelineFactoryList
 import com.android.adblib.tools.debugging.sendPacket
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import java.io.EOFException
+import java.net.InetSocketAddress
 
 /**
  * Implementation of [JdwpProxySocketServer]
@@ -87,12 +89,16 @@ internal class JdwpProxySocketServerImpl(
     }
 
     private suspend fun runSocketServer() {
-        // Create server socket and start accepting JDWP connections
-        session.channelFactory.createServerSocket().use { serverSocket ->
-            val socketAddress = serverSocket.bind()
+        try {
+            // Create server socket and start accepting JDWP connections
+            session.channelFactory.createServerSocket().use { serverSocket ->
+                val socketAddress = serverSocket.bind()
 
-            proxyStatusStateFlow.update { it.copy(socketAddress = socketAddress) }
-            try {
+                // Publish the server socket we just created
+                proxyStatusStateFlow.update {
+                    it.copy(socketAddress = OptionalValue.of(socketAddress))
+                }
+
                 // Retry proxy as long as process is active (i.e. as long as we have not been
                 // cancelled)
                 while (true) {
@@ -115,8 +121,13 @@ internal class JdwpProxySocketServerImpl(
                         }
                     }
                 }
-            } finally {
-                proxyStatusStateFlow.update { it.copy(socketAddress = null) }
+            }
+        } finally {
+            // Publish the fact our server socket is not available anymore
+            // (This should happen only on cancellation in normal code path, but could also
+            // happen if we could not create the server socket, for example)
+            proxyStatusStateFlow.update {
+                it.copy(socketAddress = serverTerminationErrorSingleton)
             }
         }
     }
@@ -275,5 +286,10 @@ internal class JdwpProxySocketServerImpl(
      */
     private fun JdwpPacketReceiver.withNoDdmsPacketFilter(): JdwpPacketReceiver {
         return withFilter(NoDdmsPacketFilterFactory.filterId)
+    }
+
+    companion object {
+        val serverTerminationErrorSingleton =
+            OptionalValue.ofError<InetSocketAddress>("Jdwp proxy server has terminated")
     }
 }

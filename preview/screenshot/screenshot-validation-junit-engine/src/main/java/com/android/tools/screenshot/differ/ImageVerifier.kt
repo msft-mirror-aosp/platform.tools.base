@@ -22,6 +22,12 @@ import javax.imageio.ImageIO
 
 class ImageVerifier(private val imageDiffer: ImageDiffer) {
     fun verify(newImagePath: String, referenceImagePath: String, diffImageOutputPath: String) {
+        val diffFile = File(diffImageOutputPath)
+        if (diffFile.exists()) {
+            diffFile.delete()
+        }
+        diffFile.parentFile.mkdirs()
+
         val newImageFile = File(newImagePath)
         if (!newImageFile.exists()) {
             throw FileNotFoundException("Preview image file does not exist ($newImagePath).")
@@ -31,12 +37,6 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
         if (!refImageFile.exists()) {
             throw FileNotFoundException("Reference image file does not exist ($referenceImagePath).")
         }
-
-        val diffFile = File(diffImageOutputPath)
-        if (diffFile.exists()) {
-            diffFile.delete()
-        }
-        diffFile.parentFile.mkdirs()
 
         val actual = ImageIO.read(newImageFile)
         val reference = ImageIO.read(refImageFile)

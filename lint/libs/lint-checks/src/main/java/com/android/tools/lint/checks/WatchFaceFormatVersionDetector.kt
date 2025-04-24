@@ -15,10 +15,12 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.SdkConstants.ANDROID_URI
+import com.android.SdkConstants.ATTR_VALUE
+import com.android.SdkConstants.TAG_PROPERTY
 import com.android.SdkConstants.WATCH_FACE_FORMAT_DEFAULT_VERSION
 import com.android.SdkConstants.WATCH_FACE_FORMAT_VERSION_PROPERTY
 import com.android.tools.lint.checks.WatchFaceFormatUtils.hasDeclarativeWatchFaceFile
-import com.android.tools.lint.checks.WatchFaceFormatUtils.hasWatchFaceFormatVersionProperty
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector.XmlScanner
@@ -27,23 +29,69 @@ import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
+import com.android.tools.wear.wff.WFFVersion
 import com.android.utils.XmlUtils
+import com.android.xml.AndroidManifest.ATTRIBUTE_NAME
 import com.android.xml.AndroidManifest.NODE_APPLICATION
+import org.w3c.dom.Element
 
 /**
  * Detector that checks that the manifest's application contains a
  * [WATCH_FACE_FORMAT_VERSION_PROPERTY] property if the project contains a Declarative Watch Face
  * file (file with a `<WatchFace>` root tag) in the `res/raw` folder.
+ *
+ * It also checks that the `android:value` attribute if the property exists.
  */
 class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
+  private var hasWffVersionProperty = false
+
+  override fun beforeCheckFile(context: Context) {
+    super.beforeCheckFile(context)
+    hasWffVersionProperty = false
+  }
+
+  override fun getApplicableElements() = listOf(TAG_PROPERTY)
+
+  override fun visitElement(context: XmlContext, element: Element) {
+    if (element.tagName != TAG_PROPERTY) return
+    if (element.parentNode.nodeName != NODE_APPLICATION) return
+    if (element.getAttributeNS(ANDROID_URI, ATTRIBUTE_NAME) != WATCH_FACE_FORMAT_VERSION_PROPERTY)
+      return
+
+    hasWffVersionProperty = true
+
+    val wffVersionValueAttribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_VALUE)
+    if (wffVersionValueAttribute == null) {
+      context.report(
+        MISSING_VERSION_ISSUE,
+        context.getNameLocation(element),
+        "The `android:value` attribute is missing",
+        fix().set(ANDROID_URI, ATTR_VALUE, WATCH_FACE_FORMAT_DEFAULT_VERSION).build(),
+      )
+      return
+    }
+
+    // It's currently not possible to use a resource reference (e.g. `@string/version`) in the
+    // manifest to specify the WFF version. It has to be a literal string otherwise the watch face
+    // will not deploy on the device.
+    val availableWffVersions = WFFVersion.entries.map { it.version }
+    if (wffVersionValueAttribute.value !in availableWffVersions) {
+      context.report(
+        INVALID_VERSION_ISSUE,
+        context.getLocation(wffVersionValueAttribute),
+        "The Watch Face Format is invalid",
+      )
+      return
+    }
+  }
+
   override fun afterCheckFile(context: Context) {
     if (!isWearProject) return
+    if (hasWffVersionProperty) return
     if (!hasDeclarativeWatchFaceFile(context.project)) return
-    val xmlContext = context as? XmlContext ?: return
-    val root = xmlContext.document.documentElement
-    val application = XmlUtils.getFirstSubTagByName(root, NODE_APPLICATION) ?: return
-    if (hasWatchFaceFormatVersionProperty(application)) return
-
+    val manifest = (context as? XmlContext)?.document ?: return
+    val application =
+      XmlUtils.getFirstSubTagByName(manifest.documentElement, NODE_APPLICATION) ?: return
     context.report(
       MISSING_VERSION_ISSUE,
       context.getNameLocation(application),
@@ -77,5 +125,25 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
           androidSpecific = true,
         )
         .addMoreInfo("https://developer.android.com/training/wearables/wff/features")
+
+    @JvmField
+    val INVALID_VERSION_ISSUE =
+      Issue.create(
+        id = "WatchFaceFormatInvalidVersion",
+        briefDescription = "The Watch Face Format version is invalid",
+        explanation =
+          """
+               The Watch Face Format version must be a literal and cannot reference a resource.
+
+               The available Watch Face Format versions are: ${WFFVersion.entries.map { it.version }}
+            """,
+        category = Category.CORRECTNESS,
+        priority = 7,
+        severity = Severity.ERROR,
+        moreInfo = "https://developer.android.com/training/wearables/wff/features",
+        implementation =
+          Implementation(WatchFaceFormatVersionDetector::class.java, Scope.MANIFEST_SCOPE),
+        androidSpecific = true,
+      )
   }
 }

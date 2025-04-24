@@ -24,10 +24,14 @@ import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.testingutils.CoroutineTestUtils.waitNonNull
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.OptionalValue
+import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
+import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -39,13 +43,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import org.junit.Assert
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.net.InetSocketAddress
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.test.assertFalse
 
 class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
 
@@ -125,17 +129,15 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
 
         val localProperties = JdwpProcessProperties(
             pid = 10,
-            processName = "Foo",
-            packageName = "Bar",
-            userId = 5,
-            vmIdentifier = "vm",
-            instructionSet = InstructionSet.X86,
-            jvmFlags = "flags",
-            isNativeDebuggable = true,
-            isWaitingForDebugger = true,
-            features = listOf("feat1", "feat2"),
-            completed = true,
-            exception = null
+            processName = OptionalValue.of("Foo"),
+            packageNames = OptionalValue.of(listOf("Bar")),
+            userId = OptionalValue.of(5),
+            vmIdentifier = OptionalValue.of("vm"),
+            instructionSet = OptionalValue.of(InstructionSet.X86),
+            jvmFlags = OptionalValue.of("flags"),
+            isNativeDebuggable = OptionalValue.of(true),
+            isWaitingForDebugger = OptionalValue.of(true),
+            features = OptionalValue.of(listOf("feat1", "feat2")),
         )
         serverConnection.withConnectionForDevice(device) {
             sendProcessProperties(localProperties)
@@ -145,8 +147,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             processListSnapshots.run {
                 isNotEmpty() &&
                         last().size == 1 &&
-                        last().first().completed &&
-                        last().first().isWaitingForDebugger
+                        last().first().areAllPropertiesInitialized() &&
+                        last().first().isWaitingForDebugger.getOrDefault(false)
             }
         }
         job.cancel()
@@ -179,9 +181,9 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             }
         }
         serverConnection.withConnectionForDevice(device) {
-            sendProcessProperties(JdwpProcessProperties(10, processName = "Foo"))
-            sendProcessProperties(JdwpProcessProperties(11, processName = "Foo"))
-            sendProcessProperties(JdwpProcessProperties(12, processName = "Foo"))
+            sendProcessProperties(JdwpProcessProperties(10, processName = OptionalValue.of("Foo")))
+            sendProcessProperties(JdwpProcessProperties(11, processName = OptionalValue.of("Foo")))
+            sendProcessProperties(JdwpProcessProperties(12, processName = OptionalValue.of("Foo")))
         }
 
         yieldUntil {
@@ -291,240 +293,190 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             it.pid == 10
         }.also {
             assertEquals(10, it.pid)
-            assertNull(it.processName)
-            assertNull(it.packageName)
-            assertNull(it.userId)
-            assertNull(it.vmIdentifier)
-            assertNull(it.instructionSetDescription)
-            assertNull(it.instructionSet)
-            assertNull(it.jvmFlags)
+            assertNull(it.processName.getOrNull())
+            assertNull(it.packageName.getOrNull())
+            assertNull(it.userId.getOrNull())
+            assertNull(it.vmIdentifier.getOrNull())
+            assertNull(it.instructionSetDescription.getOrNull())
+            assertNull(it.instructionSet.getOrNull())
+            assertNull(it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertFalse(it.isNativeDebuggable)
-            assertFalse(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertFalse(it.isNativeDebuggable.getOrDefault(false))
+            assertFalse(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(processName = "Foo")
+        localProperties = localProperties.copy(processName = OptionalValue.of("Foo"))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.processName == "Foo"
+            it.pid == 10 && it.processName.getOrNull() == "Foo"
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertNull(it.packageName)
-            assertNull(it.userId)
-            assertNull(it.vmIdentifier)
-            assertNull(it.instructionSetDescription)
-            assertNull(it.instructionSet)
-            assertNull(it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertNull(it.packageName.getOrNull())
+            assertNull(it.userId.getOrNull())
+            assertNull(it.vmIdentifier.getOrNull())
+            assertNull(it.instructionSetDescription.getOrNull())
+            assertNull(it.instructionSet.getOrNull())
+            assertNull(it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertFalse(it.isNativeDebuggable)
-            assertFalse(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertFalse(it.isNativeDebuggable.getOrDefault(false))
+            assertFalse(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(packageName = "Bar")
+        localProperties = localProperties.copy(packageNames = OptionalValue.of(listOf("Bar")))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.packageName == "Bar"
+            it.pid == 10 && it.packageName.getOrNull() == "Bar"
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertNull(it.userId)
-            assertNull(it.vmIdentifier)
-            assertNull(it.instructionSetDescription)
-            assertNull(it.instructionSet)
-            assertNull(it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertEquals("Bar", it.packageName.getOrNull())
+            assertNull(it.userId.getOrNull())
+            assertNull(it.vmIdentifier.getOrNull())
+            assertNull(it.instructionSetDescription.getOrNull())
+            assertNull(it.instructionSet.getOrNull())
+            assertNull(it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertFalse(it.isNativeDebuggable)
-            assertFalse(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertFalse(it.isNativeDebuggable.getOrDefault(false))
+            assertFalse(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(userId = 12)
+        localProperties = localProperties.copy(userId = OptionalValue.of(12))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.userId == 12
+            it.pid == 10 && it.userId.getOrNull() == 12
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertNull(it.vmIdentifier)
-            assertNull(it.instructionSetDescription)
-            assertNull(it.instructionSet)
-            assertNull(it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertEquals("Bar", it.packageName.getOrNull())
+            assertEquals(12, it.userId.getOrNull())
+            assertNull(it.vmIdentifier.getOrNull())
+            assertNull(it.instructionSetDescription.getOrNull())
+            assertNull(it.instructionSet.getOrNull())
+            assertNull(it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertFalse(it.isNativeDebuggable)
-            assertFalse(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertFalse(it.isNativeDebuggable.getOrDefault(false))
+            assertFalse(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(vmIdentifier = "vm")
+        localProperties = localProperties.copy(vmIdentifier = OptionalValue.of("vm"))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.vmIdentifier == "vm"
+            it.pid == 10 && it.vmIdentifier.getOrNull() == "vm"
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertNull(it.instructionSetDescription)
-            assertNull(it.instructionSet)
-            assertNull(it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertEquals("Bar", it.packageName.getOrNull())
+            assertEquals(12, it.userId.getOrNull())
+            assertEquals("vm", it.vmIdentifier.getOrNull())
+            assertNull(it.instructionSetDescription.getOrNull())
+            assertNull(it.instructionSet.getOrNull())
+            assertNull(it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertFalse(it.isNativeDebuggable)
-            assertFalse(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertFalse(it.isNativeDebuggable.getOrDefault(false))
+            assertFalse(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(instructionSet = InstructionSet.X86)
+        localProperties = localProperties.copy(instructionSet = OptionalValue.of(InstructionSet.X86))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.instructionSetDescription == "32-bit (x86)"
+            it.pid == 10 && it.instructionSetDescription.getOrNull() == "32-bit (x86)"
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertNull(it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertEquals("Bar", it.packageName.getOrNull())
+            assertEquals(12, it.userId.getOrNull())
+            assertEquals("vm", it.vmIdentifier.getOrNull())
+            assertEquals("32-bit (x86)", it.instructionSetDescription.getOrNull())
+            assertEquals(InstructionSet.X86, it.instructionSet.getOrNull())
+            assertNull(it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertFalse(it.isNativeDebuggable)
-            assertFalse(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertFalse(it.isNativeDebuggable.getOrDefault(false))
+            assertFalse(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(jvmFlags = "FooBar")
+        localProperties = localProperties.copy(jvmFlags = OptionalValue.of("FooBar"))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.jvmFlags == "FooBar"
+            it.pid == 10 && it.jvmFlags.getOrNull() == "FooBar"
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertEquals("FooBar", it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertEquals("Bar", it.packageName.getOrNull())
+            assertEquals(12, it.userId.getOrNull())
+            assertEquals("vm", it.vmIdentifier.getOrNull())
+            assertEquals("32-bit (x86)", it.instructionSetDescription.getOrNull())
+            assertEquals(InstructionSet.X86, it.instructionSet.getOrNull())
+            assertEquals("FooBar", it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertFalse(it.isNativeDebuggable)
-            assertFalse(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertFalse(it.isNativeDebuggable.getOrDefault(false))
+            assertFalse(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(isNativeDebuggable = true)
+        localProperties = localProperties.copy(isNativeDebuggable = OptionalValue.of(true))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
             @Suppress("DEPRECATION")
-            it.pid == 10 && it.isNativeDebuggable
+            it.pid == 10 && it.isNativeDebuggable.getOrDefault(false)
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertEquals("FooBar", it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertEquals("Bar", it.packageName.getOrNull())
+            assertEquals(12, it.userId.getOrNull())
+            assertEquals("vm", it.vmIdentifier.getOrNull())
+            assertEquals("32-bit (x86)", it.instructionSetDescription.getOrNull())
+            assertEquals(InstructionSet.X86, it.instructionSet.getOrNull())
+            assertEquals("FooBar", it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable)
-            assertFalse(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertTrue(it.isNativeDebuggable.getOrDefault(false))
+            assertFalse(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(isWaitingForDebugger = true)
+        localProperties = localProperties.copy(isWaitingForDebugger = OptionalValue.of(true))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.isWaitingForDebugger
+            it.pid == 10 && it.isWaitingForDebugger.getOrDefault(false)
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertEquals("FooBar", it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertEquals("Bar", it.packageName.getOrNull())
+            assertEquals(12, it.userId.getOrNull())
+            assertEquals("vm", it.vmIdentifier.getOrNull())
+            assertEquals("32-bit (x86)", it.instructionSetDescription.getOrNull())
+            assertEquals(InstructionSet.X86, it.instructionSet.getOrNull())
+            assertEquals("FooBar", it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable)
-            assertTrue(it.isWaitingForDebugger)
-            assertTrue(it.features.isEmpty())
-            assertFalse(it.completed)
-            assertNull(it.exception)
+            assertTrue(it.isNativeDebuggable.getOrDefault(false))
+            assertTrue(it.isWaitingForDebugger.getOrDefault(false))
+            assertTrue(it.features.getOrDefault(emptyList()).isEmpty())
+            assertFalse(it.areAllPropertiesInitialized())
         }
 
-        localProperties = localProperties.copy(features = listOf("f1", "f2", "f3"))
+        localProperties = localProperties.copy(features = OptionalValue.of(listOf("f1", "f2", "f3")))
         sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.features == listOf("f1", "f2", "f3")
+            it.pid == 10 && it.features.getOrDefault(emptyList()) == listOf("f1", "f2", "f3")
         }.also {
             assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertEquals("FooBar", it.jvmFlags)
+            assertEquals("Foo", it.processName.getOrNull())
+            assertEquals("Bar", it.packageName.getOrNull())
+            assertEquals(12, it.userId.getOrNull())
+            assertEquals("vm", it.vmIdentifier.getOrNull())
+            assertEquals("32-bit (x86)", it.instructionSetDescription.getOrNull())
+            assertEquals(InstructionSet.X86, it.instructionSet.getOrNull())
+            assertEquals("FooBar", it.jvmFlags.getOrNull())
             @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable)
-            assertTrue(it.isWaitingForDebugger)
-            assertEquals(listOf("f1", "f2", "f3"), it.features)
-            assertFalse(it.completed)
-            assertNull(it.exception)
-        }
-
-        localProperties = localProperties.copy(completed = true)
-        sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.completed
-        }.also {
-            assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertEquals("FooBar", it.jvmFlags)
-            @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable)
-            assertTrue(it.isWaitingForDebugger)
-            assertEquals(listOf("f1", "f2", "f3"), it.features)
-            assertTrue(it.completed)
-            assertNull(it.exception)
-        }
-
-        localProperties = localProperties.copy(exception = Exception("Message"))
-        sendAndWaitForUpdate(serverConnections.first(), devices.first(), processListFlows, localProperties) {
-            it.pid == 10 && it.exception?.message == "Message"
-        }.also {
-            assertEquals(10, it.pid)
-            assertEquals("Foo", it.processName)
-            assertEquals("Bar", it.packageName)
-            assertEquals(12, it.userId)
-            assertEquals("vm", it.vmIdentifier)
-            assertEquals("32-bit (x86)", it.instructionSetDescription)
-            assertEquals(InstructionSet.X86, it.instructionSet)
-            assertEquals("FooBar", it.jvmFlags)
-            @Suppress("DEPRECATION")
-            assertTrue(it.isNativeDebuggable)
-            assertTrue(it.isWaitingForDebugger)
-            assertEquals(listOf("f1", "f2", "f3"), it.features)
-            assertTrue(it.completed)
-            assertEquals("Message", it.exception?.message)
+            assertTrue(it.isNativeDebuggable.getOrDefault(false))
+            assertTrue(it.isWaitingForDebugger.getOrDefault(false))
+            assertEquals(listOf("f1", "f2", "f3"), it.features.getOrDefault(emptyList()))
+            assertTrue(it.areAllPropertiesInitialized())
         }
 
         collectorJobs.forEach {
@@ -536,8 +488,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         processListFlows.map { it.value }.forEach { list ->
             assertEquals(1, list.size)
             assertEquals(10, list.first().pid)
-            assertEquals("Foo", list.first().processName)
-            assertEquals("Bar", list.first().packageName)
+            assertEquals("Foo", list.first().processName.getOrNull())
+            assertEquals("Bar", list.first().packageName.getOrNull())
         }
     }
 

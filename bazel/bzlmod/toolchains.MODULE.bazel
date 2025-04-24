@@ -33,9 +33,6 @@ local_repository(
 
 # CC toolchains
 register_toolchains(
-    "@native_toolchain//:cc-toolchain-x64_linux",
-    "@native_toolchain//:cc-toolchain-darwin",
-    "@native_toolchain//:cc-toolchain-x64_windows-clang-cl",
     "//build/bazel/toolchains/cc/linux_clang:x64_toolchain",
     "//build/bazel/toolchains/cc/mac_clang:x64_toolchain",
     "//build/bazel/toolchains/cc/mac_clang:arm64_toolchain",

@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.fakeadbserver.services.PackageManager;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.sdklib.AndroidVersion;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -108,7 +109,7 @@ public class RemoteSplitApkInstallerTest extends TestSuite {
                                 MANUFACTURER,
                                 MODEL,
                                 RELEASE,
-                                Integer.toString(apiLevel),
+                                new AndroidApiLevel(apiLevel),
                                 DeviceState.HostConnectionType.USB)
                         .get();
         assertThat(deviceLatch.await(5000, TimeUnit.MILLISECONDS)).isTrue();

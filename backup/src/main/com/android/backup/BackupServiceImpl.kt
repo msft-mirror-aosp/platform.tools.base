@@ -21,6 +21,7 @@ import com.android.backup.BackupResult.WithoutAppData
 import com.android.backup.BackupService.Companion.APP_DATA_FILE
 import com.android.backup.BackupService.Companion.AUTH_DATA_FILE
 import com.android.backup.BackupService.Companion.METADATA_FILE
+import com.android.backup.BackupService.Companion.PERMISSIONS_FILE
 import com.android.backup.BackupService.Companion.PM_DATA_FILE
 import com.android.backup.BackupService.Companion.PROPERTY_APPLICATION_ID
 import com.android.backup.BackupService.Companion.PROPERTY_BACKUP_TYPE
@@ -32,7 +33,6 @@ import com.android.backup.ErrorCode.BACKUP_NOT_ENABLED
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
 import com.android.backup.ErrorCode.READ_CONTENT_FAILED
 import com.android.backup.ErrorCode.WRITE_CONTENT_FAILED
-import com.intellij.util.io.delete
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -93,7 +93,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
                 .toBackupResult()
           }
         if (result is BackupResult.Error) {
-          tempFile.delete()
+          Files.delete(tempFile)
         } else {
           backupFile.parent.createDirectories()
           Files.move(tempFile, backupFile, REPLACE_EXISTING)
@@ -137,6 +137,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
               clearAppData(applicationId)
               reportProgress("Restoring $applicationId")
               restore(token, applicationId, metadata.backupType)
+              reportProgress("Restoring $applicationId permissions")
+              zip.getPermissions().forEach { permission ->
+                grantPermission(applicationId, permission)
+              }
             }
           }
         } catch (e: IOException) {
@@ -179,6 +183,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     return factory.createAdbServices(serialNumber, null, 1).isPlayStoreInstalled()
   }
 
+  override suspend fun getDebuggableApps(serialNumber: String): List<String> {
+    return factory.createAdbServices(serialNumber, null, 1).getDebuggableApps()
+  }
+
   private suspend fun pullBackup(
     adbServices: AdbServices,
     metadata: BackupMetadata,
@@ -190,6 +198,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
       adbServices.pullFileIntoZip(zip, APP_DATA_FILE)
       try {
         adbServices.pullFileIntoZip(zip, AUTH_DATA_FILE)
+        adbServices.pullFileIntoZip(zip, PERMISSIONS_FILE)
       } catch (e: BackupException) {
         // older versions of GmsCore may not have AUTH backup support
         if (e.errorCode != READ_CONTENT_FAILED) {
@@ -245,10 +254,18 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   companion object {
 
     const val BACKUP_STEPS = 10
-    const val RESTORE_STEPS = 10
+    const val RESTORE_STEPS = 11
   }
 }
 
 private fun Path.hasAuthData(): Boolean {
   return ZipFile(this.pathString).use { it.getEntry(AUTH_DATA_FILE).size > 0 }
+}
+
+internal fun ZipFile.getPermissions(): List<String> {
+  return try {
+    getInputStream(getEntry(PERMISSIONS_FILE)).reader().readLines()
+  } catch (_: Exception) {
+    emptyList()
+  }
 }

@@ -20,8 +20,6 @@ import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.ExternalJdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.mergeWith
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 
 /**
  * Collect changes from an [ExternalJdwpProcessPropertiesCollector], merging them into
@@ -29,7 +27,6 @@ import kotlinx.coroutines.cancel
  */
 internal class ExternalPropertiesCollectorHandler(
     private val externalCollector: ExternalJdwpProcessPropertiesCollector,
-    private val localCollectorJob: Job,
     private val localPropertiesStateFlow: AtomicStateFlow<JdwpProcessProperties>
 ) {
     private val session = externalCollector.process.device.session
@@ -43,16 +40,9 @@ internal class ExternalPropertiesCollectorHandler(
 
             localPropertiesStateFlow.update { localProperties ->
                 // merge external properties with local properties
-                val newProperties = localProperties.mergeWith(externalProperties)
-
-                // Stop local property collector so that it does not hog a JDWP session
-                if (newProperties.completed) {
-                    logger.debug { "Cancelling local collector because collection is completed" }
-                    localCollectorJob.cancel("Cancellation due to external collector completion")
+                localProperties.mergeWith(externalProperties).also {
+                    logger.debug { "Updating local JDWP properties: $it" }
                 }
-
-                logger.debug { "Updating local JDWP properties: $newProperties" }
-                newProperties
             }
         }
     }

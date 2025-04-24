@@ -352,6 +352,29 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testNoStableRelease() {
+    // Tests that we don't upgrade to a lower-stability channel (e.g. from
+    // 1.4.0-rc01 to 1.5.0-alpha01) if there is no stable version of 1.4.0 yet
+    lint()
+      .files(
+        gradleToml(
+            """
+            [versions]
+            window = "1.4.0-rc01"
+
+            [libraries]
+            androidx-window = { module = "androidx.window:window", version.ref = "window"}
+            """
+          )
+          .indented(),
+        gradle(""),
+      )
+      .issues(AGP_DEPENDENCY, DEPENDENCY, REMOTE_VERSION)
+      .mavenMetadata("androidx.window:window", "1.5.0-alpha01", "1.4.0-rc01")
+      .run()
+      .expectClean()
+  }
+
   fun testRemoteVersionsWithTomlVersionCatalogs() {
     // Tests that when using version catalogs, remote dependencies also reports
     // warnings.
@@ -1681,19 +1704,19 @@ class GradleDetectorTest : AbstractCheckTest() {
         ../gradle/libs.versions.toml:16: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
         android-compileSdk = "34"  # ERROR 11
                              ~~~~
-        build.gradle.kts:5: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        build.gradle.kts:5: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
                 minSdk = libs.versions.keys.msv.get().toInt() // ERROR 14
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ../gradle/libs.versions.toml:3: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        ../gradle/libs.versions.toml:3: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
         min_sdk_version = "15"     # ERROR 2
                           ~~~~
-        ../gradle/libs.versions.toml:7: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        ../gradle/libs.versions.toml:7: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
         minSdkVersion = "15"       # ERROR 5
                         ~~~~
-        ../gradle/libs.versions.toml:11: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        ../gradle/libs.versions.toml:11: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
         minSdk = "15"              # ERROR 8
                  ~~~~
-        ../gradle/libs.versions.toml:15: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        ../gradle/libs.versions.toml:15: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
         android-minSdk = "15"      # ERROR 10
                          ~~~~
         0 errors, 15 warnings
@@ -2724,10 +2747,10 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testMinSdkVersion() {
     val expected =
       "" +
-        "build.gradle:8: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
+        "build.gradle:8: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
         "        minSdkVersion 7\n" +
         "        ~~~~~~~~~~~~~~~\n" +
-        "build.gradle:9: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
+        "build.gradle:9: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
         "        minSdk 7\n" +
         "        ~~~~~~~~\n" +
         "0 errors, 2 warnings"
@@ -2846,7 +2869,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.5.0. (There is also a newer version of 3.3.𝑥 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.3.2 [AndroidGradlePluginVersion]
             classpath 'com.android.tools.build:gradle:3.3.0-alpha04'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
@@ -2858,10 +2881,6 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -7 +7
         -     classpath 'com.android.tools.build:gradle:3.3.0-alpha04'
         +     classpath 'com.android.tools.build:gradle:3.3.2'
-        Fix for build.gradle line 7: Replace with 3.5.0 (Risky; prefer Upgrade Assistant):
-        @@ -7 +7
-        -     classpath 'com.android.tools.build:gradle:3.3.0-alpha04'
-        +     classpath 'com.android.tools.build:gradle:3.5.0'
         """
       )
   }
@@ -2869,11 +2888,11 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testTooRecentVersionInVersionCatalog() {
     val expected =
       """
-            ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.5.0. (There is also a newer version of 3.3.𝑥 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]
-            gradle = "  com.android.tools.build:gradle:3.3.0-alpha04  "
-                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            0 errors, 1 warnings
-            """
+      ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha04 is available: 3.3.2 [AndroidGradlePluginVersion]
+      gradle = "  com.android.tools.build:gradle:3.3.0-alpha04  "
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      0 errors, 1 warning
+      """
 
     lint()
       .files(
@@ -2902,10 +2921,6 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -2 +2
         - gradle = "  com.android.tools.build:gradle:3.3.0-alpha04  "
         + gradle = "  com.android.tools.build:gradle:3.3.2  "
-        Fix for gradle/libs.versions.toml line 2: Replace with 3.5.0 (Risky; prefer Upgrade Assistant):
-        @@ -2 +2
-        - gradle = "  com.android.tools.build:gradle:3.3.0-alpha04  "
-        + gradle = "  com.android.tools.build:gradle:3.5.0  "
         """
       )
   }
@@ -2950,7 +2965,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         "" +
-          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha01 is available: 3.5.0. (There is also a newer version of 3.3.\uD835\uDC65 available, if upgrading to 3.5.0 is difficult: 3.3.2) [AndroidGradlePluginVersion]\n" +
+          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 3.3.0-alpha01 is available: 3.4.1. (There is also a newer version of 3.3.\uD835\uDC65 available, if upgrading to 3.4.1 is difficult: 3.3.2) [AndroidGradlePluginVersion]\n" +
           "    classpath 'com.android.tools.build:gradle:3.3.0-alpha01'\n" +
           "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
           "0 errors, 1 warnings"
@@ -3000,6 +3015,95 @@ class GradleDetectorTest : AbstractCheckTest() {
             classpath 'com.android.tools.build:gradle:3.3.0-alpha04'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
+        """
+      )
+  }
+
+  fun testTooRecentVersion4() {
+    // Regression test for https://issuetracker.google.com/409716542
+    // Studio is on a canary version, AGP (and Studio) has never version
+    lint()
+      .files(
+        gradle(
+            """
+            buildscript {
+              repositories {
+                google()
+                mavenCentral()
+              }
+              dependencies {
+                classpath 'com.android.tools.build:gradle:8.11.0-alpha05' // OK
+              }
+            }
+            """
+          )
+          .indented()
+      )
+      .networkData(
+        "https://maven.google.com/com/android/tools/build/group-index.xml",
+        // language=xml
+        "" +
+          "<?xml version='1.0' encoding='UTF-8'?>\n" +
+          "<com.android.tools.build>\n" +
+          "  <gradle versions=\"8.11.0-alpha06\"/>\n" +
+          "</com.android.tools.build>",
+      )
+      .issues(AGP_DEPENDENCY)
+      .clientFactory {
+        object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "8.11.0-alpha05" else null
+          }
+        }
+      }
+      .run()
+      .expectClean()
+  }
+
+  fun testTooRecentVersion5() {
+    // Regression test for https://issuetracker.google.com/409716542
+    // Current version is a recent preview version, newer stable is available
+    lint()
+      .files(
+        gradle(
+            """
+            buildscript {
+              repositories {
+                google()
+                mavenCentral()
+              }
+              dependencies {
+                classpath 'com.android.tools.build:gradle:4.2.0'
+              }
+            }
+            """
+          )
+          .indented()
+      )
+      .networkData(
+        "https://maven.google.com/com/android/tools/build/group-index.xml",
+        // language=xml
+        "" +
+          "<?xml version='1.0' encoding='UTF-8'?>\n" +
+          "<com.android.tools.build>\n" +
+          "  <gradle versions=\"4.2.0,7.4.2,8.1.0-alpha05\"/>\n" +
+          "</com.android.tools.build>",
+      )
+      .issues(AGP_DEPENDENCY)
+      .clientFactory {
+        object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
+          override fun getClientProperty(key: String): Any? {
+            return if (key == KEY_IDE_AGP_VERSION) "8.11.0-dev" else null
+          }
+        }
+      }
+      .run()
+      .expect(
+        """
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 4.2.0 is available: 7.4.2 [AndroidGradlePluginVersion]
+            classpath 'com.android.tools.build:gradle:4.2.0'
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
         """
       )
   }
@@ -4838,7 +4942,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         build.gradle.kts:9: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
             compileSdkVersion(34)
             ~~~~~~~~~~~~~~~~~~~~~
-        build.gradle.kts:12: Warning: The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+        build.gradle.kts:12: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
                 minSdkVersion(7)
                 ~~~~~~~~~~~~~~~~
         0 errors, 4 warnings

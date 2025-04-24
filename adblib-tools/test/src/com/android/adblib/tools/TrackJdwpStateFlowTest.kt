@@ -17,8 +17,6 @@ package com.android.adblib.tools
 
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.ProcessIdList
-import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
@@ -26,12 +24,11 @@ import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.tools.debugging.trackJdwpStateFlow
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -293,7 +290,7 @@ class TrackJdwpStateFlowTest {
             "test1",
             "test2",
             "model",
-            sdk.toString(),
+            AndroidApiLevel(sdk),
             DeviceState.HostConnectionType.USB
         )
     }

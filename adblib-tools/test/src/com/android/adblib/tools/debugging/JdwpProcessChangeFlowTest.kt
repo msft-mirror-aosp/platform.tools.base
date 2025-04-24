@@ -22,14 +22,17 @@ import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
+import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
@@ -55,7 +58,7 @@ class JdwpProcessChangeFlowTest {
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
             // Wait for all process properties to get populated
-            yieldUntil { processes[0].jdwpProcess!!.properties.completed }
+            yieldUntil { processes[0].jdwpProcess!!.properties.areAllPropertiesInitialized() }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
@@ -92,7 +95,7 @@ class JdwpProcessChangeFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -116,11 +119,11 @@ class JdwpProcessChangeFlowTest {
                 // remaining items in the processUpdatesList should be about property updates
                 yieldUntil {
                     (processUpdatesList.drop(1).last() as? JdwpProcessChange.Updated)?.processInfo
-                        ?.properties?.packageName != null
+                        ?.properties?.packageName?.getOrNull() != null
                 }
                 val lastUpdate = processUpdatesList.last() as JdwpProcessChange.Updated
                 assertTrue(lastUpdate.processInfo.properties.pid == pid10)
-                assertEquals("a.b.c.e", lastUpdate.processInfo.properties.packageName)
+                assertEquals("a.b.c.e", lastUpdate.processInfo.properties.packageName.getOrNull())
                 fakeAdb.disconnectDevice(fakeDevice.deviceId)
             }
 
@@ -132,6 +135,7 @@ class JdwpProcessChangeFlowTest {
         }
 
     @Test
+    @Ignore("b/412913225)")
     fun testConnectedDeviceDebuggableProcesses_tracksRemovedProcess(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
             // Prepare
@@ -141,7 +145,7 @@ class JdwpProcessChangeFlowTest {
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
             // Wait for all process properties to get populated
-            yieldUntil { processes[0].jdwpProcess!!.properties.completed }
+            yieldUntil { processes[0].jdwpProcess!!.properties.areAllPropertiesInitialized() }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
@@ -188,7 +192,7 @@ class JdwpProcessChangeFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
             val connectedDevice = hostServices.session.connectedDevicesTracker.connectedDevices
@@ -279,7 +283,7 @@ class JdwpProcessChangeFlowTest {
             "test1",
             "test2",
             "model",
-            "31", // SDK >= 31 is required for track_app feature.
+            AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

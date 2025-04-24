@@ -21,6 +21,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
@@ -144,7 +145,7 @@ class AdbSessionTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -183,7 +184,7 @@ class AdbSessionTest {
             "manufacturer",
             "deviceModel",
             "FakePixel device",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB,
             maxSpeedMbps = maxSpeed,
             negotiatedSpeedMbps = negotiatedSpeed,
@@ -215,7 +216,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -290,7 +291,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -347,7 +348,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -418,7 +419,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -464,7 +465,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -499,7 +500,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -542,7 +543,7 @@ class AdbSessionTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         val deviceSelector = DeviceSelector.fromSerialNumber("abcd")
@@ -575,7 +576,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -652,7 +653,7 @@ class AdbSessionTest {
                 "test1",
                 "test2",
                 "model",
-                "sdk",
+                sdk = AndroidApiLevel(23),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -730,7 +731,7 @@ class AdbSessionTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         val deviceSelector = DeviceSelector.fromSerialNumber(deviceId)

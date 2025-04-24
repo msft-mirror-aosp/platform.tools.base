@@ -19,6 +19,7 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.utils.createChildScope
+import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.deviceprovisioner.ActivationAction
 import com.android.sdklib.deviceprovisioner.DeactivationAction
@@ -170,7 +171,7 @@ class FakeAdbDeviceProvisionerPlugin(
                 properties.manufacturer ?: "(Unknown manufacturer)",
                 properties.model ?: "(Unknown model)",
                 properties.androidRelease ?: "(Unknown release)",
-                properties.androidVersion?.apiLevel?.toString() ?: "",
+                properties.androidVersion?.androidApiLevel ?: AndroidApiLevel(23),
                 com.android.fakeadbserver.DeviceState.HostConnectionType.USB,
               )
               .also { it.deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE }

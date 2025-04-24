@@ -27,6 +27,7 @@ import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.ProfilerState
+import com.android.sdklib.AndroidApiLevel
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -186,7 +187,7 @@ class JdwpProcessProfilerTest : AdbLibToolsTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

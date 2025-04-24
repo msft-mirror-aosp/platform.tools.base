@@ -17,14 +17,14 @@
 package com.android.tools.backup
 
 /**
- * Annotation to identify a set up method to be run before a backup is generated.
+ * Annotation to identify a setup method to be run before a backup is generated.
  */
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
 annotation class BeforeBackup()
 
 /**
- * Annotation to identify a set up method to be run after a backup is generated
+ * Annotation to identify a setup method to be run after a backup is generated
  * and before the application is restored from the generated backup file.
  */
 @Retention(AnnotationRetention.RUNTIME)
@@ -32,7 +32,7 @@ annotation class BeforeBackup()
 annotation class BetweenBackupAndRestore()
 
 /**
- * Annotation to identify a set up method to be run before the application is restored
+ * Annotation to identify a setup method to be run before the application is restored
  * from an existing backup file.
  */
 @Retention(AnnotationRetention.RUNTIME)

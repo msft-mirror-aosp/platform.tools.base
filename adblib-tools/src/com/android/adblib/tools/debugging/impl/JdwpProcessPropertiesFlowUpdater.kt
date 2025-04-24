@@ -17,7 +17,9 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import kotlinx.coroutines.CoroutineScope
+import com.android.adblib.tools.debugging.JdwpProcessProperties.Companion.unsupportedByOlderApi
+import com.android.adblib.tools.debugging.OptionalValue
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
 
 /**
  * A component that asynchronously updates an [AtomicStateFlow] of [JdwpProcessProperties]
@@ -25,11 +27,34 @@ import kotlinx.coroutines.CoroutineScope
 internal interface JdwpProcessPropertiesFlowUpdater {
 
     /**
-     * Asynchronously updates [stateFlow] with incremental updates to [JdwpProcessProperties]
-     * of a given [process][JdwpProcessProperties.pid].
+     * Updates [stateFlow] with incremental changes to [JdwpProcessProperties]
+     * of a given JDWP [process][JdwpProcessProperties.pid] for as long as the process
+     * is active.
      *
-     * [processScope] is a [CoroutineScope] that is guaranteed to be cancelled
-     * when (or slightly after) the corresponding process on the device is terminated.
+     * The caller is responsible for cancelling this coroutine function when no
+     * more updates are needed, typically when the JDWP process is terminated.
      */
-    fun execute(processScope: CoroutineScope, stateFlow: AtomicStateFlow<JdwpProcessProperties>)
+    suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>)
+
+    companion object {
+        /**
+         * Returns an [OptionalValue] for a process or package name, which may contain "fake names
+         * (see [filterFakeName]).
+         */
+        internal fun OptionalValue.Companion.ofFilteredFakeName(name: String?): OptionalValue<String> {
+            return when (name) {
+                null -> OptionalValue.unsupportedByOlderApi()
+                else -> filterFakeName(name)?.let { of(it) } ?: empty()
+            }
+        }
+
+        internal fun OptionalValue.Companion.ofFilteredFakeNames(names: List<String>?): OptionalValue<List<String>> {
+            val goodNames = names?.mapNotNull { filterFakeName(it) } ?: return empty()
+            return if (goodNames.isEmpty()) {
+                empty()
+            } else {
+                of(goodNames)
+            }
+        }
+    }
 }

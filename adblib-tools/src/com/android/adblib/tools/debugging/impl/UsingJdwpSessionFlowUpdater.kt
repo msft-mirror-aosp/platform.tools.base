@@ -29,12 +29,17 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_DURATION
 import com.android.adblib.tools.debugging.AtomicStateFlow
+import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
+import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.SharedJdwpSession
-import com.android.adblib.tools.debugging.addException
 import com.android.adblib.tools.debugging.fromLegacyDescription
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollector.Companion.filterFakeName
+import com.android.adblib.tools.debugging.getOrNull
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeNames
+import com.android.adblib.tools.debugging.jdwpProxySocketServer
+import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
@@ -54,13 +59,13 @@ import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.receiveWhile
 import com.android.adblib.tools.debugging.rethrowCancellation
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
@@ -79,43 +84,39 @@ import java.nio.channels.InterruptedByTimeoutException
  * Reads [JdwpProcessProperties] from a JDWP connection.
  */
 internal class UsingJdwpSessionFlowUpdater(
-    private val device: ConnectedDevice,
-    private val pid: Int,
-    private val jdwpSessionProvider: SharedJdwpSessionProvider,
-    private val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
+    private val process: JdwpProcess
 ) : JdwpProcessPropertiesFlowUpdater {
 
     private val session: AdbSession
         get() = device.session
 
-    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
+    private val device: ConnectedDevice
+        get() = process.device
 
-    private lateinit var processScope: CoroutineScope
+    private val logger = adbLogger(session).withProcessPrefix(device, process.pid)
+
+    private val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
+        get() = process.jdwpProxySocketServer.proxyStatusFlow
 
     /**
-     * Collects [JdwpProcessProperties] for the process [pid] emits them to [stateFlow],
+     * Collects [JdwpProcessProperties] for the [process] and emits them to [stateFlow],
      * retrying as many times as necessary if there is contention on acquiring JDWP sessions
      * to the process.
      */
-    override fun execute(
-        processScope: CoroutineScope,
-        stateFlow: AtomicStateFlow<JdwpProcessProperties>
-    ) {
-        // Store scope for downstream methods in this class
-        this.processScope = processScope
-        processScope.launch {
-            runCatching {
-                executeWorker(stateFlow)
-            }.onFailure { t ->
-                logger.logIOCompletionErrors(t)
-                stateFlow.update { current ->
-                    current.copy(exception = current.addException(t))
-                }
-            }
+    override suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+        coroutineScope {
+            // Capture the current scope so that is can be used to launch the coroutine used
+            // to keep the JDWP connection open in case a WAIT packet is received.
+            // (see `launchJdwpSessionHolder`).
+            val processScope = this
+            collectUpdatesWorker(processScope, stateFlow)
         }
     }
 
-    private suspend fun executeWorker(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+    private suspend fun collectUpdatesWorker(
+        processScope: CoroutineScope,
+        stateFlow: AtomicStateFlow<JdwpProcessProperties>
+    ) {
         // Delay opening the JDWP session for a small amount of time in case
         // another instance wants to go first.
         delay(
@@ -136,7 +137,7 @@ internal class UsingJdwpSessionFlowUpdater(
             val collectState = CollectState(stateFlow)
             try {
                 withTimeout(session.property(PROCESS_PROPERTIES_READ_TIMEOUT).toMillis()) {
-                    collect(collectState)
+                    collect(processScope, collectState)
                 }
 
                 // We reached EOF, which can happen for at least 2 common cases:
@@ -184,10 +185,12 @@ internal class UsingJdwpSessionFlowUpdater(
                 }
 
                 if (collectState.shouldRetryCollecting) {
-                    logUsage(isSuccess = false,
-                             throwable = throwable,
-                             previouslyFailedCount = previouslyFailedCollectingCount++,
-                             previouslyFailedThrowable = previouslyFailedThrowable)
+                    logUsage(
+                        isSuccess = false,
+                        throwable = throwable,
+                        previouslyFailedCount = previouslyFailedCollectingCount++,
+                        previouslyFailedThrowable = previouslyFailedThrowable
+                    )
                     previouslyFailedThrowable = throwable
 
                     // Delay and retry if we did not collect all properties we want
@@ -197,23 +200,22 @@ internal class UsingJdwpSessionFlowUpdater(
                                 "because previous attempt failed with an error ('${throwable.message}')"
                     }
                 } else {
-                    logUsage(isSuccess = true,
-                             throwable = null, // Do not record a throwable since property collection was successful
-                             previouslyFailedCount = previouslyFailedCollectingCount,
-                             previouslyFailedThrowable = previouslyFailedThrowable)
-                    collectState.propertiesFlow.update {
-                        it.copy(
-                            completed = true,
-                            exception = exceptionToRecord
-                        )
+                    logUsage(
+                        isSuccess = true,
+                        throwable = null, // Do not record a throwable since property collection was successful
+                        previouslyFailedCount = previouslyFailedCollectingCount,
+                        previouslyFailedThrowable = previouslyFailedThrowable
+                    )
+                    exceptionToRecord?.also {
+                        logger.debug(exceptionToRecord) { "Exception when collecting properties" }
                     }
                     logger.debug { "Successfully retrieved JDWP process properties: ${stateFlow.value}" }
                     break
                 }
             }
         }
-        assert(stateFlow.value.completed) {
-            "Properties flow should have been set to `completed`"
+        assert(stateFlow.value.areAllPropertiesInitialized()) {
+            "Properties flow should have initialized all JDWP process properties"
         }
     }
 
@@ -238,11 +240,12 @@ internal class UsingJdwpSessionFlowUpdater(
     }
 
     /**
-     * Collects [JdwpProcessProperties] from a new JDWP session to the process [pid]
+     * Collects [JdwpProcessProperties] from a new JDWP session to the [process]
      * and emits them to [CollectState.propertiesFlow].
      */
-    private suspend fun collect(collectState: CollectState) {
-        jdwpSessionProvider.withSharedJdwpSession { jdwpSession ->
+    private suspend fun collect(processScope: CoroutineScope, collectState: CollectState) {
+        process.withJdwpSession {
+            val jdwpSession = this
             collectWithSession(jdwpSession, collectState)
 
             if (collectState.hasCollectedEverything) {
@@ -251,7 +254,7 @@ internal class UsingJdwpSessionFlowUpdater(
                     // debugger attaches to the Android process, because a JDWP session in a
                     // `WAIT` state needs to remain open until at least one "real" JDWP command
                     // is sent to eh Android debugger.
-                    launchJdwpSessionHolder(collectState.propertiesFlow)
+                    launchJdwpSessionHolder(processScope, collectState.propertiesFlow)
                 }
             }
         }
@@ -364,14 +367,15 @@ internal class UsingJdwpSessionFlowUpdater(
         }
         logger.debug { "`HELO` reply: $heloChunk" }
         collectState.propertiesFlow.update {
+            @Suppress("DEPRECATION")
             it.copy(
-                processName = filterFakeName(heloChunk.processName),
-                userId = heloChunk.userId,
-                packageName = filterFakeName(heloChunk.packageName),
-                vmIdentifier = heloChunk.vmIdentifier,
-                instructionSet = convertLegacyDescriptionToInstructionSet(heloChunk.abi),
-                jvmFlags = heloChunk.jvmFlags,
-                isNativeDebuggable = heloChunk.isNativeDebuggable
+                processName = OptionalValue.ofFilteredFakeName(heloChunk.processName).orElse(it.processName),
+                userId = OptionalValue.ofNullable(heloChunk.userId).orElse(it.userId),
+                packageNames = OptionalValue.ofFilteredFakeNames(listOf(heloChunk.packageName ?: "")).orElse(it.packageNames),
+                vmIdentifier = OptionalValue.of(heloChunk.vmIdentifier).orElse(it.vmIdentifier),
+                instructionSet = OptionalValue.ofNullable(convertLegacyDescriptionToInstructionSet(heloChunk.abi)).orElse(it.instructionSet),
+                jvmFlags = OptionalValue.ofNullable(heloChunk.jvmFlags).orElse(it.jvmFlags),
+                isNativeDebuggable = OptionalValue.ofNullable(heloChunk.isNativeDebuggable).orElse(it.isNativeDebuggable)
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
@@ -391,7 +395,11 @@ internal class UsingJdwpSessionFlowUpdater(
             DdmsFeatChunk.parse(featChunkView, workBuffer)
         }
         logger.debug { "`FEAT` reply: $featChunk" }
-        collectState.propertiesFlow.update { it.copy(features = featChunk.features) }
+        collectState.propertiesFlow.update {
+            it.copy(
+                features = OptionalValue.of(featChunk.features)
+            )
+        }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
     }
 
@@ -405,7 +413,7 @@ internal class UsingJdwpSessionFlowUpdater(
         }
         logger.debug { "`WAIT` command: $waitChunk" }
         collectState.propertiesFlow.update {
-            it.copy(isWaitingForDebugger = true)
+            it.copy(isWaitingForDebugger = OptionalValue.of(true))
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
     }
@@ -421,9 +429,9 @@ internal class UsingJdwpSessionFlowUpdater(
         logger.debug { "`APNM` command: $apnmChunk" }
         collectState.propertiesFlow.update {
             it.copy(
-                processName = filterFakeName(apnmChunk.processName),
-                userId = apnmChunk.userId,
-                packageName = filterFakeName(apnmChunk.packageName)
+                processName = OptionalValue.ofFilteredFakeName(apnmChunk.processName).orElse(it.processName),
+                userId = OptionalValue.ofNullable(apnmChunk.userId).orElse(it.userId),
+                packageNames = OptionalValue.ofFilteredFakeNames(listOf(apnmChunk.packageName ?: "")).orElse(it.packageNames),
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
@@ -480,11 +488,14 @@ internal class UsingJdwpSessionFlowUpdater(
         return packet
     }
 
-    private suspend fun launchJdwpSessionHolder(propertiesFlow: AtomicStateFlow<JdwpProcessProperties>) {
+    private suspend fun launchJdwpSessionHolder(
+        processScope: CoroutineScope,
+        propertiesFlow: AtomicStateFlow<JdwpProcessProperties>
+    ) {
         logger.debug { "JDWP session holder: launching coroutine" }
         val deferred = CompletableDeferred<Unit>()
         processScope.launch {
-            jdwpSessionProvider.withSharedJdwpSession {
+            process.withJdwpSession {
                 logger.debug { "JDWP session holder: JDWP session has been acquired" }
 
                 // Ok to exit function now, as session has been acquired
@@ -497,7 +508,9 @@ internal class UsingJdwpSessionFlowUpdater(
                 // we also release the SharedJdwpSession in case another debug session
                 // needs to be started later on.
                 proxyStatusFlow.waitUntil { isExternalDebuggerAttached }
-                propertiesFlow.update { it.copy(isWaitingForDebugger = false) }
+                propertiesFlow.update {
+                    it.copy(isWaitingForDebugger = OptionalValue.of(false))
+                }
                 proxyStatusFlow.waitWhile { isExternalDebuggerAttached }
 
                 logger.debug { "JDWP session holder: JDWP session about to be released as debugger has detached" }
@@ -549,8 +562,21 @@ internal class UsingJdwpSessionFlowUpdater(
     }
 
     private fun JdwpProcessProperties.summaryForLogging() =
-        "processName=${processName ?: "<not yet received>"}, isWaitingForDebugger=${isWaitingForDebugger}"
+        "processName=${processName.getOrNull() ?: "<not yet received>"}, isWaitingForDebugger=${isWaitingForDebugger}"
 
+
+    private fun JdwpProcessProperties.areAllPropertiesInitialized(): Boolean {
+        @Suppress("DEPRECATION")
+        return !processName.isEmpty &&
+                !userId.isEmpty &&
+                !packageName.isEmpty &&
+                !vmIdentifier.isEmpty &&
+                !instructionSet.isEmpty &&
+                !jvmFlags.isEmpty &&
+                !isNativeDebuggable.isEmpty &&
+                !features.isEmpty &&
+                !isWaitingForDebugger.isEmpty
+    }
     /**
      * List of DDMS requests sent to the Android VM.
      */
@@ -590,7 +616,7 @@ internal class UsingJdwpSessionFlowUpdater(
             get() {
                 return heloReplyReceived &&
                         featReplyReceived &&
-                        propertiesFlow.value.processName != null
+                        propertiesFlow.value.processName.hasValue
             }
     }
 }
@@ -616,4 +642,3 @@ private fun Throwable.toAdbUsageTrackerFailureType(): AdbUsageTracker.JdwpProces
         else -> AdbUsageTracker.JdwpProcessPropertiesCollectorFailureType.OTHER_ERROR
     }
 }
-

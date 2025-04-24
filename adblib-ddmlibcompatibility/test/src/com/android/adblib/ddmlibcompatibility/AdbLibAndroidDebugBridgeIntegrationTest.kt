@@ -23,6 +23,7 @@ import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice.PROP_DEVICE_DENSITY
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -79,7 +80,7 @@ class AdbLibAndroidDebugBridgeIntegrationTest {
             "test1",
             "test2",
             "model",
-            "30",
+            AndroidApiLevel(30),
             "x86_64",
             mapOf(Pair(PROP_DEVICE_DENSITY, "120")),
             DeviceState.HostConnectionType.USB

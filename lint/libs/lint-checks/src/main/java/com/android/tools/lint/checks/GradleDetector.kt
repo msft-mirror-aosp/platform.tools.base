@@ -991,7 +991,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
   ) {
     if (version in 1 until LOWEST_ACTIVE_API) {
       val message =
-        "The value of minSdkVersion is too low. It can be incremented " +
+        "The value of minSdkVersion ($version) is too low. It can be incremented " +
           "without noticeably reducing the number of supported devices."
 
       val label = "Update minSdkVersion to $LOWEST_ACTIVE_API"
@@ -1637,84 +1637,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
     }
     return false
-  }
-
-  /**
-   * Returns a predicate that encapsulates version constraints for the given library, or null if
-   * there are no constraints.
-   */
-  private fun getUpgradeVersionFilter(
-    context: Context,
-    groupId: String,
-    artifactId: String,
-    version: Version,
-  ): Predicate<Version>? {
-    if (
-      (groupId == "com.android.tools.build" || ALL_PLUGIN_IDS.contains(groupId)) &&
-        LintClient.isStudio
-    ) {
-      val agpVersion =
-        context.client.getClientProperty(KEY_IDE_AGP_VERSION) as? String ?: return null
-      val ideGradleCompatibleVersion = Version.parse(agpVersion)
-      val ideMajor = ideGradleCompatibleVersion.major ?: return null
-      val ideMinor = ideGradleCompatibleVersion.minor ?: return null
-      return Predicate { v ->
-        // Any higher IDE version that matches major and minor
-        // (e.g. from 3.3.0 offer 3.3.2 but not 3.4.0)
-        val major = v.major ?: Integer.MAX_VALUE
-        val minor = v.major ?: Integer.MAX_VALUE
-        major < ideMajor ||
-          major == ideMajor && minor <= ideMinor ||
-          // Also allow matching latest current existing major/minor version
-          (v.major == version.major && v.minor == version.minor)
-      }
-    }
-
-    // Some special cases for specific artifacts that were versioned
-    // incorrectly (using a string suffix to delineate separate branches
-    // whereas Gradle will just use an alphabetical sort on these). See
-    // 171369798 for an example.
-
-    // These cases must be considered before the generic logic related to not
-    // upgrading to other versions outside a preview series, because these
-    // pseudo-version strings look like preview versions even though they're not.
-    if (groupId == "com.google.guava") {
-      val suffix = version.toString()
-      val jre = Predicate<Version> { v -> v.toString().endsWith("-jre") }
-      val android = Predicate<Version> { v -> v.toString().endsWith("-android") }
-      val neither = Predicate<Version> { v -> !v.toString().endsWith("-jre") }
-      return when {
-        suffix.endsWith("-jre") -> jre
-        suffix.endsWith("-android") -> android
-        else -> neither
-      }
-    } else if (groupId == "org.jetbrains.kotlinx" && artifactId.contains("kotlinx-coroutines")) {
-      val suffix = version.toString()
-      return when {
-        suffix.contains("-native-mt-2") ->
-          Predicate<Version> { v -> v.toString().contains("-native-mt-2") }
-        suffix.contains("-native-mt") ->
-          Predicate<Version> { v ->
-            v.toString().run { contains("native-mt") && !contains("native-mt-2") }
-          }
-        else -> Predicate<Version> { v -> !v.toString().contains("-native-mt") }
-      }
-    }
-
-    if (version.major != null) {
-      // version.major not being null is something of a pun, but sensible anyway:
-      // if the whole version is non-numeric, the concept of "the current preview
-      // series" doesn't really exist.  It also guards against the fact that the
-      // "revision" that we've parsed into a Version isn't known to be a version,
-      // and in fact has more of the character of a RichVersion.
-      val infimum = version.previewInfimum
-      val supremum = version.previewSupremum
-      if (infimum != null && supremum != null) {
-        return Predicate { v -> (if (v.isPreview) (infimum < v && v < supremum) else true) }
-      }
-    }
-
-    return null
   }
 
   /** Home in the Gradle cache for artifact caches. */
@@ -3204,7 +3126,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         category = Category.CORRECTNESS,
         priority = 4,
         severity = Severity.WARNING,
-        implementation = IMPLEMENTATION,
+        implementation = IMPLEMENTATION_WITH_TOML,
         androidSpecific = true,
         enabledByDefault = false,
       )
@@ -3859,6 +3781,89 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return location1
     }
 
+    /**
+     * Returns a predicate that encapsulates version constraints for the given library, or null if
+     * there are no constraints.
+     */
+    fun getUpgradeVersionFilter(
+      context: Context,
+      groupId: String,
+      artifactId: String,
+      version: Version,
+    ): Predicate<Version>? {
+      if (
+        (groupId == "com.android.tools.build" || ALL_PLUGIN_IDS.contains(groupId)) &&
+          LintClient.isStudio
+      ) {
+        val agpVersion =
+          context.client.getClientProperty(KEY_IDE_AGP_VERSION) as? String ?: return null
+        val ideGradleCompatibleVersion = Version.parse(agpVersion)
+        val ideMajor = ideGradleCompatibleVersion.major ?: return null
+        val ideMinor = ideGradleCompatibleVersion.minor ?: return null
+        return Predicate { v ->
+          val major = v.major ?: Integer.MAX_VALUE
+          val minor = v.minor ?: Integer.MAX_VALUE
+          if (ideGradleCompatibleVersion.isPreview && major == ideMajor && minor == ideMinor) {
+            // For canary versions, we must have an exact match
+            v == ideGradleCompatibleVersion
+          } else {
+            // Any higher IDE version that matches major and minor
+            // (e.g. from 3.3.0 offer 3.3.2 but not 3.4.0)
+            major < ideMajor ||
+              major == ideMajor && minor <= ideMinor ||
+              // Also allow matching latest current existing major/minor version
+              v.major == version.major && v.minor == version.minor
+          }
+        }
+      }
+
+      // Some special cases for specific artifacts that were versioned
+      // incorrectly (using a string suffix to delineate separate branches
+      // whereas Gradle will just use an alphabetical sort on these). See
+      // 171369798 for an example.
+
+      // These cases must be considered before the generic logic related to not
+      // upgrading to other versions outside a preview series, because these
+      // pseudo-version strings look like preview versions even though they're not.
+      if (groupId == "com.google.guava") {
+        val suffix = version.toString()
+        val jre = Predicate<Version> { v -> v.toString().endsWith("-jre") }
+        val android = Predicate<Version> { v -> v.toString().endsWith("-android") }
+        val neither = Predicate<Version> { v -> !v.toString().endsWith("-jre") }
+        return when {
+          suffix.endsWith("-jre") -> jre
+          suffix.endsWith("-android") -> android
+          else -> neither
+        }
+      } else if (groupId == "org.jetbrains.kotlinx" && artifactId.contains("kotlinx-coroutines")) {
+        val suffix = version.toString()
+        return when {
+          suffix.contains("-native-mt-2") ->
+            Predicate<Version> { v -> v.toString().contains("-native-mt-2") }
+          suffix.contains("-native-mt") ->
+            Predicate<Version> { v ->
+              v.toString().run { contains("native-mt") && !contains("native-mt-2") }
+            }
+          else -> Predicate<Version> { v -> !v.toString().contains("-native-mt") }
+        }
+      }
+
+      if (version.major != null) {
+        // version.major not being null is something of a pun, but sensible anyway:
+        // if the whole version is non-numeric, the concept of "the current preview
+        // series" doesn't really exist.  It also guards against the fact that the
+        // "revision" that we've parsed into a Version isn't known to be a version,
+        // and in fact has more of the character of a RichVersion.
+        val infimum = version.previewInfimum
+        val supremum = version.previewSupremum
+        if (infimum != null && supremum != null) {
+          return Predicate { v -> (if (v.isPreview) (infimum < v && v < supremum) else true) }
+        }
+      }
+
+      return null
+    }
+
     fun getGradlePluginVersion(
       client: LintClient,
       pluginId: String,
@@ -4130,7 +4135,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         if (currentVersion != null) {
           if (stable != null && currentVersion < stable) {
             suggested = stable
-          } else if (currentVersion.isPreview && currentVersion < preview) {
+          } else if (
+            currentVersion.isPreview &&
+              currentVersion < preview
+              // Make sure we don't jump to a weaker release channel. For example, if
+              // you're currently using 1.4.0-rc01, but 1.4.0 final hasn't been released
+              // yet, but 1.5.0-alpha01 has, don't offer to update to 1.5.0-alpha01.
+              // (1.5.0-rc01 would be okay.)
+              &&
+              hasCompatibleChannelStability(currentVersion, preview)
+          ) {
             suggested = preview
           }
         }
@@ -4144,6 +4158,16 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       } else {
         return null
       }
+    }
+
+    /**
+     * Returns true if the given [potential] preview version is at least as stable as the given
+     * [current] preview version.
+     */
+    private fun hasCompatibleChannelStability(current: Version, potential: Version): Boolean {
+      val currentChannel = current.previewString ?: return false
+      val potentialChannel = potential.previewString ?: return true
+      return currentChannel <= potentialChannel
     }
 
     /**
@@ -4168,7 +4192,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           groupId != "com.google.devtools.ksp"
       ) {
         val versions = gmavenRepository.getVersions(groupId, artifactId).asSequence()
-        return getMavenMetadataVersions(versions, version, groupId, artifactId)
+        return getMavenMetadataVersions(versions, version, groupId, artifactId, filter)
       }
 
       if (artifactId.endsWith(GRADLE_PLUGIN_ARTIFACT_SUFFIX)) {
@@ -4177,7 +4201,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             client,
             artifactId.removeSuffix(GRADLE_PLUGIN_ARTIFACT_SUFFIX),
             version,
-            true,
+            allowCache,
+            filter,
           )
         if (mavenVersions != null) {
           return mavenVersions

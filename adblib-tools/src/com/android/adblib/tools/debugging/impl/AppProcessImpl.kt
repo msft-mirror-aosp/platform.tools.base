@@ -22,7 +22,7 @@ import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AppProcess
 import com.android.adblib.tools.debugging.JdwpProcess
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollector.Companion.filterFakeName
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
 import com.android.adblib.withPrefix
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

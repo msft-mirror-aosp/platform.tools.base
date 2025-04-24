@@ -47,6 +47,7 @@ import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.waitForDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
@@ -69,7 +70,7 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "30", // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -77,8 +78,8 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", false)
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
         CoroutineTestUtils.yieldUntil {
-             process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress != null &&
-                    process.properties.processName != null
+             process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.hasValue &&
+                    process.properties.processName.hasValue
         }
         val jdwpSession = attachDebuggerSession(process)
         return JdwpProxySessionInfo(
@@ -89,10 +90,10 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
     }
 
     protected suspend fun attachDebuggerSession(process: JdwpProcess): JdwpSession {
-        process.jdwpProxySocketServer.proxyStatusFlow.first { it.socketAddress != null }
+        process.jdwpProxySocketServer.proxyStatusFlow.first { it.socketAddress.hasValue }
         val clientSocket = registerCloseable(
             session.channelFactory.connectSocket(
-                process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress!!
+                process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.getOrThrow()
             )
         )
         return registerCloseable(

@@ -19,6 +19,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.deviceInfo
 import com.android.adblib.tools.debugging.JdwpProcessChange
+import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.jdwpProcessChangeFlow
 import com.android.adblib.withPrefix
 import com.android.processmonitor.common.ProcessEvent
@@ -63,22 +64,18 @@ internal class JdwpProcessTracker(
                     // is known, so we process `Added` and `Updated` events the same way.
                     is JdwpProcessChange.Added, is JdwpProcessChange.Updated -> {
                         if (!sentProcessAddedEvents.contains(processProperties.pid)) {
-                            if (processProperties.processName != null || processProperties.completed) {
-                                val processName = processProperties.processName
-                                if (processName == null) {
-                                    logger.warn("Incomplete properties: $processProperties")
-                                } else {
-                                    val packageName = processProperties.packageName
-                                    val event =
-                                        ProcessAdded(
-                                            processProperties.pid,
-                                            packageName,
-                                            processName
-                                        )
-                                    logger.verbose { "$event" }
-                                    sentProcessAddedEvents.add(processProperties.pid)
-                                    emit(event)
-                                }
+                            if (processProperties.processName.hasValue) {
+                                val processName = processProperties.processName.getOrThrow()
+                                val packageName = processProperties.packageName.getOrNull()
+                                val event =
+                                    ProcessAdded(
+                                        pid = processProperties.pid,
+                                        applicationId = packageName,
+                                        processName = processName
+                                    )
+                                logger.verbose { "$event" }
+                                sentProcessAddedEvents.add(processProperties.pid)
+                                emit(event)
                             }
                         }
                     }

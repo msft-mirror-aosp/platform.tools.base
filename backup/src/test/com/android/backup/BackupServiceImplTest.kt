@@ -98,6 +98,7 @@ class BackupServiceImplTest {
         "restore_token_file",
         "app_backup",
         "auth_backup",
+        "permissions",
         "metadata.txt",
       )
     assertThat(adbServices.testMode).isEqualTo(0)
@@ -151,6 +152,7 @@ class BackupServiceImplTest {
         "restore_token_file",
         "app_backup",
         "auth_backup",
+        "permissions",
         "metadata.txt",
       )
     assertThat(files["pm_backup"])
@@ -202,6 +204,7 @@ class BackupServiceImplTest {
         "restore_token_file",
         "app_backup",
         "auth_backup",
+        "permissions",
         "metadata.txt",
       )
     assertThat(files["pm_backup"])
@@ -566,6 +569,47 @@ class BackupServiceImplTest {
   }
 
   @Test
+  fun restore_withPermission(): Unit = runBlocking {
+    val backupFile =
+      backupFileHelper.createBackupFile(
+        "com.app",
+        "11223344556677889900",
+        DEVICE_TO_DEVICE,
+        permissions = listOf("permission1", "permission2"),
+      )
+    val adbServicesFactory = FakeAdbServicesFactory("com.app")
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    val result = backupService.restore("serial", backupFile, null)
+
+    val adbServices = adbServicesFactory.adbServices
+    assertThat(result).isEqualTo(Success)
+    assertThat(adbServices.getCommands())
+      .containsExactly(
+        "pm list packages com.app",
+        "dumpsys package com.google.android.gms",
+        "bmgr enabled",
+        "bmgr enable true",
+        "settings put secure backup_enable_testing_flows 1",
+        "bmgr transport com.google.android.gms/.backup.migrate.service.D2dTransport",
+        "bmgr list transports",
+        "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
+        "bmgr transport com.google.android.gms/.backup.BackupTransportService",
+        "bmgr list transports",
+        "pm clear com.app",
+        "settings put secure backup_testing_flows_type 0",
+        "bmgr restore 9bc1546914997f6c com.app",
+        "pm grant com.app permission1",
+        "pm grant com.app permission2",
+        "bmgr transport com.google.android.gms/.backup.BackupTransportService",
+        "settings put secure backup_enable_testing_flows 0",
+        "bmgr enable false",
+      )
+      .inOrder()
+    assertThat(adbServices.testMode).isEqualTo(0)
+  }
+
+  @Test
   fun restore_bmgrAlreadyEnabled(): Unit = runBlocking {
     val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
     val adbServicesFactory = FakeAdbServicesFactory("com.app") { it.bmgrEnabled = true }
@@ -641,19 +685,20 @@ class BackupServiceImplTest {
     val adbServices = adbServicesFactory.adbServices
     assertThat(adbServices.getProgress())
       .containsExactly(
-        "1/10: Verifying Google services",
-        "2/10: Checking if BMGR is enabled",
-        "3/12: Enabling BMGR",
-        "4/12: Enabling test mode",
-        "5/12: Setting backup transport",
-        "6/13: Initializing backup transport",
-        "7/13: Pushing backup file",
-        "8/13: Clearing app data",
-        "9/13: Restoring com.app",
-        "10/13: Restoring backup transport",
-        "11/13: Disabling test mode",
-        "12/13: Disabling BMGR",
-        "13/13: Done",
+        "1/11: Verifying Google services",
+        "2/11: Checking if BMGR is enabled",
+        "3/13: Enabling BMGR",
+        "4/13: Enabling test mode",
+        "5/13: Setting backup transport",
+        "6/14: Initializing backup transport",
+        "7/14: Pushing backup file",
+        "8/14: Clearing app data",
+        "9/14: Restoring com.app",
+        "10/14: Restoring com.app permissions",
+        "11/14: Restoring backup transport",
+        "12/14: Disabling test mode",
+        "13/14: Disabling BMGR",
+        "14/14: Done",
       )
       .inOrder()
   }
@@ -899,6 +944,41 @@ class BackupServiceImplTest {
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     assertThat(backupService.isBackupEnabled("serial", "com.app")).isFalse()
+  }
+
+  @Test
+  fun getDebuggableApps(): Unit = runBlocking {
+    val adbServicesFactory =
+      FakeAdbServicesFactory(("com.app")) {
+        it.addCommandOverride(
+          Output(
+            "dumpsys package",
+            """
+              Packages:
+                Package [app1] (3c318f1):
+                  ...
+                  pkgFlags=[ foo bar ]
+                  ...
+                Package [app2] (3c318f1):
+                  ...
+                  pkgFlags=[ foo DEBUGGABLE bar ]
+                  ...
+                Package [app3] (3c318f1):
+                  ...
+                  pkgFlags=[ DEBUGGABLE bar ]
+                  ...
+                Package [app4] (3c318f1):
+                  ...
+                  pkgFlags=[ foo DEBUGGABLE ]
+                  ...
+            """
+              .trimIndent(),
+          )
+        )
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    assertThat(backupService.getDebuggableApps("serial")).containsExactly("app2", "app3", "app4")
   }
 }
 

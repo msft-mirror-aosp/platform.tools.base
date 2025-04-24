@@ -109,8 +109,12 @@ interface PreviewScreenshotTestEngineInput {
     @get:OutputDirectory
     val diffImageOutputDir: DirectoryProperty
 
+    @get:Optional
     @get:OutputDirectory
     val junitXmlOutputDirectory: DirectoryProperty
+
+    @get:Input
+    val recordingModeEnabled: Property<Boolean>
 }
 
 fun PreviewScreenshotTestEngineInput.copyJvmArgsTo(addJvmArgFunc: (String) -> Unit) {
@@ -183,8 +187,17 @@ fun PreviewScreenshotTestEngineInput.copyJvmArgsTo(addJvmArgFunc: (String) -> Un
         "Renderer.layoutlibDataDir",
         layoutlibDataDir.singleFile.absolutePath))
     addJvmArgFunc(toJvmTestEngineParam(
-        "XmlReportInput.outputDirectory",
-        junitXmlOutputDirectory.get().asFile.absolutePath))
+        "TestOption.recordingModeEnabled",
+        recordingModeEnabled.get().toString()))
+
+    if (junitXmlOutputDirectory.isPresent) {
+        addJvmArgFunc(toJvmTestEngineParam("XmlReportInput.isEnabled", "true"))
+        addJvmArgFunc(toJvmTestEngineParam(
+            "XmlReportInput.outputDirectory",
+            junitXmlOutputDirectory.get().asFile.absolutePath))
+    } else {
+        addJvmArgFunc(toJvmTestEngineParam("XmlReportInput.isEnabled", "false"))
+    }
 
     threshold.orNull?.let {
         validateFloat(it)

@@ -160,6 +160,7 @@ AGP_TEST_ARTIFACTS = [
     "//tools/base/fakeadbserver:tools.fakeadbserver",  # TODO(b/143864616): Only used for tests
     "//tools/base/testutils:tools.testutils",  # TODO(b/143864616): Only used for tests
     "//tools/base/ddmlib:tools.ddmlib.test",  # TODO(b/143864616): Only used for tests
+    "//tools/base/wear-wff-schema:tools.wear-wff-schema",  # Used in lint-checks
 ]
 
 # Test only dependencies that are not published to gmaven,

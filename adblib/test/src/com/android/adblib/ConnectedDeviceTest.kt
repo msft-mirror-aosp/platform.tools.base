@@ -24,6 +24,7 @@ import com.android.adblib.testingutils.TimeWaitSocketsThrottler
 import com.android.adblib.testingutils.asAdbInputChannel
 import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.SupervisorJob
@@ -1590,7 +1591,7 @@ class ConnectedDeviceTest {
                 "test1",
                 "test2",
                 "model",
-                "$sdk",
+                AndroidApiLevel(sdk),
                 com.android.fakeadbserver.DeviceState.HostConnectionType.USB
             )
         deviceState.deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE

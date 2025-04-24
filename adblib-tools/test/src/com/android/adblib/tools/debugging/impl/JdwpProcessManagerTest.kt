@@ -23,14 +23,18 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.flow
+import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
 import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import com.android.adblib.tools.debugging.packets.payloadLength
 import com.android.adblib.tools.debugging.packets.withPayload
 import com.android.adblib.tools.debugging.properties
+import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.testutils.AdbLibToolsJdwpTestBase
+import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.waitForDevice
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +48,6 @@ import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -110,13 +113,13 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
         // Act
         val props = process.propertiesFlow.first {
             // Having a process names implies monitoring has started
-            it.processName != null
+            it.processName.getOrNull() != null
         }
 
         // Assert
         assertEquals(10, props.pid)
-        assertEquals("p1", props.processName)
-        assertEquals("pkg", props.packageName)
+        assertEquals("p1", props.processName.getOrNull())
+        assertEquals("pkg", props.packageName.getOrNull())
     }
 
     @Test
@@ -234,7 +237,7 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
 
         // Act: Collecting properties of the "connected" process should impact the properties
         // of the "delegating" process
-        yieldUntil { delegatingProcess.properties.completed }
+        yieldUntil { delegatingProcess.properties.areAllPropertiesInitialized() }
 
         // Assert
         val properties = delegatingProcess.properties
@@ -306,10 +309,10 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
         // property collection. As a result `activationCountStateFlow` is incremented
         // by the `JdwpProcessPropertiesCollector`. Wait for properties collector to be done so that
         // `activationCountStateFlow` is decremented.
-        yieldUntil { connectedJdwpProcess.properties.completed }
-
-        // Assert
-        assertEquals(0, connectedJdwpProcess.jdwpSessionActivationCount.value)
+        yieldUntil {
+            connectedJdwpProcess.properties.areAllPropertiesInitialized() &&
+            connectedJdwpProcess.jdwpSessionActivationCount.value == 0
+        }
     }
 
     @Test
@@ -382,8 +385,8 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
         val delegatingProcess = delegatingSession.awaitJdwpProcess(connectedJdwpProcess)
 
         // Act
-        val proxyAddress = connectedJdwpProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
-        val delegatingProxyAddress = delegatingProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress }.first()
+        val proxyAddress = connectedJdwpProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress.getOrNull() }.first()
+        val delegatingProxyAddress = delegatingProcess.jdwpProxySocketServer.proxyStatusFlow.mapNotNull { it.socketAddress.getOrNull() }.first()
 
         // Assert
         assertSame(proxyAddress, delegatingProxyAddress)
@@ -391,15 +394,15 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
 
     private fun assertProcessPropertiesComplete(properties: JdwpProcessProperties) {
         assertEquals(10, properties.pid)
-        assertEquals("p1", properties.processName)
-        assertEquals(2, properties.userId)
-        assertEquals("pkg", properties.packageName)
-        assertEquals("FakeVM", properties.vmIdentifier)
-        assertEquals("64-bit (x86_64)", properties.instructionSetDescription)
-        assertEquals(InstructionSet.X86_64, properties.instructionSet)
-        assertEquals("CheckJNI=true", properties.jvmFlags)
+        assertEquals("p1", properties.processName.getOrNull())
+        assertEquals(2, properties.userId.getOrNull())
+        assertEquals("pkg", properties.packageName.getOrNull())
+        assertEquals("FakeVM", properties.vmIdentifier.getOrNull())
+        assertEquals("64-bit (x86_64)", properties.instructionSetDescription.getOrNull())
+        assertEquals(InstructionSet.X86_64, properties.instructionSet.getOrNull())
+        assertEquals("CheckJNI=true", properties.jvmFlags.getOrNull())
         @Suppress("DEPRECATION")
-        assertFalse(properties.isNativeDebuggable)
+        assertFalse(properties.isNativeDebuggable.getOrDefault(false))
         assertEquals(
             listOf(
                 "hprof-heap-dump",
@@ -409,9 +412,8 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
                 "hprof-heap-dump-streaming",
                 "method-trace-profiling-streaming",
                 "opengl-tracing"
-            ), properties.features
+            ), properties.features.getOrNull()
         )
-        assertNull(properties.exception)
-        assertTrue(properties.completed)
+        assertTrue(properties.areAllPropertiesInitialized())
     }
 }

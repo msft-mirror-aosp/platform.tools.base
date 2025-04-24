@@ -15,6 +15,7 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:kotlin-test",
         "//tools/base/fakeadbserver:studio.android.sdktools.fakeadbserver",
+        "//tools/base/common:studio.android.sdktools.common",
     ],
     test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
@@ -48,6 +49,7 @@ maven_library(
         "//tools/base/adb-proxy:__subpackages__",
         "//tools/base/adblib-ddmlibcompatibility:__subpackages__",
         "//tools/base/adblib-tools:__subpackages__",
+        "//tools/base/backup:__subpackages__",
         "//tools/base/deploy/deployer:__subpackages__",
         "//tools/base/gmaven:__subpackages__",
         "//tools/vendor/google/directaccess-client:__subpackages__",
@@ -87,6 +89,7 @@ kotlin_test(
         "@maven//:junit.junit",
         # FakeAdbServer
         "//tools/base/fakeadbserver:tools.fakeadbserver",
+        "//tools/base/common:tools.common",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
     ],

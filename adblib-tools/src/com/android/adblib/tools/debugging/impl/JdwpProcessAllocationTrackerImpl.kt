@@ -24,7 +24,6 @@ import com.android.adblib.tools.debugging.JdwpProcessAllocationTracker
 import com.android.adblib.tools.debugging.handleDdmsREAE
 import com.android.adblib.tools.debugging.handleDdmsREAL
 import com.android.adblib.tools.debugging.handleDdmsREAQ
-import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
 
 internal class JdwpProcessAllocationTrackerImpl(

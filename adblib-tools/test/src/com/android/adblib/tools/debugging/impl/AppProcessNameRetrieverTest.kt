@@ -22,6 +22,7 @@ import com.android.adblib.tools.debugging.AppProcessTracker
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -44,7 +45,7 @@ class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -79,7 +80,7 @@ class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -114,7 +115,7 @@ class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "36", // SDK >= 36 is required for `app_info` feature.
+                AndroidApiLevel(36), // SDK >= 36 is required for `app_info` feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -151,7 +152,7 @@ class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
                     "test1",
                     "test2",
                     "model",
-                    "31", // SDK >= 31 is required for track_app feature.
+                    AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                     DeviceState.HostConnectionType.USB
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -196,7 +197,7 @@ class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 30 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 30 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

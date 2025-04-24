@@ -22,6 +22,7 @@ import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.testing.FakeAdbRule
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 import java.time.Duration
@@ -35,7 +36,7 @@ fun FakeAdbRule.createAdbSession(closeables: CloseablesRule): AdbSession {
 
 suspend fun FakeAdbRule.connectTestDevice(
     deviceId: String = "1234",
-    sdk: String = "31",
+    sdk: AndroidApiLevel = AndroidApiLevel(31),
     timeout: Duration = Duration.ofSeconds(2)
 ): Pair<IDevice, DeviceState> {
     return withTimeout(timeout.toMillis()) {

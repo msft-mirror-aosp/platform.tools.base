@@ -21,6 +21,7 @@ import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -220,7 +221,7 @@ class AdbActivityManagerServicesTest {
                 "test1",
                 "test2",
                 "model",
-                "$sdk",
+                AndroidApiLevel(sdk),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

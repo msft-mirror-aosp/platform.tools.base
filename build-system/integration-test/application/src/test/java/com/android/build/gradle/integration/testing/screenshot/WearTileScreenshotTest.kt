@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.screenshot
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
@@ -27,7 +26,6 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import kotlin.io.path.listDirectoryEntries
@@ -206,25 +204,18 @@ class WearTileScreenshotTest {
             .with(BooleanOption.USE_ANDROID_X, true)
             .withLoggingLevel(LoggingLevel.LIFECYCLE)
 
-    private fun updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app"): GradleBuildResult {
+    private fun updateReferenceImage(
+        buildType: String = "debug",
+        flavor: String = "",
+        projectName: String = "app") {
         val build = rule.build
         val variantName = if (flavor.isEmpty()) {
             buildType
         } else {
             flavor + buildType.usLocaleCapitalize()
         }
-        val result = build.sstExecutor().expectFailure().run(
-            ":$projectName:validate${variantName.usLocaleCapitalize()}ScreenshotTest")
-
-        val previewDir = build.directory.resolve(
-            "$projectName/build/outputs/screenshotTest-results/preview/$buildType/$flavor/rendered").toFile()
-        val refDir = build.directory.resolve("$projectName/src/screenshotTest${variantName.usLocaleCapitalize()}/reference").toFile()
-
-        assertTrue(
-            "Failed to update reference images",
-            previewDir.copyRecursively(refDir, overwrite = true))
-
-        return result
+        build.sstExecutor().run(
+            ":$projectName:update${variantName.usLocaleCapitalize()}ScreenshotTest")
     }
 
     @Test

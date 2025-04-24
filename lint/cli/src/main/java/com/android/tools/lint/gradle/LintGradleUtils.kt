@@ -18,6 +18,7 @@ package com.android.tools.lint.gradle
 import com.android.SdkConstants
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Project
+import com.android.tools.lint.detector.api.findGradleRootDir
 import com.android.tools.lint.model.LintModelArtifactType
 import com.android.tools.lint.model.LintModelModuleType
 import java.io.File
@@ -79,27 +80,6 @@ fun Project.isDesignatedGradleRootHolder(client: LintClient): Boolean {
   // inside the root project folder. Just fall back to assigning the
   // responsibility to the app module; there's usually exactly one.
   return type == LintModelModuleType.APP
-}
-
-fun findGradleRootDir(projectDir: File): File? {
-  // Workaround: we need the root project; it's not yet part of the model,
-  // and adding it now would clash with simultaneous edits to decouple Gradle
-  // and lint
-  var parent = projectDir
-  while (true) {
-    // The settings file is the best marker for the root of the
-    // Gradle project.
-    if (
-      File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() ||
-        File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists() ||
-        File(parent, SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE).exists()
-    ) {
-      return parent
-    }
-    parent = parent.parentFile ?: break
-  }
-
-  return null
 }
 
 @VisibleForTesting

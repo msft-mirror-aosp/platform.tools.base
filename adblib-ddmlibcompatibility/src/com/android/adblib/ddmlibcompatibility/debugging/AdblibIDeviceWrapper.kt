@@ -336,11 +336,11 @@ internal class AdblibIDeviceWrapper(
             val future = propertyFetcher.getProperty(name)
             try {
                 return@logUsage future.get(timeout, TimeUnit.MILLISECONDS)
-            } catch (e: InterruptedException) {
+            } catch (_: InterruptedException) {
                 // ignore
-            } catch (e: ExecutionException) {
+            } catch (_: ExecutionException) {
                 // ignore
-            } catch (e: TimeoutException) {
+            } catch (_: TimeoutException) {
                 // ignore
             }
             null
@@ -1003,7 +1003,7 @@ internal class AdblibIDeviceWrapper(
         }
     }
 
-    override fun <T> computeUserDataIfAbsent(
+    override fun <T : Any> computeUserDataIfAbsent(
         key: IUserDataMap.Key<T>, mappingFunction: Function<IUserDataMap.Key<T>, T>
     ): T {
         return mUserDataMap.computeUserDataIfAbsent(key, mappingFunction)

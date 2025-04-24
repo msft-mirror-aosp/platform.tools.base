@@ -18,8 +18,6 @@ package com.android.adblib.tools
 import com.android.adblib.AdbDeviceFailResponseException
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.AppProcessEntry
-import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
@@ -27,12 +25,11 @@ import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -68,7 +65,7 @@ class TrackAppStateFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track-app service.
+                AndroidApiLevel(31), // SDK >= 31 is required for track-app service.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -186,7 +183,7 @@ class TrackAppStateFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -240,7 +237,7 @@ class TrackAppStateFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "30", // track-app is not supported on API <= 30
+                AndroidApiLevel(30), // track-app is not supported on API <= 30
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -266,7 +263,7 @@ class TrackAppStateFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 31 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -305,7 +302,7 @@ class TrackAppStateFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 30 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 30 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -338,7 +335,7 @@ class TrackAppStateFlowTest {
                 "test1",
                 "test2",
                 "model",
-                "31", // SDK >= 30 is required for track_app feature.
+                AndroidApiLevel(31), // SDK >= 30 is required for track_app feature.
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

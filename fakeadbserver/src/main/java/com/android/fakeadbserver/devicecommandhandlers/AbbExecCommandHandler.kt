@@ -34,7 +34,7 @@ class AbbExecCommandHandler : DeviceCommandHandler("abb_exec") {
         // Acknowledge only if "abb_exec" is supported
         // TODO: Even though it is equivalent to use API level to check for abb_exec the answer
         //       should come from the list of features contained in [deviceState].
-        if (device.buildVersionSdk.toInt() < 30) {
+        if (device.buildVersionSdk.majorVersion < 30) {
             writeFail(socket.getOutputStream())
             return
         }

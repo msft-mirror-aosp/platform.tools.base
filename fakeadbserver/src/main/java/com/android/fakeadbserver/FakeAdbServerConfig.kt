@@ -18,6 +18,7 @@ package com.android.fakeadbserver
 import com.android.fakeadbserver.DeviceState.HostConnectionType
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.HostCommandHandler
+import com.android.sdklib.AndroidApiLevel
 
 /**
  * The properties of a [FakeAdbServer] instance, that can be re-used to create
@@ -47,7 +48,7 @@ data class DeviceStateConfig(
     val manufacturer: String,
     val model: String,
     val buildVersionRelease: String,
-    val buildVersionSdk: String,
+    val buildVersionSdk: AndroidApiLevel,
     val cpuAbi: String,
     val properties: Map<String, String>,
     val deviceStatus: DeviceState.DeviceStatus,

@@ -41,7 +41,6 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -332,46 +331,25 @@ class ScreenshotTest {
         resultLowThreshold.assertErrorContains("There were failing tests. See the report at: ")
     }
 
-    private fun updateReferenceImage(buildType: String = "debug", flavor: String = "", projectName: String = "app"): GradleBuildResult {
+    private fun updateReferenceImage(
+        buildType: String = "debug",
+        flavor: String = "",
+        projectName: String = "app"): GradleBuildResult {
         val build = rule.build
         val variantName = if (flavor.isEmpty()) {
             buildType
         } else {
             flavor + buildType.usLocaleCapitalize()
         }
-        val result = build.sstExecutor().expectFailure().run(
-            ":$projectName:validate${variantName.usLocaleCapitalize()}ScreenshotTest")
-
-        val previewDir = build.directory.resolve(
-            "$projectName/build/outputs/screenshotTest-results/preview/$buildType/$flavor/rendered").toFile()
-        val refDir = build.directory.resolve("$projectName/src/screenshotTest${variantName.usLocaleCapitalize()}/reference").toFile()
-
-        assertTrue(
-            "Failed to update reference images",
-            previewDir.copyRecursively(refDir, overwrite = true))
-
-        return result
+        return build.sstExecutor().run(
+            ":$projectName:update${variantName.usLocaleCapitalize()}ScreenshotTest")
     }
 
-    private fun updateReferenceImageForAllProjects(variantName: String = "debug"): GradleBuildResult {
+    private fun updateReferenceImageForAllProjects(
+        variantName: String = "debug"): GradleBuildResult {
         val build = rule.build
-        val result = build.sstExecutor().expectFailure().run(
-            "validate${variantName.usLocaleCapitalize()}ScreenshotTest")
-
-        for (projectName in listOf("app", "lib", "lib2_0", "lib2_1")) {
-            val previewDir = build.directory.resolve(
-                "$projectName/build/outputs/screenshotTest-results/preview/$variantName/rendered"
-            ).toFile()
-            val refDir =
-                build.directory.resolve("$projectName/src/screenshotTest${variantName.usLocaleCapitalize()}/reference")
-                    .toFile()
-
-            assertTrue(
-                "Failed to update reference images",
-                previewDir.copyRecursively(refDir, overwrite = true)
-            )
-        }
-        return result
+        return build.sstExecutor().run(
+            "update${variantName.usLocaleCapitalize()}ScreenshotTest")
     }
 
     @Test
@@ -527,7 +505,7 @@ class ScreenshotTest {
         profiles.mapNotNull { profile ->
             val spanList = profile.spanList
             val taskSpan = spanList.firstOrNull {
-                it.task.type == GradleTaskExecutionType.PREVIEW_SCREENSHOT_VALIDATION_VALUE
+                it.task.type == GradleTaskExecutionType.PREVIEW_SCREENSHOT_UPDATE_VALUE
             } ?: return@mapNotNull null
             taskSpan.durationInMs
         }.first { durationInMs ->
@@ -741,13 +719,20 @@ class ScreenshotTest {
         }
         val appProject = build.androidApplication()
 
-        // Generate screenshots to be tested against
+        // Generate screenshots to be tested against.
+        // Note: update task doesn't provide filter functions.
         updateReferenceImage()
+
         val exampleTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/ExampleTest")
         val topLevelTestReferenceScreenshotDir = appProject.resolve("src/screenshotTestDebug/reference/pkg/name/TopLevelPreviewTestKt")
         assertThat(exampleTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
-            "simpleComposableTest_simpleComposable_c5877f71_0.png",
+            "multiPreviewTest_with_Background_6d9364e2_0.png",
+            "multiPreviewTest_withoutBackground_3619adf7_0.png",
+            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_0.png",
+            "parameterProviderTest_simplePreviewParameterProvider_893e015e_b983d6d8_1.png",
+            "previewNameCannotBeUsedAsFileNameTest_aa50de45_0.png",
             "simpleComposableTest2_simpleComposable_7362dd6b_0.png",
+            "simpleComposableTest_simpleComposable_c5877f71_0.png",
         )
         assertThat(topLevelTestReferenceScreenshotDir.listDirectoryEntries().map { it.name }).containsExactly(
             "simpleComposableTest_3_748aa731_0.png"

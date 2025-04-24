@@ -1,5 +1,7 @@
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
+load("//tools/base/bazel:maven.bzl", "maven_library")
+load("//tools/base/common:version.bzl", "BASE_VERSION")
 
 # managed by go/iml_to_build
 iml_module(
@@ -53,5 +55,30 @@ java_binary(
     main_class = "com.android.backup.cli.AndroidRestore",
     runtime_deps = [
         ":studio.android.sdktools.backup.cli",
+    ],
+)
+
+maven_library(
+    name = "backup-restore",
+    srcs = glob([
+        "src/main/**/*.java",
+        "src/main/**/*.kt",
+    ]),
+    bundled_deps = [
+        "//tools/base/environment-services:tools.environment-services",
+    ],
+    coordinates = "com.android.tools.backup:backup-restore",
+    description = "Library to perform backup and restore operations",
+    module_name = "backup-restore",
+    version = BASE_VERSION,
+    visibility = [
+        "//tools/base/backup-test:__subpackages__",
+    ],
+    deps = [
+        "//tools/base/adblib",
+        "//tools/base/common:tools.common",
+        "//tools/base/sdk-common:tools.sdk-common",
+        "//tools/base/sdklib:tools.sdklib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )

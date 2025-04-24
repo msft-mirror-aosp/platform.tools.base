@@ -245,6 +245,32 @@ abstract class AbstractAdbServices(
     }
   }
 
+  override suspend fun grantPermission(applicationId: String, permission: String) {
+    try {
+      executeCommand("pm grant $applicationId $permission")
+    } catch (e: BackupException) {
+      logger.warn("Failed to restore permission $permission on $applicationId", e)
+    }
+  }
+
+  override suspend fun getDebuggableApps(): List<String> {
+    return buildList {
+      var packageName: String? = null
+      executeCommand("dumpsys package").stdout.lineSequence().forEach { line ->
+        if (line.startsWith("  Package [")) {
+          packageName = line.substringAfter('[').substringBefore(']')
+        }
+        if (packageName != null && line.startsWith("    pkgFlags=[")) {
+          val flags = line.substringAfter('[').substringBefore(']').trim().split(" ")
+          if (flags.contains("DEBUGGABLE")) {
+            add(packageName)
+          }
+          packageName = null
+        }
+      }
+    }
+  }
+
   private suspend fun withTestMode(block: suspend () -> Unit) {
     reportProgress("Enabling test mode")
     enableTestMode(true)

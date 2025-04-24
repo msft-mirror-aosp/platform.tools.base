@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
+import com.android.ide.common.build.GenericFilterConfiguration;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.tools.deployer.tasks.Canceller;
@@ -48,6 +49,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DeployerRunner {
+    // TODO: Remove later. This is just to test our build system has the right dependencies.
+    private static GenericFilterConfiguration test = null;
 
     private static final int SUCCESS = 0;
 

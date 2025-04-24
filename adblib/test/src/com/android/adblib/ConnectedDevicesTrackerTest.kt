@@ -21,6 +21,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
+import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.junit.Assert
@@ -54,7 +55,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -75,7 +76,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -98,7 +99,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -126,7 +127,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -155,7 +156,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -205,7 +206,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -242,7 +243,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -278,7 +279,7 @@ class ConnectedDevicesTrackerTest {
             "test1",
             "test2",
             "model",
-            "sdk",
+            sdk = AndroidApiLevel(23),
             DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE

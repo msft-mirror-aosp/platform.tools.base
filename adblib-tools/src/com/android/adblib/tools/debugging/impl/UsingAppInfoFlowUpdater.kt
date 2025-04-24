@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.AmCapabilitiesResult
-import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.activityManager
@@ -24,124 +23,117 @@ import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
+import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.addException
+import com.android.adblib.tools.debugging.OptionalValue
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeNames
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
+import com.android.adblib.tools.debugging.isAppInfoSupported
+import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.trackAppStateFlow
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
 import com.android.adblib.withProcessPrefix
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import java.io.IOException
 
 /**
- * Reads [JdwpProcessProperties] from [ConnectedDevice.trackAppStateFlow] entries
+ * A [JdwpProcessPropertiesFlowUpdater] implementation that collects [JdwpProcessProperties]
+ * from [ConnectedDevice.trackAppStateFlow] for a given [JdwpProcess].
+ *
+ * This class should only be used if the device of the [process] supports
+ * [ConnectedDevice.isAppInfoSupported]
  */
 internal class UsingAppInfoFlowUpdater(
-    private val device: ConnectedDevice,
-    private val pid: Int,
+    private val process: JdwpProcess
 ) : JdwpProcessPropertiesFlowUpdater {
+
+    private val device: ConnectedDevice
+        get() = process.device
+
+    private val pid: Int
+        get() = process.pid
 
     private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
-    override fun execute(processScope: CoroutineScope, stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
-        // Collect device specific properties into the process properties flow
-        processScope.launch {
-            kotlin.runCatching {
-                device.vmInfoRetriever.vmInfo()?.also { vmInfo ->
-                    vmInfo.also {
-                        logger.debug { "Updating process properties with vmInfo=$vmInfo" }
-                        stateFlow.update { current ->
-                            current.copy(
-                                vmIdentifier = vmInfo.vmIdentifier,
-                                features = vmInfo.features
-                            )
-                        }
-                    }
-                } ?: run {
-                    // This should not happen, because if we were able to retrieve the device
-                    // capabilities, the `VmInfoRetriever` should also be able to retrieve the
-                    // `VmInfo`.
-                    throw IOException(
-                        "The `${VmInfoRetriever.VmInfo::class.simpleName}` for " +
-                                "the device is `null`, this is not expected"
-                    )
-                }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-                stateFlow.update { current ->
-                    current.copy(
-                        exception = current.addException(throwable)
-                    )
-                }
-            }
-        }
-
-        // Figure out when to set the `completed` boolean property
-        processScope.launch {
-            runCatching {
-                // Wait for all properties to be set
-                stateFlow.asStateFlow().first { properties ->
-                    val completed =
-                        (properties.processName != null) &&
-                                (properties.packageName != null) &&
-                                (properties.userId != null) &&
-                                (properties.vmIdentifier != null) &&
-                                (properties.jvmFlags != null) &&
-                                (properties.instructionSetDescription != null) &&
-                                (properties.instructionSet != null) &&
-                                (properties.features.isNotEmpty())
-
-                    completed
-                }
-
-                logger.debug { "Setting `completed` to `true` as all properties are set" }
-                stateFlow.update { it.copy(completed = true) }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-            }
-        }
-
-        // Collect properties from the `track-app` service
-        processScope.launch {
-            logger.debug { "Monitoring process properties using `track-app` service" }
-            device.trackAppStateFlow()
-                .map {
-                    // Find process entry with `pid`
-                    it.entries.firstOrNull { appProcessEntry ->
-                        appProcessEntry.pid == pid
-                    }
-                }
-                .filterNotNull()
-                .collect {
-                    assert(it.pid == pid)
-                    updateStateFlow(stateFlow, it)
-                }
+    override suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+        coroutineScope {
+            val jobs = arrayOf(
+                async {
+                    // Collect properties from the `track-app` service
+                    collectTrackAppUpdates(stateFlow)
+                },
+                async {
+                    // Collect device specific properties
+                    collectVmInfo(stateFlow)
+                },
+            )
+            awaitAll(*jobs)
         }
     }
 
-    private fun updateStateFlow(
-        stateFlow: AtomicStateFlow<JdwpProcessProperties>,
-        appProcessEntry: AppProcessEntry
-    ) {
-        logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
-        stateFlow.update { current ->
-            current.copy(
-                processName = JdwpProcessPropertiesCollector.filterFakeName(appProcessEntry.processName)
-                    ?: current.processName,
-                packageName = JdwpProcessPropertiesCollector.filterFakeName(appProcessEntry.packageNames?.firstOrNull())
-                    ?: current.packageName,
-                userId = appProcessEntry.userId32 ?: current.userId,
-                instructionSet = appProcessEntry.instructionSet,
-                isWaitingForDebugger = appProcessEntry.waitingForDebugger ?: current.isWaitingForDebugger,
-                jvmFlags = legacyJvmFlags()
-            )
+    private suspend fun collectTrackAppUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+        logger.debug { "Monitoring process properties using `track-app` service" }
+        device.trackAppStateFlow()
+            .map {
+                // Find process entry with `pid`
+                it.entries.firstOrNull { appProcessEntry ->
+                    appProcessEntry.pid == pid
+                }
+            }
+            .filterNotNull()
+            .collect { appProcessEntry ->
+                assert(appProcessEntry.pid == pid)
+                logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
+                stateFlow.update { properties ->
+                    properties.copy(
+                        processName = OptionalValue.ofFilteredFakeName(appProcessEntry.processName).orElse(properties.processName),
+                        packageNames = OptionalValue.ofFilteredFakeNames(appProcessEntry.packageNames).orElse(properties.packageNames),
+                        userId = OptionalValue.ofNullable(appProcessEntry.userId32).orElse(properties.userId),
+                        instructionSet = OptionalValue.of(appProcessEntry.instructionSet).orElse(properties.instructionSet),
+                        isWaitingForDebugger = OptionalValue.ofNullable(appProcessEntry.waitingForDebugger).orElse(properties.isWaitingForDebugger),
+                        isNativeDebuggable = OptionalValue.of(false),
+                        jvmFlags = OptionalValue.legacyJvmFlags()
+                    )
+                }
+            }
+    }
+
+    private suspend fun collectVmInfo(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
+        try {
+            device.vmInfoRetriever.vmInfo()?.also { vmInfo ->
+                vmInfo.also {
+                    logger.debug { "Updating process properties with vmInfo=$vmInfo" }
+                    stateFlow.update {
+                        it.copy(
+                            vmIdentifier = OptionalValue.of(vmInfo.vmIdentifier).orElse(it.vmIdentifier),
+                            features = OptionalValue.of(vmInfo.features).orElse(it.features)
+                        )
+                    }
+                }
+            } ?: run {
+                // This should not happen, because if we were able to retrieve the device
+                // capabilities, the `VmInfoRetriever` should also be able to retrieve the
+                // `VmInfo`.
+                throw IOException(
+                    "The `${VmInfo::class.simpleName}` for " +
+                            "the device is `null`, this is not expected"
+                )
+            }
+        } catch (throwable: Throwable) {
+            logger.logIOCompletionErrors(throwable)
+            stateFlow.update {
+                it.copy(
+                    vmIdentifier =  OptionalValue.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
+                    features = OptionalValue.ofError<List<String>>("Error collecting features from device capabilities").orElse(it.features)
+                )
+            }
         }
     }
 
@@ -149,18 +141,16 @@ internal class UsingAppInfoFlowUpdater(
      * We need set the [JdwpProcessProperties.jvmFlags] property to its legacy value,
      * which is not supported by `track-app`.
      */
-    private fun legacyJvmFlags(): String {
-        return "CheckJNI=true"
-    }
+    private fun OptionalValue.Companion.legacyJvmFlags(): OptionalValue<String> = legacyJvmFlagsSingleton
 
     companion object {
+        private val legacyJvmFlagsSingleton = OptionalValue.of("CheckJNI=true")
+
         private val VmInfoRetrieverKey = CoroutineScopeCache.Key<VmInfoRetriever>("TrackApp")
 
         private val ConnectedDevice.vmInfoRetriever: VmInfoRetriever
-            get() {
-                return cache.getOrPutSynchronized(VmInfoRetrieverKey) {
-                    VmInfoRetriever(this)
-                }
+            get() = cache.getOrPutSynchronized(VmInfoRetrieverKey) {
+                VmInfoRetriever(this)
             }
 
         /**

@@ -151,77 +151,91 @@ message JdwpProcessInfo {
     int32 pid = 1;
 
     /*
-     * Whether all properties have been collected.
+     * The process name (see JdwpProcessProperties class)
      */
-    bool completed = 2;
+    OptionalString process_name = 2;
 
     /*
-     * Description of the last error encountered when collecting process properties, or `null`
-     * if no error occurred. Once [collection_completed] is `true`, this value never changes.
+     * The list of package names of the packages hosted by this process (see JdwpProcessProperties class)
      */
-    optional Exception completed_exception = 3;
+    OptionalStringList package_names = 3;
 
     /*
-     * The process name that uniquely identifies the process on the device, or `null` if the process
-     * name is not known (yet) due to debugger latency or an error connecting to the process and
-     * retrieving data about it.
-     *
-     * The process name is often equal to [packageName], except when a `android:process`
-     * process name entry is specified in the
-     * [AndroidManifest.xml](https://developer.android.com/guide/topics/manifest/application-element)
-     * file.
+     * The User ID this process is running in context of (see JdwpProcessProperties class)
      */
-    optional string process_name = 4;
+    OptionalInt32 user_id = 4;
 
     /*
-     * The package name of the process, or `null` if the value is not known yet or if the device
-     * does not support retrieving this information (R+ only)
+     * The AndroidVM instruction set architecture (isa) (see JdwpProcessProperties class)
      */
-    optional string package_name = 5;
+    OptionalString instruction_set = 5;
 
     /*
-     * The User ID this process is running in context of, or `null` if the value is not known yet or
-     * the device does not support retrieving this information (R+ only).
+     * The Android VM identifier (see JdwpProcessProperties class)
      */
-    optional int32 user_id = 6;
+    OptionalString vm_identifier = 6;
 
     /*
-     * The AndroidVM instruction set architecture (isa), or `null` if the value is not known yet.
+     * The JVM flags (see JdwpProcessProperties class)
      */
-    optional string instruction_set = 7;
+    OptionalString jvm_flags = 7;
 
     /*
-     * The Android VM identifier, or `null` if the value is not known yet.
+     * Whether legacy native debugging is supported (see JdwpProcessProperties class)
      */
-    optional string vm_identifier = 8;
-
-    /*
-     * The JVM flags, or `null` if the value is not known yet.
-     */
-    optional string jvm_flags = 9;
-
-    /*
-     * Whether legacy native debugging is supported.
-     */
-    optional bool native_debuggable = 10;
+    OptionalBool native_debuggable = 8;
 
     /**
-     * Whether the process is waiting for a debugger to attach.
+     * Whether the process is waiting for a debugger to attach (see JdwpProcessProperties class)
      */
-    optional bool waiting_for_debugger = 11;
+    OptionalBool waiting_for_debugger = 9;
 
     /*
-     * List of features reported by the [DdmsFeatChunk] packet
+     * List of features reported by the [DdmsFeatChunk] packet (see JdwpProcessProperties class)
      */
-    optional Features features = 12;
-
-    message Features {
-        repeated string feature = 1;
-    }
+    OptionalStringList features = 10;
 }
 
-message Exception {
-    string class_name = 1;
-    string message = 2;
-    optional Exception cause = 3;
+message OptionalString {
+    // has_value == false && is_error == false  =>  empty value
+    // has_value == true  && is_error == false  =>  valid non-null value
+    // has_value == false && is_error == true   =>  error with error message
+    // has_value == true  && is_error == true   =>  should never happen
+    bool has_value = 1;
+    bool is_error = 2;
+    optional string error_message = 3;
+    optional string string_value = 4;
+}
+
+message OptionalBool {
+    // has_value == false && is_error == false  =>  empty value
+    // has_value == true  && is_error == false  =>  valid non-null value
+    // has_value == false && is_error == true   =>  error with error message
+    // has_value == true  && is_error == true   =>  should never happen
+    bool has_value = 1;
+    bool is_error = 2;
+    optional string error_message = 3;
+    optional bool bool_value = 4;
+}
+
+message OptionalInt32 {
+    // has_value == false && is_error == false  =>  empty value
+    // has_value == true  && is_error == false  =>  valid non-null value
+    // has_value == false && is_error == true   =>  error with error message
+    // has_value == true  && is_error == true   =>  should never happen
+    bool has_value = 1;
+    bool is_error = 2;
+    optional string error_message = 3;
+    optional int32 in32_value = 4;
+}
+
+message OptionalStringList {
+    // has_value == false && is_error == false  =>  empty value
+    // has_value == true  && is_error == false  =>  valid non-null value
+    // has_value == false && is_error == true   =>  error with error message
+    // has_value == true  && is_error == true   =>  should never happen
+    bool has_value = 1;
+    bool is_error = 2;
+    optional string error_message = 3;
+    repeated string strings_value = 4;
 }

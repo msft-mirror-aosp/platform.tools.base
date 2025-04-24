@@ -6,7 +6,12 @@ load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
 filegroup(
     name = "gradle_project_files",
     # buildifier: disable=globs
-    srcs = glob(["src/main/**/*.kt"]) + ["build.gradle"],
+    srcs = glob([
+        "src/main/**/*.kt",
+        "src/main/resources/**",
+    ]) + [
+        "build.gradle",
+    ],
     visibility = ["//visibility:private"],
 )
 
@@ -28,7 +33,5 @@ gradle_build(
         "//tools/base:agp_dependencies",
     ],
     tasks = [":base:journeys:journeys-junit5-engine:zipRepo"],
-    visibility = [
-        "//tools/base/build-system/integration-test:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
 )
