@@ -152,20 +152,22 @@ class AlarmHandlerImpl(
   private fun AlarmSet.Builder.setPendingIntent(pendingIntent: PendingIntent): Long {
     val builder = PendingIntentProto.newBuilder()
     try {
+      @Suppress("UsePropertyAccessSyntax")
       builder
         .setCreatorPackage(pendingIntent.creatorPackage)
         .setCreatorUid(pendingIntent.creatorUid)
-    } catch (t: Throwable) {
+    } catch (_: Throwable) {
       // Tests running on Robolectric APIs 31 & 32 crash when accessing PendingIntent getters.
       // Tested on a real device and it did not crash
     }
 
     val info = intentRegistry.getPendingIntentInfo(pendingIntent)
     if (info != null) {
+      @Suppress("UsePropertyAccessSyntax")
       builder
         .setType(info.type)
         .setRequestCode(info.requestCode)
-        .setIntent(info.intent.toProto())
+        .addAllIntent(info.intents.map { it.toProto().build() })
         .setFlags(info.flags)
     }
     setOperation(builder)

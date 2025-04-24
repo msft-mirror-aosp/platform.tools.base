@@ -113,7 +113,7 @@ class AlarmHandlerTest {
                 .setCreatorPackage("org.robolectric.default")
                 .setType(ACTIVITY)
                 .setRequestCode(PENDING_INTENT_REQUEST_CODE)
-                .setIntent(
+                .addIntent(
                   IntentProto.newBuilder()
                     .setAction("action")
                     .setData("http://google.com")
@@ -171,8 +171,8 @@ class AlarmHandlerTest {
       listenerTag = null,
     )
     inspectorRule.connection.consume {
-      assertThat(alarmSet.operation.intent)
-        .isEqualTo(IntentProto.newBuilder().setAction("action").setType("type").build())
+      assertThat(alarmSet.operation.intentList)
+        .containsExactly(IntentProto.newBuilder().setAction("action").setType("type").build())
     }
   }
 
@@ -216,7 +216,7 @@ class AlarmHandlerTest {
                 .setCreatorPackage("org.robolectric.default")
                 .setType(ACTIVITY)
                 .setRequestCode(PENDING_INTENT_REQUEST_CODE)
-                .setIntent(IntentProto.newBuilder())
+                .addIntent(IntentProto.newBuilder())
                 .setFlags(PENDING_INTENT_FLAGS)
             )
             .build()

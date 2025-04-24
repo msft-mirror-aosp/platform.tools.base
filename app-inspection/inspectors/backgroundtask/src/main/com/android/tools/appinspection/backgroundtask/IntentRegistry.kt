@@ -37,12 +37,12 @@ class IntentRegistry {
   private var currentInfo by threadLocal<PendingIntentInfo?> { null }
 
   fun setCurrentInfo(type: PendingIntentType, requestCode: Int, intent: Intent, flags: Int) {
-    currentInfo = PendingIntentInfo(type, requestCode, intent, flags)
+    currentInfo = PendingIntentInfo(type, requestCode, listOf(intent), flags)
   }
 
   fun setPendingIntentForActiveIntent(pendingIntent: PendingIntent) {
     val info = currentInfo ?: return
-    intentToPendingIntentMap[info.intent.wrap()] = pendingIntent
+    info.intents.forEach { intentToPendingIntentMap[it.wrap()] = pendingIntent }
     pendingIntentToInfoMap[pendingIntent] = info
   }
 
