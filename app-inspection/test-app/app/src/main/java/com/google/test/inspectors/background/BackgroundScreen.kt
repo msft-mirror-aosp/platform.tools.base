@@ -44,7 +44,13 @@ private fun BackgroundScreen(actions: BackgroundScreenActions) {
     button("Start Work") { actions.startWork() }
     button("Acquire Wake Lock") { actions.doAcquireWakeLock() }
     button("Release Wake Lock") { actions.doReleaseWakeLock() }
-    button("Set Alarm") { actions.doSetAlarm() }
+    button("Set Activity Alarm") { actions.doSetActivityAlarm() }
+    button("Set Activity (Bundle) Alarm") { actions.doSetActivityWithBundleAlarm() }
+    button("Set Activities Alarm") { actions.doSetActivitiesAlarm() }
+    button("Set Activities (Bundle) Alarm") { actions.doSetActivitiesWithBundleAlarm() }
+    button("Set Broadcast Alarm") { actions.doSetBroadcastAlarm() }
+    button("Set Service Alarm") { actions.doSetServiceAlarm() }
+    button("Set Foreground Service Alarm") { actions.doSetForegroundServiceAlarm() }
   }
 }
 

@@ -19,18 +19,19 @@ package com.google.test.inspectors.background
 import android.app.AlarmManager
 import android.app.Application
 import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_IMMUTABLE
+import android.app.PendingIntent.FLAG_ONE_SHOT
 import android.app.job.JobInfo
 import android.app.job.JobScheduler
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.os.PowerManager.PARTIAL_WAKE_LOCK
 import androidx.core.app.AlarmManagerCompat
 import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
@@ -99,12 +100,63 @@ internal class BackgroundViewModel @Inject constructor(private val application: 
     workManager.enqueue(request)
   }
 
-  override fun doSetAlarm() {
-    val alarmManager = application.getSystemService<AlarmManager>() ?: throw IllegalStateException()
+  override fun doSetActivityAlarm() {
+    val intent = Intent(application, AlarmActivity::class.java).putExtra("NAME", "Alarm")
+    val pendingIntent =
+      PendingIntent.getActivity(application, 1, intent, FLAG_ONE_SHOT or FLAG_IMMUTABLE)
+    doSetAlarm(pendingIntent)
+  }
+
+  override fun doSetActivityWithBundleAlarm() {
+    val intent = Intent(application, AlarmActivity::class.java).putExtra("NAME", "Alarm-Bundle")
+    val pendingIntent =
+      PendingIntent.getActivity(application, 1, intent, FLAG_ONE_SHOT or FLAG_IMMUTABLE, Bundle())
+    doSetAlarm(pendingIntent)
+  }
+
+  override fun doSetActivitiesAlarm() {
+    val intent1 = Intent(application, AlarmActivity::class.java).putExtra("NAME", "Alarm1")
+    val intent2 = Intent(application, AlarmActivity::class.java).putExtra("NAME", "Alarm2")
+    val pendingIntent =
+      PendingIntent.getActivities(
+        application,
+        1,
+        arrayOf(intent1, intent2),
+        FLAG_ONE_SHOT or FLAG_IMMUTABLE,
+      )
+    doSetAlarm(pendingIntent)
+  }
+
+  override fun doSetActivitiesWithBundleAlarm() {
+    val intent1 = Intent(application, AlarmActivity::class.java).putExtra("NAME", "Alarm1-Bundle")
+    val intent2 = Intent(application, AlarmActivity::class.java).putExtra("NAME", "Alarm2-Bundle")
+    val pendingIntent =
+      PendingIntent.getActivities(
+        application,
+        1,
+        arrayOf(intent1, intent2),
+        FLAG_ONE_SHOT or FLAG_IMMUTABLE,
+      )
+    doSetAlarm(pendingIntent)
+  }
+
+  override fun doSetServiceAlarm() {
+    val intent = Intent(application, AlarmService::class.java)
+    val pendingIntent = PendingIntent.getService(application, 1, intent, FLAG_IMMUTABLE)
+    doSetAlarm(pendingIntent)
+  }
+
+  override fun doSetForegroundServiceAlarm() {
+    val intent = Intent(application, AlarmService::class.java).putExtra("FOREGROUND", true)
+    val pendingIntent = PendingIntent.getForegroundService(application, 1, intent, FLAG_IMMUTABLE)
+    doSetAlarm(pendingIntent)
+  }
+
+  override fun doSetBroadcastAlarm() {
     val intent =
       Intent(application, AlarmReceiver::class.java)
         .setAction("Alarm")
-        .setDataAndType(Uri.parse("http://google.com"), "Some type")
+        .setDataAndType("http://google.com".toUri(), "Some type")
         .addCategory("category1")
         .addCategory("category2")
         .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -117,16 +169,23 @@ internal class BackgroundViewModel @Inject constructor(private val application: 
             putString("INNER_STRING_EXTRA", "Foo")
           },
         )
-    AlarmManagerCompat.setExactAndAllowWhileIdle(
-      alarmManager,
-      AlarmManager.RTC,
-      System.currentTimeMillis() + 3.seconds.inWholeMilliseconds,
+    val pendingIntent =
       PendingIntent.getBroadcast(
         application,
         1,
         intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-      ),
+        PendingIntent.FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE,
+      )
+    doSetAlarm(pendingIntent)
+  }
+
+  private fun doSetAlarm(pendingIntent: PendingIntent) {
+    val alarmManager = application.getSystemService<AlarmManager>() ?: throw IllegalStateException()
+    AlarmManagerCompat.setExactAndAllowWhileIdle(
+      alarmManager,
+      AlarmManager.RTC,
+      System.currentTimeMillis() + 3.seconds.inWholeMilliseconds,
+      pendingIntent,
     )
   }
 
@@ -140,8 +199,6 @@ internal class BackgroundViewModel @Inject constructor(private val application: 
 }
 
 private fun JobInfo.Builder.safeSetRequiresBatteryNotLow(value: Boolean): JobInfo.Builder {
-  if (Build.VERSION.SDK_INT >= 26) {
-    setRequiresBatteryNotLow(value)
-  }
+  setRequiresBatteryNotLow(value)
   return this
 }

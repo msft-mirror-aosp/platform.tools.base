@@ -22,7 +22,19 @@ internal interface BackgroundScreenActions {
 
   fun startWork() {}
 
-  fun doSetAlarm() {}
+  fun doSetActivityAlarm() {}
+
+  fun doSetActivityWithBundleAlarm() {}
+
+  fun doSetActivitiesAlarm() {}
+
+  fun doSetActivitiesWithBundleAlarm() {}
+
+  fun doSetServiceAlarm() {}
+
+  fun doSetForegroundServiceAlarm() {}
+
+  fun doSetBroadcastAlarm() {}
 
   fun doAcquireWakeLock() {}
 
