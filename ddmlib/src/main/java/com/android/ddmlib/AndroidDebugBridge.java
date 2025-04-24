@@ -175,7 +175,6 @@ public class AndroidDebugBridge {
      * This method should be only called from tests if there is a need to reset a `delegate` to
      * its default implementation.
      */
-    @VisibleForTesting
     public static void resetForTests() {
         delegateIsUsed = false;
         delegate = new AndroidDebugBridgeImpl();
