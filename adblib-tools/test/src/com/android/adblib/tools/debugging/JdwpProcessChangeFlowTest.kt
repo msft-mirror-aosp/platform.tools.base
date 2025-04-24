@@ -135,7 +135,6 @@ class JdwpProcessChangeFlowTest {
         }
 
     @Test
-    @Ignore("b/412913225)")
     fun testConnectedDeviceDebuggableProcesses_tracksRemovedProcess(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
             // Prepare
@@ -144,8 +143,16 @@ class JdwpProcessChangeFlowTest {
             fakeDevice.startClient(pid10, 0, "a.b.c", true)
             val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
-            // Wait for all process properties to get populated
-            yieldUntil { processes[0].jdwpProcess!!.properties.areAllPropertiesInitialized() }
+            // Wait for all process properties to get populated, so that we get a single
+            // `JdwpProcessChange.Added` change later on. Failing to do so may result in
+            // getting a `JdwpProcessChange.Added` followed by a `JdwpProcessChange.Updated`
+            // event.
+            yieldUntil {
+                processes[0].jdwpProcess!!.let {
+                    it.properties.areAllPropertiesInitialized()
+                            && it.jdwpProxySocketServer.proxyStatus.socketAddress.hasValue
+                }
+            }
 
             // Act / Assert
             val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
