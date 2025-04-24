@@ -1,6 +1,9 @@
 """Continuous Integration scripts."""
 
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+package(default_visibility = ["//tools/base/bazel/ci:__subpackages__"])
 
 string_flag(
     name = "ab_target",
@@ -17,11 +20,6 @@ bool_flag(
 py_library(
     name = "bazel",
     srcs = ["bazel.py"],
-)
-
-py_library(
-    name = "bazel_diff",
-    srcs = ["bazel_diff.py"],
 )
 
 py_library(
@@ -53,16 +51,6 @@ py_library(
 )
 
 py_library(
-    name = "presubmit",
-    srcs = ["presubmit.py"],
-    deps = [
-        ":bazel",
-        ":bazel_diff",
-        ":gce",
-    ],
-)
-
-py_library(
     name = "query_checks",
     srcs = ["query_checks.py"],
     deps = [
@@ -85,8 +73,8 @@ py_library(
     srcs = ["studio_linux.py"],
     deps = [
         ":bazel",
-        ":presubmit",
         ":studio",
+        "//tools/base/bazel/ci/presubmit",
     ],
 )
 
@@ -95,8 +83,8 @@ py_library(
     srcs = ["studio_win.py"],
     deps = [
         ":bazel",
-        ":presubmit",
         ":studio",
+        "//tools/base/bazel/ci/presubmit",
     ],
 )
 
@@ -146,20 +134,5 @@ py_test(
         ":fake_gce",
         ":gce",
         "@absl-py//absl/testing:absltest",
-    ],
-)
-
-py_test(
-    name = "presubmit_test",
-    srcs = ["presubmit_test.py"],
-    deps = [
-        ":bazel",
-        ":bazel_diff",
-        ":fake_build_env",
-        ":fake_gce",
-        ":gce",
-        ":presubmit",
-        "@absl-py//absl/testing:absltest",
-        "@absl-py//absl/testing:parameterized",
     ],
 )

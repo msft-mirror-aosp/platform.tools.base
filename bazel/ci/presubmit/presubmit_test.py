@@ -8,11 +8,11 @@ from unittest import mock
 from absl.testing import absltest
 from absl.testing import parameterized
 from tools.base.bazel.ci import bazel
-from tools.base.bazel.ci import bazel_diff
 from tools.base.bazel.ci import fake_build_env
 from tools.base.bazel.ci import fake_gce
 from tools.base.bazel.ci import gce
-from tools.base.bazel.ci import presubmit
+from tools.base.bazel.ci.presubmit import bazel_diff
+from tools.base.bazel.ci.presubmit import presubmit
 
 
 class PresubmitTest(parameterized.TestCase):

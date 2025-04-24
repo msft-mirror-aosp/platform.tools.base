@@ -4,8 +4,8 @@ import pathlib
 import tempfile
 
 from tools.base.bazel.ci import bazel
-from tools.base.bazel.ci import presubmit
 from tools.base.bazel.ci import studio
+from tools.base.bazel.ci.presubmit import presubmit
 
 
 def studio_win(build_env: bazel.BuildEnv):

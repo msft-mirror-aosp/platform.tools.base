@@ -8,8 +8,8 @@ from typing import List, Sequence
 import zipfile
 
 from tools.base.bazel.ci import bazel
-from tools.base.bazel.ci import presubmit
 from tools.base.bazel.ci import studio
+from tools.base.bazel.ci.presubmit import presubmit
 
 
 _BASE_TARGETS = [

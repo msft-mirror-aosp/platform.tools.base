@@ -15,8 +15,8 @@ import tempfile
 from typing import Iterator, List, Sequence, Set
 
 from tools.base.bazel.ci import bazel
-from tools.base.bazel.ci import bazel_diff
 from tools.base.bazel.ci import gce
+from tools.base.bazel.ci.presubmit import bazel_diff
 
 
 _FILE_BUCKET = 'adt-byob'
