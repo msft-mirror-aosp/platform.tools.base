@@ -310,7 +310,7 @@ class AlarmHandlerTest {
         shadow.isService -> SERVICE
         else -> throw IllegalStateException()
       }
-    onIntentCapturedEntry(type, shadow.requestCode, shadow.savedIntent, shadow.flags)
+    onIntentCapturedEntry(type, shadow.requestCode, arrayOf(shadow.savedIntent), shadow.flags)
     onIntentCapturedExit(pendingIntent)
   }
 }

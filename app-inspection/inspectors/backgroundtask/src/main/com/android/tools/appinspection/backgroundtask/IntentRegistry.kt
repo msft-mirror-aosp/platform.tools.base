@@ -36,8 +36,8 @@ class IntentRegistry {
   /* Intent shared between an entry hook and an exit hook for the same method. */
   private var currentInfo by threadLocal<PendingIntentInfo?> { null }
 
-  fun setCurrentInfo(type: PendingIntentType, requestCode: Int, intent: Intent, flags: Int) {
-    currentInfo = PendingIntentInfo(type, requestCode, listOf(intent), flags)
+  fun setCurrentInfo(type: PendingIntentType, requestCode: Int, intents: List<Intent>, flags: Int) {
+    currentInfo = PendingIntentInfo(type, requestCode, intents, flags)
   }
 
   fun setPendingIntentForActiveIntent(pendingIntent: PendingIntent) {

@@ -19,7 +19,6 @@ package com.android.tools.appinspection.backgroundtask
 import android.app.Activity
 import android.app.AlarmManager
 import android.app.Instrumentation
-import android.app.IntentService
 import android.app.PendingIntent
 import android.app.job.JobInfo
 import android.app.job.JobParameters
@@ -138,6 +137,7 @@ class BackgroundTaskInspector(
     // TODO(b/325663988): Support all methods
     listOf(
         GET_ACTIVITY_METHOD_NAME to PendingIntentType.ACTIVITY,
+        GET_ACTIVITIES_METHOD_NAME to PendingIntentType.ACTIVITY,
         GET_SERVICE_METHOD_NAME to PendingIntentType.SERVICE,
         GET_BROADCAST_METHOD_NAME to PendingIntentType.BROADCAST,
       )
@@ -145,10 +145,11 @@ class BackgroundTaskInspector(
         environment.artTooling().registerEntryHook(PendingIntent::class.java, methodName) { _, args
           ->
           val requestCode = args[1] as Int
-          val intent = args[2] as? Intent ?: return@registerEntryHook
+          val intents = buildIntentArray(args[2]) ?: return@registerEntryHook
           val flags = args[3] as Int
-          pendingIntentHandler.onIntentCapturedEntry(type, requestCode, intent, flags)
+          pendingIntentHandler.onIntentCapturedEntry(type, requestCode, intents, flags)
         }
+
         environment.artTooling().registerExitHook(PendingIntent::class.java, methodName) {
           pendingIntent: PendingIntent? ->
           pendingIntent?.let { pendingIntentHandler.onIntentCapturedExit(it) }
@@ -170,23 +171,22 @@ class BackgroundTaskInspector(
       }
 
     environment.artTooling().registerEntryHook(
-      IntentService::class.java,
+      javaClass.classLoader.loadClass("android.app.IntentService"),
       ON_START_COMMAND_METHOD_NAME,
     ) { _, args ->
       pendingIntentHandler.onIntentReceived((args[0] as? Intent) ?: return@registerEntryHook)
     }
 
-    environment.artTooling().registerEntryHook(
-      javaClass.classLoader.loadClass("android.app.ActivityThread"),
-      HANDLE_RECEIVER_METHOD_NAME,
-    ) { _, args ->
+    val activityThreadClass = javaClass.classLoader.loadClass("android.app.ActivityThread")
+    environment.artTooling().registerEntryHook(activityThreadClass, HANDLE_RECEIVER_METHOD_NAME) {
+      _,
+      args ->
       pendingIntentHandler.onReceiverDataCreated(args[0] ?: return@registerEntryHook)
     }
 
-    environment.artTooling().registerEntryHook(
-      javaClass.classLoader.loadClass("android.app.ActivityThread"),
-      HANDLE_SERVICE_METHOD_NAME,
-    ) { _, args ->
+    environment.artTooling().registerEntryHook(activityThreadClass, HANDLE_SERVICE_METHOD_NAME) {
+      _,
+      args ->
       val args = args[0].getFieldValue("args", null as Intent?)
       pendingIntentHandler.onIntentReceived((args) ?: return@registerEntryHook)
     }
@@ -282,5 +282,13 @@ class BackgroundTaskInspector(
         wantsReschedule = args[1] as Boolean,
       )
     }
+  }
+}
+
+private fun buildIntentArray(arg: Any): Array<Intent>? {
+  return when (arg) {
+    is Intent -> arrayOf(arg)
+    is Array<*> -> arg.mapNotNull { it as? Intent }.toTypedArray().takeIf { it.size == arg.size }
+    else -> null
   }
 }
