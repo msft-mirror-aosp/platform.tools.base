@@ -3495,7 +3495,7 @@ package com.android.build.gradle.api {
     method public void apply(org.gradle.api.Project project);
   }
 
-  @org.gradle.api.Incubating public final class KotlinMultiplatformAndroidPlugin extends com.android.build.gradle.BasePlugin {
+  public final class KotlinMultiplatformAndroidPlugin extends com.android.build.gradle.BasePlugin {
     ctor public KotlinMultiplatformAndroidPlugin();
   }
 
