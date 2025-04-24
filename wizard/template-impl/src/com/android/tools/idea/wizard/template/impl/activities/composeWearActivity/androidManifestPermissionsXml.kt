@@ -16,7 +16,10 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.composeWearActivity
 
-fun androidManifestWearOsAdditions() = """
+import com.android.tools.idea.wizard.template.renderIf
+
+fun androidManifestWearOsAdditions(useWearSdkLibrary: Boolean) =
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -26,6 +29,9 @@ fun androidManifestWearOsAdditions() = """
     <application>
 
         <uses-library android:name="com.google.android.wearable" android:required="true" />
+        ${renderIf(useWearSdkLibrary) {
+            "<uses-library android:name=\"wear-sdk\" android:required=\"false\" />"
+        }}
 
         <!--
                Set to true if your app is Standalone, that is, it does not require the handheld

@@ -74,7 +74,14 @@ private fun RecipeExecutor.commonComposeRecipe(
     )
 
     val (_, srcOut, resOut, manifestOut) = moduleData
-    mergeXml(androidManifestWearOsAdditions(), manifestOut.resolve("AndroidManifest.xml"))
+    val useWearSdkLibrary = moduleData.apis.buildApi.api >= 36
+    mergeXml(
+        androidManifestWearOsAdditions(useWearSdkLibrary),
+        manifestOut.resolve("AndroidManifest.xml"),
+    )
+    if (useWearSdkLibrary) {
+        useLibrary("wear-sdk")
+    }
     mergeXml(
         stringsXml(
             activityClass,
