@@ -184,6 +184,14 @@ class BackgroundTaskInspector(
     }
 
     environment.artTooling().registerEntryHook(
+      javaClass.classLoader.loadClass("android.app.ActivityThread"),
+      HANDLE_SERVICE_METHOD_NAME,
+    ) { _, args ->
+      val args = args[0].getFieldValue("args", null as Intent?)
+      pendingIntentHandler.onIntentReceived((args) ?: return@registerEntryHook)
+    }
+
+    environment.artTooling().registerEntryHook(
       BroadcastReceiver::class.java,
       SET_PENDING_RESULT_METHOD_NAME,
     ) { _, args ->

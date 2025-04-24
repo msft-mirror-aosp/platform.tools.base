@@ -57,7 +57,7 @@ const val GET_BROADCAST_METHOD_NAME =
  * [Activity#onCreate(Bundle)].
  */
 const val CALL_ACTIVITY_ON_CREATE_METHOD_NAME =
-  "callActivityOnCreate" + "(Landroid/app/Activity;Landroid/os/Bundle;)V"
+  "callActivityOnCreate(Landroid/app/Activity;Landroid/os/Bundle;)V"
 
 /**
  * Method name for [Instrumentation#callActivityOnCreate(Activity, Bundle, PersistableBundle)] to
@@ -82,7 +82,14 @@ const val ON_START_COMMAND_METHOD_NAME = "onStartCommand(Landroid/content/Intent
  * to capture the [Intent].
  */
 const val HANDLE_RECEIVER_METHOD_NAME =
-  "handleReceiver" + "(Landroid/app/ActivityThread\$ReceiverData;)V"
+  "handleReceiver(Landroid/app/ActivityThread\$ReceiverData;)V"
+
+/**
+ * Method name for [ActivityThread.handleServiceArgs(ServiceArgsData) ] to capture a ServiceArgsData
+ * containing the needed [Intent]..
+ */
+const val HANDLE_SERVICE_METHOD_NAME =
+  "handleServiceArgs(Landroid/app/ActivityThread\$ServiceArgsData;)V"
 
 /**
  * Method name for [android.content.BroadcastReceiver.setPendingResult(PendingResult)]. If the
@@ -91,7 +98,7 @@ const val HANDLE_RECEIVER_METHOD_NAME =
  * the [Intent] properly.
  */
 const val SET_PENDING_RESULT_METHOD_NAME =
-  "setPendingResult" + "(Landroid/content/BroadcastReceiver\$PendingResult;)V"
+  "setPendingResult(Landroid/content/BroadcastReceiver\$PendingResult;)V"
 
 /** A handler class that adds necessary hooks to track [Intent] and its related [PendingIntent]. */
 interface PendingIntentHandler {
