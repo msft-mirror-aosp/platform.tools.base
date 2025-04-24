@@ -25,8 +25,10 @@ import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.appProcessTracker
 import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.withPrefix
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.job
 
 /**
  * Implementation of [AbstractJdwpProcess] performing the actual JDWP connection.
@@ -85,6 +87,15 @@ internal class JdwpProcessImpl(
         logger.debug { "close()" }
         sharedJdwpSessionProvider.close()
         cache.close()
+    }
+
+    /**
+     * For testing purpose only: close all scopes and jobs, and wait for all these jobs
+     * to finish using [Job.join]
+     */
+    internal suspend fun closeAndJoinInternalOnly() {
+        close()
+        cache.scope.coroutineContext.job.join()
     }
 
     override fun toString(): String {
