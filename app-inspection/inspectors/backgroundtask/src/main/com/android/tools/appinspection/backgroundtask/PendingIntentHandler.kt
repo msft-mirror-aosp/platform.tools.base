@@ -49,6 +49,15 @@ const val GET_SERVICE_METHOD_NAME =
     "Landroid/app/PendingIntent;"
 
 /**
+ * Method name for [PendingIntent#getForegroundService(Context, int, Intent, int)] to capture the
+ * [Intent] used to create a [PendingIntent] that starts an [android.app.Service].
+ */
+const val GET_FOREGROUND_SERVICE_METHOD_NAME =
+  "getForegroundService" +
+    "(Landroid/content/Context;ILandroid/content/Intent;I)" +
+    "Landroid/app/PendingIntent;"
+
+/**
  * Method name for [PendingIntent.getBroadcast(Context, int, Intent, int)] to capture the [Intent]
  * used to create a [PendingIntent] that starts an [android.content.BroadcastReceiver].
  */

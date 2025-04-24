@@ -139,6 +139,7 @@ class BackgroundTaskInspector(
         GET_ACTIVITY_METHOD_NAME to PendingIntentType.ACTIVITY,
         GET_ACTIVITIES_METHOD_NAME to PendingIntentType.ACTIVITY,
         GET_SERVICE_METHOD_NAME to PendingIntentType.SERVICE,
+        GET_FOREGROUND_SERVICE_METHOD_NAME to PendingIntentType.FOREGROUND_SERVICE,
         GET_BROADCAST_METHOD_NAME to PendingIntentType.BROADCAST,
       )
       .forEach { (methodName, type) ->

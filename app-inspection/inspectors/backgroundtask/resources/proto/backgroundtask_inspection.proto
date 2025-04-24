@@ -141,6 +141,7 @@ message PendingIntent {
     ACTIVITY = 1;
     BROADCAST = 2;
     SERVICE = 3;
+    FOREGROUND_SERVICE = 4;
   }
 
   // The package name of the PendingIntent, or empty if there is none
