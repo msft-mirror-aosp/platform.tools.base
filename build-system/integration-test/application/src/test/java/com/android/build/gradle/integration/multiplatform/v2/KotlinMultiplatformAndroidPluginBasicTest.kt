@@ -34,6 +34,20 @@ class KotlinMultiplatformAndroidPluginBasicTest {
         .create()
 
     @Test
+    fun testKgpOnClasspathButNotApplied() {
+        TestFileUtils.searchAndReplace(project.getSubproject("kmpFirstLib").ktsBuildFile,
+            """
+                id("org.jetbrains.kotlin.multiplatform")
+            """.trimIndent(), "")
+
+        val result = project.executor().expectFailure().run(":kmpFirstLib:assembleAndroidMain")
+        // In case of missing KGP the build script will not compile
+        result.assertErrorContains(
+            "Script compilation errors:"
+        )
+    }
+
+    @Test
     fun testJavaCompilationWithSources9AndAbove() {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
