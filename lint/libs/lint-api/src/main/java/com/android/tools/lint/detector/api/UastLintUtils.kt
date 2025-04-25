@@ -995,6 +995,16 @@ fun UCallExpression.isThisConstructorCall(): Boolean {
   }
 }
 
+// https://youtrack.jetbrains.com/issue/KTIJ-31794
+// For some cases, e.g., computing source location,
+// do not use implicit receiver (no source PSI).
+val UCallExpression.explicitReceiver: UExpression?
+  get() = receiver?.takeIf { it.sourcePsi != null }
+
+// https://youtrack.jetbrains.com/issue/KTIJ-31794
+val UCallExpression.implicitReceiver: UExpression?
+  get() = receiver?.takeIf { it.sourcePsi == null }
+
 /**
  * Like [UFile.accept], but in the case of multi-file classes (where multiple source files
  * containing top level declarations are annotated with `@JvmMultifileClass`, all naming the same
