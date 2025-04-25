@@ -85,7 +85,6 @@ iml_module(
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "//tools/base/build-system:studio.android.sdktools.manifest-merger",
-        "//tools/base/wear-wff-schema:studio.intellij.android.wear-wff-schema",
     ],
     # do not sort: must match IML order
     deps = [
@@ -100,7 +99,6 @@ iml_module(
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "//tools/base/build-system:studio.android.sdktools.manifest-merger",
-        "//tools/base/wear-wff-schema:studio.intellij.android.wear-wff-schema",
     ],
 )
 
@@ -214,7 +212,6 @@ maven_library(
         "//tools/base/lint:lint-checks-proto",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/wear-wff-schema:tools.wear-wff-schema",
         "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
