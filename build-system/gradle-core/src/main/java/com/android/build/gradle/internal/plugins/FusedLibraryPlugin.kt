@@ -299,26 +299,33 @@ class FusedLibraryPlugin @Inject constructor(
         // transitive dependencies in the fused library artifacts, this configuration should never
         // be extended or resolved from other configurations. It is only used to ensure consistent
         // version resolution of non-transitive dependencies.
-        val includeTransitiveResolved =
-            project.configurations.create("includeTransitiveResolved").also { includePlatform ->
-                includePlatform.description =
-                    "Used for resolving transitive dependency version constraints of include dependencies."
-                includePlatform.isCanBeDeclared = false
-                includePlatform.isCanBeConsumed = false
-                includePlatform.isCanBeResolved = true
-                includePlatform.isTransitive = true
-                val buildType: BuildTypeAttr =
-                    project.objects.named(BuildTypeAttr::class.java, "debug")
-                includePlatform.attributes.attribute(
-                    BuildTypeAttr.ATTRIBUTE,
-                    buildType,
-                )
-                includePlatform.extendsFrom(include)
-            }
+        fun getIncludeTransitiveResolved(name: String, usage: String): Configuration =
+            project.configurations.create(name)
+                .also { includePlatform ->
+                    includePlatform.description =
+                        "Used for resolving transitive dependency version constraints of include dependencies."
+                    includePlatform.isCanBeDeclared = false
+                    includePlatform.isCanBeConsumed = false
+                    includePlatform.isCanBeResolved = true
+                    includePlatform.isTransitive = true
+                    val buildType: BuildTypeAttr =
+                        project.objects.named(BuildTypeAttr::class.java, "debug")
+                    includePlatform.attributes.attribute(
+                        BuildTypeAttr.ATTRIBUTE,
+                        buildType,
+                    )
+                    includePlatform.attributes.attribute(
+                        Usage.USAGE_ATTRIBUTE,
+                        project.objects.named(Usage::class.java, usage)
+                    )
+                    includePlatform.extendsFrom(include)
+                }
+
+        val includeTransitiveApiResolved = getIncludeTransitiveResolved("includeTransitiveResolvedApi",Usage.JAVA_API)
+        val includeTransitiveRuntimeResolved = getIncludeTransitiveResolved("includeTransitiveResolvedRuntime", Usage.JAVA_RUNTIME)
 
         // This is the internal configuration that will be used to feed tasks that require access
-        // to the resolved 'include' dependency. It is for JAVA_API usage which mean all transitive
-        // dependencies that are implementation() scoped will not be included.
+        // to the resolved 'include' dependency.
         val fusedApi =
             project.configurations.create(FusedLibraryConstants.FUSED_API_CONFIGURATION_NAME)
                 .also { apiClasspath ->
@@ -336,13 +343,12 @@ class FusedLibraryPlugin @Inject constructor(
                     BuildTypeAttr.ATTRIBUTE,
                     buildType,
                 )
-                apiClasspath.shouldResolveConsistentlyWith(includeTransitiveResolved)
+                apiClasspath.shouldResolveConsistentlyWith(includeTransitiveApiResolved)
                 apiClasspath.extendsFrom(include)
             }
 
         // This is the internal configuration that will be used to feed tasks that require access
-        // to the resolved 'include' dependency. It is for JAVA_RUNTIME usage which mean all transitive
-        // dependencies that are implementation() scoped will  be included.
+        // to the resolved 'include' dependency.
         val fusedRuntime =
             project.configurations.create(FusedLibraryConstants.FUSED_RUNTIME_CONFIGURATION_NAME)
                 .also { runtimeClasspath ->
@@ -360,7 +366,7 @@ class FusedLibraryPlugin @Inject constructor(
                     BuildTypeAttr.ATTRIBUTE,
                     buildType,
                 )
-                runtimeClasspath.shouldResolveConsistentlyWith(includeTransitiveResolved)
+                runtimeClasspath.shouldResolveConsistentlyWith(includeTransitiveRuntimeResolved)
                 runtimeClasspath.extendsFrom(include)
             }
 
@@ -384,7 +390,7 @@ class FusedLibraryPlugin @Inject constructor(
         variantScope.incomingConfigurations.addAll(resolvableConfigurations)
 
         val dependenciesModuleVersionIds =
-            getFusedLibraryDependencyModuleVersionIdentifiers(includeTransitiveResolved)
+            getFusedLibraryDependencyModuleVersionIdentifiers(includeTransitiveRuntimeResolved)
         val dependenciesProvider = dependenciesModuleVersionIds.toDependenciesProvider(project)
 
         maybePublishToMaven(
