@@ -421,6 +421,7 @@ com.android.tools.apkdeployer:apkdeployer
     com.google.guava:guava (runtime)
     com.google.protobuf:protobuf-java (runtime)
     org.jetbrains:annotations (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
     org.xerial:sqlite-jdbc (runtime)
 
 com.android.tools.apkparser:apkanalyzer

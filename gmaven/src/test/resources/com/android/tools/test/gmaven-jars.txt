@@ -221,6 +221,7 @@ com/android/tools/apkdeployer/apkdeployer
   LICENSE
   META-INF/
   META-INF/MANIFEST.MF
+  META-INF/unnamed.kotlin_module
   com/
   com/android/
   com/android/tools/

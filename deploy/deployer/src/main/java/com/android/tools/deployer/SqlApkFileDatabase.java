@@ -20,9 +20,11 @@ import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.DexClass;
 import com.android.tools.r8.Version;
 import com.android.tools.tracer.Trace;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +39,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -185,17 +188,21 @@ public class SqlApkFileDatabase {
     private void fillTables() throws SQLException {
         executeStatements(
                 "BEGIN;",
-                "CREATE TABLE metadata (name VARCHAR(255) UNIQUE NOT NULL, value TEXT NOT NULL, PRIMARY KEY (name));",
+                "CREATE TABLE metadata (name VARCHAR(255) UNIQUE NOT NULL, value TEXT NOT NULL,"
+                        + " PRIMARY KEY (name));",
                 "INSERT INTO metadata (name, value) values (\"schema-version\", \""
                         + databaseVersion
                         + "\");",
-                "CREATE TABLE dexfiles (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255) NOT NULL, checksum LONG NOT NULL);",
+                "CREATE TABLE dexfiles (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255) NOT"
+                        + " NULL, checksum LONG NOT NULL);",
                 "CREATE INDEX dexfiles_checksum_index ON dexfiles(checksum);",
-                "CREATE TABLE archives (dexfileId INTEGER, checksum VARCHAR(255), "
-                        + "CONSTRAINT fk_archives_dexfileId FOREIGN KEY(dexfileId) REFERENCES dexfiles(id) ON DELETE CASCADE);",
+                "CREATE TABLE archives (dexfileId INTEGER, checksum VARCHAR(255), CONSTRAINT"
+                        + " fk_archives_dexfileId FOREIGN KEY(dexfileId) REFERENCES dexfiles(id) ON"
+                        + " DELETE CASCADE);",
                 "CREATE INDEX archives_checksum_index ON archives(checksum);",
-                "CREATE TABLE classes (dexfileId INTEGER, name TEXT, checksum LONG, "
-                        + "CONSTRAINT fk_classes_dexfileId FOREIGN KEY(dexfileId) REFERENCES dexfiles(id) ON DELETE CASCADE);",
+                "CREATE TABLE classes (dexfileId INTEGER, name TEXT, checksum LONG, CONSTRAINT"
+                        + " fk_classes_dexfileId FOREIGN KEY(dexfileId) REFERENCES dexfiles(id) ON"
+                        + " DELETE CASCADE);",
                 "CREATE INDEX classes_dexfileId_name_index ON classes(dexfileId);",
                 "END;");
     }
@@ -205,7 +212,8 @@ public class SqlApkFileDatabase {
         maxDexFilesEntries = Math.max(maxDexFilesEntries, numDexFiles * 2);
         try {
             executeUpdate(
-                    "DELETE FROM dexfiles WHERE id < (SELECT * FROM (SELECT id from dexfiles ORDER BY id DESC LIMIT "
+                    "DELETE FROM dexfiles WHERE id < (SELECT * FROM (SELECT id from dexfiles ORDER"
+                            + " BY id DESC LIMIT "
                             + maxDexFilesEntries
                             + ") ORDER BY id LIMIT 1);");
         } catch (SQLException e) {
@@ -238,11 +246,10 @@ public class SqlApkFileDatabase {
                 Statement s = connection.createStatement();
                 ResultSet result =
                         s.executeQuery(
-                                "SELECT classes.name as name, classes.checksum as checksum"
-                                        + "  FROM dexfiles"
-                                        + "  INNER JOIN archives on archives.dexfileId = dexfiles.id"
-                                        + "  INNER JOIN classes on classes.dexfileId = dexfiles.id"
-                                        + "  WHERE dexfiles.name = \""
+                                "SELECT classes.name as name, classes.checksum as checksum  FROM"
+                                        + " dexfiles  INNER JOIN archives on archives.dexfileId ="
+                                        + " dexfiles.id  INNER JOIN classes on classes.dexfileId ="
+                                        + " dexfiles.id  WHERE dexfiles.name = \""
                                         + dex.getName()
                                         + "\" AND dexfiles.checksum = "
                                         + dex.getChecksum()
@@ -293,8 +300,10 @@ public class SqlApkFileDatabase {
     private int addDexFile(long checksum, String name) throws SQLException {
         String insert =
                 String.format(
+                        Locale.ROOT,
                         "INSERT INTO dexfiles(name, checksum) VALUES (\"%s\", %d);",
-                        name, checksum);
+                        name,
+                        checksum);
         try (Statement s = connection.createStatement()) {
             int updated = s.executeUpdate(insert);
             assert updated == 1;
@@ -324,7 +333,9 @@ public class SqlApkFileDatabase {
             if (numClassesInserted > 0) {
                 insert.append(",");
             }
-            insert.append(String.format("(%d, \"%s\", %d)", dexId, next.name, next.checksum));
+            insert.append(
+                    String.format(
+                            Locale.ROOT, "(%d, \"%s\", %d)", dexId, next.name, next.checksum));
             numClassesInserted++;
 
             // Since we can't 'peak' the next element in the iterator, we are going to assume
@@ -350,7 +361,7 @@ public class SqlApkFileDatabase {
 
         String values =
                 files.stream()
-                        .map(e -> String.format("(%d, \"%s\")", e, archiveChecksum))
+                        .map(e -> String.format(Locale.ROOT, "(%d, \"%s\")", e, archiveChecksum))
                         .collect(Collectors.joining(","));
         String insert =
                 String.format("INSERT INTO archives (dexfileId, checksum) VALUES %s;", values);
@@ -410,13 +421,14 @@ public class SqlApkFileDatabase {
     }
 
     /** Test only code */
+    @VisibleForTesting
     private List<ApkEntry> getFiles(Apk apk) {
         try (Statement s = connection.createStatement();
                 ResultSet result =
                         s.executeQuery(
-                                "SELECT dexfiles.name as name, dexfiles.checksum as checksum FROM dexfiles"
-                                        + "  INNER JOIN archives on archives.dexfileId = dexfiles.id"
-                                        + "  WHERE archives.checksum = \""
+                                "SELECT dexfiles.name as name, dexfiles.checksum as checksum FROM"
+                                        + " dexfiles  INNER JOIN archives on archives.dexfileId ="
+                                        + " dexfiles.id  WHERE archives.checksum = \""
                                         + apk.checksum
                                         + "\"")) {
             List<ApkEntry> files = new ArrayList<>();

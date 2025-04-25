@@ -33,6 +33,7 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 public class ApkInstaller {
 
@@ -250,7 +251,7 @@ public class ApkInstaller {
             messageBuilder.append("\nList of apks:\n");
             for (int i = 0; i < app.getApks().size(); i++) {
                 String apkPath = app.getApks().get(i).path;
-                String line = String.format("[%d] '%s'\n", i, apkPath);
+                String line = String.format(Locale.ROOT, "[%d] '%s'\n", i, apkPath);
                 messageBuilder.append(line);
             }
             throw DeployerException.installFailed(result.status, messageBuilder.toString());

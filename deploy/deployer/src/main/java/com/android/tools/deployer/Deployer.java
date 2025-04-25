@@ -39,7 +39,8 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 public class Deployer {
-
+    // TODO: Verify Kotlin builds within our build system. Remove later.
+    public static final TempKotlin TEMP_KOTLIN = new TempKotlin();
     public static final String BASE_DIRECTORY = Sites.deviceStudioFolder();
     public static final String INSTALLER_DIRECTORY = Sites.installerExecutableFolder();
     public static final String INSTALLER_TMP_DIRECTORY = Sites.installerTmpFolder();

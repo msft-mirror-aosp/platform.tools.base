@@ -97,7 +97,7 @@ public class DeployRunnerParameters {
 
     private void parseCommand(String arg) {
         try {
-            commands.add(Command.valueOf(arg.toUpperCase()));
+            commands.add(Command.valueOf(arg.toUpperCase(Locale.ROOT)));
         } catch (Exception e) {
             throw new RuntimeException("Unknown command: '" + arg + "'");
         }
