@@ -4135,16 +4135,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         if (currentVersion != null) {
           if (stable != null && currentVersion < stable) {
             suggested = stable
-          } else if (
-            currentVersion.isPreview &&
-              currentVersion < preview
-              // Make sure we don't jump to a weaker release channel. For example, if
-              // you're currently using 1.4.0-rc01, but 1.4.0 final hasn't been released
-              // yet, but 1.5.0-alpha01 has, don't offer to update to 1.5.0-alpha01.
-              // (1.5.0-rc01 would be okay.)
-              &&
-              hasCompatibleChannelStability(currentVersion, preview)
-          ) {
+          } else if (currentVersion.isPreview && currentVersion < preview) {
             suggested = preview
           }
         }
@@ -4158,16 +4149,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       } else {
         return null
       }
-    }
-
-    /**
-     * Returns true if the given [potential] preview version is at least as stable as the given
-     * [current] preview version.
-     */
-    private fun hasCompatibleChannelStability(current: Version, potential: Version): Boolean {
-      val currentChannel = current.previewString ?: return false
-      val potentialChannel = potential.previewString ?: return true
-      return currentChannel <= potentialChannel
     }
 
     /**
