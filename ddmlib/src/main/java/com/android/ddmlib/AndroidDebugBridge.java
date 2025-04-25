@@ -182,6 +182,15 @@ public class AndroidDebugBridge {
     }
 
     /**
+     * This method should be only called from tests if there is a need to reset a `delegate` to a
+     * custom value.
+     */
+    public static void resetForTests(AndroidDebugBridgeDelegate delegate) {
+        delegateIsUsed = false;
+        AndroidDebugBridge.delegate = delegate;
+    }
+
+    /**
      * Initialized the library only if needed; deprecated for non-test usages.
      *
      * @param clientSupport Indicates whether the library should enable the monitoring and
