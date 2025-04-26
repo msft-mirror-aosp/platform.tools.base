@@ -865,4 +865,27 @@ class SamDetectorTest : AbstractCheckTest() {
         """
       )
   }
+
+  fun test413411317() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            import android.app.Service
+            import android.content.Context
+            import android.content.Intent
+
+            fun testStopService(context: Context) {
+                context.stopService(Intent(context, ForegroundService::class.java))
+            }
+            abstract class ForegroundService : Service()
+            """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
 }

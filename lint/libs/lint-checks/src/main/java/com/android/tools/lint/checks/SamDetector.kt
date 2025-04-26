@@ -44,6 +44,7 @@ import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCallableReferenceExpression
@@ -128,6 +129,16 @@ class SamDetector : Detector(), SourceCodeScanner {
           val parameter = node.getParameterForArgument(argument) ?: return
           if (!isInstanceRemoval(method, parameter)) {
             return
+          }
+          val sourcePsi = argument.sourcePsi
+          if (sourcePsi !is KtExpression) {
+            return
+          }
+          analyze(sourcePsi) {
+            val expressionType = sourcePsi.expressionType
+            if (expressionType != null && !expressionType.isFunctionalInterface) {
+              return
+            }
           }
           val methodName = method.name
           val location = context.getLocation(selector)
