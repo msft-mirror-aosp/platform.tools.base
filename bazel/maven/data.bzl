@@ -339,12 +339,14 @@ DATA = [
     "androidx.test.espresso:espresso-core:3.2.0",
     "androidx.test.espresso:espresso-core:3.4.0",
     "androidx.test.espresso:espresso-core:3.5.1",
+    "androidx.test.espresso:espresso-core:3.6.1",
     "androidx.test.espresso:espresso-intents:3.5.0",  # Dependency of architecture-samples
     "androidx.test.espresso.idling:idling-concurrent:3.5.0",  # Dependency of architecture-samples
     "androidx.test.ext:junit:1.1.2",  # TODO: To be removed once dependent tests pass b/273872043
     "androidx.test.ext:junit:1.1.3-alpha02",
     "androidx.test.ext:junit:1.1.5",
     "androidx.test.ext:junit:1.2.0-alpha01",
+    "androidx.test.ext:junit:1.2.1",
     "androidx.test.ext:junit-ktx:1.1.4",  # Dependency of architecture-samples
     "androidx.test:monitor:1.6.1",
     "androidx.test:orchestrator:1.5.0-alpha02",
@@ -354,6 +356,7 @@ DATA = [
     "androidx.test:runner:1.4.0-alpha06",
     "androidx.test:runner:1.5.2",
     "androidx.test.services:test-services:1.5.0-alpha02",
+    "androidx.test.uiautomator:uiautomator:2.3.0",
     "androidx.tracing:tracing-perfetto-handshake:1.0.0-beta02",
     "androidx.tv:tv-foundation:1.0.0-alpha07",
     "androidx.tv:tv-material:1.0.0-alpha07",
@@ -661,6 +664,7 @@ DATA = [
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:31.1.0",
     "com.android:zipflinger:8.7.0",
     "com.beust:jcommander:1.82",
+    "com.charleskorn.kaml:kaml:0.72.0",
     "com.crashlytics.sdk.android:crashlytics:2.6.8",
     "com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2",
     "com.flurry.android:analytics:13.0.0",  # Used by SdkIndexIssuesSyncListenerTest
@@ -827,7 +831,16 @@ DATA = [
     "com.linkedin.testbutler:test-butler-app:1.3.1",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
+    "com.squareup:kotlinpoet:2.0.0",
     "com.squareup.okio:okio:3.4.0",
+    "com.squareup.okio:okio-fakefilesystem:3.9.1",
+    "com.squareup.wire:com.squareup.wire.gradle.plugin:pom:5.3.1",
+    "com.squareup.wire:wire-compiler:5.3.1",
+    "com.squareup.wire:wire-gradle-plugin:5.3.1",
+    "com.squareup.wire:wire-grpc-client:5.3.1",
+    "com.squareup.wire:wire-kotlin-generator:5.3.1",
+    "com.squareup.wire:wire-runtime:5.3.1",
+    "com.squareup.wire:wire-schema:5.3.1",
     "commons-lang:commons-lang:2.4",
     "info.picocli:picocli:4.7.4",
     "io.grpc:grpc-inprocess:1.66.0",
@@ -921,6 +934,7 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.20",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.23",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.0",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20-RC2",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0-dev-11824",
@@ -949,6 +963,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.9.20",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.9.22",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.9.23",
+    "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.0.21",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.1.20",  # Used by AGP built-in Kapt tests
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.1.20-RC2",
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.0",
@@ -1095,6 +1110,7 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0",  # used in //tools/base/build-system/integration-test/connected
+    "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.6",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3",
@@ -1107,8 +1123,10 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0-RC2",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3",
+    "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0",
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
