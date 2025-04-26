@@ -16,6 +16,7 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.InstructionSet
+import com.android.adblib.tools.debugging.JdwpProcessProperties.Companion.unsupportedByOlderApiSingleton
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsFeatChunk
 import com.android.adblib.tools.debugging.packets.ddms.chunks.DdmsHeloChunk
 
@@ -229,7 +230,6 @@ data class JdwpProcessProperties(
         }
     }
 }
-
 
 /**
  * Convert this [InstructionSet] (typically `"arm64"` or `"arm"`) to the legacy representation

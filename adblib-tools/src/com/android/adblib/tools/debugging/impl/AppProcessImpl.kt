@@ -23,8 +23,7 @@ import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AppProcess
 import com.android.adblib.tools.debugging.AppProcessProperties
 import com.android.adblib.tools.debugging.JdwpProcess
-import com.android.adblib.tools.debugging.OptionalValue
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
+import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.withPrefix
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +44,9 @@ internal class AppProcessImpl(
     private val logger = adbLogger(device.session).withPrefix("$processDescription -")
 
     override val cache = CoroutineScopeCache.create(device.scope, processDescription)
+
+    private val optionalValueFactory: OptionalValueFactory
+        get() = device.optionalValueFactory
 
     private val stateFlow = MutableStateFlow(appProcessEntry.toAppProcessProperties())
 
@@ -82,14 +84,14 @@ internal class AppProcessImpl(
         val current = this
         assert(current.pid == newEntry.pid)
         return current.copy(
-            debuggable = OptionalValue.of(newEntry.debuggable),
-            profileable = OptionalValue.of(newEntry.profileable),
-            processName = filterFakeName(newEntry.processName)?.let { OptionalValue.of(it) } ?: current.processName,
-            packageNames = newEntry.packageNames?.mapNotNull { filterFakeName(it) }?.let { OptionalValue.of(it) } ?: current.packageNames,
-            instructionSet = OptionalValue.of(newEntry.instructionSet),
-            userId = newEntry.userId?.let { OptionalValue.of(it) } ?: current.userId,
-            waitingForDebugger = newEntry.waitingForDebugger?.let { OptionalValue.of(it) } ?: current.waitingForDebugger,
-            uid = newEntry.uid?.let { OptionalValue.of(it) } ?: current.uid,
+            debuggable = optionalValueFactory.of(newEntry.debuggable).orElse(current.debuggable),
+            profileable = optionalValueFactory.of(newEntry.profileable).orElse(current.profileable),
+            processName = optionalValueFactory.ofFilteredFakeName(newEntry.processName).orElse(current.processName),
+            packageNames = optionalValueFactory.ofFilteredFakeNames(newEntry.packageNames).orElse(current.packageNames),
+            instructionSet =  optionalValueFactory.ofInstructionSet(newEntry.instructionSet).orElse(current.instructionSet),
+            userId = optionalValueFactory.ofNullable(newEntry.userId).orElse(current.uid),
+            waitingForDebugger = optionalValueFactory.ofNullable(newEntry.waitingForDebugger).orElse(current.waitingForDebugger),
+            uid = optionalValueFactory.ofNullable(newEntry.uid).orElse(current.uid),
         )
     }
 }
