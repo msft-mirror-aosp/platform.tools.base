@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.job
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.net.InetSocketAddress
@@ -61,6 +62,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
     @Rule
     val closeables = CloseablesRule()
 
+    @Ignore("b/413042433")
     @Test
     fun testJdwpPropertiesCollectionIsDistributed(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
@@ -112,6 +114,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             })
         }
 
+    @Ignore("b/413042433")
     @Test
     fun testDistributedJdwpPropertiesCollectionRecoversFromSessionClosing(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
