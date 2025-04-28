@@ -78,15 +78,14 @@ import androidx.sqlite.inspection.SqliteInspectorProtocol.TrackDatabasesCommand
 import androidx.sqlite.inspection.SqliteInspectorProtocol.TrackDatabasesResponse
 import com.android.tools.appinspection.database.EntryExitMatchingHookRegistry.OnExitCallback
 import com.android.tools.appinspection.database.SqliteInspectionExecutors.submit
+import com.android.tools.appinspection.database.Utils.isDatabase
 import com.android.tools.appinspection.database.androidx.AndroidXDatabase
 import com.android.tools.appinspection.database.androidx.SQLiteConnectionWrapper
 import com.android.tools.appinspection.database.framework.FrameworkDatabase
 import com.android.tools.idea.protobuf.ByteString
-import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.util.Collections
-import java.util.WeakHashMap
+import java.util.*
 import java.util.concurrent.Executor
 import java.util.concurrent.Future
 import kotlin.coroutines.CoroutineContext
@@ -280,7 +279,7 @@ internal class SqliteInspector(
     for (instance in environment.artTooling().findInstances(Application::class.java)) {
       for (name in instance.databaseList()) {
         val path = instance.getDatabasePath(name)
-        if (path.exists() && !isHelperSqliteFile(path)) {
+        if (path.isDatabase()) {
           databaseRegistry.notifyOnDiskDatabase(path.absolutePath)
         }
       }
@@ -1027,15 +1026,6 @@ internal class SqliteInspector(
       val writer = StringWriter()
       exception.printStackTrace(PrintWriter(writer))
       return writer.toString()
-    }
-
-    private fun isHelperSqliteFile(file: File): Boolean {
-      // TODO(b/399901633): Check file contents. See https://www.sqlite.org/fileformat.html
-      val path = file.path
-      return path.endsWith("-journal") ||
-        path.endsWith("-shm") ||
-        path.endsWith("-wal") ||
-        path.endsWith(".lck")
     }
   }
 }
