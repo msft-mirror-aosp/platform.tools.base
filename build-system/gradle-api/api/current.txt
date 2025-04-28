@@ -3257,7 +3257,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.SourceDirectories.Flat getByName(String name);
     method public com.android.build.api.variant.SourceDirectories.Flat? getJava();
     method public com.android.build.api.variant.SourceDirectories.Layered? getJniLibs();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
+    method public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
     method public com.android.build.api.variant.ManifestFiles getManifests();
     method public com.android.build.api.variant.SourceDirectories.Layered? getMlModels();
     method public com.android.build.api.variant.SourceDirectories.Flat? getRenderscript();
@@ -3269,7 +3269,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? baselineProfiles;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? jniLibs;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
+    property public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
     property public abstract com.android.build.api.variant.ManifestFiles manifests;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? mlModels;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? renderscript;
