@@ -385,9 +385,6 @@ https://issuetracker.google.com/328748959
   * com.android.build.api.dsl.LintOptions.textOutput: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
-https://issuetracker.google.com/328748961
-  * com.android.build.api.variant.ApplicationVariantBuilder.getProfileable: boolean ()
-  * com.android.build.api.variant.ApplicationVariantBuilder.setProfileable: void (boolean)
 https://issuetracker.google.com/328748995
   * com.android.build.api.dsl.EmulatorSnapshots
   * com.android.build.api.dsl.EmulatorSnapshots.getCompressSnapshots: boolean ()
