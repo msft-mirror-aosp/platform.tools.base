@@ -37,32 +37,31 @@ class FakeGoogleMavenRepositoryV2Host : GoogleMavenRepositoryV2Host {
     ): NetworkCache.ReadUrlDataResult = throw IllegalStateException("Should not be called")
 
     override fun readDefaultData(relative: String): InputStream? {
-        val samplePackages: Map<String, Any?> = mapOf(
-            "packages" to listOf(
-                mapOf(
-                    "packageId" to "com.android.support",
-                    "artifacts" to listOf(
-                        mapOf(
-                            "artifactId" to "appcompat",
-                            "versions" to listOf(
-                                mapOf(
-                                    "version" to "1.0.0"
-                                ),
-                                mapOf(
-                                    "version" to "1.0.1-preview"
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val samplePackages = """
+            {
+              "packages": [
+                {
+                  "packageId": "com.android.support",
+                  "artifacts": [
+                    {
+                      "artifactId": "appcompat",
+                      "versions": [
+                        {
+                          "version": "1.0.0"
+                        },
+                        {
+                          "version": "1.0.1-preview"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
         val byteArrayOutputStream = ByteArrayOutputStream()
         GZIPOutputStream(byteArrayOutputStream).use { gzipOutputStream ->
-            gzipOutputStream.write(
-              Gson().toJson(samplePackages)
-                    .toByteArray(Charsets.UTF_8)
-            )
+            gzipOutputStream.write(samplePackages.toByteArray(Charsets.UTF_8))
         }
         return ByteArrayInputStream(byteArrayOutputStream.toByteArray())
     }
