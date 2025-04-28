@@ -16,6 +16,7 @@
 
 package com.android.ide.common.symbols
 
+import com.android.testutils.MockLog
 import com.android.utils.FileUtils
 import com.google.common.truth.ThrowableSubject
 import com.google.common.truth.Truth.assertThat
@@ -78,7 +79,7 @@ class ResourceDirectoryParserTest {
 
         val parsed =
                 parseResourceSourceSetDirectory(
-                        directory, IdProvider.sequential(), platformTable)
+                        directory, IdProvider.sequential(), platformTable, logger = MockLog())
 
         val expected = SymbolTable.builder().build()
 
@@ -104,7 +105,7 @@ class ResourceDirectoryParserTest {
 
         val parsed =
                 parseResourceSourceSetDirectory(
-                        directory, IdProvider.sequential(), platformTable)
+                        directory, IdProvider.sequential(), platformTable, logger = MockLog())
 
         val expected =
                 SymbolTable.builder()
@@ -140,7 +141,7 @@ class ResourceDirectoryParserTest {
 
         val parsed =
                 parseResourceSourceSetDirectory(
-                        directory, IdProvider.sequential(), platformTable)
+                        directory, IdProvider.sequential(), platformTable, logger = MockLog())
 
         val expected =
                 SymbolTable.builder()
@@ -175,7 +176,7 @@ class ResourceDirectoryParserTest {
 
         val parsed =
             parseResourceSourceSetDirectory(
-                directory, IdProvider.sequential(), platformTable)
+                directory, IdProvider.sequential(), platformTable, logger = MockLog())
 
         val expected =
             SymbolTable.builder()
@@ -306,7 +307,7 @@ class ResourceDirectoryParserTest {
             val platformTable = SymbolTable.builder().tablePackage("android").build()
 
             parseResourceSourceSetDirectory(
-                    directory, IdProvider.sequential(), platformTable)
+                    directory, IdProvider.sequential(), platformTable, logger = MockLog())
             fail()
         } catch (e: ResourceDirectoryParseException) {
             assertThat(e.message).contains(FileUtils.join("values", "col.xml"))
@@ -330,7 +331,7 @@ class ResourceDirectoryParserTest {
             val platformTable = SymbolTable.builder().tablePackage("android").build()
 
             parseResourceSourceSetDirectory(
-                directory, IdProvider.sequential(), platformTable)
+                directory, IdProvider.sequential(), platformTable, logger = MockLog())
             fail()
         } catch (e: ResourceDirectoryParseException) {
             assertThat(e.message).contains(FileUtils.join("layout", "mylayout.xml"))
@@ -358,7 +359,7 @@ class ResourceDirectoryParserTest {
 
         val parsed =
             parseResourceSourceSetDirectory(
-                directory, IdProvider.sequential(), platformTable)
+                directory, IdProvider.sequential(), platformTable, logger = MockLog())
 
         val expected =
             SymbolTable.builder()

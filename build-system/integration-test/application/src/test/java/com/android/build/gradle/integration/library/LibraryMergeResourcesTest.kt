@@ -23,15 +23,15 @@ import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Regression test for b/355397971
- */
 class LibraryMergeResourcesTest {
     @get:Rule
     var project: GradleTestProject = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
         .create()
 
+    /**
+     * Regression test for b/355397971
+     */
     @Test
     fun `merge res task not executed when includeAndroidResources disabled`() {
         TestFileUtils.appendToFile(
@@ -50,6 +50,9 @@ class LibraryMergeResourcesTest {
         Truth.assertThat(result.didWorkTasks).doesNotContain(":packageDebugUnitTestForUnitTest")
     }
 
+    /**
+     * Regression test for b/355397971
+     */
     @Test
     fun `merge res task executed when includeAndroidResources enabled`() {
         TestFileUtils.appendToFile(
@@ -67,5 +70,50 @@ class LibraryMergeResourcesTest {
         Truth.assertThat(result.didWorkTasks).contains(":mergeDebugUnitTestResources")
         Truth.assertThat(result.didWorkTasks).contains(":packageDebugUnitTestForUnitTest")
 
+    }
+
+    @Test
+    fun `test trailing text in xml`() {
+        val layoutWithXmlTrailingContent =
+            project.mainResDir.resolve("layout/trailing_content_layout.xml").also {
+                it.writeText(
+                    """<?xml version="1.0" encoding="utf-8"?>
+            <FrameLayout>content</FrameLayout> trailing content
+            """
+                )
+            }
+        val execution = project.executor().run("clean", ":parseDebugLocalResources")
+        execution.assertOutputDoesNotContain(
+            """main.xml contains trailing content."""
+        )
+        execution.assertOutputContains(
+            "trailing_content_layout.xml contains trailing content. Trailing is stripped during XML parsing."
+        )
+        execution.assertOutputContains(
+            """Trailing content was: ' trailing content
+        '"""
+        )
+        layoutWithXmlTrailingContent.delete()
+        val valuesColorsWithXmlTrailingContent =
+            project.mainResDir.resolve("layout/colors.xml").also {
+                it.writeText(
+                    """<?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <color
+                    name="color_name"
+                    >hex_color</color>
+            </resources> trailing content
+            """
+                )
+            }
+        project.executor().run("clean", ":parseDebugLocalResources")
+        valuesColorsWithXmlTrailingContent.delete()
+
+        val noValidXmlLayout = project.mainResDir.resolve("layout/empty_layout.xml").also {
+            it.writeText("content")
+        }
+        val failure = project.executor().expectFailure().run("clean", ":parseDebugLocalResources")
+        failure.assertFailureMessage().contains("Content is not allowed in prolog.")
+        noValidXmlLayout.delete()
     }
 }

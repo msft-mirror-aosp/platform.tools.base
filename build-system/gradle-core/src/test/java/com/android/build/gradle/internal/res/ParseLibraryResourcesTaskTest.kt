@@ -24,6 +24,7 @@ import com.android.builder.files.SerializableChange
 import com.android.ide.common.resources.FileStatus
 import com.android.ide.common.symbols.SymbolTable
 import com.android.resources.ResourceFolderType
+import com.android.testutils.MockLog
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Project
@@ -118,6 +119,7 @@ class ParseLibraryResourcesTaskTest(
 
     @Test
     fun testDoFullTaskAction_producesExpectedSymbolTableFile() {
+        val logger = MockLog()
         val parentFolder = temporaryFolder.newFolder("parent")
         val resourcesFolder = createFakeResourceDirectory(parentFolder)
 
@@ -144,7 +146,7 @@ class ParseLibraryResourcesTaskTest(
             )
             override val validateResources = FakeGradleProperty(useResourceValidation)
         }
-        doFullTaskAction(params)
+        doFullTaskAction(params, logger)
 
         assertThat(librarySymbolsFile.readLines()).containsExactly(
           "R_DEF: Internal format may change without notice",
@@ -159,6 +161,7 @@ class ParseLibraryResourcesTaskTest(
 
     @Test
     fun testDoFullTaskAction_producesExpectedPartialRFiles() {
+        val logger = MockLog()
         val parentFolder = temporaryFolder.newFolder("parent")
         val resourcesFolder = createFakeResourceDirectory(parentFolder)
 
@@ -184,7 +187,7 @@ class ParseLibraryResourcesTaskTest(
             override val validateResources = FakeGradleProperty(useResourceValidation)
         }
 
-        doFullTaskAction(params)
+        doFullTaskAction(params, logger)
 
         val createdPartialRFiles = partialRDirectory.walkTopDown()
                 .toList().filter { it.isFile }.sortedBy { it.name }
@@ -200,6 +203,7 @@ class ParseLibraryResourcesTaskTest(
 
     @Test
     fun testDoIncrementalTaskAction_producesExpectedSymbolTableFileFromAddedResource() {
+        val logger = MockLog()
         val parentFolder = temporaryFolder.newFolder("parent")
         val resourcesFolder = createFakeResourceDirectory(parentFolder)
         val partialRFolder = createPartialRDirectory(File(parentFolder, SdkConstants.FD_PARTIAL_R))
@@ -242,10 +246,10 @@ class ParseLibraryResourcesTaskTest(
         }
 
         if (usePartialR){
-            val updated = doIncrementalPartialRTaskAction(params)
+            val updated = doIncrementalPartialRTaskAction(params, logger)
             assertThat(updated).isTrue()
         } else {
-            doIncrementalRDefTaskAction(params)
+            doIncrementalRDefTaskAction(params, logger)
         }
 
         assertThat(librarySymbolsFile.readLines()).containsExactly(
@@ -262,6 +266,7 @@ class ParseLibraryResourcesTaskTest(
 
     @Test
     fun testDoIncrementalTaskAction_producesExpectedSymbolTableFileFromModifiedResource() {
+        val logger = MockLog()
         val parentFolder = temporaryFolder.newFolder("parent")
         val resourcesFolder = createFakeResourceDirectory(parentFolder)
         val partialRFolder = createPartialRDirectory(File(parentFolder, SdkConstants.FD_PARTIAL_R))
@@ -321,7 +326,7 @@ class ParseLibraryResourcesTaskTest(
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipTwo"/>
                      </root>""")
-            val updated = doIncrementalPartialRTaskAction(params)
+            val updated = doIncrementalPartialRTaskAction(params, logger)
             assertThat(updated).isTrue()
             assertThat(librarySymbolsFile.readLines()).containsExactly(
                     "R_DEF: Internal format may change without notice",
@@ -343,7 +348,7 @@ class ParseLibraryResourcesTaskTest(
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipTwo"/>
                      </root>""")
-            val updatedAgain = doIncrementalPartialRTaskAction(params)
+            val updatedAgain = doIncrementalPartialRTaskAction(params, logger)
             assertThat(updatedAgain).isFalse()
         }
 
@@ -352,6 +357,7 @@ class ParseLibraryResourcesTaskTest(
 
     @Test
     fun testDoIncrementalTaskAction_producesExpectedSymbolTableFileFromRemovedResource() {
+        val logger = MockLog()
         val parentFolder = temporaryFolder.newFolder("parent")
         val resourcesFolder = createFakeResourceDirectory(parentFolder)
         val partialRFolder = createPartialRDirectory(File(parentFolder, SdkConstants.FD_PARTIAL_R))
@@ -403,7 +409,7 @@ class ParseLibraryResourcesTaskTest(
         }
 
         if (usePartialR) {
-            val updated = doIncrementalPartialRTaskAction(params)
+            val updated = doIncrementalPartialRTaskAction(params, logger)
             assertThat(updated).isTrue()
             assertThat(librarySymbolsFile.readLines()).containsExactly(
                     "R_DEF: Internal format may change without notice",
@@ -419,12 +425,13 @@ class ParseLibraryResourcesTaskTest(
 
     @Test
     fun testGenerateResourceSymbolTables_generatesExpectedSymbolTables() {
+        val logger = MockLog()
         val parentFolder = temporaryFolder.newFolder("parent")
         val fakeResourceDirectory = createFakeResourceDirectory(parentFolder)
         val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 
         val symbolTables = getResourceDirectorySymbolTables(
-                fakeResourceDirectory, null, documentBuilder)
+                fakeResourceDirectory, null, documentBuilder, true, logger)
                 .toTypedArray()
 
         assertThat(symbolTables.count()).isEqualTo(4)
@@ -441,6 +448,7 @@ class ParseLibraryResourcesTaskTest(
 
     @Test
     fun testSavePartialRFilesToDirectory_checkAllPartialFilesSaved() {
+        val logger = MockLog()
         val parentFolder = temporaryFolder.newFolder("parent")
         val fakeResourceDirectory = createFakeResourceDirectory(parentFolder)
         val partialRFileDirectory = File(parentFolder, "partialR")
@@ -449,7 +457,7 @@ class ParseLibraryResourcesTaskTest(
         val emptyPlatformAttrSymbolTable = SymbolTable.builder().build()
         val symbolTables =
                 getResourceDirectorySymbolTables(fakeResourceDirectory,
-                        emptyPlatformAttrSymbolTable, documentBuilder)
+                        emptyPlatformAttrSymbolTable, documentBuilder, true, logger)
 
         writeSymbolTablesToPartialRFiles(symbolTables, partialRFileDirectory)
 
@@ -479,6 +487,7 @@ class ParseLibraryResourcesTaskTest(
 
     @Test
     fun testResourceValidation_isDisabledByFlag() {
+        val logger = MockLog()
         val parentFolder = temporaryFolder.newFolder("parent")
         val fakeResourceDirectory = createFakeResourceDirectory(parentFolder)
         val partialRFolder = temporaryFolder.newFolder()
@@ -506,7 +515,7 @@ class ParseLibraryResourcesTaskTest(
             override val analyticsService: Property<AnalyticsService> = FakeGradleProperty(FakeNoOpAnalyticsService())
             override val validateResources = FakeGradleProperty(false)
         }
-        doFullTaskAction(params)
+        doFullTaskAction(params, logger)
     }
 
     private fun createFakeResourceDirectory(parentFolder : File): File {

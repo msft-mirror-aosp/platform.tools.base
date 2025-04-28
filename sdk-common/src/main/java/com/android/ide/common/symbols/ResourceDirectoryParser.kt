@@ -34,6 +34,7 @@ import java.io.InputStream
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
+import com.android.utils.ILogger
 
 /**
  * Parser method that scans a resource directory for all resources and builds a [SymbolTable]. It
@@ -79,7 +80,8 @@ fun parseResourceSourceSetDirectory(
         idProvider: IdProvider,
         platformAttrSymbols: SymbolTable?,
         tablePackage: String? = null,
-        validation: Boolean = true
+        validation: Boolean = true,
+        logger: ILogger
 ): SymbolTable {
     Preconditions.checkArgument(directory.isDirectory, "!directory.isDirectory()")
 
@@ -105,7 +107,8 @@ fun parseResourceSourceSetDirectory(
                 idProvider,
                 documentBuilder,
                 platformAttrSymbols,
-                validation
+                validation,
+                logger
         )
     }
 
@@ -130,7 +133,8 @@ private fun parseResourceDirectory(
         idProvider: IdProvider,
         documentBuilder: DocumentBuilder,
         platformAttrSymbols: SymbolTable?,
-        validation: Boolean
+        validation: Boolean,
+        logger: ILogger
 ) {
     assert(resourceDirectory.isDirectory)
 
@@ -155,7 +159,8 @@ private fun parseResourceDirectory(
                 documentBuilder,
                 platformAttrSymbols,
                 idProvider,
-                validation
+                validation,
+                logger
         )
     }
 }
@@ -167,7 +172,8 @@ fun parseResourceFile(
     documentBuilder: DocumentBuilder,
     platformAttrSymbols: SymbolTable?,
     idProvider: IdProvider = IdProvider.constant(),
-    validation: Boolean) {
+    validation: Boolean,
+    logger: ILogger) {
 
     if (maybeResourceFile.isDirectory) {
         return
@@ -222,7 +228,20 @@ fun parseResourceFile(
             // If we are parsing an XML file (but not in values directories), parse the file in
             // search of lazy constructions like `@+id/name` that also declare resources.
             try {
-                val domTree = documentBuilder.parse(maybeResourceFile)
+                // Trim any characters at the end of the XML document prior to parsing, otherwise
+                // parsing will fail.
+                val resFileContent = maybeResourceFile.readText(Charsets.UTF_8)
+                val resXml = resFileContent.substringBeforeLast('>') + ">\n"
+                val domTree = if (resXml.length == resFileContent.length) {
+                    documentBuilder.parse(maybeResourceFile)
+                } else {
+                    logger.warning(
+                        "${maybeResourceFile.absolutePath} contains trailing content. " +
+                                "Trailing is stripped during XML parsing. \n" +
+                                "Trailing content was: '${resFileContent.substringAfterLast('>')}'"
+                    )
+                    documentBuilder.parse(resXml.byteInputStream())
+                }
                 val extraSymbols =
                         parseResourceForInlineResources(domTree, idProvider, validation)
                 extraSymbols.symbols.values().forEach { s -> addIfNotExisting(builder, s) }
