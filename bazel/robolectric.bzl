@@ -6,9 +6,11 @@ load(":coverage.bzl", "coverage_android_local_test")
 def robolectric_test(
         name,
         srcs = [],
+        resources = [],
         deps = [],
         jvm_flags = [],
         friends = [],
+        resource_strip_prefix = "",
         test_class = "com.android.testutils.JarTestSuite",
         custom_package = "org.robolectric.default",
         **kwargs):
@@ -17,6 +19,8 @@ def robolectric_test(
     Args:
         name: The sources of the library.
         srcs: The sources of the library.
+        resources: A list of data files to include in the test.
+        resource_strip_prefix: The path prefix to strip from the resources
         deps: The dependencies of this library.
         jvm_flags: Flags to pass to the jvm
         friends: a list of friend jars (allowing access to 'internal' members) out: the output jar file
@@ -34,6 +38,8 @@ def robolectric_test(
         friends = friends,
         testonly = True,
         deps = deps,
+        resources = resources,
+        resource_strip_prefix = resource_strip_prefix,
         **kwargs
     )
 
