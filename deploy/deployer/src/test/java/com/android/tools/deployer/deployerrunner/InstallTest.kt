@@ -2186,5 +2186,26 @@ class InstallTestTest : DeployRunnerTestBase() {
         )
     }
 
-
+    @Test
+    @ApiLevel.InRange(min = 30)
+    @Throws(Exception::class)
+    fun testCustomUserFlags() {
+        Assert.assertTrue(device.apps.isEmpty())
+        val runner = DeployerRunner(cacheDb, dexDB, service)
+        val file = TestUtils.resolveWorkspacePath(BASE + "sample.apk")
+        val installersPath = DeployerTestUtils.prepareInstaller().toPath()
+        val args = arrayOf(
+            "install",
+            "com.example.helloworld",
+            file.toString(),
+            "--install-flags=-g     -d", // Make sure we are parsing empty space correctly.
+            "--force-full-install",
+            "--installers-path=$installersPath"
+        )
+        val retcode = runner.run(args)
+        Assert.assertEquals(0, retcode.toLong())
+        Assert.assertEquals(1, device.apps.size.toLong())
+        assertInstalled("com.example.helloworld", file)
+        assertHistoryContain(device, "package install-create -r -t -g -d")
+    }
 }
