@@ -130,8 +130,6 @@ https://issuetracker.google.com/328748514
   * com.android.build.api.variant.BundleConfig
   * com.android.build.api.variant.BundleConfig.addMetadataFile: void (java.lang.String, org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile>)
   * com.android.build.api.variant.BundleConfig.getCodeTransparency: com.android.build.api.variant.CodeTransparency ()
-https://issuetracker.google.com/328748530
-  * com.android.build.api.variant.AndroidResources.getViewBinding: boolean ()
 https://issuetracker.google.com/328748534
   * com.android.build.api.variant.SigningConfig.setConfig: void (com.android.build.api.dsl.SigningConfig)
 https://issuetracker.google.com/328748570
@@ -303,8 +301,6 @@ https://issuetracker.google.com/328748918
   * com.android.build.api.dsl.NdkBuildFlags.getCppFlags: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.NdkBuildFlags.getTargets: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.NdkBuildFlags.targets: void (java.lang.String[])
-https://issuetracker.google.com/328748920
-  * com.android.build.api.variant.AndroidResources.getDataBinding: boolean ()
 https://issuetracker.google.com/328748935
   * com.android.build.api.dsl.ConsumerKeepRules implements com.android.build.api.dsl.ConfigurableFiles
   * com.android.build.api.dsl.ConsumerKeepRules.getIgnoreFrom: java.util.Set<java.lang.String> ()
