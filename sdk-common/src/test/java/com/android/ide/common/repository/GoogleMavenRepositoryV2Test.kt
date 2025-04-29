@@ -15,10 +15,11 @@
  */
 package com.android.ide.common.repository
 
+import com.android.ide.common.gradle.Dependency
+import com.android.ide.common.gradle.RichVersion
 import com.android.ide.common.gradle.Version
 import com.android.ide.common.resources.BaseTestCase
 import com.google.common.truth.Truth.assertThat
-import com.google.gson.Gson
 import org.junit.Before
 import org.junit.Test
 import java.io.ByteArrayInputStream
@@ -27,17 +28,49 @@ import java.io.InputStream
 import java.nio.file.Path
 import java.util.function.Predicate
 import java.util.zip.GZIPOutputStream
+import kotlin.test.assertContains
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class GoogleMavenRepositoryV2Test : BaseTestCase() {
 
-    private lateinit var mavenRepository: GoogleMavenRepositoryV2
+    // Mocks the Google Maven Repository to return sample data.
+    private lateinit var mockMavenRepository: GoogleMavenRepositoryV2
+
+    // Test Google Maven Repository that uses files stored in the /testdata folder to return package
+    // related data.
+    private lateinit var testMavenRepository: GoogleMavenRepositoryV2
+    private var errorMessage: String? = null
+    private var readDataCallCount = 0
 
     @Before
     fun setUp() {
-        mavenRepository = GoogleMavenRepositoryV2.create(FakeGoogleMavenRepositoryV2Host())
+        errorMessage = null
+        readDataCallCount = 0
+        mockMavenRepository = GoogleMavenRepositoryV2.create(FakeGoogleMavenRepositoryV2Host())
+        testMavenRepository = GoogleMavenRepositoryV2.create(object : GoogleMavenRepositoryV2Host {
+            override val cacheDir: Path? = null
+
+            override fun readUrlData(
+                url: String,
+                timeout: Int,
+                lastModified: Long
+            ): NetworkCache.ReadUrlDataResult =
+                throw IllegalStateException("Should not be called")
+
+            override fun readDefaultData(relative: String): InputStream? {
+                readDataCallCount++
+                return GoogleMavenRepositoryV2Test::class.java.getResourceAsStream(
+                    "/testData/$relative"
+                )
+            }
+
+            override fun error(throwable: Throwable, message: String?) {
+                errorMessage = message
+            }
+        })
     }
 
     @Test
@@ -145,7 +178,7 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
     @Test
     fun findVersion_withNullPredicate_returnsVersion() {
         assertEquals(
-            mavenRepository.findVersion(
+            mockMavenRepository.findVersion(
                 "com.android.support",
                 "appcompat",
                 null as Predicate<Version>?
@@ -157,7 +190,7 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
     @Test
     fun findVersion_withGroupIdArtifactIdAndPredicate_returnsVersion() {
         assertEquals(
-            mavenRepository.findVersion(
+            mockMavenRepository.findVersion(
                 "com.android.support",
                 "appcompat",
                 Predicate { true }),
@@ -168,7 +201,7 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
     @Test
     fun findVersion_withMissingGroup_returnsNull() {
         assertNull(
-            mavenRepository.findVersion(
+            mockMavenRepository.findVersion(
                 "com.android.missing",
                 "appcompat",
                 { true }
@@ -179,7 +212,7 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
     @Test
     fun findVersion_withMissingArtifact_returnsNull() {
         assertNull(
-            mavenRepository.findVersion(
+            mockMavenRepository.findVersion(
                 "com.android.support",
                 "missing",
                 { true }
@@ -190,7 +223,7 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
     @Test
     fun findVersion_withNullFilter_returnsVersion() {
         assertEquals(
-            mavenRepository.findVersion(
+            mockMavenRepository.findVersion(
                 "com.android.support",
                 "appcompat",
                 null as ((Version) -> Boolean)?
@@ -202,7 +235,7 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
     @Test
     fun findVersion_withAllowPreview_returnsPreviewVersion() {
         assertEquals(
-            mavenRepository.findVersion(
+            mockMavenRepository.findVersion(
                 "com.android.support",
                 "appcompat",
                 null as ((Version) -> Boolean)?,
@@ -215,19 +248,68 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
     @Test
     fun findVersion_withGroupIdArtifactIdAndFilter_returnsVersion() {
         assertEquals(
-            mavenRepository.findVersion("com.android.support", "appcompat", { true }),
+            mockMavenRepository.findVersion("com.android.support", "appcompat", { true }),
             Version.parse("1.0.0")
         )
     }
 
     @Test
-    fun findCompileDependencies_returnsEmpty() {
-        assertThat(
-            mavenRepository.findCompileDependencies(
-                "com.android.support",
-                "appcompat",
-                Version.parse("1.0.0")
+    fun findDependencies_parsesPomFileForRuntime_Successfully() {
+        assertContentEquals(
+            testMavenRepository.findDependencies(
+                "androidx.activity",
+                "activity-compose",
+                Version.parse("1.10.1"),
+                "runtime"
+            ), listOf(
+                Dependency("org.jetbrains.kotlin", "kotlin-stdlib", RichVersion.parse("1.8.22")),
+                Dependency("androidx.lifecycle", "lifecycle-common", RichVersion.parse("2.6.1"))
             )
-        ).isEmpty()
+        )
+    }
+
+    @Test
+    fun findDependencies_forRepeatedDependencyLookup_usesCache() {
+        testMavenRepository.findDependencies(
+            "androidx.activity",
+            "activity-compose",
+            Version.parse("1.10.1"),
+            "runtime"
+        )
+        assertEquals(readDataCallCount, 1)
+
+        testMavenRepository.findDependencies(
+            "androidx.activity",
+            "activity-compose",
+            Version.parse("1.10.1"),
+            "runtime"
+        )
+
+        assertEquals(readDataCallCount, 1)
+    }
+
+    @Test
+    fun findDependencies_forMalformedFile_returnsEmpty() {
+        assertThat(
+            testMavenRepository.findDependencies(
+                "androidx.activity",
+                "activity-compose",
+                Version.parse("1.10.2"),
+                "runtime"
+            )
+        ).hasSize(0)
+        assertNotNull(errorMessage)
+        assertContains(errorMessage!!, "Problem reading POM file")
+    }
+
+    @Test
+    fun findCompileDependencies_parsesPomFile_Successfully() {
+        assertThat(
+            testMavenRepository.findCompileDependencies(
+                "androidx.activity",
+                "activity-compose",
+                Version.parse("1.10.1"),
+            )
+        ).hasSize(6)
     }
 }
