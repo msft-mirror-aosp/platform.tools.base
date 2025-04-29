@@ -109,6 +109,123 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       )
   }
 
+  fun testNoFlagsClassPresent() {
+    // Make sure the lint checks still flag API usages even if you don't
+    // have the Flags class on the classpath
+    lint()
+      .files(
+        bytecode(
+          "libs/annotation.jar",
+          flaggedApiAnnotationStub,
+          0x81415584,
+          """
+          android/annotation/FlaggedApi.class:
+          H4sIAAAAAAAA/4WRwU4CMRCG/yLLKqigookHo/FA9OIePXja4BJJcJfsVhPj
+          wRRoNiWlS5ZCwqt58AF8KOOsJsKBxEP/Tjrf/O1MP7/ePwDc4sTFkYumi2MG
+          ZyH0XDI0r657Y7EQnhYm9RKbK5PeMVSTbJ4PZUdpYuodLdJUjvypuilYhtN4
+          bqyayGc1UwMtfWMyK6zKzIzhbM1P/CU8LvJUWrK+3JwPtJxIY/lyKgkq85d+
+          wFB5DPhDdM9Qa0dhwuOnNo9ienynG/TotO6HYcR93o3Ct9+Ci83msbTkTRFZ
+          t/5B+plWwyWBTrvnJwk1JMwoz9RonV5NhKGx8osGYzm0DOcbr1iNqcXAUKK1
+          RR/DytQvHIpKqPyoi23aPYp2iCm/wpGoolbIbiF7hewXUkejICQOcPgNDPA2
+          HOgBAAA=
+          """,
+        ),
+        bytecode(
+          "libs/api.jar",
+          // Generated
+          java(
+              """
+              package com.android.aconfig.test;
+
+              public class Flags {
+                  public static final String FLAG_DISABLED_RO = "com.android.aconfig.test.ExportedFlags.disabledRo";
+                  public static boolean disabledRo() {
+                      return true; // not the real implementation
+                  }
+              }
+              """
+            )
+            .indented(),
+          0xa6233539,
+          """
+            com/android/aconfig/test/Flags.class:
+            H4sIAAAAAAAA/11Qy0oDQRCsztuYmBi9KCh4Uw+7ePKgCDEPERYDieTgJUx2
+            x2VkMyO7E/GjvHgSPPgBfpTYOwYCHqa6p6aqu5jvn88vAOfYraOIdhXbVXQI
+            7WHQvZn1byfd62DQn41HhE7wJF6Enwgd+xObKh1fEJo9ozMrtJ2KZClr2CFU
+            LpVW9opQPD6ZEko9E0lCK1Ba3i0Xc5nei3nCTD1SWd5FY+O0D0xNzDIN5VC5
+            92Ei4szLlzZQwwbhMDQLX+goNSryRWj0o4p9KzPrOymnXicczZ9kaAln7PFW
+            Hm/l8XKPN3h9NqmV0d+adRgcocBfARD2UEKZa4VvBVT5UJ6Esc7MAVfiWj79
+            AL07wyZjxZFFljXQXEn3HcdDSm//dDluufGtX5zQZkOLAQAA
+            """,
+        ),
+        bytecode(
+          "libs/api.jar",
+          java(
+              """
+              package test.api;
+              import android.annotation.FlaggedApi;
+              import com.android.aconfig.test.Flags;
+
+              @FlaggedApi(Flags.FLAG_DISABLED_RO)
+              public class MyApi {
+                public void apiMethod() { }
+                public int apiField = 42;
+              }
+              """
+            )
+            .indented(),
+          0x3ababae6,
+          """
+            test/api/MyApi.class:
+            H4sIAAAAAAAA/0VQTUvDQBScbdOmTWtbP0E8iCe1hwRPHhShiIVCq1DF+za7
+            xi3pbkk2RX+WBxE8+AP8UeLLIvXwHvvmzcwO7/vn8wvAOfYCeNhqooptHzs+
+            dhkafKmGSqaCgY0Y6pdKK3vFUD05fWTwro2QDN2x0vK2WMxk9sBnKSFNkk2k
+            fTakC+5NkcVyqMpFMHkdLFU45yvOcDAttFULOdIrlSsSDrQ2lltldM5wOOZa
+            ZEaJiK/haJjyJJGCPC4YaiueFmR6FptF+EcOeWz0k0pCK3Mb3rwsTWalKGV5
+            KFRexhNT04aPRhs11Bk6JTOiwJHLxtAr00Up10l0N5vL2OKITuLRiegIpYZe
+            FXqRBfUmTcduBlr9D7B+r/+OypujB9QDWoJEnqO31qJ9x6D6p9Yd4JOg7f7Y
+            QKd0JbRL1cux+QtqrrJkrAEAAA==
+            """,
+        ),
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+
+            public class Test {
+              public void test(MyApi api) {
+                api.apiMethod(); // ERROR 1
+                // Wrong flags class
+                if (Flags.disabledRo()) {
+                  int val = api.apiField; // ERROR 2
+                }
+              }
+            }
+
+            class Flags {
+                static final String FLAG_DISABLED_RO = "test.pkg.Flags.disabled_ro";
+                static boolean disabledRo() {
+                    return true; // not the real implementation
+                }
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/Test.java:6: Error: Method apiMethod() is a flagged API and should be inside an if (ExportedFlags.disabledro()) check (or annotate the surrounding method test with @FlaggedApi(ExportedFlags.disabledRo) to transfer requirement to caller) [FlaggedApi]
+            api.apiMethod(); // ERROR 1
+            ~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:9: Error: Field apiField is a flagged API and should be inside an if (ExportedFlags.disabledro()) check (or annotate the surrounding method test with @FlaggedApi(ExportedFlags.disabledRo) to transfer requirement to caller) [FlaggedApi]
+              int val = api.apiField; // ERROR 2
+                            ~~~~~~~~
+        2 errors
+        """
+      )
+  }
+
   fun testCompiled() {
     lint()
       .files(
