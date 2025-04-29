@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.multiplatform.v2.publishLibs
 import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 class KotlinMultiplatformPublicationModelSnapshotTest: BaseModelComparator {
 
@@ -74,6 +75,33 @@ class KotlinMultiplatformPublicationModelSnapshotTest: BaseModelComparator {
 
         sourceSetsComparator.fetchAndCompareModels(
             projects = listOf(":kmpFirstLib")
+        )
+
+        val pomFilesComparator = KmpModelComparator(
+            project = project,
+            testClass = this,
+            modelSnapshotTask = "publish",
+            taskOutputsLocator = { projectPath ->
+                val projectName = projectPath.removePrefix(":")
+                val matchingPoms = mutableListOf<File>()
+                FileUtils.join(
+                    project.projectDir,
+                    "testRepo",
+                    "com",
+                    "example"
+                ).listFiles()?.forEach { childFile ->
+                    if (childFile.isDirectory && childFile.name.startsWith(projectName)) {
+                        childFile.walkTopDown()
+                            .filter { it.isFile && it.extension.equals("pom", ignoreCase = true) }
+                            .toCollection(matchingPoms)
+                    }
+                }
+                matchingPoms
+            },
+        )
+
+        pomFilesComparator.fetchAndComparePomModels(
+            projects = listOf(":kmpJvmOnly", ":kmpSecondLib", ":kmpLibraryPlugin", ":kmpFirstLib")
         )
     }
 }

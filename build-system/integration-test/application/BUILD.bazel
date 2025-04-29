@@ -262,6 +262,7 @@ single_gradle_integration_test_per_source(
             "src/test/java/com/android/build/gradle/integration/dependencies/**",
             "src/test/java/com/android/build/gradle/integration/privacysandbox/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/v2/**",
+            "src/test/java/com/android/build/gradle/integration/multiplatform/v1/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/model/**",
             "src/test/java/com/android/build/gradle/integration/r8/**",
             "src/test/java/com/android/build/gradle/integration/application/Java11CompileTest.kt",
@@ -269,7 +270,6 @@ single_gradle_integration_test_per_source(
             "src/test/java/com/android/build/gradle/integration/application/JavaCompileWithToolChainTest.kt",
             "src/test/java/com/android/build/gradle/integration/application/ComposeHelloWorldTest.kt",
             "src/test/java/com/android/build/gradle/integration/compose/ComposePluginOptionsTest.kt",
-            "src/test/java/com/android/build/gradle/integration/multiplatform/KotlinMultiplatformComposeTest.kt",
             "src/test/java/com/android/build/gradle/integration/api/R8VersionCheckTest.kt",
             "src/test/java/com/android/build/gradle/integration/declarative/GradleDeclarativeTest.kt",
         ],
@@ -400,7 +400,7 @@ gradle_integration_test(
 COMPOSE_TESTS = [
     "src/test/java/com/android/build/gradle/integration/application/ComposeHelloWorldTest.kt",
     "src/test/java/com/android/build/gradle/integration/compose/ComposePluginOptionsTest.kt",
-    "src/test/java/com/android/build/gradle/integration/multiplatform/KotlinMultiplatformComposeTest.kt",
+    "src/test/java/com/android/build/gradle/integration/multiplatform/v1/KotlinMultiplatformComposeTest.kt",
 ]
 
 gradle_integration_test(
@@ -969,7 +969,6 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    shard_count = 2,
     tags = ["noci:studio-win"],
     deps = TEST_DEPS,
 )
