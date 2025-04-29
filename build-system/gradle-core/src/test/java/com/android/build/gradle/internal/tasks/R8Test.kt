@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.transforms.testdata.Toy
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.core.ComponentTypeImpl
+import com.android.builder.dexing.PartialShrinkingConfig
 import com.android.builder.dexing.R8OutputType
 import com.android.builder.dexing.ToolConfig
 import com.android.testutils.TestClassesGenerator
@@ -263,6 +264,61 @@ class R8Test(private val r8OutputType: R8OutputType) {
         assertClassDoesNotExist(Animal::class.java)
         assertClassDoesNotExist(Cat::class.java)
         assertClassDoesNotExist(Toy::class.java)
+    }
+
+    @Test
+    fun testPartialShrinkingConfiguration() {
+        Assume.assumeTrue(r8OutputType == R8OutputType.DEX)
+        val classes = tmp.root.toPath().resolve("classes.jar")
+
+        TestInputsGenerator.pathWithClasses(
+            classes,
+            listOf(Animal::class.java, CarbonForm::class.java, Cat::class.java, Toy::class.java)
+        )
+
+        runR8(
+            classes = listOf(classes.toFile()),
+            java8Support = Java8LangSupport.R8,
+            useFullR8 = true,
+            minSdkVersion = 23,
+            partialShrinkingConfig = PartialShrinkingConfig(
+                "${Cat::class.java.name},${Animal::class.java.name}",
+                null
+            )
+        )
+
+        assertClassDoesNotExist(Cat::class.java)
+        assertClassDoesNotExist(Animal::class.java)
+        assertClassExists(CarbonForm::class.java)
+        assertClassExists(Toy::class.java)
+    }
+
+    @Test
+    fun testPartialShrinkingExcludeConfiguration() {
+        Assume.assumeTrue(r8OutputType == R8OutputType.DEX)
+        val classes = tmp.root.toPath().resolve("classes.jar")
+
+        TestInputsGenerator.pathWithClasses(
+            classes,
+            listOf(Animal::class.java, CarbonForm::class.java, Cat::class.java, Toy::class.java)
+        )
+
+        runR8(
+            classes = listOf(classes.toFile()),
+            java8Support = Java8LangSupport.R8,
+            useFullR8 = true,
+            minSdkVersion = 23,
+            partialShrinkingConfig = PartialShrinkingConfig(
+                "com.android.build.gradle.internal.transforms.testdata.*",
+                CarbonForm::class.java.name
+            )
+        )
+
+        assertClassExists(CarbonForm::class.java)
+        assertClassDoesNotExist(Animal::class.java)
+        assertClassDoesNotExist(Toy::class.java)
+        assertClassDoesNotExist(Cat::class.java)
+
     }
 
     @Test
@@ -647,7 +703,8 @@ class R8Test(private val r8OutputType: R8OutputType) {
         featureJavaResourceJars: List<File> = listOf(),
         featureDexDir: File? = null,
         featureJavaResourceOutputDir: File? = null,
-        libConfiguration: String? = null
+        libConfiguration: String? = null,
+        partialShrinkingConfig: PartialShrinkingConfig? = null
     ) {
         val proguardConfigurations: MutableList<String> = mutableListOf(
             "-ignorewarnings")
@@ -712,7 +769,7 @@ class R8Test(private val r8OutputType: R8OutputType) {
                 r8OutputType = if (componentType.isAar) R8OutputType.CLASSES else R8OutputType.DEX
             ),
             resourceShrinkingConfig = null,
-            partialShrinkingConfig = null,
+            partialShrinkingConfig = partialShrinkingConfig,
             r8ThreadPool = MoreExecutors.newDirectExecutorService()
         )
     }
