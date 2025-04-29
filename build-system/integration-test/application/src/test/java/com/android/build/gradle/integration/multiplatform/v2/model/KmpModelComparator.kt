@@ -109,8 +109,28 @@ class KmpModelComparator(
         }
     }
 
-    fun fetchAndCompareModels(
-        projects: List<String>
+    private fun fetchPomModels(
+        projectPath: String,
+        executor: GradleTaskExecutor,
+    ): Map<String, String> {
+        executor.run("$projectPath:$modelSnapshotTask")
+
+        val outputs = taskOutputsLocator(projectPath)
+
+        return outputs.associate { output ->
+            val reportName = output.name.removeSuffix(".pom")
+            val content = output.readText().normalizeVersionsOfCommonDependencies()
+            reportName to content
+        }
+    }
+
+    fun fetchAndCompareModels(projects: List<String>) = compareFetchedModels(projects, ::fetchModels)
+
+    fun fetchAndComparePomModels(projects: List<String>) = compareFetchedModels(projects, ::fetchPomModels)
+
+    private fun compareFetchedModels(
+        projects: List<String>,
+        fetchModels: (String, GradleTaskExecutor) -> Map<String, String>
     ) {
         // Generate project structure metadata json file for all subproject
         // They are needed in order to resolve project dependencies
