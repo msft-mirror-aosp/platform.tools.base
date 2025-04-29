@@ -90,6 +90,7 @@ class AgpVersionTest {
         assertThat(AgpVersion.tryParse("3.1.0-dev-0")).isNull()
         assertThat(AgpVersion.tryParse("3.1.0-dev1")).isNull()
         assertThat(AgpVersion.tryParse("3.1.0-dev01")).isNull()
+        assertThat(AgpVersion.tryParse("\"3.1.0\"")).isNull()
     }
 
     @Test
@@ -113,6 +114,7 @@ class AgpVersionTest {
         assertThat(AgpVersion.tryParseStable("3.0.0-beta01")).isNull()
         assertThat(AgpVersion.tryParseStable("3.0.0-rc01")).isNull()
         assertThat(AgpVersion.tryParseStable("3.0.0-dev")).isNull()
+        assertThat(AgpVersion.tryParseStable("\"3.0.0\"")).isNull()
     }
 
     @Test
@@ -125,7 +127,15 @@ class AgpVersionTest {
             AgpVersion.parse("3.1")
             Assert.fail("Expect IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
-            assertThat(e.message).isEqualTo("3.1 is not a valid AGP version string.")
+            assertThat(e.message).isEqualTo("'3.1' is not a valid AGP version string.")
+        }
+
+        // Invalid, quoted version
+        try {
+            AgpVersion.parse("\"3.0.0\"")
+            Assert.fail("Expect IllegalArgumentException")
+        } catch (e: IllegalArgumentException) {
+            assertThat(e.message).isEqualTo("'\"3.0.0\"' is not a valid AGP version string.")
         }
     }
 
@@ -139,7 +149,7 @@ class AgpVersionTest {
             AgpVersion.parseStable("3.1")
             Assert.fail("Expect IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
-            assertThat(e.message).isEqualTo("3.1 is not a valid stable AGP version string.")
+            assertThat(e.message).isEqualTo("'3.1' is not a valid stable AGP version string.")
         }
 
         // Valid but preview version
@@ -148,7 +158,7 @@ class AgpVersionTest {
             Assert.fail("Expect IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             assertThat(e.message)
-                .isEqualTo("4.0.0-alpha01 is not a valid stable AGP version string.")
+                .isEqualTo("'4.0.0-alpha01' is not a valid stable AGP version string.")
         }
     }
 
