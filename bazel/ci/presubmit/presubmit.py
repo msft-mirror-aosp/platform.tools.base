@@ -3,7 +3,6 @@
 import collections
 import dataclasses
 import enum
-import hashlib
 import json
 import logging
 import os
@@ -17,6 +16,7 @@ from typing import Iterator, List, Sequence, Set
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import bazel_diff
+from tools.base.bazel.ci.presubmit import gerrit
 
 
 _FILE_BUCKET = 'adt-byob'
@@ -95,11 +95,15 @@ class SelectivePresubmitResult:
     ]
 
 
-def _find_failed_tests(build_env: bazel.BuildEnv) -> List[str]:
+def _find_failed_tests(
+    build_env: bazel.BuildEnv,
+    gerrit_info: gerrit.GerritInfo,
+) -> List[str]:
   """Returns the list of failed targets from a previous run.
 
   Args:
     build_env: The build environment.
+    gerrit_info: The Gerrit info.
 
   Returns:
     The list of failed tests from a previous run.
@@ -107,10 +111,8 @@ def _find_failed_tests(build_env: bazel.BuildEnv) -> List[str]:
   Raises:
     SelectivePresubmitError: If previous failed tests could not be found.
   """
-  gerrit_changes = gce.get_gerrit_changes(build_env.build_number)
-  changes_hash = change_set_hash(gerrit_changes)
   object_name = _FAILED_TESTS_FILE_NAME.format(
-      changes_hash=changes_hash,
+      changes_hash=gerrit_info.changes_hash,
       target=build_env.build_target_name,
   )
   logging.info('Attempting to find failed tests at %s', object_name)
@@ -284,37 +286,6 @@ def _find_impacted_test_targets(
   )
 
 
-def _parse_gerrit_tags(
-    build_env: bazel.BuildEnv,
-    filter_tag: str,
-) -> Iterator[str]:
-  """Yields tag values from Gerrit change tags.
-
-  Tag values are expected to be in one of two formats:
-    - <ab_target>:<value>
-    - <value>
-
-  Args:
-    bazel_env: The build environment.
-    filter_tag: The tag to look for.
-
-  Yields:
-    The tag values from the targeted Gerrit changes.
-  """
-  for gerrit_change in gce.get_gerrit_changes(build_env.build_number):
-    for tag, value in gerrit_change.tags:
-      if tag.lower() != filter_tag.lower():
-        continue
-      logging.info('Found %s tag: %s', tag, value)
-      # AB target names only contain word characters and hyphens.
-      match = re.fullmatch(r'^([\w-]+):(.+)$', value)
-      if match:
-        ab_target, value = match.group(1), match.group(2)
-        if ab_target != build_env.build_target_name:
-          continue
-      yield value
-
-
 def validate_and_upload_failed_tests(build_env: bazel.BuildEnv) -> None:
   """Validates and uploads the failed tests file for the current build.
 
@@ -327,16 +298,15 @@ def validate_and_upload_failed_tests(build_env: bazel.BuildEnv) -> None:
   Args:
     build_env: The build environment.
   """
+  gerrit_info = gerrit.get_gerrit_info(build_env)
   failed_tests_path = pathlib.Path(build_env.dist_dir) / 'failed_tests.txt'
   failed_tests = failed_tests_path.read_text().splitlines()
   if not failed_tests or len(failed_tests) > _MAX_FAILED_TESTS:
     logging.info('%d failed tests, not uploading', len(failed_tests))
     return
 
-  gerrit_changes = gce.get_gerrit_changes(build_env.build_number)
-  changes_hash = change_set_hash(gerrit_changes)
   object_name = _FAILED_TESTS_FILE_NAME.format(
-      changes_hash=changes_hash,
+      changes_hash=gerrit_info.changes_hash,
       target=build_env.build_target_name,
   )
 
@@ -359,14 +329,27 @@ def generate_and_upload_hash_file(build_env: bazel.BuildEnv) -> None:
   logging.info('Uploaded hash file to GCS with object name: %s', object_name)
 
 
-def change_set_hash(changes: Sequence[gce.GerritChange]) -> str:
-  """Returns a hash of the change set."""
-  changes = sorted(changes, key=lambda c: int(c.change_number))
-  hasher = hashlib.new('sha256')
-  for c in changes:
-    hasher.update(int(c.change_number).to_bytes(length=8, byteorder='little'))
-    hasher.update(int(c.patchset).to_bytes(length=4, byteorder='little'))
-  return hasher.hexdigest()
+def _generate_runs_per_test_flags(gerrit_info: gerrit.GerritInfo) -> List[str]:
+  """Returns the flags used to specify the number of runs per test."""
+  flags = []
+  for value in gerrit_info.filter_tags('Presubmit-Runs-Per-Test'):
+    target, runs = value.split('@')
+    runs = int(runs)
+
+    # Limit the number of runs per test.
+    if runs > _MAX_RUNS_PER_TEST:
+      raise ValueError(
+          f'Exceeded maximum runs per test: {runs} > {_MAX_RUNS_PER_TEST}'
+      )
+
+    # Prevent wildcards.
+    if target.endswith('...') or target.endswith(':all'):
+      raise ValueError(f'Wildcard target not allowed: {target}')
+
+    logging.info('Running %s with %d runs per test', target, runs)
+    flags.append(f'--runs_per_test={value}')
+
+  return flags
 
 
 def find_test_targets(
@@ -390,25 +373,13 @@ def find_test_targets(
 
   Tags can be repeated in one description and across multiple changes.
   """
-  # Flags that are always returned.
-  gerrit_changes = gce.get_gerrit_changes(build_env.build_number)
-  change = gerrit_changes[0]
-  changes_hash = change_set_hash(gerrit_changes)
+  gerrit_info = gerrit.get_gerrit_info(build_env)
 
-  flags = [
-      f'--build_metadata=gerrit_change_set_hash={changes_hash}',
-      f'--build_metadata=gerrit_owner={change.owner}',
-      f'--build_metadata=gerrit_change_id={change.change_id}',
-      f'--build_metadata=gerrit_change_number={change.change_number}',
-      f'--build_metadata=gerrit_change_patchset={change.patchset}',
-  ]
-
-  if change.topic:
-    flags.append(f'--build_metadata=gerrit_topic={change.topic}')
+  flags = gerrit_info.get_bazel_flags() + _generate_runs_per_test_flags(gerrit_info)
 
   # Parse Presubmit-Test tags.
   explicit_targets = []
-  for value in _parse_gerrit_tags(build_env, 'Presubmit-Test'):
+  for value in gerrit_info.filter_tags('Presubmit-Test'):
     # "default" is a special value that indicates that all default targets
     # should be tested.
     if value.lower() == 'default':
@@ -422,7 +393,7 @@ def find_test_targets(
 
   # Prioritize failed tests.
   try:
-    failed_test_targets = _find_failed_tests(build_env)
+    failed_test_targets = _find_failed_tests(build_env, gerrit_info)
     return SelectivePresubmitResult(
         strategy=SelectivePresubmitStrategy.RETRY_FAILED,
         targets=failed_test_targets + explicit_targets,
@@ -471,26 +442,3 @@ def find_test_targets(
       targets=base_targets + explicit_targets,
       base_flags=flags,
   )
-
-
-def generate_runs_per_test_flags(build_env: bazel.BuildEnv) -> List[str]:
-  """Returns the flags used to specify the number of runs per test."""
-  flags = []
-  for value in _parse_gerrit_tags(build_env, 'Presubmit-Runs-Per-Test'):
-    target, runs = value.split('@')
-    runs = int(runs)
-
-    # Limit the number of runs per test.
-    if runs > _MAX_RUNS_PER_TEST:
-      raise ValueError(
-          f'Exceeded maximum runs per test: {runs} > {_MAX_RUNS_PER_TEST}'
-      )
-
-    # Prevent wildcards.
-    if target.endswith('...') or target.endswith(':all'):
-      raise ValueError(f'Wildcard target not allowed: {target}')
-
-    logging.info('Running %s with %d runs per test', target, runs)
-    flags.append(f'--runs_per_test={value}')
-
-  return flags

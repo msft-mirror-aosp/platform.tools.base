@@ -10,10 +10,31 @@ py_library(
 )
 
 py_library(
+    name = "gerrit",
+    srcs = ["gerrit.py"],
+    deps = [
+        "//tools/base/bazel/ci:bazel",
+        "//tools/base/bazel/ci:gce",
+    ],
+)
+
+py_test(
+    name = "gerrit_test",
+    srcs = ["gerrit_test.py"],
+    deps = [
+        ":gerrit",
+        "//tools/base/bazel/ci:fake_build_env",
+        "//tools/base/bazel/ci:fake_gce",
+        "@absl-py//absl/testing:absltest",
+    ],
+)
+
+py_library(
     name = "presubmit",
     srcs = ["presubmit.py"],
     deps = [
         ":bazel_diff",
+        ":gerrit",
         "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:gce",
     ],

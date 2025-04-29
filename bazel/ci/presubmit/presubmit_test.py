@@ -12,6 +12,7 @@ from tools.base.bazel.ci import fake_build_env
 from tools.base.bazel.ci import fake_gce
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import bazel_diff
+from tools.base.bazel.ci.presubmit import gerrit
 from tools.base.bazel.ci.presubmit import presubmit
 
 
@@ -77,7 +78,7 @@ class PresubmitTest(parameterized.TestCase):
         self.gce.add_change('owner', 'message', []),
         self.gce.add_change('owner', 'message', []),
     ]
-    changes_hash = presubmit.change_set_hash(changes)
+    changes_hash = gerrit.get_gerrit_info(self.build_env).changes_hash
 
     presubmit.validate_and_upload_failed_tests(self.build_env)
 
@@ -108,24 +109,6 @@ class PresubmitTest(parameterized.TestCase):
         deps_output_path=None,
     )
 
-  def test_change_set_hash(self):
-    changes = [
-        gce.GerritChange(
-            change_id='',
-            change_number='123',
-            patchset='2',
-            file_infos=[],
-            owner='owner',
-            message='message',
-            topic='topic',
-            tags=[],
-        ),
-    ]
-    self.assertEqual(
-        presubmit.change_set_hash(changes),
-        'e894ae70705dfaee4674cb48c5194c2c56a51be1c3f6fb80aa2510a98512e908',
-    )
-
   @parameterized.named_parameters(
       dict(
           testcase_name='basic',
@@ -135,11 +118,11 @@ class PresubmitTest(parameterized.TestCase):
           query_targets=['target2', 'target3'],
           expected_targets=['target2', 'target3'],
           expected_flags=[
-              f'--build_metadata=selective_presubmit_strategy=impacted_targets',
-              f'--build_metadata=selective_presubmit_found=True',
-              f'--build_metadata=selective_presubmit_impacted_target_count=2',
-              f'--build_metadata=selective_presubmit_target_distance=(0:2)',
-              f'--build_metadata=selective_presubmit_package_distance=(0:2)',
+              '--build_metadata=selective_presubmit_strategy=impacted_targets',
+              '--build_metadata=selective_presubmit_found=True',
+              '--build_metadata=selective_presubmit_impacted_target_count=2',
+              '--build_metadata=selective_presubmit_target_distance=(0:2)',
+              '--build_metadata=selective_presubmit_package_distance=(0:2)',
           ],
       ),
       dict(
@@ -150,8 +133,27 @@ class PresubmitTest(parameterized.TestCase):
           query_targets=['target2'],
           expected_targets=['base_target1', 'base_target2'],
           expected_flags=[
-              f'--build_metadata=selective_presubmit_strategy=default_explicit',
-              f'--build_metadata=selective_presubmit_found=False',
+              '--build_metadata=selective_presubmit_strategy=default_explicit',
+              '--build_metadata=selective_presubmit_found=False',
+          ],
+      ),
+      dict(
+          testcase_name='with_runs_per_test',
+          tags = [
+              ('Presubmit-Test', 'default'),
+              ('Presubmit-Runs-Per-Test', 'studio-test:target1@10'),
+              ('Presubmit-Runs-Per-Test', 'target2@20'),
+              ('Presubmit-Runs-Per-Test', 'studio-other:target3@30'),
+          ],
+          failed_tests=[],
+          impacted_targets=[],
+          query_targets=[],
+          expected_targets=['base_target1', 'base_target2'],
+          expected_flags=[
+              '--runs_per_test=target1@10',
+              '--runs_per_test=target2@20',
+              '--build_metadata=selective_presubmit_strategy=default_explicit',
+              '--build_metadata=selective_presubmit_found=False',
           ],
       ),
       dict(
@@ -162,11 +164,11 @@ class PresubmitTest(parameterized.TestCase):
           query_targets=['target2'],
           expected_targets=['target2'],
           expected_flags=[
-              f'--build_metadata=selective_presubmit_strategy=impacted_targets',
-              f'--build_metadata=selective_presubmit_found=True',
-              f'--build_metadata=selective_presubmit_impacted_target_count=1',
-              f'--build_metadata=selective_presubmit_target_distance=(0:1)',
-              f'--build_metadata=selective_presubmit_package_distance=(0:1)',
+              '--build_metadata=selective_presubmit_strategy=impacted_targets',
+              '--build_metadata=selective_presubmit_found=True',
+              '--build_metadata=selective_presubmit_impacted_target_count=1',
+              '--build_metadata=selective_presubmit_target_distance=(0:1)',
+              '--build_metadata=selective_presubmit_package_distance=(0:1)',
           ],
       ),
       dict(
@@ -180,11 +182,11 @@ class PresubmitTest(parameterized.TestCase):
           query_targets=['target2'],
           expected_targets=['target2', 'target3', 'target4'],
           expected_flags=[
-              f'--build_metadata=selective_presubmit_strategy=impacted_targets',
-              f'--build_metadata=selective_presubmit_found=True',
-              f'--build_metadata=selective_presubmit_impacted_target_count=1',
-              f'--build_metadata=selective_presubmit_target_distance=(0:1)',
-              f'--build_metadata=selective_presubmit_package_distance=(0:1)',
+              '--build_metadata=selective_presubmit_strategy=impacted_targets',
+              '--build_metadata=selective_presubmit_found=True',
+              '--build_metadata=selective_presubmit_impacted_target_count=1',
+              '--build_metadata=selective_presubmit_target_distance=(0:1)',
+              '--build_metadata=selective_presubmit_package_distance=(0:1)',
           ],
       ),
       dict(
@@ -198,10 +200,10 @@ class PresubmitTest(parameterized.TestCase):
           query_targets=[],
           expected_targets=['target1', 'target2', 'target3', 'target4'],
           expected_flags=[
-              f'--flaky_test_attempts=target1@2',
-              f'--flaky_test_attempts=target2@2',
-              f'--build_metadata=selective_presubmit_strategy=retry_failed',
-              f'--build_metadata=selective_presubmit_found=False',
+              '--flaky_test_attempts=target1@2',
+              '--flaky_test_attempts=target2@2',
+              '--build_metadata=selective_presubmit_strategy=retry_failed',
+              '--build_metadata=selective_presubmit_found=False',
           ],
       ),
   )
@@ -269,21 +271,6 @@ class PresubmitTest(parameterized.TestCase):
           ' base_target2) except attr(target_compatible_with,'
           ' "@platforms//:incompatible", base_target2)',
       )
-
-  def test_generate_runs_per_test_flags(self):
-    self.gce.add_change(
-        'owner',
-        'message',
-        [
-            ('Presubmit-Runs-Per-Test', 'studio-test:target1@10'),
-            ('Presubmit-Runs-Per-Test', 'target2@20'),
-            ('Presubmit-Runs-Per-Test', 'studio-other:target3@30'),
-        ],
-    )
-    self.assertEqual(
-        presubmit.generate_runs_per_test_flags(self.build_env),
-        ['--runs_per_test=target1@10', '--runs_per_test=target2@20'],
-    )
 
 
 if __name__ == '__main__':

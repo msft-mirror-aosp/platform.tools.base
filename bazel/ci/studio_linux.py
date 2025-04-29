@@ -130,7 +130,6 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
     # target to run.
     targets = result.targets + ['//tools/base/bazel:iml_to_build_consistency_test']
     flags.extend(result.flags)
-    flags.extend(presubmit.generate_runs_per_test_flags(build_env))
 
   result = studio.run_tests(build_env, flags, targets)
   if build_type == studio.BuildType.PRESUBMIT:

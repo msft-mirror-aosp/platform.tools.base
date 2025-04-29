@@ -58,7 +58,6 @@ def studio_win(build_env: bazel.BuildEnv):
     # ci_test is included so that there is always a test target to run.
     targets = result.targets + ['//tools/base/bazel/ci:ci_test']
     flags.extend(result.flags)
-    flags.extend(presubmit.generate_runs_per_test_flags(build_env))
 
   test_result = studio.run_tests(build_env, flags, targets)
 
