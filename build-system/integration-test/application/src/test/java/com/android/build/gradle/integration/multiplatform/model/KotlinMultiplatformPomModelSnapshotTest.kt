@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.multiplatform.v2.model
+package com.android.build.gradle.integration.multiplatform.model
 
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
@@ -34,7 +34,6 @@ class KotlinMultiplatformPomModelSnapshotTest: BaseModelComparator {
 
     @Test
     fun testPomModelsWhenLibsArePublished() {
-        if(SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) return
         project.publishLibs()
 
         val pomFilesComparator = KmpModelComparator(

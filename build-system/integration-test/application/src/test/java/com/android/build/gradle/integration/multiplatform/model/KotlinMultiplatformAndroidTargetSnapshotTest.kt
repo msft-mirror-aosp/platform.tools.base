@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.multiplatform.v2.model
+package com.android.build.gradle.integration.multiplatform.model
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.model.BaseModelComparator
@@ -22,7 +22,7 @@ import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
 
-class KotlinMultiplatformMetadataSnapshotTest: BaseModelComparator {
+class KotlinMultiplatformAndroidTargetSnapshotTest: BaseModelComparator {
 
     @get:Rule
     val project = GradleTestProjectBuilder()
@@ -30,30 +30,16 @@ class KotlinMultiplatformMetadataSnapshotTest: BaseModelComparator {
         .create()
 
     @Test
-    fun testKotlinToolingMetadataOutput() {
+    fun testModels() {
         KmpModelComparator(
             project = project,
             testClass = this,
-            modelSnapshotTask = "buildKotlinToolingMetadata",
+            modelSnapshotTask = "dumpAndroidTarget",
             taskOutputsLocator = { projectPath ->
                 FileUtils.join(
                     project.getSubproject(projectPath).buildDir,
-                    "kotlinToolingMetadata",
-                ).listFiles()!!.toList()
-            },
-        ).fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
-    }
-
-    @Test
-    fun testKotlinProjectStructureMetadataOutput() {
-        KmpModelComparator(
-            project = project,
-            testClass = this,
-            modelSnapshotTask = "generateProjectStructureMetadata",
-            taskOutputsLocator = { projectPath ->
-                FileUtils.join(
-                    project.getSubproject(projectPath).buildDir,
-                    "kotlinProjectStructureMetadata",
+                    "ide",
+                    "targets"
                 ).listFiles()!!.toList()
             },
         ).fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))

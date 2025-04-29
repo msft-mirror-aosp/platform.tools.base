@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.multiplatform.v2.model
+package com.android.build.gradle.integration.multiplatform.model
 
 import com.android.SdkConstants.DOT_JSON
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor

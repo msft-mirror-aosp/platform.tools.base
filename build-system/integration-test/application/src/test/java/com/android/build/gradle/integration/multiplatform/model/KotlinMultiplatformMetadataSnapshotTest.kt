@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.multiplatform.v2.model
+package com.android.build.gradle.integration.multiplatform.model
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.model.BaseModelComparator
@@ -22,7 +22,7 @@ import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
 
-class KotlinMultiplatformAndroidTargetSnapshotTest: BaseModelComparator {
+class KotlinMultiplatformMetadataSnapshotTest: BaseModelComparator {
 
     @get:Rule
     val project = GradleTestProjectBuilder()
@@ -30,16 +30,30 @@ class KotlinMultiplatformAndroidTargetSnapshotTest: BaseModelComparator {
         .create()
 
     @Test
-    fun testModels() {
+    fun testKotlinToolingMetadataOutput() {
         KmpModelComparator(
             project = project,
             testClass = this,
-            modelSnapshotTask = "dumpAndroidTarget",
+            modelSnapshotTask = "buildKotlinToolingMetadata",
             taskOutputsLocator = { projectPath ->
                 FileUtils.join(
                     project.getSubproject(projectPath).buildDir,
-                    "ide",
-                    "targets"
+                    "kotlinToolingMetadata",
+                ).listFiles()!!.toList()
+            },
+        ).fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
+    }
+
+    @Test
+    fun testKotlinProjectStructureMetadataOutput() {
+        KmpModelComparator(
+            project = project,
+            testClass = this,
+            modelSnapshotTask = "generateProjectStructureMetadata",
+            taskOutputsLocator = { projectPath ->
+                FileUtils.join(
+                    project.getSubproject(projectPath).buildDir,
+                    "kotlinProjectStructureMetadata",
                 ).listFiles()!!.toList()
             },
         ).fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
