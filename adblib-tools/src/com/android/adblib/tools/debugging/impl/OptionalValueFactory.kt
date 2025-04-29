@@ -18,7 +18,6 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.InstructionSet
-import com.android.adblib.tools.debugging.JdwpProcessProperties.Companion.unsupportedByOlderApi
 import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
 
@@ -42,20 +41,12 @@ internal class OptionalValueFactory(val device: ConnectedDevice) {
         }
     }
 
-    fun ofNullableInstructionSet(value: InstructionSet?): OptionalValue<InstructionSet> {
-        return value?.let { ofInstructionSet(value) } ?: OptionalValue.empty()
-    }
-
     fun ofVmIdentifier(value: String): OptionalValue<String> {
         return lastVmIdentifier.of(value)
     }
 
     fun ofJvmFlags(value: String): OptionalValue<String> {
         return lastJvmFlags.of(value)
-    }
-
-    fun ofNullableJvmFlags(value: String?): OptionalValue<String> {
-        return value?.let { ofJvmFlags(value) } ?: OptionalValue.empty()
     }
 
     fun ofFeatures(value: List<String>): OptionalValue<List<String>> {
@@ -89,7 +80,7 @@ internal class OptionalValueFactory(val device: ConnectedDevice) {
      */
     fun ofFilteredFakeName(name: String?): OptionalValue<String> {
         return when (name) {
-            null -> OptionalValue.unsupportedByOlderApi()
+            null -> OptionalValue.empty()
             else -> filterFakeName(name)?.let { OptionalValue.of(it) } ?: OptionalValue.empty()
         }
     }

@@ -31,7 +31,9 @@ import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_RETRY_D
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.JdwpProcessProperties.Companion.unsupportedByOlderApi
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
+import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.fromLegacyDescription
 import com.android.adblib.tools.debugging.getOrNull
@@ -367,22 +369,40 @@ internal class UsingJdwpSessionFlowUpdater(
         }
         logger.debug { "`HELO` reply: $heloChunk" }
         collectState.propertiesFlow.update {
-            @Suppress("DEPRECATION")
-            it.copy(
-                processName = optionalValueFactory.ofFilteredFakeName(heloChunk.processName).orElse(it.processName),
-                userId = optionalValueFactory.ofNullable(heloChunk.userId).orElse(it.userId),
-                packageNames = optionalValueFactory.ofFilteredFakeNames(listOf(heloChunk.packageName ?: "")).orElse(it.packageNames),
-                vmIdentifier = optionalValueFactory.ofVmIdentifier(heloChunk.vmIdentifier).orElse(it.vmIdentifier),
-                instructionSet = optionalValueFactory.ofNullableInstructionSet(convertLegacyDescriptionToInstructionSet(heloChunk.abi)).orElse(it.instructionSet),
-                jvmFlags = optionalValueFactory.ofNullableJvmFlags(heloChunk.jvmFlags).orElse(it.jvmFlags),
-                isNativeDebuggable = optionalValueFactory.ofNullable(heloChunk.isNativeDebuggable).orElse(it.isNativeDebuggable)
+            @Suppress("DEPRECATION") it.copy(
+                processName = optionalValueFactory.ofFilteredFakeName(heloChunk.processName)
+                    .orElse(it.processName),
+                userId = optionalOrErrorIfNull(heloChunk.userId) { userId ->
+                    OptionalValue.of(userId)
+                }.orElse(it.userId),
+                vmIdentifier = optionalOrErrorIfNull(heloChunk.vmIdentifier) { vmIdentifier ->
+                    optionalValueFactory.ofVmIdentifier(vmIdentifier)
+                }.orElse(it.vmIdentifier),
+                packageNames = optionalOrErrorIfNull(heloChunk.packageName) { packageName ->
+                    optionalValueFactory.ofFilteredFakeNames(
+                        listOf(packageName)
+                    )
+                }.orElse(it.packageNames),
+                instructionSet = optionalOrErrorIfNull(heloChunk.abi) { abi ->
+                    val instructionSet = convertLegacyDescriptionToInstructionSet(abi)
+                    instructionSet?.let { optionalValueFactory.ofInstructionSet(instructionSet) }
+                        ?: OptionalValue.empty()
+                }.orElse(it.instructionSet),
+                jvmFlags = optionalOrErrorIfNull(heloChunk.jvmFlags) { jvmFlags ->
+                    optionalValueFactory.ofJvmFlags(jvmFlags)
+                }.orElse(it.jvmFlags),
+                isNativeDebuggable = optionalOrErrorIfNull(heloChunk.isNativeDebuggable) { isNativeDebuggable ->
+                    OptionalValue.of(
+                        isNativeDebuggable
+                    )
+                }.orElse(it.isNativeDebuggable)
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
     }
 
-    private fun convertLegacyDescriptionToInstructionSet(abi: String?): InstructionSet? {
-        return abi?.let { InstructionSet.fromLegacyDescription(abi) }
+    private fun convertLegacyDescriptionToInstructionSet(abi: String): InstructionSet? {
+        return InstructionSet.fromLegacyDescription(abi)
     }
 
     private suspend fun processFeatReply(
@@ -430,8 +450,14 @@ internal class UsingJdwpSessionFlowUpdater(
         collectState.propertiesFlow.update {
             it.copy(
                 processName = optionalValueFactory.ofFilteredFakeName(apnmChunk.processName).orElse(it.processName),
-                userId = optionalValueFactory.ofNullable(apnmChunk.userId).orElse(it.userId),
-                packageNames = optionalValueFactory.ofFilteredFakeNames(listOf(apnmChunk.packageName ?: "")).orElse(it.packageNames),
+                userId = optionalOrErrorIfNull(apnmChunk.userId) { userId ->
+                    OptionalValue.of(userId)
+                }.orElse(it.userId),
+                packageNames = optionalOrErrorIfNull(apnmChunk.packageName) { packageName ->
+                    optionalValueFactory.ofFilteredFakeNames(
+                        listOf(packageName)
+                    )
+                }.orElse(it.packageNames),
             )
         }
         logger.verbose { "Updated stateflow: ${collectState.propertiesFlow.value}" }
@@ -564,6 +590,21 @@ internal class UsingJdwpSessionFlowUpdater(
     private fun JdwpProcessProperties.summaryForLogging() =
         "processName=${processName.getOrNull() ?: "<not yet received>"}, isWaitingForDebugger=${isWaitingForDebugger}"
 
+
+    /**
+     * If `value` is `null` returns `OptionalValue.unsupportedByOlderApi()`. Otherwise, returns
+     * the result of `block(value)`
+     */
+    private inline fun <T : Any, R : Any> optionalOrErrorIfNull(
+        value: T?,
+        block: (T) -> OptionalValue<R>
+    ): OptionalValue<R> {
+
+        if (value == null) {
+            return OptionalValue.unsupportedByOlderApi()
+        }
+        return block(value)
+    }
 
     private fun JdwpProcessProperties.areAllPropertiesInitialized(): Boolean {
         @Suppress("DEPRECATION")
