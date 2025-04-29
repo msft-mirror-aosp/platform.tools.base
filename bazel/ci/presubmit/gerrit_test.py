@@ -1,6 +1,4 @@
-"""TODO: ruiqimao - DO NOT SUBMIT without either providing a detailed docstring or
-removing it altogether.
-"""
+"""Tests for gerrit."""
 
 from absl.testing import absltest
 from tools.base.bazel.ci import fake_build_env

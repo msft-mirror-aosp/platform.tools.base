@@ -54,44 +54,6 @@ class PresubmitTest(parameterized.TestCase):
     self.build_env = self.enter_context(fake_build_env.make_fake_build_env())
     self.gce = self.enter_context(fake_gce.make_fake_gce(self, self.build_env))
 
-  @parameterized.named_parameters(
-      dict(
-          testcase_name='empty',
-          targets=[],
-          should_upload=False,
-      ),
-      dict(
-          testcase_name='too_many',
-          targets=['1', '2', '3', '4', '5', '6', '7', '8', '9'],
-          should_upload=False,
-      ),
-      dict(
-          testcase_name='typical',
-          targets=['1', '2', '3'],
-          should_upload=True,
-      ),
-  )
-  def test_validate_and_upload_failed_tests(self, targets, should_upload):
-    failed_tests_path = self.build_env.dist_path / 'failed_tests.txt'
-    failed_tests_path.write_text('\n'.join(targets))
-    changes = [
-        self.gce.add_change('owner', 'message', []),
-        self.gce.add_change('owner', 'message', []),
-    ]
-    changes_hash = gerrit.get_gerrit_info(self.build_env).changes_hash
-
-    presubmit.validate_and_upload_failed_tests(self.build_env)
-
-    downloaded = self.build_env.tmp_path / 'downloaded'
-    did_download = gce.download_from_gcs(
-        'adt-byob',
-        f'failed-tests/v1/{changes_hash}-studio-test.txt',
-        downloaded,
-    )
-    self.assertEqual(did_download, should_upload)
-    if did_download:
-      self.assertEqual(downloaded.read_text(), failed_tests_path.read_text())
-
   def test_generate_and_upload_hash_file(self):
     mock_generate = self._mock_generate_hash_file('hash-file')
     presubmit.generate_and_upload_hash_file(self.build_env)

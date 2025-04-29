@@ -16,6 +16,7 @@ from typing import Iterator, List, Sequence, Set
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import bazel_diff
+from tools.base.bazel.ci.presubmit import failure_retry
 from tools.base.bazel.ci.presubmit import gerrit
 
 
@@ -93,36 +94,6 @@ class SelectivePresubmitResult:
         f'--build_metadata=selective_presubmit_found={found}',
         f'--build_metadata=selective_presubmit_strategy={self.strategy.value}',
     ]
-
-
-def _find_failed_tests(
-    build_env: bazel.BuildEnv,
-    gerrit_info: gerrit.GerritInfo,
-) -> List[str]:
-  """Returns the list of failed targets from a previous run.
-
-  Args:
-    build_env: The build environment.
-    gerrit_info: The Gerrit info.
-
-  Returns:
-    The list of failed tests from a previous run.
-
-  Raises:
-    SelectivePresubmitError: If previous failed tests could not be found.
-  """
-  object_name = _FAILED_TESTS_FILE_NAME.format(
-      changes_hash=gerrit_info.changes_hash,
-      target=build_env.build_target_name,
-  )
-  logging.info('Attempting to find failed tests at %s', object_name)
-
-  with tempfile.TemporaryDirectory() as temp_dir:
-    temp_path = pathlib.Path(temp_dir) / 'failed_tests.txt'
-    if not gce.download_from_gcs(_FILE_BUCKET, object_name, str(temp_path)):
-      raise SelectivePresubmitError(f'Failed tests file {object_name} not found')
-    logging.info('Failed tests file %s found', object_name)
-    return temp_path.read_text().splitlines()
 
 
 def _generate_hash_file(
@@ -286,34 +257,6 @@ def _find_impacted_test_targets(
   )
 
 
-def validate_and_upload_failed_tests(build_env: bazel.BuildEnv) -> None:
-  """Validates and uploads the failed tests file for the current build.
-
-  If there are no failed tests or if there are too many failed tests, the file
-  is not uploaded.
-
-  This function assumes the failed tests file is located at
-  DIST_DIR/failed_tests.txt.
-
-  Args:
-    build_env: The build environment.
-  """
-  gerrit_info = gerrit.get_gerrit_info(build_env)
-  failed_tests_path = pathlib.Path(build_env.dist_dir) / 'failed_tests.txt'
-  failed_tests = failed_tests_path.read_text().splitlines()
-  if not failed_tests or len(failed_tests) > _MAX_FAILED_TESTS:
-    logging.info('%d failed tests, not uploading', len(failed_tests))
-    return
-
-  object_name = _FAILED_TESTS_FILE_NAME.format(
-      changes_hash=gerrit_info.changes_hash,
-      target=build_env.build_target_name,
-  )
-
-  gce.upload_to_gcs(failed_tests_path, _FILE_BUCKET, object_name)
-  logging.info('Uploaded failed tests to GCS with object name: %s', object_name)
-
-
 def generate_and_upload_hash_file(build_env: bazel.BuildEnv) -> None:
   """Generates and uploads the hash file for the current build to GCS."""
   object_name = _HASH_FILE_NAME.format(
@@ -393,16 +336,16 @@ def find_test_targets(
 
   # Prioritize failed tests.
   try:
-    failed_test_targets = _find_failed_tests(build_env, gerrit_info)
+    failure_retry_info = failure_retry.get_failure_retry_info(
+        build_env,
+        gerrit_info,
+    )
     return SelectivePresubmitResult(
         strategy=SelectivePresubmitStrategy.RETRY_FAILED,
-        targets=failed_test_targets + explicit_targets,
-        base_flags=flags + [
-            f'--flaky_test_attempts={target}@{_FAILED_TESTS_RUNS}'
-            for target in failed_test_targets
-        ],
+        targets=failure_retry_info.targets + explicit_targets,
+        base_flags=flags + failure_retry_info.get_bazel_flags(),
     )
-  except SelectivePresubmitError as e:
+  except failure_retry.NoFailedTestsError as e:
     logging.warning('Failed to find failed tests: %s', e)
 
   # Finally, try impacted targets.

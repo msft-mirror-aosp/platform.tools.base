@@ -10,6 +10,30 @@ py_library(
 )
 
 py_library(
+    name = "failure_retry",
+    srcs = ["failure_retry.py"],
+    deps = [
+        ":gerrit",
+        "//tools/base/bazel/ci:bazel",
+        "//tools/base/bazel/ci:gce",
+    ],
+)
+
+py_test(
+    name = "failure_retry_test",
+    srcs = ["failure_retry_test.py"],
+    deps = [
+        ":failure_retry",
+        ":gerrit",
+        "//tools/base/bazel/ci:fake_build_env",
+        "//tools/base/bazel/ci:fake_gce",
+        "//tools/base/bazel/ci:gce",
+        "@absl-py//absl/testing:absltest",
+        "@absl-py//absl/testing:parameterized",
+    ],
+)
+
+py_library(
     name = "gerrit",
     srcs = ["gerrit.py"],
     deps = [
@@ -34,6 +58,7 @@ py_library(
     srcs = ["presubmit.py"],
     deps = [
         ":bazel_diff",
+        ":failure_retry",
         ":gerrit",
         "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:gce",

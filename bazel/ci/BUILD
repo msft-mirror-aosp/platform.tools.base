@@ -75,6 +75,7 @@ py_library(
         ":bazel",
         ":studio",
         "//tools/base/bazel/ci/presubmit",
+        "//tools/base/bazel/ci/presubmit:failure_retry",
     ],
 )
 
@@ -85,6 +86,7 @@ py_library(
         ":bazel",
         ":studio",
         "//tools/base/bazel/ci/presubmit",
+        "//tools/base/bazel/ci/presubmit:failure_retry",
     ],
 )
 

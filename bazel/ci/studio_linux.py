@@ -9,6 +9,7 @@ import zipfile
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import studio
+from tools.base.bazel.ci.presubmit import failure_retry
 from tools.base.bazel.ci.presubmit import presubmit
 
 
@@ -133,7 +134,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
 
   result = studio.run_tests(build_env, flags, targets)
   if build_type == studio.BuildType.PRESUBMIT:
-    presubmit.validate_and_upload_failed_tests(build_env)
+    failure_retry.validate_and_upload(build_env)
   copy_agp_supported_versions(build_env)
   if studio.is_build_successful(result):
     copy_artifacts(

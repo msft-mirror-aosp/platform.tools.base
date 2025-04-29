@@ -5,6 +5,7 @@ import tempfile
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import studio
+from tools.base.bazel.ci.presubmit import failure_retry
 from tools.base.bazel.ci.presubmit import presubmit
 
 
@@ -62,7 +63,7 @@ def studio_win(build_env: bazel.BuildEnv):
   test_result = studio.run_tests(build_env, flags, targets)
 
   if build_type == studio.BuildType.PRESUBMIT:
-    presubmit.validate_and_upload_failed_tests(build_env)
+    failure_retry.validate_and_upload(build_env)
 
   studio.copy_artifacts(
       build_env,
