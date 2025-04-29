@@ -266,9 +266,11 @@ void Agent::AddDaemonConnectedCallback(std::function<void()> callback) {
   lock_guard<std::mutex> connect_guard(connect_mutex_);
   if (grpc_target_initialized_) {
     background_queue_.EnqueueTask([callback] { callback(); });
+  } else {
+    // Prevent callbacks from getting called twice
+    lock_guard<std::mutex> daemon_connected_guard(daemon_connected_mutex_);
+    daemon_connected_callbacks_.push_back(callback);
   }
-  lock_guard<std::mutex> daemon_connected_guard(daemon_connected_mutex_);
-  daemon_connected_callbacks_.push_back(callback);
 }
 
 void Agent::RunHeartbeatThread() {
