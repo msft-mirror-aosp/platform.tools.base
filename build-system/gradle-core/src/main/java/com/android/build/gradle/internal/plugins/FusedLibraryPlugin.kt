@@ -179,7 +179,8 @@ class FusedLibraryPlugin @Inject constructor(
         }
 
         // create an adhoc component, this will be used for publication
-        val adhocComponent = softwareComponentFactory.adhoc("fusedLibraryComponent")
+        val adhocComponent = softwareComponentFactory.adhoc(
+            FusedLibraryConstants.FUSED_LIBRARY_PUBLICATION_COMPONENT_NAME)
         // add it to the list of components that this project declares
         project.components.add(adhocComponent)
 
@@ -370,20 +371,34 @@ class FusedLibraryPlugin @Inject constructor(
                 runtimeClasspath.extendsFrom(include)
             }
 
-        // This is the configuration that will contain all the JAVA_RUNTIME dependencies that are
-        // not fused in the resulting aar library.
-        project.configurations.create("runtimeElements") { runtimeElements ->
+        if (projectServices.projectOptions[BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE]) {
+            val publicationOnlyModeWarning =
+                """Fused Library Plugin is using Publication Only Mode.
 
-            configureElements(
-                project,
-                runtimeElements,
-                Usage.JAVA_RUNTIME,
-                variantScope.artifacts,
-                mapOf(
-                FusedLibraryInternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME to
-                        AndroidArtifacts.ArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME)
-            )
-            runtimeElements.extendsFrom(include)
+                    Depending on Fused Library projects from other projects is not fully supported.
+
+                    Local Fused Library projects will not be able to be added as project dependencies to other modules.
+                    If you wish to depend on a fused library, consider publishing as an external library using
+                    maven-publish plugin and using the ${FusedLibraryConstants.FUSED_LIBRARY_PUBLICATION_COMPONENT_NAME} component.
+                    """
+            syncIssueReporter.reportWarning(IssueReporter.Type.GENERIC, publicationOnlyModeWarning)
+        } else {
+            // This is the configuration that will contain all the JAVA_RUNTIME dependencies that are
+            // not fused in the resulting aar library.
+            project.configurations.create("runtimeElements") { runtimeElements ->
+
+                configureElements(
+                    project,
+                    runtimeElements,
+                    Usage.JAVA_RUNTIME,
+                    variantScope.artifacts,
+                    mapOf(
+                        FusedLibraryInternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME to
+                                AndroidArtifacts.ArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME
+                    )
+                )
+                runtimeElements.extendsFrom(include)
+            }
         }
 
         val resolvableConfigurations = listOf(fusedApi, fusedRuntime)

@@ -391,7 +391,17 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
-    FUSED_LIBRARY_SUPPORT("android.experimental.fusedLibrarySupport", false, FeatureStage.Experimental),
+    FUSED_LIBRARY_SUPPORT(
+        "android.experimental.fusedLibrarySupport",
+        false,
+        FeatureStage.Experimental
+    ),
+
+    FUSED_LIBRARY_PUBLICATION_ONLY_MODE(
+        "android.experimental.fusedLibrarySupport.publicationOnly",
+        true,
+        FeatureStage.Experimental
+    ),
 
     /**
      * Whether to omit line numbers when writing lint baselines

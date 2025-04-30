@@ -104,6 +104,7 @@ class BooleanOptionTest {
                 BooleanOption.EXCLUDE_RES_SOURCES_FOR_RELEASE_BUNDLES,
                 BooleanOption.RUN_LINT_IN_PROCESS,
                 BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES,
+                BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE
         )
 
         val violatingOptions = BooleanOption.values().filter {
