@@ -23,6 +23,7 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.mavenLibrary
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Project
+import com.android.tools.lint.useFirUast
 import java.io.File
 
 class RestrictToDetectorTest : AbstractCheckTest() {
@@ -71,6 +72,19 @@ class RestrictToDetectorTest : AbstractCheckTest() {
   }
 
   fun testVisibleForTestingOnSealedDataClass() {
+    // https://youtrack.jetbrains.com/issue/KT-72722
+    val copyPsi =
+      if (useFirUast()) {
+        """
+            src/pkg2/Bar.kt:7: Warning: This declaration implicitly references Foo, which should only be accessed from tests or within package private scope [VisibleForTests]
+              data class Bar2(val id: Long, val p2: Foo): Bar()
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
+      } else {
+        """
+            src/pkg2/Bar.kt:7: Warning: This declaration implicitly references Foo, which should only be accessed from tests or within package private scope [VisibleForTests]
+              data class Bar2(val id: Long, val p2: Foo): Bar()
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"""
+      }
     lint()
       .files(
         kotlin(
@@ -121,10 +135,7 @@ class RestrictToDetectorTest : AbstractCheckTest() {
         """
             src/pkg2/Bar.kt:7: Warning: This class should only be accessed from tests or within package private scope [VisibleForTests]
               data class Bar2(val id: Long, val p2: Foo): Bar()
-                                                    ~~~
-            src/pkg2/Bar.kt:7: Warning: This declaration implicitly references Foo, which should only be accessed from tests or within package private scope [VisibleForTests]
-              data class Bar2(val id: Long, val p2: Foo): Bar()
-              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                    ~~~$copyPsi
             0 errors, 2 warnings
         """
       )

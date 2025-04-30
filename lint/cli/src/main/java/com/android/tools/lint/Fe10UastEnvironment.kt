@@ -30,6 +30,7 @@ import com.intellij.psi.ClassTypePointerFactory
 import com.intellij.psi.PsiManager
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartTypePointerManager
+import com.intellij.psi.impl.file.impl.JavaFileManager
 import com.intellij.psi.impl.smartPointers.PsiClassReferenceTypePointerFactory
 import com.intellij.psi.impl.smartPointers.SmartPointerManagerImpl
 import com.intellij.psi.impl.smartPointers.SmartTypePointerManagerImpl
@@ -44,21 +45,21 @@ import org.jetbrains.kotlin.analysis.api.descriptors.KaFe10AnalysisHandlerExtens
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinAnnotationsResolverFactory
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclarationProviderFactory
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclarationProviderMerger
+import org.jetbrains.kotlin.analysis.api.platform.java.KotlinJavaModuleAccessibilityChecker
+import org.jetbrains.kotlin.analysis.api.platform.java.KotlinJavaModuleAnnotationsProvider
 import org.jetbrains.kotlin.analysis.api.platform.lifetime.KotlinAlwaysAccessibleLifetimeTokenFactory
 import org.jetbrains.kotlin.analysis.api.platform.lifetime.KotlinLifetimeTokenFactory
-import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinGlobalModificationService
 import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModificationTrackerFactory
 import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProviderFactory
 import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProviderMerger
 import org.jetbrains.kotlin.analysis.api.platform.permissions.KotlinAnalysisPermissionOptions
-import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinByModulesResolutionScopeProvider
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
-import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinResolutionScopeProvider
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinFakeClsStubsCache
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneAnnotationsResolverFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneDeclarationProviderFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneDeclarationProviderMerger
-import org.jetbrains.kotlin.analysis.api.standalone.base.modification.KotlinStandaloneGlobalModificationService
+import org.jetbrains.kotlin.analysis.api.standalone.base.java.KotlinStandaloneJavaModuleAccessibilityChecker
+import org.jetbrains.kotlin.analysis.api.standalone.base.java.KotlinStandaloneJavaModuleAnnotationsProvider
 import org.jetbrains.kotlin.analysis.api.standalone.base.modification.KotlinStandaloneModificationTrackerFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.packages.KotlinStandalonePackageProviderFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.packages.KotlinStandalonePackageProviderMerger
@@ -74,9 +75,13 @@ import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleProviderB
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.jvm.compiler.CliBindingTrace
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles.JVM_CONFIG_FILES
+import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCliJavaFileManagerImpl
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreProjectEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.TopDownAnalyzerFacadeForJVM
+import org.jetbrains.kotlin.cli.jvm.modules.CliJavaModuleFinder
+import org.jetbrains.kotlin.cli.jvm.modules.CliJavaModuleResolver
+import org.jetbrains.kotlin.cli.jvm.modules.JavaModuleGraph
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -88,7 +93,9 @@ import org.jetbrains.kotlin.references.fe10.base.DummyKtFe10ReferenceResolutionH
 import org.jetbrains.kotlin.references.fe10.base.KtFe10ReferenceResolutionHelper
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.jvm.extensions.AnalysisHandlerExtension
+import org.jetbrains.kotlin.resolve.jvm.modules.JavaModuleResolver
 import org.jetbrains.kotlin.scripting.compiler.plugin.ScriptingCompilerConfigurationComponentRegistrar
+import org.jetbrains.kotlin.util.PhaseType
 import org.jetbrains.kotlin.util.slicedMap.WritableSlice
 import org.jetbrains.uast.UastLanguagePlugin
 import org.jetbrains.uast.kotlin.BaseKotlinUastResolveProviderService
@@ -200,7 +207,7 @@ private constructor(
     resetPackagePartProviders()
 
     val perfManager = kotlinCompilerConfig.get(CLIConfigurationKeys.PERF_MANAGER)
-    perfManager?.notifyAnalysisStarted()
+    perfManager?.notifyPhaseStarted(PhaseType.Analysis)
 
     // Run the Kotlin compiler front end.
     // The result is implicitly associated with the IntelliJ project environment.
@@ -216,7 +223,7 @@ private constructor(
       klibList = klibs,
     )
 
-    perfManager?.notifyAnalysisFinished()
+    perfManager?.notifyPhaseFinished(PhaseType.Analysis)
   }
 
   private fun resetPackagePartProviders() {
@@ -303,10 +310,6 @@ private fun configureAnalysisApiServices(
     KotlinModificationTrackerFactory::class.java,
     KotlinStandaloneModificationTrackerFactory::class.java,
   )
-  project.registerService(
-    KotlinGlobalModificationService::class.java,
-    KotlinStandaloneGlobalModificationService::class.java,
-  )
 
   project.registerService(
     KotlinLifetimeTokenFactory::class.java,
@@ -319,17 +322,44 @@ private fun configureAnalysisApiServices(
   )
   project.registerService(SmartPointerManager::class.java, SmartPointerManagerImpl::class.java)
 
+  // NB: Type casting to [CliJavaModuleResolver] is necessary
+  // to filter out [KaBaseJavaModuleResolver] from K2 (!)
+  // (due to the unisolated test modes, see b/410029606).
+  // Using it as a delegate resolver causes the stack overflow as it will call
+  // [KaBaseJavaModuleResolver.getAnnotationsForModuleOwnerOfClass] recursively.
+  var delegateJavaModuleResolver =
+    project.getService(JavaModuleResolver::class.java) as? CliJavaModuleResolver
+  if (delegateJavaModuleResolver == null) {
+    val javaFileManager =
+      project.getService(JavaFileManager::class.java) as KotlinCliJavaFileManagerImpl
+    val javaModuleFinder = CliJavaModuleFinder(null, null, javaFileManager, project, null)
+    val javaModuleGraph = JavaModuleGraph(javaModuleFinder)
+    delegateJavaModuleResolver =
+      CliJavaModuleResolver(
+        javaModuleGraph,
+        emptyList(),
+        javaModuleFinder.systemModules.toList(),
+        project,
+      )
+  }
+  project.registerService(
+    KotlinJavaModuleAccessibilityChecker::class.java,
+    KotlinStandaloneJavaModuleAccessibilityChecker(delegateJavaModuleResolver),
+  )
+  project.registerService(
+    KotlinJavaModuleAnnotationsProvider::class.java,
+    KotlinStandaloneJavaModuleAnnotationsProvider(delegateJavaModuleResolver),
+  )
+
   val projectStructureProvider =
-    KtModuleProviderBuilder(env).apply(configureAnalysisApiProjectStructure(config)).build()
+    KtModuleProviderBuilder(env.environment, project)
+      .apply(configureAnalysisApiProjectStructure(config))
+      .build()
   val ktFiles = projectStructureProvider.allSourceFiles.filterIsInstance<KtFile>()
 
   project.registerService(
     KotlinAnnotationsResolverFactory::class.java,
     KotlinStandaloneAnnotationsResolverFactory(project, ktFiles),
-  )
-  project.registerService(
-    KotlinResolutionScopeProvider::class.java,
-    KotlinByModulesResolutionScopeProvider::class.java,
   )
 
   project.registerService(KotlinProjectStructureProvider::class.java, projectStructureProvider)
