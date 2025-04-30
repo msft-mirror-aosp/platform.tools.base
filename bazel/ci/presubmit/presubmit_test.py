@@ -13,11 +13,17 @@ from tools.base.bazel.ci import fake_gce
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import bazel_diff
 from tools.base.bazel.ci.presubmit import gerrit
+from tools.base.bazel.ci.presubmit import impacted_targets
 from tools.base.bazel.ci.presubmit import presubmit
 
 
 class PresubmitTest(parameterized.TestCase):
   """Tests for the presubmit module."""
+
+  def setUp(self):
+    super().setUp()
+    self.build_env = self.enter_context(fake_build_env.make_fake_build_env())
+    self.gce = self.enter_context(fake_gce.make_fake_gce(self, self.build_env))
 
   def _mock_generate_hash_file(self, contents: str) -> mock.Mock:
     def func(
@@ -47,28 +53,6 @@ class PresubmitTest(parameterized.TestCase):
 
     return self.enter_context(
         mock.patch.object(bazel_diff, 'get_impacted_targets', side_effect=func)
-    )
-
-  def setUp(self):
-    super().setUp()
-    self.build_env = self.enter_context(fake_build_env.make_fake_build_env())
-    self.gce = self.enter_context(fake_gce.make_fake_gce(self, self.build_env))
-
-  def test_generate_and_upload_hash_file(self):
-    mock_generate = self._mock_generate_hash_file('hash-file')
-    presubmit.generate_and_upload_hash_file(self.build_env)
-    downloaded = self.build_env.tmp_path / 'downloaded'
-    gce.download_from_gcs(
-        'adt-byob',
-        'bazel-diff-hashes/v8/P123-studio-test.json',
-        downloaded,
-    )
-    self.assertEqual(downloaded.read_text(), 'hash-file')
-    mock_generate.assert_called_once_with(
-        self.build_env,
-        presubmit._LOCAL_REPOSITORIES,
-        mock.ANY,
-        deps_output_path=None,
     )
 
   @parameterized.named_parameters(

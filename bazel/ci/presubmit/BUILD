@@ -54,14 +54,37 @@ py_test(
 )
 
 py_library(
+    name = "impacted_targets",
+    srcs = ["impacted_targets.py"],
+    deps = [
+        ":bazel_diff",
+        "//tools/base/bazel/ci:bazel",
+        "//tools/base/bazel/ci:gce",
+    ],
+)
+
+py_test(
+    name = "impacted_targets_test",
+    srcs = ["impacted_targets_test.py"],
+    deps = [
+        ":bazel_diff",
+        ":impacted_targets",
+        "//tools/base/bazel/ci:bazel",
+        "//tools/base/bazel/ci:fake_build_env",
+        "//tools/base/bazel/ci:fake_gce",
+        "//tools/base/bazel/ci:gce",
+        "@absl-py//absl/testing:absltest",
+    ],
+)
+
+py_library(
     name = "presubmit",
     srcs = ["presubmit.py"],
     deps = [
-        ":bazel_diff",
         ":failure_retry",
         ":gerrit",
+        ":impacted_targets",
         "//tools/base/bazel/ci:bazel",
-        "//tools/base/bazel/ci:gce",
     ],
 )
 
@@ -70,6 +93,7 @@ py_test(
     srcs = ["presubmit_test.py"],
     deps = [
         ":bazel_diff",
+        ":gerrit",
         ":presubmit",
         "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:fake_build_env",
