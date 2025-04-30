@@ -4,7 +4,7 @@
     xmlns:d="http://schemas.android.com/sdk/devices/7">
 
     <d:device>
-        <d:name>Resizable (Experimental)</d:name>
+        <d:name>Resizable</d:name>
         <d:id>resizable</d:id>
         <d:manufacturer>Generic</d:manufacturer>
         <d:hardware>
