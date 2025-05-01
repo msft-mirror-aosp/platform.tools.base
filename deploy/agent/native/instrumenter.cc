@@ -323,6 +323,10 @@ bool Instrumenter::ApplyTransforms(
     }
   }
 
+  // This needs to be reset; otherwise, we leave around a pointer to memory
+  // that this method doesn't own.
+  current_transform = nullptr;
+
   if (!failed_classes.empty()) {
     CrashLogger::Instance().LogInstrumentationFailures(failed_classes);
   }
