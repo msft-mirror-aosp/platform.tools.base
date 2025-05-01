@@ -24,7 +24,9 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
@@ -120,6 +122,33 @@ class R8TaskTest {
         assertThat(mainDexListFile).exists()
     }
 
+    /**
+     * b/181858113
+     */
+    @Test
+    fun testMultiDexKeepFileDeprecationStillAllowed() {
+        val build = rule.build {
+            androidApplication {
+                enableMultiDex()
+                android.buildTypes {
+                    named("release") {
+                        it.multiDexKeepFile = File("multidex-keep-file.txt")
+                    }
+                }
+                files.add("multidex-keep-file.txt", "")
+            }
+            gradleProperties {
+                add(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED, false)
+            }
+        }
+
+        val result = build.executor.run(":app:assembleRelease")
+        result.assertOutputContains(
+                "WARNING: Using multiDexKeepFile property with R8 is deprecated and will be fully " +
+                        "removed in AGP 9.0. Please migrate to use multiDexKeepProguard instead."
+        )
+    }
+
     @Test
     fun testMultiDexKeepFileDeprecation() {
         val build = rule.build {
@@ -132,13 +161,16 @@ class R8TaskTest {
                 }
                 files.add("multidex-keep-file.txt", "")
             }
+            gradleProperties {
+                add(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED, true)
+            }
         }
 
-        val result = build.executor.run(":app:assembleRelease")
-        result.assertOutputContains(
-                "WARNING: Using multiDexKeepFile property with R8 is deprecated and will be fully " +
-                        "removed in AGP 8.0. Please migrate to use multiDexKeepProguard instead."
-        )
+
+        val result = build.executor
+            .expectFailure()
+            .run(":app:assembleRelease")
+        assertThat(result.exception).isNotNull()
     }
 
     @Test

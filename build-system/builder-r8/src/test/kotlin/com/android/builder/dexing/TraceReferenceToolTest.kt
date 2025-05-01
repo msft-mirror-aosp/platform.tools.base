@@ -47,7 +47,8 @@ class TraceReferenceToolTest {
             fullMode = true,
             strictFullModeForKeepRules = true,
             isolatedSplits = null,
-            r8OutputType = R8OutputType.DEX
+            r8OutputType = R8OutputType.DEX,
+            mainDexListDisallowed = true // Default behaviour as in BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED
         )
         val mainDexConfig = MainDexListConfig(listOf(), listOf())
         val fakeOutput = tmp.newFolder().resolve("fake_output.txt").toPath()

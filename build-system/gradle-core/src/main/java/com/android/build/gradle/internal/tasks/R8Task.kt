@@ -62,7 +62,6 @@ import com.android.builder.dexing.ToolConfig
 import com.android.builder.dexing.runR8
 import com.android.utils.FileUtils
 import com.android.zipflinger.ZipArchive
-import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
@@ -322,6 +321,11 @@ abstract class R8Task @Inject constructor(
                 it.strictFullModeForKeepRules.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES])
                 it.packagedManifestDirectory.setDisallowChanges(null) // Not used for privacy sandbox SDK
                 it.r8OutputType.setDisallowChanges(R8OutputType.DEX)
+                it.mainDexListDisallowed.set(
+                    creationConfig.services.projectOptions.get(
+                        BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED
+                    )
+                )
             }
             task.proguardConfigurations = proguardConfigurations
 
@@ -576,6 +580,9 @@ abstract class R8Task @Inject constructor(
                     } else {
                         R8OutputType.DEX
                     }
+                )
+                it.mainDexListDisallowed.set(
+                    creationConfig.services.projectOptions.get(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED)
                 )
             }
 
@@ -1064,6 +1071,9 @@ abstract class R8ToolParameters {
     @get:Input
     abstract val r8OutputType: Property<R8OutputType>
 
+    @get:Input
+    abstract val mainDexListDisallowed: Property<Boolean>
+
     fun toToolConfig() = ToolConfig(
         minSdkVersion = minSdkVersion.get(),
         debuggable = debuggable.get(),
@@ -1073,7 +1083,8 @@ abstract class R8ToolParameters {
         fullMode = fullMode.get(),
         strictFullModeForKeepRules = strictFullModeForKeepRules.get(),
         isolatedSplits = getIsolatedSplitsValue(),
-        r8OutputType = r8OutputType.get()
+        r8OutputType = r8OutputType.get(),
+        mainDexListDisallowed = mainDexListDisallowed.get()
     )
 
     private fun getIsolatedSplitsValue(): Boolean? {

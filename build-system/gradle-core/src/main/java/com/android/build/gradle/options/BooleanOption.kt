@@ -17,8 +17,8 @@
 package com.android.build.gradle.options
 
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
-import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
 import com.android.build.gradle.options.Version.VERSION_3_5
 import com.android.build.gradle.options.Version.VERSION_3_6
 import com.android.build.gradle.options.Version.VERSION_4_0
@@ -556,6 +556,20 @@ enum class BooleanOption(
         FutureStage(
             true,
             FeatureStage.Enforced(Version.VERSION_9_0),
+            Version.VERSION_9_0
+        )
+    ),
+
+    /**
+     * Temporary workaround to continue using R8 param of --main-dex-list
+     */
+    R8_MAIN_DEX_LIST_DISALLOWED(
+        "android.r8.mainDexList.disallowed",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Experimental,
             Version.VERSION_9_0
         )
     ),

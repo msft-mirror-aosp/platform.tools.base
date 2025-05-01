@@ -147,6 +147,7 @@ fun runR8(
             R8DiagnosticsHandler(
                 proguardConfig.proguardOutputFiles.missingKeepRules,
                 messageReceiver,
+                toolConfig.mainDexListDisallowed,
                 "R8"
             )
         )
@@ -574,6 +575,7 @@ data class ToolConfig(
     val strictFullModeForKeepRules: Boolean,
     val isolatedSplits: Boolean?,
     val r8OutputType: R8OutputType,
+    val mainDexListDisallowed: Boolean
 ) : java.io.Serializable { // Serializable so it can be used in Gradle workers
 
     companion object {

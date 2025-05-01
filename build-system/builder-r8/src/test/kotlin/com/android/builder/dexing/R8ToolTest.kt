@@ -27,10 +27,11 @@ import com.android.testutils.truth.DexSubject.assertThatDex
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.tools.r8.CompilationFailedException
-import com.android.utils.Pair
 import com.android.utils.FileUtils
+import com.android.utils.Pair
 import com.android.zipflinger.ZipArchive
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -118,29 +119,22 @@ class R8ToolTest {
     }
 
     @Test
-    fun testMainDexList() {
-        val toolConfig = defaultToolConfig().copy(minSdkVersion = 19, debuggable = true, disableTreeShaking = true)
-
-        val classes = tmp.newFolder().toPath().resolve("classes.jar")
-        TestInputsGenerator.dirWithEmptyClasses(classes, listOf("test/A", "test/B"))
-
-        val mainDexList = tmp.newFile().toPath()
-        Files.write(mainDexList, listOf("test/A.class"))
-        val mainDexConfig = MainDexListConfig(
-                mainDexRulesFiles = listOf(),
-                mainDexListFiles = listOf(mainDexList),
-                mainDexRules = listOf())
-
+    fun testMainDexListAllowed() {
         val output = tmp.newFolder().toPath()
-
-        runR8Tool(
-            inputClasses = listOf(classes),
-            output = output,
-            toolConfig = toolConfig,
-            mainDexListConfig = mainDexConfig,
-        )
-
+        runR8WithMainDexList(output = output, mainDexListDisallowed = false)
         assertThat(getDexFileCount(output)).isEqualTo(2)
+    }
+
+    @Test
+    fun testMainDexListDisallowed() {
+        val exception = assertThrows(CompilationFailedException::class.java) {
+            runR8WithMainDexList(mainDexListDisallowed = true)
+        }
+        assertThat(exception.cause?.message).isEqualTo(
+            "Unsupported usage of main-dex list. " +
+                    "The usage of main-dex-list content for the compilation of non-DEX inputs is deprecated. " +
+                    "See issue https://issuetracker.google.com/181858113 for context."
+        )
     }
 
     @Test
@@ -497,6 +491,36 @@ class R8ToolTest {
         assertThatDex(outputDexFile).containsClass("Ltest/A;").that().doesNotHaveMethod("<init>")
     }
 
+    private fun runR8WithMainDexList(
+        output: Path = tmp.newFolder().toPath(), mainDexListDisallowed: Boolean
+    ) {
+        val toolConfig =
+            defaultToolConfig().copy(
+                minSdkVersion = 19,
+                debuggable = true,
+                disableTreeShaking = true,
+                mainDexListDisallowed = mainDexListDisallowed
+            )
+
+        val classes = tmp.newFolder().toPath().resolve("classes.jar")
+        TestInputsGenerator.dirWithEmptyClasses(classes, listOf("test/A", "test/B"))
+
+        val mainDexList = tmp.newFile().toPath()
+        Files.write(mainDexList, listOf("test/A.class"))
+        val mainDexConfig = MainDexListConfig(
+            mainDexRulesFiles = listOf(),
+            mainDexListFiles = listOf(mainDexList),
+            mainDexRules = listOf(),
+        )
+
+        runR8Tool(
+            inputClasses = listOf(classes),
+            output = output,
+            toolConfig = toolConfig,
+            mainDexListConfig = mainDexConfig,
+        )
+    }
+
     private fun runR8Tool(
         inputClasses: Collection<Path>,
         output: Path,
@@ -552,7 +576,8 @@ class R8ToolTest {
         fullMode = true,
         strictFullModeForKeepRules = true,
         isolatedSplits = null,
-        r8OutputType = R8OutputType.DEX
+        r8OutputType = R8OutputType.DEX,
+        mainDexListDisallowed = true // Default behaviour as in BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED
     )
 
     private val emptyProguardOutputFiles by lazy {

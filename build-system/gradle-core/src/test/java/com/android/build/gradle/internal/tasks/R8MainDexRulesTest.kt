@@ -42,9 +42,9 @@ import java.io.File
 import java.nio.file.Path
 
 /**
- * Testing scenarios for R8 task processing class files which outputs DEX.
+ * Tests R8's main dex rules
  */
-class R8MainDexListTaskTest {
+class R8MainDexRulesTest {
     @get: Rule
     val tmp: TemporaryFolder = TemporaryFolder()
     private lateinit var outputDir: Path
@@ -201,7 +201,8 @@ fun runR8(
             fullMode = false,
             strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
             isolatedSplits = null,
-            r8OutputType = R8OutputType.DEX
+            r8OutputType = R8OutputType.DEX,
+            mainDexListDisallowed = BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED.defaultValue
         ),
         resourceShrinkingConfig = null,
         partialShrinkingConfig = null,
