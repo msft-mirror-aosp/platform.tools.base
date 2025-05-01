@@ -2520,15 +2520,15 @@ package com.android.build.api.variant {
 
   public interface AndroidResources {
     method public org.gradle.api.provider.ListProperty<java.lang.String> getAaptAdditionalParameters();
-    method @org.gradle.api.Incubating public boolean getDataBinding();
+    method public boolean getDataBinding();
     method public org.gradle.api.provider.ListProperty<java.lang.String> getIgnoreAssetsPatterns();
     method @org.gradle.api.Incubating public org.gradle.api.provider.ListProperty<java.lang.String> getNoCompress();
-    method @org.gradle.api.Incubating public boolean getViewBinding();
+    method public boolean getViewBinding();
     property public abstract org.gradle.api.provider.ListProperty<java.lang.String> aaptAdditionalParameters;
-    property @org.gradle.api.Incubating public abstract boolean dataBinding;
+    property public abstract boolean dataBinding;
     property public abstract org.gradle.api.provider.ListProperty<java.lang.String> ignoreAssetsPatterns;
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.ListProperty<java.lang.String> noCompress;
-    property @org.gradle.api.Incubating public abstract boolean viewBinding;
+    property public abstract boolean viewBinding;
   }
 
   @org.gradle.api.Incubating public interface AndroidResourcesBuilder {
@@ -2574,8 +2574,8 @@ package com.android.build.api.variant {
     property public abstract java.util.List<com.android.build.api.variant.ApkInstallGroup> apkInstallGroups;
   }
 
-  @org.gradle.api.Incubating public interface ApkOutputProviders {
-    method @org.gradle.api.Incubating public <TaskT extends org.gradle.api.Task> void provideApkOutputToTask(org.gradle.api.tasks.TaskProvider<TaskT> taskProvider, kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.provider.Property<com.android.build.api.variant.ApkOutput>> taskInput, com.android.build.api.variant.DeviceSpec deviceSpec);
+  public interface ApkOutputProviders {
+    method public <TaskT extends org.gradle.api.Task> void provideApkOutputToTask(org.gradle.api.tasks.TaskProvider<TaskT> taskProvider, kotlin.jvm.functions.Function1<? super TaskT,? extends org.gradle.api.provider.Property<com.android.build.api.variant.ApkOutput>> taskInput, com.android.build.api.variant.DeviceSpec deviceSpec);
   }
 
   public interface ApkPackaging extends com.android.build.api.variant.Packaging {
@@ -2621,11 +2621,11 @@ package com.android.build.api.variant {
   public interface ApplicationVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyAndroidResourcesBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
     method public com.android.build.api.variant.ApplicationAndroidResourcesBuilder getAndroidResources();
     method public com.android.build.api.variant.DependenciesInfoBuilder getDependenciesInfo();
-    method @Deprecated @org.gradle.api.Incubating public boolean getProfileable();
-    method @org.gradle.api.Incubating public void setProfileable(boolean);
+    method @Deprecated public boolean getProfileable();
+    method public void setProfileable(boolean);
     property public abstract com.android.build.api.variant.ApplicationAndroidResourcesBuilder androidResources;
     property public abstract com.android.build.api.variant.DependenciesInfoBuilder dependenciesInfo;
-    property @Deprecated @org.gradle.api.Incubating public abstract boolean profileable;
+    property @Deprecated public abstract boolean profileable;
   }
 
   public final class BuildConfigField<T extends java.io.Serializable> implements java.io.Serializable {
@@ -2936,7 +2936,7 @@ package com.android.build.api.variant {
     method public org.gradle.api.provider.Provider<java.lang.String> getApplicationId();
     method @org.gradle.api.Incubating public com.android.build.api.variant.Dexing getDexing();
     method public com.android.build.api.variant.AndroidVersion getMinSdk();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.ApkOutputProviders getOutputProviders();
+    method public com.android.build.api.variant.ApkOutputProviders getOutputProviders();
     method public com.android.build.api.variant.ApkPackaging getPackaging();
     method public com.android.build.api.variant.Renderscript? getRenderscript();
     method public com.android.build.api.variant.AndroidVersion getTargetSdk();
@@ -2945,7 +2945,7 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.provider.Provider<java.lang.String> applicationId;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.Dexing dexing;
     property public abstract com.android.build.api.variant.AndroidVersion minSdk;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.ApkOutputProviders outputProviders;
+    property public abstract com.android.build.api.variant.ApkOutputProviders outputProviders;
     property public abstract com.android.build.api.variant.ApkPackaging packaging;
     property public abstract com.android.build.api.variant.Renderscript? renderscript;
     property public abstract com.android.build.api.variant.AndroidVersion targetSdk;
@@ -3257,7 +3257,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.SourceDirectories.Flat getByName(String name);
     method public com.android.build.api.variant.SourceDirectories.Flat? getJava();
     method public com.android.build.api.variant.SourceDirectories.Layered? getJniLibs();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
+    method public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
     method public com.android.build.api.variant.ManifestFiles getManifests();
     method public com.android.build.api.variant.SourceDirectories.Layered? getMlModels();
     method public com.android.build.api.variant.SourceDirectories.Flat? getRenderscript();
@@ -3269,7 +3269,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? baselineProfiles;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? jniLibs;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
+    property public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
     property public abstract com.android.build.api.variant.ManifestFiles manifests;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? mlModels;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? renderscript;
@@ -3495,7 +3495,7 @@ package com.android.build.gradle.api {
     method public void apply(org.gradle.api.Project project);
   }
 
-  @org.gradle.api.Incubating public final class KotlinMultiplatformAndroidPlugin extends com.android.build.gradle.BasePlugin {
+  public final class KotlinMultiplatformAndroidPlugin extends com.android.build.gradle.BasePlugin {
     ctor public KotlinMultiplatformAndroidPlugin();
   }
 

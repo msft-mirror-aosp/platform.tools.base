@@ -2234,8 +2234,8 @@ class UastTest : TestCase() {
         file.accept(
           object : AbstractUastVisitor() {
             override fun visitClass(node: UClass): Boolean {
-              // Intentionally calling unimplemented KotlinUClass.isRecord
-              @Suppress("UElementAsPsi") assertFalse(node.sourcePsi?.text, node.isRecord)
+              // Intentionally calling previously unimplemented UClass.isRecord
+              @Suppress("UElementAsPsi") assertTrue(node.sourcePsi?.text, node.isRecord)
               assertTrue((node.sourcePsi as? PsiClass)?.isRecord == true)
               count++
               return super.visitClass(node)
@@ -2466,6 +2466,36 @@ class UastTest : TestCase() {
                 """
           .trimIndent(),
         file.asLogTypes(indent = "  ").trim(),
+      )
+    }
+  }
+
+  fun disableTestJvmOverloadTrampoline() {
+    // https://youtrack.jetbrains.com/issue/KTIJ-30476
+    val source =
+      kotlin(
+        """
+          class Test {
+            @JvmOverloads
+            fun foo(p: String? = null) {}
+          }
+        """
+      )
+    // Will create an overloaded version with a trampoline:
+    //   fun foo(p: String? = null) {}
+    //
+    //   fun foo() {
+    //     foo(null) // <- not resolved!
+    //   }
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            val resolved = node.resolve()
+            assertNotNull(node.sourcePsi?.text, resolved)
+            return super.visitCallExpression(node)
+          }
+        }
       )
     }
   }

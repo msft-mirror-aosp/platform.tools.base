@@ -141,6 +141,7 @@ message PendingIntent {
     ACTIVITY = 1;
     BROADCAST = 2;
     SERVICE = 3;
+    FOREGROUND_SERVICE = 4;
   }
 
   // The package name of the PendingIntent, or empty if there is none
@@ -153,7 +154,7 @@ message PendingIntent {
   // The requestCode of the PendingIntent
   optional int32 requestCode = 4;
   // The requestCode of the PendingIntent
-  optional Intent intent = 5;
+  repeated Intent intent = 5;
   // The requestCode of the PendingIntent
   int32 flags = 6;
 }

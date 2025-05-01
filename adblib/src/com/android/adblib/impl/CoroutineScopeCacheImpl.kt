@@ -16,7 +16,6 @@
 package com.android.adblib.impl
 
 import com.android.adblib.CoroutineScopeCache
-import com.android.adblib.CoroutineScopeCache.Key
 import com.android.adblib.utils.SuppressedExceptions
 import com.android.adblib.utils.createChildScope
 import kotlinx.coroutines.CancellationException
@@ -33,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap
 internal class CoroutineScopeCacheImpl(
     parentScope: CoroutineScope,
     val description: String
-) : CoroutineScopeCache {
+) : CoroutineScopeCache() {
 
     override var scope = parentScope.createChildScope(isSupervisor = true)
 
@@ -58,26 +57,34 @@ internal class CoroutineScopeCacheImpl(
         }
     }
 
-    override fun <T> getOrPut(key: Key<T>, defaultValue: () -> T): T {
+    override fun <T> getOrPutWorker(key: Key<T>, defaultValue: () -> T): T {
         if (isClosed) {
             return defaultValue()
         }
         return valueMap.getOrPut(key, defaultValue)
     }
 
-    override suspend fun <T> getOrPutSuspending(
+    override suspend fun <T> getOrPutSuspendingWorker(
         key: Key<T>,
         defaultValue: suspend CoroutineScope.() -> T
     ): T {
         return suspendingMap.getOrPut(key, defaultValue)
     }
 
-    override fun <T> getOrPutSuspending(
+    override fun <T> getOrPutSuspendingWorker(
         key: Key<T>,
         fastDefaultValue: () -> T,
         defaultValue: suspend CoroutineScope.() -> T
     ): T {
         return suspendingMap.getOrPut(key, fastDefaultValue, defaultValue)
+    }
+
+    override fun <T> getOrDefault(key: Key<T>, defaultValue: T): T {
+        return valueMap.getOrDefault(key, defaultValue)
+    }
+
+    override fun <T> getOrSuspendingDefault(key: Key<T>, defaultValue: T): T {
+        return suspendingMap.getOrDefault(key, defaultValue)
     }
 
     override fun close() {
@@ -90,6 +97,13 @@ internal class CoroutineScopeCacheImpl(
     private class ValueMap {
 
         private val map = ConcurrentHashMap<Key<*>, Any>()
+
+        fun <T> getOrDefault(key: Key<T>, defaultValue: T): T {
+            return map.get(key)?.let {
+                @Suppress("UNCHECKED_CAST")
+                it as T
+            } ?: defaultValue
+        }
 
         fun <T> getOrPut(key: Key<T>, defaultValue: () -> T): T {
             val result = map.getOrPut(key) { defaultValue() }
@@ -107,6 +121,19 @@ internal class CoroutineScopeCacheImpl(
     private class SuspendingMap(private val scope: CoroutineScope) {
 
         private val map = ConcurrentHashMap<Key<*>, Any>()
+
+        fun <T> getOrDefault(key: Key<T>, defaultValue: T): T {
+            // Return non-null only for success, let any other case return `null`
+            // so caller will take the (slower) getOrPut code path
+            return (map[key] as? Result<*>)?.let { result ->
+                if (result.isSuccess) {
+                    @Suppress("UNCHECKED_CAST")
+                    return result.getOrThrow() as T
+                } else {
+                    defaultValue
+                }
+            } ?: defaultValue
+        }
 
         fun <T> getOrPut(
             key: Key<T>,

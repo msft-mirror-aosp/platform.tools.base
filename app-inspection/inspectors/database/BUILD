@@ -64,6 +64,8 @@ robolectric_test(
         "testSrc/**/*.kt",
     ]),
     friends = [":agent-jar"],
+    resource_strip_prefix = "tools/base/app-inspection/inspectors/database/testResources/",
+    resources = glob(["testResources/**"]),
     deps = [
         ":database_inspector_java_proto",
         "//prebuilts/studio/sdk:platforms/latest_jar",

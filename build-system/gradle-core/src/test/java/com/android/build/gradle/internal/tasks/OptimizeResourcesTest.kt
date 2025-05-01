@@ -40,6 +40,7 @@ class OptimizeResourcesTest(private val enableResourceObfuscation: Boolean) {
     val temporaryFolder = TemporaryFolder()
 
     companion object {
+
         @JvmStatic
         @Parameterized.Parameters
         fun enableResourceObfuscation() = arrayOf(true, false)
@@ -53,21 +54,23 @@ class OptimizeResourcesTest(private val enableResourceObfuscation: Boolean) {
         val testFolder = temporaryFolder.newFolder()
         val optimizedApk = File(testFolder, "optimized.apk")
 
-        val flags = listOf (
-                    aaptOptimizeCommand,
-                    sourceApk.path,
-                    AAPT2OptimizeFlags.ENABLE_SPARSE_ENCODING.flag,
-                    AAPT2OptimizeFlags.SHORTEN_RESOURCE_PATHS.flag,
-                    AAPT2OptimizeFlags.COLLAPSE_RESOURCE_NAMES.flag,
-                    "-o",
-                    optimizedApk.path
-            )
+        val flags = listOf(
+            aaptOptimizeCommand,
+            sourceApk.path,
+            AAPT2OptimizeFlags.ENABLE_SPARSE_ENCODING.flag,
+            AAPT2OptimizeFlags.SHORTEN_RESOURCE_PATHS.flag,
+            AAPT2OptimizeFlags.COLLAPSE_RESOURCE_NAMES.flag,
+            "-o",
+            optimizedApk.path
+        )
 
         if (enableResourceObfuscation) {
             invokeAapt(testAapt2, *flags.toTypedArray())
         } else {
-            invokeAapt(testAapt2,
-                    *flags.minus(AAPT2OptimizeFlags.COLLAPSE_RESOURCE_NAMES.flag).toTypedArray())
+            invokeAapt(
+                testAapt2,
+                *flags.minus(AAPT2OptimizeFlags.COLLAPSE_RESOURCE_NAMES.flag).toTypedArray()
+            )
         }
 
         val previousApkSize = sourceApk.length()

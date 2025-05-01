@@ -19,6 +19,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.deployer.model.component.ComponentType;
 import com.android.utils.StdLogger;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -48,8 +49,10 @@ public class DeployRunnerParameters {
     private String targetUserId = null;
     private StdLogger.Level logLevel = StdLogger.Level.ERROR;
     private String applicationId;
+    private String[] userInstallFlags = null;
     private final List<String> targetDevices = new ArrayList<>();
     private final List<Path> apkPaths = new ArrayList<>();
+
     private Component componentToActivate = null;
 
     private boolean createAdblibSession = false;
@@ -79,6 +82,8 @@ public class DeployRunnerParameters {
             jdwpClientSupport = false;
         } else if (arg.equals(PARAMETER_CREATE_ADBLIB_SESSION)) {
             createAdblibSession = true;
+        } else if (arg.startsWith("--install-flags=")) {
+            userInstallFlags = arg.substring("--install-flags=".length()).split(" +");
         } else if (arg.startsWith("--log-level=")) {
             try {
                 logLevel = StdLogger.Level.valueOf(arg.substring("--log-level=".length()));
@@ -92,7 +97,7 @@ public class DeployRunnerParameters {
 
     private void parseCommand(String arg) {
         try {
-            commands.add(Command.valueOf(arg.toUpperCase()));
+            commands.add(Command.valueOf(arg.toUpperCase(Locale.ROOT)));
         } catch (Exception e) {
             throw new RuntimeException("Unknown command: '" + arg + "'");
         }
@@ -194,6 +199,10 @@ public class DeployRunnerParameters {
 
     public boolean getCreateAdblibSession() {
         return createAdblibSession;
+    }
+
+    public String[] getUserInstallFlags() {
+        return userInstallFlags;
     }
 
     static class Component {

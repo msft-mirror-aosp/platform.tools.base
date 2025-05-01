@@ -53,7 +53,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 import java.nio.ByteBuffer
 import java.time.Duration
@@ -356,7 +355,6 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     }
 
     @Test
-    @Ignore("b/412913225")
     fun jdwpProcessPropertyCollectorLogsUsageStats() = runBlockingWithTimeout {
         // Prepare
         val (_, device, firstProcess) = createJdwpProcess(waitForDebugger = false)
@@ -406,6 +404,10 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
         yieldUntil { process.properties.areAllPropertiesInitialized()
                 && process.jdwpSessionActivationCount.value == 0 }
+
+        // Ensure all pending cancellations are fully processed
+        firstProcess.closeAndJoinInternalOnly()
+        process.closeAndJoinInternalOnly()
 
         // Assert: We should have logged 2 adb usage events from the `process`. Note that
         // we have closed `firstProcess` before it could have logged any adb usage events.

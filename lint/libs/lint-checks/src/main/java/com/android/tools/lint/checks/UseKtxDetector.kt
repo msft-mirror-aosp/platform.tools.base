@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.XmlScanner
+import com.android.tools.lint.detector.api.explicitReceiver
 import com.android.tools.lint.detector.api.isBelow
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.isReturningLambdaResult
@@ -435,7 +436,7 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
         .build()
     )
 
-    val receiver = target.receiver
+    val receiver = target.explicitReceiver
     val targetPsi = target.sourcePsi
     val recycleStart =
       if (receiver?.skipParenthesizedExprDown().isNameOrThis())

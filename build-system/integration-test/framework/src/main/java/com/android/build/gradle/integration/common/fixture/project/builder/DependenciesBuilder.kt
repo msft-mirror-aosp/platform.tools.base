@@ -26,119 +26,7 @@ interface DependencyBuilder {
 }
 
 @GradleDefinitionDsl
-interface DependenciesBuilder {
-
-    /**
-     * Remove all dependencies
-     */
-    fun clear()
-
-    /**
-     * Remove a dependency, by its scope and its information.
-     *
-     * This must match exactly how it was added
-     */
-    fun remove(scope: String, dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * adds a dependency to the [configurationName] configuration.
-     *
-     * See [implementation] for details
-     */
-    fun add(
-        configurationName: String,
-        dependency: Any,
-        action: (DependencyBuilder.() -> Unit)? = null
-    )
-
-    /**
-     * adds a dependency in the implementation scope.
-     *
-     * The instance being passed as a parameter must be:
-     * - a String (should not be quoted) or result of [externalLibrary]: for maven coordinates.
-     * - result of [project] for sub-project dependency
-     * - result of [localJar] for on-the-fly created local jars
-     * - a [MavenRepoGenerator.Library] for on-the-fly created external AARs.
-     */
-    fun implementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * adds a dependency in the api scope.
-     *
-     * See [implementation] for details
-     */
-    fun api(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /** Adds a dependency to the compileOnly configuration. See [implementation] for details. */
-    fun compileOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /** Adds a dependency to the compileOnlyApi configuration. See [implementation] for details. */
-    fun compileOnlyApi(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /** Adds a dependency to the runtimeOnly configuration. See [implementation] for details. */
-    fun runtimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * adds a dependency in the testImplementation scope.
-     *
-     * See [implementation] for details
-     */
-    fun testImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /** Adds a dependency to the testRuntimeOnly configuration. See [implementation] for details. */
-    fun testRuntimeOnly(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    fun testFixturesImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-    /**
-     * adds a dependency in the androidTestImplementation scope.
-     *
-     * See [implementation] for details
-     */
-    fun androidTestImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * adds a dependency
-     */
-    fun include(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * Adds a dependency (to privacy sandbox sdk) declaring dependent sdk modules should be 'installed'.
-     */
-    fun requiredSdk(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * Adds a dependency to (to privacy sandbox sdk) declaring its dependent sdks are optional.
-     */
-    fun optionalSdk(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * adds a dependency in the lintPublish scope.
-     *
-     * See [implementation] for details
-     */
-    fun lintPublish(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * adds a dependency in the lintCheck scope.
-     *
-     * See [implementation] for details
-     */
-    fun lintChecks(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * adds a dependency in the screenshotTest scope.
-     *
-     * See [implementation] for details
-     */
-    fun screenshotTestImplementation(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /**
-     * Adds a dependency in the coreLibraryDesugaring scope.
-     */
-    fun coreLibraryDesugaring(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
-
-    /** Adds a dependency that using KSP's configuration. */
-    fun ksp(dependency: Any, action: (DependencyBuilder.() -> Unit)? = null)
+interface DependenciesBuilder: DependencyConfigurations {
 
     /**
      * Creates a [LocalJarBuilder] to be passed to [implementation] or any other scope
@@ -173,6 +61,11 @@ interface DependenciesBuilder {
      */
     fun externalLibrary(coordinate: String, testFixtures: Boolean = false): ExternalDependencyBuilder
 
+    /**
+     * Configures dependency constraints of the project
+     */
+    fun constraints(action: ConstraintsBuilder.() -> Unit)
+    val constraints: ConstraintsBuilder
 }
 
 interface LocalJarDependency {

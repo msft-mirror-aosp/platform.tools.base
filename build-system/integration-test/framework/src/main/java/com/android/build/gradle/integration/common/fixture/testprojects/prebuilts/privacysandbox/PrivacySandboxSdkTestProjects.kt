@@ -36,6 +36,24 @@ import com.android.testutils.generateAarWithContent
 import com.google.common.collect.ImmutableList
 import org.gradle.api.JavaVersion
 
+/**
+ * Kotlin version used for privacy-sandbox tests.
+ *
+ * Privacy-sandbox tests are not always able to run with the latest version of Kotlin, so we might
+ * need to use a lower version than [com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS]
+ * (b/412597247).
+ */
+const val KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS = "2.0.21"
+
+/**
+ * KSP version used for privacy-sandbox tests.
+ *
+ * Privacy-sandbox tests are not always able to run with the latest version of Kotlin, so we might
+ * need to use a lower version than [com.android.testutils.TestUtils.KSP_VERSION_FOR_TESTS]
+ * (b/412597247).
+ */
+const val KSP_VERSION_FOR_PRIVACY_SANDBOX_TESTS = "2.0.21-1.0.28"
+
 fun GradleBuildDefinition.createGradleProjectWithPrivacySandboxLibrary(
     action: GradleBuildDefinition.() -> Unit
 ) {
@@ -385,7 +403,7 @@ fun GradleBuildDefinition.buildPrivacySandboxSampleProject() {
         }
     }
     rootProject {
-        applyPlugin(PluginType.KSP)
+        applyPlugin(PluginType.KSP, version = KSP_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
     }
 }
 
@@ -453,7 +471,7 @@ fun privacySandboxSdkAppLargeSampleProjectWithTestModule(
         .from {
             buildPrivacySandboxSdkAppLargeSampleProject()
             androidTest(":client-app-test", createMinimumProject = false) {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
+                applyPlugin(PluginType.KOTLIN_ANDROID, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
                 android {
                     namespace = "com.example.privacysandbox.client.test"
                     targetProjectPath = ":client-app"
@@ -511,7 +529,7 @@ fun GradleBuildDefinition.configurePrivacySandboxTestProject() {
         add(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
         add(BooleanOption.USE_NON_FINAL_RES_IDS, false)
         add(StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR_GENERATED_RUNTIME_DEPENDENCIES,
-            "androidx.privacysandbox.tools:tools-apigenerator:$androidxPrivacySandboxVersion,org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS,org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0,androidx.privacysandbox.activity:activity-core:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.activity:activity-client:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.activity:activity-provider:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.ui:ui-core:$androidxPrivacySandboxVersion,androidx.privacysandbox.ui:ui-client:$androidxPrivacySandboxVersion")
+            "androidx.privacysandbox.tools:tools-apigenerator:$androidxPrivacySandboxVersion,org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS,org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0,androidx.privacysandbox.activity:activity-core:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.activity:activity-client:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.activity:activity-provider:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.ui:ui-core:$androidxPrivacySandboxVersion,androidx.privacysandbox.ui:ui-client:$androidxPrivacySandboxVersion")
     }
 }
 
@@ -523,7 +541,7 @@ fun GradleBuildDefinition.addSdkSubprojects() {
     buildExampleSdkSandboxSdk(":example-sdk") { }
     buildExampleSdkSandboxSdkBundle(":example-sdk-bundle") { }
     rootProject {
-        applyPlugin(PluginType.KSP)
+        applyPlugin(PluginType.KSP, version = KSP_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
     }
 }
 
@@ -532,7 +550,7 @@ fun GradleBuildDefinition.buildExampleSdkConsumerApp(
     action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
 ) {
     androidApplication(path, createMinimumProject = false) {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
+        applyPlugin(PluginType.KOTLIN_ANDROID, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
         android {
             namespace = "com.example.privacysandbox.client"
             compileSdk = DEFAULT_COMPILE_SDK_VERSION
@@ -565,7 +583,7 @@ fun GradleBuildDefinition.buildExampleSdkConsumerApp(
             implementation("androidx.privacysandbox.activity:activity-core:$androidxPrivacySandboxActivityVersion")
             implementation("androidx.privacysandbox.activity:activity-client:$androidxPrivacySandboxVersion")
             androidTestImplementation("androidx.appcompat:appcompat:$ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION")
-            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
+            androidTestImplementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS")
             androidTestImplementation("androidx.test:core:1.5.0")
             androidTestImplementation("androidx.test:core-ktx:1.5.0")
             androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -1050,7 +1068,7 @@ fun GradleBuildDefinition.buildExampleSdkSandboxSdk(
     action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
 ) {
     androidXPrivacySandboxLibrary(path, createMinimumProject = false) {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
+        applyPlugin(PluginType.KOTLIN_ANDROID, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
         android {
             namespace = "com.example"
             compileSdk = DEFAULT_COMPILE_SDK_VERSION

@@ -242,6 +242,8 @@ interface DeviceProperties {
           characteristics.contains("tv") -> DeviceType.TV
           characteristics.contains("automotive") -> DeviceType.AUTOMOTIVE
           characteristics.contains("xr") -> DeviceType.XR
+          // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains "xr".
+          properties["ro.build.product"]?.startsWith("xr") == true -> DeviceType.XR
           else -> DeviceType.HANDHELD
         }
       isVirtual = properties[RO_KERNEL_QEMU] == "1"

@@ -424,8 +424,29 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return getApiStringWithoutExtension();
     }
 
+    private String getApiString(boolean withExtension) {
+        // There are four different valid formats for API strings:
+        // 1. version
+        // 2. version-codename (API >= 36)
+        // 3. version-extension
+        // 4. codename (API < 36)
+        //
+        // We don't display extension levels on previews because we don't display base extension
+        // levels in general, and when the preview is released, its level will be the base extension
+        // level.
+        if (mCodename == null) {
+            return mAndroidApiLevel
+                    + (withExtension && !mIsBaseExtension ? "-ext" + mExtensionLevel : "");
+        } else if (mAndroidApiLevel.getMajorVersion() >= 36) {
+            return mAndroidApiLevel + "-" + mCodename;
+        } else {
+            return mCodename;
+        }
+    }
+
     /**
-     * Returns a string representing the API level and/or the code name.
+     * Returns a string representing the API level and/or the code name, suitable for most purposes,
+     * including display to the user.
      *
      * <p>This does not include the SDK Extension level.
      *
@@ -433,24 +454,18 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      */
     @NonNull
     public String getApiStringWithoutExtension() {
-        if (mCodename != null) {
-            return mCodename;
-        }
-
-        return mAndroidApiLevel.toString();
+        return getApiString(false);
     }
 
+    /**
+     * Returns a string representing the API level, extension level, and/or the code name, suitable
+     * for most purposes, including display to the user.
+     *
+     * @see #getPlatformHashString() for use with SDK package paths
+     */
     @NonNull
     public String getApiStringWithExtension() {
-        if (mCodename != null) {
-            return mCodename;
-        }
-
-        if (mIsBaseExtension) {
-            return getApiStringWithoutExtension();
-        }
-
-        return getApiStringWithoutExtension() + "-ext" + mExtensionLevel;
+        return getApiString(true);
     }
 
     /**

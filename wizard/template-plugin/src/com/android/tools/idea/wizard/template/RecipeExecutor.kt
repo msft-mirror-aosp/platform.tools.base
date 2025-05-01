@@ -15,7 +15,6 @@
  */
 package com.android.tools.idea.wizard.template
 
-import com.android.ide.common.repository.AgpVersion
 import com.intellij.openapi.module.Module
 import java.io.File
 
@@ -252,6 +251,13 @@ interface RecipeExecutor {
    * @return the Java version
    */
   fun getJavaVersion(defaultVersion: String = "JavaVersion.VERSION_17"): String
+
+  /**
+   * Adds a `useLibrary("[name]")` declaration to the module build.gradle[.kts] file
+   *
+   * @param name the name of the library to use
+   */
+  fun useLibrary(name: String)
 }
 
 enum class SourceSetType {

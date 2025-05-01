@@ -39,7 +39,3 @@ new_local_repository(
     build_file = "//tools/base/bazel/jarjar:jarjar.BUILD",
     path = "external/jarjar",
 )
-
-load("//tools/base/intellij-bazel:platforms.bzl", "setup_intellij_platforms")
-
-setup_intellij_platforms()

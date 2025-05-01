@@ -359,6 +359,9 @@ internal fun configureApplicationEnvironment(
     PsiAugmentProvider::class.java,
   )
 
+  // https://youtrack.jetbrains.com/issue/IJPL-175398
+  System.setProperty("javac.fresh.variables.for.captured.wildcards.only", "true")
+
   appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
   appEnv.addExtension(UEvaluatorExtension.EXTENSION_POINT_NAME, KotlinEvaluatorExtension())
   appEnv.addExtension(UastLanguagePlugin.EP, DeclarativeUastLanguagePlugin())

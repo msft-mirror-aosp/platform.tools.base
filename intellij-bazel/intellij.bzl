@@ -4,6 +4,7 @@
 This initially is implemented as a bridge to Android Studio rules
 """
 
+load("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 load("//tools/adt/idea/studio:studio.bzl", "LINUX", "PluginInfo", "studio_plugin")
 load("//tools/base/bazel:functions.bzl", "create_option_file")
 
@@ -292,20 +293,25 @@ def _intellij_remote_platform_impl(ctx):
     if not ctx.attr.sha256:
         fail("Downloading without a fixed sha256 is not supported.")
 
+    # TODO(b/340640065): Remove original_name attribute and use
+    # ctx.original_name after upgrade to Bazel 8.1 and higher.
+    name = ctx.attr.original_name
+
     ctx.download_and_extract(
         url = ctx.attr.url,
         sha256 = ctx.attr.sha256,
         stripPrefix = ctx.attr.top_level_dir,
     )
-    ctx.file("WORKSPACE", "workspace(name = \"{name}\")\n".format(name = ctx.name))
+    ctx.file("WORKSPACE", "workspace(name = \"{name}\")\n".format(name = name))
 
     content = "load(':spec.bzl', 'SPEC')\n"
     content += "load('@//tools/adt/idea/studio:studio.bzl', 'intellij_platform_import')\n"
     content += "intellij_platform_import(\n"
-    content += "    name = '" + ctx.name + "',\n"
+    content += "    name = '" + name + "',\n"
     content += "    spec = SPEC,\n"
     content += ")\n"
     ctx.file("BUILD.bazel", content)
+
     # On windows we can't rely on the shebang for python
     python = ["python"] if _is_windows(ctx) else []
     exec_result = ctx.execute(python + [ctx.path(ctx.attr.cmd)], quiet = False)
@@ -314,6 +320,7 @@ def _intellij_remote_platform_impl(ctx):
 
 intellij_remote_platform = repository_rule(
     attrs = {
+        "original_name": attr.string(),
         "sha256": attr.string(),
         "url": attr.string(),
         "cmd": attr.label(),
@@ -368,6 +375,7 @@ def setup_platforms(repos):
         if hasattr(repo, "url"):
             intellij_remote_platform(
                 name = repo.name,
+                original_name = repo.name,
                 cmd = "//tools/adt/idea/studio:mkspec.py",
                 srcs = [
                     "//tools/adt/idea/studio:mkspec.py",
@@ -395,7 +403,7 @@ def setup_platforms(repos):
         content += "    ),\n"
     content += "])\n"
 
-    native.new_local_repository(
+    new_local_repository(
         name = "intellij",
         build_file_content = content,
         path = "tools/base/intellij-bazel/intellij",

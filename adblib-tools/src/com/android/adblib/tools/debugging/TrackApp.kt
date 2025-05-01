@@ -15,143 +15,68 @@
  */
 package com.android.adblib.tools.debugging
 
-import com.android.adblib.AdbDeviceFailResponseException
 import com.android.adblib.AdbDeviceServices
 import com.android.adblib.AdbFeatures
-import com.android.adblib.AdbSession
 import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.activityManager
-import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.hasAvailableFeature
-import com.android.adblib.property
-import com.android.adblib.scope
-import com.android.adblib.selector
-import com.android.adblib.tools.AdbLibToolsProperties
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
-import com.android.adblib.tools.debugging.utils.serviceFlowToMutableStateFlow
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.android.adblib.tools.debugging.impl.TrackAppImpl
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 
 /**
- * A thread-safe [StateFlow] of active [app process entries][TrackAppItem.entries] for
- * a given [ConnectedDevice].
+ * A thread-safe wrapper for [AdbDeviceServices.trackApp] that exposes a [StateFlow] of
+ * [AppProcessEntryList] for a given [ConnectedDevice].
  *
  * The implementation uses a single underlying [AdbDeviceServices.trackApp] invocation
  * that is shared by all collectors of the flow.
  *
- * Note: The caller is responsible for calling [ConnectedDevice.isTrackAppSupported]
- * to make sure this operation is supported by the device. If the operation is not
- * supported, this function throws [AdbDeviceFailResponseException].
- */
-suspend fun ConnectedDevice.trackAppStateFlow(): StateFlow<TrackAppItem> {
-    return cache.getOrPutSynchronized(TrackAppKey) {
-        TrackApp(this)
-    }.stateFlow()
-}
-
-/**
- * An entry of the [trackAppStateFlow], containing the [list][entries] of [AppProcessEntry].
+ * Use the [ConnectedDevice.trackApp] extension to access this component.
  *
- * [isEndOfFlow] is emitted at the very last entry if the flow is inactive, i.e. the device
- * is not connected anymore.
+ * Note: The caller is responsible for calling [ConnectedDevice.isTrackAppSupported]
+ * to make sure [AdbDeviceServices.trackApp] is supported by the device, otherwise the
+ * [StateFlow] will only contains entries of [StateFlowStatus.isRetrying] status.
  */
-class TrackAppItem(val entries: List<AppProcessEntry>) {
+interface TrackApp {
+    /**
+     * The [ConnectedDevice] that this [TrackApp] is dedicated to
+     */
+    val device: ConnectedDevice
 
     /**
-     * Whether this is the very first entry of the flow, emitted before the actual list
-     * of processes has been retrieved for the first time.
+     * The [StateFlow] of [AppProcessEntryList], which contains both the list of [AppProcessEntry]
+     * entries as well as a [AppProcessEntryList.status] describing the current state of the
+     * connection (see [StateFlowStatus])
      */
-    val isStartOfFlow: Boolean
-        get() = (this === TrackApp.StartOfFlow)
-
-    /**
-     * Whether the flow is still active, typically `true` when the device has disconnected.
-     */
-    val isEndOfFlow: Boolean
-        get() = (this === TrackApp.EndOfFlow)
-
-    override fun toString(): String {
-        val desc = when {
-            isStartOfFlow -> "StartOfFlow"
-            isEndOfFlow -> "EndOfFlow"
-            else -> "$entries"
-        }
-        return "${this::class.simpleName}($desc)"
-    }
-}
-
-private val TrackAppKey = CoroutineScopeCache.Key<TrackApp>("TrackApp")
-
-private class TrackApp(private val device: ConnectedDevice) {
-
-    private val session: AdbSession
-        get() = device.session
-
-    private val scope: CoroutineScope
-        get() = device.scope
-
-    private val logger = adbLogger(session)
-
-    private val mutableFlow = MutableStateFlow(StartOfFlow)
-
-    private val stateFlowField = mutableFlow.asStateFlow()
-
-    private val trackProcessesJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        scope.launch {
-            runCatching {
-                trackProcesses()
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-            }
-        }
-    }
-
-    suspend fun stateFlow(): StateFlow<TrackAppItem> {
-        if (!device.isTrackAppSupported()) {
-            // Emit a single "error" entry since operation is not supported
-            throw AdbDeviceFailResponseException(
-                device.selector,
-                "track-app",
-                "track-app command is not supported by the device"
-            )
-        } else {
-            // Note: We rely on "lazy" to ensure the tracking coroutine is launched only once
-            trackProcessesJob
-            return stateFlowField
-        }
-    }
-
-    private suspend fun trackProcesses() {
-        device.serviceFlowToMutableStateFlow(
-            serviceInvocation = { device ->
-                device.session.deviceServices.trackApp(device.selector).map { list ->
-                    TrackAppItem(list)
-                }
-            },
-            destinationStateFlow = mutableFlow,
-            lastValue = EndOfFlow,
-            retryValue = Empty,
-            retryDelay = session.property(AdbLibToolsProperties.TRACK_APP_RETRY_DELAY),
-        )
-    }
-
-    companion object {
-        val Empty = TrackAppItem(emptyList())
-        val StartOfFlow = TrackAppItem(emptyList())
-        val EndOfFlow = TrackAppItem(emptyList())
-    }
+    val stateFlow: StateFlow<AppProcessEntryList>
 }
 
 /**
- * Whether [trackAppStateFlow] is supported
+ * An entry of the [TrackApp.stateFlow], containing the list of [AppProcessEntry].
+ *
+ * Use [status] property to get more information about the state of the connection.
+ */
+class AppProcessEntryList(
+    list: List<AppProcessEntry>,
+    flowStatus: StateFlowStatus
+) : ListWithStateFlowStatus<AppProcessEntry>(list, flowStatus)
+
+
+/**
+ * The [TrackApp] instance dedicated to this [ConnectedDevice]
+ */
+val ConnectedDevice.trackApp: TrackApp
+    get() = cache.getOrPutSynchronized(trackAppKey) {
+        TrackAppImpl(this)
+    }
+
+private val trackAppKey = CoroutineScopeCache.Key<TrackApp>("TrackApp")
+
+/**
+ * Whether [AdbFeatures.TRACK_APP] is supported by this [ConnectedDevice]. If `false`,
+ * [TrackApp] will only emit errors to the [TrackApp.stateFlow].
  */
 suspend fun ConnectedDevice.isTrackAppSupported(): Boolean {
     // Note: "track-app" is only supported on API 31+ (Android "S"), but there
@@ -160,16 +85,18 @@ suspend fun ConnectedDevice.isTrackAppSupported(): Boolean {
 }
 
 /**
- * Whether [trackAppStateFlow] **and** [AdbFeatures.APP_INFO] are supported
+ * Whether [trackApp] **and** [AdbFeatures.APP_INFO] are supported, meaning
+ * [AppProcessEntry] instances will be populated with [AppProcessEntry.processName],
+ * [AppProcessEntry.packageNames], etc. This should return `true` for API 36 and later.
  */
 suspend fun ConnectedDevice.isAppInfoSupported(): Boolean {
-    // Note: In theory, `app_info` implies `track_app`, but we check anyways
+    // Note: In theory, `app_info` implies `track_app`, but we check anyway.
     // `track_app` was introduced around API 31, whereas `app_info` was introduced
     // around API 36.
     return if (!isTrackAppSupported()) {
         false
     }
-    // "adbd" needs to support `app_info`...
+    // ADB server and the ADB daemon ("adbd") on the device needs to support `app_info`...
     else if (!hasAvailableFeature(AdbFeatures.APP_INFO)) {
         false
     } else {

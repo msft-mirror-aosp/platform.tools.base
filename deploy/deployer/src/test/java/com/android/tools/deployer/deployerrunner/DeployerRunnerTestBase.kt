@@ -184,6 +184,10 @@ abstract class DeployRunnerTestBase {
         Assert.assertEquals(expected, actual)
     }
 
+    protected fun assertHistoryContain(device: FakeDevice, line: String) {
+        Assert.assertTrue(device.shell.history.any { it.contains( line )})
+    }
+
     @Throws(IOException::class)
     protected fun assertInstalled(packageName: String, vararg files: Path?) {
         Assert.assertArrayEquals(arrayOf(packageName), device!!.apps.toTypedArray())

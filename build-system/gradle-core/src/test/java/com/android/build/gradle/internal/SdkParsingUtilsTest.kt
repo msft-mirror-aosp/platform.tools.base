@@ -473,7 +473,7 @@ class SdkParsingUtilsTest {
             issueReporter = issueReporter,
             maxVersion = AndroidVersion(30),
             androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
-            suppressWarningIfTooNewForVersions = ",,,S,31,",
+            suppressWarningIfTooNewForVersions = ",,,38.4-S,31,",
         )
         assertThat(issueReporter.messages).isEmpty()
         assertThat(issueReporter.syncIssues).isEmpty()

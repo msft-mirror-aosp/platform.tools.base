@@ -35,26 +35,4 @@ internal interface JdwpProcessPropertiesFlowUpdater {
      * more updates are needed, typically when the JDWP process is terminated.
      */
     suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>)
-
-    companion object {
-        /**
-         * Returns an [OptionalValue] for a process or package name, which may contain "fake names
-         * (see [filterFakeName]).
-         */
-        internal fun OptionalValue.Companion.ofFilteredFakeName(name: String?): OptionalValue<String> {
-            return when (name) {
-                null -> OptionalValue.unsupportedByOlderApi()
-                else -> filterFakeName(name)?.let { of(it) } ?: empty()
-            }
-        }
-
-        internal fun OptionalValue.Companion.ofFilteredFakeNames(names: List<String>?): OptionalValue<List<String>> {
-            val goodNames = names?.mapNotNull { filterFakeName(it) } ?: return empty()
-            return if (goodNames.isEmpty()) {
-                empty()
-            } else {
-                of(goodNames)
-            }
-        }
-    }
 }

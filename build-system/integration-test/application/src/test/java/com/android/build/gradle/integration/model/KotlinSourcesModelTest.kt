@@ -87,7 +87,7 @@ class KotlinSourcesModelTest {
             """
 
             kotlin {
-                android()
+                androidTarget()
 
                 sourceSets {
                     named("androidInstrumentedTest") {
@@ -96,7 +96,7 @@ class KotlinSourcesModelTest {
                     }
                 }
 
-                android {
+                androidTarget {
                     compilations.all {
                         kotlinOptions.jvmTarget = "1.8"
                     }

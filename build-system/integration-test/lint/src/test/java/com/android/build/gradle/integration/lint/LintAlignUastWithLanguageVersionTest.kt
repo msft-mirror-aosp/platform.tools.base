@@ -114,15 +114,21 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
      */
     @Test
     fun testKotlinExperimentalTryNext() {
+        // When updating the Kotlin version used for tests, be sure to also update this constant to
+        // the next version.
+        val nextLanguageVersion = "2.3"
+        check(nextLanguageVersion != kotlinLanguageVersion) {
+            "nextLanguageVersion must be higher than the current language version ($kotlinLanguageVersion)"
+        }
         val build = rule.build {
             addLanguageVersionsToProject(
-                appExpectedLanguageVersion = "2.2",
-                libExpectedLanguageVersion = "2.2",
-                featureExpectedLanguageVersion = "2.2",
+                appExpectedLanguageVersion = nextLanguageVersion,
+                libExpectedLanguageVersion = nextLanguageVersion,
+                featureExpectedLanguageVersion = nextLanguageVersion,
                 javaLibExpectedLanguageVersion = null,
-                kotlinLibExpectedLanguageVersion = "2.2",
-                kmpAndroidLibExpectedLanguageVersion = "2.2",
-                kmpJvmLibExpectedLanguageVersion = "2.2",
+                kotlinLibExpectedLanguageVersion = nextLanguageVersion,
+                kmpAndroidLibExpectedLanguageVersion = nextLanguageVersion,
+                kmpJvmLibExpectedLanguageVersion = nextLanguageVersion,
                 appExpectedUseK2Uast = true,
                 libExpectedUseK2Uast = true,
                 featureExpectedUseK2Uast = true,

@@ -20,7 +20,9 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.OptionalLibrary;
+
 import com.google.common.collect.ImmutableList;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
@@ -31,11 +33,16 @@ import java.util.Map;
  * This reimplements the minimum needed from the interface for our limited testing needs.
  */
 public class MockPlatformTarget implements IAndroidTarget {
-    private final int mApiLevel;
+    private final AndroidVersion mAndroidVersion;
     private final int mRevision;
 
     public MockPlatformTarget(int apiLevel, int revision) {
-        mApiLevel = apiLevel;
+        mAndroidVersion = new AndroidVersion(apiLevel, 0);
+        mRevision = revision;
+    }
+
+    public MockPlatformTarget(AndroidVersion version, int revision) {
+        mAndroidVersion = version;
         mRevision = revision;
     }
 
@@ -132,7 +139,7 @@ public class MockPlatformTarget implements IAndroidTarget {
      */
     @Override
     public String getVendor() {
-        return "vendor " + mApiLevel;
+        return "vendor " + mAndroidVersion.getApiStringWithExtension();
     }
 
     /**
@@ -140,18 +147,18 @@ public class MockPlatformTarget implements IAndroidTarget {
      */
     @Override
     public String getName() {
-        return "platform r" + mApiLevel;
+        return "platform r" + mAndroidVersion.getApiStringWithExtension();
     }
 
     @Override
     @NonNull
     public AndroidVersion getVersion() {
-        return new AndroidVersion(mApiLevel, null /*codename*/);
+        return mAndroidVersion;
     }
 
     @Override
     public String getVersionName() {
-        return String.format("android-%1$d", mApiLevel);
+        return mAndroidVersion.getPlatformHashString();
     }
 
     @Override

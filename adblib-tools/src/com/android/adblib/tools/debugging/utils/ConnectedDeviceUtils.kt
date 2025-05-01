@@ -39,7 +39,7 @@ internal suspend fun <T: Any> ConnectedDevice.serviceFlowToMutableStateFlow(
     serviceInvocation: (ConnectedDevice) -> Flow<T>,
     destinationStateFlow: MutableStateFlow<T>,
     lastValue: T,
-    retryValue: T,
+    retryValue: (Throwable) -> T,
     retryDelay: Duration
 ) {
     val device = this
@@ -49,7 +49,7 @@ internal suspend fun <T: Any> ConnectedDevice.serviceFlowToMutableStateFlow(
             .retryWhen { throwable, _ ->
                 logger.logIOCompletionErrors(throwable)
                 // Retry after emitting "retryValue"
-                emit(retryValue)
+                emit(retryValue(throwable))
                 delay(retryDelay.toMillis())
                 true // Retry
             }.collect { newValue ->

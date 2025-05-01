@@ -74,8 +74,9 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
           try {
             reportProgress("Running backup")
             backupNow(applicationId, type)
+            val permissions = getGrantedPermissions(applicationId)
             reportProgress("Fetching backup")
-            pullBackup(adbServices, BackupMetadata(applicationId, type), tempFile)
+            pullBackup(adbServices, BackupMetadata(applicationId, type), permissions, tempFile)
           } finally {
             reportProgress("Cleaning up")
           }
@@ -190,6 +191,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   private suspend fun pullBackup(
     adbServices: AdbServices,
     metadata: BackupMetadata,
+    permissions: List<String>,
     backupFile: Path,
   ) {
     ZipOutputStream(backupFile.outputStream()).use { zip ->
@@ -198,7 +200,6 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
       adbServices.pullFileIntoZip(zip, APP_DATA_FILE)
       try {
         adbServices.pullFileIntoZip(zip, AUTH_DATA_FILE)
-        adbServices.pullFileIntoZip(zip, PERMISSIONS_FILE)
       } catch (e: BackupException) {
         // older versions of GmsCore may not have AUTH backup support
         if (e.errorCode != READ_CONTENT_FAILED) {
@@ -206,6 +207,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
         }
       }
       zip.putMetadata(adbServices, metadata)
+      zip.putPermissions(adbServices, permissions)
     }
   }
 
@@ -248,6 +250,16 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
       properties[PROPERTY_APPLICATION_ID] = metadata.applicationId
       properties[PROPERTY_BACKUP_TYPE] = metadata.backupType.name
       properties.store(this@putMetadata, null)
+    }
+  }
+
+  private suspend fun ZipOutputStream.putPermissions(
+    adbServices: AdbServices,
+    permissions: List<String>,
+  ) {
+    withContext(adbServices.ioContext) {
+      putNextEntry(ZipEntry(PERMISSIONS_FILE))
+      write(permissions.joinToString("\n") { it }.toByteArray())
     }
   }
 

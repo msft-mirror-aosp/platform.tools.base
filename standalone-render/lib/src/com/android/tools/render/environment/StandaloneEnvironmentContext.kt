@@ -91,4 +91,6 @@ class StandaloneEnvironmentContext(
     override fun isInTest(): Boolean = false
 
     override val useRBytecodeParser: Boolean = true
+
+    override fun cleanLayoutlibNativeMemory() {}
 }

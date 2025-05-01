@@ -34,6 +34,7 @@ enum class Category {
   Widget,
   Google,
   Compose,
+  Test,
   Other,
 }
 

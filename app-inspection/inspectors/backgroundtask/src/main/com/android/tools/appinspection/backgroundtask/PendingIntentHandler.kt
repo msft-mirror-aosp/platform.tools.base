@@ -31,11 +31,29 @@ const val GET_ACTIVITY_METHOD_NAME =
     "Landroid/os/Bundle;)Landroid/app/PendingIntent;"
 
 /**
+ * Method name for [PendingIntent.getActivities(Context, int, Intent[], int, Bundle)] to capture the
+ * [Intent] used to create a [PendingIntent] that starts an [android.app.Activity].
+ */
+const val GET_ACTIVITIES_METHOD_NAME =
+  "getActivities" +
+    "(Landroid/content/Context;I[Landroid/content/Intent;I" +
+    "Landroid/os/Bundle;)Landroid/app/PendingIntent;"
+
+/**
  * Method name for [PendingIntent#getService(Context, int, Intent, int)] to capture the [Intent]
  * used to create a [PendingIntent] that starts an [android.app.Service].
  */
 const val GET_SERVICE_METHOD_NAME =
   "getService" +
+    "(Landroid/content/Context;ILandroid/content/Intent;I)" +
+    "Landroid/app/PendingIntent;"
+
+/**
+ * Method name for [PendingIntent#getForegroundService(Context, int, Intent, int)] to capture the
+ * [Intent] used to create a [PendingIntent] that starts an [android.app.Service].
+ */
+const val GET_FOREGROUND_SERVICE_METHOD_NAME =
+  "getForegroundService" +
     "(Landroid/content/Context;ILandroid/content/Intent;I)" +
     "Landroid/app/PendingIntent;"
 
@@ -57,7 +75,7 @@ const val GET_BROADCAST_METHOD_NAME =
  * [Activity#onCreate(Bundle)].
  */
 const val CALL_ACTIVITY_ON_CREATE_METHOD_NAME =
-  "callActivityOnCreate" + "(Landroid/app/Activity;Landroid/os/Bundle;)V"
+  "callActivityOnCreate(Landroid/app/Activity;Landroid/os/Bundle;)V"
 
 /**
  * Method name for [Instrumentation#callActivityOnCreate(Activity, Bundle, PersistableBundle)] to
@@ -82,7 +100,14 @@ const val ON_START_COMMAND_METHOD_NAME = "onStartCommand(Landroid/content/Intent
  * to capture the [Intent].
  */
 const val HANDLE_RECEIVER_METHOD_NAME =
-  "handleReceiver" + "(Landroid/app/ActivityThread\$ReceiverData;)V"
+  "handleReceiver(Landroid/app/ActivityThread\$ReceiverData;)V"
+
+/**
+ * Method name for [ActivityThread.handleServiceArgs(ServiceArgsData) ] to capture a ServiceArgsData
+ * containing the needed [Intent]..
+ */
+const val HANDLE_SERVICE_METHOD_NAME =
+  "handleServiceArgs(Landroid/app/ActivityThread\$ServiceArgsData;)V"
 
 /**
  * Method name for [android.content.BroadcastReceiver.setPendingResult(PendingResult)]. If the
@@ -91,12 +116,17 @@ const val HANDLE_RECEIVER_METHOD_NAME =
  * the [Intent] properly.
  */
 const val SET_PENDING_RESULT_METHOD_NAME =
-  "setPendingResult" + "(Landroid/content/BroadcastReceiver\$PendingResult;)V"
+  "setPendingResult(Landroid/content/BroadcastReceiver\$PendingResult;)V"
 
 /** A handler class that adds necessary hooks to track [Intent] and its related [PendingIntent]. */
 interface PendingIntentHandler {
 
-  fun onIntentCapturedEntry(type: PendingIntentType, requestCode: Int, intent: Intent, flags: Int)
+  fun onIntentCapturedEntry(
+    type: PendingIntentType,
+    requestCode: Int,
+    intents: Array<Intent>,
+    flags: Int,
+  )
 
   fun onIntentCapturedExit(pendingIntent: PendingIntent): PendingIntent
 
@@ -124,10 +154,10 @@ class PendingIntentHandlerImpl(
   override fun onIntentCapturedEntry(
     type: PendingIntentType,
     requestCode: Int,
-    intent: Intent,
+    intents: Array<Intent>,
     flags: Int,
   ) {
-    intentRegistry.setCurrentInfo(type, requestCode, intent, flags)
+    intentRegistry.setCurrentInfo(type, requestCode, intents.toList(), flags)
   }
 
   override fun onIntentCapturedExit(pendingIntent: PendingIntent): PendingIntent {

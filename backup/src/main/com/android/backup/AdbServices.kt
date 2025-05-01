@@ -86,6 +86,8 @@ interface AdbServices {
 
   suspend fun grantPermission(applicationId: String, permission: String)
 
+  suspend fun getGrantedPermissions(applicationId: String): List<String>
+
   class AdbOutput(val stdout: String, val stderr: String) {
     val out =
       """

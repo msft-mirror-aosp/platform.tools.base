@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.tasks
 
+import com.android.SdkConstants
 import com.android.build.api.variant.impl.BuiltArtifactImpl
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.component.ApkCreationConfig
@@ -23,6 +24,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.internal.utils.toImmutableSet
 import com.android.build.gradle.options.BooleanOption
@@ -34,12 +36,14 @@ import com.android.utils.FileUtils
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import com.google.protobuf.util.JsonFormat
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
@@ -50,6 +54,8 @@ import org.gradle.work.DisableCachingByDefault
 import java.io.File
 import java.io.FileReader
 import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.invariantSeparatorsPath
 
 /**
  * Task that extract APKs from the apk zip (created with [BundleToApkTask] into a folder. a Device
@@ -60,6 +66,7 @@ import java.nio.file.Files
 abstract class ExtractApksTask : NonIncrementalTask() {
 
     companion object {
+
         const val namePrefix = "extractApksFromBundleFor"
         fun getTaskName(componentImpl: ComponentCreationConfig): String {
             return componentImpl.computeTaskNameInternal(namePrefix)
@@ -70,14 +77,15 @@ abstract class ExtractApksTask : NonIncrementalTask() {
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val apkSetArchive: RegularFileProperty
 
-    @get:InputFile
-    @get:Optional
+    @get:InputFiles
     @get:PathSensitive(PathSensitivity.NONE)
-    var deviceConfig: File? = null
-        private set
+    abstract val deviceConfigs: ConfigurableFileCollection
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
+
+    @get:OutputFile
+    abstract val deviceSpecToApksLocationMappingFile: RegularFileProperty
 
     @get:OutputFile
     abstract val apksFromBundleIdeModel: RegularFileProperty
@@ -100,11 +108,9 @@ abstract class ExtractApksTask : NonIncrementalTask() {
         workerExecutor.noIsolation().submit(BundleToolRunnable::class.java) {
             it.initializeFromBaseTask(this)
             it.apkSetArchive.set(apkSetArchive)
-            it.deviceConfig.set(
-                deviceConfig
-                    ?: throw RuntimeException("Calling ExtractApk with no device config")
-            )
+            it.deviceConfig.setFrom(deviceConfigs)
             it.outputDir.set(outputDir)
+            it.deviceSpecToApksLocationMappingFile.set(this@ExtractApksTask.deviceSpecToApksLocationMappingFile)
             it.extractInstant.set(extractInstant)
             it.apksFromBundleIdeModel.set(apksFromBundleIdeModel)
             it.applicationId.set(applicationId)
@@ -115,9 +121,11 @@ abstract class ExtractApksTask : NonIncrementalTask() {
     }
 
     abstract class Params : ProfileAwareWorkAction.Parameters() {
+
         abstract val apkSetArchive: RegularFileProperty
-        abstract val deviceConfig: Property<File>
+        abstract val deviceConfig: ConfigurableFileCollection
         abstract val outputDir: DirectoryProperty
+        abstract val deviceSpecToApksLocationMappingFile: RegularFileProperty
         abstract val extractInstant: Property<Boolean>
         abstract val apksFromBundleIdeModel: RegularFileProperty
         abstract val applicationId: Property<String>
@@ -126,34 +134,65 @@ abstract class ExtractApksTask : NonIncrementalTask() {
         abstract val setIncludeMetadata: Property<Boolean>
     }
 
+    private data class DeviceSpecInfo(val path: Path, val deviceSpec: DeviceSpec)
+
     abstract class BundleToolRunnable : ProfileAwareWorkAction<Params>() {
+
         override fun run() {
             FileUtils.cleanOutputDir(parameters.outputDir.asFile.get())
 
-            val builder: DeviceSpec.Builder = DeviceSpec.newBuilder()
-            val elementList = mutableListOf<BuiltArtifactImpl>()
-
-            Files.newBufferedReader(parameters.deviceConfig.get().toPath(), Charsets.UTF_8).use {
-                JsonFormat.parser().merge(it, builder)
+            val deviceSpecFiles = parameters.deviceConfig.files
+            if (deviceSpecFiles.isEmpty()) {
+                throw RuntimeException("Calling ExtractApk with no device config")
             }
 
-            val command = ExtractApksCommand
-                .builder()
-                .setApksArchivePath(parameters.apkSetArchive.asFile.get().toPath())
-                .setDeviceSpec(builder.build())
-                .setOutputDirectory(parameters.outputDir.asFile.get().toPath())
-                .setInstant(parameters.extractInstant.get())
-                .also {
-                    if (parameters.optionalListOfDynamicModulesToInstall.get().isNotEmpty()) {
-                        it.setModules(
-                            parameters.optionalListOfDynamicModulesToInstall.get().toImmutableSet()
-                        )
-                        it.setIncludeMetadata(parameters.setIncludeMetadata.get())
+            val specsToFiles: Map<DeviceSpec, List<DeviceSpecInfo>> = deviceSpecFiles.map { file ->
+                val spec = DeviceSpec.newBuilder().apply {
+                    Files.newBufferedReader(file.toPath(), Charsets.UTF_8).use { reader ->
+                        JsonFormat.parser().merge(reader, this)
                     }
+                }.build()
+                DeviceSpecInfo(file.toPath(), spec)
+            }.groupBy { it.deviceSpec }
 
+            val elementList = mutableListOf<BuiltArtifactImpl>()
+            val extractApksDir = parameters.outputDir.asFile.get()
+
+            specsToFiles.entries.forEachIndexed { index, (deviceSpec, _) ->
+                val outputDir = if (deviceSpecFiles.size == 1) {
+                    extractApksDir
+                } else {
+                    extractApksDir.resolve("$index")
                 }
 
-            command.build().execute()
+                val command = ExtractApksCommand
+                    .builder()
+                    .setApksArchivePath(parameters.apkSetArchive.asFile.get().toPath())
+                    .setDeviceSpec(deviceSpec)
+                    .setOutputDirectory(outputDir.toPath())
+                    .setInstant(parameters.extractInstant.get())
+                    .also {
+                        if (parameters.optionalListOfDynamicModulesToInstall.get()
+                                .isNotEmpty()
+                        ) {
+                            it.setModules(
+                                parameters.optionalListOfDynamicModulesToInstall.get()
+                                    .toImmutableSet()
+                            )
+                            it.setIncludeMetadata(parameters.setIncludeMetadata.get())
+                        }
+
+                    }
+
+                command.build().execute()
+            }
+
+            parameters.deviceSpecToApksLocationMappingFile.get().asFile.writeText(
+                specsToFiles.entries.withIndex()
+                    .joinToString(separator = "\n") { (i, specToFiles) ->
+                        specToFiles.value.joinToString(separator = "\n") { file -> "${file.path.toString().replace(File.separatorChar, '/')} $i" }
+                    }
+            )
 
             if (parameters.setIncludeMetadata.get()) {
                 val metadataJson = parameters.outputDir.file("metadata.json").get().asFile
@@ -172,7 +211,8 @@ abstract class ExtractApksTask : NonIncrementalTask() {
                                 when (reader.nextName()) {
                                     "moduleName" -> reader.nextString()
                                     "path" -> path = reader.nextString()
-                                    "deliveryType" -> deliveryTypeMap[path] = reader.nextString()
+                                    "deliveryType" -> deliveryTypeMap[path] =
+                                        reader.nextString()
                                 }
                             }
                             reader.endObject()
@@ -183,8 +223,14 @@ abstract class ExtractApksTask : NonIncrementalTask() {
                     }
                 }
                 reader.endObject()
-                deliveryTypeMap.forEach { elementList.add(BuiltArtifactImpl.make(outputFile = parameters.outputDir.asFile.get().absolutePath + "/" + it.key,
-                    attributes = mapOf("deliveryType" to it.value))) }
+                deliveryTypeMap.forEach {
+                    elementList.add(
+                        BuiltArtifactImpl.make(
+                            outputFile = parameters.outputDir.asFile.get().absolutePath + "/" + it.key,
+                            attributes = mapOf("deliveryType" to it.value)
+                        )
+                    )
+                }
 
                 fileReader.close()
                 FileUtils.deleteIfExists(metadataJson)
@@ -195,10 +241,13 @@ abstract class ExtractApksTask : NonIncrementalTask() {
                 applicationId = parameters.applicationId.get(),
                 variantName = parameters.variantName.get(),
                 elements = if (elementList.isEmpty()) {
-                    parameters.outputDir.asFileTree.files.forEach { elementList.add(BuiltArtifactImpl.make(outputFile = it.absolutePath)) }
+                    parameters.outputDir.asFileTree.files.forEach {
+                        elementList.add(
+                            BuiltArtifactImpl.make(outputFile = it.absolutePath)
+                        )
+                    }
                     elementList
-                }
-                else elementList
+                } else elementList
 
             ).saveToFile(parameters.apksFromBundleIdeModel.asFile.get())
         }
@@ -220,13 +269,21 @@ abstract class ExtractApksTask : NonIncrementalTask() {
             super.handleProvider(taskProvider)
             creationConfig.artifacts.setInitialProvider(
                 taskProvider,
-                ExtractApksTask::outputDir)
+                ExtractApksTask::outputDir
+            )
                 .on(InternalArtifactType.EXTRACTED_APKS)
             creationConfig.artifacts.setInitialProvider(
                 taskProvider,
-                ExtractApksTask::apksFromBundleIdeModel)
+                ExtractApksTask::apksFromBundleIdeModel
+            )
                 .withName(BuiltArtifactsImpl.METADATA_FILE_NAME)
                 .on(InternalArtifactType.APK_FROM_BUNDLE_IDE_MODEL)
+            creationConfig.artifacts.setInitialProvider(
+                taskProvider,
+                ExtractApksTask::deviceSpecToApksLocationMappingFile
+            )
+                .withName("${InternalArtifactType.DEVICE_SPEC_PATH_MAP.getFolderName()}${SdkConstants.DOT_TXT}")
+                .on(InternalArtifactType.DEVICE_SPEC_PATH_MAP)
         }
 
         override fun configure(
@@ -236,24 +293,33 @@ abstract class ExtractApksTask : NonIncrementalTask() {
 
             creationConfig.artifacts.setTaskInputToFinalProduct(
                 InternalArtifactType.APKS_FROM_BUNDLE,
-                task.apkSetArchive)
+                task.apkSetArchive
+            )
 
-            val devicePath = creationConfig.services.projectOptions.get(StringOption.IDE_APK_SELECT_CONFIG)
-            if (devicePath != null) {
-                task.deviceConfig = File(devicePath)
+            val devicePath =
+                creationConfig.services.projectOptions.get(StringOption.IDE_APK_SELECT_CONFIG)
+            devicePath?.let {
+                val deviceSpecsPaths = it.split(",")
+                task.deviceConfigs.fromDisallowChanges(
+                    deviceSpecsPaths.map(::File)
+                )
             }
 
-            task.extractInstant = creationConfig.services.projectOptions.get(BooleanOption.IDE_EXTRACT_INSTANT)
+            task.extractInstant =
+                creationConfig.services.projectOptions.get(BooleanOption.IDE_EXTRACT_INSTANT)
             task.applicationId.setDisallowChanges(creationConfig.applicationId)
-            val optionalListOfDynamicModulesToInstall = creationConfig.services.projectOptions.get(
-                StringOption.IDE_INSTALL_DYNAMIC_MODULES_LIST
-            )
+            val optionalListOfDynamicModulesToInstall =
+                creationConfig.services.projectOptions.get(
+                    StringOption.IDE_INSTALL_DYNAMIC_MODULES_LIST
+                )
             if (!optionalListOfDynamicModulesToInstall.isNullOrEmpty()) {
                 task.dynamicModulesToInstall.addAll(
-                    optionalListOfDynamicModulesToInstall.split(','))
+                    optionalListOfDynamicModulesToInstall.split(',')
+                )
             }
             task.dynamicModulesToInstall.disallowChanges()
             task.setIncludeMetadata.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.ENABLE_LOCAL_TESTING])
         }
     }
 }
+

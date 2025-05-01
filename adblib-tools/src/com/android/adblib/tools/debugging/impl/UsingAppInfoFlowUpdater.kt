@@ -25,13 +25,10 @@ import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.OptionalValue
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeName
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesFlowUpdater.Companion.ofFilteredFakeNames
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
-import com.android.adblib.tools.debugging.trackAppStateFlow
+import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
 import com.android.adblib.withProcessPrefix
@@ -45,7 +42,7 @@ import java.io.IOException
 
 /**
  * A [JdwpProcessPropertiesFlowUpdater] implementation that collects [JdwpProcessProperties]
- * from [ConnectedDevice.trackAppStateFlow] for a given [JdwpProcess].
+ * from [ConnectedDevice.trackApp] for a given [JdwpProcess].
  *
  * This class should only be used if the device of the [process] supports
  * [ConnectedDevice.isAppInfoSupported]
@@ -59,6 +56,9 @@ internal class UsingAppInfoFlowUpdater(
 
     private val pid: Int
         get() = process.pid
+
+    private val optionalValueFactory: OptionalValueFactory
+        get() = process.device.optionalValueFactory
 
     private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
@@ -80,10 +80,10 @@ internal class UsingAppInfoFlowUpdater(
 
     private suspend fun collectTrackAppUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
         logger.debug { "Monitoring process properties using `track-app` service" }
-        device.trackAppStateFlow()
+        device.trackApp.stateFlow
             .map {
                 // Find process entry with `pid`
-                it.entries.firstOrNull { appProcessEntry ->
+                it.firstOrNull { appProcessEntry ->
                     appProcessEntry.pid == pid
                 }
             }
@@ -93,13 +93,13 @@ internal class UsingAppInfoFlowUpdater(
                 logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
                 stateFlow.update { properties ->
                     properties.copy(
-                        processName = OptionalValue.ofFilteredFakeName(appProcessEntry.processName).orElse(properties.processName),
-                        packageNames = OptionalValue.ofFilteredFakeNames(appProcessEntry.packageNames).orElse(properties.packageNames),
-                        userId = OptionalValue.ofNullable(appProcessEntry.userId32).orElse(properties.userId),
-                        instructionSet = OptionalValue.of(appProcessEntry.instructionSet).orElse(properties.instructionSet),
-                        isWaitingForDebugger = OptionalValue.ofNullable(appProcessEntry.waitingForDebugger).orElse(properties.isWaitingForDebugger),
-                        isNativeDebuggable = OptionalValue.of(false),
-                        jvmFlags = OptionalValue.legacyJvmFlags()
+                        processName = optionalValueFactory.ofFilteredFakeName(appProcessEntry.processName).orElse(properties.processName),
+                        packageNames = optionalValueFactory.ofFilteredFakeNames(appProcessEntry.packageNames).orElse(properties.packageNames),
+                        userId = optionalValueFactory.ofNullable(appProcessEntry.userId32).orElse(properties.userId),
+                        instructionSet = optionalValueFactory.ofInstructionSet(appProcessEntry.instructionSet).orElse(properties.instructionSet),
+                        isWaitingForDebugger = optionalValueFactory.ofNullable(appProcessEntry.waitingForDebugger).orElse(properties.isWaitingForDebugger),
+                        isNativeDebuggable = optionalValueFactory.of(false),
+                        jvmFlags = optionalValueFactory.ofJvmFlags(legacyJvmFlags())
                     )
                 }
             }
@@ -112,8 +112,8 @@ internal class UsingAppInfoFlowUpdater(
                     logger.debug { "Updating process properties with vmInfo=$vmInfo" }
                     stateFlow.update {
                         it.copy(
-                            vmIdentifier = OptionalValue.of(vmInfo.vmIdentifier).orElse(it.vmIdentifier),
-                            features = OptionalValue.of(vmInfo.features).orElse(it.features)
+                            vmIdentifier = optionalValueFactory.ofVmIdentifier(vmInfo.vmIdentifier).orElse(it.vmIdentifier),
+                            features = optionalValueFactory.ofFeatures(vmInfo.features).orElse(it.features)
                         )
                     }
                 }
@@ -130,8 +130,8 @@ internal class UsingAppInfoFlowUpdater(
             logger.logIOCompletionErrors(throwable)
             stateFlow.update {
                 it.copy(
-                    vmIdentifier =  OptionalValue.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
-                    features = OptionalValue.ofError<List<String>>("Error collecting features from device capabilities").orElse(it.features)
+                    vmIdentifier =  optionalValueFactory.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
+                    features = optionalValueFactory.ofError<List<String>>("Error collecting features from device capabilities").orElse(it.features)
                 )
             }
         }
@@ -141,11 +141,9 @@ internal class UsingAppInfoFlowUpdater(
      * We need set the [JdwpProcessProperties.jvmFlags] property to its legacy value,
      * which is not supported by `track-app`.
      */
-    private fun OptionalValue.Companion.legacyJvmFlags(): OptionalValue<String> = legacyJvmFlagsSingleton
+    private fun legacyJvmFlags() = "CheckJNI=true"
 
     companion object {
-        private val legacyJvmFlagsSingleton = OptionalValue.of("CheckJNI=true")
-
         private val VmInfoRetrieverKey = CoroutineScopeCache.Key<VmInfoRetriever>("TrackApp")
 
         private val ConnectedDevice.vmInfoRetriever: VmInfoRetriever

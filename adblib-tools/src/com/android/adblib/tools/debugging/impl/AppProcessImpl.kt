@@ -21,8 +21,9 @@ import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AppProcess
+import com.android.adblib.tools.debugging.AppProcessProperties
 import com.android.adblib.tools.debugging.JdwpProcess
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
+import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.withPrefix
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,38 +35,34 @@ import kotlinx.coroutines.flow.update
  */
 internal class AppProcessImpl(
     override val device: ConnectedDevice,
-    process: AppProcessEntry,
+    appProcessEntry: AppProcessEntry,
     override val jdwpProcess: JdwpProcess?,
 ) : AppProcess, AutoCloseable {
 
-    private val processDescription = "${device.session} - $device - pid=${process.pid}"
+    private val processDescription = "${device.session} - $device - pid=${appProcessEntry.pid}"
 
     private val logger = adbLogger(device.session).withPrefix("$processDescription -")
 
     override val cache = CoroutineScopeCache.create(device.scope, processDescription)
 
-    private val stateFlow = MutableStateFlow(process)
+    private val optionalValueFactory: OptionalValueFactory
+        get() = device.optionalValueFactory
 
-    override val appProcessEntryFlow: StateFlow<AppProcessEntry> = stateFlow.asStateFlow()
+    private val stateFlow = MutableStateFlow(appProcessEntry.toAppProcessProperties())
 
-    override val pid: Int = process.pid
+    override val propertiesFlow: StateFlow<AppProcessProperties> = stateFlow.asStateFlow()
+
+    override val pid: Int = stateFlow.value.pid
 
     /**
      * Called when a newer version of the [AppProcessEntry] for this process has been
-     * collected. This method updates the internal [appProcessEntryFlow] with the new value.
+     * collected. This method updates the internal [propertiesFlow] with the new value.
      */
     internal fun onAppProcessEntryUpdated(newEntry: AppProcessEntry) {
         assert(newEntry.pid == pid)
 
-        // Minor optimization: if no changes, don't try to update the flow, to prevent
-        // unnecessary locking and GC usage.
-        if (newEntry != stateFlow.value) {
-            stateFlow.update {
-                newEntry.copy(
-                    processName = filterFakeName(newEntry.processName),
-                    packageNames = newEntry.packageNames?.mapNotNull { filterFakeName(it) }
-                )
-            }
+        stateFlow.update {
+            it.mergeWith(newEntry)
         }
     }
 
@@ -76,6 +73,25 @@ internal class AppProcessImpl(
 
     override fun toString(): String {
         return "AppProcess(device=$device, pid=$pid, jdwpProcess=$jdwpProcess, " +
-                "appProcessEntry=${stateFlow.value})"
+                "properties=${stateFlow.value})"
+    }
+
+    private fun AppProcessEntry.toAppProcessProperties(): AppProcessProperties {
+        return AppProcessProperties(this.pid).mergeWith(this)
+    }
+
+    private fun AppProcessProperties.mergeWith(newEntry: AppProcessEntry): AppProcessProperties {
+        val current = this
+        assert(current.pid == newEntry.pid)
+        return current.copy(
+            debuggable = optionalValueFactory.of(newEntry.debuggable).orElse(current.debuggable),
+            profileable = optionalValueFactory.of(newEntry.profileable).orElse(current.profileable),
+            processName = optionalValueFactory.ofFilteredFakeName(newEntry.processName).orElse(current.processName),
+            packageNames = optionalValueFactory.ofFilteredFakeNames(newEntry.packageNames).orElse(current.packageNames),
+            instructionSet =  optionalValueFactory.ofInstructionSet(newEntry.instructionSet).orElse(current.instructionSet),
+            userId = optionalValueFactory.ofNullable(newEntry.userId).orElse(current.uid),
+            waitingForDebugger = optionalValueFactory.ofNullable(newEntry.waitingForDebugger).orElse(current.waitingForDebugger),
+            uid = optionalValueFactory.ofNullable(newEntry.uid).orElse(current.uid),
+        )
     }
 }

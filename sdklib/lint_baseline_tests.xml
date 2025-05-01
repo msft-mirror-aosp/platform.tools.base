@@ -15,17 +15,6 @@
     <issue
         id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="        return String.format(&quot;android-%1$d&quot;, mApiLevel);"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/test/java/com/android/sdklib/internal/androidTarget/MockPlatformTarget.java"
-            line="154"
-            column="16"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
         errorLine1="        formatter.addColumn(&quot;double&quot;, c -> String.format(&quot;%.2f&quot;, c.myDouble), 99, 99);"
         errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location

@@ -21,6 +21,6 @@ import android.content.Intent
 class PendingIntentInfo(
   val type: PendingIntentType,
   val requestCode: Int,
-  val intent: Intent,
+  val intents: List<Intent>,
   val flags: Int,
 )

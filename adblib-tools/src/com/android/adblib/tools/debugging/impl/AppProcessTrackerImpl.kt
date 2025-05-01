@@ -19,9 +19,10 @@ import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
-import com.android.adblib.tools.debugging.AppProcess
+import com.android.adblib.tools.debugging.AppProcessList
 import com.android.adblib.tools.debugging.AppProcessTracker
-import com.android.adblib.tools.debugging.trackAppStateFlow
+import com.android.adblib.tools.debugging.StateFlowStatus
+import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.withPrefix
@@ -37,7 +38,8 @@ internal class AppProcessTrackerImpl(
     private val logger = adbLogger(device.session)
         .withPrefix("${device.session} - $device - ")
 
-    private val processesMutableFlow = MutableStateFlow<List<AppProcess>>(emptyList())
+    private val processesMutableFlow = MutableStateFlow(
+        AppProcessList(emptyList(), StateFlowStatus.startOfFlow))
 
     private val trackProcessesJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         scope.launch {
@@ -60,9 +62,12 @@ internal class AppProcessTrackerImpl(
 
     private suspend fun trackProcesses() {
         val processMap = ProcessMap<AppProcessImpl>()
-        device.trackAppStateFlow().collect { trackAppItem ->
-            updateProcessMap(processMap, trackAppItem.entries)
-            processesMutableFlow.emit(processMap.values.toList())
+        device.trackApp.stateFlow.collect { appProcessEntryList ->
+            updateProcessMap(processMap, appProcessEntryList)
+            processMap.values.toList().also {
+                logger.verbose { "Emitting new list of App processes: $it" }
+                processesMutableFlow.emit(AppProcessList(it, appProcessEntryList.flowStatus))
+            }
         }
     }
 

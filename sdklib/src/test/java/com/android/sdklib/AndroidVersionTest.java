@@ -197,6 +197,46 @@ public class AndroidVersionTest {
     }
 
     @Test
+    public void getApiStringWithExtension() {
+        assertEquals("33", new AndroidVersion(33, 0).getApiStringWithExtension());
+        assertEquals("36.0", new AndroidVersion(36, 0, null, 17, true).getApiStringWithExtension());
+        assertEquals(
+                "36.0-Baklava",
+                new AndroidVersion(36, 0, "Baklava", 17, true).getApiStringWithExtension());
+        assertEquals(
+                "36.0-ext41",
+                new AndroidVersion(36, 0, null, 41, false).getApiStringWithExtension());
+        assertEquals(
+                "36.0-Baklava",
+                new AndroidVersion(36, 0, "Baklava", 41, false).getApiStringWithExtension());
+        assertEquals("Tiramisu", new AndroidVersion(32, "Tiramisu").getApiStringWithExtension());
+        assertEquals(
+                "VanillaIceCream",
+                new AndroidVersion(34, 0, "VanillaIceCream", 12, false)
+                        .getApiStringWithExtension());
+    }
+
+    @Test
+    public void getApiStringWithoutExtension() {
+        assertEquals("33", new AndroidVersion(33, 0).getApiStringWithoutExtension());
+        assertEquals(
+                "36.0", new AndroidVersion(36, 0, null, 17, true).getApiStringWithoutExtension());
+        assertEquals(
+                "36.0-Baklava",
+                new AndroidVersion(36, 0, "Baklava", 17, true).getApiStringWithoutExtension());
+        assertEquals(
+                "36.0", new AndroidVersion(36, 0, null, 41, false).getApiStringWithoutExtension());
+        assertEquals(
+                "36.0-Baklava",
+                new AndroidVersion(36, 0, "Baklava", 41, false).getApiStringWithoutExtension());
+        assertEquals("Tiramisu", new AndroidVersion(32, "Tiramisu").getApiStringWithoutExtension());
+        assertEquals(
+                "VanillaIceCream",
+                new AndroidVersion(34, 0, "VanillaIceCream", 12, false)
+                        .getApiStringWithoutExtension());
+    }
+
+    @Test
     public void fromString_apiLevel() {
         // A valid integer is considered an API level
         AndroidVersion v = AndroidVersion.fromString("15");
@@ -249,7 +289,7 @@ public class AndroidVersionTest {
         AndroidVersion v = AndroidVersion.fromString("36.1-DEV");
         assertEquals(new AndroidApiLevel(36, 1), v.getAndroidApiLevel());
         assertEquals("DEV", v.getCodename());
-        assertEquals("DEV", v.getApiStringWithExtension());
+        assertEquals("36.1-DEV", v.getApiStringWithExtension());
         assertTrue(v.isPreview());
     }
 

@@ -103,7 +103,6 @@ import com.android.repository.Revision
 import com.android.utils.FileUtils
 import com.android.utils.appendCapitalized
 import com.google.wireless.android.sdk.stats.GradleBuildProject
-import org.gradle.api.Incubating
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -117,7 +116,6 @@ import javax.inject.Inject
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.publishSources
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
-@Incubating
 class KotlinMultiplatformAndroidPlugin @Inject constructor(
     listenerRegistry: BuildEventsListenerRegistry,
     private val buildFeatures: BuildFeatures,

@@ -16,12 +16,12 @@
 package com.android.adblib.tools
 
 import com.android.adblib.AdbSessionHost
-import com.android.adblib.ProcessIdList
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.testingutils.TestingAdbSessionHost
-import com.android.adblib.tools.debugging.trackJdwpStateFlow
+import com.android.adblib.tools.debugging.JdwpProcessIdList
+import com.android.adblib.tools.debugging.trackJdwp
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
@@ -66,7 +66,7 @@ class TrackJdwpStateFlowTest {
         val pid11 = 11
 
         // Act
-        val listOfProcessList = CopyOnWriteArrayList<ProcessIdList>()
+        val listOfProcessList = CopyOnWriteArrayList<JdwpProcessIdList>()
         launch {
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             Assert.assertNotNull(fakeDevice.getClient(pid10))
@@ -88,13 +88,12 @@ class TrackJdwpStateFlowTest {
             Assert.assertNull(fakeDevice.getClient(pid11))
         }
 
-        val trackJdwpFlow = connectedDevice.trackJdwpStateFlow()
+        val trackJdwpFlow = connectedDevice.trackJdwp.stateFlow
         // Collecting the flow deterministically is a little tricky, as the list of events
         // in the flow depends on how fast FakeAdbServer emits events from the "track-app"
         // event and how fast adblib collects and emits these events in the app tracker
         // flow.
-        trackJdwpFlow.takeWhile { trackJdwpItem ->
-            val processIds = trackJdwpItem.processIds
+        trackJdwpFlow.takeWhile { processIds ->
 
             // The goal here is to collect 3 list of processes in `listOfProcessList`
             // * One with a single process
@@ -175,8 +174,8 @@ class TrackJdwpStateFlowTest {
         )
 
         // Act
-        val listOfProcessList = CopyOnWriteArrayList<ProcessIdList>()
-        val trackJdwpFlow = connectedDevice.trackJdwpStateFlow()
+        val listOfProcessList = CopyOnWriteArrayList<JdwpProcessIdList>()
+        val trackJdwpFlow = connectedDevice.trackJdwp.stateFlow
         launch(Dispatchers.Default) {
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             fakeDevice.startClient(pid11, 0, "a.b.c.e", false)
@@ -197,9 +196,9 @@ class TrackJdwpStateFlowTest {
         }
 
         // Assert
-        trackJdwpFlow.first { trackJdwpItem ->
-            listOfProcessList.add(trackJdwpItem.processIds)
-            trackJdwpItem.isEndOfFlow
+        trackJdwpFlow.first { jdwpProcessIdList ->
+            listOfProcessList.add(jdwpProcessIdList)
+            jdwpProcessIdList.flowStatus.isEndOfFlow
         }
         // We don't assert anything, the fact we reached this point means the
         // flow was cancelled when the device was disconnected.
@@ -217,8 +216,8 @@ class TrackJdwpStateFlowTest {
         val pid11 = 11
 
         // Act
-        val listOfProcessList = CopyOnWriteArrayList<ProcessIdList>()
-        val trackJdwpFlow = connectedDevice.trackJdwpStateFlow()
+        val listOfProcessList = CopyOnWriteArrayList<JdwpProcessIdList>()
+        val trackJdwpFlow = connectedDevice.trackJdwp.stateFlow
         launch(Dispatchers.Default) {
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             fakeDevice.startClient(pid11, 0, "a.b.c.e", false)
@@ -228,9 +227,9 @@ class TrackJdwpStateFlowTest {
         }
 
         // Assert
-        trackJdwpFlow.first { trackJdwpItem ->
-            listOfProcessList.add(trackJdwpItem.processIds)
-            trackJdwpItem.isEndOfFlow
+        trackJdwpFlow.first { jdwpProcessIdList ->
+            listOfProcessList.add(jdwpProcessIdList)
+            jdwpProcessIdList.flowStatus.isEndOfFlow
         }
         // We don't assert anything, the fact we reached this point means the
         // flow was cancelled when the device was disconnected.
@@ -250,7 +249,7 @@ class TrackJdwpStateFlowTest {
         exceptionRule.expect(Exception::class.java)
         exceptionRule.expectMessage("My Test Exception")
         fakeDevice.startClient(pid10, 0, "a.b.c", false)
-        val trackJdwpFlow = connectedDevice.trackJdwpStateFlow()
+        val trackJdwpFlow = connectedDevice.trackJdwp.stateFlow
         runBlocking {
             trackJdwpFlow.collect {
                 throw Exception("My Test Exception")
@@ -274,7 +273,7 @@ class TrackJdwpStateFlowTest {
         exceptionRule.expect(CancellationException::class.java)
         exceptionRule.expectMessage("My Test Exception")
         fakeDevice.startClient(pid10, 0, "a.b.c", false)
-        val trackJdwpFlow = connectedDevice.trackJdwpStateFlow()
+        val trackJdwpFlow = connectedDevice.trackJdwp.stateFlow
         runBlocking {
             trackJdwpFlow.collect {
                 cancel("My Test Exception")

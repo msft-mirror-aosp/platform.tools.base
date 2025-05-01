@@ -63,7 +63,7 @@ internal class AppProcessNameRetriever(private val process: AppProcess) {
         logger.debug { "Retrieve process name using `appProcessEntryFlow`" }
         // If the `app_info` feature is supported, the process name will eventually
         // be set as part of the `track_app` service
-        return process.appProcessEntryFlow.mapNotNull { it.processName }.first()
+        return process.propertiesFlow.mapNotNull { it.processName.getOrNull() }.first()
     }
 
     private suspend fun retrieveProcessNameFromJdwpProcess(jdwpProcess: JdwpProcess): String {

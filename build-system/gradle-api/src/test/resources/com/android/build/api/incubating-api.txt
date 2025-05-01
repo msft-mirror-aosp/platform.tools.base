@@ -130,8 +130,6 @@ https://issuetracker.google.com/328748514
   * com.android.build.api.variant.BundleConfig
   * com.android.build.api.variant.BundleConfig.addMetadataFile: void (java.lang.String, org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile>)
   * com.android.build.api.variant.BundleConfig.getCodeTransparency: com.android.build.api.variant.CodeTransparency ()
-https://issuetracker.google.com/328748530
-  * com.android.build.api.variant.AndroidResources.getViewBinding: boolean ()
 https://issuetracker.google.com/328748534
   * com.android.build.api.variant.SigningConfig.setConfig: void (com.android.build.api.dsl.SigningConfig)
 https://issuetracker.google.com/328748570
@@ -303,8 +301,6 @@ https://issuetracker.google.com/328748918
   * com.android.build.api.dsl.NdkBuildFlags.getCppFlags: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.NdkBuildFlags.getTargets: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.NdkBuildFlags.targets: void (java.lang.String[])
-https://issuetracker.google.com/328748920
-  * com.android.build.api.variant.AndroidResources.getDataBinding: boolean ()
 https://issuetracker.google.com/328748935
   * com.android.build.api.dsl.ConsumerKeepRules implements com.android.build.api.dsl.ConfigurableFiles
   * com.android.build.api.dsl.ConsumerKeepRules.getIgnoreFrom: java.util.Set<java.lang.String> ()
@@ -389,11 +385,6 @@ https://issuetracker.google.com/328748959
   * com.android.build.api.dsl.LintOptions.textOutput: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
-https://issuetracker.google.com/328748961
-  * com.android.build.api.variant.ApplicationVariantBuilder.getProfileable: boolean ()
-  * com.android.build.api.variant.ApplicationVariantBuilder.setProfileable: void (boolean)
-https://issuetracker.google.com/328748963
-  * com.android.build.api.variant.Sources.getKotlin: com.android.build.api.variant.SourceDirectories$Flat ()
 https://issuetracker.google.com/328748995
   * com.android.build.api.dsl.EmulatorSnapshots
   * com.android.build.api.dsl.EmulatorSnapshots.getCompressSnapshots: boolean ()
@@ -617,8 +608,6 @@ https://issuetracker.google.com/357083708
 https://issuetracker.google.com/361880963
   * com.android.build.api.variant.DeviceTestBuilder implements com.android.build.api.variant.GeneratesTestApkBuilder
 https://issuetracker.google.com/362941219
-  * com.android.build.api.variant.ApkOutputProviders
-  * com.android.build.api.variant.ApkOutputProviders.provideApkOutputToTask: void (org.gradle.api.tasks.TaskProvider<TaskT>, kotlin.jvm.functions.Function1<? super TaskT, ? extends org.gradle.api.provider.Property<com.android.build.api.variant.ApkOutput>>, com.android.build.api.variant.DeviceSpec)
   * com.android.build.api.variant.DeviceSpec
   * com.android.build.api.variant.DeviceSpec$Builder
   * com.android.build.api.variant.DeviceSpec$Builder.<init>: com.android.build.api.variant.DeviceSpec$Builder ()
@@ -651,7 +640,6 @@ https://issuetracker.google.com/362941219
   * com.android.build.api.variant.DeviceSpec.getSupportsPrivacySandbox: boolean ()
   * com.android.build.api.variant.DeviceSpec.hashCode: int ()
   * com.android.build.api.variant.DeviceSpec.toString: java.lang.String ()
-  * com.android.build.api.variant.GeneratesApk.getOutputProviders: com.android.build.api.variant.ApkOutputProviders ()
 https://issuetracker.google.com/368059518
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.getLint: com.android.build.api.dsl.Lint ()
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.lint: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint, kotlin.Unit>)

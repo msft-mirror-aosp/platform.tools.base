@@ -26,6 +26,10 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+    <activity
+            android:name=".background.AlarmActivity"
+            android:theme="@style/Theme.InspectorsTestApp">
+    </activity>
     <receiver
             android:name=".background.AlarmReceiver"
             android:exported="true">
@@ -38,6 +42,11 @@
     <service
             android:name=".background.AppJobService"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+
+    <service
+            android:name=".background.AlarmService"
+        android:foregroundServiceType="dataSync"
+        />
 
     <provider
       android:name="androidx.startup.InitializationProvider"

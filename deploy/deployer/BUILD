@@ -1,7 +1,7 @@
 load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
 load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:coverage.bzl", "coverage_java_library", "coverage_java_test")
+load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_library")
@@ -65,10 +65,11 @@ java_library(
     visibility = ["//visibility:public"],
 )
 
-coverage_java_library(
+kotlin_library(
     name = "tools.deployer",
     srcs = glob([
         "src/main/**/*.java",
+        "src/main/**/*.kt",
     ]),
     # Embed android installer in the jar (x86, x86_64, arm7, arm64)
     resources = ["//tools/base/deploy/installer:android-installer"],
@@ -133,7 +134,10 @@ java_import(
 maven_library(
     name = "deployer.runner.maven",
     srcs = glob(
-        ["src/main/**/*.java"],
+        [
+            "src/main/**/*.java",
+            "src/main/**/*.kt",
+        ],
         exclude = ["src/main/java/com/android/tools/deployer/JdiBasedClassRedefiner.java"],
     ),
     # All the dependencies that aren't maven libraries need to be included
@@ -168,6 +172,7 @@ maven_library(
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.annotations",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.xerial.sqlite-jdbc",
     ],
 )

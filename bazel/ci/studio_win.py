@@ -4,8 +4,9 @@ import pathlib
 import tempfile
 
 from tools.base.bazel.ci import bazel
-from tools.base.bazel.ci import presubmit
 from tools.base.bazel.ci import studio
+from tools.base.bazel.ci.presubmit import failure_retry
+from tools.base.bazel.ci.presubmit import presubmit
 
 
 def studio_win(build_env: bazel.BuildEnv):
@@ -58,12 +59,11 @@ def studio_win(build_env: bazel.BuildEnv):
     # ci_test is included so that there is always a test target to run.
     targets = result.targets + ['//tools/base/bazel/ci:ci_test']
     flags.extend(result.flags)
-    flags.extend(presubmit.generate_runs_per_test_flags(build_env))
 
   test_result = studio.run_tests(build_env, flags, targets)
 
   if build_type == studio.BuildType.PRESUBMIT:
-    presubmit.validate_and_upload_failed_tests(build_env)
+    failure_retry.validate_and_upload(build_env)
 
   studio.copy_artifacts(
       build_env,

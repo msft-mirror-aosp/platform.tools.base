@@ -27,6 +27,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.impl.ZipHandler
 import com.intellij.pom.java.LanguageLevel
 import java.io.File
+import kotlin.concurrent.withLock
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.config.addJavaSourceRoots
@@ -178,12 +179,21 @@ interface UastEnvironment {
     fun disposeApplicationEnvironment() {
       // Note: if we later decide to keep the app env alive forever in the Gradle daemon, we
       // should still clear some caches between builds (see CompileServiceImpl.clearJarCache).
-      val appEnv = KotlinCoreEnvironment.applicationEnvironment ?: return
-      Disposer.dispose(appEnv.parentDisposable)
-      checkApplicationEnvironmentDisposed()
-      ZipHandler.clearFileAccessorCache()
-      // https://youtrack.jetbrains.com/issue/KTIJ-24467
-      UastFacade.clearCachedPlugin()
+
+      // b/404566333: using upstream `disposeApplicationEnvironment` will use another lock.
+      // Rather, Lint should use its own lock to execute disposing sequences.
+      appLock.withLock {
+        val appEnv = KotlinCoreEnvironment.applicationEnvironment ?: return
+
+        // b/404562168: `UastFacade.<clinit>` loads the message bus via application,
+        // and thus we should clear the cached plugin _before_ disposing application.
+        // https://youtrack.jetbrains.com/issue/KTIJ-24467
+        UastFacade.clearCachedPlugin()
+
+        Disposer.dispose(appEnv.parentDisposable)
+        checkApplicationEnvironmentDisposed()
+        ZipHandler.clearFileAccessorCache()
+      }
     }
 
     @JvmStatic
