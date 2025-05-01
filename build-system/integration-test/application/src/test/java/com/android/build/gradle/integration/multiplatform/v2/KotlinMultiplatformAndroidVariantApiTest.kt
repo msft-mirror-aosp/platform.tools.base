@@ -19,14 +19,11 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
-import com.android.build.gradle.integration.common.output.AarSubject
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.apk.Apk
 import com.android.utils.FileUtils
-import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 @Suppress("PathAsIterable")
 class KotlinMultiplatformAndroidVariantApiTest {
@@ -34,6 +31,25 @@ class KotlinMultiplatformAndroidVariantApiTest {
     val project = GradleTestProjectBuilder()
         .fromTestProject("kotlinMultiplatform")
         .create()
+
+    @Test
+    fun testRegisteringCustomSourceDirs() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            """
+                androidComponents.registerSourceType("stableAidl")
+                androidComponents {
+                    onVariants { variant ->
+                        println(variant.sources.getByName("stableAidl").all.get())
+                    }
+                }
+            """.trimIndent()
+        )
+
+        val result = project.executor().run(":kmpFirstLib:assemble")
+
+        result.assertOutputContains("kmpFirstLib${File.separator}src${File.separator}androidMain${File.separator}stableAidl")
+    }
 
     @Test
     fun testInstrumentedTestDependencySubstitution() {
