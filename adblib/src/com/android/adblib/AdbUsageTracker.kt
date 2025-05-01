@@ -57,7 +57,8 @@ interface AdbUsageTracker {
                     buildTags = properties[DevicePropertyNames.RO_BUILD_TAGS] ?: "",
                     buildType = properties[DevicePropertyNames.RO_BUILD_TYPE] ?: "",
                     buildVersionRelease = properties[DevicePropertyNames.RO_BUILD_VERSION_RELEASE] ?: "",
-                    buildApiLevelFull = properties[DevicePropertyNames.RO_BUILD_VERSION_SDK] ?: "",
+                    buildApiLevelFull = properties[DevicePropertyNames.RO_BUILD_VERSION_SDK_FULL]
+                        ?: properties[DevicePropertyNames.RO_BUILD_VERSION_SDK] ?: "",
                     cpuAbi = properties[DevicePropertyNames.RO_PRODUCT_CPU_ABI] ?: "",
                     manufacturer = properties[DevicePropertyNames.RO_PRODUCT_MANUFACTURER] ?: "",
                     model = properties[DevicePropertyNames.RO_PRODUCT_MODEL] ?: "",
