@@ -173,7 +173,7 @@ def _find_impacted_targets(
         str(base_hashes),
     )
     if not exists:
-      raise SelectivePresubmitError(f'Base hash file {object_name} not found')
+      raise ImpactedTargetsNotFoundError(f'Base hash file {object_name} not found')
     logging.info('Base hash file %s found', object_name)
 
     impacted_targets = pathlib.Path(build_env.dist_dir) / 'impacted-targets.txt'
