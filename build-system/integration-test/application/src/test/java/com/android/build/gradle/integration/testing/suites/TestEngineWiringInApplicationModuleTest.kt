@@ -95,6 +95,26 @@ class TestEngineWiringInApplicationModuleTest {
     }
 
     @Test
+    fun testBasicModel() {
+        val project = rule.build
+        val result = project.modelBuilder.fetchModels()
+        Truth.assertThat(result).isNotNull()
+        val models = result.container.getProject(":app")
+        val testSuiteArtifacts = models.basicAndroidProject?.variants?.first { variant ->
+            variant.name == "debug"
+        }?.testSuiteArtifacts
+
+        Truth.assertThat(testSuiteArtifacts).isNotNull()
+        val firstTestSuite = testSuiteArtifacts?.get("first")
+        Truth.assertThat(firstTestSuite).isNotNull()
+        val sources = firstTestSuite!!.sources
+        Truth.assertThat(sources).hasSize(1)
+        Truth.assertThat(sources.single()).isEqualTo(
+            project.androidApplication(":app").resolve("src/first").toFile()
+        )
+    }
+
+    @Test
     fun testModel() {
         val result = rule.build.modelBuilder.fetchModels()
         Truth.assertThat(result).isNotNull()

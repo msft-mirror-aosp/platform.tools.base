@@ -57,6 +57,11 @@ interface BasicVariant: AndroidModel {
     val hostTestArtifacts: Map<String, BasicArtifact>
 
     /**
+     * The test suite components for this variant
+     */
+    val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>
+
+    /**
      * The TestFixtures artifact for this variant, if applicable.
      */
     val testFixturesArtifact: BasicArtifact?

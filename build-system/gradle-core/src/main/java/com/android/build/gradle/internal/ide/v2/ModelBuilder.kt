@@ -29,6 +29,7 @@ import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.Installation
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestExtension
+import com.android.build.api.variant.Component
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
@@ -98,6 +99,7 @@ import com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanF
 import com.android.builder.model.v2.ide.ArtifactDependencies
 import com.android.builder.model.v2.ide.ArtifactDependenciesAdjacencyList
 import com.android.builder.model.v2.ide.BasicArtifact
+import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
 import com.android.builder.model.v2.ide.BundleInfo
 import com.android.builder.model.v2.ide.BytecodeTransformation
 import com.android.builder.model.v2.ide.CodeShrinker
@@ -881,11 +883,19 @@ class ModelBuilder<
                 createBasicArtifact(hostTest, features)
 
         }
+        val testSuiteArtifacts = mutableMapOf<String, BasicTestSuiteArtifact>()
+        (variant as? HasTestSuitesCreationConfig)?.suites?.values?.forEach { testSuite ->
+            testSuiteArtifacts[testSuite.name] =
+                BasicTestSuiteArtifactImpl(
+                    testSuite.sources.all().get().map { it.asFile }.toSet()
+                )
+        }
         return BasicVariantImpl(
             name = variant.name,
             mainArtifact = createBasicArtifact(variant, features),
             deviceTestArtifacts = deviceTestArtifacts,
             hostTestArtifacts = hostTestArtifacts,
+            testSuiteArtifacts = testSuiteArtifacts,
             testFixturesArtifact = (variant as? HasTestFixtures)?.testFixtures?.let {
                 createBasicArtifact(it, features)
             },

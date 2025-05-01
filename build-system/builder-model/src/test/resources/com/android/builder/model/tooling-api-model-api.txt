@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-7cd2bdcec2c6aea5f33747f5c6f6b41e4b9285cdfccd3213f2773ebe6ee8d8bd
+0bd51334a63713d5bdf983dc01ad5f1c9cead0d9058303479b6bf4962faa3e7e
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -632,6 +632,8 @@ com.android.builder.model.v2.ide.ArtifactDependenciesFlatList.getUnresolvedDepen
 com.android.builder.model.v2.ide.BasicArtifact
 com.android.builder.model.v2.ide.BasicArtifact.getMultiFlavorSourceProvider: com.android.builder.model.v2.ide.SourceProvider ()
 com.android.builder.model.v2.ide.BasicArtifact.getVariantSourceProvider: com.android.builder.model.v2.ide.SourceProvider ()
+com.android.builder.model.v2.ide.BasicTestSuiteArtifact implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.BasicTestSuiteArtifact.getSources: java.util.Set<java.io.File> ()
 com.android.builder.model.v2.ide.BasicVariant implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.BasicVariant$DefaultImpls
 com.android.builder.model.v2.ide.BasicVariant.getAndroidTestArtifact: com.android.builder.model.v2.ide.BasicArtifact ()
@@ -642,6 +644,7 @@ com.android.builder.model.v2.ide.BasicVariant.getMainArtifact: com.android.build
 com.android.builder.model.v2.ide.BasicVariant.getName: java.lang.String ()
 com.android.builder.model.v2.ide.BasicVariant.getProductFlavors: java.util.List<java.lang.String> ()
 com.android.builder.model.v2.ide.BasicVariant.getTestFixturesArtifact: com.android.builder.model.v2.ide.BasicArtifact ()
+com.android.builder.model.v2.ide.BasicVariant.getTestSuiteArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.BasicTestSuiteArtifact> ()
 com.android.builder.model.v2.ide.BasicVariant.getUnitTestArtifact: com.android.builder.model.v2.ide.BasicArtifact ()
 com.android.builder.model.v2.ide.BundleInfo implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.BundleInfo.getApkFromBundleTaskName: java.lang.String ()
