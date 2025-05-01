@@ -86,21 +86,35 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
 
     @TaskAction
     override fun executeTests() {
-        val deviceProvider = deviceProviderFactory.getDeviceProvider(
-            buildTools.adbExecutable(),
-            System.getenv("ANDROID_SERIAL")
-        )
-        deviceProvider.use {
-            executeTests(deviceProvider)
+        val engineInputParameters: List<TestEngineInputProperty> = engineInputParameters.get(). map { inputProperty ->
+            TestEngineInputProperty(
+                inputProperty.type.toString(),
+                inputProperty.value.get().asFile.absolutePath
+            )
+        }
+
+        // only get the connected devices if the test requested an APK.
+        if (
+            engineInputParameters.any { inputParameter ->
+                inputParameter.name == AgpTestSuiteInputParameters.TESTED_APKS.name
+            }
+        ) {
+            val deviceProvider = deviceProviderFactory.getDeviceProvider(
+                buildTools.adbExecutable(),
+                System.getenv("ANDROID_SERIAL")
+            )
+            deviceProvider.use {
+                executeTests(engineInputParameters, deviceProvider)
+            }
+        } else {
+            executeTests(engineInputParameters)
         }
     }
 
-    private fun executeTests(deviceProvider: DeviceProvider) {
-
-        val serialIds = deviceProvider.devices.joinToString(",") { device ->
-            device.serialNumber
-        }
-
+    private fun executeTests(
+        engineInputParameters: List<TestEngineInputProperty>,
+        deviceProvider: DeviceProvider? = null,
+    ) {
         val standardInputs = mutableListOf(
             TestEngineInputProperty(
                 TestEngineInputProperty.SOURCE_FOLDERS,
@@ -123,23 +137,26 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 AgpTestSuiteInputParameters.ADB_EXECUTABLE.propertyName,
                 buildTools.adbExecutable().get().asFile.absolutePath
             ),
-            TestEngineInputProperty(
-                TestEngineInputProperty.SERIAL_IDS,
-                serialIds
-            )
         )
+
+        if (deviceProvider != null ) {
+            val serialIds = deviceProvider.devices.joinToString(",") { device ->
+                device.serialNumber
+            }
+            standardInputs.add(
+                TestEngineInputProperty(
+                    TestEngineInputProperty.SERIAL_IDS,
+                    serialIds
+                )
+            )
+        }
 
         // write all the input properties for the junit engine. This mean the input properties
         // that were requested through the TestSuite DSL/Variant APIs but also the default ones
         // that are always provided.
         AgpTestSuiteInputsSerializer.serialize(
             engineInputProperties = engineInputProperties.get(),
-            engineInputParameters = engineInputParameters.get(). map { inputProperty ->
-                TestEngineInputProperty(
-                    inputProperty.type.toString(),
-                    inputProperty.value.get().asFile.absolutePath
-                )
-            }.plus(standardInputs),
+            engineInputParameters = engineInputParameters.plus(standardInputs),
             into = engineInputPropertiesFiles.asFile.get(),
         )
 
@@ -160,7 +177,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     ): GlobalTaskCreationAction<TestSuiteTestTask>() {
 
         override val name: String
-            get() = computeTaskName(creationConfig.testedVariant.name, "test${creationConfig.name.toCamelCase()}","TestSuite" )
+            get() = creationConfig.testTaskName
 
         override val type: Class<TestSuiteTestTask> = TestSuiteTestTask::class.java
 

@@ -60,6 +60,13 @@ interface Variant: AndroidModel {
     val hostTestArtifacts: Map<String, JavaArtifact>
 
     /**
+     * The test suites components for this variant. Test suites must have been declared in the DSL
+     * using the CommonExtension.testSuites facilities.
+     */
+    val testSuiteArtifacts: Map<String, TestSuiteArtifact>
+
+
+    /**
      * The TestFixtures artifact for this variant, if applicable.
      */
     val testFixturesArtifact: AndroidArtifact?

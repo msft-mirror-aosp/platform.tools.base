@@ -21,6 +21,7 @@ import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
 import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.utils.getDebugVariant
 import com.google.common.truth.Truth
 import java.time.LocalDateTime
 import org.junit.Rule
@@ -64,7 +65,7 @@ class TestEngineWiringInApplicationModuleTest {
                     testOptions.suites.create("first", AgpTestSuite::class.java) {
                         it.useJunitEngine.apply {
                             inputs.add(
-                                AgpTestSuiteInputParameters.TESTED_APKS
+                                AgpTestSuiteInputParameters.MERGED_MANIFEST
                             )
                             includeEngines.add(
                                 "[engine:toy-junit-engine-for-tests]"
@@ -90,6 +91,19 @@ class TestEngineWiringInApplicationModuleTest {
             .expectFailure() // TODO: it fails because Gradle complains I have no tests.
             .run(":app:testFirstDebugTestSuite")
         Truth.assertThat(result.didWorkTasks).contains(":app:testFirstDebugTestSuite")
+        result.assertFailureMessage().contains("Deprecated Gradle features were used in this build")
+    }
+
+    @Test
+    fun testModel() {
+        val result = rule.build.modelBuilder.fetchModels()
+        Truth.assertThat(result).isNotNull()
+        val testSuites = result.container.getProject(":app").androidProject?.getDebugVariant()?.testSuiteArtifacts
+        Truth.assertThat(testSuites).isNotNull()
+        val firstTestSuite = testSuites?.get("first")
+        Truth.assertThat(firstTestSuite).isNotNull()
+        Truth.assertThat(firstTestSuite!!.testInfo.testTaskName).isEqualTo("testFirstDebugTestSuite")
+        Truth.assertThat(firstTestSuite.testInfo.junitInfo.includedEngines.single()).isEqualTo("[engine:toy-junit-engine-for-tests]")
     }
 }
 

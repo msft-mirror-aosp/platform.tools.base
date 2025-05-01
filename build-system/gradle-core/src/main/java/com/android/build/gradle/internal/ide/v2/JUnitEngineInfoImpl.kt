@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,18 @@
 
 package com.android.build.gradle.internal.ide.v2
 
-import com.android.builder.model.v2.ide.TestInfo
-import java.io.File
+import com.android.builder.model.v2.ide.JUnitEngineInfo
 import java.io.Serializable
 
 /**
- * Implementation of [TestInfo] for serialization via the Tooling API.
+ * Implementation of [JUnitEngineInfo] for serialization via the Tooling API.
  */
-data class TestInfoImpl(
-    override val animationsDisabled: Boolean,
-    override val execution: TestInfo.Execution?,
-    override val additionalRuntimeApks: Collection<File>,
-    override val instrumentedTestTaskName: String
-) : TestInfo, Serializable {
+data class JUnitEngineInfoImpl(
+    override val includedEngines: Set<String>
+): JUnitEngineInfo, Serializable {
+
     companion object {
         @JvmStatic
-        private val serialVersionUID: Long = 1L
+        private val serialVersionUID: Long = 2L
     }
 }

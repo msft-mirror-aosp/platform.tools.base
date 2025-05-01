@@ -43,6 +43,7 @@ class TestSuiteImpl internal constructor(
     val variantServices: VariantServices,
     override val services: TaskCreationServices,
     override val artifacts: ArtifactsImpl,
+    override val testTaskName: String,
 ) : TestSuite, TestSuiteCreationConfig {
 
     private val _name = testSuiteBuilder.name

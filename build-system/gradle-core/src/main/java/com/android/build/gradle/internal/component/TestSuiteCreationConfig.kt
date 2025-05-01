@@ -60,4 +60,9 @@ interface TestSuiteCreationConfig: TestSuite {
      * Artifacts specific to this Test suite.
      */
     val artifacts: ArtifactsImpl
+
+    /**
+     * Test task name, within the current project scope.
+     */
+    val testTaskName: String
 }

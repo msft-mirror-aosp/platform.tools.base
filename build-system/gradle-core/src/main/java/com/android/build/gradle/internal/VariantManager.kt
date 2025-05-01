@@ -15,11 +15,13 @@
  */
 package com.android.build.gradle.internal
 
+import android.databinding.tool.ext.toCamelCase
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.component.impl.DeviceTestImpl
 import com.android.build.api.component.impl.TestFixturesImpl
 import com.android.build.api.variant.impl.TestSuiteImpl
+import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
@@ -962,6 +964,9 @@ class VariantManager<
                     }
 
                     // Create the TestSuite instance, its sources and various classpath configurations
+                    val componentName = "${testSuiteBuilder.name}${variantInfo.variant.name
+                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                    }"
                     variant.addTestSuite(
                         testSuiteBuilder.name,
                         TestSuiteImpl(
@@ -983,9 +988,8 @@ class VariantManager<
                             globalTaskCreationConfig,
                             variantServices,
                             taskCreationServices,
-                            ArtifactsImpl(project, "${testSuiteBuilder.name}${variantInfo.variant.name
-                                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-                            }")
+                            ArtifactsImpl(project, componentName),
+                            computeTaskName(variantBuilder.name, "test${testSuiteBuilder.name.toCamelCase()}","TestSuite" )
                         )
                     )
                 }
