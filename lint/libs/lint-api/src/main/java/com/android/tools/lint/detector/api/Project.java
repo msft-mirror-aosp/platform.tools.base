@@ -566,6 +566,24 @@ public class Project {
         return javaSourceFolders;
     }
 
+    /**
+     * Returns whether this Project is a test project. For example, this Project might just contain
+     * unit tests or some other form of tests.
+     *
+     * @return true if this is a test project, false if it is not, or null for a project that
+     *     contains both test and non-test files (or for projects where it is unknown whether this
+     *     is a test project).
+     */
+    @Nullable
+    public Boolean isTestProject() {
+        if (getJavaSourceFolders().isEmpty()
+                && getGeneratedSourceFolders().isEmpty()
+                && !getTestSourceFolders().isEmpty()) {
+            return true;
+        }
+        return null;
+    }
+
     @NonNull
     public List<File> getGeneratedSourceFolders() {
         if (generatedSourceFolders == null) {
