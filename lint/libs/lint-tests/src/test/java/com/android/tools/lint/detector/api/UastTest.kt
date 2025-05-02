@@ -82,6 +82,7 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UForEachExpression
+import org.jetbrains.uast.UImportStatement
 import org.jetbrains.uast.ULabeledExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.ULocalVariable
@@ -3358,7 +3359,8 @@ class UastTest : TestCase() {
         kotlin(
           """
             import java.util.function.Consumer
-            import test.*
+            import test.inlineFun
+            import test.reifiedFun
 
             fun test() {
               Any().inlineFun()
@@ -3372,6 +3374,15 @@ class UastTest : TestCase() {
     check(*testFiles) { file ->
       file.accept(
         object : AbstractUastVisitor() {
+          override fun visitImportStatement(node: UImportStatement): Boolean {
+            // b/415335843
+            // https://youtrack.jetbrains.com/issue/KTIJ-34040
+            val txt = node.sourcePsi?.text
+            val resolved = node.resolve()
+            assertNotNull(txt, resolved)
+            return super.visitImportStatement(node)
+          }
+
           override fun visitCallExpression(node: UCallExpression): Boolean {
             if (node.isConstructorCall()) {
               // Like Any()
