@@ -21,6 +21,7 @@ import com.android.adblib.tools.impl.ScreenRecordImpl
 import com.android.adblib.tools.impl.ScreenRecordImpl.ConstantsUsedForKdocReferenceOnly
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
+import java.awt.Dimension
 import java.io.IOException
 
 /**
@@ -74,7 +75,7 @@ data class ScreenRecordOptions(
      * display resolution (if supported), 1280x720 if not.  For best results,
      * use a size supported by the AVC encoder.
      */
-    val videoSize: VideoSize? = null,
+    val videoSize: Dimension? = null,
 
     /**
      * Bit rate in Mbps. Default 20Mbps.
@@ -105,17 +106,7 @@ data class ScreenRecordOptions(
      * Max recording duration in seconds. Default is 180. Set to 0 to remove the time limit.
      */
     val timeLimitSec: Int? = null,
-) {
-    /**
-     * Set the video size, e.g. "1280x720".  Default is the device's main
-     * display resolution (if supported), 1280x720 if not.  For best results,
-     * use a size supported by the AVC encoder.
-     */
-    data class VideoSize(
-        val width: Int,
-        val height: Int,
-    )
-}
+)
 
 class AdbScreenRecordException(
     override val message: String,

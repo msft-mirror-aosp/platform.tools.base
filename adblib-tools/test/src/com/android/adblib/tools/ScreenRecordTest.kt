@@ -37,6 +37,7 @@ import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import java.awt.Dimension
 
 class ScreenRecordTest {
 
@@ -250,7 +251,7 @@ class ScreenRecordTest {
     @Test
     fun test_getScreenRecordCommand_allowsSettingWithAndHeight() {
         // Prepare
-        val options = ScreenRecordOptions(ScreenRecordOptions.VideoSize(width = 1000, height = 700))
+        val options = ScreenRecordOptions(Dimension(1000, 700))
 
         // Act
         val command = ScreenRecordImpl.getScreenRecordCommand(options, "foobar.mp4")
