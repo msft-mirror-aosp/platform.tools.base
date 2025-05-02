@@ -16,13 +16,37 @@
 
 package com.android.build.gradle.internal.services
 
+import com.android.build.api.component.impl.ComponentImpl
+import com.android.build.api.component.impl.DeviceTestImpl
+import com.android.build.api.component.impl.HostTestImpl
+import com.android.build.api.component.impl.KmpComponentImpl
+import com.android.build.api.component.impl.TestFixturesImpl
+import com.android.build.api.variant.impl.ApplicationVariantImpl
+import com.android.build.api.variant.impl.DynamicFeatureVariantImpl
+import com.android.build.api.variant.impl.LibraryVariantImpl
+import com.android.build.api.variant.impl.TestVariantImpl
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.TestExtension
+import com.android.build.gradle.TestedExtension
+import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation
+import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.gradle.Version
+import org.gradle.api.Project
+import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinJvmFactory
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilationFactory
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /**
  * Services related to the built-in Kotlin support, to be used when
@@ -35,12 +59,14 @@ interface BuiltInKotlinServices {
     val kotlinBaseApiVersion: KotlinBaseApiVersion
 
     val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension
+    val baseExtension: BaseExtension // Currently required (KT-77300)
 
     companion object {
 
         fun createFromPlugin(
             kotlinBaseApiPlugin: KotlinBaseApiPlugin,
             kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
+            baseExtension: BaseExtension,
             projectName: String
         ): BuiltInKotlinServices {
             getKotlinPluginVersionFromPlugin(kotlinBaseApiPlugin)?.let {
@@ -65,6 +91,7 @@ interface BuiltInKotlinServices {
                 override val factory: KotlinJvmFactory = kotlinBaseApiPlugin
                 override val kotlinBaseApiVersion = kgpVersion.kotlinBaseApiVersion()
                 override val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension = kotlinAndroidProjectExtension
+                override val baseExtension: BaseExtension = baseExtension
             }
         }
     }
@@ -158,5 +185,59 @@ sealed class BuiltInKaptSupportMode {
 
         /** Built-in Kapt support is not available because the KMP plugin is applied. */
         object KmpPluginApplied : NotSupported()
+    }
+}
+
+internal fun ComponentCreationConfig.createKotlinCompilation(
+    project: Project,
+    kotlinCompileTaskProvider: TaskProvider<out KotlinJvmCompile>
+): KotlinCompilation<KotlinJvmOptions> {
+    val kotlinServices = services.builtInKotlinServices
+    // Creating a KotlinCompilation instance currently requires access to the old BaseVariant (KT-77300)
+    val variant = toBaseVariant(kotlinServices.baseExtension)
+    return if (variant != null) {
+        // TODO(b/409528883): Use KGP API to create a KotlinCompilation instance once it is
+        // available (KT-77023).
+        // For now, we need to make use of KotlinJvmAndroidCompilationFactory, and because its
+        // constructor is `internal`, we need to use reflection.
+        val constructor = KotlinJvmAndroidCompilationFactory::class.java.getConstructor(KotlinAndroidTarget::class.java, BaseVariant::class.java)
+        constructor.isAccessible = true
+        val kotlinCompilationFactory = constructor.newInstance(kotlinServices.kotlinAndroidProjectExtension.target, variant)
+        kotlinCompilationFactory.create(name)
+    } else {
+        // For a screenshot-test or test-fixtures component, there isn't a corresponding old
+        // BaseVariant, so we need to create a custom KotlinCompilation instance.
+        BuiltInKotlinJvmAndroidCompilation(
+            project = project,
+            compilationName = name,
+            compileTaskProvider = kotlinCompileTaskProvider,
+            kotlinServices = kotlinServices,
+            kotlinSourceDirectories = sources.kotlin!!.directories,
+        )
+    }
+}
+
+/**
+ * Returns the corresponding old [BaseVariant] for this component, or null if such an instance
+ * doesn't exist (for screenshot-test and test-fixtures components).
+ */
+internal fun ComponentCreationConfig.toBaseVariant(baseExtension: BaseExtension): BaseVariant? {
+    return when (this) {
+        is ComponentImpl<*> -> when (this) {
+            is ApplicationVariantImpl, is DynamicFeatureVariantImpl -> (baseExtension as AppExtension).applicationVariants.single { it.name == name }
+            is LibraryVariantImpl -> (baseExtension as LibraryExtension).libraryVariants.single { it.name == name }
+            is TestVariantImpl -> (baseExtension as TestExtension).applicationVariants.single { it.name == name }
+            is HostTestImpl -> if (hostTestName == com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE) {
+                (baseExtension as TestedExtension).unitTestVariants.single { it.name == name }
+            } else {
+                check(hostTestName == com.android.build.api.variant.HostTestBuilder.SCREENSHOT_TEST_TYPE)
+                null // Not available screenshot-test components
+            }
+            is DeviceTestImpl -> (baseExtension as TestedExtension).testVariants.single { it.name == name }
+            is TestFixturesImpl -> null // Not available for test-fixtures components
+            else -> error("Unknown component: ${this::class.java.name}")
+        }
+        is KmpComponentImpl<*> -> error("KmpComponentImpl is not expected here (built-in Kotlin support is not available for KMP)")
+        else -> error("Unknown component: ${this::class.java.name}")
     }
 }

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.services
 
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.errors.SyncIssueReporter
 import com.android.build.gradle.internal.lint.LintFromMaven
@@ -91,6 +92,7 @@ class ProjectServices constructor(
         BuiltInKotlinServices.createFromPlugin(
             kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
             kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
+            baseExtension = projectInfo.getExtension(BaseExtension::class.java),
             projectName = projectInfo.name
         )
     }

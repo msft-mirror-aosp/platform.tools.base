@@ -20,6 +20,8 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -31,6 +33,10 @@ class BuiltInKotlinCompilerPluginTest {
         buildFileType = BuildFileType.KTS
         androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+            android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
+        }
+        gradleProperties {
+            add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
         }
     }
 
@@ -40,44 +46,45 @@ class BuiltInKotlinCompilerPluginTest {
         build.addKotlinCompilerGradlePlugin()
 
         // Check Kotlin compiler Gradle plugin is invoked
-        val result = build.executor.run(":app:compileDebugKotlin")
+        val result = build.executor.run(":app:help")
         result.assertOutputContains("Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation 'debug'")
 
         // Also check KotlinCompilation details
         result.assertOutputContains(
             """
             Details of KotlinCompilation 'debug':
-            allAssociatedCompilations = BuiltInKotlinUnsupportedApiException
-            allKotlinSourceSets = [[src/main/kotlin,src/main/java,src/debug/kotlin,src/debug/java]]
-            apiConfigurationName = BuiltInKotlinUnsupportedApiException
-            associateWith = BuiltInKotlinUnsupportedApiException
-            associatedCompilations = BuiltInKotlinUnsupportedApiException
+            allAssociatedCompilations = []
+            allKotlinSourceSets = [[src/debug/kotlin,src/debug/java]]
+            apiConfigurationName = debugCompilationApi
+            associateWith = []
+            associatedCompilations = []
             compilationName = debug
-            compileAllTaskName = BuiltInKotlinUnsupportedApiException
-            compileDependencyConfigurationName = BuiltInKotlinUnsupportedApiException
-            compileDependencyFiles = BuiltInKotlinUnsupportedApiException
-            compileKotlinTask = BuiltInKotlinUnsupportedApiException
+            compileAllTaskName = debugClasses
+            compileDependencyConfigurationName = debugCompileClasspath
+            compileDependencyFiles = <can't resolve at this point as it is too early>
+            compileKotlinTask = task ':app:compileDebugKotlin'
             compileKotlinTaskName = compileDebugKotlin
-            compileKotlinTaskProvider = BuiltInKotlinUnsupportedApiException
-            compileOnlyConfigurationName = BuiltInKotlinUnsupportedApiException
+            compileKotlinTaskProvider = provider(task 'compileDebugKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
+            compileOnlyConfigurationName = debugCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
-            compilerOptions = BuiltInKotlinUnsupportedApiException
-            defaultSourceSet = [src/main/kotlin,src/main/java,src/debug/kotlin,src/debug/java]
+            compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
+            defaultSourceSet = [src/debug/kotlin,src/debug/java]
             defaultSourceSetName = debug
             disambiguatedName = debug
-            extras = []
-            getAttributes = BuiltInKotlinUnsupportedApiException
+            extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, main))]
+            getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debug
-            implementationConfigurationName = BuiltInKotlinUnsupportedApiException
-            kotlinOptions = BuiltInKotlinUnsupportedApiException
-            kotlinSourceSets = [[src/main/kotlin,src/main/java,src/debug/kotlin,src/debug/java]]
-            output = BuiltInKotlinUnsupportedApiException
+            implementationConfigurationName = debugCompilationImplementation
+            kotlinOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}kotlinOptions$1@<hash-code>
+            kotlinSourceSets = [[src/debug/kotlin,src/debug/java]]
+            output = org.jetbrains.kotlin.gradle.plugin.mpp.DefaultKotlinCompilationOutput@<hash-code>
             platformType = androidJvm
             project = project ':app'
-            runtimeDependencyConfigurationName = BuiltInKotlinUnsupportedApiException
-            runtimeDependencyFiles = BuiltInKotlinUnsupportedApiException
-            runtimeOnlyConfigurationName = BuiltInKotlinUnsupportedApiException
+            runtimeDependencyConfigurationName = debugRuntimeClasspath
+            runtimeDependencyFiles = <can't resolve at this point as it is too early>
+            runtimeOnlyConfigurationName = debugCompilationRuntimeOnly
             target = target  (androidJvm)
+            toString = compilation 'debug' (target  (androidJvm))
             """.trimIndent()
         )
         // Check KotlinCompilation 'debugUnitTest' too as there could be some confusion around the
@@ -85,39 +92,78 @@ class BuiltInKotlinCompilerPluginTest {
         // ('testDebug/kotlin' and others).
         result.assertOutputContains(
             """
-            Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation 'debugUnitTest'
             Details of KotlinCompilation 'debugUnitTest':
+            allAssociatedCompilations = []
+            allKotlinSourceSets = [[src/debugUnitTest/kotlin]]
+            apiConfigurationName = debugUnitTestCompilationApi
+            associateWith = []
+            associatedCompilations = []
+            compilationName = debugUnitTest
+            compileAllTaskName = debugUnitTestClasses
+            compileDependencyConfigurationName = debugUnitTestCompileClasspath
+            compileDependencyFiles = <can't resolve at this point as it is too early>
+            compileKotlinTask = task ':app:compileDebugUnitTestKotlin'
+            compileKotlinTaskName = compileDebugUnitTestKotlin
+            compileKotlinTaskProvider = provider(task 'compileDebugUnitTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
+            compileOnlyConfigurationName = debugUnitTestCompilationCompileOnly
+            compileTaskProvider = provider(task 'compileDebugUnitTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
+            compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
+            defaultSourceSet = [src/debugUnitTest/kotlin]
+            defaultSourceSetName = debugUnitTest
+            disambiguatedName = debugUnitTest
+            extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, test))]
+            getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
+            getName = debugUnitTest
+            implementationConfigurationName = debugUnitTestCompilationImplementation
+            kotlinOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}kotlinOptions$1@<hash-code>
+            kotlinSourceSets = [[src/debugUnitTest/kotlin]]
+            output = org.jetbrains.kotlin.gradle.plugin.mpp.DefaultKotlinCompilationOutput@<hash-code>
+            platformType = androidJvm
+            project = project ':app'
+            runtimeDependencyConfigurationName = debugUnitTestRuntimeClasspath
+            runtimeDependencyFiles = <can't resolve at this point as it is too early>
+            runtimeOnlyConfigurationName = debugUnitTestCompilationRuntimeOnly
+            target = target  (androidJvm)
+            toString = compilation 'debugUnitTest' (target  (androidJvm))
+            """.trimIndent()
+        )
+        // Also check screenshot test as screenshot-test and test-fixture components are handled
+        // slightly differently.
+        result.assertOutputContains(
+            """
+            Details of KotlinCompilation 'debugScreenshotTest':
             allAssociatedCompilations = BuiltInKotlinUnsupportedApiException
-            allKotlinSourceSets = [[src/test/kotlin,src/test/java,src/testDebug/kotlin,src/testDebug/java]]
+            allKotlinSourceSets = [[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]]
             apiConfigurationName = BuiltInKotlinUnsupportedApiException
             associateWith = BuiltInKotlinUnsupportedApiException
             associatedCompilations = BuiltInKotlinUnsupportedApiException
-            compilationName = debugUnitTest
+            compilationName = debugScreenshotTest
             compileAllTaskName = BuiltInKotlinUnsupportedApiException
             compileDependencyConfigurationName = BuiltInKotlinUnsupportedApiException
-            compileDependencyFiles = BuiltInKotlinUnsupportedApiException
+            compileDependencyFiles = <can't resolve at this point as it is too early>
             compileKotlinTask = BuiltInKotlinUnsupportedApiException
-            compileKotlinTaskName = compileDebugUnitTestKotlin
+            compileKotlinTaskName = compileDebugScreenshotTestKotlin
             compileKotlinTaskProvider = BuiltInKotlinUnsupportedApiException
             compileOnlyConfigurationName = BuiltInKotlinUnsupportedApiException
-            compileTaskProvider = provider(task 'compileDebugUnitTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
+            compileTaskProvider = provider(task 'compileDebugScreenshotTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = BuiltInKotlinUnsupportedApiException
-            defaultSourceSet = [src/test/kotlin,src/test/java,src/testDebug/kotlin,src/testDebug/java]
-            defaultSourceSetName = debugUnitTest
-            disambiguatedName = debugUnitTest
+            defaultSourceSet = [src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]
+            defaultSourceSetName = debugScreenshotTest
+            disambiguatedName = debugScreenshotTest
             extras = []
             getAttributes = BuiltInKotlinUnsupportedApiException
-            getName = debugUnitTest
+            getName = debugScreenshotTest
             implementationConfigurationName = BuiltInKotlinUnsupportedApiException
             kotlinOptions = BuiltInKotlinUnsupportedApiException
-            kotlinSourceSets = [[src/test/kotlin,src/test/java,src/testDebug/kotlin,src/testDebug/java]]
+            kotlinSourceSets = [[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]]
             output = BuiltInKotlinUnsupportedApiException
             platformType = androidJvm
             project = project ':app'
             runtimeDependencyConfigurationName = BuiltInKotlinUnsupportedApiException
-            runtimeDependencyFiles = BuiltInKotlinUnsupportedApiException
+            runtimeDependencyFiles = <can't resolve at this point as it is too early>
             runtimeOnlyConfigurationName = BuiltInKotlinUnsupportedApiException
             target = target  (androidJvm)
+            toString = com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation@<hash-code>
             """.trimIndent()
         )
     }
@@ -141,22 +187,25 @@ class BuiltInKotlinCompilerPluginTest {
                             is File -> value.relativeTo(kotlinCompilation.project.projectDir).invariantSeparatorsPath
                             is Iterable<*> -> value.joinToString(",", prefix = "[", postfix = "]") { printValue(it) }
                             is org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet -> printValue(value.kotlin.sourceDirectories)
-                            else -> value.toString()
+                            else -> value.toString().replaceAfter("@", "<hash-code>")
                         }
                     }
 
                     org.jetbrains.kotlin.gradle.plugin.KotlinCompilation::class.members.sortedBy { it.name }.forEach { member ->
                         if (member.visibility!!.name != "PUBLIC") return@forEach
                         if (member.parameters.size != 1) return@forEach
-                        if (member.name == "hashCode" || member.name == "toString") return@forEach
+                        if (member.name == "hashCode") return@forEach
 
-                        val value = try {
-                            member.call(kotlinCompilation)
-                        } catch (e: java.lang.reflect.InvocationTargetException) {
-                            if (e.cause is com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation.BuiltInKotlinUnsupportedApiException) {
-                                com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation.BuiltInKotlinUnsupportedApiException::class.simpleName
-                            } else {
-                                throw e
+                        val value = when (member.name) {
+                            "compileDependencyFiles", "runtimeDependencyFiles" -> "<can't resolve at this point as it is too early>"
+                            else -> try {
+                                member.call(kotlinCompilation)
+                            } catch (e: java.lang.reflect.InvocationTargetException) {
+                                if (e.cause is com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation.BuiltInKotlinUnsupportedApiException) {
+                                    com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation.BuiltInKotlinUnsupportedApiException::class.simpleName
+                                } else {
+                                    throw e
+                                }
                             }
                         }
                         println(member.name + " = " + printValue(value))

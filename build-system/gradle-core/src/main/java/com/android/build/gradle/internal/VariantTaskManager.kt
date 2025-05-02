@@ -148,6 +148,13 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     }
 
     fun createPostApiTasks() {
+        // Create Kotlin tasks after the variant API runs because Kotlin tasks currently need access
+        // to the old variant API (KT-77300).
+        // Once KT-77300 is fixed, we should move this call to earlier where
+        // `TaskManager.createJavacTask` is called.
+        (variants.map { it.variant } + testComponents + testFixturesComponents).forEach {
+            maybeCreateKotlinTasks(it)
+        }
 
         // must run this after scopes are created so that we can configure kotlin
         // kapt tasks

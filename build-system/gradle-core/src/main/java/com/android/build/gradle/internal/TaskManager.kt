@@ -22,6 +22,7 @@ import com.android.build.api.artifact.Artifact.Single
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.artifact.impl.ArtifactsLocationsReportTask
 import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.dsl.Device
@@ -74,8 +75,12 @@ import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
-import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
+import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
+import com.android.build.gradle.internal.services.KotlinBaseApiVersion
+import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
+import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
+import com.android.build.gradle.internal.services.createKotlinCompilation
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
@@ -108,6 +113,7 @@ import com.android.build.gradle.internal.tasks.MergeClassesTask
 import com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
+import com.android.build.gradle.internal.tasks.MergePackageListsForR8Task
 import com.android.build.gradle.internal.tasks.OptimizeResourcesTask
 import com.android.build.gradle.internal.tasks.PrepareLintJarForPublish
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask
@@ -118,11 +124,6 @@ import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
-import com.android.build.api.artifact.impl.ArtifactsLocationsReportTask
-import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
-import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
-import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
-import com.android.build.gradle.internal.tasks.MergePackageListsForR8Task
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
@@ -147,9 +148,9 @@ import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
-import com.android.build.gradle.internal.utils.maybeAddKotlinStdlibDependency
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
+import com.android.build.gradle.internal.utils.maybeAddKotlinStdlibDependency
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AidlCompile
@@ -208,6 +209,8 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
@@ -940,8 +943,6 @@ abstract class TaskManager(
     protected fun createJavacTask(
             creationConfig: ComponentCreationConfig
     ): TaskProvider<out JavaCompile> {
-        maybeCreateKotlinTasks(creationConfig)
-
         val usingKapt = isKotlinKaptPluginApplied(project)
         val usingKsp = isKspPluginApplied(project)
         taskFactory.register(JavaPreCompileTask.CreationAction(creationConfig, usingKapt, usingKsp))
@@ -957,7 +958,7 @@ abstract class TaskManager(
         return javacTask
     }
 
-    private fun maybeCreateKotlinTasks(creationConfig: ComponentCreationConfig) {
+    protected fun maybeCreateKotlinTasks(creationConfig: ComponentCreationConfig) {
         if (!creationConfig.useBuiltInKotlinSupport) {
             return
         }
@@ -993,13 +994,7 @@ abstract class TaskManager(
                 null
             }
 
-        val kotlinCompilation = BuiltInKotlinJvmAndroidCompilation(
-            project = project,
-            compilationName = creationConfig.name,
-            compileTaskProvider = kotlinCompileTaskProvider,
-            kotlinServices = kotlinServices,
-            kotlinSourceDirectories = creationConfig.sources.kotlin!!.directories,
-        )
+        val kotlinCompilation = creationConfig.createKotlinCompilation(project, kotlinCompileTaskProvider)
         if (project.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID)) {
             // Ensure "kotlin-extension" configuration exists here, because the Compose
             // Compiler Gradle plugin assumes it will have been created already.
@@ -1044,7 +1039,7 @@ abstract class TaskManager(
     // Similar to SubpluginEnvironment.addSubpluginOptions in KGP
     private fun addSubpluginOptionsForBuiltInKotlin(
         creationConfig: ComponentCreationConfig,
-        kotlinCompilation: BuiltInKotlinJvmAndroidCompilation,
+        kotlinCompilation: KotlinCompilation<KotlinJvmOptions>,
         kaptGenerateStubsTaskProvider: TaskProvider<out KaptGenerateStubs>?
     ) {
         // Since support for Kotlin compiler plugins is not yet complete, invoking the plugins' code

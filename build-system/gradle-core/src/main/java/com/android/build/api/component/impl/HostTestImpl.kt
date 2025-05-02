@@ -195,13 +195,13 @@ abstract class HostTestImpl @Inject constructor(
         when(dslInfo.componentType) {
             ComponentTypeImpl.UNIT_TEST -> {
                 hostTestName = HostTestBuilder.UNIT_TEST_TYPE
-                builtInKotlinSupportMode = mainVariant.builtInKotlinSupportMode
-                builtInKaptSupportMode = mainVariant.builtInKaptSupportMode
+                builtInKotlinSupportMode = super.builtInKotlinSupportMode
+                builtInKaptSupportMode = super.builtInKaptSupportMode
             }
             ComponentTypeImpl.SCREENSHOT_TEST -> {
                 hostTestName = HostTestBuilder.SCREENSHOT_TEST_TYPE
                 builtInKotlinSupportMode = run {
-                    val support = mainVariant.builtInKotlinSupportMode
+                    val support = super.builtInKotlinSupportMode
                     if (support is BuiltInKotlinSupportMode.NotSupported
                         && internalServices.projectInfo.hasPlugin(KOTLIN_ANDROID_PLUGIN_ID)
                     ) {
@@ -211,7 +211,7 @@ abstract class HostTestImpl @Inject constructor(
                     }
                 }
                 builtInKaptSupportMode = run {
-                    val support = mainVariant.builtInKaptSupportMode
+                    val support = super.builtInKaptSupportMode
                     if (support is BuiltInKaptSupportMode.NotSupported
                         && internalServices.projectInfo.hasPlugin(KOTLIN_KAPT_PLUGIN_ID)
                     ) {

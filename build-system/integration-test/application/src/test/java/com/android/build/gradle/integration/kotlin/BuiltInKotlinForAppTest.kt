@@ -368,20 +368,10 @@ class BuiltInKotlinForAppTest {
             }
         }
 
-        // First test that kotlin compilation completes successfully.
+        // Test that kotlin compilation completes successfully
         build.executor
             .with(BooleanOption.USE_ANDROID_X, true)
             .run(":app:compileDebugKotlin")
-
-        // Then test that the build fails if Kotlin attribute setup is disabled
-        build.executor
-            .expectFailure()
-            .with(BooleanOption.USE_ANDROID_X, true)
-            .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
-            .run(":app:compileDebugKotlin")
-            .assertErrorContains(
-                "Could not find androidx.compose.ui"
-            )
     }
 
     @Test
