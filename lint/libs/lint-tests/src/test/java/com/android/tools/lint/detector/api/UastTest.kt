@@ -35,6 +35,7 @@ import com.intellij.psi.PsiClassObjectAccessExpression
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
+import com.intellij.psi.PsiLiteral
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiParameter
@@ -4398,6 +4399,63 @@ class UastTest : TestCase() {
     }
     // Test and anonymous Object
     assertEquals(2, count)
+  }
+
+  fun testAnnotationOnDeclarationWithValueClass() {
+    // b/402629264
+    // https://youtrack.jetbrains.com/issue/KTIJ-33916
+    val source =
+      kotlin(
+          """
+          annotation class MySuppress(
+            val message: String
+          )
+
+          class Test {
+            @MySuppress("Somehow")
+            fun test (x: Result<Any>): String {
+              return x.getOrNull()?.toString()
+            }
+          }
+        """
+        )
+        .indented()
+
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitMethod(node: UMethod): Boolean {
+            if (node.name != "test") return super.visitMethod(node)
+
+            val uAnno = node.uAnnotations.find { it.qualifiedName == "MySuppress" }
+            assertNotNull(uAnno)
+            assertEquals("MySuppress", uAnno!!.qualifiedName)
+
+            val uAttr = uAnno.findAttributeValue("message")
+            assertEquals("Somehow", uAttr?.evaluate())
+            val jAttr = uAnno.javaPsi!!.findAttributeValue("message")
+            assertEquals("Somehow", (jAttr as? PsiLiteral)?.value)
+
+            // Intentionally calling previously unimplemented UastFakeLightMethodBase#getAnnotation
+            @Suppress("UElementAsPsi") val psiAnno = node.getAnnotation("MySuppress")
+            assertNotNull(psiAnno)
+            assertEquals("MySuppress", psiAnno!!.qualifiedName)
+            assertEquals(psiAnno.qualifiedName, uAnno.javaPsi?.qualifiedName)
+
+            val pAttr = psiAnno.findAttributeValue("message")
+            assertEquals("Somehow", (pAttr as? PsiLiteral)?.value)
+
+            val javaPsiAnno = node.javaPsi.getAnnotation("MySuppress")
+            assertNotNull(javaPsiAnno)
+            assertEquals("MySuppress", javaPsiAnno!!.qualifiedName)
+
+            assertEquals(psiAnno, javaPsiAnno)
+
+            return super.visitMethod(node)
+          }
+        }
+      )
+    }
   }
 
   fun testMethodsBelongToValueClass_source() {
