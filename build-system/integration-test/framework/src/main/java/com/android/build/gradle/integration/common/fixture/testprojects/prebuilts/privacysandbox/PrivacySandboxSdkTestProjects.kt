@@ -31,7 +31,6 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
-import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
 import com.android.testutils.generateAarWithContent
 import com.google.common.collect.ImmutableList
 import org.gradle.api.JavaVersion
@@ -493,7 +492,7 @@ fun privacySandboxSdkAppLargeSampleProjectWithTestModule(
                 }
                 dependencies {
                     implementation("androidx.appcompat:appcompat:$ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION")
-                    implementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_TESTS")
+                    implementation("org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS")
                     implementation("androidx.test:core:1.5.0")
                     implementation("androidx.test:core-ktx:1.5.0")
                     implementation("androidx.test.ext:junit:1.1.5")
@@ -1089,7 +1088,6 @@ fun GradleBuildDefinition.buildExampleSdkSandboxSdk(
         dependencies {
             implementation("androidx.activity:activity-ktx:1.8.2")
             ksp("androidx.annotation:annotation:1.8.1")
-            implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$KOTLIN_VERSION_FOR_TESTS")
             implementation("androidx.lifecycle:lifecycle-common:2.7.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0")

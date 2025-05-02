@@ -25,7 +25,7 @@ android {
 }
 
 tasks.withType(KotlinCompile::class.java) {
-    kotlinOptions {
-        jvmTarget = "17"
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
