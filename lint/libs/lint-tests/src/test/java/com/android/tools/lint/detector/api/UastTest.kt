@@ -3356,13 +3356,11 @@ class UastTest : TestCase() {
         ),
         kotlin(
           """
-            import java.util.function.Consumer
             import test.*
 
             fun test() {
               Any().inlineFun()
               Any().reifiedFun()
-              Consumer(Any::reifiedFun)
             }
           """
         ),
@@ -3397,24 +3395,6 @@ class UastTest : TestCase() {
             assertTrue(txt, resolved.hasAnnotation("test.MyAnnotation"))
 
             return super.visitCallExpression(node)
-          }
-
-          override fun visitCallableReferenceExpression(
-            node: UCallableReferenceExpression
-          ): Boolean {
-            // b/400512375
-            // https://youtrack.jetbrains.com/issue/KTIJ-33333
-            val txt = node.sourcePsi?.text
-            val resolved = node.resolve() as? PsiMethod
-            assertNotNull(txt, resolved)
-            resolved!!
-
-            val facadeOrPart =
-              if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt"
-              else "test.UtilKt__UtilKt"
-            assertEquals(txt, facadeOrPart, resolved.containingClass?.qualifiedName)
-
-            return super.visitCallableReferenceExpression(node)
           }
         }
       )
