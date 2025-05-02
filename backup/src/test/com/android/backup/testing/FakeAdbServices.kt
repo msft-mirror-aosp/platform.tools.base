@@ -42,6 +42,7 @@ private const val LIST_PACKAGES = "pm list packages"
 private const val CHECK_PLAY_STORE = "pm resolve-activity market://details?id=com.android.vending"
 private const val CLEAR_APP_DATA = "pm clear "
 private const val DUMPSYS_PACKAGE = "dumpsys package "
+private const val DUMPSYS_PACKAGES = "dumpsys package"
 private const val GRANT_PERMISSION = "pm grant "
 private const val GET_CURRENT_USER = "am get-current-user"
 
@@ -50,6 +51,7 @@ class FakeAdbServices(
   serialNumber: String = "serial",
   totalSteps: Int = 10,
   minGmsVersion: Int = 100,
+  private val debuggableApps: List<String> = listOf("com.app"),
 ) :
   AbstractAdbServices(
     serialNumber,
@@ -122,6 +124,7 @@ class FakeAdbServices(
         command == DUMPSYS_ACTIVITY -> handleDumpsysActivity()
         command.startsWith(CLEAR_APP_DATA) -> handleClearAppData()
         command.startsWith(DUMPSYS_PACKAGE) -> handleDumpsysApp(command)
+        command == DUMPSYS_PACKAGES -> handleDumpsysPackages()
         command.startsWith(GRANT_PERMISSION) -> handleGrantPermission()
         command == GET_CURRENT_USER -> handleGetCurrentUser()
         else -> throw NotImplementedError("Command '$command' is not implemented")
@@ -269,6 +272,26 @@ class FakeAdbServices(
               permission1: granted=true, true=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
     """
       .trimIndent()
+      .asStdout()
+  }
+
+  private fun handleDumpsysPackages(): AdbOutput {
+    return buildString {
+        debuggableApps.forEach {
+          append(
+            """
+      Packages:
+        Package [$it] (a4101a8):
+          pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]
+          User 0: ...
+            ...
+            runtime permissions:
+              permission1: granted=true, true=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+    """
+              .trimIndent()
+          )
+        }
+      }
       .asStdout()
   }
 
