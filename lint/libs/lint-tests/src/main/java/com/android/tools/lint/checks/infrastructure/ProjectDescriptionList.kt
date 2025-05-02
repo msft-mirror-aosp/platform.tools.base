@@ -63,10 +63,10 @@ internal class ProjectDescriptionList(
   }
 
   /** Adds all projects reachable via dependencies into the target list. */
-  fun addProjects(projects: List<ProjectDescription>) {
+  fun addProjects(projects: Collection<ProjectDescription>) {
     for (project in projects) {
       addProject(project)
-      addProjects(project.dependsOn)
+      addProjects(project.dependsOn.keys)
     }
   }
 
@@ -229,12 +229,12 @@ internal class ProjectDescriptionList(
       nameMap[project.name] = project
     }
     for (project in projects) {
-      for (name in project.dependsOnNames) {
+      for ((name, kind) in project.dependsOnNames) {
         val dependency = nameMap[name]
         if (dependency == null) {
           Assert.fail("Unknown named project " + name + " from " + project.name)
         } else {
-          project.dependsOn(dependency)
+          project.dependsOn(dependency, kind)
         }
       }
     }

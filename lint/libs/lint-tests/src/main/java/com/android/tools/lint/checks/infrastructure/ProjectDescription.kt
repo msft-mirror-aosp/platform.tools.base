@@ -27,6 +27,7 @@ import com.android.tools.lint.checks.infrastructure.TestFile.KotlinTestFile
 import com.android.tools.lint.checks.infrastructure.TestFile.XmlTestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles.LibraryReferenceTestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles.xml
+import com.android.tools.lint.detector.api.Project.DependencyKind
 import com.android.utils.NullLogger
 import com.google.common.base.Joiner
 import java.io.File
@@ -37,8 +38,8 @@ import org.junit.Assert.fail
 /** A description of a lint test project. */
 class ProjectDescription : Comparable<ProjectDescription> {
   var files: Array<out TestFile> = emptyArray()
-  val dependsOn: MutableList<ProjectDescription> = mutableListOf()
-  val dependsOnNames: MutableList<String> = mutableListOf()
+  val dependsOn: MutableMap<ProjectDescription, DependencyKind> = mutableMapOf()
+  val dependsOnNames: MutableMap<String, DependencyKind> = mutableMapOf()
   var dependencyGraph: String? = null
   var name: String = ""
   var type = Type.APP
@@ -90,9 +91,13 @@ class ProjectDescription : Comparable<ProjectDescription> {
    * @param library the project to depend on
    * @return this for constructor chaining
    */
-  fun dependsOn(library: ProjectDescription): ProjectDescription {
-    if (!dependsOn.contains(library)) {
-      dependsOn.add(library)
+  @JvmOverloads
+  fun dependsOn(
+    library: ProjectDescription,
+    kind: DependencyKind = DependencyKind.Regular,
+  ): ProjectDescription {
+    if (library !in dependsOn) {
+      dependsOn[library] = kind
       if (library.type == Type.APP) {
         library.type = Type.LIBRARY
       }
@@ -101,9 +106,10 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /** Adds a dependency on the given named project. */
-  fun dependsOn(name: String): ProjectDescription {
-    if (!dependsOnNames.contains(name)) {
-      dependsOnNames.add(name)
+  @JvmOverloads
+  fun dependsOn(name: String, kind: DependencyKind = DependencyKind.Regular): ProjectDescription {
+    if (name !in dependsOnNames) {
+      dependsOnNames[name] = kind
     }
     return this
   }

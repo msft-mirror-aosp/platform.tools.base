@@ -110,7 +110,12 @@ interface UastEnvironment {
       }
 
       internal val Configuration.isKMP: Boolean
-        get() = modules.flatMapTo(mutableSetOf()) { it.platforms }.size > 1
+        get() {
+          // If any of modules has a `dependOn` dependency
+          return modules.any { module ->
+            module.directDependencies.any { (_, kind) -> kind == DependencyKind.DependsOn }
+          }
+        }
     }
 
     val modules: Collection<Module>
