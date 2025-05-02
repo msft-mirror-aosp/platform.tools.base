@@ -30,6 +30,7 @@ data class VariantDependenciesImpl(
     override val mainArtifact: ArtifactDependencies,
     override val deviceTestArtifacts: Map<String, ArtifactDependencies>,
     override val hostTestArtifacts: Map<String, ArtifactDependencies>,
+    override val testSuiteArtifacts: Map<String, ArtifactDependencies>,
     override val testFixturesArtifact: ArtifactDependencies?,
     override val libraries: Map<String, Library>
 ) : VariantDependencies, Serializable {

@@ -16,7 +16,18 @@
 
 package com.android.build.gradle.internal.dependency
 
+import com.android.build.gradle.internal.ide.dependencies.ResolvedArtifact
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
+import com.android.build.gradle.internal.publishing.getAttributes
+import com.google.common.collect.Sets
+import org.gradle.api.Action
+import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.result.ResolutionResult
+import org.gradle.api.attributes.AttributeContainer
+import org.gradle.api.model.ObjectFactory
 
 /**
  * Resolvable dependencies of a test suite. Do not resolve these configurations before execution
@@ -31,5 +42,77 @@ class TestSuiteClasspath(
     /**
      * The test suite runtime classpath that can be used when configuring the test task.
      */
-    val runtimeClasspath: Configuration
-)
+    val runtimeClasspath: Configuration,
+
+    val objectFactory: ObjectFactory,
+): ResolutionResultProvider {
+
+
+
+    fun resolvedArtifacts(
+        artifactCollection: ArtifactCollection,
+        dependencyFailureHandler: (Collection<Throwable>) -> Any = {}
+    ): Set<ResolvedArtifact> {
+
+        val resolvedArtifacts = artifactCollection.artifacts
+
+        // use a linked hash set to keep the artifact order.
+        val artifacts =
+            Sets.newLinkedHashSetWithExpectedSize<ResolvedArtifact>(resolvedArtifacts.size)
+
+        resolvedArtifacts.forEach { resolvedArtifact ->
+            artifacts.add(
+                ResolvedArtifact(
+                    mainArtifactResult = resolvedArtifact,
+                    artifactFile = resolvedArtifact.file,
+                    extractedFolder = null,
+                    publishedLintJar = null,
+                    dependencyType = ResolvedArtifact.DependencyType.JAVA,
+                    isWrappedModule = false
+                )
+            )
+
+        }
+        return artifacts
+    }
+
+    fun getArtifactCollectionForToolingModel(
+        configType: AndroidArtifacts.ConsumedConfigType,
+        artifactType: AndroidArtifacts.ArtifactType,
+        configurationFactory: (Configuration) -> Configuration = { it }
+    ): ArtifactCollection {
+        val configuration = configurationFactory(
+            when (configType) {
+                AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath
+                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath
+                else -> throw RuntimeException("Test suite do not support $configType")
+            }
+        )
+        val attributesAction =
+            Action { container: AttributeContainer ->
+                container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+                artifactType.getAttributes { type, name ->
+                    objectFactory.named(type, name)
+                }.addAttributesToContainer(container)
+            }
+
+        return configuration
+            .incoming
+            .artifactView { config: ArtifactView.ViewConfiguration ->
+                config.attributes(attributesAction)
+            }
+            .artifacts
+    }
+
+    override fun getResolutionResult(configType: ConsumedConfigType): ResolutionResult = when (configType) {
+        ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath.incoming.resolutionResult
+        ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath.incoming.resolutionResult
+        else -> throw RuntimeException("Unsupported ConsumedConfigType value: $configType")
+    }
+    override fun getAdditionalArtifacts(
+        configType: AndroidArtifacts.ConsumedConfigType,
+        type: AdditionalArtifactType
+    ): ArtifactCollection {
+        throw RuntimeException("Not yet implemented")
+    }
+}

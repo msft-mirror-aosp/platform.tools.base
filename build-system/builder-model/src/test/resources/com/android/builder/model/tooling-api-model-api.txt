@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-0bd51334a63713d5bdf983dc01ad5f1c9cead0d9058303479b6bf4962faa3e7e
+d81f7497f0dc2569c4ea85e084388ff54fcdff9464cc75091c72dafe863be88e
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -893,6 +893,7 @@ com.android.builder.model.v2.models.VariantDependencies.getLibraries: java.util.
 com.android.builder.model.v2.models.VariantDependencies.getMainArtifact: com.android.builder.model.v2.ide.ArtifactDependencies ()
 com.android.builder.model.v2.models.VariantDependencies.getName: java.lang.String ()
 com.android.builder.model.v2.models.VariantDependencies.getTestFixturesArtifact: com.android.builder.model.v2.ide.ArtifactDependencies ()
+com.android.builder.model.v2.models.VariantDependencies.getTestSuiteArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.ArtifactDependencies> ()
 com.android.builder.model.v2.models.VariantDependencies.getUnitTestArtifact: com.android.builder.model.v2.ide.ArtifactDependencies ()
 com.android.builder.model.v2.models.VariantDependenciesAdjacencyList implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.models.VariantDependenciesAdjacencyList$DefaultImpls

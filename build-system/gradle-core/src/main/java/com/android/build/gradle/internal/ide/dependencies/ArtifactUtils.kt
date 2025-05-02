@@ -20,6 +20,7 @@ package com.android.build.gradle.internal.ide.dependencies
 
 import com.android.build.api.attributes.AgpVersionAttr
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.ide.DependencyFailureHandler
 import com.android.build.gradle.internal.ide.dependencies.ArtifactCollectionsInputs.RuntimeType
@@ -293,6 +294,17 @@ fun getArtifactsForModelBuilder(
         dependencyFailureHandler = dependencyFailureHandler
     )
 }
+
+fun getArtifactsForModelBuilder(
+    testSuite: TestSuiteCreationConfig,
+    configType: AndroidArtifacts.ConsumedConfigType,
+): Set<ResolvedArtifact> =
+    testSuite.testSuiteClasspath.resolvedArtifacts(
+        testSuite.testSuiteClasspath.getArtifactCollectionForToolingModel(
+            configType,
+            AndroidArtifacts.ArtifactType.AAR_OR_JAR,
+        )
+    )
 
 /**
  * Returns a set of ResolvedArtifact where the [ResolvedArtifact.dependencyType] and
