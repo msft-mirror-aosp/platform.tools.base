@@ -15,6 +15,7 @@
  */
 package com.android.adblib.tools.debugging
 
+import com.android.adblib.InstructionSet
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils
@@ -26,18 +27,24 @@ import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.time.Duration
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.collections.first
+import kotlin.collections.isNotEmpty
 
 class AppProcessTrackerTest {
 
@@ -324,5 +331,85 @@ class AppProcessTrackerTest {
             // Assert
             Assert.assertNotNull(appProcesses)
             Assert.assertTrue(appProcesses!!.isEmpty())
+        }
+
+    @Test
+    fun testAppProcessTrackerSetsAllPropertiesForDevicesSupportingAppInfo(): Unit =
+        CoroutineTestUtils.runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(36), // SDK >= 36 is required for app_info feature.
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 0, "a.b.c", false)
+            val appProcessTracker = AppProcessTracker.create(connectedDevice)
+
+            // Act
+            val process = appProcessTracker.appProcessFlow
+                .filter { it.isNotEmpty() }
+                .map { it.first() }
+                .first()
+            process.propertiesFlow.first()
+
+            // Assert
+            assertEquals(pid10, process.pid)
+            assertEquals(InstructionSet.X86_64, process.propertiesFlow.value.instructionSet.getOrNull())
+            assertEquals(true, process.propertiesFlow.value.debuggable.getOrNull())
+            assertEquals(false, process.propertiesFlow.value.profileable.getOrNull())
+            // AppInfo properties
+            assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
+            assertEquals(0L, process.propertiesFlow.value.userId.getOrNull())
+            assertEquals(0L, process.propertiesFlow.value.uid.getOrNull())
+            assertEquals(listOf("a.b.c"), process.propertiesFlow.value.packageNames.getOrNull())
+            assertEquals(false, process.propertiesFlow.value.waitingForDebugger.getOrNull())
+        }
+
+    @Test
+    fun testAppProcessTrackerExposesUnsupportedProperties_whenDeviceDoesNotSupportAppInfo(): Unit =
+        CoroutineTestUtils.runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(31), // Devices with SDK <36 do not support `app_info` feature
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 0, "a.b.c", false)
+            val appProcessTracker = AppProcessTracker.create(connectedDevice)
+
+            // Act
+            val process = appProcessTracker.appProcessFlow
+                .filter { it.isNotEmpty() }
+                .map { it.first() }
+                .first()
+            process.propertiesFlow.first()
+
+            // Assert
+            assertEquals(pid10, process.pid)
+            assertEquals(InstructionSet.X86_64, process.propertiesFlow.value.instructionSet.getOrNull())
+            assertEquals(true, process.propertiesFlow.value.debuggable.getOrNull())
+            assertEquals(false, process.propertiesFlow.value.profileable.getOrNull())
+            // Unsupported AppInfo properties
+            assertTrue(process.propertiesFlow.value.processName.isError)
+            assertTrue(process.propertiesFlow.value.userId.isError)
+            assertTrue(process.propertiesFlow.value.uid.isError)
+            assertTrue(process.propertiesFlow.value.packageNames.isError)
+            assertTrue(process.propertiesFlow.value.waitingForDebugger.isError)
         }
 }

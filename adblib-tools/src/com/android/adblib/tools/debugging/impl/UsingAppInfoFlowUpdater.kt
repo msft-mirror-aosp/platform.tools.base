@@ -93,11 +93,22 @@ internal class UsingAppInfoFlowUpdater(
                 logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
                 stateFlow.update { properties ->
                     properties.copy(
-                        processName = optionalValueFactory.ofFilteredFakeName(appProcessEntry.processName).orElse(properties.processName),
-                        packageNames = optionalValueFactory.ofFilteredFakeNames(appProcessEntry.packageNames).orElse(properties.packageNames),
-                        userId = optionalValueFactory.ofNullable(appProcessEntry.userId32).orElse(properties.userId),
-                        instructionSet = optionalValueFactory.ofInstructionSet(appProcessEntry.instructionSet).orElse(properties.instructionSet),
-                        isWaitingForDebugger = optionalValueFactory.ofNullable(appProcessEntry.waitingForDebugger).orElse(properties.isWaitingForDebugger),
+                        processName = optionalValueFactory.optionalOrErrorIfNull(appProcessEntry.processName) { processName ->
+                            optionalValueFactory.ofFilteredFakeName(processName)
+                        }.orElse(properties.processName),
+                        packageNames = optionalValueFactory.optionalOrErrorIfNull(appProcessEntry.packageNames) { packageNames ->
+                            optionalValueFactory.ofFilteredFakeNames(packageNames)
+                        }.orElse(properties.packageNames),
+                        userId = optionalValueFactory.optionalOrErrorIfNull(appProcessEntry.userId32) { userId32 ->
+                            optionalValueFactory.of(userId32)
+                        }.orElse(properties.userId),
+                        instructionSet = optionalValueFactory.ofInstructionSet(appProcessEntry.instructionSet)
+                            .orElse(properties.instructionSet),
+                        isWaitingForDebugger = optionalValueFactory.optionalOrErrorIfNull(
+                            appProcessEntry.waitingForDebugger
+                        ) { waitingForDebugger ->
+                            optionalValueFactory.of(waitingForDebugger)
+                        }.orElse(properties.isWaitingForDebugger),
                         isNativeDebuggable = optionalValueFactory.of(false),
                         jvmFlags = optionalValueFactory.ofJvmFlags(legacyJvmFlags())
                     )

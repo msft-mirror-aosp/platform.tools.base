@@ -18,6 +18,7 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.InstructionSet
+import com.android.adblib.tools.debugging.JdwpProcessProperties.Companion.unsupportedByOlderApi
 import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
 
@@ -96,6 +97,21 @@ internal class OptionalValueFactory(val device: ConnectedDevice) {
         } else {
             OptionalValue.of(goodNames)
         }
+    }
+
+    /**
+     * If `value` is `null` returns `OptionalValue.unsupportedByOlderApi()`. Otherwise, returns
+     * [OptionalValue] produced by `block(value)`
+     */
+    inline fun <T : Any, R : Any> optionalOrErrorIfNull(
+        value: T?,
+        block: (T) -> OptionalValue<R>
+    ): OptionalValue<R> {
+
+        if (value == null) {
+            return OptionalValue.unsupportedByOlderApi()
+        }
+        return block(value)
     }
 
     /**
