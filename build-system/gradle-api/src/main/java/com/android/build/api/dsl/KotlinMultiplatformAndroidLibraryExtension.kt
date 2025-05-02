@@ -161,6 +161,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * For more information about the properties you can configure in this block, see [DependencyVariantSelection].
      */
     @get:Incubating
+    @Deprecated("Use localDependencySelection instead. This API will be removed in AGP 9.0")
     val dependencyVariantSelection: DependencyVariantSelection
 
     /**
@@ -170,7 +171,26 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * For more information about the properties you can configure in this block, see [DependencyVariantSelection].
      */
     @Incubating
+    @Deprecated("Use localDependencySelection instead. This API will be removed in AGP 9.0")
     fun dependencyVariantSelection(action: DependencyVariantSelection.() -> Unit)
+
+    /**
+     * Specifies options for doing variant selection for external Android dependencies
+     * based on build types and product flavours
+     *
+     * For more information about the properties you can configure in this block, see [LocalDependencySelection].
+     */
+    @Incubating
+    fun localDependencySelection(action: LocalDependencySelection.() -> Unit)
+
+    /**
+     * Specifies options for doing variant selection for external Android dependencies
+     * based on build types and product flavours
+     *
+     * For more information about the properties you can configure in this block, see [LocalDependencySelection].
+     */
+    @get:Incubating
+    val localDependencySelection: LocalDependencySelection
 
     /**
      * Specifies options for the lint tool.

@@ -17,7 +17,7 @@
   {
     "binaryType": "KOTLIN_COMPILE",
     "classpath": [
-      "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug-api.jar"
+      "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease-api.jar"
     ],
     "coordinates": {
       "group": "com.example",
@@ -32,7 +32,7 @@
       ],
       "attributes": {
         "artifactType": "android-classes-jar",
-        "com.android.build.api.attributes.BuildTypeAttr": "debug",
+        "com.android.build.api.attributes.BuildTypeAttr": "release",
         "com.android.build.api.attributes.ProductFlavor:mode": "modetwo",
         "com.android.build.api.attributes.ProductFlavor:type": "typeone",
         "org.gradle.category": "library",
@@ -43,14 +43,14 @@
       }
     },
     "extras": {
-      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "androidLib-1.0-typeoneModetwoDebug.aar -\u003e androidLib-1.0-typeoneModetwoDebug-api.jar (com.example:androidLib:1.0)",
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "androidLib-1.0-typeoneModetwoRelease.aar -\u003e androidLib-1.0-typeoneModetwoRelease-api.jar (com.example:androidLib:1.0)",
       "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
       "com.android.kotlin.multiplatform.models.DependencyInfo;android-dependency-model": {
         "library": {
           "type": "ANDROID_LIBRARY",
           "libraryInfo": {
             "componentInfo": {
-              "buildType": "debug",
+              "buildType": "release",
               "productFlavors": {
                 "mode": "modetwo",
                 "type": "typeone"
@@ -72,51 +72,51 @@
             "version": "1.0"
           },
           "artifact": {
-            "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/testRepo/com/example/androidLib/1.0/androidLib-1.0-typeoneModetwoDebug.aar"
+            "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/testRepo/com/example/androidLib/1.0/androidLib-1.0-typeoneModetwoRelease.aar"
           },
           "androidLibraryData": {
             "manifest": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/AndroidManifest.xml"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/AndroidManifest.xml"
             },
             "compileJarFiles": [
               {
-                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/jars/classes.jar"
+                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/jars/classes.jar"
               }
             ],
             "runtimeJarFiles": [
               {
-                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/jars/classes.jar"
+                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/jars/classes.jar"
               }
             ],
             "resFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/res"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/res"
             },
             "resStaticLibrary": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/res.apk"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/res.apk"
             },
             "assetsFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/assets"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/assets"
             },
             "jniFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/jni"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/jni"
             },
             "aidlFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/aidl"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/aidl"
             },
             "renderscriptFolder": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/rs"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/rs"
             },
             "proguardRules": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/proguard.txt"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/proguard.txt"
             },
             "externalAnnotations": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/annotations.zip"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/annotations.zip"
             },
             "publicResources": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/public.txt"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/public.txt"
             },
             "symbolFile": {
-              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/R.txt"
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoRelease/R.txt"
             }
           },
           "srcJars": []

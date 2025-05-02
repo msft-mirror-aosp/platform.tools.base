@@ -25,9 +25,13 @@ kotlin {
         kotlinOptions.languageVersion = "1.8"
     }
 
-    dependencyVariantSelection {
-      productFlavors.put("type", mutableListOf("typeone"))
-      productFlavors.put("mode", mutableListOf("modetwo"))
+    localDependencySelection {
+      productFlavorDimension("type") {
+        selectFrom.set(listOf("typeone"))
+      }
+      productFlavorDimension("mode") {
+        selectFrom.set(listOf("modetwo"))
+      }
     }
 
     aarMetadata.minAgpVersion = "7.2.0"

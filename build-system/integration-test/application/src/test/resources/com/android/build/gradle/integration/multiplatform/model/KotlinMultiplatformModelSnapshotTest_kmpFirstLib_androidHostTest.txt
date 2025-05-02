@@ -383,14 +383,14 @@
           "type": "PROJECT",
           "projectInfo": {
             "componentInfo": {
-              "buildType": "debug",
+              "buildType": "release",
               "productFlavors": {
                 "mode": "modetwo",
                 "type": "typeone"
               },
               "attributes": {
                 "com.android.build.api.attributes.AgpVersionAttr": "{AGP_Version}",
-                "com.android.build.gradle.internal.attributes.VariantAttr": "typeoneModetwoDebug",
+                "com.android.build.gradle.internal.attributes.VariantAttr": "typeoneModetwoRelease",
                 "org.gradle.libraryelements": "jar",
                 "org.gradle.usage": "java-api"
               },

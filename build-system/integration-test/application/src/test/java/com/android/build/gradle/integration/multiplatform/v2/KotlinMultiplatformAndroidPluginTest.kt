@@ -61,8 +61,8 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
                 kotlin.androidLibrary {
-                    dependencyVariantSelection {
-                      buildTypes.add("release")
+                    localDependencySelection {
+                      selectBuildTypeFrom.set(listOf("debug"))
                     }
                 }
             """.trimIndent()
@@ -76,7 +76,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
         )
 
         ZipSubject.assertThat(androidTestMergedRes) {
-            textFile("android_lib_resource.txt").isEqualTo("android lib resource")
+            textFile("android_lib_resource.txt").isEqualTo("android lib debug resource")
         }
     }
 
@@ -190,7 +190,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
 
     @Test
     fun testKmpLibraryAarContents() {
-        val action: AarSubject.() ->Unit = {
+        val action: AarSubject.() -> Unit = {
             textFile("R.txt")
             mainJar {
                 classes().containsExactly(
@@ -224,7 +224,6 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             AarSubject.assertThat(file, action)
         } else {
             project.executor().run(":kmpFirstLib:assemble")
-
             project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE, action)
         }
 
@@ -309,7 +308,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
 
             javaResources {
                 resourceAsText("kmp_resource.txt").isEqualTo("kmp resource")
-                resourceAsText("android_lib_resource.txt").isEqualTo("android lib debug resource")
+                resourceAsText("android_lib_resource.txt").isEqualTo("android lib resource")
             }
 
             // validate all contents by looking at the java resources which in

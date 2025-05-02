@@ -4,6 +4,9 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
 Deprecated from AGP 8.11.0
+  * com.android.build.api.dsl.DependencyVariantSelection
+  * com.android.build.api.dsl.DependencyVariantSelection.getBuildTypes: org.gradle.api.provider.ListProperty<java.lang.String> ()
+  * com.android.build.api.dsl.DependencyVariantSelection.getProductFlavors: org.gradle.api.provider.MapProperty<java.lang.String, java.util.List<java.lang.String>> ()
   * com.android.build.api.dsl.EmulatorSnapshots
   * com.android.build.api.dsl.EmulatorSnapshots.getCompressSnapshots: boolean ()
   * com.android.build.api.dsl.EmulatorSnapshots.getEnableForTestFailures: boolean ()
@@ -12,6 +15,8 @@ Deprecated from AGP 8.11.0
   * com.android.build.api.dsl.EmulatorSnapshots.setCompressSnapshots: void (boolean)
   * com.android.build.api.dsl.EmulatorSnapshots.setEnableForTestFailures: void (boolean)
   * com.android.build.api.dsl.EmulatorSnapshots.setMaxSnapshotsForTestFailures: void (int)
+  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.dependencyVariantSelection: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection, kotlin.Unit>)
+  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getDependencyVariantSelection: com.android.build.api.dsl.DependencyVariantSelection ()
   * com.android.build.api.dsl.LibraryBuildFeatures.getAndroidResources: java.lang.Boolean ()
   * com.android.build.api.dsl.LibraryBuildFeatures.setAndroidResources: void (java.lang.Boolean)
   * com.android.build.api.dsl.TestOptions.emulatorSnapshots: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots, kotlin.Unit>)
