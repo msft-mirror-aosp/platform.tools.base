@@ -41,6 +41,9 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_AGP_VERSION
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import com.android.build.gradle.internal.testsuites.HasTestSuites
+import com.android.build.gradle.internal.utils.toImmutableList
+import com.android.build.gradle.internal.utils.toImmutableMap
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.core.BuilderConstants
@@ -81,6 +84,8 @@ open class LibraryVariantImpl @Inject constructor(
     HasTestFixtures,
     HasHostTestsCreationConfig,
     HasHostTests,
+    HasTestSuitesCreationConfig,
+    HasTestSuites,
     HasUnitTest {
 
     // ---------------------------------------------------------------------------------------------
@@ -109,6 +114,9 @@ open class LibraryVariantImpl @Inject constructor(
 
     override val hostTests: Map<String, HostTestCreationConfig>
         get() = internalHostTests
+
+    override val suites: Map<String, TestSuiteCreationConfig>
+        get() = internalTestSuites.toImmutableMap()
 
     override var testFixtures: TestFixturesImpl? = null
 
@@ -174,7 +182,12 @@ open class LibraryVariantImpl @Inject constructor(
         internalDeviceTests[testTypeName] = deviceTest
     }
 
-    override val testSuites: List<TestSuiteCreationConfig> = listOf()
+    override fun addTestSuite(testName: String, testComponent: TestSuiteCreationConfig) {
+        internalTestSuites[testName] =  testComponent
+    }
+
+    override val testSuites: List<TestSuiteCreationConfig>
+        get() = internalTestSuites.values.toImmutableList()
 
     // ---------------------------------------------------------------------------------------------
     // Private stuff
@@ -182,4 +195,5 @@ open class LibraryVariantImpl @Inject constructor(
 
     private val internalHostTests = mutableMapOf<String, HostTestCreationConfig>()
     private val internalDeviceTests = mutableMapOf<String, DeviceTest>()
+    private val internalTestSuites = mutableMapOf<String, TestSuiteCreationConfig>()
 }

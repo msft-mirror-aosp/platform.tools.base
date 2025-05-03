@@ -32,7 +32,7 @@ import org.gradle.api.provider.Provider
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
-internal open class TestSuiteBuilderImpl @Inject internal constructor(
+internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
     objects: ObjectFactory,
     private val _name: String,
     override var enable: Boolean,
