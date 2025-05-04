@@ -878,6 +878,7 @@ DATA = [
     "org.apache.commons:commons-io:1.3.2",
     "org.apache.commons:commons-lang3:3.13.0",
     "org.apache.commons:commons-text:1.11.0",
+    "org.apache.lucene:lucene-queryparser:9.12.0",  # Match the version of Lucene with the one used by IntelliJ
     "org.bouncycastle:bcprov-jdk16:1.46",
     "org.bouncycastle:bcprov-jdk18on:1.77",
     "org.brotli:dec:0.1.2",

@@ -69808,6 +69808,62 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-core_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-core/9.12.0/lucene-core-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-core/9.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-facet_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-facet/9.12.0/lucene-facet-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-facet/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-queries_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-queries/9.12.0/lucene-queries-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queries/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-queryparser_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-queryparser/9.12.0/lucene-queryparser-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queryparser/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+        "org.apache.lucene.lucene-queries_9.12.0",
+        "org.apache.lucene.lucene-sandbox_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-sandbox_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-sandbox/9.12.0/lucene-sandbox-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-sandbox/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+        "org.apache.lucene.lucene-queries_9.12.0",
+        "org.apache.lucene.lucene-facet_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.maven.maven-artifact_3.3.9",
     pom = "repository/org/apache/maven/maven-artifact/3.3.9/maven-artifact-3.3.9.pom",
     repo_root_path = "repository",
