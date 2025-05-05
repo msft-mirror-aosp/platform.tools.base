@@ -1,5 +1,4 @@
 load(":maven.bzl", "MavenRepoInfo")
-load("@exec_properties//:constants.bzl", "RBE_CPU_8")
 
 def _java_runtime(java_version):
     if java_version == 17:
@@ -118,9 +117,6 @@ def gradle_build(
     distribution = "//tools/base/build-system:gradle-distrib" + ("-" + gradle_version if (gradle_version) else "")
 
     java_runtime = _java_runtime(java_version)
-
-    if 'exec_properties' not in kwargs:
-        kwargs['exec_properties'] = RBE_CPU_8
 
     _gradle_build(
         name = name,
