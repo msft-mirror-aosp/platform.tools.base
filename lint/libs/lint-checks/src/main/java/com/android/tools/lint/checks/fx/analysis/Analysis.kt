@@ -933,7 +933,7 @@ internal open class Analysis<FX : Any>(
               translate((body.uastParent as UMethod).getContainingUClass()!!)
             body.expressions.any { it is UReturnExpression } -> target.returns
             // TODO: extract `Nothing` type. Anything else is `Unit`.
-            target.returns == Type.None && lastStm != null && lastStm !is UThrowExpression ->
+            target.returns == Type.None && (lastStm == null || lastStm !is UThrowExpression) ->
               Type.Unit
             else -> target.returns
           }

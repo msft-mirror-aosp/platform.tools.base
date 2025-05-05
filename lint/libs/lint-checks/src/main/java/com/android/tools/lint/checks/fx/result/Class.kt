@@ -15,6 +15,10 @@
  */
 package com.android.tools.lint.checks.fx.result
 
+import com.android.tools.lint.checks.fx.utils.Encoder
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.case
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.zeroOrMore
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiDocumentManager
@@ -76,7 +80,7 @@ sealed interface ClassId {
       override fun offsetString() = if (line == -1) "?" else "$line:$col1-$col2"
     }
 
-    private data class Imprecise(override val path: String, val offset: Int) : Anon() {
+    data class Imprecise(override val path: String, val offset: Int) : Anon() {
       override fun offsetString() = "~$offset"
     }
 
@@ -164,6 +168,20 @@ sealed interface ClassId {
     inline fun <reified C> of(): ClassId = of(C::class)
 
     val Array: ClassId = Common.Array
+
+    fun encoder(guardEncoder: Encoder<Any>, methodIdEncoder: Encoder<MethodId>): Encoder<ClassId> =
+      Encoder.fix { self ->
+        val int = Encoder.int
+        val str = Encoder.internedString
+        Encoder.sum(
+          case<_, Named>(str.adapt(Named::fqn, ::Named)),
+          case<_, Anon.Precise>(Encoder.product(Anon::Precise, str, int, int, int)),
+          case<_, Anon.Imprecise>(Encoder.product(Anon::Imprecise, str, int)),
+          case<_, Common>(Encoder.enum()),
+          case<_, Guarded>(Encoder.product(ClassId::Guarded, guardEncoder, self)),
+          case<_, Local>(Encoder.product(ClassId::Local, self, methodIdEncoder.zeroOrMore())),
+        )
+      }
   }
 }
 

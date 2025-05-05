@@ -23,6 +23,8 @@ import com.android.tools.lint.checks.fx.result.EffectAnnotation
 import com.android.tools.lint.checks.fx.result.EffectAnnotation.Explicit
 import com.android.tools.lint.checks.fx.result.Error
 import com.android.tools.lint.checks.fx.result.Type.Sym.Companion.chain
+import com.android.tools.lint.checks.fx.utils.Encoder
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.detector.api.Context
@@ -70,6 +72,11 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
 
   protected abstract val violationIssue: Issue
   protected abstract val unsatisfiableConstraintIssue: Issue
+  override val mainIssue
+    get() = violationIssue
+
+  override val effectEncoder
+    get() = lattice.encoder
 
   override fun report(context: Context, error: Error<ThreadConstraint<T>>) =
     when (error) {
@@ -387,6 +394,13 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
         second.isLeastPermissive() -> first
         // Only last case needed. Above cases are micro-optimization re-using common instances
         else -> of(first.cases or second.cases)
+      }
+
+    val encoder: Encoder<ThreadConstraint<T>> =
+      when {
+        fullCases < Byte.MAX_VALUE.toULong() ->
+          Encoder.byte.adapt({ it.cases.toByte() }, { of(it.toULong()) })
+        else -> Encoder.int.adapt({ it.cases.toInt() }, { of(it.toULong()) })
       }
 
     companion object {

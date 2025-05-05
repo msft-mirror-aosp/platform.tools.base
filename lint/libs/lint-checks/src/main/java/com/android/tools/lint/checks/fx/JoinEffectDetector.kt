@@ -21,26 +21,52 @@ import com.android.tools.lint.checks.fx.analysis.EffectResult
 import com.android.tools.lint.checks.fx.analysis.LocalFun
 import com.android.tools.lint.checks.fx.analysis.Module
 import com.android.tools.lint.checks.fx.result.AssumptionTable
+import com.android.tools.lint.checks.fx.result.ClassId
+import com.android.tools.lint.checks.fx.result.Constraint
 import com.android.tools.lint.checks.fx.result.ConstraintFailure
+import com.android.tools.lint.checks.fx.result.Effect
 import com.android.tools.lint.checks.fx.result.Error
 import com.android.tools.lint.checks.fx.result.MethodBody
+import com.android.tools.lint.checks.fx.result.MethodId
 import com.android.tools.lint.checks.fx.result.Point
 import com.android.tools.lint.checks.fx.result.Result
 import com.android.tools.lint.checks.fx.result.ResultTable
+import com.android.tools.lint.checks.fx.result.ResultTemplate
 import com.android.tools.lint.checks.fx.result.Type
+import com.android.tools.lint.checks.fx.result.get
+import com.android.tools.lint.checks.fx.utils.Encoder
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.case
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.interned
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.orNull
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.subType
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.withDefault
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.zeroOrMore
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
+import com.android.tools.lint.checks.fx.utils.decodeFromDir
+import com.android.tools.lint.checks.fx.utils.encodeToDir
 import com.android.tools.lint.checks.fx.utils.leastFixPoint
 import com.android.tools.lint.checks.fx.utils.unionedWith
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.PartialResult
+import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
+import java.io.File
+import java.nio.file.Paths
+import kotlin.io.path.exists
+import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentSet
+import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UDeclaration
@@ -62,11 +88,21 @@ abstract class JoinEffectDetector<FX : Any>(
   private val effects: Lattice<FX>,
   initialAssumptions: AssumptionTable<FX>,
 ) : Detector(), SourceCodeScanner, Module.AnnotationParser<FX> {
-  private val knownResults: ResultTable<FX> = ResultTable.of(initialAssumptions)
+  private var knownResults: LazyLoadedResultTable =
+    LazyLoadedResultTable(initialAssumptions, hashMapOf())
   private val programBuilder = Module.Builder(this)
 
   private var isSummariesCacheValid = false
   private lateinit var summariesCache: Map<Type.MethodRef, Result<Type<FX>, EffectResult.Eval<FX>>>
+
+  protected abstract val mainIssue: Issue
+
+  protected abstract val effectEncoder: Encoder<FX>
+
+  final override fun beforeCheckEachProject(context: Context) {
+    super.beforeCheckEachProject(context)
+    maybeLoadPartialResults(context)
+  }
 
   final override fun applicableSuperClasses() = listOf("java.lang.Object")
 
@@ -106,12 +142,13 @@ abstract class JoinEffectDetector<FX : Any>(
       }
     }
 
-  final override fun afterCheckEachProject(context: Context) {
-    if (!isSummariesCacheValid) {
-      summariesCache = runReadAction {
-        // programBuilder.loTechDebug()
+  final override fun afterCheckRootProject(context: Context) {
+    super.afterCheckEachProject(context)
 
-        val program = programBuilder.build()
+    if (!isSummariesCacheValid) {
+      val program = programBuilder.build()
+      // programBuilder.loTechDebug()
+      summariesCache = runReadAction {
         val entries = buildList {
           for ((cId, cDefn) in program.classes) {
             for ((mId, _) in cDefn.methods) {
@@ -130,6 +167,8 @@ abstract class JoinEffectDetector<FX : Any>(
           }
         }
       }
+
+      maybeSavePartialResults(context, program)
       isSummariesCacheValid = true
     }
     for ((_, sum) in summariesCache) {
@@ -144,6 +183,47 @@ abstract class JoinEffectDetector<FX : Any>(
    * [Lattice.top].
    */
   protected abstract fun report(context: Context, error: Error<FX>)
+
+  private fun maybeSavePartialResults(context: Context, program: Module<FX>) {
+    if (context.isGlobalAnalysis()) return
+    val dirPath =
+      getPartialResultDir(context.project, createIfAbsent = true)?.absolutePath ?: return
+    summaryEncoder.encodeToDir(
+      resultList(program, summariesCache),
+      dirPath,
+      methodIdEncoder,
+      Encoder.internedString,
+    )
+  }
+
+  private fun maybeLoadPartialResults(context: Context) {
+    if (context.isGlobalAnalysis()) return
+
+    for (dependentProject in context.project.allLibraries) {
+      val libDir =
+        getPartialResultDir(dependentProject, createIfAbsent = false)?.absolutePath ?: continue
+      val classIds =
+        classIdListEncoder.decodeFromDir(libDir, methodIdEncoder, Encoder.internedString)
+      for (c in classIds) knownResults.toBeLoaded[c] = libDir
+    }
+  }
+
+  override fun checkPartialResults(context: Context, partialResults: PartialResult) {}
+
+  private fun getPartialResultDir(project: Project, createIfAbsent: Boolean): File? {
+    val path =
+      when {
+        // Workaround for unit tests not having `partialResultsDir` set
+        LintClient.isUnitTest ->
+          Paths.get(project.dir.absolutePath, "build", mainIssue.id, project.name)
+        else -> Paths.get(project.partialResultsDir!!.absolutePath, mainIssue.id, project.name)
+      }
+    return when {
+      path.exists() -> path.toFile()
+      createIfAbsent -> path.toFile().apply { createDirectory() }
+      else -> null
+    }
+  }
 
   /**
    * During the fix-point computation, we might report redundant errors, the latter subsuming the
@@ -228,6 +308,134 @@ abstract class JoinEffectDetector<FX : Any>(
 
   private fun joinFxPair(fxPair0: Pair<FX, FX>, fxPair1: Pair<FX, FX>): Pair<FX, FX> =
     with(effects) { (fxPair0.first join fxPair1.first) to (fxPair0.second join fxPair1.second) }
+
+  private val classSummaryEncoder: Encoder<PersistentMap<MethodId, ResultTemplate<FX>>> = Encoder {
+    val resultEncoder =
+      Encoder.product(
+        ::ResultTemplate,
+        Encoder.map(
+          Encoder.internedString,
+          Encoder.set(recNothingTypeEncoder) withDefault persistentSetOf(),
+        ) withDefault persistentMapOf(),
+        recNothingTypeEncoder.zeroOrMore() withDefault listOf(),
+        recTypeEncoder withDefault Type.Unit,
+        fxEncoder withDefault Effect(effects.bottom, persistentSetOf(), Constraint.MostPermissive),
+      )
+    Encoder.map(methodIdEncoder, resultEncoder)
+  }
+
+  private val classIdEncoder: Encoder<ClassId> = Encoder {
+    ClassId.encoder(effectEncoder.adapt({ it as FX }, { it }), methodIdEncoder)
+  }
+
+  private val classIdListEncoder = classIdEncoder.zeroOrMore()
+
+  private val summaryEncoder =
+    Encoder.product(::Pair, classIdListEncoder, classSummaryEncoder.zeroOrMore())
+
+  private val methodIdEncoder: Encoder<MethodId> =
+    Encoder {
+        Encoder.product(
+          ::MethodId,
+          Encoder.boolean withDefault true,
+          Encoder.internedString withDefault "invoke",
+          classIdEncoder.orNull().zeroOrMore() withDefault listOf(),
+        )
+      }
+      .interned()
+
+  private val methodRefEncoder: Encoder<Type.MethodRef> =
+    Encoder.product(Type<FX>::MethodRef, classIdEncoder, methodIdEncoder)
+
+  private val recTypeEncoder = Encoder { typeEncoder }
+  private val typeListEncoder = recTypeEncoder.zeroOrMore()
+  private val recTypeSymEncoder = recTypeEncoder.subType<_, Type.Sym<FX>>()
+  private val invokeEncoder =
+    Encoder.product(Type.Sym<FX>::Invoke, recTypeSymEncoder, methodIdEncoder, typeListEncoder)
+  private val recNothingTypeEncoder = recTypeEncoder.subType<_, Type<Nothing>>()
+
+  private val typeEncoder: Encoder<Type<FX>> = Encoder {
+    Encoder.sum(
+      case<_, Type.Application<FX>>(
+        Encoder.product(Type<FX>::Application, classIdEncoder, typeListEncoder withDefault listOf())
+      ),
+      case<_, Type.Ellipsis<FX>>(
+        recTypeEncoder.adapt(Type.Ellipsis<FX>::element, Type<FX>::Ellipsis)
+      ),
+      case<_, Type.WildCard>(Encoder.const(Type.WildCard)),
+      case<_, Type.Union<FX>>(
+        Encoder.set(recTypeEncoder).adapt(Type.Union<FX>::cases, { Type.Union(it) as Type.Union })
+      ),
+      case<_, Type.Lambda<FX>>(
+        Encoder.product(
+          Type<FX>::Lambda,
+          typeListEncoder,
+          Encoder.product(::Result, recTypeEncoder, fxEncoder),
+          classIdEncoder.orNull(),
+        )
+      ),
+      case<_, Type.MethodRef>(methodRefEncoder),
+      case<_, Type.SpecializedMethodRef<FX>>(
+        Encoder.product(Type<FX>::SpecializedMethodRef, recTypeEncoder, methodRefEncoder)
+      ),
+      case<_, Type.Sym.Rec>(Encoder.const(Type.Sym.Rec)),
+      case<_, Type.Sym.Param>(
+        Encoder.internedString.adapt(Type.Sym.Param::name, Type.Sym<Nothing>::Param)
+      ),
+      case<_, Type.Sym.This>(classIdEncoder.adapt(Type.Sym.This::site, Type.Sym<Nothing>::This)),
+      case<_, Type.Sym.Invoke<FX>>(invokeEncoder),
+      case<_, Type.Sym.Fix<FX>>(
+        Encoder.product(
+          Type.Sym<FX>::Fix,
+          Encoder.set(recTypeSymEncoder),
+          Encoder.set(invokeEncoder),
+        )
+      ),
+    )
+  }
+
+  private val fxEncoder: Encoder<Effect<FX>> = Encoder {
+    val constraintEncoder =
+      Encoder.product(
+        ::Constraint,
+        Encoder.map(recTypeSymEncoder, effectEncoder).orNull() withDefault persistentMapOf(),
+        Encoder.map(
+            invokeEncoder,
+            Encoder.set(recTypeSymEncoder).orNull() withDefault persistentSetOf(),
+          )
+          .orNull() withDefault persistentMapOf(),
+      )
+
+    Encoder.product(
+      ::Effect,
+      effectEncoder,
+      Encoder.set(recTypeSymEncoder).orNull() withDefault persistentSetOf(),
+      constraintEncoder withDefault Constraint.MostPermissive,
+    )
+  }
+
+  private inner class LazyLoadedResultTable(
+    var loaded: AssumptionTable<FX>,
+    val toBeLoaded: MutableMap<ClassId, String>,
+  ) : ResultTable<FX> {
+
+    override fun get(ref: Type.MethodRef): ResultTemplate<FX>? {
+      val cached = loaded[ref]
+      if (cached != null) return cached
+      loadFromDir(toBeLoaded[ref.klass] ?: return null)
+      return loaded[ref]
+    }
+
+    private fun loadFromDir(dir: String) {
+      val (classIds, classSummaries) =
+        summaryEncoder.decodeFromDir(dir, methodIdEncoder, Encoder.internedString)
+      require(classIds.size == classSummaries.size)
+      for ((i, classId) in classIds.withIndex()) {
+        loaded = loaded.put(classId, classSummaries[i])
+        toBeLoaded.remove(classId)
+      }
+    }
+  }
 }
 
 private fun <FX : Any> debugEntry(program: Module<FX>, k: Point<FX>, v: Ans<FX>) {
@@ -243,3 +451,39 @@ private fun <FX : Any> debugEntry(program: Module<FX>, k: Point<FX>, v: Ans<FX>)
     is Point.Instantiation -> println("  - $k : $v")
   }
 }
+
+private fun <FX : Any> resultList(
+  module: Module<FX>,
+  results: Map<Type.MethodRef, Result<Type<FX>, EffectResult.Eval<FX>>>,
+) =
+  module.classes
+    .map { (classId, classBody) ->
+      val classSummary: PersistentMap<MethodId, ResultTemplate<FX>> =
+        classBody.methods.asSequence().fold(persistentMapOf()) { m, (methodId, methodBody) ->
+          val methodSummary = results[Type.MethodRef(classId, methodId)] ?: return@fold m
+          val effect =
+            when (val effectResult = methodSummary.effect) {
+              is EffectResult.Checking ->
+                when (val status = methodBody.status) {
+                  is MethodBody.Status.ForChecking ->
+                    Effect(status.upperBound.annotated, persistentSetOf(), effectResult.result)
+                  is MethodBody.Status.ForInference -> throw IllegalStateException()
+                  is MethodBody.Status.Abstract,
+                  is MethodBody.Status.BasicConstructor -> return@fold m
+                }
+              is EffectResult.Inference -> effectResult.result
+              is EffectResult.Inapplicable -> return@fold m
+            }
+          m.put(
+            methodId,
+            ResultTemplate(
+              methodBody.initEnvironment.types,
+              methodBody.domains,
+              methodSummary.value,
+              effect,
+            ),
+          )
+        }
+      classId to classSummary
+    }
+    .unzip()
