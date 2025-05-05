@@ -14,22 +14,9 @@ _git = [
     # TODO(b/340640065): Perfetto relies on a load() for @perfetto_cfg that
     # cannot be overridden with bzlmod.
     {
-        "name": "perfetto",
-        "path": "external/perfetto",
-        "repo_mapping": {
-            "@com_google_protobuf": "@com_google_protobuf",
-        },
-    },
-    {
         "name": "perfetto_cfg",
         "path": "tools/base/bazel/perfetto_cfg",
         "build_file_content": "",
-    },
-    # TODO: Migrate users of @perfetto_repo to @perfetto
-    {
-        "name": "perfetto_repo",
-        "build_file": "//tools/base/profiler:native/external/perfetto.BUILD",
-        "path": "external/perfetto",
     },
     # TODO(b/340640065): Must be moved with @maven.
     {
@@ -42,7 +29,7 @@ _git = [
 # Bazel repository mapped to archive files, containing the sources.
 _archives = [
     # Perfetto Dependencies:
-    # These are external dependencies to build Perfetto (from external/perfetto)
+    # These are external dependencies to build Perfetto.
     {
         # https://github.com/google/perfetto/blob/063034c1deea22dced25d8714fd525e3a8a120d3/bazel/deps.bzl#L59
         "name": "perfetto-jsoncpp-1.0.0",
