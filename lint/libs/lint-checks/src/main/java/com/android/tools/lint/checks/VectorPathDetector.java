@@ -43,14 +43,16 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
 
 /** Looks for issues with long vector paths */
 public class VectorPathDetector extends ResourceXmlDetector {
@@ -75,11 +77,12 @@ public class VectorPathDetector extends ResourceXmlDetector {
             Issue.create(
                             "InvalidVectorPath",
                             "Invalid vector paths",
-                            "This check ensures that vector paths are valid. For example, it makes "
-                                    + "sure that the numbers are not using scientific notation (such as 1.0e3) "
-                                    + "which can lead to runtime crashes on older devices. As another example, "
-                                    + "it flags numbers like `.5` which should be written as `0.5` instead to "
-                                    + "avoid crashes on some pre-Marshmallow devices.",
+                            "This check ensures that vector paths are valid. For example, it makes"
+                                + " sure that the numbers are not using scientific notation (such"
+                                + " as 1.0e3) which can lead to runtime crashes on older devices."
+                                + " As another example, it flags numbers like `.5` which should be"
+                                + " written as `0.5` instead to avoid crashes on some"
+                                + " pre-Marshmallow devices.",
                             Category.CORRECTNESS,
                             5,
                             Severity.ERROR,
@@ -87,8 +90,9 @@ public class VectorPathDetector extends ResourceXmlDetector {
                     //noinspection LintImplBadUrl -- old bug, fewer digits than usual
                     .addMoreInfo("https://issuetracker.google.com/37008268");
 
-    // Arbitrary limit suggested in https://code.google.com/p/android/issues/detail?id=235219
-    static final int MAX_PATH_DATA_LENGTH = 800;
+    // Arbitrary limit suggested in https://code.google.com/p/android/issues/detail?id=235219,
+    // increased to 3000 as suggested in https://issuetracker.google.com/414374636
+    static final int MAX_PATH_DATA_LENGTH = 3000;
 
     /** Constructs a new {@link VectorPathDetector} */
     public VectorPathDetector() {}
@@ -146,9 +150,9 @@ public class VectorPathDetector extends ResourceXmlDetector {
         String message =
                 String.format(
                         Locale.getDefault(),
-                        "Very long vector path (%1$d characters), which is bad for "
-                                + "performance. Considering reducing precision, removing minor details or "
-                                + "rasterizing vector.",
+                        "Very long vector path (%1$d characters), which is bad for performance."
+                                + " Considering reducing precision, removing minor details or"
+                                + " rasterizing vector.",
                         length);
         Incident incident =
                 new Incident(PATH_LENGTH, attribute, context.getValueLocation(attribute), message);
