@@ -259,4 +259,8 @@ class LiveEditClass {
     public String getClassInternalName() {
         return bytecode.getInternalName();
     }
+
+    public Interpretable getBytecode() {
+        return bytecode;
+    }
 }

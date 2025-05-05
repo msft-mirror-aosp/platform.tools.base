@@ -15,51 +15,17 @@
  */
 package com.android.tools.deploy.liveedit;
 
-import com.google.common.io.ByteStreams;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
-import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.stream.Collectors;
-
 public class LambdaSuperTest {
     private static final String TEST_CLASS = "com/android/tools/deploy/liveedit/LambdasKt";
 
-    static {
-        LiveEditStubs.init(ProxyEvalTest.class.getClassLoader());
-    }
-
     @BeforeClass
     public static void before() throws Exception {
-        JarFile jar =
-                new JarFile(
-                        new File(
-                                LambdasKt.class
-                                        .getProtectionDomain()
-                                        .getCodeSource()
-                                        .getLocation()
-                                        .toURI()));
-        List<JarEntry> files =
-                jar.stream()
-                        .filter(entry -> entry.getName().endsWith(".class"))
-                        .collect(Collectors.toList());
-        for (JarEntry entry : files) {
-            if (entry.getName().equals(TEST_CLASS + ".class")) {
-                byte[] classData = ByteStreams.toByteArray(jar.getInputStream(entry));
-                LiveEditStubs.addClass(TEST_CLASS, new Interpretable(classData), false);
-            }
-            if (entry.getName().startsWith(TEST_CLASS + "$")) {
-                String internalName =
-                        entry.getName().substring(0, entry.getName().length() - ".class".length());
-                byte[] classData = ByteStreams.toByteArray(jar.getInputStream(entry));
-                LiveEditStubs.addClass(internalName, new Interpretable(classData), true);
-            }
-        }
+        LambdaUtils.loadClassAndLambdaClasses(LambdasKt.class);
     }
 
     @Test
