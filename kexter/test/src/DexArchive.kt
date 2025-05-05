@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-object DexArchive : DexArchiveBase("dex_kexter_test_resources.jar")
+object DexArchive : DexArchiveBase("dex_kexter_test_resources_main_dex.jar")
 
-object OtherDexArchive : DexArchiveBase("dex_kexter_test_resources_second_dex.jar")
+object OtherDexArchive : DexArchiveBase("dex_kexter_test_resources_other_dex.jar")

@@ -8,49 +8,46 @@ kotlin_library(
     srcs = glob([
         "src/**/*.kt",
     ]),
-    visibility = [
-    ],
+    visibility = [],
     deps = [
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],
 )
 
 kotlin_library(
-    name = "jar_kexter_test_resources",
+    name = "jar_kexter_test_resources_main_dex",
     srcs = glob([
-        "test/resources/src/**/*.kt",
+        "test/resources/main_dex/src/**/*.kt",
     ]),
     coverage_baseline_enabled = False,
-    visibility = [
-    ],
+    visibility = [],
 )
 
 dex_library(
-    name = "dex_kexter_test_resources",
+    name = "dex_kexter_test_resources_main_dex",
     flags = ["--min-api 26"],
     jars = [
-        ":jar_kexter_test_resources",
+        ":jar_kexter_test_resources_main_dex",
     ],
     visibility = [],
 )
 
 # To allow testing of sequential dex, we create a second dex file
 kotlin_library(
-    name = "jar_kexter_test_resources_second_dex",
+    name = "jar_kexter_test_resources_other_dex",
     srcs = glob([
-        "test/resources_second_dex/src/**/*.kt",
+        "test/resources/other_dex/src/**/*.kt",
     ]),
     coverage_baseline_enabled = False,
-    visibility = [
-    ],
+    visibility = [],
 )
 
 # To allow testing of sequential dex, we create a second dex file
 dex_library(
-    name = "dex_kexter_test_resources_second_dex",
+    name = "dex_kexter_test_resources_other_dex",
     flags = ["--min-api 26"],
     jars = [
-        ":jar_kexter_test_resources_second_dex",
+        ":jar_kexter_test_resources_other_dex",
     ],
     visibility = [],
 )
@@ -85,15 +82,11 @@ iml_module(
     ],
     iml_files = ["android.sdktools.kexter.iml"],
     test_data = [
-        ":dex_kexter_test_resources",
-        ":dex_kexter_test_resources_second_dex",
+        ":dex_kexter_test_resources_main_dex",
+        ":dex_kexter_test_resources_other_dex",
     ],
     test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_srcs = [
-        "test/src",
-        "test/resources/src",
-        "test/resources_second_dex/src",
-    ],
+    test_srcs = ["test/src"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
