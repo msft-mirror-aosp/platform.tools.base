@@ -28,7 +28,6 @@ import com.android.build.gradle.integration.common.fixture.DESUGAR_NIO_DEPENDENC
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.compileSdkHash
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
@@ -438,7 +437,7 @@ class CheckAarMetadataTaskTest {
             "\n\nandroid.compileSdkPreview 'UpsideDownCakePrivacySandbox'\n\n"
         )
         val result = project.executor().run(":app:checkDebugAarMetadata")
-        ScannerSubject.assertThat(result.stdout).contains("BUILD SUCCESSFUL")
+        result.assertOutputContains("BUILD SUCCESSFUL")
     }
 
     @Test
@@ -503,7 +502,7 @@ class CheckAarMetadataTaskTest {
         }
 
         val result = project.executor().run(":app:checkDebugAarMetadata")
-        ScannerSubject.assertThat(result.stdout).contains("BUILD SUCCESSFUL")
+        result.assertOutputContains("BUILD SUCCESSFUL")
     }
 
     @Test
@@ -557,7 +556,7 @@ class CheckAarMetadataTaskTest {
         )
 
         val result = project.executor().expectFailure().run(":app:checkDebugAarMetadata")
-        ScannerSubject.assertThat(result.stderr).contains(
+        result.assertErrorContains(
             """
                 An issue was found when checking AAR metadata:
 
@@ -615,7 +614,7 @@ class CheckAarMetadataTaskTest {
             "dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION'}"
         )
         val result = project.executor().expectFailure().run(":app:checkDebugAarMetadata")
-        ScannerSubject.assertThat(result.stderr).contains(
+        result.assertErrorContains(
             "2 issues were found when checking AAR metadata"
         )
     }
@@ -661,7 +660,7 @@ class CheckAarMetadataTaskTest {
         // Android test is enforced to have core library desugaring enabled
         val result = project.executor().expectFailure().run(
             ":lib2:checkDebugAndroidTestAarMetadata")
-        ScannerSubject.assertThat(result.stderr).contains(
+        result.assertErrorContains(
             """
                 An issue was found when checking AAR metadata:
 
