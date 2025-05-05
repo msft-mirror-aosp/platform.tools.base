@@ -20,14 +20,15 @@ import java.nio.file.Paths
 import kexter.Dex
 import kexter.DexBytecode
 import kexter.DexClass
+import kexter.DexContainer
 import kexter.DexDumper
 import kexter.Logger
 
 open class DexArchiveBase(private val archiveName: String) {
 
-  val dex = getTestResourceDex(archiveName)
+  val container = getTestResourceDex(archiveName)
 
-  private fun getTestResourceDex(filename: String): Dex {
+  private fun getTestResourceDex(filename: String): DexContainer {
     val path = "tools/base/kexter/$filename"
     var resourcesPath = Paths.get(path)
     if (!Files.exists(resourcesPath)) {
@@ -36,9 +37,9 @@ open class DexArchiveBase(private val archiveName: String) {
     val repo = ZipRepo(resourcesPath)
     repo.use {
       val logger = Logger()
-      val dex = Dex.fromBytes(repo.getContent("classes.dex").array(), logger)
-      DexDumper.dump(dex, logger)
-      return dex
+      val container = Dex.fromBytes(repo.getContent("classes.dex").array(), logger)
+      DexDumper.dump(container, logger)
+      return container
     }
   }
 
@@ -47,11 +48,7 @@ open class DexArchiveBase(private val archiveName: String) {
   }
 
   internal fun getByteCode(className: String, methodName: String): DexBytecode {
-    if (!dex.classes.containsKey(className)) {
-      throw IllegalStateException(
-        "Unable to find class $className, found:${dex.classes.keys.joinToString(",\n")}"
-      )
-    }
+    val dex = getDex(className)
     val clazz = dex.classes[className]!!
     if (!clazz.methods.containsKey(methodName)) {
       throw IllegalStateException(
@@ -62,18 +59,16 @@ open class DexArchiveBase(private val archiveName: String) {
     return method.byteCode
   }
 
-  internal fun allClasses() = dex.classes
-
   internal fun retrieveClass(internalClassName: String): DexClass {
-    if (!dex.classes.containsKey(internalClassName)) {
-      throw IllegalStateException(
-        "No class $internalClassName in dex $archiveName. Only found:\n${
-                    dex.classes.keys.joinToString(
-                        "\n"
-                    )
-                }"
-      )
-    }
-    return dex.classes[internalClassName]!!
+    return getDex(internalClassName).classes[internalClassName]!!
+  }
+
+  internal fun getDex(className: String): Dex {
+    return container.getDexFileWithClass(className)
+      ?: throw IllegalStateException("Unable to find class $className")
+  }
+
+  override fun toString(): String {
+    return archiveName
   }
 }

@@ -14,19 +14,12 @@
  * limitations under the License.
  */
 
-package kexter.core
+import org.junit.runners.Parameterized.Parameters
 
-internal class TypeIds(private val span: Span, private val dex: DexImpl) {
-  private val cache: MutableMap<UInt, String> = mutableMapOf()
-
-  fun get(index: UInt): String {
-    return cache.computeIfAbsent(index) {
-      if (index > span.count) {
-        dex.logger.error("Bad typeId index $index (max = ${span.count})")
-      }
-      val reader = dex.reader(span.offset + index * 4u)
-      val descriptorIndex = reader.uint()
-      dex.stringIds.get(descriptorIndex)
-    }
+abstract class MultipleDexVersionTestBase(protected val archive: DexArchiveBase) {
+  companion object {
+    @JvmStatic
+    @Parameters(name = "dex archive {0}")
+    fun data() = listOf(MainDexArchive, MainDexContainerArchive)
   }
 }

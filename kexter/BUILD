@@ -1,5 +1,4 @@
 load("@rules_java//java:defs.bzl", "java_binary")
-load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 
@@ -12,44 +11,6 @@ kotlin_library(
     deps = [
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],
-)
-
-kotlin_library(
-    name = "jar_kexter_test_resources_main_dex",
-    srcs = glob([
-        "test/resources/main_dex/src/**/*.kt",
-    ]),
-    coverage_baseline_enabled = False,
-    visibility = [],
-)
-
-dex_library(
-    name = "dex_kexter_test_resources_main_dex",
-    flags = ["--min-api 26"],
-    jars = [
-        ":jar_kexter_test_resources_main_dex",
-    ],
-    visibility = [],
-)
-
-# To allow testing of sequential dex, we create a second dex file
-kotlin_library(
-    name = "jar_kexter_test_resources_other_dex",
-    srcs = glob([
-        "test/resources/other_dex/src/**/*.kt",
-    ]),
-    coverage_baseline_enabled = False,
-    visibility = [],
-)
-
-# To allow testing of sequential dex, we create a second dex file
-dex_library(
-    name = "dex_kexter_test_resources_other_dex",
-    flags = ["--min-api 26"],
-    jars = [
-        ":jar_kexter_test_resources_other_dex",
-    ],
-    visibility = [],
 )
 
 kotlin_library(
@@ -82,11 +43,19 @@ iml_module(
     ],
     iml_files = ["android.sdktools.kexter.iml"],
     test_data = [
-        ":dex_kexter_test_resources_main_dex",
-        ":dex_kexter_test_resources_other_dex",
+        "//tools/base/kexter/test/resources:container_dex",
+        "//tools/base/kexter/test/resources:main_container_dex",
+        "//tools/base/kexter/test/resources:main_dex",
+        "//tools/base/kexter/test/resources:other_dex",
     ],
     test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
-    test_srcs = ["test/src"],
+    # do not sort: must match IML order
+    test_srcs = [
+        "test/src",
+        "test/resources/container/src",
+        "test/resources/main/src",
+        "test/resources/other/src",
+    ],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [

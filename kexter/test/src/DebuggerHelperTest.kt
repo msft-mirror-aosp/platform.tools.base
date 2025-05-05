@@ -17,20 +17,23 @@
 import kexter.DexDebuggerHelper
 import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class DebuggerHelperTest {
+@RunWith(Parameterized::class)
+class DebuggerHelperTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive) {
 
   @Test
   fun isSimpleGetter() {
     val debugHelper =
-      DexDebuggerHelper(DexArchive.getRawBytecode("LSimpleGetterClass;", "getIntValue(I)"))
+      DexDebuggerHelper(archive.getRawBytecode("LSimpleGetterClass;", "getIntValue(I)"))
     Assert.assertEquals("", true, debugHelper.isSimpleGetter())
   }
 
   @Test
   fun hasStaticInvocations() {
     val debugHelper =
-      DexDebuggerHelper(DexArchive.getRawBytecode("LStaticInvocationClass;", "invokeStatic(V)"))
+      DexDebuggerHelper(archive.getRawBytecode("LStaticInvocationClass;", "invokeStatic(V)"))
     Assert.assertEquals("", true, debugHelper.hasStaticInvocations())
   }
 }

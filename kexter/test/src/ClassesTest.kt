@@ -1,6 +1,3 @@
-import org.junit.Assert
-import org.junit.Test
-
 /*
  * Copyright (C) 2024 The Android Open Source Project
  *
@@ -16,29 +13,36 @@ import org.junit.Test
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-class ClassesTest {
 
+import org.junit.Assert
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+
+@RunWith(Parameterized::class)
+class ClassesTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive) {
   @Test
   fun testClassesRetrievalNonExistent() {
-    Assert.assertFalse(DexArchive.allClasses().isEmpty())
+    val noClassesRetrieved = archive.container.dexFiles.all { it.classes.isEmpty() }
+    Assert.assertFalse(noClassesRetrieved)
     Assert.assertThrows(java.lang.IllegalStateException::class.java) {
-      DexArchive.retrieveClass("Foo")
+      archive.retrieveClass("Foo")
     }
   }
 
   @Test
   fun testClassRetrievalByName() {
-    DexArchive.retrieveClass("LAddClass;")
+    archive.retrieveClass("LAddClass;")
   }
 
   @Test
   fun testClassRetrievalByNameWithPackage() {
-    DexArchive.retrieveClass("Lcom/pkg/ClassInPackage;")
+    archive.retrieveClass("Lcom/pkg/ClassInPackage;")
   }
 
   @Test
   fun testMethodsRetrieval() {
-    val clazz = DexArchive.retrieveClass("Lcom/pkg/ClassInPackage;")
+    val clazz = archive.retrieveClass("Lcom/pkg/ClassInPackage;")
     Assert.assertFalse(clazz.methods.isEmpty())
     val expected = listOf("<init>(V)", "f(FF)", "i(II)", "l(JJ)", "d(DD)", "o(LLLL)").sorted()
     val actual = clazz.methods.keys.sorted()
@@ -47,7 +51,7 @@ class ClassesTest {
 
   @Test
   fun testMethodParamsComplexTypes() {
-    val clazz = DexArchive.retrieveClass("Lcom/pkg/ClassInPackage;")
+    val clazz = archive.retrieveClass("Lcom/pkg/ClassInPackage;")
     Assert.assertFalse(clazz.methods.isEmpty())
     Assert.assertTrue(clazz.methods.keys.contains("o(LLLL)"))
 
@@ -64,7 +68,7 @@ class ClassesTest {
 
   @Test
   fun testMethodParamsPrimitiveTypes() {
-    val clazz = DexArchive.retrieveClass("Lcom/pkg/ClassInPackage;")
+    val clazz = archive.retrieveClass("Lcom/pkg/ClassInPackage;")
     Assert.assertFalse(clazz.methods.isEmpty())
     Assert.assertTrue(clazz.methods.keys.contains("i(II)"))
 

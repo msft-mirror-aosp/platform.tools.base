@@ -17,11 +17,14 @@
 import kexter.Opcode
 import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class ByteCodeTest {
+@RunWith(Parameterized::class)
+class ByteCodeTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive) {
   @Test
   fun testSimpleBytecode() {
-    val bytecode = DexArchive.getByteCode("LByteCodeClass;", "invokeMath(II)")
+    val bytecode = archive.getByteCode("LByteCodeClass;", "invokeMath(II)")
     Assert.assertNotEquals(0, bytecode.instructions.size)
 
     var instr = bytecode.instructionsForLineNumber(20)
@@ -34,7 +37,7 @@ class ByteCodeTest {
 
   @Test
   fun testMultiInstructionPerLine() {
-    val bytecode = DexArchive.getByteCode("LByteCodeClass;", "multiInstructionPerLine(II)")
+    val bytecode = archive.getByteCode("LByteCodeClass;", "multiInstructionPerLine(II)")
     Assert.assertNotEquals(0, bytecode.instructions.size)
 
     var instr = bytecode.instructionsForLineNumber(30)

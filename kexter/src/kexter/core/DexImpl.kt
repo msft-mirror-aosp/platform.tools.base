@@ -20,16 +20,16 @@ import kexter.Dex
 import kexter.DexMethod
 import kexter.Logger
 
-internal class DexImpl(private val bytes: ByteArray, val logger: Logger) : Dex() {
+internal class DexImpl(header: DexHeader, private val bytes: ByteArray, val logger: Logger) :
+  Dex() {
 
   fun reader(position: UInt) = DexReader(bytes, position)
 
-  val header: DexHeader = DexHeader(reader(0u))
   val stringIds: StringIds = StringIds(header.stringIds, this)
   val classDefs: ClassDefs = ClassDefs(header.classDefs, this)
   val methodIds: MethodIds = MethodIds(header.methodsIds, this)
   val protoIds: ProtoIds = ProtoIds(header.protoIds, this)
-  val typeIds: TypeIds = TypeIds(this)
+  val typeIds: TypeIds = TypeIds(header.typeIds, this)
 
   private val allMethodsCache: MutableMap<UInt, DexMethod> = mutableMapOf()
 
@@ -66,4 +66,23 @@ internal class DexImpl(private val bytes: ByteArray, val logger: Logger) : Dex()
     }
     return params
   }
+}
+
+internal fun parseHeaders(bytes: ByteArray): List<DexHeader> {
+  val reader = DexReader(bytes, 0u)
+  var currentOffset = reader.position
+  val result = mutableListOf<DexHeader>()
+  while (reader.remaining() > 0u) {
+    val header = DexHeader.parse(reader)
+    result.add(header)
+
+    // Dex header grows with new features. Keep track of what we may not have parsed.
+    val extraBytes = currentOffset + header.headerSize - reader.position
+    reader.skip(extraBytes)
+
+    // Jump to an end of file or to a next header if container format is enabled
+    reader.skip(header.fileSize - header.headerSize)
+    currentOffset = reader.position
+  }
+  return result
 }
