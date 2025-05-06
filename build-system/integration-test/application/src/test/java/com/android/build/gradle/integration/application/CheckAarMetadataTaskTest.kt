@@ -697,14 +697,14 @@ class CheckAarMetadataTaskTest {
         ZipArchive(aarFile).use { aar ->
             aar.delete(AarMetadataTask.AAR_METADATA_ENTRY_PATH)
             val sb = StringBuilder()
-            aarFormatVersion?.let { sb.appendln("$AAR_FORMAT_VERSION_PROPERTY=$it") }
-            aarMetadataVersion?.let { sb.appendln("$AAR_METADATA_VERSION_PROPERTY=$it") }
-            minCompileSdk?.let { sb.appendln("$MIN_COMPILE_SDK_PROPERTY=$it") }
-            minCompileSdkExtension?.let { sb.appendln("$MIN_COMPILE_SDK_EXTENSION_PROPERTY=$it") }
-            minAgpVersion?.let { sb.appendln("$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=$it") }
-            forceCompileSdkPreview?.let { sb.appendln("$FORCE_COMPILE_SDK_PREVIEW_PROPERTY=$it") }
-            coreLibraryDesugaringEnabled?.let { sb.appendln("$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=$it") }
-            minDesugarJdkLib?.let { sb.appendln("$DESUGAR_JDK_LIB_PROPERTY=$it") }
+            aarFormatVersion?.let { sb.appendLine("$AAR_FORMAT_VERSION_PROPERTY=$it") }
+            aarMetadataVersion?.let { sb.appendLine("$AAR_METADATA_VERSION_PROPERTY=$it") }
+            minCompileSdk?.let { sb.appendLine("$MIN_COMPILE_SDK_PROPERTY=$it") }
+            minCompileSdkExtension?.let { sb.appendLine("$MIN_COMPILE_SDK_EXTENSION_PROPERTY=$it") }
+            minAgpVersion?.let { sb.appendLine("$MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY=$it") }
+            forceCompileSdkPreview?.let { sb.appendLine("$FORCE_COMPILE_SDK_PREVIEW_PROPERTY=$it") }
+            coreLibraryDesugaringEnabled?.let { sb.appendLine("$CORE_LIBRARY_DESUGARING_ENABLED_PROPERTY=$it") }
+            minDesugarJdkLib?.let { sb.appendLine("$DESUGAR_JDK_LIB_PROPERTY=$it") }
             aar.add(
                 BytesSource(
                     sb.toString().toByteArray(),
