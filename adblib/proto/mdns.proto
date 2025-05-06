@@ -35,7 +35,7 @@ message ServiceAdbTcp {
 }
 
 message ServiceAdbTls {
-    MdnsService service = 1 ;
+    MdnsService service = 1;
     // If this device has previously been paired, it is considered a known device.
     bool known_device = 2;
 }
@@ -52,5 +52,5 @@ message MdnsService {
     repeated string ipv6 = 5;
     uint32 port = 6;
     optional string device_model = 7;
-    optional string build_version_sdk = 8;
+    optional string build_version_sdk_full = 8;
 }
