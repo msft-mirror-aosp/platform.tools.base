@@ -84,6 +84,7 @@ py_library(
         ":failure_retry",
         ":gerrit",
         ":impacted_targets",
+        ":runs_per_test",
         "//tools/base/bazel/ci:bazel",
     ],
 )
@@ -101,5 +102,25 @@ py_test(
         "//tools/base/bazel/ci:gce",
         "@absl-py//absl/testing:absltest",
         "@absl-py//absl/testing:parameterized",
+    ],
+)
+
+py_library(
+    name = "runs_per_test",
+    srcs = ["runs_per_test.py"],
+    deps = [
+        ":gerrit",
+    ],
+)
+
+py_test(
+    name = "runs_per_test_test",
+    srcs = ["runs_per_test_test.py"],
+    deps = [
+        ":gerrit",
+        ":runs_per_test",
+        "//tools/base/bazel/ci:fake_build_env",
+        "//tools/base/bazel/ci:fake_gce",
+        "@absl-py//absl/testing:absltest",
     ],
 )

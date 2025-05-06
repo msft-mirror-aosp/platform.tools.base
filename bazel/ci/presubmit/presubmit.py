@@ -9,9 +9,7 @@ from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci.presubmit import impacted_targets
 from tools.base.bazel.ci.presubmit import failure_retry
 from tools.base.bazel.ci.presubmit import gerrit
-
-
-_MAX_RUNS_PER_TEST = 200
+from tools.base.bazel.ci.presubmit import runs_per_test
 
 
 class SelectivePresubmitStrategy(enum.Enum):
@@ -41,29 +39,6 @@ class SelectivePresubmitResult:
     ]
 
 
-def _generate_runs_per_test_flags(gerrit_info: gerrit.GerritInfo) -> List[str]:
-  """Returns the flags used to specify the number of runs per test."""
-  flags = []
-  for value in gerrit_info.filter_tags('Presubmit-Runs-Per-Test'):
-    target, runs = value.split('@')
-    runs = int(runs)
-
-    # Limit the number of runs per test.
-    if runs > _MAX_RUNS_PER_TEST:
-      raise ValueError(
-          f'Exceeded maximum runs per test: {runs} > {_MAX_RUNS_PER_TEST}'
-      )
-
-    # Prevent wildcards.
-    if target.endswith('...') or target.endswith(':all'):
-      raise ValueError(f'Wildcard target not allowed: {target}')
-
-    logging.info('Running %s with %d runs per test', target, runs)
-    flags.append(f'--runs_per_test={value}')
-
-  return flags
-
-
 def find_test_targets(
     build_env: bazel.BuildEnv,
     base_targets: Sequence[str],
@@ -86,8 +61,9 @@ def find_test_targets(
   Tags can be repeated in one description and across multiple changes.
   """
   gerrit_info = gerrit.get_gerrit_info(build_env)
+  runs_per_test_info = runs_per_test.get_runs_per_test_info(gerrit_info)
 
-  flags = gerrit_info.get_bazel_flags() + _generate_runs_per_test_flags(gerrit_info)
+  flags = gerrit_info.get_bazel_flags() + runs_per_test_info.get_bazel_flags()
 
   # Parse Presubmit-Test tags.
   explicit_targets = []

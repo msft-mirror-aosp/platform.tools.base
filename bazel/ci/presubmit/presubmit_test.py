@@ -84,25 +84,6 @@ class PresubmitTest(parameterized.TestCase):
           ],
       ),
       dict(
-          testcase_name='with_runs_per_test',
-          tags = [
-              ('Presubmit-Test', 'default'),
-              ('Presubmit-Runs-Per-Test', 'studio-test:target1@10'),
-              ('Presubmit-Runs-Per-Test', 'target2@20'),
-              ('Presubmit-Runs-Per-Test', 'studio-other:target3@30'),
-          ],
-          failed_tests=[],
-          impacted_targets=[],
-          query_targets=[],
-          expected_targets=['base_target1', 'base_target2'],
-          expected_flags=[
-              '--runs_per_test=target1@10',
-              '--runs_per_test=target2@20',
-              '--build_metadata=selective_presubmit_strategy=default_explicit',
-              '--build_metadata=selective_presubmit_found=False',
-          ],
-      ),
-      dict(
           testcase_name='with_other_target_name',
           tags=[('Presubmit-Test', 'studio-other:target3')],
           failed_tests=[],
