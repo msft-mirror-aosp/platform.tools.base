@@ -253,12 +253,19 @@ suspend fun SqliteInspectorTestEnvironment.issueQuery(
  * - [registerEntryHook] and [registerExitHook] record the calls which can later be retrieved in
  *   [consumeRegisteredHooks].
  */
-private class FakeArtTooling : ArtTooling {
+class FakeArtTooling : ArtTooling {
   private val instancesToFind = mutableListOf<Any>()
+  private val invalidClasses = mutableListOf<String>()
+
   val registeredHooks = mutableListOf<Hook>()
 
   fun registerInstancesToFind(instances: List<Any>) {
     instancesToFind.addAll(instances)
+  }
+
+  fun registerInvalidClasses(vararg invalidClasses: String) {
+    this.invalidClasses.clear()
+    this.invalidClasses.addAll(invalidClasses)
   }
 
   fun triggerOnOpenedEntry(path: String) {
@@ -313,6 +320,10 @@ private class FakeArtTooling : ArtTooling {
     originMethod: String,
     entryHook: ArtTooling.EntryHook,
   ) {
+    if (invalidClasses.contains(originClass.name)) {
+      throw NoClassDefFoundError("Class ${originClass.name} registered as invalid415408962")
+    }
+
     // TODO: implement actual registerEntryHook behaviour
     registeredHooks.add(Hook.EntryHook(originClass, originMethod, entryHook))
   }
