@@ -27,6 +27,7 @@ import com.android.backup.ErrorCode.DEVICE_DISCONNECTED
 import com.android.backup.ErrorCode.GMSCORE_IS_TOO_OLD
 import com.android.backup.ErrorCode.GMSCORE_NOT_FOUND
 import com.android.backup.ErrorCode.PLAY_STORE_NOT_INSTALLED
+import com.android.backup.ErrorCode.RESTORE_FAILED
 import com.android.backup.ErrorCode.TRANSPORT_INIT_FAILED
 import com.android.backup.ErrorCode.TRANSPORT_NOT_SELECTED
 import com.android.backup.ErrorCode.UNEXPECTED_ERROR
@@ -66,14 +67,21 @@ abstract class AbstractAdbServices(
     withBmgr { withTestMode { withTransport(transport) { block() } } }
   }
 
-  override suspend fun initializeTransport(transport: String) {
-    val out = executeCommand("bmgr init $transport", TRANSPORT_INIT_FAILED)
-    if (out.stdout.lines().last() != "Initialization result: 0") {
-      throw BackupException(TRANSPORT_INIT_FAILED, "Failed to initialize '$transport`: ${out.out}")
+  override suspend fun initializeTransport(transport: String): Boolean {
+    val out = executeCommand("bmgr init $transport", TRANSPORT_INIT_FAILED).stdout
+    val last = out.lines().last()
+    return when (last) {
+      "Initialization result: 0" -> true
+      "Initialization result: -1000" -> {
+        logger.debug("Failed to initialize '$transport`: $out")
+        false
+      }
+      else ->
+        throw BackupException(TRANSPORT_INIT_FAILED, "Failed to initialize '$transport`: $out")
     }
   }
 
-  override suspend fun backupNow(applicationId: String, type: BackupType) {
+  override suspend fun backupNow(applicationId: String, type: BackupType, initOk: Boolean) {
     setBackupType(type)
     val out =
       executeCommand(
@@ -95,6 +103,8 @@ abstract class AbstractAdbServices(
           BACKUP_NOT_ALLOWED,
           "Backup not allowed. Please ensure manifest value 'android:allowBackup' is set to true.",
         )
+      !initOk ->
+        throw BackupException(TRANSPORT_INIT_FAILED, "Failed to backup '$applicationId`: $out")
       else -> throw BackupException(BACKUP_FAILED, "Failed to backup '$applicationId`: $out")
     }
   }
@@ -107,11 +117,17 @@ abstract class AbstractAdbServices(
     }
   }
 
-  override suspend fun restore(token: String, applicationId: String, type: BackupType) {
+  override suspend fun restore(
+    token: String,
+    applicationId: String,
+    type: BackupType,
+    initOk: Boolean,
+  ) {
     setBackupType(type)
-    val out = executeCommand("bmgr restore $token $applicationId", ErrorCode.RESTORE_FAILED)
+    val out = executeCommand("bmgr restore $token $applicationId", RESTORE_FAILED)
     if (out.stdout.indexOf("restoreFinished: 0\n") < 0) {
-      throw BackupException(ErrorCode.RESTORE_FAILED, "Error restoring app: ${out.stdout}")
+      val errorCode = if (initOk) RESTORE_FAILED else TRANSPORT_INIT_FAILED
+      throw BackupException(errorCode, "Error restoring app: ${out.stdout}")
     }
   }
 
