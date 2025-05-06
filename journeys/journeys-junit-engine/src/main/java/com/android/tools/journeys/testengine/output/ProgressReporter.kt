@@ -299,7 +299,9 @@ class ProgressReporter(
      */
     private fun PromptDescriptor.reportEntry(key: String, value: String) {
         println("[additionalTestArtifacts]Journeys.$key=$value")
-        listener.reportingEntryPublished(this, ReportEntry.from(key, value))
+        if (key.isNotBlank() && value.isNotBlank()) {
+            listener.reportingEntryPublished(this, ReportEntry.from(key, value))
+        }
     }
 
     /**

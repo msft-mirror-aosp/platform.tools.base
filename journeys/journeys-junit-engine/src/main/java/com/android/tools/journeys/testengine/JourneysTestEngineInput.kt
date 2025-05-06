@@ -29,6 +29,7 @@ object JourneysTestEngineInput {
         val appApkPath: File = getFileFromSystemProperty("Proxy.appApkPath")
         val crawlerApkPath: File = getFileFromSystemProperty("Proxy.crawlerApkPath")
         val adbPath: File = getFileFromSystemProperty("Proxy.adbPath")
+        val accessTokenPath: String = getSystemProperty("Proxy.accessTokenPath")
     }
 }
 

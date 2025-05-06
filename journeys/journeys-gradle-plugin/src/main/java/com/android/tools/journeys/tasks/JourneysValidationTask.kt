@@ -78,6 +78,10 @@ abstract class JourneysValidationTask : Test() {
     @get:Internal
     abstract val adbExecutable: RegularFileProperty
 
+    @get:Optional
+    @get:Input
+    abstract val accessTokenFilePath: Property<String>
+
     @TaskAction
     override fun executeTests() {
         FileUtils.cleanOutputDir(resultsDir.get().asFile)
@@ -139,7 +143,7 @@ abstract class JourneysValidationTask : Test() {
                 setTestEngineParam("Proxy.applicationId", applicationId.get())
                 setTestEngineParam("Proxy.adbPath", adbExecutable.get().asFile.absolutePath)
                 setTestEngineParam("Proxy.crawlerApkPath", journeysCrawlerConfig.singleFile.absolutePath)
-
+                setTestEngineParam("Proxy.accessTokenPath", accessTokenFilePath.get())
                 super.executeTests()
             } else {
                 logger.quiet("No devices connected, exiting")

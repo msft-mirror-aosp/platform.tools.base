@@ -17,8 +17,12 @@
 package com.android.tools.journeys.testengine.robo
 
 import androidx.test.tools.crawler.proto.CrawlGuidanceProto.CrawlParameter
+import com.google.api.client.auth.oauth2.TokenResponse
+import com.google.api.client.json.gson.GsonFactory
 import com.google.appcrawler.platform.client.GrpcClient
+import com.google.auth.oauth2.AccessToken
 import com.google.auth.oauth2.GoogleCredentials
+import com.google.auth.oauth2.ImpersonatedCredentials
 import com.google.cloud.test.appcrawler.proto.Artifact
 import com.google.cloud.test.appcrawler.proto.ClientMetadata
 import com.google.cloud.test.appcrawler.proto.CrawlSetup
@@ -30,15 +34,17 @@ import io.grpc.CallCredentials
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
-import com.google.auth.oauth2.ImpersonatedCredentials
 import io.grpc.ClientInterceptor
 import io.grpc.CompositeCallCredentials
 import io.grpc.MethodDescriptor
 import io.grpc.auth.MoreCallCredentials
 import io.grpc.netty.NettyChannelBuilder
+import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
 import java.nio.file.Path
+import java.time.Instant
+import java.util.Date
 import java.util.UUID
 import kotlin.io.path.inputStream
 
@@ -51,12 +57,14 @@ import kotlin.io.path.inputStream
  * @param crawlerAppApkPath Path to the crawler APK.
  * @param applicationId The package ID of the application under test.
  * @param appApkPath Path to the application under test APK.
+ * @param accessTokenPath Path to obtain access token for establishing connection to backend.
  */
 class Proxy(
     private val adb: Adb,
     private val crawlerAppApkPath: String,
     private val applicationId: String,
-    private val appApkPath: String
+    private val appApkPath: String,
+    private val accessTokenPath: String
 ) {
 
     /**
@@ -73,7 +81,7 @@ class Proxy(
             val journeyScript = readJourneyScript(journeyPath)
             val instrumentationProcess = setupInstrumentation()
             hostPort = setupAdbForward()
-            val result = connectToCrawlerBackend(hostPort, journeyScript, artifactProcessor)
+            val result = connectToCrawlerBackend(hostPort, journeyScript, accessTokenPath, artifactProcessor)
             if (result.outcome().equals(GrpcClient.SUCCESS_RESULT)) {
                 stopInstrumentation(instrumentationProcess, true)
             } else {
@@ -269,11 +277,13 @@ class Proxy(
      *
      * @param hostPort The host port forwarded to the device's Robo service port.
      * @param journeyScript The journey script content as a string.
+     * @param accessTokenPath Path to obtain access token for establishing connection to backend.
      * @param artifactProcessor A lambda function to process any [Artifact] produced during the crawl.
      */
     private fun connectToCrawlerBackend(
         hostPort: Int,
         journeyScript: String,
+        accessTokenPath: String,
         artifactProcessor: (Artifact) -> Unit
     ): GrpcClient.Result {
         val crawlSetup = CrawlSetup.newBuilder().setAppPackageId(applicationId)
@@ -305,21 +315,11 @@ class Proxy(
                     .build()
             ).build()
 
-        val defaultCredentials = GoogleCredentials.getApplicationDefault()
-        defaultCredentials.refreshAccessToken()
-        val impersonated =
-            ImpersonatedCredentials.newBuilder()
-                .setSourceCredentials(defaultCredentials)
-                .setScopes(listOf(RoboConfigConstants.AUTH_SCOPE))
-                .setTargetPrincipal(RoboConfigConstants.AUTH_PRINCIPAL)
-                .setQuotaProjectId(RoboConfigConstants.QUOTA_PROJECT_ID)
-                .build()
-        impersonated.refresh()
         val channel =
             NettyChannelBuilder.forTarget(RoboConfigConstants.CRAWLER_BACKEND_ENDPOINT).intercept(
                 CallCredentialsInterceptor(
                     MoreCallCredentials.from(
-                        impersonated
+                        createCredentials(accessTokenPath)
                     )
                 )
             ).build()
@@ -334,6 +334,40 @@ class Proxy(
                 RoboConfigConstants.DEFAULT_RESPONSE_TIMEOUT,
                 RoboConfigConstants.DEFAULT_RESULTS_TIMEOUT
             )
+        }
+    }
+
+    private fun createCredentials(accessTokenPath: String): GoogleCredentials {
+        val impersonated =
+            ImpersonatedCredentials.newBuilder()
+                .setSourceCredentials(createSourceCredentials(accessTokenPath))
+                .setScopes(listOf(RoboConfigConstants.AUTH_SCOPE))
+                .setTargetPrincipal(RoboConfigConstants.AUTH_PRINCIPAL)
+                .setQuotaProjectId(RoboConfigConstants.QUOTA_PROJECT_ID)
+                .build()
+        impersonated.refresh()
+
+        return impersonated
+    }
+
+    private fun createSourceCredentials(accessTokenPath: String): GoogleCredentials {
+        return if (accessTokenPath.isNotBlank() && File(accessTokenPath).exists()) {
+            val token =
+                File(accessTokenPath).reader()
+                    .use { fileReader ->
+                        GsonFactory().fromReader<TokenResponse>(
+                            fileReader,
+                            TokenResponse::class.java
+                        )
+                    }
+            val userCreds = GoogleCredentials.create(AccessToken.newBuilder().apply {
+                tokenValue = token.accessToken
+                scopes = listOf(RoboConfigConstants.AUTH_SCOPE)
+                expirationTime = Date.from(Instant.now().plusSeconds(token.expiresInSeconds))
+            }.build())
+            userCreds
+        } else {
+            GoogleCredentials.getApplicationDefault()
         }
     }
 

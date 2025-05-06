@@ -47,7 +47,8 @@ class JourneysTestEngine : TestEngine {
         ),
         JourneysTestEngineInput.ProxyInput.crawlerApkPath.absolutePath,
         JourneysTestEngineInput.ProxyInput.applicationId,
-        JourneysTestEngineInput.ProxyInput.appApkPath.absolutePath
+        JourneysTestEngineInput.ProxyInput.appApkPath.absolutePath,
+        JourneysTestEngineInput.ProxyInput.accessTokenPath
     )
 
     override fun getId(): String = "journeys-test-engine"
@@ -79,7 +80,8 @@ class JourneysTestEngine : TestEngine {
                 val outputPath =
                     Path(
                         JourneysTestEngineInput.resultsDir.absolutePath,
-                        JourneysTestEngineInput.testDeviceId.sanitizeForPath(), journeyFileName.sanitizeForPath()
+                        JourneysTestEngineInput.testDeviceId.sanitizeForPath(),
+                        journeyFileName.removeSuffix(".xml").sanitizeForPath()
                     )
                 outputPath.toFile().mkdirs()
 

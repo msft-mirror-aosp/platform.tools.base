@@ -30,6 +30,7 @@ import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Properties
 
 private val minAgpVersion = AndroidPluginVersion(8, 2, 1)
 private val maxAgpVersion = AndroidPluginVersion(8, 11, 255)
@@ -38,6 +39,19 @@ private val maxAgpVersion = AndroidPluginVersion(8, 11, 255)
  * An entry point for Journeys plugin that adds support for Journeys testing.
  */
 class JourneysGradlePlugin : Plugin<Project> {
+
+    companion object {
+
+        val JOURNEYS_TEST_PLUGIN_VERSION: String by lazy {
+            requireNotNull(JourneysGradlePlugin::class.java.getResourceAsStream("/version.properties"))
+                .buffered().use { stream ->
+                    Properties().let { properties ->
+                        properties.load(stream)
+                        properties.getProperty("buildVersion")
+                    }
+                }
+        }
+    }
 
     override fun apply(project: Project) {
         project.plugins.withType(AppPlugin::class.java) {
@@ -103,6 +117,7 @@ class JourneysGradlePlugin : Plugin<Project> {
                     task.journeysFilter.set(project.providers.gradleProperty("journeysFilter"))
                     task.applicationId.set(variant.applicationId)
                     task.adbExecutable.set(componentsExtension.sdkComponents.adb)
+                    task.accessTokenFilePath.set(project.providers.gradleProperty("JourneysTestEngineInput.Proxy.accessTokenPath"))
 
                     task.isScanForTestClasses = false
 
@@ -180,7 +195,7 @@ class JourneysGradlePlugin : Plugin<Project> {
             dependencies.add(journeysEngineConfigName, "org.junit.platform:junit-platform-launcher")
             dependencies.add(
                 journeysEngineConfigName,
-                "com.android.tools.journeys:journeys-junit-engine:0.0.1-dev"
+                "com.android.tools.journeys:journeys-junit-engine:$JOURNEYS_TEST_PLUGIN_VERSION"
             )
         }
     }
@@ -198,7 +213,7 @@ class JourneysGradlePlugin : Plugin<Project> {
 
             dependencies.add(
                 crawlerApkConfigName,
-                "androidx.test:orchestrator:1.5.0-alpha02@apk"
+                "com.google.android.appcrawler:appcrawler-app:0.0.1-alpha01@apk"
             )
         }
     }
