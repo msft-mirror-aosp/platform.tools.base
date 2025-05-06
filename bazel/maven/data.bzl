@@ -768,8 +768,11 @@ DATA = [
     "com.google.guava:guava:31.1-jre",
     "com.google.guava:guava:32.1.2-jre",
     "com.google.guava:guava:33.2.1-jre",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "com.google.http-client:google-http-client-bom:pom:1.42.0",  # For journeys engine
     "com.google.http-client:google-http-client-bom:pom:1.44.2",  # For journeys engine
+    "com.google.oauth-client:google-oauth-client:1.34.1",  # For journeys engine
     "com.google.oauth-client:google-oauth-client-java6:1.34.1",
+    "com.google.oauth-client:google-oauth-client-parent:pom:1.34.1",  # For journeys engine
     "com.google.oboe:oboe:1.6.1",
     "com.google.prefab:cli:jar:all:2.1.0",
     "com.google.protobuf:protobuf-bom:pom:3.17.2",
