@@ -21,17 +21,20 @@ import android.os.AsyncTask;
 import android.os.Debug;
 import android.os.PowerManager;
 import android.util.ArrayMap;
+
 import com.example.javalib.JavaLibJavaClass;
 import com.example.javalib.JavaLibKotlinClass;
 import com.example.util_lib.UtilLibJavaClass;
 import com.example.util_lib.UtilLibKotlinClass;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.net.URL;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jdeferred.Deferred;
 import org.junit.Test;
+
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.net.URL;
 
 public class AppJavaUnitTest {
     @Test
@@ -134,16 +137,16 @@ public class AppJavaUnitTest {
         assertNotEquals(AsyncTask.Status.RUNNING, AsyncTask.Status.FINISHED);
 
         assertEquals(AsyncTask.Status.FINISHED, AsyncTask.Status.valueOf("FINISHED"));
-        assertEquals(0, AsyncTask.Status.PENDING.ordinal()); // Was 1 pre API28
+        assertEquals(1, AsyncTask.Status.PENDING.ordinal());
         assertEquals("RUNNING", AsyncTask.Status.RUNNING.name());
 
         assertEquals(AsyncTask.Status.RUNNING, Enum.valueOf(AsyncTask.Status.class, "RUNNING"));
 
         AsyncTask.Status[] values = AsyncTask.Status.values();
         assertEquals(3, values.length);
-        assertEquals(AsyncTask.Status.PENDING, values[0]);
-        assertEquals(AsyncTask.Status.RUNNING, values[1]);
-        assertEquals(AsyncTask.Status.FINISHED, values[2]);
+        assertEquals(AsyncTask.Status.FINISHED, values[0]);
+        assertEquals(AsyncTask.Status.PENDING, values[1]);
+        assertEquals(AsyncTask.Status.RUNNING, values[2]);
     }
 
     @Test

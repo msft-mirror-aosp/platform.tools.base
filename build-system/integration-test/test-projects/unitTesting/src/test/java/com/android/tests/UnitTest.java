@@ -12,13 +12,15 @@ import android.os.AsyncTask;
 import android.os.Debug;
 import android.os.PowerManager;
 import android.util.ArrayMap;
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.net.URL;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.net.URL;
 
 public class UnitTest {
     @Test
@@ -98,16 +100,16 @@ public class UnitTest {
         assertNotEquals(AsyncTask.Status.RUNNING, AsyncTask.Status.FINISHED);
 
         assertEquals(AsyncTask.Status.FINISHED, AsyncTask.Status.valueOf("FINISHED"));
-        assertEquals(0, AsyncTask.Status.PENDING.ordinal()); // Was 1 pre API28
+        assertEquals(1, AsyncTask.Status.PENDING.ordinal());
         assertEquals("RUNNING", AsyncTask.Status.RUNNING.name());
 
         assertEquals(AsyncTask.Status.RUNNING, Enum.valueOf(AsyncTask.Status.class, "RUNNING"));
 
         AsyncTask.Status[] values = AsyncTask.Status.values();
         assertEquals(3, values.length);
-        assertEquals(AsyncTask.Status.PENDING, values[0]);
-        assertEquals(AsyncTask.Status.RUNNING, values[1]);
-        assertEquals(AsyncTask.Status.FINISHED, values[2]);
+        assertEquals(AsyncTask.Status.FINISHED, values[0]);
+        assertEquals(AsyncTask.Status.PENDING, values[1]);
+        assertEquals(AsyncTask.Status.RUNNING, values[2]);
     }
 
     @Test
@@ -126,7 +128,8 @@ public class UnitTest {
         URL url = UnitTest.class.getClassLoader().getResource("resource_file.txt");
         assertNotNull("expected resource_file.txt to be in the ClassLoader's resources", url);
 
-        InputStream stream = UnitTest.class.getClassLoader().getResourceAsStream("resource_file.txt");
+        InputStream stream =
+                UnitTest.class.getClassLoader().getResourceAsStream("resource_file.txt");
         assertNotNull("expected resource_file.txt to be opened as a stream", stream);
         byte[] line = new byte[1024];
         assertTrue("Expected >0 bytes read from input stream", stream.read(line) > 0);
@@ -139,7 +142,8 @@ public class UnitTest {
         URL url = UnitTest.class.getClassLoader().getResource("prod_resource_file.txt");
         assertNotNull("expected resource_file.txt to be in the ClassLoader's resources", url);
 
-        InputStream stream = UnitTest.class.getClassLoader().getResourceAsStream("prod_resource_file.txt");
+        InputStream stream =
+                UnitTest.class.getClassLoader().getResourceAsStream("prod_resource_file.txt");
         assertNotNull("expected resource_file.txt to be opened as a stream", stream);
         byte[] line = new byte[1024];
         assertTrue("Expected >0 bytes read from input stream", stream.read(line) > 0);

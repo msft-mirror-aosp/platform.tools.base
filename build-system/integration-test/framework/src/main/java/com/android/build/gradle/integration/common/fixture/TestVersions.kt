@@ -32,7 +32,7 @@ package com.android.build.gradle.integration.common.fixture
         imports = arrayOf("com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition")
     )
 )
-const val DEFAULT_COMPILE_SDK_VERSION = 35
+const val DEFAULT_COMPILE_SDK_VERSION = 36
 
 const val DEFAULT_MIN_SDK_VERSION = 14
 const val SUPPORT_LIB_MIN_SDK = 14
