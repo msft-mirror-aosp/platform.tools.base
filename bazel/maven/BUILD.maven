@@ -5943,17 +5943,17 @@ maven_import(
 )
 
 maven_artifact(
-    name = "io.modelcontextprotocol.kotlin-sdk_0.4.0",
-    pom = "repository/io/modelcontextprotocol/kotlin-sdk/0.4.0/kotlin-sdk-0.4.0.pom",
+    name = "io.modelcontextprotocol.kotlin-sdk_0.5.0",
+    pom = "repository/io/modelcontextprotocol/kotlin-sdk/0.5.0/kotlin-sdk-0.5.0.pom",
     repo_root_path = "repository",
-    repo_path = "io/modelcontextprotocol/kotlin-sdk/0.4.0",
+    repo_path = "io/modelcontextprotocol/kotlin-sdk/0.5.0",
     deps = [
         "org.jetbrains.kotlinx.kotlinx-serialization-json_1.7.3",
         "io.ktor.ktor-client-cio_3.0.2",
         "io.ktor.ktor-server-cio_3.0.2",
         "io.ktor.ktor-server-sse_3.0.2",
         "io.ktor.ktor-server-websockets_3.0.2",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -5962,7 +5962,10 @@ maven_import(
     name = "io.modelcontextprotocol.kotlin-sdk",
     classifiers = [],
     jars = [
-        "repository/io/modelcontextprotocol/kotlin-sdk/0.4.0/kotlin-sdk-0.4.0.jar"
+        "repository/io/modelcontextprotocol/kotlin-sdk/0.5.0/kotlin-sdk-0.5.0.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     deps = [
         "org.jetbrains.kotlinx.kotlinx-serialization-json",
@@ -5970,7 +5973,6 @@ maven_import(
         "io.ktor.ktor-server-cio",
         "io.ktor.ktor-server-sse",
         "io.ktor.ktor-server-websockets",
-        "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
         "org.jetbrains.kotlinx.kotlinx-serialization-json_1.7.3",
@@ -5978,11 +5980,11 @@ maven_import(
         "io.ktor.ktor-server-cio_3.0.2",
         "io.ktor.ktor-server-sse_3.0.2",
         "io.ktor.ktor-server-websockets_3.0.2",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
-    pom = "repository/io/modelcontextprotocol/kotlin-sdk/0.4.0/kotlin-sdk-0.4.0.pom",
+    pom = "repository/io/modelcontextprotocol/kotlin-sdk/0.5.0/kotlin-sdk-0.5.0.pom",
     repo_root_path = "repository",
-    repo_path = "io/modelcontextprotocol/kotlin-sdk/0.4.0",
+    repo_path = "io/modelcontextprotocol/kotlin-sdk/0.5.0",
     visibility = ["//visibility:public"],
 )
 
@@ -11584,9 +11586,9 @@ maven_import(
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-build-tools-api",
-        "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
         "org.jetbrains.kotlin.kotlin-compiler-embeddable",
         "org.jetbrains.kotlin.kotlin-compiler-runner",
         "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable",

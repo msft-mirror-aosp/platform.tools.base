@@ -124,7 +124,7 @@ ARTIFACTS = [
     "io.grpc:protoc-gen-grpc-java:exe:osx-aarch_64:1.57.0",
     "io.grpc:protoc-gen-grpc-java:exe:osx-x86_64:1.57.0",
     "io.grpc:protoc-gen-grpc-java:exe:windows-x86_64:1.57.0",
-    "io.modelcontextprotocol:kotlin-sdk:0.4.0",
+    "io.modelcontextprotocol:kotlin-sdk:0.5.0",
     "io.netty:netty-all:4.1.115.Final",
     "io.netty:netty-buffer:4.1.115.Final",
     "io.netty:netty-codec:4.1.115.Final",
