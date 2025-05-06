@@ -99,7 +99,7 @@ def main():
 
   bazel_name = 'bazel.cmd' if platform.system() == 'Windows' else 'bazel'
   bazel_path = os.path.join(find_workspace(), f'tools/base/bazel/{bazel_name}')
-  build_env = bazel.BuildEnv(bazel_path=bazel_path)
+  build_env = bazel.make_build_env(bazel_path=bazel_path)
   ci = CI(build_env=build_env)
 
   if build_env.dist_dir:

@@ -21,9 +21,8 @@ class GceTest(absltest.TestCase):
     self.assertEqual(header, ['Authorization: Bearer fake-token-2'])
 
   def test_get_reference_build_id(self):
-    self.build_env.build_number = 'P456'
     self.gce.reference_build_id = '789'
-    self.assertEqual(gce.get_reference_build_id('P456', 'studio-test'), '789')
+    self.assertEqual(gce.get_reference_build_id('P123', 'studio-test'), '789')
 
   def test_upload_download(self):
     src = self.build_env.tmp_path / 'src.txt'

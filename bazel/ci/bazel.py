@@ -1,5 +1,6 @@
-"""A module providing a BazelCmd object."""
+"""Provides the current build environment and Bazel commands."""
 
+import dataclasses
 import getpass
 import logging
 import os
@@ -12,6 +13,7 @@ EXITCODE_TEST_FAILURES = 3
 EXITCODE_NO_TESTS_FOUND = 4
 
 
+@dataclasses.dataclass(frozen=True)
 class BuildEnv:
   """Represents the build environment."""
 
@@ -26,43 +28,7 @@ class BuildEnv:
   branch: str
 
   # Startup options for Bazel commands.
-  _startup_options: List[str]
-
-  def __init__(
-      self,
-      bazel_path: str,
-      user: str = getpass.getuser(),
-      bazel_version: str = "",
-  ):
-    self.build_number = os.environ.get("BUILD_NUMBER", "SNAPSHOT")
-    self.build_target_name = os.environ.get("BUILD_TARGET_NAME", "")
-    self.workspace_dir = os.environ.get("BUILD_WORKSPACE_DIRECTORY", "")
-    self.dist_dir = os.environ.get("DIST_DIR", "")
-    self.tmp_dir = os.environ.get("TMPDIR", "")
-    self.bazel_path = os.path.normpath(bazel_path)
-    if bazel_version:
-      self.bazel_version = bazel_version
-    else:
-      with open(os.path.join(self.workspace_dir, ".bazelversion")) as f:
-        self.bazel_version = f.read()
-    self.user = user
-    # Assuming the workspace root is the name of the branch.
-    # Ideally, buildbot provides a concerete environment variable.
-    self.branch = self.workspace_dir.split("/")[-1]
-
-    self._startup_options = ["--max_idle_secs=60"]
-    if self.is_ab_environment():
-      install_base = os.path.join(
-          self.tmp_dir, "bazel_install", self.bazel_version
-      )
-      self._startup_options.extend([
-          f"--output_base={os.path.join(self.tmp_dir, 'bazel_out')}",
-          f"--install_base={install_base}",
-      ])
-
-  def is_ab_environment(self) -> bool:
-    """Returns true if on an Android Build machine."""
-    return self.build_target_name and self.user == "android-build"
+  startup_options: List[str]
 
   def bazel_build(
       self, *build_args, timeout=None
@@ -118,7 +84,7 @@ class BuildEnv:
       timeout: int = None,
   ) -> subprocess.CompletedProcess:
     """Runs a Bazel command with the given args."""
-    cmd = [self.bazel_path, *self._startup_options, *args]
+    cmd = [self.bazel_path, *self.startup_options, *args]
     # Inherit env vars, but drop problematic ones added by the parent Bazel invocation.
     # E.g., PYTHONSAFEPATH causes problems for Python scripts in repository rules (b/395760815).
     env = os.environ.copy()
@@ -132,3 +98,43 @@ class BuildEnv:
         env=env,
         timeout=timeout,
     )
+
+
+def make_build_env(
+    bazel_path: str,
+    user: str = getpass.getuser(),
+    bazel_version: str = "",
+):
+  build_number = os.environ.get("BUILD_NUMBER", "SNAPSHOT")
+  build_target_name = os.environ.get("BUILD_TARGET_NAME", "")
+  workspace_dir = os.environ.get("BUILD_WORKSPACE_DIRECTORY", "")
+  dist_dir = os.environ.get("DIST_DIR", "")
+  tmp_dir = os.environ.get("TMPDIR", "")
+  bazel_path = os.path.normpath(bazel_path)
+  if not bazel_version:
+    with open(os.path.join(workspace_dir, ".bazelversion")) as f:
+      bazel_version = f.read()
+  # Assuming the workspace root is the name of the branch.
+  # Ideally, buildbot provides a concerete environment variable.
+  branch = workspace_dir.split("/")[-1]
+
+  startup_options = ["--max_idle_secs=60"]
+  if build_target_name and user == "android-build":  # AB environment
+    install_base = os.path.join(tmp_dir, "bazel_install", bazel_version)
+    startup_options.extend([
+        f"--output_base={os.path.join(tmp_dir, 'bazel_out')}",
+        f"--install_base={install_base}",
+    ])
+
+  return BuildEnv(
+      build_number=build_number,
+      build_target_name=build_target_name,
+      workspace_dir=workspace_dir,
+      dist_dir=dist_dir,
+      tmp_dir=tmp_dir,
+      bazel_path=bazel_path,
+      bazel_version=bazel_version,
+      user=user,
+      branch=branch,
+      startup_options=startup_options,
+  )

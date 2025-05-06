@@ -1,6 +1,7 @@
 """Implements a fake build environment for testing."""
 
 import contextlib
+import dataclasses
 import pathlib
 import tempfile
 from typing import Iterator
@@ -9,35 +10,62 @@ from unittest import mock
 from tools.base.bazel.ci import bazel
 
 
+@dataclasses.dataclass(frozen=True)
 class FakeBuildEnv(bazel.BuildEnv):
-  """Fake build environment for testing."""
+  """Represents a fake build environment for testing."""
 
-  def __init__(self, root_dir: pathlib.Path):
-    super().__init__('', 'user', '7.0.0')
-    self.build_number = 'P123'
-    self.build_target_name = 'studio-test'
-    self.workspace_dir = str(root_dir / 'workspace')
+  workspace_path: pathlib.Path
+  dist_path: pathlib.Path
+  tmp_path: pathlib.Path
 
-    self.dist_path = root_dir / 'dist'
-    self.dist_path.mkdir()
-    self.tmp_path = root_dir / 'tmp'
-    self.tmp_path.mkdir()
-
-    self.dist_dir = str(self.dist_path)
-    self.tmp_dir = str(self.tmp_path)
-
-    self.bazel_build = mock.create_autospec(self.bazel_build)
-    self.bazel_test = mock.create_autospec(self.bazel_test)
-    self.bazel_run = mock.create_autospec(self.bazel_run)
-    self.bazel_query = mock.create_autospec(self.bazel_query)
-    self.bazel_cquery = mock.create_autospec(self.bazel_cquery)
-    self.bazel_info = mock.create_autospec(self.bazel_info)
-    self.bazel_shutdown = mock.create_autospec(self.bazel_shutdown)
+  def __post_init__(self):
+    for method_name in [
+        "bazel_build",
+        "bazel_test",
+        "bazel_run",
+        "bazel_query",
+        "bazel_cquery",
+        "bazel_info",
+        "bazel_shutdown",
+    ]:
+      # object.__setattr__ must be used here because the dataclass is frozen.
+      object.__setattr__(
+          self,
+          method_name,
+          mock.create_autospec(getattr(self, method_name)),
+      )
 
 
 @contextlib.contextmanager
-def make_fake_build_env() -> Iterator[bazel.BuildEnv]:
-  """Yields a fake build environment for testing."""
+def make_fake_build_env(**kwargs) -> Iterator[bazel.BuildEnv]:
+  """Yields a fake build environment for testing.
+
+  Args:
+    **kwargs: Keyword arguments to pass to the BuildEnv constructor.
+  """
   with contextlib.ExitStack() as es:
     root_dir = es.enter_context(tempfile.TemporaryDirectory())
-    yield FakeBuildEnv(pathlib.Path(root_dir))
+    root_path = pathlib.Path(root_dir)
+    workspace_path = root_path / 'workspace'
+    workspace_path.mkdir()
+    dist_path = root_path / 'dist'
+    dist_path.mkdir()
+    tmp_path = root_path / 'tmp'
+    tmp_path.mkdir()
+
+    yield FakeBuildEnv(
+        build_number='P123',
+        build_target_name='studio-test',
+        workspace_dir=str(workspace_path),
+        workspace_path=workspace_path,
+        dist_dir=str(dist_path),
+        dist_path=dist_path,
+        tmp_dir=str(tmp_path),
+        tmp_path=tmp_path,
+        bazel_path='',
+        bazel_version='7.0.0',
+        user='user',
+        branch='',
+        startup_options=[],
+        **kwargs,
+    )
