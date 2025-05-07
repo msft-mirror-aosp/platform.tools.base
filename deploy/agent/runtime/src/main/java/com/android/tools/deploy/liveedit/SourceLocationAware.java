@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,14 @@
  */
 package com.android.tools.deploy.liveedit;
 
-import kotlin.jvm.internal.Lambda;
-
-import java.lang.reflect.Proxy;
 import java.util.Map;
 
-public final class LiveEditLambda<R> extends Lambda<R> implements SourceLocationAware {
-    private final ProxyClassHandler handler;
-
-    public LiveEditLambda(int arity, Object proxy) {
-        super(arity);
-        this.handler = (ProxyClassHandler) Proxy.getInvocationHandler(proxy);
-    }
-
-    @Override
-    public Map<String, Object> getSourceLocationInfo() {
-        return handler.getSourceLineLocation();
-    }
+/**
+ * Interface implemented by all generated Live Edit classes (proxies, etc.). Exposes source line
+ * information for use by the Layout Inspector. The interface of this class should not be changed
+ * without consulting the Layout Inspector team.
+ */
+public interface SourceLocationAware {
+    @SuppressWarnings("unused")
+    Map<String, Object> getSourceLocationInfo();
 }

@@ -41,9 +41,12 @@ public final class ProxyClassHandler implements InvocationHandler {
         fields.putAll(defaultFieldValues);
     }
 
-    public Map<String, Object> getLocation() {
+    Map<String, Object> getSourceLineLocation() {
         ProxySourceLocation location = ProxySourceLocation.findSourceLocation(clazz);
-        return location.asMap();
+        if (location != null) {
+            return location.asMap();
+        }
+        return new HashMap<>();
     }
 
     void initSuperClass(String superInternalName, Object[] args, Object proxy) {
@@ -125,6 +128,11 @@ public final class ProxyClassHandler implements InvocationHandler {
         // itself results in an infinite loop of this method being called.
         if (method.getDeclaringClass().equals(Object.class)) {
             return method.invoke(this, args);
+        }
+
+        if (method.getDeclaringClass() == SourceLocationAware.class
+                && method.getName().equals("getSourceLocationInfo")) {
+            return getSourceLineLocation();
         }
 
         // It's safe to pass the proxy object here, since it's serving as a 'this' pointer, not
