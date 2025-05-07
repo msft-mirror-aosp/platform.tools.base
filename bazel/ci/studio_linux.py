@@ -102,6 +102,7 @@ _ARTIFACTS = [
     ('tools/base/resource-repository/libtools.resource-repository.jar', 'artifacts'),
     ('tools/base/environment-services/libtools.environment-services.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
+    ('tools/base/build-system/android_gradle_plugin_9.zip', 'artifacts'),
 ]
 
 
