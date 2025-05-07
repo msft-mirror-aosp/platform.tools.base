@@ -177,5 +177,5 @@ object RoboConverter {
           },
     """.trimIndent()
 
-    private val assertionKeywords = listOf("verify", "assert")
+    private val assertionKeywords = listOf("verify", "assert", "check that")
 }

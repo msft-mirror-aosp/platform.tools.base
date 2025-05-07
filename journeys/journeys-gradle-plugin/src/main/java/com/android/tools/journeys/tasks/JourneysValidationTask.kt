@@ -143,7 +143,7 @@ abstract class JourneysValidationTask : Test() {
                 setTestEngineParam("Proxy.applicationId", applicationId.get())
                 setTestEngineParam("Proxy.adbPath", adbExecutable.get().asFile.absolutePath)
                 setTestEngineParam("Proxy.crawlerApkPath", journeysCrawlerConfig.singleFile.absolutePath)
-                setTestEngineParam("Proxy.accessTokenPath", accessTokenFilePath.get())
+                accessTokenFilePath.orNull?.let { setTestEngineParam("Proxy.accessTokenPath", it) }
                 super.executeTests()
             } else {
                 logger.quiet("No devices connected, exiting")

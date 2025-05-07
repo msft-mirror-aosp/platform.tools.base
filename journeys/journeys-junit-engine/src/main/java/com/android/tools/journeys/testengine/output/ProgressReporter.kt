@@ -154,7 +154,6 @@ class ProgressReporter(
         for (displayState in crawl.displayStatesList) {
             state.addScreenshot(displayState)
         }
-
         for (action in crawl.actionsList) {
             // If an action has no RoboScriptDetails, accumulate it and report with the immediate
             // next prompt. This typically happens for setup actions like LAUNCH_ACTION before
@@ -175,17 +174,26 @@ class ProgressReporter(
                 val currentRoboScriptIndex = state.getCurrentRoboScriptIndex()
                 val lastCompletedIndex = state.getLastCompletedRoboScriptIndex()
 
+                // If the currentRoboScript was a singleton in roboscript details, the finish would
+                // not be triggered until next action is received. This check makes sure we invoke
+                // finish for such cases.
+                if (roboIndex == currentRoboScriptIndex + 1 && lastCompletedIndex == currentRoboScriptIndex - 1) {
+                    val currentRoboScript = state.getCurrentRoboScript()
+                    currentRoboScript?.let {
+                        onRoboScriptFinished(it, action.actionSeq - 1)
+                        state.updateLastCompletedRoboScriptIndex(currentRoboScriptIndex)
+                    }
+                }
                 if (roboIndex == lastCompletedIndex + 1 && roboIndex != currentRoboScriptIndex) {
                     onRoboScriptStarted(roboScript)
-                    state.updateCurrentRoboScriptIndex(roboIndex)
+                    state.updateCurrentRoboScript(roboScript)
                 }
                 if (roboIndex == lastInActionListRoboScriptIndex) {
                     onActionPerformed(action, roboScript)
                 }
 
-                val isGoalComplete =
-                    roboScript.modelDetails.description == RoboConfigConstants.GOAL_COMPLETE_DESCRIPTION
-                if (isGoalComplete || isTerminateCrawlAction(action)) {
+                val isComplete = roboIndex < lastInActionListRoboScriptIndex
+                if (isComplete || isTerminateCrawlAction(action)) {
                     onRoboScriptFinished(roboScript, action.actionSeq)
                     state.updateLastCompletedRoboScriptIndex(roboIndex)
                 }
@@ -322,6 +330,7 @@ class ProgressReporter(
     }
 
     private companion object {
+
         const val TERMINATE_ACTION_DESCRIPTION = "crawlTerminated"
     }
 }

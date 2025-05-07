@@ -19,6 +19,7 @@ package com.android.tools.journeys.testengine.output
 import androidx.test.tools.crawler.output.Action
 import androidx.test.tools.crawler.output.DisplayState
 import androidx.test.tools.crawler.output.ModelDetails
+import androidx.test.tools.crawler.output.RoboScriptDetails
 import com.android.tools.journeys.testengine.descriptor.JourneyFileDescriptor
 import com.android.tools.journeys.testengine.descriptor.PromptDescriptor
 
@@ -40,11 +41,11 @@ class CrawlProcessingState(private val journeyFileDescriptor: JourneyFileDescrip
     // Accumulates actions received without a corresponding roboscript detail, for example launch action.
     private val accumulatedActions = mutableListOf<Action>()
 
-    // Tracks the index of the currently executing RoboScript prompt. -1 indicates none started.
-    private var currentRoboScriptIndex = -1
-
     // Tracks the index of the last completed RoboScript prompt. -1 indicates none finished.
     private var lastCompletedRoboScriptIndex = -1
+
+    // Tracks the current roboscript.
+    private var currentRoboScript: RoboScriptDetails? = null
 
     /**
      * Adds model details to the state, if not already present for the given ID.
@@ -97,19 +98,26 @@ class CrawlProcessingState(private val journeyFileDescriptor: JourneyFileDescrip
     }
 
     /**
-     * Updates the index of the currently executing RoboScript.
-     * @param index The index of the RoboScript that has just started.
+     * Updates the currently executing RoboScript.
+     * @param roboScript The RoboScript that has just started.
      */
-    fun updateCurrentRoboScriptIndex(index: Int) {
-        currentRoboScriptIndex = index
+    fun updateCurrentRoboScript(roboScript: RoboScriptDetails) {
+        currentRoboScript = roboScript
     }
 
+    /**
+     * Gets the currently executing RoboScript.
+     * @return The roboScript, or null if no script has started yet.
+     */
+    fun getCurrentRoboScript(): RoboScriptDetails? {
+        return currentRoboScript
+    }
     /**
      * Gets the index of the currently executing RoboScript.
      * @return The index, or -1 if no script has started execution yet.
      */
     fun getCurrentRoboScriptIndex(): Int {
-        return currentRoboScriptIndex
+        return currentRoboScript?.actionIndex ?: -1
     }
 
     /**

@@ -63,10 +63,10 @@ object RoboConfigConstants {
     const val TEST_TIMEOUT_SECONDS = 3600L
 
     /** Description of a goal complete model detail. */
-    const val GOAL_COMPLETE_DESCRIPTION = "Goal Complete"
+    private const val GOAL_COMPLETE_DESCRIPTION = "Goal Complete"
 
     /** Description of a goal failed model detail. */
-    const val GOAL_FAILED_DESCRIPTION = "Goal Failed"
+    private const val GOAL_FAILED_DESCRIPTION = "Goal Failed"
 
     /** Default timeout duration for platform connection. */
     val DEFAULT_PLATFORM_TIMEOUT: Duration = Duration.ofSeconds(60)

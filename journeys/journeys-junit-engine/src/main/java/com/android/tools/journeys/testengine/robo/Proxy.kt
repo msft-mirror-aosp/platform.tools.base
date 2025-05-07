@@ -46,6 +46,8 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.Date
 import java.util.UUID
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.io.path.inputStream
 
 /**
@@ -81,7 +83,8 @@ class Proxy(
             val journeyScript = readJourneyScript(journeyPath)
             val instrumentationProcess = setupInstrumentation()
             hostPort = setupAdbForward()
-            val result = connectToCrawlerBackend(hostPort, journeyScript, accessTokenPath, artifactProcessor)
+            val result =
+                connectToCrawlerBackend(hostPort, journeyScript, accessTokenPath, artifactProcessor)
             if (result.outcome().equals(GrpcClient.SUCCESS_RESULT)) {
                 stopInstrumentation(instrumentationProcess, true)
             } else {
@@ -325,6 +328,13 @@ class Proxy(
             ).build()
 
         val grpcClient = GrpcClient(channel, null, artifactProcessor)
+        try {
+            val clientLogger = Logger.getLogger(
+                "${RoboConfigConstants.CRAWLER_PACKAGE_ID}.client.GrpcClient")
+            clientLogger.setLevel(Level.WARNING)
+        } catch (e: Exception) {
+            System.err.println("Failed to disable connection logs with error: ${e.message}")
+        }
 
         return grpcClient.use { client ->
             client.startForward(
@@ -338,16 +348,22 @@ class Proxy(
     }
 
     private fun createCredentials(accessTokenPath: String): GoogleCredentials {
-        val impersonated =
-            ImpersonatedCredentials.newBuilder()
-                .setSourceCredentials(createSourceCredentials(accessTokenPath))
-                .setScopes(listOf(RoboConfigConstants.AUTH_SCOPE))
-                .setTargetPrincipal(RoboConfigConstants.AUTH_PRINCIPAL)
-                .setQuotaProjectId(RoboConfigConstants.QUOTA_PROJECT_ID)
-                .build()
-        impersonated.refresh()
-
-        return impersonated
+        try {
+            val impersonated =
+                ImpersonatedCredentials.newBuilder()
+                    .setSourceCredentials(createSourceCredentials(accessTokenPath))
+                    .setScopes(listOf(RoboConfigConstants.AUTH_SCOPE))
+                    .setTargetPrincipal(RoboConfigConstants.AUTH_PRINCIPAL)
+                    .setQuotaProjectId(RoboConfigConstants.QUOTA_PROJECT_ID)
+                    .build()
+            impersonated.refresh()
+            return impersonated
+        } catch (e: Exception) {
+            throw IllegalStateException(
+                "Failed to obtain credentials for establishing connection with backend. " +
+                "Make sure you are logged in to Android Studio before re-trying."
+            )
+        }
     }
 
     private fun createSourceCredentials(accessTokenPath: String): GoogleCredentials {
