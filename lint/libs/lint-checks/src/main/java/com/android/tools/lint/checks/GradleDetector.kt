@@ -92,6 +92,7 @@ import java.nio.file.Path
 import java.util.Calendar
 import java.util.Collections
 import java.util.EnumSet
+import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtElement
@@ -2650,13 +2651,13 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         val repository =
           object : GoogleMavenRepository(cacheDir?.toPath()) {
 
-            public override fun readUrlData(
+            override fun readUrlData(
               url: String,
               timeout: Int,
               lastModified: Long,
             ): ReadUrlDataResult = readUrlData(client, url, timeout, lastModified)
 
-            public override fun error(throwable: Throwable, message: String?) =
+            override fun error(throwable: Throwable, message: String?) =
               client.log(throwable, message)
           }
 
@@ -3865,27 +3866,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return null
     }
 
-    fun getGradlePluginVersion(
-      client: LintClient,
-      pluginId: String,
-      currentVersion: Version? = null,
-      allowCache: Boolean = false,
-      filter: Predicate<Version>? = null,
-    ): AvailableVersions? {
-      return getAvailableVersions(
-        client = client,
-        groupId = pluginId,
-        artifactId = "$pluginId$GRADLE_PLUGIN_ARTIFACT_SUFFIX",
-        currentVersion = currentVersion,
-        filter = filter,
-        allowCache = allowCache,
-        repositoryCacheKey = "plugins.gradle.org",
-        baseUrl = "https://plugins.gradle.org/m2/",
-        relative =
-          "${pluginId.replace(".", "/")}/$pluginId$GRADLE_PLUGIN_ARTIFACT_SUFFIX/maven-metadata.xml",
-      )
-    }
-
     @JvmStatic
     fun getLatestVersionFromRemoteRepo(
       client: LintClient,
@@ -3896,8 +3876,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       val group = dependency.group ?: return null
       val name = dependency.name
       val currentVersion = dependency.version?.lowerBound
-      return getMavenCentralVersions(client, group, name, currentVersion, filter, allowCache = true)
-        ?.suggested
+      return getMavenVersion(client, group, name, currentVersion, filter, allowCache = true)
     }
 
     /**
@@ -3929,40 +3908,27 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       currentVersion: Version? = null,
       filter: Predicate<Version>? = null,
       allowCache: Boolean = false,
+      cacheExpiryHours: Int = -1,
     ): AvailableVersions? {
-      return getAvailableVersions(
-        client = client,
-        groupId = "org.gradle",
-        artifactId = "gradle-tooling-api",
-        currentVersion = currentVersion,
-        filter = filter,
-        allowCache = allowCache,
-        repositoryCacheKey = "repo.gradle.org",
-        baseUrl =
-          "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/",
-        relative = "maven-metadata.xml",
-      )
-    }
-
-    fun getMavenCentralVersions(
-      client: LintClient,
-      group: String,
-      artifact: String,
-      currentVersion: Version? = null,
-      filter: Predicate<Version>? = null,
-      allowCache: Boolean = false,
-    ): AvailableVersions? {
-      return getAvailableVersions(
-        client = client,
-        groupId = group,
-        artifactId = artifact,
-        currentVersion = currentVersion,
-        filter = filter,
-        allowCache = allowCache,
-        repositoryCacheKey = "repo1.maven.org",
-        baseUrl = "https://repo1.maven.org/maven2/",
-        relative = "${group.replace(".", "/")}/$artifact/maven-metadata.xml",
-      )
+      val inputStream =
+        getMavenMetadata(
+          client,
+          "org.gradle",
+          "gradle-tooling-api",
+          allowCache,
+          cacheExpiryHours,
+          false,
+        )
+      if (inputStream != null) {
+        return getMavenMetadataVersions(
+          inputStream,
+          currentVersion,
+          "org.gradle",
+          "gradle-tooling-api",
+          filter,
+        )
+      }
+      return null
     }
 
     /** Information about the most recent available versions of a given library. */
@@ -4001,22 +3967,25 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       return repositoryDir
     }
 
-    private fun getAvailableVersions(
+    private fun getMavenMetadata(
       client: LintClient,
-      groupId: String,
-      artifactId: String,
-      currentVersion: Version?,
-      filter: Predicate<Version>?,
       allowCache: Boolean,
       repositoryCacheKey: String,
       baseUrl: String,
       relative: String,
-    ): AvailableVersions? {
+      cacheExpiryHours: Int,
+    ): InputStream? {
       val inputStream =
         if (allowCache) {
           val cacheDir = getNetworkCacheDirectory(client, repositoryCacheKey).toPath()
           val cache =
-            object : NetworkCache(baseUrl, cacheDir) {
+            object :
+              NetworkCache(
+                baseUrl,
+                cacheDir,
+                cacheExpiryHours =
+                  if (cacheExpiryHours != -1) cacheExpiryHours else TimeUnit.DAYS.toHours(7).toInt(),
+              ) {
               override fun readUrlData(
                 url: String,
                 timeout: Int,
@@ -4049,9 +4018,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           }
         }
 
-      inputStream ?: return null
-
-      return getMavenMetadataVersions(inputStream, currentVersion, groupId, artifactId, filter)
+      return inputStream
     }
 
     private fun getMavenMetadataVersions(
@@ -4074,6 +4041,21 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         }
       }
       return getMavenMetadataVersions(sequence, currentVersion, group, artifact, filter)
+    }
+
+    private fun getMavenMetadataVersions(inputStream: InputStream): List<Version> {
+      val versions = mutableListOf<Version>()
+      val parser = KXmlParser()
+      parser.setInput(inputStream, StandardCharsets.UTF_8.name())
+      while (parser.next() != XmlPullParser.END_DOCUMENT) {
+        if (parser.eventType == XmlPullParser.START_TAG && parser.name == "version") {
+          val versionString = parser.nextText().trim()
+          if (versionString.isNotEmpty()) {
+            versions.add(Version.parse(versionString))
+          }
+        }
+      }
+      return versions.sorted()
     }
 
     fun getMavenMetadataVersions(
@@ -4152,6 +4134,24 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       }
     }
 
+    private fun getGmavenVersions(
+      groupId: String,
+      artifactId: String,
+      gmavenRepository: GoogleMavenRepository? = null,
+    ): Sequence<Version>? {
+      if (
+        gmavenRepository != null &&
+          gmavenRepository.hasGroupId(groupId) &&
+          // Don't look for KSP on gmaven; those versions are old, it's now maintained on maven
+          // central
+          groupId != "com.google.devtools.ksp"
+      ) {
+        return gmavenRepository.getVersions(groupId, artifactId).asSequence()
+      }
+
+      return null
+    }
+
     /**
      * Looks up the available versions to use as a replacement for the current version, consulting
      * various maven repositories.
@@ -4165,72 +4165,126 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       allowCache: Boolean = false,
       gmavenRepository: GoogleMavenRepository? = null,
       includeJitpack: Boolean = true,
+      cacheExpiryHours: Int = -1,
     ): AvailableVersions? {
-      if (
-        gmavenRepository != null &&
-          gmavenRepository.hasGroupId(groupId) &&
-          // Don't look for KSP on gmaven; those versions are old, it's now maintained on maven
-          // central
-          groupId != "com.google.devtools.ksp"
-      ) {
-        val versions = gmavenRepository.getVersions(groupId, artifactId).asSequence()
-        return getMavenMetadataVersions(versions, version, groupId, artifactId, filter)
+      val gmavenVersions = getGmavenVersions(groupId, artifactId, gmavenRepository)
+      if (gmavenVersions != null) {
+        return getMavenMetadataVersions(gmavenVersions, version, groupId, artifactId, filter)
       }
 
+      val mavenMetadata =
+        getMavenMetadata(client, groupId, artifactId, allowCache, cacheExpiryHours, includeJitpack)
+      if (mavenMetadata != null) {
+        return getMavenMetadataVersions(mavenMetadata, version, groupId, artifactId, filter)
+      }
+
+      return null
+    }
+
+    private fun getMavenMetadata(
+      client: LintClient,
+      groupId: String,
+      artifactId: String,
+      allowCache: Boolean,
+      cacheExpiryHours: Int,
+      includeJitpack: Boolean,
+    ): InputStream? {
       if (artifactId.endsWith(GRADLE_PLUGIN_ARTIFACT_SUFFIX)) {
-        val mavenVersions =
-          getGradlePluginVersion(
-            client,
-            artifactId.removeSuffix(GRADLE_PLUGIN_ARTIFACT_SUFFIX),
-            version,
-            allowCache,
-            filter,
+        // Gradle plugin portal
+        val pluginId = artifactId.removeSuffix(GRADLE_PLUGIN_ARTIFACT_SUFFIX)
+        getMavenMetadata(
+            client = client,
+            allowCache = allowCache,
+            repositoryCacheKey = "plugins.gradle.org",
+            baseUrl = "https://plugins.gradle.org/m2/",
+            relative = "${pluginId.replace(".", "/")}/$artifactId/maven-metadata.xml",
+            cacheExpiryHours = cacheExpiryHours,
           )
-        if (mavenVersions != null) {
-          return mavenVersions
-        }
+          ?.let {
+            return it
+          }
+      } else if (groupId == "org.gradle" && artifactId == "gradle-tooling-api") {
+        // Gradle version: use gradle.org
+        getMavenMetadata(
+            client = client,
+            allowCache = allowCache,
+            repositoryCacheKey = "repo.gradle.org",
+            baseUrl =
+              "https://repo.gradle.org/artifactory/libs-releases/org/gradle/gradle-tooling-api/",
+            relative = "maven-metadata.xml",
+            cacheExpiryHours = cacheExpiryHours,
+          )
+          ?.let {
+            return it
+          }
       }
 
-      val mavenVersions =
-        getMavenCentralVersions(client, groupId, artifactId, version, filter, allowCache)
-      if (mavenVersions != null) {
-        return mavenVersions
-      }
+      // Maven central
+      getMavenMetadata(
+          client = client,
+          allowCache = allowCache,
+          repositoryCacheKey = "repo1.maven.org",
+          baseUrl = "https://repo1.maven.org/maven2/",
+          relative = "${groupId.replace(".", "/")}/$artifactId/maven-metadata.xml",
+          cacheExpiryHours = cacheExpiryHours,
+        )
+        ?.let {
+          return it
+        }
 
       if (groupId.startsWith("com.github.") && includeJitpack) {
-        val jitpackVersions =
-          getAvailableVersions(
+        // Jitpack
+        getMavenMetadata(
             client = client,
-            groupId = groupId,
-            artifactId = artifactId,
-            currentVersion = version,
-            filter = filter,
             allowCache = allowCache,
             repositoryCacheKey = "jitpack.io",
             baseUrl = "https://jitpack.io/",
             relative = "${groupId.replace(".", "/")}/$artifactId/maven-metadata.xml",
+            cacheExpiryHours = cacheExpiryHours,
           )
-        if (jitpackVersions != null) {
-          return jitpackVersions
-        }
-      }
-
-      if (groupId.startsWith("io.fabric")) {
-        val fabricVersions =
-          getAvailableVersions(
+          ?.let {
+            return it
+          }
+      } else if (groupId.startsWith("io.fabric")) {
+        // Fabric
+        getMavenMetadata(
             client = client,
-            groupId = groupId,
-            artifactId = artifactId,
-            currentVersion = version,
-            filter = filter,
             allowCache = allowCache,
             repositoryCacheKey = "io.fabric",
             baseUrl = "https://maven.fabric.io/public/",
             relative = "${groupId.replace(".", "/")}/$artifactId/maven-metadata.xml",
+            cacheExpiryHours = cacheExpiryHours,
           )
-        if (fabricVersions != null) {
-          return fabricVersions
-        }
+          ?.let {
+            return it
+          }
+      }
+
+      return null
+    }
+
+    /**
+     * Looks up *all* the available versions for the given artifact, consulting various maven
+     * repositories. Returns null if it's an unknown artifact.
+     */
+    fun getAllMavenVersions(
+      client: LintClient,
+      groupId: String,
+      artifactId: String,
+      allowCache: Boolean = false,
+      gmavenRepository: GoogleMavenRepository? = null,
+      includeJitpack: Boolean = true,
+      cacheExpiryHours: Int = -1,
+    ): List<Version>? {
+      val gmavenVersions = getGmavenVersions(groupId, artifactId, gmavenRepository)
+      if (gmavenVersions != null) {
+        return gmavenVersions.sorted().toList()
+      }
+
+      val mavenMetadata =
+        getMavenMetadata(client, groupId, artifactId, allowCache, cacheExpiryHours, includeJitpack)
+      if (mavenMetadata != null) {
+        return getMavenMetadataVersions(mavenMetadata)
       }
 
       return null
@@ -4245,10 +4299,11 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       groupId: String,
       artifactId: String,
       version: Version?,
-      filter: Predicate<Version>?,
+      filter: Predicate<Version>? = null,
       allowCache: Boolean = false,
       includeJitpack: Boolean = true,
       gmavenRepository: GoogleMavenRepository? = null,
+      cacheExpiryHours: Int = -1,
     ): Version? {
       val versions =
         getMavenVersions(
@@ -4260,6 +4315,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           allowCache,
           gmavenRepository,
           includeJitpack,
+          cacheExpiryHours,
         )
       if (versions != null) {
         return versions.suggested

@@ -8887,24 +8887,12 @@ class GradleDetectorTest : AbstractCheckTest() {
     val artifact = "not-exist"
     val currentVersion = Version.parse("1.0")
     val version =
-      GradleDetector.getMavenCentralVersions(
-        client,
-        group,
-        artifact,
-        currentVersion,
-        allowCache = true,
-      )
+      GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertNull(version)
     assertEquals(1, networkHitCount)
-    GradleDetector.getMavenCentralVersions(
-      client,
-      group,
-      artifact,
-      currentVersion,
-      allowCache = true,
-    )
+    GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertEquals(1, networkHitCount)
-    GradleDetector.getMavenCentralVersions(
+    GradleDetector.getMavenVersion(
       client,
       group,
       "other-artifact",
@@ -8942,24 +8930,12 @@ class GradleDetectorTest : AbstractCheckTest() {
     val artifact = "not-exist"
     val currentVersion = Version.parse("1.0")
     val version =
-      GradleDetector.getMavenCentralVersions(
-        client,
-        group,
-        artifact,
-        currentVersion,
-        allowCache = true,
-      )
+      GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertNull(version)
     assertEquals(1, networkHitCount)
-    GradleDetector.getMavenCentralVersions(
-      client,
-      group,
-      artifact,
-      currentVersion,
-      allowCache = true,
-    )
+    GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertEquals(1, networkHitCount)
-    GradleDetector.getMavenCentralVersions(
+    GradleDetector.getMavenVersion(
       client,
       group,
       "other-artifact",
@@ -8968,6 +8944,33 @@ class GradleDetectorTest : AbstractCheckTest() {
     )
     assertEquals(2, networkHitCount)
     tempFolder.delete()
+  }
+
+  fun testMavenGetAllVersions() {
+    val task = lint()
+    initializeNetworkMocksAndCaches(task)
+    val client = com.android.tools.lint.checks.infrastructure.TestLintClient()
+    client.setLintTask(task)
+    val gmaven = GradleDetector().getGoogleMavenRepository(client)
+    val versions1 =
+      GradleDetector.getAllMavenVersions(
+        client,
+        "com.google.firebase.crashlytics",
+        "com.google.firebase.crashlytics.gradle.plugin",
+        false,
+        gmaven,
+      )
+    assertEquals(
+      "2.8.1, 2.9.0, 2.9.1, 2.9.2, 2.9.3, 2.9.4, 2.9.5, 2.9.6, 2.9.7",
+      versions1?.joinToString() { it.toString() },
+    )
+
+    val versions2 =
+      GradleDetector.getAllMavenVersions(client, "org.gradle", "gradle-tooling-api", false, gmaven)
+    assertEquals(
+      "7.0, 7.0.1, 7.0.2, 7.6-rc-4, 7.6, 7.6.1, 7.6.2, 7.6.3, 7.6.4, 8.0-milestone-6, 8.0-rc-1, 8.0-rc-2, 8.0-rc-3, 8.0-rc-4, 8.0-rc-5, 8.0, 8.0.1, 8.0.2, 8.1-rc-1, 8.1-rc-2, 8.1-rc-3, 8.1-rc-4, 8.1, 8.1.1, 8.2-milestone-1, 8.2-milestone-2, 8.2-rc-1, 8.2-rc-1",
+      versions2?.joinToString() { it.toString() },
+    )
   }
 
   fun testIncludedFiles() {
