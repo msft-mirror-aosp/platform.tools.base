@@ -809,13 +809,14 @@ class LintIssueDocGenerator(
     }
 
     if (type != IndexType.ARTIFACTS) {
+      val deletedIds = mutableSetOf<String>()
       for (registry in registryMap.keys) {
-        val deleted = registry.deletedIssues.filter { !skipIssue(it) }
-        if (deleted.isNotEmpty()) {
-          sb.append("\n${bullet}Withdrawn or Obsolete Issues (${deleted.size})\n\n")
-          for (id in deleted) {
-            sb.append("  - [$id]($id${format.extension})\n")
-          }
+        deletedIds.addAll(registry.deletedIssues.filter { !skipIssue(it) })
+      }
+      if (deletedIds.isNotEmpty()) {
+        sb.append("\n${bullet}Withdrawn or Obsolete Issues (${deletedIds.size})\n\n")
+        for (id in deletedIds.sorted()) {
+          sb.append("  - [$id]($id${format.extension})\n")
         }
       }
     }
