@@ -723,14 +723,14 @@ fun pickLibraryVariableName(
   }
 
   val reservedQuickfixNames = getReservedQuickfixNames(VC_LIBRARIES)
-  for (key in reservedQuickfixNames) {
-    reserved.add(key)
+  synchronized(reservedQuickfixNames) {
+    for (key in reservedQuickfixNames) {
+      reserved.add(key)
+    }
+    val suggestion = pickLibraryVariableName(dependency, includeVersionInKey, reserved)
+    reservedQuickfixNames.add(suggestion)
+    return suggestion
   }
-
-  val suggestion = pickLibraryVariableName(dependency, includeVersionInKey, reserved)
-  reservedQuickfixNames.add(suggestion)
-
-  return suggestion
 }
 
 /**
@@ -770,30 +770,34 @@ fun pickVersionVariableName(
   }
 
   val reservedQuickfixNames = getReservedQuickfixNames(VC_VERSIONS)
-  for (key in reservedQuickfixNames) {
-    reserved.add(key)
+  synchronized(reservedQuickfixNames) {
+    for (key in reservedQuickfixNames) {
+      reserved.add(key)
+    }
+
+    // Is the gradle coordinate *already* using a variable name? If so, use that!
+    // (we do this *outside* of the reservedQuickfix check because for multiple
+    // dependencies all referencing the same variable we want to make the same
+    // suggestion over and over.
+    if (versionVar != null && !reserved.contains(versionVar)) {
+      return versionVar
+    }
+
+    val suggestion = pickVersionVariableName(dependency, reserved)
+    reservedQuickfixNames.add(suggestion)
+
+    return suggestion
   }
-
-  // Is the gradle coordinate *already* using a variable name? If so, use that!
-  // (we do this *outside* of the reservedQuickfix check because for multiple
-  // dependencies all referencing the same variable we want to make the same
-  // suggestion over and over.
-  if (versionVar != null && !reserved.contains(versionVar)) {
-    return versionVar
-  }
-
-  val suggestion = pickVersionVariableName(dependency, reserved)
-  reservedQuickfixNames.add(suggestion)
-
-  return suggestion
 }
 
 private fun getReservedQuickfixNames(key: String): MutableSet<String> {
-  val reservedQuickfixNames =
-    GradleDetector.reservedQuickfixNames
-      ?: mutableMapOf<String, MutableSet<String>>().also {
-        GradleDetector.reservedQuickfixNames = it
-      }
-  return reservedQuickfixNames[key]
-    ?: mutableSetOf<String>().also { reservedQuickfixNames[key] = it }
+  synchronized(GradleDetector.reservedQuickfixNamesLock) {
+    val reservedQuickfixNames =
+      GradleDetector.reservedQuickfixNames
+        ?: mutableMapOf<String, MutableSet<String>>().also {
+          GradleDetector.reservedQuickfixNames = it
+        }
+    return reservedQuickfixNames[key]
+      ?: mutableSetOf<String>().also { reservedQuickfixNames[key] = it }
+  }
 }

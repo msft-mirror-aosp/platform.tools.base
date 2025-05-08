@@ -3397,6 +3397,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
      * creating a clash if all fixes are applied.
      */
     var reservedQuickfixNames: MutableMap<String, MutableSet<String>>? = null
+    val reservedQuickfixNamesLock: Any = Object()
 
     /** targetSdkVersion about to expire */
     @JvmField
