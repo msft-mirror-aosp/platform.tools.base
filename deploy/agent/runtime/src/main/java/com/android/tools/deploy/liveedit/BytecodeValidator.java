@@ -16,6 +16,7 @@
 package com.android.tools.deploy.liveedit;
 
 import com.android.annotations.VisibleForTesting;
+import com.android.deploy.asm.Opcodes;
 import com.android.deploy.asm.Type;
 import com.android.deploy.asm.tree.AbstractInsnNode;
 import com.android.deploy.asm.tree.FieldNode;
@@ -24,6 +25,7 @@ import com.android.deploy.asm.tree.MethodNode;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -89,16 +91,25 @@ public class BytecodeValidator {
                         .collect(Collectors.toMap(m -> m.name + m.desc, m -> m));
 
         for (Map.Entry<String, Executable> entry : originalMethods.entrySet()) {
-            if (isLikelySynthetic(entry.getKey())) {
+            String name = entry.getKey();
+            Executable executable = entry.getValue();
+
+            if (isBridgeMethod(executable)) {
+                // Skip verifying bridge methods as their appearance is not consistent across
+                // compiler versions.
                 continue;
             }
 
-            MethodNode newMethod = newMethods.get(entry.getKey());
+            if (isLikelySynthetic(name)) {
+                continue;
+            }
+
+            MethodNode newMethod = newMethods.get(name);
             if (newMethod == null) {
                 UnsupportedChange change = new UnsupportedChange();
                 change.type = UnsupportedChange.Type.REMOVED_METHOD.name();
                 change.className = className;
-                change.targetName = entry.getKey();
+                change.targetName = name;
                 change.fileName = bytecode.getFilename();
                 errors.add(change);
             }
@@ -110,7 +121,9 @@ public class BytecodeValidator {
             if (method.startsWith("<clinit>")) {
                 continue;
             }
-            if (!originalMethods.containsKey(method) && !isLikelySynthetic(method)) {
+            if (!originalMethods.containsKey(method)
+                    && !isLikelySynthetic(method)
+                    && !isBridgeMethod(newMethods.get(method))) {
                 UnsupportedChange change = new UnsupportedChange();
                 change.type = UnsupportedChange.Type.ADDED_METHOD.name();
                 change.className = className;
@@ -244,6 +257,15 @@ public class BytecodeValidator {
 
     private static boolean isLikelySynthetic(String methodDesc) {
         return methodDesc.contains("$");
+    }
+
+    private static boolean isBridgeMethod(Executable exec) {
+        // Only Methods can be checked for isBridge(), not constructors.
+        return exec instanceof Method && ((Method) exec).isBridge();
+    }
+
+    private static boolean isBridgeMethod(MethodNode method) {
+        return (method.access & Opcodes.ACC_BRIDGE) != 0;
     }
 
     // In a perfect world, we'd just use the proto for all of this. However, using the proto across
