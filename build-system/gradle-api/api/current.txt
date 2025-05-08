@@ -1424,9 +1424,9 @@ package com.android.build.api.dsl {
   }
 
   public interface LibraryAndroidResources extends com.android.build.api.dsl.AndroidResources {
-    method @org.gradle.api.Incubating public boolean getEnable();
-    method @org.gradle.api.Incubating public void setEnable(boolean);
-    property @org.gradle.api.Incubating public abstract boolean enable;
+    method public boolean getEnable();
+    method public void setEnable(boolean);
+    property public abstract boolean enable;
   }
 
   public interface LibraryBaseFlavor extends com.android.build.api.dsl.BaseFlavor com.android.build.api.dsl.LibraryVariantDimension {
@@ -1442,15 +1442,15 @@ package com.android.build.api.dsl {
   }
 
   public interface LibraryBuildFeatures extends com.android.build.api.dsl.BuildFeatures {
-    method public Boolean? getAndroidResources();
+    method @Deprecated public Boolean? getAndroidResources();
     method public Boolean? getDataBinding();
     method public Boolean? getMlModelBinding();
     method public Boolean? getPrefabPublishing();
-    method public void setAndroidResources(Boolean?);
+    method @Deprecated public void setAndroidResources(Boolean?);
     method public void setDataBinding(Boolean?);
     method public void setMlModelBinding(Boolean?);
     method public void setPrefabPublishing(Boolean?);
-    property public abstract Boolean? androidResources;
+    property @Deprecated public abstract Boolean? androidResources;
     property public abstract Boolean? dataBinding;
     property public abstract Boolean? mlModelBinding;
     property public abstract Boolean? prefabPublishing;

@@ -104,12 +104,14 @@ import java.util.IdentityHashMap
 import org.jetbrains.jps.model.java.impl.JavaSdkUtil
 import org.jetbrains.kotlin.analysis.api.KaNonPublicApi
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys.PERF_MANAGER
-import org.jetbrains.kotlin.cli.common.CommonCompilerPerformanceManager
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.languageVersionSettings
 import org.jetbrains.kotlin.light.classes.symbol.withMultiplatformLightClassSupport
+import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.util.PerformanceCounter.Companion.resetAllCounters
+import org.jetbrains.kotlin.util.PerformanceManager
+import org.jetbrains.kotlin.util.PhaseType
 import org.w3c.dom.Document
 
 /**
@@ -1460,7 +1462,7 @@ open class LintCliClient : LintClient {
 
     val env = UastEnvironment.create(config)
     uastEnvironment = env
-    kotlinPerformanceManager?.notifyCompilerInitialized(-1, -1, "Android Lint")
+    kotlinPerformanceManager?.notifyPhaseFinished(PhaseType.Initialization)
 
     for (project in allProjects) {
       project.ideaProject = env.ideaProject
@@ -1851,7 +1853,7 @@ open class LintCliClient : LintClient {
   }
 
   private class LintCliKotlinPerformanceManager(private val perfReportName: String) :
-    CommonCompilerPerformanceManager("Lint CLI") {
+    PerformanceManager(JvmPlatforms.defaultJvmPlatform, "Lint CLI") {
     fun report(request: LintRequest) {
       notifyCompilationFinished()
       val sb = StringBuilder(perfReportName)
@@ -1868,7 +1870,7 @@ open class LintCliClient : LintClient {
     }
 
     init {
-      enableCollectingPerformanceStatistics()
+      enableExtendedStats()
       resetAllCounters()
     }
   }

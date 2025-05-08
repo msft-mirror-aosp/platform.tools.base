@@ -1039,6 +1039,16 @@ fun UFile.acceptSourceFile(visitor: UastVisitor) {
  */
 fun UMethod.isDuplicatedOverload(): Boolean {
   val method = sourcePsi as? KtFunction ?: return false
+  // Sanity check: compiler-generated members may use the source PSI whose names don't match,
+  // e.g., SLC `data` class `copy` points to the primary constructor (with the class name).
+  // If that constructor is annotated with @JvmOverloads, copy is treated as duplicate overload.
+  method.name?.let { name ->
+    // Caveat: internal$module_name in [UMethod] v.s. just internal in source PSI
+    // Hence, not just equality, but prefix comparison.
+    if (!this.name.startsWith(name)) {
+      return false
+    }
+  }
   if (
     method.annotationEntries.any {
       it.shortName?.asString() == JVM_OVERLOADS_FQ_NAME.shortName().asString()

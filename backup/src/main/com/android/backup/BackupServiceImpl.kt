@@ -70,10 +70,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
         // Backup is always handled by the D2D transport
         withSetup(TRANSPORT_DTD) {
           reportProgress("Initializing backup transport")
-          initializeTransport(TRANSPORT_DTD)
+          val initOk = initializeTransport(TRANSPORT_DTD)
           try {
             reportProgress("Running backup")
-            backupNow(applicationId, type)
+            backupNow(applicationId, type, initOk)
             val permissions = getGrantedPermissions(applicationId)
             reportProgress("Fetching backup")
             pullBackup(adbServices, BackupMetadata(applicationId, type), permissions, tempFile)
@@ -129,7 +129,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
             // Restore is always handled by the Cloud transport
             withSetup(TRANSPORT_DTD) {
               reportProgress("Initializing backup transport")
-              initializeTransport(TRANSPORT_DTD)
+              val initOk = initializeTransport(TRANSPORT_DTD)
               setTransport(TRANSPORT_CLOUD, true)
               val token = zip.getRestoreToken()
               reportProgress("Pushing backup file")
@@ -137,7 +137,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
               reportProgress("Clearing app data")
               clearAppData(applicationId)
               reportProgress("Restoring $applicationId")
-              restore(token, applicationId, metadata.backupType)
+              restore(token, applicationId, metadata.backupType, initOk)
               reportProgress("Restoring $applicationId permissions")
               zip.getPermissions().forEach { permission ->
                 grantPermission(applicationId, permission)

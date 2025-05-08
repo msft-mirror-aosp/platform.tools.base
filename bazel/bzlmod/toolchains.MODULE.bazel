@@ -98,10 +98,4 @@ rbe.constant(
         "machine-size": "large",
     },
 )
-rbe.constant(
-    name = "RBE_CPU_8",
-    labels = {
-        "machine-size": "cpu8",
-    },
-)
 use_repo(rbe, "exec_properties")

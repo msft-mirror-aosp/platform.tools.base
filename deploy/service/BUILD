@@ -1,7 +1,6 @@
-load("@rules_java//java:defs.bzl", "java_binary", "java_test")
-load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
-load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "java_proto_library")
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
+load("//tools/base/bazel:proto.bzl", "android_java_proto_library")
 
 android_java_proto_library(
     name = "deploy-service-proto",
@@ -11,15 +10,18 @@ android_java_proto_library(
     visibility = ["//visibility:public"],
 )
 
-java_binary(
-    name = "deploy.service",
+kotlin_library(
+    name = "deploy.service-lib",
     srcs = glob([
         "src/main/**/*.java",
+        "src/main/**/*.kt",
     ]),
-    main_class = "com.android.deploy.service.DeployServiceMain",
     visibility = ["//visibility:public"],
     deps = [
         ":deploy-service-proto",
+        "//tools/base/adblib",
+        "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility",
+        "//tools/base/adblib-tools:adblib.tools",
         "//tools/base/annotations",
         "//tools/base/bazel:studio-grpc",
         "//tools/base/bazel:studio-proto",
@@ -32,10 +34,20 @@ java_binary(
     ],
 )
 
-java_test(
+java_binary(
+    name = "deploy.service",
+    main_class = "com.android.deploy.service.DeployServiceMain",
+    visibility = ["//visibility:public"],
+    runtime_deps = [
+        ":deploy.service-lib",
+    ],
+)
+
+kotlin_test(
     name = "service_test",
     srcs = glob([
         "src/test/java/com/android/deploy/service/*.java",
+        "src/test/java/com/android/deploy/service/*.kt",
     ]),
     data = [
     ],
@@ -45,7 +57,7 @@ java_test(
     ],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
-        ":deploy.service",
+        ":deploy.service-lib",
         ":deploy-service-proto",
         "//tools/base/annotations",
         "//tools/base/bazel:studio-grpc",

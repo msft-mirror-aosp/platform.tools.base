@@ -106,14 +106,14 @@ class PrivacySandboxSdkMinimalTest {
                   E: manifest
                     A: http://schemas.android.com/apk/res/android:versionCode=1
                     A: http://schemas.android.com/apk/res/android:versionName="1.2.3"
-                    A: http://schemas.android.com/apk/res/android:compileSdkVersion=35
-                    A: http://schemas.android.com/apk/res/android:compileSdkVersionCodename="15"
+                    A: http://schemas.android.com/apk/res/android:compileSdkVersion=$DEFAULT_COMPILE_SDK_VERSION
+                    A: http://schemas.android.com/apk/res/android:compileSdkVersionCodename="16"
                     A: package="com.example.emptyprivacysandboxsdk_10002"
-                    A: platformBuildVersionCode=35
-                    A: platformBuildVersionName=15
+                    A: platformBuildVersionCode=$DEFAULT_COMPILE_SDK_VERSION
+                    A: platformBuildVersionName=16
                       E: uses-sdk
                         A: http://schemas.android.com/apk/res/android:minSdkVersion=33
-                        A: http://schemas.android.com/apk/res/android:targetSdkVersion=35
+                        A: http://schemas.android.com/apk/res/android:targetSdkVersion=36
                       E: uses-permission
                         A: http://schemas.android.com/apk/res/android:name="com.example.emptyprivacysandboxsdk.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
                       E: application

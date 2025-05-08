@@ -1,5 +1,6 @@
 .out
 tools/out/
+tools/idea/out
 tools/adt/idea/out
 tools/adt/idea/studio/monobuild/out
 tools/vendor/intellij/cidr

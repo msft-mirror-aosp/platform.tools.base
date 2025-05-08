@@ -6311,7 +6311,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 .run()
                 .expect(
                         ""
-                                + "src/test/pkg/TestClass.kt:12: Error: Call requires API level 24, or core library desugaring (current min is 14): java.util.Map#getOrDefault (called from kotlin.collections.Map#getOrDefault) [NewApi]\n"
+                                + "src/test/pkg/TestClass.kt:12: Error: Call requires API level 24 (current min is 14): java.util.HashMap#getOrDefault [NewApi]\n"
                                 + "        map.getOrDefault(key1, 0F)\n"
                                 + "            ~~~~~~~~~~~~\n"
                                 + "src/test/pkg/TestClass.kt:13: Error: Call requires API level 24 (current min is 14): java.util.HashMap#getOrDefault [NewApi]\n"

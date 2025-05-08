@@ -41,6 +41,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.kdoc.lexer.KDocTokens
 import org.jetbrains.kotlin.kdoc.psi.api.KDoc
 import org.jetbrains.kotlin.kdoc.psi.impl.KDocTag
+import org.jetbrains.kotlin.lexer.KtToken
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtModifierListOwner
@@ -177,7 +178,27 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
         }
         val tag = getFirstTag(comment, text) ?: return
         val commentType = if (isKotlin(element.getLanguage())) "KDoc" else "javadoc"
-        val tagText = tag.text.substringBefore("\n")
+        val type = (tag as? LeafPsiElement)?.elementType
+        val tagText =
+          if ((type as? KtToken)?.tokenId == 8) {
+            // We can't use type == KDocTokens.KDOC_LPAR yet (until 252)
+            //    PsiElement(KDOC_TEXT)(' [Kotlin]')
+            //    PsiElement(KDOC_LPAR)('(')
+            //    PsiElement(KDOC_TEXT)('https://kotlinlang.org')
+            //    PsiElement(KDOC_RPAR)(')')
+            //
+            // Therefore, previous TEXT's suffix after `[`
+            // followed by `(`, link text, and `)`.
+            buildString {
+              append('[')
+              append(tag.prevSibling.text.substringAfter('['))
+              append('(')
+              append(tag.nextSibling.text)
+              append(')')
+            }
+          } else {
+            tag.text.substringBefore("\n")
+          }
         val delta = text.indexOf(tagText)
         val location =
           if (delta != -1) {
@@ -223,8 +244,46 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
                   return tag
                 } else if (tag is LeafPsiElement) {
                   val type = tag.elementType
+                  // /**
+                  // * [Kotl
+                  // * in](https://kotlinlang.org) is made by [JetBrains][1]
+                  // * [1]: https://www.jetbrains.com/
+                  // */
+                  //
+                  // is parsed as:
+                  //
+                  //  KDOC_SECTION
+                  //    PsiElement(KDOC_LEADING_ASTERISK)('*')
+                  //    PsiElement(KDOC_TEXT)(' ')
+                  //    PsiElement(KDOC_MARKDOWN_INLINE_LINK)('[Kotlin](https://kotlinlang.org)')
+                  //    PsiElement(KDOC_TEXT)(' is made by [JetBrains][1]')
+                  //    PsiWhiteSpace('\n ')
+                  //    PsiElement(KDOC_LEADING_ASTERISK)('*')
+                  //    PsiElement(KDOC_TEXT)(' [1]: https://www.jetbrains.com/')
+                  // TODO: once 252 is merged, the following is no-op.
                   if (type == KDocTokens.MARKDOWN_INLINE_LINK) {
                     return tag
+                  }
+                  // After https://youtrack.jetbrains.com/issue/KT-74555
+                  //
+                  //  KDOC_SECTION
+                  //    PsiElement(KDOC_LEADING_ASTERISK)('*')
+                  //    PsiElement(KDOC_TEXT)(' [Kotlin]')
+                  //    PsiElement(KDOC_LPAR)('(')
+                  //    PsiElement(KDOC_TEXT)('https://kotlinlang.org')
+                  //    PsiElement(KDOC_RPAR)(')')
+                  //    PsiElement(KDOC_TEXT)(' is made by [JetBrains][1]')
+                  //    PsiWhiteSpace('\n ')
+                  //    PsiElement(KDOC_LEADING_ASTERISK)('*')
+                  //    PsiElement(KDOC_TEXT)(' [1]: https://www.jetbrains.com/')
+                  if ((type as? KtToken)?.tokenId == 8) {
+                    // We can't use type == KDocTokens.KDOC_LPAR yet (until 252)
+                    val prevText = tag.prevSibling.text
+                    val l = prevText.indexOf('[')
+                    val r = prevText.indexOf(']')
+                    if (l != -1 && r != -1 && l < r) {
+                      return tag
+                    }
                   }
                 }
                 curr = curr.nextSibling ?: break

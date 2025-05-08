@@ -15,6 +15,7 @@
  */
 package com.android.adblib.tools.debugging
 
+import com.android.adblib.InstructionSet
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
@@ -24,13 +25,22 @@ import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
@@ -41,7 +51,6 @@ class JdwpProcessTrackerTest {
     @Rule
     val fakeAdbRule = FakeAdbServerProviderRule {
         installDefaultCommandHandlers()
-        setFeatures("push_sync")
     }
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
@@ -69,23 +78,23 @@ class JdwpProcessTrackerTest {
         val listOfProcessList = CopyOnWriteArrayList<List<JdwpProcess>>()
         launch {
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
-            Assert.assertNotNull(fakeDevice.getClient(pid10))
+            assertNotNull(fakeDevice.getClient(pid10))
             yieldUntil {
                 val size = listOfProcessList.size
                 size == 1
             }
 
             fakeDevice.startClient(pid11, 0, "a.b.c.e", false)
-            Assert.assertNotNull(fakeDevice.getClient(pid10))
-            Assert.assertNotNull(fakeDevice.getClient(pid11))
+            assertNotNull(fakeDevice.getClient(pid10))
+            assertNotNull(fakeDevice.getClient(pid11))
             yieldUntil { listOfProcessList.size == 2 }
 
             // Note: Depending on how fast FakeAdbServer is, adblib may get one or two
             //       jdwp tracking event
             fakeDevice.stopClient(pid10)
             fakeDevice.stopClient(pid11)
-            Assert.assertNull(fakeDevice.getClient(pid10))
-            Assert.assertNull(fakeDevice.getClient(pid11))
+            assertNull(fakeDevice.getClient(pid10))
+            assertNull(fakeDevice.getClient(pid11))
         }
 
         val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
@@ -135,35 +144,35 @@ class JdwpProcessTrackerTest {
                 }
 
                 else -> {
-                    Assert.fail("Should not reach")
+                    fail("Should not reach")
                     false
                 }
             }
         }.collect()
 
         // Assert: We should have 3 lists: 1 process, 2 processes, empty list.
-        Assert.assertTrue(listOfProcessList.size == 3)
+        assertTrue(listOfProcessList.size == 3)
 
         // First list has one process
-        Assert.assertEquals(1, listOfProcessList[0].size)
-        Assert.assertEquals(listOf(pid10), listOfProcessList[0].map { it.pid }.toList())
+        assertEquals(1, listOfProcessList[0].size)
+        assertEquals(listOf(pid10), listOfProcessList[0].map { it.pid }.toList())
 
         // Second list has 2 processes
-        Assert.assertEquals(2, listOfProcessList[1].size)
-        Assert.assertEquals(listOf(pid10, pid11), listOfProcessList[1].map { it.pid }.toList())
+        assertEquals(2, listOfProcessList[1].size)
+        assertEquals(listOf(pid10, pid11), listOfProcessList[1].map { it.pid }.toList())
 
         // Last list is empty
-        Assert.assertEquals(0, listOfProcessList[2].size)
+        assertEquals(0, listOfProcessList[2].size)
 
         // Ensure JdwpProcess instances are re-used across flow changes
-        Assert.assertSame(listOfProcessList[0].first { it.pid == pid10 },
+        assertSame(listOfProcessList[0].first { it.pid == pid10 },
                           listOfProcessList[1].first { it.pid == pid10 })
 
         val process10 = listOfProcessList[0].first { it.pid == pid10 }
-        Assert.assertEquals(connectedDevice, process10.device)
-        Assert.assertEquals(pid10, process10.pid)
+        assertEquals(connectedDevice, process10.device)
+        assertEquals(pid10, process10.pid)
         yieldUntil { !process10.scope.isActive }
-        Assert.assertFalse(process10.scope.isActive)
+        assertFalse(process10.scope.isActive)
     }
 
     @Test
@@ -205,13 +214,13 @@ class JdwpProcessTrackerTest {
             }.first()
 
         // Assert
-        Assert.assertEquals(pid10, process10.pid)
-        Assert.assertEquals("a.b.c", process10.propertiesFlow.value.processName.getOrNull())
-        Assert.assertEquals(100, process10.propertiesFlow.value.userId.getOrNull())
+        assertEquals(pid10, process10.pid)
+        assertEquals("a.b.c", process10.propertiesFlow.value.processName.getOrNull())
+        assertEquals(100, process10.propertiesFlow.value.userId.getOrNull())
 
-        Assert.assertEquals(pid11, process11.pid)
-        Assert.assertEquals("a.b.c.e", process11.propertiesFlow.value.processName.getOrNull())
-        Assert.assertEquals(101, process11.propertiesFlow.value.userId.getOrNull())
+        assertEquals(pid11, process11.pid)
+        assertEquals("a.b.c.e", process11.propertiesFlow.value.processName.getOrNull())
+        assertEquals(101, process11.propertiesFlow.value.userId.getOrNull())
     }
 
     @Test
@@ -272,7 +281,7 @@ class JdwpProcessTrackerTest {
         val pid10 = 10
 
         // Act
-        val exception = Assert.assertThrows(Exception::class.java) {
+        val exception = assertThrows(Exception::class.java) {
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
             runBlocking {
@@ -283,7 +292,7 @@ class JdwpProcessTrackerTest {
         }
 
         // Assert
-        Assert.assertEquals(exception.message, "My Test Exception")
+        assertEquals(exception.message, "My Test Exception")
     }
 
     @Test
@@ -304,7 +313,7 @@ class JdwpProcessTrackerTest {
         val pid10 = 10
 
         // Act
-        val exception = Assert.assertThrows(CancellationException::class.java) {
+        val exception = assertThrows(CancellationException::class.java) {
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
             runBlocking {
@@ -315,6 +324,305 @@ class JdwpProcessTrackerTest {
         }
 
         // Assert
-        Assert.assertEquals(exception.message, "My Test Exception")
+        assertEquals(exception.message, "My Test Exception")
     }
+
+    @Test
+    fun testJdwpProcessTrackerExposesUnsupportedPropertiesForApi17AndBelow() =
+        runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(17),
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 100, "a.b.c", false)
+            val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
+
+            // Act
+            val process = jdwpTracker.processesFlow
+                .filter { it.isNotEmpty() }
+                .map { it.first() }
+                .first()
+            process.propertiesFlow.takeWhile { it.processName.isEmpty }
+                .collect {
+                    // We didn't receive HELO packet with the `processName` yet
+                    assertTrue(process.propertiesFlow.value.processName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.vmIdentifier.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSet.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSetDescription.isEmpty)
+                    assertTrue(process.propertiesFlow.value.jvmFlags.isEmpty)
+                    assertTrue(process.propertiesFlow.value.isNativeDebuggable.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageNames.isEmpty)
+                }
+
+            // Assert
+            // Supported properties
+            assertEquals(pid10, process.pid)
+            assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
+            assertEquals("FakeVM", process.propertiesFlow.value.vmIdentifier.getOrNull())
+            // Unsupported properties
+            assertTrue(process.propertiesFlow.value.instructionSet.isError)
+            assertTrue(process.propertiesFlow.value.instructionSetDescription.isError)
+            assertTrue(process.propertiesFlow.value.jvmFlags.isError)
+            assertTrue(process.propertiesFlow.value.isNativeDebuggable.isError)
+            assertTrue(process.propertiesFlow.value.packageName.isError)
+            assertTrue(process.propertiesFlow.value.packageNames.isError)
+        }
+
+    @Test
+    fun testJdwpProcessTrackerExposesUnsupportedPropertiesForApi18To20() =
+        runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(18),
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 100, "a.b.c", false)
+            val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
+
+            // Act
+            val process = jdwpTracker.processesFlow
+                .filter { it.isNotEmpty() }
+                .map { it.first() }
+                .first()
+            process.propertiesFlow.takeWhile { it.processName.isEmpty }
+                .collect {
+                    // We didn't receive HELO packet with the `processName` yet
+                    assertTrue(process.propertiesFlow.value.processName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.vmIdentifier.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSet.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSetDescription.isEmpty)
+                    assertTrue(process.propertiesFlow.value.jvmFlags.isEmpty)
+                    assertTrue(process.propertiesFlow.value.isNativeDebuggable.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageNames.isEmpty)
+                }
+
+            // Assert
+            // Supported properties
+            assertEquals(pid10, process.pid)
+            assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
+            assertEquals("FakeVM", process.propertiesFlow.value.vmIdentifier.getOrNull())
+            // Unsupported properties
+            assertTrue(process.propertiesFlow.value.instructionSet.isError)
+            assertTrue(process.propertiesFlow.value.instructionSetDescription.isError)
+            assertTrue(process.propertiesFlow.value.jvmFlags.isError)
+            assertTrue(process.propertiesFlow.value.isNativeDebuggable.isError)
+            assertTrue(process.propertiesFlow.value.packageName.isError)
+            assertTrue(process.propertiesFlow.value.packageNames.isError)
+        }
+
+    @Test
+    fun testJdwpProcessTrackerExposesUnsupportedPropertiesForApi21To23() =
+        runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(21),
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 100, "a.b.c", false)
+            val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
+
+            // Act
+            val process = jdwpTracker.processesFlow
+                .filter { it.isNotEmpty() }
+                .map { it.first() }
+                .first()
+            process.propertiesFlow.takeWhile { it.processName.isEmpty }
+                .collect {
+                    // We didn't receive HELO packet with the `processName` yet
+                    assertTrue(process.propertiesFlow.value.processName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.vmIdentifier.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSet.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSetDescription.isEmpty)
+                    assertTrue(process.propertiesFlow.value.jvmFlags.isEmpty)
+                    assertTrue(process.propertiesFlow.value.isNativeDebuggable.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageNames.isEmpty)
+                }
+
+            // Assert
+            // Supported properties
+            assertEquals(pid10, process.pid)
+            assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
+            assertEquals("FakeVM", process.propertiesFlow.value.vmIdentifier.getOrNull())
+            assertEquals(InstructionSet.X86_64, process.propertiesFlow.value.instructionSet.getOrNull())
+            assertEquals("64-bit (x86_64)", process.propertiesFlow.value.instructionSetDescription.getOrNull())
+            assertEquals("CheckJNI=true", process.propertiesFlow.value.jvmFlags.getOrNull())
+            // Unsupported properties
+            assertTrue(process.propertiesFlow.value.isNativeDebuggable.isError)
+            assertTrue(process.propertiesFlow.value.packageName.isError)
+            assertTrue(process.propertiesFlow.value.packageNames.isError)
+        }
+
+    @Test
+    fun testJdwpProcessTrackerExposesUnsupportedPropertiesForApi24To29() =
+        runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(24),
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 100, "a.b.c", false)
+            val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
+
+            // Act
+            val process = jdwpTracker.processesFlow
+                .filter { it.isNotEmpty() }
+                .map { it.first() }
+                .first()
+            process.propertiesFlow.takeWhile { it.processName.isEmpty }
+                .collect {
+                    // We didn't receive HELO packet with the `processName` yet
+                    assertTrue(process.propertiesFlow.value.processName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.vmIdentifier.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSet.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSetDescription.isEmpty)
+                    assertTrue(process.propertiesFlow.value.jvmFlags.isEmpty)
+                    assertTrue(process.propertiesFlow.value.isNativeDebuggable.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageNames.isEmpty)
+                }
+
+            // Assert
+            // Supported properties
+            assertEquals(pid10, process.pid)
+            assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
+            assertEquals("FakeVM", process.propertiesFlow.value.vmIdentifier.getOrNull())
+            assertEquals(InstructionSet.X86_64, process.propertiesFlow.value.instructionSet.getOrNull())
+            assertEquals("64-bit (x86_64)", process.propertiesFlow.value.instructionSetDescription.getOrNull())
+            assertEquals("CheckJNI=true", process.propertiesFlow.value.jvmFlags.getOrNull())
+            assertEquals(false, process.propertiesFlow.value.isNativeDebuggable.getOrNull())
+
+            // Unsupported properties
+            assertTrue(process.propertiesFlow.value.packageName.isError)
+            assertTrue(process.propertiesFlow.value.packageNames.isError)
+        }
+
+    @Test
+    fun testJdwpProcessTrackerSetsAllPropertiesForApi30AndAbove() =
+        runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(30),
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 100, "a.b.c", false)
+            val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
+
+            // Act
+            val process = jdwpTracker.processesFlow
+                .filter { it.isNotEmpty() }
+                .map { it.first() }
+                .first()
+            process.propertiesFlow.takeWhile { it.processName.isEmpty }
+                .collect {
+                    // We didn't receive HELO packet with the `processName` yet
+                    assertTrue(process.propertiesFlow.value.processName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.vmIdentifier.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSet.isEmpty)
+                    assertTrue(process.propertiesFlow.value.instructionSetDescription.isEmpty)
+                    assertTrue(process.propertiesFlow.value.jvmFlags.isEmpty)
+                    assertTrue(process.propertiesFlow.value.isNativeDebuggable.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageName.isEmpty)
+                    assertTrue(process.propertiesFlow.value.packageNames.isEmpty)
+                }
+
+            // Assert
+            // Supported properties
+            assertEquals(pid10, process.pid)
+            assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
+            assertEquals("FakeVM", process.propertiesFlow.value.vmIdentifier.getOrNull())
+            assertEquals(InstructionSet.X86_64, process.propertiesFlow.value.instructionSet.getOrNull())
+            assertEquals("64-bit (x86_64)", process.propertiesFlow.value.instructionSetDescription.getOrNull())
+            assertEquals("CheckJNI=true", process.propertiesFlow.value.jvmFlags.getOrNull())
+            assertEquals(false, process.propertiesFlow.value.isNativeDebuggable.getOrNull())
+            assertEquals("a.b.c", process.propertiesFlow.value.packageName.getOrNull())
+            assertEquals(listOf("a.b.c"), process.propertiesFlow.value.packageNames.getOrNull())
+        }
+
+    @Test
+    fun testJdwpProcessPropertiesCollectorSetsAllProperties_whenItUsesAppInfo() =
+        runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(36), // SDK >= 36 is required for app_info feature.
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 100, "a.b.c", false)
+            val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
+
+            // Act
+            val process = jdwpTracker.processesFlow
+                .filter { it.isNotEmpty() }
+                .map { it.first() }
+                .first()
+            process.propertiesFlow.first { !it.processName.isEmpty && !it.vmIdentifier.isEmpty }
+
+            // Assert
+            assertEquals(pid10, process.pid)
+            assertEquals("a.b.c", process.propertiesFlow.value.processName.getOrNull())
+            assertEquals("Dalvik 2.1.0", process.propertiesFlow.value.vmIdentifier.getOrNull())
+            assertEquals(InstructionSet.X86_64, process.propertiesFlow.value.instructionSet.getOrNull())
+            assertEquals("64-bit (x86_64)", process.propertiesFlow.value.instructionSetDescription.getOrNull())
+            assertEquals("CheckJNI=true", process.propertiesFlow.value.jvmFlags.getOrNull())
+            assertEquals(false, process.propertiesFlow.value.isNativeDebuggable.getOrNull())
+            assertEquals("a.b.c", process.propertiesFlow.value.packageName.getOrNull())
+            assertEquals(listOf("a.b.c"), process.propertiesFlow.value.packageNames.getOrNull())
+        }
 }

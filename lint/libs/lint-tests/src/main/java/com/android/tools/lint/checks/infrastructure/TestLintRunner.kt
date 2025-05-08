@@ -629,7 +629,7 @@ class TestLintRunner(private val task: TestLintTask) {
               files = ObjectArrays.concat(files, propertyFile)
             }
             var index = 1
-            for (dependency in project.dependsOn) {
+            for ((dependency, _) in project.dependsOn) {
               val dependencyDir = ProjectDescription.getProjectDirectory(dependency, rootDir)
               val client = TestLintClient(clientName)
               val relative = client.getRelativePath(projectDir, dependencyDir)

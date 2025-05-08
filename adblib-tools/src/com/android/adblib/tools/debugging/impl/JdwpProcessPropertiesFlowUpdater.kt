@@ -17,9 +17,6 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
-import com.android.adblib.tools.debugging.JdwpProcessProperties.Companion.unsupportedByOlderApi
-import com.android.adblib.tools.debugging.OptionalValue
-import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl.Companion.filterFakeName
 
 /**
  * A component that asynchronously updates an [AtomicStateFlow] of [JdwpProcessProperties]

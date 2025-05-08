@@ -48,11 +48,13 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
     interface LibraryBuilder {
         var artifact: ByteArray?
         val dependencies: MutableList<String>
+        val dependencyManagementDependencies: MutableList<String>
     }
 
     internal interface LibraryData {
         val artifact: ByteArray
         val dependencies: List<MavenCoordinate>
+        val dependencyManagementDependencies: List<MavenCoordinate>
     }
 
     class Library internal constructor(
@@ -62,6 +64,23 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
         internal val additionalArtifact: LibraryData? = null,
         internal val fixtureArtifact: LibraryData? = null
     ) {
+
+        constructor(
+            mavenCoordinate: String,
+            packaging: String,
+            artifact: ByteArray,
+            dependencies: List<String>,
+            dependencyManagementDependencies: List<String>
+        ) : this(
+            mavenCoordinate,
+            packaging,
+            LibraryBuilderImpl(
+                artifact,
+                dependencies.toMutableList(),
+                dependencyManagementDependencies.toMutableList()
+            ).toData()
+        )
+
         constructor(
             mavenCoordinate: String,
             packaging: String,
@@ -121,6 +140,25 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
             if (packaging != "jar") {
                 sb.append( "  <packaging>$packaging</packaging>\n")
             }
+
+            sb.append("  <dependencyManagement>\n")
+            if (mainArtifact.dependencyManagementDependencies.any()) {
+                sb.append("    <dependencies>\n")
+                for (dependency in mainArtifact.dependencyManagementDependencies) {
+                    sb.append(
+                        """
+                    |      <dependency>
+                    |        <groupId>${dependency.groupId}</groupId>
+                    |        <artifactId>${dependency.artifactId}</artifactId>
+                    |        <version>${dependency.version}</version>
+                    |      </dependency>
+                    |""".trimMargin()
+                    )
+                }
+                sb.append("    </dependencies>\n")
+            }
+            sb.append("  </dependencyManagement>\n")
+
             sb.append("  <dependencies>\n")
             for (dependency in mainArtifact.dependencies) {
                 sb.append(
@@ -419,7 +457,8 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
 
     class LibraryBuilderImpl(
         override var artifact: ByteArray? = null,
-        override val dependencies: MutableList<String> = mutableListOf()
+        override val dependencies: MutableList<String> = mutableListOf(),
+        override val dependencyManagementDependencies: MutableList<String> = mutableListOf()
     ): LibraryBuilder {
 
         constructor(
@@ -428,12 +467,16 @@ class MavenRepoGenerator constructor(val libraries: List<Library>) {
         ): this(artifact, dependencies.toMutableList())
 
         internal fun toData(): LibraryData {
-            return LibraryDataImpl(artifact!!, dependencies.map { MavenCoordinate.parse(it) })
+            return LibraryDataImpl(
+                artifact!!,
+                dependencies.map { MavenCoordinate.parse(it) },
+                dependencyManagementDependencies.map { MavenCoordinate.parse(it) })
         }
     }
 
     class LibraryDataImpl(
         override val artifact: ByteArray,
-        override val dependencies: List<MavenCoordinate>
+        override val dependencies: List<MavenCoordinate>,
+        override val dependencyManagementDependencies: List<MavenCoordinate>
     ): LibraryData
 }

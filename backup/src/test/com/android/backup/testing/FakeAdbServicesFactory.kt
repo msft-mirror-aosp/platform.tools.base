@@ -32,7 +32,7 @@ class FakeAdbServicesFactory(
     listener: BackupProgressListener?,
     steps: Int,
   ): AdbServices {
-    adbServices = FakeAdbServices(serialNumber, steps)
+    adbServices = FakeAdbServices(serialNumber, steps, debuggableApps = listOf(appId))
     adbServices.addCommandOverride(Output("pm list packages $appId", "package:$appId"))
     configure(adbServices)
     return adbServices

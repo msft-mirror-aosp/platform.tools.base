@@ -99,6 +99,10 @@ interface DeviceHandle : Extensible {
   val repairDeviceAction: RepairDeviceAction?
     get() = null
 
+  /** Attempts to pair the physical device over Wifi. */
+  val wifiPairDeviceAction: PairDeviceAction?
+    get() = null
+
   /** Waits until this device handle is no longer associated with [device]. */
   suspend fun awaitRelease(device: ConnectedDevice) {
     stateFlow.takeWhile { it.connectedDevice == device }.collect()

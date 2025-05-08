@@ -51,6 +51,7 @@ maven_library(
         "//tools/base/adblib-tools:__subpackages__",
         "//tools/base/backup:__subpackages__",
         "//tools/base/deploy/deployer:__subpackages__",
+        "//tools/base/deploy/service:__subpackages__",
         "//tools/base/gmaven:__subpackages__",
         "//tools/vendor/google/directaccess-client:__subpackages__",
     ],
@@ -106,6 +107,7 @@ java_proto_library(
         "proto/am_capabilities.proto",
         "proto/app_processes.proto",
         "proto/devices.proto",
+        "proto/mdns.proto",
     ],
     visibility = ["//visibility:public"],
 )

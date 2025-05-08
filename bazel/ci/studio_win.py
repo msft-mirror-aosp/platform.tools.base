@@ -6,6 +6,7 @@ import tempfile
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import studio
 from tools.base.bazel.ci.presubmit import failure_retry
+from tools.base.bazel.ci.presubmit import impacted_targets
 from tools.base.bazel.ci.presubmit import presubmit
 
 
@@ -47,7 +48,7 @@ def studio_win(build_env: bazel.BuildEnv):
 
   build_type = studio.BuildType.from_build_number(build_env.build_number)
   if build_type == studio.BuildType.POSTSUBMIT:
-    presubmit.generate_and_upload_hash_file(build_env)
+    impacted_targets.generate_and_upload_hash_file(build_env)
     targets += extra_targets
 
   if build_type == studio.BuildType.PRESUBMIT:

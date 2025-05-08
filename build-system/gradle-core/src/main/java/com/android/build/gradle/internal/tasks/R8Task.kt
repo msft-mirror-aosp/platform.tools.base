@@ -627,10 +627,6 @@ abstract class R8Task @Inject constructor(
     }
 
     override fun doTaskAction() {
-        // TODO: add the package list to the gradual R8 API
-        if (packageList.isPresent) {
-            val packageFile = packageList.get()
-        }
         val output: Property<out FileSystemLocation> =
             when {
                 componentType.orNull?.isAar == true -> outputClasses
@@ -751,7 +747,7 @@ abstract class R8Task @Inject constructor(
             it.r8Metadata.set(r8Metadata)
             it.toolConfig.set(toolParameters.toToolConfig())
             it.resourceShrinkingConfig.set(resourceShrinkingParams.toConfig())
-            it.partialShrinkingConfig.set(partialShrinkingConfig.orNull)
+            it.partialShrinkingConfig.set(aggregatePartialShrinkingConfig())
             // Note: Build service can only be passed in Gradle worker non-isolation mode
             if (executionOptions.get().runInSeparateProcess) {
                 it.r8ThreadPoolSizeIfIsolationMode.set(r8ThreadPoolSize)
@@ -773,6 +769,26 @@ abstract class R8Task @Inject constructor(
         } else {
             workerExecutor.noIsolation().submit(R8Runnable::class.java, workerAction)
         }
+    }
+
+    // Merge creation config included/excluded patterns with package.txt with merged R8 packages
+    private fun aggregatePartialShrinkingConfig(): PartialShrinkingConfig? {
+        val creationConfig = partialShrinkingConfig.orNull
+        return if (packageList.isPresent) {
+            val packages = loadR8AllowedPackages()
+            val updatedPackages = creationConfig?.includedPatterns?.split(",")?.let {
+                packages + it
+            } ?: packages
+            PartialShrinkingConfig(
+                updatedPackages.joinToString(","),
+                creationConfig?.excludedPatterns
+            )
+        } else creationConfig
+    }
+
+    private fun loadR8AllowedPackages(): List<String> {
+        val packageFile = packageList.get()
+        return packageFile.asFile.readLines()
     }
 
     companion object {

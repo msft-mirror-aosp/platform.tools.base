@@ -13,11 +13,17 @@ from tools.base.bazel.ci import fake_gce
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import bazel_diff
 from tools.base.bazel.ci.presubmit import gerrit
+from tools.base.bazel.ci.presubmit import impacted_targets
 from tools.base.bazel.ci.presubmit import presubmit
 
 
 class PresubmitTest(parameterized.TestCase):
   """Tests for the presubmit module."""
+
+  def setUp(self):
+    super().setUp()
+    self.build_env = self.enter_context(fake_build_env.make_fake_build_env())
+    self.gce = self.enter_context(fake_gce.make_fake_gce(self, self.build_env))
 
   def _mock_generate_hash_file(self, contents: str) -> mock.Mock:
     def func(
@@ -49,28 +55,6 @@ class PresubmitTest(parameterized.TestCase):
         mock.patch.object(bazel_diff, 'get_impacted_targets', side_effect=func)
     )
 
-  def setUp(self):
-    super().setUp()
-    self.build_env = self.enter_context(fake_build_env.make_fake_build_env())
-    self.gce = self.enter_context(fake_gce.make_fake_gce(self, self.build_env))
-
-  def test_generate_and_upload_hash_file(self):
-    mock_generate = self._mock_generate_hash_file('hash-file')
-    presubmit.generate_and_upload_hash_file(self.build_env)
-    downloaded = self.build_env.tmp_path / 'downloaded'
-    gce.download_from_gcs(
-        'adt-byob',
-        'bazel-diff-hashes/v8/P123-studio-test.json',
-        downloaded,
-    )
-    self.assertEqual(downloaded.read_text(), 'hash-file')
-    mock_generate.assert_called_once_with(
-        self.build_env,
-        presubmit._LOCAL_REPOSITORIES,
-        mock.ANY,
-        deps_output_path=None,
-    )
-
   @parameterized.named_parameters(
       dict(
           testcase_name='basic',
@@ -95,25 +79,6 @@ class PresubmitTest(parameterized.TestCase):
           query_targets=['target2'],
           expected_targets=['base_target1', 'base_target2'],
           expected_flags=[
-              '--build_metadata=selective_presubmit_strategy=default_explicit',
-              '--build_metadata=selective_presubmit_found=False',
-          ],
-      ),
-      dict(
-          testcase_name='with_runs_per_test',
-          tags = [
-              ('Presubmit-Test', 'default'),
-              ('Presubmit-Runs-Per-Test', 'studio-test:target1@10'),
-              ('Presubmit-Runs-Per-Test', 'target2@20'),
-              ('Presubmit-Runs-Per-Test', 'studio-other:target3@30'),
-          ],
-          failed_tests=[],
-          impacted_targets=[],
-          query_targets=[],
-          expected_targets=['base_target1', 'base_target2'],
-          expected_flags=[
-              '--runs_per_test=target1@10',
-              '--runs_per_test=target2@20',
               '--build_metadata=selective_presubmit_strategy=default_explicit',
               '--build_metadata=selective_presubmit_found=False',
           ],

@@ -31,6 +31,7 @@ import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -59,9 +60,9 @@ class JourneysConnectedTest {
     private fun AndroidProjectDefinition<ApplicationExtension>.setupProject() {
         applyPlugin(
             PluginType.Custom(
-                id = "com.android.journeys",
+                id = "com.android.tools.journeys",
                 version = "+",
-                artifact = "com.android.journeys:journeys-gradle-plugin",
+                artifact = "com.android.tools.journeys:journeys-gradle-plugin",
                 hasMarker = false,
             )
         )
@@ -125,6 +126,8 @@ class JourneysConnectedTest {
         }
     }
 
+    // TODO(b/408183626): Re-enable once crawler app is available on maven for testing.
+    @Ignore("408183626")
     @Test
     fun runJourneysTest() {
         val result = executor.run(":app:validateDebugJourneysTest")

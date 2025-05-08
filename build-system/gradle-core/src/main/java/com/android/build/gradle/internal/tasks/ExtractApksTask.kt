@@ -55,7 +55,6 @@ import java.io.File
 import java.io.FileReader
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.invariantSeparatorsPath
 
 /**
  * Task that extract APKs from the apk zip (created with [BundleToApkTask] into a folder. a Device
@@ -77,9 +76,14 @@ abstract class ExtractApksTask : NonIncrementalTask() {
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val apkSetArchive: RegularFileProperty
 
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val targetDeviceSpec: RegularFileProperty
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NONE)
-    abstract val deviceConfigs: ConfigurableFileCollection
+    abstract val multipleDeviceConfigs: ConfigurableFileCollection
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -108,7 +112,8 @@ abstract class ExtractApksTask : NonIncrementalTask() {
         workerExecutor.noIsolation().submit(BundleToolRunnable::class.java) {
             it.initializeFromBaseTask(this)
             it.apkSetArchive.set(apkSetArchive)
-            it.deviceConfig.setFrom(deviceConfigs)
+            it.multipleDeviceConfigs.setFrom(this@ExtractApksTask.multipleDeviceConfigs)
+            it.targetDeviceSpec.set(targetDeviceSpec)
             it.outputDir.set(outputDir)
             it.deviceSpecToApksLocationMappingFile.set(this@ExtractApksTask.deviceSpecToApksLocationMappingFile)
             it.extractInstant.set(extractInstant)
@@ -123,7 +128,9 @@ abstract class ExtractApksTask : NonIncrementalTask() {
     abstract class Params : ProfileAwareWorkAction.Parameters() {
 
         abstract val apkSetArchive: RegularFileProperty
-        abstract val deviceConfig: ConfigurableFileCollection
+        abstract val multipleDeviceConfigs: ConfigurableFileCollection
+        abstract val targetDeviceSpec: RegularFileProperty
+
         abstract val outputDir: DirectoryProperty
         abstract val deviceSpecToApksLocationMappingFile: RegularFileProperty
         abstract val extractInstant: Property<Boolean>
@@ -141,9 +148,18 @@ abstract class ExtractApksTask : NonIncrementalTask() {
         override fun run() {
             FileUtils.cleanOutputDir(parameters.outputDir.asFile.get())
 
-            val deviceSpecFiles = parameters.deviceConfig.files
-            if (deviceSpecFiles.isEmpty()) {
-                throw RuntimeException("Calling ExtractApk with no device config")
+            val targetDeviceSpec = parameters.targetDeviceSpec.orNull?.asFile
+            val multipleDeviceSpecs = parameters.multipleDeviceConfigs.files
+
+            val deviceSpecFiles: List<File> = when {
+                targetDeviceSpec == null ->
+                    throw RuntimeException("Calling ExtractApk with no device config")
+
+                multipleDeviceSpecs.isNotEmpty() ->
+                    multipleDeviceSpecs.toList()
+
+                else ->
+                    listOf(targetDeviceSpec)
             }
 
             val specsToFiles: Map<DeviceSpec, List<DeviceSpecInfo>> = deviceSpecFiles.map { file ->
@@ -190,7 +206,12 @@ abstract class ExtractApksTask : NonIncrementalTask() {
             parameters.deviceSpecToApksLocationMappingFile.get().asFile.writeText(
                 specsToFiles.entries.withIndex()
                     .joinToString(separator = "\n") { (i, specToFiles) ->
-                        specToFiles.value.joinToString(separator = "\n") { file -> "${file.path.toString().replace(File.separatorChar, '/')} $i" }
+                        specToFiles.value.joinToString(separator = "\n") { file ->
+                            "${
+                                file.path.toString()
+                                    .replace(File.separatorChar, '/')
+                            } $i"
+                        }
                     }
             )
 
@@ -296,14 +317,26 @@ abstract class ExtractApksTask : NonIncrementalTask() {
                 task.apkSetArchive
             )
 
-            val devicePath =
+            val targetDeviceSpecPath =
                 creationConfig.services.projectOptions.get(StringOption.IDE_APK_SELECT_CONFIG)
-            devicePath?.let {
-                val deviceSpecsPaths = it.split(",")
-                task.deviceConfigs.fromDisallowChanges(
-                    deviceSpecsPaths.map(::File)
+            targetDeviceSpecPath?.let {
+
+                task.targetDeviceSpec.setDisallowChanges(
+                    creationConfig.services.fileProvider(
+                        creationConfig.services.provider { File(it) })
                 )
             }
+            task.targetDeviceSpec.disallowChanges()
+
+            val multipleDeviceSpec =
+                creationConfig.services.projectOptions.get(StringOption.IDE_APK_SELECT_MULTIPLE_DEVICE_SPECS)
+            val deviceSpecsPaths = multipleDeviceSpec
+                ?.split(",")
+                ?.map(String::trim)
+                ?: emptyList()
+            task.multipleDeviceConfigs.fromDisallowChanges(
+                deviceSpecsPaths.map(::File)
+            )
 
             task.extractInstant =
                 creationConfig.services.projectOptions.get(BooleanOption.IDE_EXTRACT_INSTANT)

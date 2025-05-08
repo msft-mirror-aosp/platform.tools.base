@@ -411,6 +411,11 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return mCodename;
     }
 
+    /** Returns the major version of this version as an {@link AndroidMajorVersion}. */
+    public AndroidMajorVersion getMajorVersion() {
+        return new AndroidMajorVersion(mAndroidApiLevel.getMajorVersion(), mCodename);
+    }
+
     /**
      * Returns a string representing the API level and/or the code name.
      *
@@ -455,6 +460,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     @NonNull
     public String getApiStringWithoutExtension() {
         return getApiString(false);
+
     }
 
     /**

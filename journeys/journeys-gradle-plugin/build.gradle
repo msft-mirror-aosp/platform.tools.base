@@ -21,20 +21,54 @@ plugins {
     id 'java-gradle-plugin'
 }
 
-// TODO(b/371012994): This is a tentative package name.
-group = 'com.android.journeys'
-version = '0.0.1-dev'
+group = 'com.android.tools.journeys'
 
 base {
     archivesName = 'journeys-gradle-plugin'
 }
 
+if (findProperty('hybrid-build-embedded-in-bazel')?.toBoolean()) {
+    version = getProperty('JOURNEYS_TEST_PLUGIN_VERSION')
+} else {
+    Properties properties = new Properties()
+    File versionRootDir = rootDir
+    String relativeVersionPath = 'base/journeys/release_version.bzl'
+    File versionProperties = new File(versionRootDir, relativeVersionPath)
+    versionProperties.withReader { properties.load(it) }
+    if (findProperty('release')?.toBoolean()) {
+        version = properties.getProperty('JOURNEYS_TEST_PLUGIN_VERSION_RELEASE').replaceAll('"', '')
+    } else {
+        version = properties.getProperty('JOURNEYS_TEST_PLUGIN_VERSION_DEV').replaceAll('"', '')
+    }
+}
+
+def generateVersionPropertiesResourceFile = tasks.register('generateVersionPropertiesResourceFile') {
+    def resourceFile = project.layout.buildDirectory.file("generated/resources/version.properties")
+    outputs.file(resourceFile)
+
+    doLast {
+        resourceFile.get().asFile.parentFile.mkdirs()
+        resourceFile.get().asFile.withWriter { writer ->
+            writer.writeLine("buildVersion=$version")
+        }
+    }
+}
+sourcesJar.dependsOn generateVersionPropertiesResourceFile
+processResources.dependsOn generateVersionPropertiesResourceFile
+
+sourceSets {
+    main {
+        resources {
+            srcDir(project.layout.buildDirectory.file("generated/resources"))
+        }
+    }
+}
+
 gradlePlugin {
     plugins {
         comAndroidJourneys {
-            // TODO(b/371012994): This is a tentative package name.
-            id = "com.android.journeys"
-            implementationClass = "com.android.journeys.JourneysGradlePlugin"
+            id = "com.android.tools.journeys"
+            implementationClass = "com.android.tools.journeys.JourneysGradlePlugin"
         }
     }
 }

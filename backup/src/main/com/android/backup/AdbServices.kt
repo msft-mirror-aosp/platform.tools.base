@@ -38,7 +38,7 @@ interface AdbServices {
    *
    * @param transport The backup transport to initialize
    */
-  suspend fun initializeTransport(transport: String)
+  suspend fun initializeTransport(transport: String): Boolean
 
   /**
    * Execute a command on a device
@@ -68,11 +68,11 @@ interface AdbServices {
    */
   suspend fun writeContent(inputStream: InputStream, uri: String)
 
-  suspend fun backupNow(applicationId: String, type: BackupType)
+  suspend fun backupNow(applicationId: String, type: BackupType, initOk: Boolean)
 
   suspend fun clearAppData(applicationId: String)
 
-  suspend fun restore(token: String, applicationId: String, type: BackupType)
+  suspend fun restore(token: String, applicationId: String, type: BackupType, initOk: Boolean)
 
   suspend fun sendUpdateGmsIntent()
 

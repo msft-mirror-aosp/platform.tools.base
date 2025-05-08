@@ -418,14 +418,66 @@ class BackupServiceImplTest {
       BackupServiceImpl(
         FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(
-            Throw("bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport")
+            Output(
+              "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
+              "Initialization result: -100",
+            )
           )
         }
       )
 
     val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
 
-    assertThat(result).isEqualTo(TRANSPORT_INIT_FAILED.asBackupResult())
+    assertThat(result)
+      .isEqualTo(
+        TRANSPORT_INIT_FAILED.asBackupResult(
+          "Failed to initialize 'com.google.android.gms/.backup.migrate.service.D2dTransport`: Initialization result: -100"
+        )
+      )
+  }
+
+  @Test
+  fun backup_initTransportMaybeFailsAndBackupSucceeds(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
+    val backupService =
+      BackupServiceImpl(
+        FakeAdbServicesFactory("com.app") {
+          it.addCommandOverride(
+            Output(
+              "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
+              "Initialization result: -1000",
+            )
+          )
+        }
+      )
+
+    val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
+
+    assertThat(result).isEqualTo(Success)
+  }
+
+  @Test
+  fun backup_initTransportMaybeFailsAndBackupFails(): Unit = runBlocking {
+    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
+    val backupService =
+      BackupServiceImpl(
+        FakeAdbServicesFactory("com.app") {
+          it.addCommandOverride(
+            Output(
+              "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
+              "Initialization result: -1000",
+            )
+          )
+          it.addCommandOverride(
+            Output("bmgr backupnow @pm@ com.app --non-incremental --monitor", "error")
+          )
+        }
+      )
+
+    val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
+
+    assertThat(result)
+      .isEqualTo(TRANSPORT_INIT_FAILED.asBackupResult("Failed to backup 'com.app`: error"))
   }
 
   @Test

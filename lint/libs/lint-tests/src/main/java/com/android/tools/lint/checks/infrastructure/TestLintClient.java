@@ -2414,5 +2414,20 @@ public class TestLintClient extends LintCliClient {
         public void setReferenceDir(File dir) {
             this.referenceDir = dir;
         }
+
+        @NonNull
+        @Override
+        public DependencyKind getDependencyKind(@NonNull Project lib) {
+            if (projectDescription == null) {
+                return DependencyKind.Regular;
+            }
+            Map<ProjectDescription, DependencyKind> map = projectDescription.getDependsOn();
+            for (Map.Entry<ProjectDescription, DependencyKind> entry : map.entrySet()) {
+                if (entry.getKey().getName().equals(lib.getName())) {
+                    return entry.getValue();
+                }
+            }
+            return DependencyKind.Regular;
+        }
     }
 }

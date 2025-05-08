@@ -231,6 +231,7 @@ internal class SqliteInspector(
           )
       }
     } catch (exception: Throwable) {
+      Log.w(TAG, "Unexpected error initializing database inspector", exception)
       callback.reply(
         createErrorOccurredResponse(
             "Unhandled Exception while processing the command: " + exception.message,
@@ -307,7 +308,11 @@ internal class SqliteInspector(
    * TODO(b/399911644): Investigate using Wrappers instead of Hooks for Framework as well.
    */
   private fun registerAndroidXHooks(hookRegistry: EntryExitMatchingHookRegistry) {
-    registerAndroidXOpenHooks(hookRegistry)
+    try {
+      registerAndroidXOpenHooks(hookRegistry)
+    } catch (_: NoClassDefFoundError) {
+      Log.i(TAG, "App does not use AndroidX Sqlite APIs")
+    }
   }
 
   /**

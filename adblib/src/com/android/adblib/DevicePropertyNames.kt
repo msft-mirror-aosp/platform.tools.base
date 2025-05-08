@@ -24,6 +24,7 @@ object DevicePropertyNames {
     const val RO_BUILD_VERSION_CODENAME = "ro.build.version.codename"
     const val RO_BUILD_VERSION_RELEASE = "ro.build.version.release"
     const val RO_BUILD_VERSION_SDK = "ro.build.version.sdk"
+    const val RO_BUILD_VERSION_SDK_FULL = "ro.build.version.sdk_full"
     const val RO_KERNEL_QEMU = "ro.kernel.qemu"
     const val RO_KERNEL_QEMU_AVD_NAME = "ro.kernel.qemu.avd_name" // Older version of RO_BOOT_QEMU_AVD_NAME
     const val RO_MANUFACTURER = "ro.manufacturer" // Older version of RO_PRODUCT_MANUFACTURER

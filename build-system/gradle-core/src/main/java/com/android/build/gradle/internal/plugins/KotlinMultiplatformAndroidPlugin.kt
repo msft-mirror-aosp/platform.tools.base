@@ -36,6 +36,8 @@ import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
+import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
+import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.KmpVariantImpl
 import com.android.build.api.variant.impl.KotlinMultiplatformAndroidCompilationImpl
@@ -115,6 +117,7 @@ import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import javax.inject.Inject
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.publishSources
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import java.io.File
 
 class KotlinMultiplatformAndroidPlugin @Inject constructor(
     listenerRegistry: BuildEventsListenerRegistry,
@@ -561,7 +564,22 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             global = global,
             androidKotlinCompilation = kotlinCompilation,
             manifestFile = getAndroidManifestDefaultLocation(kotlinCompilation)
-        )
+        ).also { variant ->
+            variant.sources.let { sourcesImpl ->
+                kmpVariantApiOperationsRegistrar.sourceSetExtensions.forEach { sourceDirName ->
+                    kotlinCompilation.defaultSourceSet.resources.srcDirs.map { srcDir ->
+                        sourcesImpl.extras.maybeCreate(sourceDirName).also {
+                            (it as FlatSourceDirectoriesImpl).addStaticSource(
+                                FileBasedDirectoryEntryImpl(
+                                    sourceDirName,
+                                    File(srcDir.parentFile, sourceDirName)
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun createUnitTestComponent(

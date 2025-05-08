@@ -71,6 +71,7 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.core.ComponentType
 import com.android.utils.appendCapitalized
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
@@ -346,12 +347,12 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
         }
 
         override fun baselineProfiles(action: (FlatSourceDirectoriesImpl) -> Unit) {
-            baselineProfiles?.let(action)
+            baselineProfiles.let(action)
         }
 
         override val manifestFile = manifestFile
 
-        private val extras by lazy(LazyThreadSafetyMode.NONE) {
+        internal val extras: NamedDomainObjectContainer<FlatSourceDirectoriesImpl> by lazy(LazyThreadSafetyMode.NONE) {
             variantServices.domainObjectContainer(
                 FlatSourceDirectoriesImpl::class.java,
                 SourcesImpl.SourceProviderFactory(

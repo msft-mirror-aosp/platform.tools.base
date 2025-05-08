@@ -261,6 +261,7 @@ class ModelBuilderTest {
         override var dontBuildAndroidTestRuntimeClasspath: Boolean = false,
         override var dontBuildTestFixtureRuntimeClasspath: Boolean = false,
         override var dontBuildHostTestRuntimeClasspath: Map<String, Boolean> =
-            mapOf("UnitTest" to false, "ScreenshotTest" to false)
+            mapOf("UnitTest" to false, "ScreenshotTest" to false),
+        override var additionalArtifactsInModel: Boolean = false
     ) : ModelBuilderParameter
 }

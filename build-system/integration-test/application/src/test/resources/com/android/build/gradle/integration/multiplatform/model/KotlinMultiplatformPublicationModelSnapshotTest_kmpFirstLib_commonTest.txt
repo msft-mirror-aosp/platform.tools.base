@@ -200,7 +200,8 @@
             "symbolFile": {
               "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/androidLib-1.0-typeoneModetwoDebug/R.txt"
             }
-          }
+          },
+          "srcJars": []
         }
       }
     }
@@ -260,9 +261,6 @@
           "artifact": {
             "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/{LIBRARY_COORDINATES}/{CHECKSUM}/kmpSecondLib.aar"
           },
-          "srcJar": {
-            "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/testRepo/com/example/kmpSecondLib-android/1.0/kmpSecondLib-android-1.0-sources.jar"
-          },
           "androidLibraryData": {
             "manifest": {
               "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpSecondLib/AndroidManifest.xml"
@@ -307,7 +305,12 @@
             "symbolFile": {
               "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/kmpSecondLib/R.txt"
             }
-          }
+          },
+          "srcJars": [
+            {
+              "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/testRepo/com/example/kmpSecondLib-android/1.0/kmpSecondLib-android-1.0-sources.jar"
+            }
+          ]
         }
       },
       "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [

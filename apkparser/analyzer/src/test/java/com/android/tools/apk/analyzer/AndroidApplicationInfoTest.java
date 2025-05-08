@@ -17,25 +17,71 @@ package com.android.tools.apk.analyzer;
 
 import static org.junit.Assert.*;
 
-import java.util.Arrays;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 public class AndroidApplicationInfoTest {
     @Test
-    public void parseManifest() throws Exception {
+    public void parseManifestExtractNativeLibsTrue() throws Exception {
         AndroidApplicationInfo info =
                 AndroidApplicationInfo.parse(
                         Arrays.asList(
                                 "N: android=http://schemas.android.com/apk/res/android\n",
                                 "  E: manifest (line=13)\n",
                                 "    A: android:versionCode(0x0101021b)=(type 0x10)0x101dfde9\n",
-                                "    A: android:versionName(0x0101021c)=\"51.0.2704.10\" (Raw: \"51.0.2704.10\")\n",
-                                "    A: package=\"com.android.chrome\" (Raw: \"com.android.chrome\")\n",
+                                "    A: android:versionName(0x0101021c)=\"51.0.2704.10\" (Raw:"
+                                        + " \"51.0.2704.10\")\n",
+                                "    A: android:extractNativeLibs(0x010104ea)=(type 0x12)0x1",
+                                "    A: package=\"com.android.chrome\" (Raw:"
+                                        + " \"com.android.chrome\")\n",
                                 "    A: platformBuildVersionCode=(type 0x10)0x17 (Raw: \"23\")\n",
                                 "    A: platformBuildVersionName=\"N\" (Raw: \"N\")\n"));
         assertEquals("com.android.chrome", info.packageId);
         assertEquals("51.0.2704.10", info.versionName);
         assertEquals(270401001, info.versionCode);
+        assertEquals(true, info.extractNativeLibs);
+    }
+
+    @Test
+    public void parseManifestExtractNativeLibsFalse() throws Exception {
+        AndroidApplicationInfo info =
+                AndroidApplicationInfo.parse(
+                        Arrays.asList(
+                                "N: android=http://schemas.android.com/apk/res/android\n",
+                                "  E: manifest (line=13)\n",
+                                "    A: android:versionCode(0x0101021b)=(type 0x10)0x101dfde9\n",
+                                "    A: android:versionName(0x0101021c)=\"51.0.2704.10\" (Raw:"
+                                        + " \"51.0.2704.10\")\n",
+                                "    A: android:extractNativeLibs(0x010104ea)=(type 0x12)0x0",
+                                "    A: package=\"com.android.chrome\" (Raw:"
+                                        + " \"com.android.chrome\")\n",
+                                "    A: platformBuildVersionCode=(type 0x10)0x17 (Raw: \"23\")\n",
+                                "    A: platformBuildVersionName=\"N\" (Raw: \"N\")\n"));
+        assertEquals("com.android.chrome", info.packageId);
+        assertEquals("51.0.2704.10", info.versionName);
+        assertEquals(270401001, info.versionCode);
+        assertEquals(false, info.extractNativeLibs);
+    }
+
+    @Test
+    public void parseManifestExtractNativeLibsAbsent() throws Exception {
+        AndroidApplicationInfo info =
+                AndroidApplicationInfo.parse(
+                        Arrays.asList(
+                                "N: android=http://schemas.android.com/apk/res/android\n",
+                                "  E: manifest (line=13)\n",
+                                "    A: android:versionCode(0x0101021b)=(type 0x10)0x101dfde9\n",
+                                "    A: android:versionName(0x0101021c)=\"51.0.2704.10\" (Raw:"
+                                        + " \"51.0.2704.10\")\n",
+                                "    A: package=\"com.android.chrome\" (Raw:"
+                                        + " \"com.android.chrome\")\n",
+                                "    A: platformBuildVersionCode=(type 0x10)0x17 (Raw: \"23\")\n",
+                                "    A: platformBuildVersionName=\"N\" (Raw: \"N\")\n"));
+        assertEquals("com.android.chrome", info.packageId);
+        assertEquals("51.0.2704.10", info.versionName);
+        assertEquals(270401001, info.versionCode);
+        assertNull(info.extractNativeLibs);
     }
 
     @Test
@@ -43,17 +89,20 @@ public class AndroidApplicationInfoTest {
         AndroidApplicationInfo info =
                 AndroidApplicationInfo.parseBadging(
                         Arrays.asList(
-                                ("package: name='com.google.samples.apps.topeka.test' versionCode='' versionName='' platformBuildVersionName=''\n"
-                                                + "sdkVersion:'14'\n"
-                                                + "targetSdkVersion:'25'\n"
-                                                + "application: label='' icon=''\n"
-                                                + "application-debuggable\n"
-                                                + "uses-library:'android.test.runner'\n"
-                                                + "feature-group: label=''\n"
-                                                + "  uses-feature: name='android.hardware.faketouch'\n"
-                                                + "  uses-implied-feature: name='android.hardware.faketouch' reason='default feature for all apps'\n"
-                                                + "supports-screens: 'small' 'normal' 'large' 'xlarge'\n"
-                                                + "supports-any-density: 'true'\n")
+                                ("package: name='com.google.samples.apps.topeka.test'"
+                                     + " versionCode='' versionName=''"
+                                     + " platformBuildVersionName=''\n"
+                                     + "sdkVersion:'14'\n"
+                                     + "targetSdkVersion:'25'\n"
+                                     + "application: label='' icon=''\n"
+                                     + "application-debuggable\n"
+                                     + "uses-library:'android.test.runner'\n"
+                                     + "feature-group: label=''\n"
+                                     + "  uses-feature: name='android.hardware.faketouch'\n"
+                                     + "  uses-implied-feature: name='android.hardware.faketouch'"
+                                     + " reason='default feature for all apps'\n"
+                                     + "supports-screens: 'small' 'normal' 'large' 'xlarge'\n"
+                                     + "supports-any-density: 'true'\n")
                                         .split("\n")));
         assertEquals("com.google.samples.apps.topeka.test", info.packageId);
         assertEquals("", info.versionName);

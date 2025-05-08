@@ -1,6 +1,7 @@
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
+load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_PLUGIN_GRADLE_PROPERTIES")
 
 # A file group that contains gradle build file and source files to build journeys gradle
 # plugin using Gradle inside Bazel's sandbox.
@@ -57,7 +58,7 @@ gradle_build(
     name = "journeys-gradle-plugin",
     build_file = "//tools:agp_gradle_build_root_build_file",
     data = ["//prebuilts/studio/jdk/jdk11:jdk_runtime_files"] + JOURNEYS_GRADLE_PLUGIN_SOURCE_FILES,
-    gradle_properties = GRADLE_PROPERTIES,
+    gradle_properties = GRADLE_PROPERTIES | JOURNEYS_TEST_PLUGIN_GRADLE_PROPERTIES,
     output_file = "journeys-gradle-plugin.zip",
     output_file_source = "dist/repo.zip",
     repos = [
@@ -76,7 +77,7 @@ gradle_test(
         ":gradle_test_files",
         "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
     ] + JOURNEYS_GRADLE_PLUGIN_SOURCE_FILES,
-    gradle_properties = GRADLE_PROPERTIES,
+    gradle_properties = GRADLE_PROPERTIES | JOURNEYS_TEST_PLUGIN_GRADLE_PROPERTIES,
     repos = [
         ":maven_test_dependencies",
         "//tools/base:agp_artifacts",

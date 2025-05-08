@@ -1,0 +1,192 @@
+/*
+ * Copyright (C) 2021 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.build.gradle.integration.fusedlibrary
+
+import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.options.BooleanOption
+import com.google.common.truth.Truth
+import org.gradle.api.Project
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
+import org.junit.Rule
+import org.junit.Test
+import kotlin.io.path.isRegularFile
+
+class FusedLibraryTest {
+    @get:Rule
+    val rule = GradleRule.configure()
+        .withMavenRepository {
+            aar("com.remotedep.remoteaar.a", "remoteaar-a", "1.0")
+                .addResource(
+                    "values/strings.xml",
+                    // language=XML
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <resources>
+                            <string name="remote_b_string">Remote String from remoteaar a</string>
+                        </resources>
+                    """.trimIndent())
+                .withDependencies(listOf("com.remotedep.remoteaar.b:remoteaar-b:1.0"))
+
+            aar("com.remotedep.remoteaar.b", "remoteaar-b", "1.0")
+                .addResource(
+                    "values/strings.xml",
+                    // language=XML
+                    """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <resources>
+                            <string name="remote_b_string">Remote String from remoteaar b</string>
+                        </resources>
+                    """.trimIndent())
+        }.from {
+            androidLibrary(":androidLib1") {
+                android {
+                    namespace = "com.example.androidLib1"
+                }
+                dependencies {
+                    implementation("junit:junit:4.12")
+                    implementation(project(":androidLib3"))
+                }
+                files.add(
+                    "src/main/res/values/strings.xml",
+                    //language=xml
+                    """
+                        <resources>
+                            <string name="string_from_android_lib_1">androidLib2</string>
+                        </resources>
+                    """.trimIndent())
+            }
+            androidLibrary(":androidLib2") {
+                android {
+                    namespace = "com.example.androidLib2"
+                }
+            }
+            androidLibrary(":androidLib3") {
+                android {
+                    namespace = "com.example.androidLib3"
+                }
+                group = "fusedlib"
+                version = "1.0.0"
+            }
+            fusedLibrary(":fusedLib1") {
+                androidFusedLibrary {
+                    minSdk = DEFAULT_MIN_SDK_VERSION
+                }
+                pluginCallbacks += FusedLibCallback::class.java
+                dependencies {
+                    include(project(":androidLib1"))
+                    include(project(":androidLib2"))
+                    include("com.remotedep.remoteaar.a:remoteaar-a:1.0")
+                }
+            }
+            gradleProperties {
+                add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
+            }
+        }
+
+    class FusedLibCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            project.plugins.apply("maven-publish")
+
+            val publishing = project.extensions.findByType(PublishingExtension::class.java)
+                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+            publishing.apply {
+                publications.create("release", MavenPublication::class.java) {
+                    it.groupId = FUSED_LIBRARY_GROUP
+                    it.artifactId = FUSED_LIBRARY_ARTIFACT_NAME
+                    it.version = FUSED_LIBRARY_VERSION
+                    it.from(project.components.getByName("fusedLibraryComponent"))
+                }
+                repositories {
+                    it.maven {
+                        it.name = "myrepo"
+                        it.url = project.uri(project.layout.buildDirectory.dir(FUSED_LIBRARY_REPO_NAME))
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun checkAarNoPublishing() {
+        val build = rule.build
+        build.executor.run(":fusedLib1:assemble")
+
+        build.fusedLibrary(":fusedLib1").assertAar(AarSelector.NO_BUILD_TYPE) {
+            exists()
+        }
+    }
+
+    @Test
+    fun checkAarPublishing() {
+        val build = rule.build
+        val fusedLibrary = build.fusedLibrary(":fusedLib1")
+
+        build.executor.run(
+            "generatePomFileForMavenPublication",
+            "generateMetadataFileForMavenPublication",
+            "publishReleasePublicationToMyrepoRepository"
+        )
+
+        fusedLibrary.buildDir.resolve("publications/maven")
+            .also { publicationDir ->
+                val pom = publicationDir.resolve("pom-default.xml")
+                assertExpectedPomDependencies(
+                    pom, listOf(
+                        "junit:junit:4.12 scope:runtime",
+                        "org.hamcrest:hamcrest-core:1.3 scope:runtime",
+                        "fusedlib:androidLib3:1.0.0 scope:runtime",
+                        "com.remotedep.remoteaar.b:remoteaar-b:1.0 scope:runtime"
+                    )
+                )
+                Truth.assertThat(publicationDir.resolve("module.json").isRegularFile()).isTrue()
+            }
+
+        fusedLibrary.buildDir.resolve(FUSED_LIBRARY_REPO_NAME).also { repoPath ->
+            val publishedLibRepoDir = repoPath.resolve(
+                "$FUSED_LIBRARY_GROUP/${FUSED_LIBRARY_ARTIFACT_NAME}/$FUSED_LIBRARY_VERSION"
+            )
+            assertThat(
+                publishedLibRepoDir.resolve(
+                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.aar")
+                    .isRegularFile()
+            ).isTrue()
+
+            assertExpectedPomDependencies(
+                publishedLibRepoDir.resolve(
+                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.pom"),
+                listOf(
+                    "junit:junit:4.12 scope:runtime",
+                    "org.hamcrest:hamcrest-core:1.3 scope:runtime",
+                    "fusedlib:androidLib3:1.0.0 scope:runtime",
+                    "com.remotedep.remoteaar.b:remoteaar-b:1.0 scope:runtime"
+                )
+            )
+        }
+    }
+
+    companion object {
+        private const val FUSED_LIBRARY_GROUP = "my-company"
+        private const val FUSED_LIBRARY_ARTIFACT_NAME = "my-fused-library"
+        private const val FUSED_LIBRARY_VERSION = "1.0"
+        private const val FUSED_LIBRARY_REPO_NAME = "repo"
+    }
+}

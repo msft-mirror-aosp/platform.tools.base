@@ -105,7 +105,8 @@
             "symbolFile": {
               "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/R.txt"
             }
-          }
+          },
+          "srcJars": []
         }
       }
     }
@@ -388,7 +389,8 @@
           },
           "lintJar": {
             "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/androidLib/build/intermediates/lint_publish_jar/global/prepareLintJarForPublish/lint.jar"
-          }
+          },
+          "srcJars": []
         }
       },
       "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "com.android.build.gradle.internal.ide.kmp.resolvers.ProjectDependencyResolver"
@@ -427,7 +429,8 @@
           },
           "lintJar": {
             "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpSecondLib/build/intermediates/lint_publish_jar/global/prepareLintJarForPublish/lint.jar"
-          }
+          },
+          "srcJars": []
         }
       },
       "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "com.android.build.gradle.internal.ide.kmp.resolvers.ProjectDependencyResolver"

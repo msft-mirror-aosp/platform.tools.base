@@ -49,6 +49,7 @@ import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
+import com.android.tools.lint.detector.api.Project.DependencyKind
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
@@ -2734,7 +2735,7 @@ class ProjectInitializerTest {
           ),
         )
         .name("androidApp")
-        .dependsOn(shared)
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val iosApp =
       project(
@@ -2789,6 +2790,7 @@ class ProjectInitializerTest {
           ),
         )
         .name("iosApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
     @Language("XML")
@@ -3145,7 +3147,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           ),
         )
         .name("project2")
-        .dependsOn(shared)
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val iosApp =
       project(
@@ -3200,6 +3202,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           ),
         )
         .name("project3")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
     @Language("XML")
@@ -3560,7 +3563,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           ),
         )
         .name("androidApp")
-        .dependsOn(shared)
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val iosApp =
       project(
@@ -3615,6 +3618,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           ),
         )
         .name("iosApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
     @Language("XML")
@@ -3828,7 +3832,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           ),
         )
         .name("androidApp")
-        .dependsOn(shared)
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val iosApp =
       project(
@@ -3893,6 +3897,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           ),
         )
         .name("iosApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
     @Language("XML")
@@ -3964,6 +3969,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
     task
       .configureOptions { it.setUseK2Uast(true) }
       .skipTestModes(TestMode.PARTIAL) // TODO no iosApp with `TestMode.PARTIAL`
+      .allowDuplicates()
       .run()
       .expect(
         """

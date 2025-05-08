@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.lint
 
 import com.android.Version
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.sdklib.AndroidVersion
 import com.android.testutils.TestUtils
 import com.google.common.io.Resources
 import com.google.common.truth.Truth
@@ -87,10 +88,18 @@ fun createReplacements(project: GradleTestProject): Map<String, String> {
         }
         put(project.location.testLocation.gradleCacheDir.absolutePath, "${"$"}{gradleCacheDir}")
         put(project.location.testLocation.gradleUserHome.toAbsolutePath().toString(), "${"$"}{gradleUserHome}")
-        put("android-${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}",
-            "android-${"$"}{androidHighestKnownStableApi}")
-        put("""targetSdkVersion="${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}"""",
-            """targetSdkVersion="${"$"}{androidHighestKnownStableApi}"""")
+        val latestCompileSdkVersion = AndroidVersion(
+            GradleTestProject.DEFAULT_COMPILE_SDK_VERSION.toInt(),
+            null
+        )
+        put(
+            latestCompileSdkVersion.platformHashString,
+            "android-${"$"}{androidHighestKnownStableApi}"
+        )
+        put(
+            """targetSdkVersion="${latestCompileSdkVersion.apiStringWithoutExtension}"""",
+            """targetSdkVersion="${"$"}{androidHighestKnownStableApi}""""
+        )
         for (repository in localRepositories) {
             put(repository, "${"$"}{mavenRepo}")
         }

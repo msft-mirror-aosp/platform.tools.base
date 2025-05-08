@@ -16,6 +16,7 @@
 package com.android.tools.deploy.liveedit;
 
 import com.android.deploy.asm.Type;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -38,6 +39,11 @@ public final class ProxyClassHandler implements InvocationHandler {
         this.clazz = clazz;
         this.fields = new HashMap<>();
         fields.putAll(defaultFieldValues);
+    }
+
+    public Map<String, Object> getLocation() {
+        ProxySourceLocation location = ProxySourceLocation.findSourceLocation(clazz);
+        return location.asMap();
     }
 
     void initSuperClass(String superInternalName, Object[] args, Object proxy) {

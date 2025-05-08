@@ -24,9 +24,14 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.LoggingLevel;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
+
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -34,8 +39,6 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.junit.Rule;
-import org.junit.Test;
 
 /**
  * Test that keep rules are applied properly when the main app references classes from the library
@@ -60,7 +63,8 @@ public class MinifyLibAndAppKeepRules {
                         project.getSubproject("app").getMainSrcDir(), "ReferencesNoPackage.java");
         Files.asCharSink(referencesNoPackage, Charsets.UTF_8)
                 .write(
-                        "public class ReferencesNoPackage { static { NoPackage np = new NoPackage(); } }");
+                        "public class ReferencesNoPackage { static { NoPackage np = new"
+                                + " NoPackage(); } }");
 
         // add the proguard rule that should keep all the classes
         Files.asCharSink(
@@ -135,7 +139,8 @@ public class MinifyLibAndAppKeepRules {
                         "org.apache.http.legacy.jar",
                         "android.test.mock.jar",
                         "android.test.base.jar",
-                        "android.test.runner.jar");
+                        "android.test.runner.jar",
+                        "wear-sdk.jar");
         assertThat(libraryNames).containsExactlyElementsIn(expectedFiles);
     }
 }

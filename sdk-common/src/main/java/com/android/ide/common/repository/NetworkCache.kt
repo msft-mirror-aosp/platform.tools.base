@@ -94,7 +94,7 @@ abstract class NetworkCache(
     protected abstract fun readDefaultData(relative: String): InputStream?
 
     /** Reports an error found during I/O. */
-    protected abstract fun error(throwable: Throwable, message: String?)
+    abstract fun error(throwable: Throwable, message: String?)
 
     protected inline fun <T> withLock(file: Path, action: () -> T): T {
         val lock = synchronized(this) {

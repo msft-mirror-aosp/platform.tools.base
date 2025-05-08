@@ -254,4 +254,20 @@ public class AndroidAutoDetectorTest extends AbstractCheckTest {
                 .run()
                 .expectClean();
     }
+
+    public void testUsesSms_isValid() {
+        //noinspection all // Sample code
+        lint().files(
+                        mValidAutoAndroidXml,
+                        xml(
+                                "res/xml/automotive_app_desc.xml",
+                                ""
+                                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                        + "<automotiveApp>\n"
+                                        + "    <uses name=\"sms\"/>\n"
+                                        + "</automotiveApp>\n"))
+                .issues(AndroidAutoDetector.INVALID_USES_TAG_ISSUE)
+                .run()
+                .expectClean();
+    }
 }

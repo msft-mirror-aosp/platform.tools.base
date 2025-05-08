@@ -38,7 +38,7 @@ class GerritTest(absltest.TestCase):
           'message',
           [
               ('Tag', 'Value1'),
-              ('Tag', 'target:Value2'),
+              ('Tag', 'studio-test:Value2'),
           ],
       ),
       self.gce.add_change(
@@ -51,7 +51,6 @@ class GerritTest(absltest.TestCase):
       ),
     ]
 
-    self.build_env.build_target_name = 'target'
     gerrit_info = gerrit.get_gerrit_info(self.build_env)
 
     self.assertEqual(

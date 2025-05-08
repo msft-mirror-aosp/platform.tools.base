@@ -86,12 +86,30 @@ internal class AppProcessImpl(
         return current.copy(
             debuggable = optionalValueFactory.of(newEntry.debuggable).orElse(current.debuggable),
             profileable = optionalValueFactory.of(newEntry.profileable).orElse(current.profileable),
-            processName = optionalValueFactory.ofFilteredFakeName(newEntry.processName).orElse(current.processName),
-            packageNames = optionalValueFactory.ofFilteredFakeNames(newEntry.packageNames).orElse(current.packageNames),
-            instructionSet =  optionalValueFactory.ofInstructionSet(newEntry.instructionSet).orElse(current.instructionSet),
-            userId = optionalValueFactory.ofNullable(newEntry.userId).orElse(current.uid),
-            waitingForDebugger = optionalValueFactory.ofNullable(newEntry.waitingForDebugger).orElse(current.waitingForDebugger),
-            uid = optionalValueFactory.ofNullable(newEntry.uid).orElse(current.uid),
+            processName = optionalValueFactory.optionalOrErrorIfNull(newEntry.processName) { processName ->
+                optionalValueFactory.ofFilteredFakeName(
+                    processName
+                )
+            }.orElse(current.processName),
+            packageNames = optionalValueFactory.optionalOrErrorIfNull(newEntry.packageNames) { packageNames ->
+                optionalValueFactory.ofFilteredFakeNames(
+                    packageNames
+                )
+            }.orElse(current.packageNames),
+            instructionSet = optionalValueFactory.ofInstructionSet(newEntry.instructionSet)
+                .orElse(current.instructionSet),
+            userId = optionalValueFactory.optionalOrErrorIfNull(newEntry.userId) { userId ->
+                optionalValueFactory.of(
+                    userId
+                )
+            }.orElse(current.userId),
+            waitingForDebugger = optionalValueFactory.optionalOrErrorIfNull(newEntry.waitingForDebugger) { waitingForDebugger ->
+                optionalValueFactory.of(
+                    waitingForDebugger
+                )
+            }.orElse(current.waitingForDebugger),
+            uid = optionalValueFactory.optionalOrErrorIfNull(newEntry.uid) { uid -> optionalValueFactory.of(uid) }
+                .orElse(current.uid),
         )
     }
 }

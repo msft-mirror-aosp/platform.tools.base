@@ -6542,6 +6542,92 @@ public object ProtoObjectKt {
     }
   }
 
+  fun testTypeAliasAnnotation() {
+    // b/414789928
+    // https://youtrack.jetbrains.com/issue/KTIJ-34026
+    val testFiles =
+      arrayOf(
+        kotlin(
+            """
+            // Mimic typealias kotlin.test.Test
+            typealias TT = org.junit.Test
+
+            class MyTest {
+              @TT(expected = Throwable::class)
+              fun foo() {}
+            }
+        """
+          )
+          .indented(),
+        bytecode(
+          "libs/junit.jar",
+          java(
+            """
+              package org.junit;
+
+              import java.lang.annotation.ElementType;
+              import java.lang.annotation.Retention;
+              import java.lang.annotation.RetentionPolicy;
+              import java.lang.annotation.Target;
+
+              @Retention(RetentionPolicy.RUNTIME)
+              @Target({ElementType.METHOD})
+              public @interface Test {
+                  static class None extends Throwable {
+                      private None() {
+                      }
+                  }
+                  Class<? extends Throwable> expected() default None.class;
+              }
+            """
+          ),
+          0x527a299e,
+          """
+                org/junit/Test＄None.class:
+                H4sIAAAAAAAA/1WOQU7DMBBF/zRp04SQQnuCSiyABbkAsKlUtRLKhoi9C1ZJ
+                FWzJTuBcrJBYcAAOhfgOK7zwm2//+TPfP59fAG4wzzBClCDOMcZEsDioV1W2
+                yuzL+tnZN7VrtWBy3ZimuxVE5xcPCab0WbcvDz1fy1r77qyyhr54ZZ+I2V1j
+                dNW/7LSr/wKye9u7R71ugkhDx1UYJJhWrDfWdwlmguJ/qiDfGqPdqlXea8/8
+                MAZLJFw6HCG5NplSLUkhx5cfkPfhO+OdDeZjxCgQ4Yj1CDl1YIGTwSGMLHCK
+                9Bfy1ItzGQEAAA==
+                """,
+          """
+                org/junit/Test.class:
+                H4sIAAAAAAAA/4WS2U7CUBRF90GwMjjihEM0xhCNif0A1MQIRhIGA9UXny54
+                xJJya9pb1F/zwQ/wo4ynPIhGEh+a7u6uvXPPaT8+394BnGLLQoIw5wc9ux9p
+                19gOh8ZCkrDQV0Nle0r37Ganz11xpwk7Y1dp7RtlXF/b59+SMMMvT0LzPSF/
+                cFgb8xeeCsMSYXFMl/lBRZ4hrNR+n2C/4WsWNt12e1qZKGDC0d+2k6MfjvMY
+                +M+q43HpTJKZth8FXb50PYmm487jGCUUWpE27oBv3dAVeHyYkLBbmzheiw3r
+                WElvaqi8SCqL/6DXvud2XyVgtW4aTrVeIWxPjjgq6LERcm/y+4rHA+l0Xp/i
+                jUzXK85Vs0zINmSmOg86HIQWCrLtCSsk5KpaczDaFsuEydgtEghTcqXkHyD5
+                1hZmkEBanqa6yCArIoEckpgdqTnMy31T1IKEFhlLyGM5lncgxgpWsSZAUpx1
+                bIjKjBRJJP0FQ/D9/GoCAAA=
+                """,
+        ),
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitMethod(node: UMethod): Boolean {
+            if (node.isConstructor) return super.visitMethod(node)
+
+            val anno =
+              node.findAnnotation("org.junit.Test")
+                // TODO: remove this workaround after KTIJ-34026
+                ?: node.uAnnotations.find { it.javaPsi?.qualifiedName == "org.junit.Test" }
+            assertNotNull(anno)
+
+            val expected = anno!!.findDeclaredAttributeValue("expected") as? UClassLiteralExpression
+            assertEquals("java.lang.Throwable", expected?.type?.canonicalText)
+
+            return super.visitMethod(node)
+          }
+        }
+      )
+    }
+  }
+
   // TODO: way to test simple UAST loading with specific project structure
   //  This test only works when source and klib are put into "common" module
   fun disabledTestBasicKlibResolution() {

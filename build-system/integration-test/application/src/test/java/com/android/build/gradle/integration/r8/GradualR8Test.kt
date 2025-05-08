@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.integration.r8
 
+import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.r8.android.ExternalAndroidLibClass
@@ -187,30 +189,177 @@ class GradualR8Test {
         // Validate package list artifact does not exist when boolean option flag is not present
         build.executor.run(":app:assembleRelease")
 
+        checkNoPackageTxt(app)
+
+        build.executor.with(BooleanOption.GRADUAL_R8_SHRINKING, true).run(":app:assembleRelease")
+
+        verifyPackagesTxt(app)
+
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().containsAtLeast(
+                ExternalAndroidLib2Class::class.java.filePath(),
+                "com/example/androidlib2/ClassInAndroidLib2"
+            )
+        }
+    }
+
+    @Test
+    fun `test gradual r8 and custom properties`() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingEnabled"] =
+                        true
+                    // with custom properties we include ExternalAndroidLib2Class that is in r8 folder.
+                    // and exclude ExternalJavaLibClass that was added via consumer-rules.pro and packages.txt
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingIncludePatterns"] =
+                        "com.android.build.gradle.integration.r8.**"
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingExcludePatterns"] =
+                        ExternalJavaLibClass::class.java.name
+                }
+            }
+        }
+
+        val app = build.androidApplication()
+
+        build.executor.with(BooleanOption.GRADUAL_R8_SHRINKING, true).run(":app:assembleRelease")
+
+        verifyPackagesTxt(app)
+
+        // excluded ExternalJavaLibClass
+        // ClassInAndroidLib2 was not included in the first place
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().containsAtLeast(
+                ExternalJavaLibClass::class.java.filePath(),
+                "com/example/androidlib2/ClassInAndroidLib2"
+            )
+        }
+    }
+
+    @Test
+    fun `test custom properties work without GRADUAL_R8_SHRINKING`() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingEnabled"] =
+                        true
+                    // with custom properties we include ExternalAndroidLib2Class that is in r8 folder.
+                    // and exclude ExternalJavaLibClass that was added via consumer-rules.pro and packages.txt
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingIncludePatterns"] =
+                        "com.android.build.gradle.integration.r8.**"
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingExcludePatterns"] =
+                        ExternalJavaLibClass::class.java.name
+                }
+            }
+        }
+
+        build.executor.run(":app:assembleRelease")
+
+        val app = build.androidApplication()
+        checkNoPackageTxt(app)
+
+        // shrink all classes from com.android.build.gradle.integration.r8
+        // except ExternalJavaLibClass
+        // does not shrink com/example/**
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().containsAtLeast(
+                ExternalJavaLibClass::class.java.filePath(),
+                "com/example/androidlib2/ClassInAndroidLib2",
+                "com/example/javalib/ClassInJavaLib"
+            )
+        }
+    }
+
+    @Test
+    fun `test multiple custom properties`() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingEnabled"] =
+                        true
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingIncludePatterns"] =
+                        "com.android.build.gradle.integration.r8.**,com.example.javalib.*,com.example.androidlib2.*,com.example.androidlib.ClassInAndroidLib"
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingExcludePatterns"] =
+                        "com.android.build.gradle.integration.r8.java.**,com.android.build.gradle.integration.r8.android.ExternalAndroidLibClass"
+                }
+            }
+        }
+
+        val app = build.androidApplication()
+
+        build.executor.run(":app:assembleRelease")
+
+        checkNoPackageTxt(app)
+
+        // excluded r8.java.** and ExternalAndroidLibClass directly
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().containsAtLeast(
+                ExternalAndroidLibClass::class.java.filePath(),
+                ExternalJavaLibClass::class.java.filePath(),
+            )
+        }
+    }
+
+    @Test
+    fun `test gradual r8 with excludes in custom properties`() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingEnabled"] =
+                        true
+                    experimentalProperties["com.android.tools.r8.experimentalPartialShrinkingExcludePatterns"] =
+                        "com.example.**,com.android.build.gradle.integration.r8.android.ExternalAndroidLibClass"
+                }
+            }
+        }
+
+        val app = build.androidApplication()
+
+        build.executor.with(BooleanOption.GRADUAL_R8_SHRINKING, true).run(":app:assembleRelease")
+
+        verifyPackagesTxt(app)
+
+        // excluded all com.example.** and ExternalAndroidLibClass
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().containsAtLeast(
+                "com/example/androidlib2/ClassInAndroidLib2",
+                "com/example/androidlib/ClassInAndroidLib",
+                "com/example/javalib/ClassInJavaLib",
+                ExternalAndroidLibClass::class.java.filePath(),
+            )
+        }
+    }
+
+    private fun Class<*>.filePath() = name.replace(".","/")
+
+    private fun checkNoPackageTxt(app: AndroidApplicationProject) {
+        // no packages.txt
         val intermediateMergedPackageList = app
             .resolve(MERGED_PACKAGES_FOR_R8)
             .resolve("release/mergeReleasePackageListsForR8/packages.txt")
             .toFile()
         PathSubject.assertThat(intermediateMergedPackageList).doesNotExist()
+    }
 
-        build.executor.with(BooleanOption.GRADUAL_R8_SHRINKING, true).run(":app:assembleRelease")
-
+    private fun verifyPackagesTxt(app: AndroidApplicationProject) {
         // Should include package names from:
         // - local Android module class
         // - local Java module class
         // - external Android lib manifest package name
         // - ExternalAndroidLibClass path
         // - ExternalJavaLibClass path
-        Truth.assertThat(app.resolve(MERGED_PACKAGES_FOR_R8).resolve(
-            "release/mergeReleasePackageListsForR8/packages.txt"
-        ).toFile().readText()).isEqualTo(
+        Truth.assertThat(
+            app.resolve(MERGED_PACKAGES_FOR_R8).resolve(
+                "release/mergeReleasePackageListsForR8/packages.txt"
+            ).toFile().readText()
+        ).isEqualTo(
             """
-                com.example.androidlib.*
-                com.example.javalib.*
-                com.external.android.lib.name.*
-                com.android.build.gradle.integration.r8.android.*
-                com.android.build.gradle.integration.r8.java.*
-            """.trimIndent()
+                    com.example.androidlib.*
+                    com.example.javalib.*
+                    com.external.android.lib.name.*
+                    com.android.build.gradle.integration.r8.android.*
+                    com.android.build.gradle.integration.r8.java.*
+                """.trimIndent()
         )
     }
 }

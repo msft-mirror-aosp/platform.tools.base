@@ -167,6 +167,29 @@ public class ArchiveTreeStructure {
                                 data.setRawFileSize(sizeOfAllChildren);
                             }
                         });
+
+        // Compute page alignment issues and roll up to parent.
+        ArchiveTreeStream.postOrderStream(root)
+                .forEach(
+                        node -> {
+                            ArchiveEntry data = node.getData();
+                            long loadSectionAlignment = data.getElfMinimumLoadSectionAlignment();
+                            if (loadSectionAlignment != -1
+                                    && (loadSectionAlignment % (16L * 1024) != 0L
+                                            || data.getFileAlignment()
+                                                    != ZipEntryInfo.Alignment.ALIGNMENT_16K)) {
+                                data.setSelfOrChild16kbIncompatible(true);
+                                return;
+                            }
+
+                            for (ArchiveNode childNode : node.getChildren()) {
+                                ArchiveEntry childData = childNode.getData();
+                                if (childData.getSelfOrChild16kbIncompatible()) {
+                                    data.setSelfOrChild16kbIncompatible(true);
+                                    return;
+                                }
+                            }
+                        });
     }
 
     public static void updateDownloadFileSizes(
@@ -213,30 +236,6 @@ public class ArchiveTreeStructure {
                                                 .map(n -> n.getData().getDownloadFileSize())
                                                 .reduce(0L, Long::sum);
                                 data.setDownloadFileSize(sizeOfAllChildren);
-                            }
-                        });
-
-        // Compute page alignment issues and roll up to parent.
-        ArchiveTreeStream.postOrderStream(root)
-                .forEach(
-                        node -> {
-                            ArchiveEntry data = node.getData();
-                            long loadSectionAlignment = data.getElfMinimumLoadSectionAlignment();
-                            if (loadSectionAlignment != -1
-                                    && !data.isFileCompressed()
-                                    && (loadSectionAlignment % (16L * 1024) != 0L
-                                            || data.getFileAlignment()
-                                                    != ZipEntryInfo.Alignment.ALIGNMENT_16K)) {
-                                data.setSelfOrChild16kbIncompatible(true);
-                                return;
-                            }
-
-                            for (ArchiveNode childNode : node.getChildren()) {
-                                ArchiveEntry childData = childNode.getData();
-                                if (childData.getSelfOrChild16kbIncompatible()) {
-                                    data.setSelfOrChild16kbIncompatible(true);
-                                    return;
-                                }
                             }
                         });
     }

@@ -74,11 +74,33 @@ class ExtractApksTaskTest {
     }
 
     @Test
+    fun extractApkFailsWithoutTargetDeviceSpec() {
+        val build = project.build
+
+        val configInfo = """{"sdk_version":30,"screen_density":160,
+               |"supported_abis":["arm64-v8a"],
+               |"supported_locales":["en"]}""".trimMargin()
+
+        val spec = temporaryFolder.newFile("deviceSpec.json").apply {
+            writeText(configInfo)
+        }
+
+        val result = build.executor
+            .expectFailure()
+            .with(
+                StringOption.IDE_APK_SELECT_MULTIPLE_DEVICE_SPECS,
+                spec.invariantSeparatorsPath
+            )
+            .run(":app:extractApksFromBundleForDebug")
+
+        result.assertErrorContains("Calling ExtractApk with no device config")
+    }
+
+    @Test
     fun extractApkSingleConfig() {
         val build = project.build
 
-        val deviceSpecJson = temporaryFolder.newFile("apkSelectConfig.json")
-        val apkSelectConfig = deviceSpecJson.apply {
+        val apkSelectConfig = temporaryFolder.newFile("apkSelectConfig.json").apply {
             writeText(
                 """{"sdk_version":25,"screen_density":160,
                     |"supported_abis":["x86_64","arm64-v8a"],
@@ -111,30 +133,82 @@ class ExtractApksTaskTest {
     }
 
     @Test
-    fun extractApkMultipleConfig() {
+    fun testSingleDeviceInMultipleDeviceSpecs() {
         val build = project.build
-        build.androidApplication()
 
-        val apkSelectConfig1 = temporaryFolder.newFile("apkSelectConfig_1.json").apply {
+        val apkSelectConfig = temporaryFolder.newFile("apkSelectConfig.json").apply {
             writeText(
                 """{"sdk_version":25,"screen_density":160,
-                    |"supported_abis":["x86_64","arm64-v8a"],
-                    |"supported_locales":["en"]}""".trimMargin()
-            )
-        }
-
-        val apkSelectConfig2 = temporaryFolder.newFile("apkSelectConfig_2.json").apply {
-            writeText(
-                """{"sdk_version":34,"screen_density":240,
-                    |"supported_abis":["x86_64","arm64-v8a"],
-                    |"supported_locales":["en"]}""".trimMargin()
+               |"supported_abis":["x86_64","arm64-v8a"],
+               |"supported_locales":["en"]}""".trimMargin()
             )
         }
 
         build.executor
             .with(
                 StringOption.IDE_APK_SELECT_CONFIG,
-                "${apkSelectConfig1.invariantSeparatorsPath},${apkSelectConfig2.invariantSeparatorsPath}"
+                apkSelectConfig.invariantSeparatorsPath
+            )
+            .with(
+                StringOption.IDE_APK_SELECT_MULTIPLE_DEVICE_SPECS,
+                apkSelectConfig.invariantSeparatorsPath
+            )
+            .run(":app:extractApksFromBundleForDebug")
+
+        val extractedApks = build.androidApplication()
+            .resolve(InternalArtifactType.EXTRACTED_APKS)
+            .resolve("debug/extractApksFromBundleForDebug/")
+            .toFile()
+        assertThat(extractedApks.resolve("base-master.apk").exists()).isTrue()
+
+        val deviceMap = build.androidApplication()
+            .resolve(InternalArtifactType.DEVICE_SPEC_PATH_MAP)
+            .resolve("debug/extractApksFromBundleForDebug")
+            .toFile()
+        assertThat(deviceMap.resolve("device_spec_path_map.txt").readLines()).containsExactly(
+            "${apkSelectConfig.invariantSeparatorsPath} 0"
+        )
+    }
+
+    @Test
+    fun testMultipleDeviceConfigs() {
+        val build = project.build
+
+        val apkSelectConfig1 = temporaryFolder.newFile("apkSelectConfig_1.json").apply {
+            writeText(
+                """{"sdk_version":25,"screen_density":160,
+               |"supported_abis":["x86_64","arm64-v8a"],
+               |"supported_locales":["en"]}""".trimMargin()
+            )
+        }
+
+        val apkSelectConfig2 = temporaryFolder.newFile("apkSelectConfig_2.json").apply {
+            writeText(
+                """{"sdk_version":34,"screen_density":240,
+               |"supported_abis":["x86_64","arm64-v8a"],
+               |"supported_locales":["en"]}""".trimMargin()
+            )
+        }
+
+        val targetDeviceSpec = temporaryFolder.newFile("target-device-config.json").apply {
+            writeText(
+                """{"sdk_version":25,"screen_density":240,
+               |"supported_abis":["x86_64","arm64-v8a"],
+               |"supported_locales":["en"]}""".trimMargin()
+            )
+        }
+
+        build.executor
+            .with(
+                StringOption.IDE_APK_SELECT_CONFIG,
+                targetDeviceSpec.invariantSeparatorsPath
+            )
+            .with(
+                StringOption.IDE_APK_SELECT_MULTIPLE_DEVICE_SPECS,
+                listOf(
+                    apkSelectConfig1.invariantSeparatorsPath,
+                    apkSelectConfig2.invariantSeparatorsPath
+                ).joinToString(",")
             )
             .run(":app:extractApksFromBundleForDebug")
 
@@ -147,10 +221,8 @@ class ExtractApksTaskTest {
             .resolve("debug/extractApksFromBundleForDebug")
             .toFile()
 
-        assertThat(extractedApks.exists()).isTrue()
         assertThat(extractedApks.resolve("0/base-mdpi.apk").exists()).isTrue()
         assertThat(extractedApks.resolve("1/base-hdpi.apk").exists()).isTrue()
-        assertThat(deviceMap.resolve("device_spec_path_map.txt").exists()).isTrue()
         assertThat(deviceMap.resolve("device_spec_path_map.txt").readLines()).containsExactly(
             "${apkSelectConfig1.invariantSeparatorsPath} 0",
             "${apkSelectConfig2.invariantSeparatorsPath} 1"
@@ -158,7 +230,7 @@ class ExtractApksTaskTest {
     }
 
     @Test
-    fun extractApkWithDuplicateDeviceSpecs() {
+    fun testMultipleDuplicateDeviceConfigs() {
         val build = project.build
         build.androidApplication()
 
@@ -175,9 +247,21 @@ class ExtractApksTaskTest {
             writeText(configInfo)
         }
 
+        val targetDeviceSpec = temporaryFolder.newFile("target-device-config.json").apply {
+            writeText(
+                """{"sdk_version":30,"screen_density":240,
+               |"supported_abis":["x86_64","arm64-v8a"],
+               |"supported_locales":["en"]}""".trimMargin()
+            )
+        }
+
         build.executor
             .with(
                 StringOption.IDE_APK_SELECT_CONFIG,
+                targetDeviceSpec.invariantSeparatorsPath
+            )
+            .with(
+                StringOption.IDE_APK_SELECT_MULTIPLE_DEVICE_SPECS,
                 "${apkSelectConfig1.invariantSeparatorsPath},${apkSelectConfig2.invariantSeparatorsPath}"
             )
             .run(":app:extractApksFromBundleForDebug")
@@ -186,7 +270,6 @@ class ExtractApksTaskTest {
             .resolve(InternalArtifactType.EXTRACTED_APKS)
             .resolve("debug/extractApksFromBundleForDebug/")
             .toFile()
-
         val deviceMap = build.androidApplication()
             .resolve(InternalArtifactType.DEVICE_SPEC_PATH_MAP)
             .resolve("debug/extractApksFromBundleForDebug")
@@ -200,5 +283,4 @@ class ExtractApksTaskTest {
             "${apkSelectConfig2.invariantSeparatorsPath} 0"
         )
     }
-
 }
