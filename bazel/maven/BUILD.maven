@@ -60394,10 +60394,18 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.android.appcrawler.appcrawler-platform_0.0.1-alpha01",
-    pom = "repository/com/google/android/appcrawler/appcrawler-platform/0.0.1-alpha01/appcrawler-platform-0.0.1-alpha01.pom",
+    name = "com.google.android.appcrawler.appcrawler-app_0.0.1-alpha02",
+    pom = "repository/com/google/android/appcrawler/appcrawler-app/0.0.1-alpha02/appcrawler-app-0.0.1-alpha02.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/android/appcrawler/appcrawler-platform/0.0.1-alpha01",
+    repo_path = "com/google/android/appcrawler/appcrawler-app/0.0.1-alpha02",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.appcrawler.appcrawler-platform_0.0.1-alpha02",
+    pom = "repository/com/google/android/appcrawler/appcrawler-platform/0.0.1-alpha02/appcrawler-platform-0.0.1-alpha02.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/appcrawler/appcrawler-platform/0.0.1-alpha02",
     deps = [
         "androidx.annotation.annotation-jvm_1.8.1",
         "com.google.auth.google-auth-library-credentials_1.24.1",

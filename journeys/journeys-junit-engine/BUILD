@@ -31,7 +31,7 @@ maven_repository(
     name = "maven_dependencies",
     # keep sorted
     artifacts = [
-        "@maven//:com.google.android.appcrawler.appcrawler-platform_0.0.1-alpha01",
+        "@maven//:com.google.android.appcrawler.appcrawler-platform_0.0.1-alpha02",
         "@maven//:com.google.auth.google-auth-library-oauth2-http_1.24.0",
         "@maven//:com.google.guava.guava_33.2.1-jre",
         "@maven//:com.google.oauth-client.google-oauth-client_1.34.1",
@@ -42,7 +42,7 @@ maven_repository(
     name = "maven_test_dependencies",
     # keep sorted
     artifacts = [
-        "@maven//:com.google.android.appcrawler.appcrawler-platform_0.0.1-alpha01",
+        "@maven//:com.google.android.appcrawler.appcrawler-platform_0.0.1-alpha02",
         "@maven//:com.google.auth.google-auth-library-oauth2-http_1.24.0",
         "@maven//:com.google.guava.guava_33.2.1-jre",
         "@maven//:com.google.oauth-client.google-oauth-client_1.34.1",

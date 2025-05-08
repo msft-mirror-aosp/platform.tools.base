@@ -126,6 +126,15 @@ class JourneysConnectedTest {
         }
     }
 
+    class DryRunCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            // Set --test-dry-run flag.
+            project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java) { testTask ->
+                testTask.dryRun.set(true)
+            }
+        }
+    }
+
     // TODO(b/408183626): Re-enable once crawler app is available on maven for testing.
     @Ignore("408183626")
     @Test
@@ -133,5 +142,35 @@ class JourneysConnectedTest {
         val result = executor.run(":app:validateDebugJourneysTest")
         result.assertOutputContains("Finished test: My Journeys Test 1 with result: SUCCESS")
         result.assertOutputContains("Finished test: My Journeys Test 2 with result: SUCCESS")
+    }
+
+    @Test
+    fun dryRunJourneysTest() {
+        rule.build {
+            androidApplication {
+                pluginCallbacks += DryRunCallback::class.java
+            }
+        }
+        val result = executor.run(":app:validateDebugJourneysTest")
+        result.assertOutputContains("""
+            Starting test suite: myJourneysTest1
+            Starting test: My Action 1
+            Finished test: My Action 1 with result: SKIPPED
+            Starting test: My Action 2
+            Finished test: My Action 2 with result: SKIPPED
+            Starting test: My Action 3
+            Finished test: My Action 3 with result: SKIPPED
+            Finished test suite: myJourneysTest1 with result: SUCCESS
+        """.trimIndent())
+        result.assertOutputContains("""
+            Starting test suite: myJourneysTest2
+            Starting test: My Action 1
+            Finished test: My Action 1 with result: SKIPPED
+            Starting test: My Action 2
+            Finished test: My Action 2 with result: SKIPPED
+            Starting test: My Action 3
+            Finished test: My Action 3 with result: SKIPPED
+            Finished test suite: myJourneysTest2 with result: SUCCESS
+        """.trimIndent())
     }
 }
