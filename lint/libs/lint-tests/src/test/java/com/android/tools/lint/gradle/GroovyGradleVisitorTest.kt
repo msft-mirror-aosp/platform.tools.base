@@ -204,14 +204,14 @@ class GroovyGradleVisitorTest {
       """
       buildscript {
         repositories {
-          jcenter()
+          mavenCentral()
         }
       }
       """,
       """
-      checkMethodCall(statement="buildscript", unnamedArguments="{ repositories { jcenter() } }")
-      checkMethodCall(statement="repositories", parent="buildscript", unnamedArguments="{ jcenter() }")
-      checkMethodCall(statement="jcenter", parent="repositories", parentParent="buildscript")
+      checkMethodCall(statement="buildscript", unnamedArguments="{ repositories { mavenCentral() } }")
+      checkMethodCall(statement="repositories", parent="buildscript", unnamedArguments="{ mavenCentral() }")
+      checkMethodCall(statement="mavenCentral", parent="repositories", parentParent="buildscript")
       """,
     )
   }

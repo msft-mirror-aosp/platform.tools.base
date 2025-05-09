@@ -10968,7 +10968,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     ""
                             + "buildscript {\n"
                             + "    repositories {\n"
-                            + "        jcenter()\n"
+                            + "        mavenCentral()\n"
                             + "    }\n"
                             + "    dependencies {\n"
                             + "        classpath 'com.android.tools.build:gradle:2.3.1'\n"

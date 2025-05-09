@@ -7,7 +7,7 @@ applicationDefaultJvmArgs = ["-ea", "-Xms2048m", "-Xmx2048m"]
 sourceCompatibility = 1.6
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 defaultTasks 'installDist'

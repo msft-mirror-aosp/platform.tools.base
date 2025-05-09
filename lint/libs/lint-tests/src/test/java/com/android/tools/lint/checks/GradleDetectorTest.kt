@@ -2047,7 +2047,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "buildscript {\n" +
             "    repositories {\n" +
             "        google()\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:3.4.0-alpha3'\n" +
@@ -2246,7 +2246,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "buildscript {\n" +
             "    repositories {\n" +
             "        google()\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:3.3.0'\n" +
@@ -2297,7 +2297,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           "" +
             "buildscript {\n" +
             "    repositories {\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "}\n" +
             "dependencies {\n" +
@@ -2325,7 +2325,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             """
                 buildscript {
                     repositories {
-                        jcenter()
+                        mavenCentral()
                     }
                 }
                 dependencies {
@@ -2379,7 +2379,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                   "\n" +
                   "buildscript {\n" +
                   "    repositories {\n" +
-                  "        jcenter()\n" +
+                  "        mavenCentral()\n" +
                   "    }\n" +
                   "}\n" +
                   "dependencies {\n" +
@@ -4143,7 +4143,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "buildscript {\n" +
             "    repositories {\n" +
             "        google()\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:1.0.0-rc8'\n" +
@@ -4154,7 +4154,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "\n" +
             "allprojects {\n" +
             "    repositories {\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "}\n"
         )
@@ -4189,7 +4189,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "buildscript {\n" +
             "    repositories {\n" +
             "        google()\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath(\"com.android.tools.build:gradle:1.0.0-rc8\")\n" +
@@ -4200,7 +4200,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "\n" +
             "allprojects {\n" +
             "    repositories {\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "}\n"
         )
@@ -4230,7 +4230,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           "" +
             "buildscript {\n" +
             "    repositories {\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:1.0.0-rc8'\n" +
@@ -4241,7 +4241,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "\n" +
             "allprojects {\n" +
             "    repositories {\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "}\n"
         )
@@ -4273,7 +4273,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           "" +
             "buildscript {\n" +
             "    repositories {\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath(\"com.android.tools.build:gradle:1.0.0-rc8\")\n" +
@@ -4284,7 +4284,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "\n" +
             "allprojects {\n" +
             "    repositories {\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "}\n"
         )
@@ -4925,7 +4925,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "}\n" +
             "\n" +
             "repositories {\n" +
-            "    jcenter()\n" +
+            "    mavenCentral()\n" +
             "}"
         )
       )
@@ -6368,7 +6368,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           "" +
             "buildscript {\n" +
             "    repositories {\n" +
-            "        jcenter()\n" +
+            "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:3.5.0-alpha10'\n" +

@@ -58,7 +58,7 @@ class LintModelSerializationTest {
         """
             buildscript {
                 repositories {
-                    jcenter()
+                    mavenCentral()
                 }
                 dependencies {
                     classpath 'com.android.tools.build:gradle:4.0.0-beta01'
