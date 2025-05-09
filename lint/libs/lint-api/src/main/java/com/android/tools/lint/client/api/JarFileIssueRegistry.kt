@@ -31,6 +31,7 @@ import java.io.InputStreamReader
 import java.lang.ref.SoftReference
 import java.net.URLClassLoader
 import java.util.Locale
+import java.util.TreeMap
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.jar.Attributes
@@ -59,7 +60,7 @@ private constructor(
   override fun cacheable(): Boolean = LintClient.isStudio
 
   override val issues: List<Issue> = registry.issues.toList()
-  private var timestamp: Long = jarFile.lastModified()
+  private val timestamp: Long = jarFile.lastModified()
 
   override val isUpToDate: Boolean
     get() = timestamp == jarFile.lastModified()
@@ -103,8 +104,21 @@ private constructor(
     /** Older key: these are for older custom rules. */
     private const val MF_LINT_REGISTRY_OLD = "Lint-Registry"
 
+    /**
+     * Manifest constant for revision number, increasing with updates.
+     *
+     * Example: Lint-Revision: 3
+     */
+    private const val MF_LINT_REVISION = "Lint-Revision"
+
     /** Cache of custom lint check issue registries. */
     private val cache = ConcurrentHashMap<File, SoftReference<JarFileIssueRegistry>>()
+
+    /**
+     * Mapping files with verification failures to their last modified timestamps. Only failures
+     * with isolated [LintDriver] and false skipVerification are cached.
+     */
+    private val failureCache = ConcurrentHashMap<File, Long>()
 
     /** Known issue id's we've ignored because the implemented was incompatible */
     private val rejectedIssueIds = CopyOnWriteArraySet<String>()
@@ -141,74 +155,89 @@ private constructor(
       val capacity = jarFiles.size + 1
       val registries = ArrayList<JarFileIssueRegistry>(capacity)
 
-      for ((registryClass, jarFile) in registryMap) {
-        try {
-          val registry =
-            get(client, registryClass, jarFile, currentProject, driver, skipVerification)
-              ?: continue
-          registries.add(registry)
-        } catch (e: Throwable) {
-          if (logJarProblems()) {
-            client.log(e, "Could not load custom lint check jar file %1\$s", jarFile)
-          }
-        }
+      for ((registryClass, jarFiles) in registryMap) {
+        val registry =
+          get(client, registryClass, jarFiles, currentProject, driver, skipVerification) ?: continue
+        registries.add(registry)
       }
 
       return registries
     }
 
     /**
-     * Returns a [JarFileIssueRegistry] for the given issue registry class name and jar file, with
-     * caching.
+     * Returns a [JarFileIssueRegistry] for the given issue registry class name and jar files, with
+     * caching. Only the first verified item in [jarFiles] are processed to create the
+     * [JarFileIssueRegistry].
      */
     private fun get(
       client: LintClient,
       registryClassName: String,
-      jarFile: File,
+      jarFiles: List<File>,
       currentProject: Project?,
       driver: LintDriver?,
       skipVerification: Boolean,
     ): JarFileIssueRegistry? {
-      val reference = cache[jarFile]
-      if (reference != null) {
-        val registry = reference.get()
-        if (registry != null && registry.isUpToDate) {
-          return registry
-        }
-      }
+      val useFailureCache = !skipVerification && driver?.isIsolated() == true && LintClient.isStudio
 
-      // Ensure that the scope-to-detector map doesn't return stale results
-      reset()
-
-      val userRegistry =
-        loadIssueRegistry(
-          client,
-          jarFile,
-          registryClassName,
-          currentProject,
-          driver,
-          skipVerification,
-          true,
-        )
-      return if (userRegistry != null) {
-        val vendor = getVendor(client, userRegistry, jarFile)
-        val jarIssueRegistry = JarFileIssueRegistry(client, jarFile, userRegistry, vendor)
-        for (issue in userRegistry.issues) {
-          issue.registry = jarIssueRegistry
-          if (issue.defaultSeverity === Severity.IGNORE && logJarProblems()) {
-            client.log(
-              Severity.ERROR,
-              null,
-              "Issue ${issue.id} has defaultSeverity=IGNORE; that's " +
-                "not valid. Use enabledByDefault=false instead.",
-            )
+      for (jarFile in jarFiles) {
+        val reference = cache[jarFile]
+        if (reference != null) {
+          val registry = reference.get()
+          if (registry != null && registry.isUpToDate) {
+            return registry
           }
         }
-        cache[jarFile] = SoftReference(jarIssueRegistry)
-        jarIssueRegistry
-      } else {
-        null
+        if (useFailureCache && failureCache[jarFile]?.equals(jarFile.lastModified()) == true) {
+          if (logJarProblems()) {
+            client.log(
+              Severity.WARNING,
+              null,
+              "Skipping loading of $jarFile, as it previously failed to be loaded.",
+            )
+          }
+          continue
+        }
+        try {
+          // Ensure that the scope-to-detector map doesn't return stale results
+          reset()
+
+          val userRegistry =
+            loadIssueRegistry(
+              client,
+              jarFile,
+              registryClassName,
+              currentProject,
+              driver,
+              skipVerification,
+              true,
+            )
+          if (userRegistry != null) {
+            val vendor = getVendor(client, userRegistry, jarFile)
+            val jarIssueRegistry = JarFileIssueRegistry(client, jarFile, userRegistry, vendor)
+            for (issue in userRegistry.issues) {
+              issue.registry = jarIssueRegistry
+              if (issue.defaultSeverity === Severity.IGNORE && logJarProblems()) {
+                client.log(
+                  Severity.ERROR,
+                  null,
+                  "Issue ${issue.id} has defaultSeverity=IGNORE; that's " +
+                    "not valid. Use enabledByDefault=false instead.",
+                )
+              }
+            }
+            cache[jarFile] = SoftReference(jarIssueRegistry)
+            return jarIssueRegistry
+          }
+        } catch (e: Throwable) {
+          if (logJarProblems()) {
+            client.log(e, "Could not load custom lint check jar file %1\$s", jarFile)
+          }
+        }
+        if (useFailureCache) {
+          failureCache[jarFile] = jarFile.lastModified()
+        }
       }
+      return null
     }
 
     /** Clear out any cached jar files. */
@@ -550,35 +579,32 @@ private constructor(
     }
 
     /**
-     * Returns a map from issue registry qualified name to the corresponding jar file that contains
-     * it.
+     * Returns a map from issue registry qualified name to the corresponding jar files that contains
+     * it. The sorting order for Jar files prioritizes those with higher revision numbers first,
+     * followed by Jar files that have no revision number, and lastly, legacy Jar files.
      */
-    fun findRegistries(client: LintClient, jarFiles: Collection<File>): Map<String, File> {
-      val registryClassToJarFile = HashMap<String, File>()
+    fun findRegistries(client: LintClient, jarFiles: Collection<File>): Map<String, List<File>> {
+      val registryClassToJarFile = HashMap<String, TreeMap<Int, File>>()
       for (jarFile in jarFiles) {
         JarFile(jarFile).use { file ->
           val manifest = file.manifest
+          // Default revision number for Jars that do not have one.
+          var revision = -1
           if (manifest != null) {
             val attrs = manifest.mainAttributes
+            revision = attrs[Attributes.Name(MF_LINT_REVISION)]?.toString()?.toIntOrNull() ?: -1
+
             var attribute: Any? = attrs[Attributes.Name(MF_LINT_REGISTRY)]
-            var isLegacy = false
             if (attribute == null) {
               attribute = attrs[Attributes.Name(MF_LINT_REGISTRY_OLD)]
               if (attribute != null) {
-                isLegacy = true
+                // Default revision number for Legacy Jars.
+                revision = -2
               }
             }
             if (attribute is String) {
               val className = attribute
-
-              // Store class name -- but it may not be unique (there could be
-              // multiple separate jar files pointing to the same issue registry
-              // (due to the way local lint.jar files propagate via project
-              // dependencies) so only store this file if it hasn't already
-              // been found, or if it's a v2 version (e.g. not legacy)
-              if (!isLegacy || registryClassToJarFile[className] == null) {
-                registryClassToJarFile[className] = jarFile
-              }
+              registryClassToJarFile.getOrPut(className) { TreeMap() }[revision] = jarFile
               return@use
             }
           }
@@ -601,7 +627,7 @@ private constructor(
                       line.trim()
                     }
                   if (className.isNotEmpty() && registryClassToJarFile[className] == null) {
-                    registryClassToJarFile[className] = jarFile
+                    registryClassToJarFile.getOrPut(className) { TreeMap() }[revision] = jarFile
                   }
                 }
               }
@@ -621,7 +647,11 @@ private constructor(
         }
       }
 
-      return registryClassToJarFile
+      return registryClassToJarFile.mapValues { entry ->
+        // Files are sorted in the TreeSet of entry.value by their revision numbers.
+        // Returns a list of files where higher revision numbers come first.
+        entry.value.values.reversed()
+      }
     }
 
     private fun generateVerifierMessage(
