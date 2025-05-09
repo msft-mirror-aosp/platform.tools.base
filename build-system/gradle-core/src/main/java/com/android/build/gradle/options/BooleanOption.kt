@@ -240,6 +240,21 @@ enum class BooleanOption(
         FeatureStage.Supported
     ),
 
+    /**
+     * AGP 9.0 will only have unit tests for debug by default.
+     */
+    ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE(
+        "android.onlyEnableUnitTestForTheTestedBuildType",
+        false,
+        FeatureStage.Supported,
+        FutureStage(
+            true,
+            FeatureStage.Supported,
+            AgpVersion.parse("9.0.0")
+        )
+    ),
+
+
 
     /* -----------------
      * EXPERIMENTAL APIs

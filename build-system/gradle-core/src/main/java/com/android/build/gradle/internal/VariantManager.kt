@@ -52,7 +52,6 @@ import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
-import com.android.build.gradle.internal.api.AndroidSourceSetName
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
 import com.android.build.gradle.internal.api.SingleTestSuiteSourceSet
@@ -1145,6 +1144,10 @@ class VariantManager<
             deviceTestBuilder.enable =
                 !variantBuilderServices.projectOptions[BooleanOption.ENABLE_NEW_TEST_DSL]
                         && (testBuildTypeData == null || buildTypeData == testBuildTypeData)
+        }
+        (variantBuilder as? HasHostTestsBuilder)?.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.let { unitTest ->
+            unitTest.enable = !variantBuilderServices.projectOptions[BooleanOption.ENABLE_NEW_TEST_DSL] &&
+                    (!variantBuilderServices.projectOptions[BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE] || testBuildTypeData == null || testBuildTypeData == buildTypeData)
         }
     }
 

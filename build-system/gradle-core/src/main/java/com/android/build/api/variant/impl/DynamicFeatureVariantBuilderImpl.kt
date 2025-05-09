@@ -100,7 +100,6 @@ open class DynamicFeatureVariantBuilderImpl @Inject constructor(
     override val hostTests: Map<String, HostTestBuilder> =
         HostTestBuilderImpl.create(
             dslInfo.dslDefinedHostTests,
-            variantBuilderServices,
             dslInfo.experimentalProperties,
         )
 }
