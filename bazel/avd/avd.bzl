@@ -8,7 +8,7 @@ def _avd_impl(ctx):
     system_image_files = ctx.attr.image[DefaultInfo].files.to_list()
     for system_image_file in system_image_files:
         if system_image_file.basename == "source.properties":
-            source_properties_path = system_image_file.short_path
+            source_properties_path = system_image_file.path
             break
     if source_properties_path == None:
         fail("Supplied system image does not contain a source.properties file")

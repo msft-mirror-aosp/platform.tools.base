@@ -70,11 +70,7 @@ def run_bazel_test(
   build_type = BuildType.from_build_number(build_env.build_number)
   bes_path = dist_path / f'bazel-{build_env.build_number}.bes'
 
-  # Using 'auto' can result in a large number of workers being created, leading
-  # to memory pressure. After observing build logs, we've seen as many as
-  # 30+ workers created for kotlinc actions on large builds.
-  # Set a strict max of number of workers (per mnemonic).
-  worker_instances = '2' if build_type == BuildType.LOCAL else '8'
+  worker_instances = '2' if build_type == BuildType.LOCAL else 'auto'
   if build_type == BuildType.POSTSUBMIT:
     flags.extend([
         '--bes_keywords=ab-postsubmit',
