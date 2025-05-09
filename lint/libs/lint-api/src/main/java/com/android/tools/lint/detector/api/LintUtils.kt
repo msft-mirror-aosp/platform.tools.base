@@ -1861,8 +1861,9 @@ fun resolvePlaceHolders(
   defaultValue: String? = null,
 ): String? {
   var s = value
+  var startFromIndex = 0
   while (true) {
-    val start = s.indexOf(MANIFEST_PLACEHOLDER_PREFIX)
+    val start = s.indexOf(MANIFEST_PLACEHOLDER_PREFIX, startFromIndex)
     if (start == -1) {
       return s
     }
@@ -1874,6 +1875,10 @@ fun resolvePlaceHolders(
     val replacement =
       resolvePlaceHolder(project, name) ?: substitutions?.get(name) ?: defaultValue ?: return null
     s = s.substring(0, start) + replacement + s.substring(end + MANIFEST_PLACEHOLDER_SUFFIX.length)
+    // Next time, start from after the replacement.
+    // This is not "end"; "end" is the start of the placeholder suffix in s before substitution.
+    // We need the index _after_ substitution.
+    startFromIndex = start + replacement.length
   }
 }
 

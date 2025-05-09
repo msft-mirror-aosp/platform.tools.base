@@ -607,6 +607,43 @@ class LintUtilsTest : TestCase() {
     )
   }
 
+  fun testResolvePlaceholdersInfiniteLoop() {
+    // Regression test for infinite loop issue identified in b/416480093
+    assertEquals(
+      "This is 12345678\${bad} but then thisisfine",
+      resolvePlaceHolders(
+        null,
+        "This is \${bad} but then \${good}",
+        mapOf("bad" to "12345678\${bad}", "good" to "thisisfine"),
+        null,
+      ),
+    )
+    // This was previously causing an infinite loop:
+    // This is ${bad} but then ${good}
+    // This is 12345678${bad} but then ${good}
+    // This is 1234567812345678${bad} but then ${good}
+    // This is 123456781234567812345678${bad} but then ${good}
+    // ...etc... (infinite)
+
+    // An incorrect fix might start the next search from:
+    //               v here
+    // This is ${bad}
+    //
+    // But this would still trigger the infinite loop due to the 12345678.
+
+    // An incorrect fix might start the next search from an index that is too high, which could
+    // miss a subsequent placeholder. This assertion prevents this mistake.
+    assertEquals(
+      "This is tr",
+      resolvePlaceHolders(
+        null,
+        "This is \${thisisalongstring}\${s}",
+        mapOf("thisisalongstring" to "t", "s" to "r"),
+        null,
+      ),
+    )
+  }
+
   fun testJavaKeyword() {
     assertThat(isJavaKeyword("")).isFalse()
     assertThat(isJavaKeyword("iff")).isFalse()
