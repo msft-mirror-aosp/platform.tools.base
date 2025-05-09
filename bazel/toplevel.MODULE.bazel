@@ -43,6 +43,7 @@ compat = use_extension("@rules_java//java:rules_java_deps.bzl", "compatibility_p
 use_repo(compat, "compatibility_proxy")
 bazel_dep(name = "rules_robolectric", version = "4.14.1.2")
 bazel_dep(name = "rules_shell", version = "0.4.0")
+bazel_dep(name = "with_cfg.bzl", version = "0.9.1")
 bazel_dep(name = "grpc", version = "1.69.0")
 single_version_override(
     module_name = "grpc",
@@ -52,6 +53,19 @@ single_version_override(
         "//tools/base/bazel/bzlmod:grpc_fix_windows_platforms.patch",
     ],
     patch_strip = 1,
+)
+# rules_apple is included by grpc, but override to a newer version to pick up
+# fixes for Bazel 8.
+single_version_override(
+    module_name = "rules_apple",
+    version = "3.16.0"
+)
+# re2 is included by grpc, but override with a fix for Bazel 8.
+# See https://github.com/google/re2/commit/c84a140c93352cdabbfb547c531be34515b12228
+git_override(
+    module_name = "re2",
+    remote = "https://github.com/google/re2",
+    commit = "c84a140c93352cdabbfb547c531be34515b12228",
 )
 
 # grpc depends on 1.0.4, which uses a python.pip extension with an incompatible attribute.
