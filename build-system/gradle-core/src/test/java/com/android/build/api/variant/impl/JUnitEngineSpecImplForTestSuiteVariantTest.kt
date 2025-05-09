@@ -19,7 +19,7 @@ package com.android.build.api.variant.impl
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl
 import com.android.build.gradle.internal.fixtures.ProjectFactory
-import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForTestSuiteVariantBuilder
+import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -32,11 +32,11 @@ class JUnitEngineSpecImplForTestSuiteVariantTest {
     fun testInputParameters() {
 
         val variantBuilderJUnitEngineSpec =
-            JUnitEngineSpecForTestSuiteVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
+            JUnitEngineSpecForVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
                 it.inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
                 it.inputs.add(AgpTestSuiteInputParameters.TESTING_APK)
             }
-        val junitEngineSpec = JUnitEngineSpecImplForTestSuiteVariant(
+        val junitEngineSpec = JUnitEngineSpecImplForVariant(
             variantBuilderJUnitEngineSpec,
             { objects.mapProperty(String::class.java, String::class.java) }
         )
@@ -49,11 +49,11 @@ class JUnitEngineSpecImplForTestSuiteVariantTest {
     @Test
     fun testInputProperties() {
         val variantBuilderJUnitEngineSpec =
-            JUnitEngineSpecForTestSuiteVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
+            JUnitEngineSpecForVariantBuilder(objects, dslDefinedJUnitEngineSpec).also {
                 it.addInputProperty("foo", "fooValue")
                 it.addInputProperty("bar", "barValue")
             }
-        val junitEngineSpec = JUnitEngineSpecImplForTestSuiteVariant(
+        val junitEngineSpec = JUnitEngineSpecImplForVariant(
             variantBuilderJUnitEngineSpec,
             { objects.mapProperty(String::class.java, String::class.java) }
         ).also {

@@ -18,14 +18,14 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
-import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForTestSuiteVariantBuilder
+import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableSet
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 
-class JUnitEngineSpecImplForTestSuiteVariant(
-    junitEngineSpec: JUnitEngineSpecForTestSuiteVariantBuilder,
+internal class JUnitEngineSpecImplForVariant internal constructor(
+    junitEngineSpec: JUnitEngineSpecForVariantBuilder,
     mapFactory: () -> MapProperty<String, String>
 ): JUnitEngineSpec {
 

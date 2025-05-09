@@ -19,7 +19,7 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.component.impl.DeviceTestImpl
 import com.android.build.api.component.impl.TestFixturesImpl
-import com.android.build.api.component.impl.TestSuiteImpl
+import com.android.build.api.variant.impl.TestSuiteImpl
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
@@ -121,7 +121,6 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.internal.GeneratedSubclass
-import org.gradle.internal.extensions.stdlib.capitalized
 import java.io.File
 import java.util.Locale
 import java.util.stream.Collectors
@@ -984,7 +983,9 @@ class VariantManager<
                             globalTaskCreationConfig,
                             variantServices,
                             taskCreationServices,
-                            ArtifactsImpl(project, "${testSuiteBuilder.name}${variantInfo.variant.name.capitalized()}")
+                            ArtifactsImpl(project, "${testSuiteBuilder.name}${variantInfo.variant.name
+                                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                            }")
                         )
                     )
                 }

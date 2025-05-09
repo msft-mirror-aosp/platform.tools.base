@@ -29,7 +29,7 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import javax.inject.Inject
 
-open class TestSuiteBuilderImpl @Inject constructor(
+internal class TestSuiteBuilderImpl @Inject internal constructor(
     objects: ObjectFactory,
     private val _name: String,
     override var enable: Boolean,
@@ -66,8 +66,8 @@ open class TestSuiteBuilderImpl @Inject constructor(
             }
     }
 
-    override val junitEngineSpec: JUnitEngineSpecForTestSuiteVariantBuilder =
-        JUnitEngineSpecForTestSuiteVariantBuilder(objects, _junitEngineSpec)
+    override val junitEngineSpec: JUnitEngineSpec =
+        JUnitEngineSpecForVariantBuilder(objects, _junitEngineSpec)
 
     override fun getName(): String = _name
 
@@ -75,7 +75,7 @@ open class TestSuiteBuilderImpl @Inject constructor(
         services.newInstance(TestSuiteDependencies::class.java)
 }
 
-class JUnitEngineSpecForTestSuiteVariantBuilder(
+internal class JUnitEngineSpecForVariantBuilder(
     objects: ObjectFactory,
     dslDefinedJUnitEngineSpec: JUnitEngineSpecImpl
 ): JUnitEngineSpec {

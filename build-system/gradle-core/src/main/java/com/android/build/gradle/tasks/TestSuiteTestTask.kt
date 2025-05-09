@@ -20,7 +20,7 @@ import android.databinding.tool.ext.toCamelCase
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.api.variant.impl.JUnitEngineSpecImplForTestSuiteVariant
+import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
 import com.android.build.gradle.internal.BuildToolsExecutableInput
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.initialize
@@ -178,7 +178,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 it.from(creationConfig.testSuiteClasspath.runtimeClasspath)
             }
 
-            val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForTestSuiteVariant)
+            val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
             junitEngineSpec.inputs.forEach { inputParameter: AgpTestSuiteInputParameters ->
                 when (inputParameter) {
                     AgpTestSuiteInputParameters.MERGED_MANIFEST -> {
