@@ -586,10 +586,10 @@ java_proto_library(
     visibility = ["//visibility:public"],
 )
 
-# Copy runfiles library from @bazel_tools so that iml_to_build can find the package.
+# Copy runfiles library so that iml_to_build can find the package.
 copy_file(
     name = "runfiles_java_lib",
-    src = "@bazel_tools//tools/java/runfiles:librunfiles.jar",
+    src = "@rules_java//java/runfiles:runfiles",
     out = "librunfiles.jar",
     allow_symlink = True,
     visibility = ["//visibility:public"],
