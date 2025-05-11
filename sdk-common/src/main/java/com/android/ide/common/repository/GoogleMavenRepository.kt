@@ -366,11 +366,13 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
             while (parser.next() != XmlPullParser.END_DOCUMENT) {
                 when (parser.eventType) {
                     XmlPullParser.START_TAG ->
-                        when (parser.name) {
-                            "groupId" -> groupId = parser.nextText()
-                            "artifactId" -> artifactId = parser.nextText()
-                            "version" -> version = parser.nextText()
-                            "scope" -> scope = parser.nextText()
+                        if (parser.depth <= 5) { // avoid <exclusions> group and artifact ids
+                            when (parser.name) {
+                                "groupId" -> groupId = parser.nextText()
+                                "artifactId" -> artifactId = parser.nextText()
+                                "version" -> version = parser.nextText()
+                                "scope" -> scope = parser.nextText()
+                            }
                         }
 
                     XmlPullParser.END_TAG ->
