@@ -116,8 +116,9 @@ class Proxy(
      */
     private fun setupInstrumentation(): Process {
         // Install apks required for instrumentation process.
-        adb.install(crawlerAppApkPath, getCrawlerInstallFlags())
-        adb.install(appApkPath, listOf("-r", "-d"))
+        val deviceApiLevel = adb.getDeviceApiLevel()
+        adb.install(crawlerAppApkPath, getCrawlerInstallFlags(deviceApiLevel))
+        adb.install(appApkPath, getAppInstallFlags(deviceApiLevel))
 
         val instrumentation = adb.runInstrumentation(
             RoboConfigConstants.CRAWLER_PACKAGE_ID,
@@ -136,12 +137,12 @@ class Proxy(
      * Provides a list of flags to use for installing the crawler app based on
      * device API level.
      *
+     * @param deviceApiLevel The device API level to determine flags.
      * @return The list of install flags.
      */
-    private fun getCrawlerInstallFlags(): List<String> {
+    private fun getCrawlerInstallFlags(deviceApiLevel: Int): List<String> {
         // -r, -d: Allow re-install, downgrade
         val baseCrawlerInstallFlags = listOf("-r", "-d")
-        val deviceApiLevel = adb.getDeviceApiLevel()
         val extraCrawlerInstallFlags = if (deviceApiLevel >= 34) {
             // -g: Grant permissions requested in manifest
             listOf("-g", "--bypass-low-target-sdk-block")
@@ -151,6 +152,25 @@ class Proxy(
             emptyList()
         }
         return baseCrawlerInstallFlags + extraCrawlerInstallFlags
+    }
+
+    /**
+     * Provides a list of flags to use for installing the app based on
+     * device API level.
+     *
+     * @param deviceApiLevel The device API level to determine flags.
+     * @return The list of install flags.
+     */
+    private fun getAppInstallFlags(deviceApiLevel: Int): List<String> {
+        // -r, -d: Allow re-install, downgrade
+        val baseInstallFlags = listOf("-r", "-d")
+        val extraInstallFlags = if (deviceApiLevel >= 23) {
+            // -g: Grant permissions requested in manifest
+            listOf("-g")
+        } else {
+            emptyList()
+        }
+        return baseInstallFlags + extraInstallFlags
     }
 
     /**

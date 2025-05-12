@@ -172,7 +172,7 @@ class ProgressReporter(
                 state.addModelDetail(roboScript.modelDetails)
                 val roboIndex = roboScript.actionIndex
                 val currentRoboScriptIndex = state.getCurrentRoboScriptIndex()
-                val lastCompletedIndex = state.getLastCompletedRoboScriptIndex()
+                var lastCompletedIndex = state.getLastCompletedRoboScriptIndex()
 
                 // If the currentRoboScript was a singleton in roboscript details, the finish would
                 // not be triggered until next action is received. This check makes sure we invoke
@@ -182,6 +182,7 @@ class ProgressReporter(
                     currentRoboScript?.let {
                         onRoboScriptFinished(it, action.actionSeq - 1)
                         state.updateLastCompletedRoboScriptIndex(currentRoboScriptIndex)
+                        lastCompletedIndex = currentRoboScriptIndex
                     }
                 }
                 if (roboIndex == lastCompletedIndex + 1 && roboIndex != currentRoboScriptIndex) {
