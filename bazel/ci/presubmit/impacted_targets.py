@@ -16,7 +16,6 @@ from tools.base.bazel.ci.presubmit import bazel_diff
 _BUCKET = 'adt-byob'
 _FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
 _LOCAL_REPOSITORIES = [
-    'intellij',
     'maven',
 ]
 
