@@ -20,6 +20,7 @@ import com.android.sdklib.AndroidMajorVersion
 import com.android.sdklib.AndroidVersion
 import java.io.File
 import java.net.URL
+import org.gradle.util.GradleVersion
 
 /**
  * Data which is required for template rendering.
@@ -96,6 +97,7 @@ data class ApiTemplateData(
 data class ProjectTemplateData(
   val androidXSupport: Boolean,
   val agpVersion: AgpVersion,
+  val gradleVersion: GradleVersion,
   val additionalMavenRepos: List<URL>,
   val sdkDir: File?,
   val language: Language,

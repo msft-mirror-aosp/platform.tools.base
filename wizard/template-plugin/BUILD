@@ -17,6 +17,7 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
+        "@intellij//:com.intellij.gradle",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
     ],
 )
