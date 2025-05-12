@@ -294,6 +294,9 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   // Lifecycle
   ANDROIDX_LIFECYCLE_VIEWMODEL_KTX("androidx.lifecycle", "lifecycle-viewmodel-ktx"),
 
+  // Activity
+  ACTIVITY_COMPOSE("androidx.activity", "activity-compose"),
+
   // Core-Ktx
   ANDROIDX_CORE_KTX("androidx.core", "core-ktx"),
   ;
