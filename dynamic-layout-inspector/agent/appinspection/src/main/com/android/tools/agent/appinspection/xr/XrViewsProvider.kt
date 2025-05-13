@@ -38,13 +38,7 @@ internal fun getXrViews(environment: InspectorEnvironment): List<View> {
         return emptyList()
     }
 
-    val xrViews = xrExtensions.listNodesWithSurfacePackages().map { it.rootView }
-    val windowViews = WindowInspector.getGlobalWindowViews()
-
-    // Views for ActivityPanelNodes are not returned but the XrExtensions API. But can be obtained
-    // through the WindowInspector, since they are in the main panel. For this reason we merge
-    // the views obtained with XrExtensions with the views from the WindowInspector.
-    return xrViews.union(windowViews).toList()
+    return xrExtensions.listNodesWithSurfacePackages().map { it.rootView }
 }
 
 private fun getXrExtensionsUsingReflection(): XrExtensions? {
