@@ -182,11 +182,11 @@ fun maybeCreateUtpConfigurations(creationConfig: ComponentCreationConfig) {
     val dependencies = creationConfig.services.dependencies
     UtpDependency.values().forEach { nitrogenDependency ->
         if (configurations.findByName(nitrogenDependency.configurationName) == null) {
-            configurations.create(nitrogenDependency.configurationName).apply {
-                isVisible = false
-                isTransitive = true
-                isCanBeConsumed = false
-                description = "A configuration to resolve the Unified Test Platform dependencies."
+            configurations.register(nitrogenDependency.configurationName) {
+                it.isVisible = false
+                it.isTransitive = true
+                it.isCanBeConsumed = false
+                it.description = "A configuration to resolve the Unified Test Platform dependencies."
             }
             dependencies.add(
                 nitrogenDependency.configurationName,
