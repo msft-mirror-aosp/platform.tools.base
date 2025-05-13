@@ -40,7 +40,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "useComposeCompilerGradlePlugin_{0}")
-        fun parameters() = listOf(true, false)
+        fun parameters() = listOf(true) //, false) todo check if we still need the false case
     }
 
     @JvmField

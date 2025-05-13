@@ -45,7 +45,7 @@ class KotlinMultiplatformComposeTest {
         }.from {
             androidLibrary {
                 applyPlugin(PluginType.KOTLIN_MPP, version = KOTLIN_VERSION_FOR_COMPOSE_TESTS)
-                applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN)
+                applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN, version = KOTLIN_VERSION_FOR_COMPOSE_TESTS)
                 pluginCallbacks += Callback::class.java
                 android {
                     defaultConfig.minSdk = 24

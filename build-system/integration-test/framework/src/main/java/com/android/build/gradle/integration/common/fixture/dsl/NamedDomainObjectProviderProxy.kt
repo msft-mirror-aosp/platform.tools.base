@@ -56,10 +56,6 @@ class NamedDomainObjectProviderProxy<T>(
         throw RuntimeException("Do not use NamedDomainObjectProvider.isPresent")
     }
 
-    override fun forUseAtConfigurationTime(): Provider<T> {
-        throw RuntimeException("Do not use NamedDomainObjectProvider.forUseAtConfigurationTime")
-    }
-
     override fun getName(): String {
         throw RuntimeException("Do not use NamedDomainObjectProvider.getName")
     }

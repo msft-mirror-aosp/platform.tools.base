@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 /** Prints out the DSL names and directory names of available source sets. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.HELP)
-public class SourceSetsTask extends ProjectBasedReportTask {
+public abstract class SourceSetsTask extends ProjectBasedReportTask {
 
     private final TextReportRenderer mRenderer = new TextReportRenderer();
 

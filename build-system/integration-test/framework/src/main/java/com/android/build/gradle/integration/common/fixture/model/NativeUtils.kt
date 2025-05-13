@@ -567,7 +567,7 @@ class NativeBuildBenchmarkProject(
     relativeBuildRoot: String,
     workingFolder: File,
     buildbenchmark: String,
-    setupDiff: String = "setup.diff") {
+    setupDiff: List<String> = listOf("setup.diff")) {
 
     private val arguments = mutableListOf<String>()
     private val testRootFolder = File(System.getenv("TEST_TMPDIR")).absoluteFile
@@ -726,7 +726,7 @@ class NativeBuildBenchmarkProject(
 
     init {
         unzip(prebuilts.resolve("src.zip"), src)
-        applyDiff(setupDiff)
+        setupDiff.onEach { applyDiff(it) }
         addRepo(prebuilts.resolve("repo.zip"))
         getLocalRepositories().forEach {
             addRepo(it.toFile())

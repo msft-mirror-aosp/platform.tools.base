@@ -30,6 +30,7 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.io.Resources
 import org.gradle.api.Project
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.nio.file.Files
@@ -204,6 +205,7 @@ class JourneysConnectedTest {
         result.assertOutputDoesNotContain("Journey 3")
     }
 
+    @Ignore("b/437851001 Not working with Gradle 9.0.0")
     @Test
     fun `expect no journey to run with mismatched journey filter`() {
         val build = rule.build

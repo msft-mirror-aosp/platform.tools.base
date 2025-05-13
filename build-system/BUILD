@@ -98,7 +98,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "8.13"
+GRADLE_VERSION = "9.0.0"
 
 filegroup(
     name = "gradle-distrib",
@@ -120,6 +120,12 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.20",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.20",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.0.0",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.0.0"],
     visibility = ["//visibility:public"],
 )
 

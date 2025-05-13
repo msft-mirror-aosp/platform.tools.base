@@ -98,7 +98,7 @@ class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
                 get() = project.objects.listProperty(String::class.java)
             override val variantName: Property<String>
                 get() = project.objects.property(String::class.java).value("variantName")
-            override val minApiCodeName: Property<String?>
+            override val minApiCodeName: Property<String>
                 get() = project.objects.property(String::class.java)
             override val minSdkVersion: Property<Int>
                 get() = project.objects.property(Int::class.java).value(21)

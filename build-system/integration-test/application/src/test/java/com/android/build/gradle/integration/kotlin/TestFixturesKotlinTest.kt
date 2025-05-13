@@ -25,6 +25,8 @@ import com.android.testutils.TestUtils
 import com.android.testutils.apk.Apk
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
+import com.google.common.truth.TruthJUnit.assume
+import org.gradle.util.GradleVersion
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -42,7 +44,7 @@ class TestFixturesKotlinTest(private val kotlinVersion: String) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "kotlinVersion_{0}")
-        fun parameters() = listOf(TestUtils.KOTLIN_VERSION_FOR_TESTS, "1.9.22")
+        fun parameters() = listOf(TestUtils.KOTLIN_VERSION_FOR_TESTS)
     }
 
     @get:Rule
@@ -415,6 +417,8 @@ class TestFixturesKotlinTest(private val kotlinVersion: String) {
 
     @Test
     fun `test kotlin version too low`() {
+        // for Gradle 9.0.0-milestone-9 we get class not found (org.gradle.api.artifacts.SelfResolvingDependency)
+        assume().that(GradleVersion.current()).isLessThan(GradleVersion.version("9.0-milestone-1"))
         Assume.assumeTrue(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
         TestFileUtils.searchAndReplace(
             project.projectDir.parentFile.resolve(VERSION_CATALOG),

@@ -21,9 +21,5 @@ import org.gradle.api.artifacts.component.BuildIdentifier
 data class FakeBuildIdentifier(
     private val _buildPath: String = "defaultBuildPath"
 ): BuildIdentifier {
-    @Deprecated("This property is deprecated starting with Gradle 8.2", ReplaceWith("\"\""))
-    override fun getName(): String = ""
-    @Deprecated("This property is deprecated starting with Gradle 8.2", ReplaceWith("false"))
-    override fun isCurrentBuild(): Boolean = false
     override fun getBuildPath(): String = _buildPath
 }

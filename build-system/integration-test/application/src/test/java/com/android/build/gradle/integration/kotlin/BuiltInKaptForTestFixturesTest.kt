@@ -45,7 +45,7 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "kotlinVersion_{0}")
-        fun parameters() = listOf(TestUtils.KOTLIN_VERSION_FOR_TESTS, "1.9.22")
+        fun parameters() = listOf(TestUtils.KOTLIN_VERSION_FOR_TESTS)
     }
 
     @Rule

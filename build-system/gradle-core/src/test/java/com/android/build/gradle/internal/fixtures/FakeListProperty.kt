@@ -56,10 +56,6 @@ class FakeListProperty<T>(
         TODO("Not yet implemented")
     }
 
-    override fun forUseAtConfigurationTime(): Provider<MutableList<T>> {
-        TODO("Not yet implemented")
-    }
-
     override fun <U : Any?, R : Any?> zip(
         p0: Provider<U>,
         p1: BiFunction<in MutableList<T>, in U, out R>

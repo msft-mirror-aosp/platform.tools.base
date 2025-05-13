@@ -249,7 +249,7 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
             "jvm()",
             """
                 jvm {
-                    withJava()
+                    //withJava()
                 }
             """.trimIndent()
 

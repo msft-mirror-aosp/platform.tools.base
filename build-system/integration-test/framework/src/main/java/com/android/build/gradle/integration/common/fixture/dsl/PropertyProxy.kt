@@ -46,10 +46,6 @@ class PropertyProxy<T>(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun forUseAtConfigurationTime(): Provider<T> {
-        throw RuntimeException("Not yet implemented")
-    }
-
     override fun finalizeValue() {
         throw RuntimeException("Not yet implemented")
     }

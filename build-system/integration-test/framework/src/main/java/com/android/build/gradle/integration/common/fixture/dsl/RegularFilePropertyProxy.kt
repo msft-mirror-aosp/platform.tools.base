@@ -48,10 +48,6 @@ class RegularFilePropertyProxy(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun forUseAtConfigurationTime(): Provider<RegularFile?> {
-        throw RuntimeException("Not yet implemented")
-    }
-
     override fun finalizeValue() {
         throw RuntimeException("Not yet implemented")
     }

@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.internal
 
-import groovy.test.GroovyTestCase.assertEquals
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class MavenCoordinatesTest {
 
