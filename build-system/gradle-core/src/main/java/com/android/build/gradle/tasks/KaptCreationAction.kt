@@ -22,8 +22,8 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
+import com.android.build.gradle.internal.utils.maybeRegister
 import com.android.build.gradle.internal.utils.setDisallowChanges
-import com.android.builder.errors.IssueReporter
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
@@ -44,13 +44,12 @@ class KaptCreationAction(
     private val kotlinJvmFactory = kotlinServices.factory
 
     private val kaptWorkersDependencies = run {
-        project.configurations.findByName(KAPT_WORKERS_CONFIGURATION)
-            ?: project.configurations.create(KAPT_WORKERS_CONFIGURATION).also {
-                it.isVisible = false
-                it.isCanBeConsumed = false
-                it.dependencies.add(project.dependencies.create("$KOTLIN_GROUP:$KAPT_ARTIFACT:${kotlinServices.kgpVersion}"))
-                it.dependencies.add(project.dependencies.create("$KOTLIN_GROUP:$KOTLIN_STDLIB:${kotlinServices.kgpVersion}"))
-            }
+        project.configurations.maybeRegister(KAPT_WORKERS_CONFIGURATION) {
+            isVisible = false
+            isCanBeConsumed = false
+            dependencies.add(project.dependencies.create("$KOTLIN_GROUP:$KAPT_ARTIFACT:${kotlinServices.kgpVersion}"))
+            dependencies.add(project.dependencies.create("$KOTLIN_GROUP:$KOTLIN_STDLIB:${kotlinServices.kgpVersion}"))
+        }
     }
 
     override val taskName: String = creationConfig.computeTaskNameInternal("kapt", "Kotlin")
