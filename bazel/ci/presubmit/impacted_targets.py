@@ -176,13 +176,16 @@ def _find_impacted_targets(
     logging.info('Base hash file %s found', object_name)
 
     impacted_targets = pathlib.Path(build_env.dist_dir) / 'impacted-targets.txt'
-    bazel_diff.get_impacted_targets(
-        build_env,
-        base_hashes,
-        current_hashes,
-        dep_edges,
-        impacted_targets,
-    )
+    try:
+      bazel_diff.get_impacted_targets(
+          build_env,
+          base_hashes,
+          current_hashes,
+          dep_edges,
+          impacted_targets,
+      )
+    except subprocess.CalledProcessError as e:
+      raise ImpactedTargetsNotFoundError(f'get-impacted-targets failed: {e}')
     data = json.loads(impacted_targets.read_text())
     return [
         ImpactedTarget(
