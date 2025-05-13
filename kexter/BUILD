@@ -20,6 +20,7 @@ kotlin_library(
     srcs = glob([
         "test/resources/src/**/*.kt",
     ]),
+    coverage_baseline_enabled = False,
     visibility = [
     ],
 )
@@ -39,6 +40,7 @@ kotlin_library(
     srcs = glob([
         "test/resources_second_dex/src/**/*.kt",
     ]),
+    coverage_baseline_enabled = False,
     visibility = [
     ],
 )

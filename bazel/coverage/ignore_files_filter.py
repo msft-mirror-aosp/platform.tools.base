@@ -28,6 +28,8 @@ def main():
       'tools/vendor/google/asfp',
       'tools/vendor/google/real-world-integration-test',
       'tools/vendor/intellij',
+      # weird issues
+      'tools/base/kexter', # something is making it generate the wrong filepath in LCOV
   ]
   # file extensions we care about
   ends = [
