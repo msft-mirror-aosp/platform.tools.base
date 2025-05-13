@@ -308,6 +308,24 @@ class AgpVersionTest {
         assertThat(AgpVersion.parse("1.2.3-dev").toString()).isEqualTo("1.2.3-dev")
     }
 
+    @Test
+    fun testWithPreview() {
+        assertThat(AgpVersion.parse("3.1.0").withPreview("alpha02"))
+            .isEqualTo(AgpVersion.parse("3.1.0-alpha02"))
+        assertThat(AgpVersion.parse("3.1.0").withPreview("beta2"))
+            .isEqualTo(AgpVersion.parse("3.1.0-beta2"))
+        assertThat(AgpVersion.parse("3.1.0").withPreview("rc02"))
+            .isEqualTo(AgpVersion.parse("3.1.0-rc02"))
+        assertThat(AgpVersion.parse("7.0.0-alpha01").withPreview("alpha02"))
+            .isEqualTo(AgpVersion.parse("7.0.0-alpha02"))
+        assertThat(AgpVersion.parse("7.0.0-alpha01").withPreview("beta02"))
+            .isEqualTo(AgpVersion.parse("7.0.0-beta02"))
+        assertThat(AgpVersion.parse("7.0.0-alpha01").withPreview("rc02"))
+            .isEqualTo(AgpVersion.parse("7.0.0-rc02"))
+        assertThat(AgpVersion.parse("7.0.0-alpha01").withPreview("dev"))
+            .isEqualTo(AgpVersion.parse("7.0.0-dev"))
+    }
+
     private fun convertAGPVersionToString(version: AgpVersion?): String {
         assertThat(version).isNotNull()
         version!!.run {

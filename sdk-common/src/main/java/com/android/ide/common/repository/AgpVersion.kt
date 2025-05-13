@@ -147,6 +147,15 @@ class AgpVersion private constructor(
         return this >= other
     }
 
+    fun withPreview(previewString: String): AgpVersion {
+        val series = AgpVersion(major, minor, micro)
+        // This implementation is a little bit caller-hostile, in that it forces the caller
+        // to know whether the AGP series in question is one with special case numbering
+        // for its previews.  A kinder implementation would parse out the preview kind
+        // and number from the string and construct a new AgpVersion using those directly.
+        return parse("$series-$previewString")
+    }
+
     override fun toString(): String {
         val sb = StringBuilder()
         sb.append(String.format(Locale.US, "%d.%d.%d%s", major, minor, micro, previewKind))
