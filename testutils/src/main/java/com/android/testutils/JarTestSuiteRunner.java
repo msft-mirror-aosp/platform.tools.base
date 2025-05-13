@@ -19,6 +19,16 @@ package com.android.testutils;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import org.junit.runner.Description;
+import org.junit.runner.Runner;
+import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.Suite;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.RunnerBuilder;
+import org.junit.runners.model.Statement;
+
 import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -33,18 +43,12 @@ import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.management.ObjectName;
 
-import org.junit.runner.Description;
-import org.junit.runner.Runner;
-import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.Suite;
-import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.RunnerBuilder;
-import org.junit.runners.model.Statement;
+import javax.management.ObjectName;
 
 public class JarTestSuiteRunner extends Suite {
     private final Runner finalizerTest;
+    private final FinalizerTest finalizerTestAnnotation;
 
     /** Putatively temporary mechanism to avoid running certain classes. */
     @Retention(RetentionPolicy.RUNTIME)
@@ -55,10 +59,11 @@ public class JarTestSuiteRunner extends Suite {
     }
 
     /**
-     * Mechanism to run an additional test at the end of the suite. This can be used to add
-     * assertions about the tests themselves, for example that they do not leak memory. Normally
-     * this would be accomplished using suite-level @AfterClass methods, but exceptions thrown from
-     * those are handled poorly by the Bazel JUnit runner (b/152757288).
+     * Mechanism to run an additional test at the end of the suite when all tests pass. This can be
+     * used to add assertions about the tests themselves, for example that they do not leak memory.
+     * Normally this would be accomplished using suite-level @AfterClass methods, but exceptions
+     * thrown from those are handled poorly by the Bazel JUnit runner (b/152757288). The finalizer
+     * test will not run if any test in the suite has failed.
      */
     @Inherited
     @Retention(RetentionPolicy.RUNTIME)
@@ -70,7 +75,13 @@ public class JarTestSuiteRunner extends Suite {
     public JarTestSuiteRunner(Class<?> suiteClass, RunnerBuilder builder)
             throws InitializationError, ClassNotFoundException, IOException {
         super(new DelegatingRunnerBuilder(builder), suiteClass, getTestClasses(suiteClass));
-        finalizerTest = getFinalizerTest(suiteClass, builder);
+        finalizerTestAnnotation = suiteClass.getAnnotation(FinalizerTest.class);
+        if (finalizerTestAnnotation != null) {
+            System.out.printf("Found finalizer test: %s%n", finalizerTestAnnotation.value());
+            finalizerTest = builder.safeRunnerForClass(finalizerTestAnnotation.value());
+        } else {
+            finalizerTest = null;
+        }
         scheduleThreadDumpOnWindows();
     }
 
@@ -89,7 +100,9 @@ public class JarTestSuiteRunner extends Suite {
                 .excludeClassNames(classNamesToExclude(suiteClass))
                 .build();
         List<Class<?>> testClasses = testGroup.scanTestClasses(suiteClass, jarSuffix);
-        System.out.printf("Found %d tests in %dms%n", testClasses.size(), (System.currentTimeMillis() - start));
+        System.out.printf(
+                "Found %d tests in %dms%n",
+                testClasses.size(), (System.currentTimeMillis() - start));
         if (testClasses.isEmpty()) {
             throw new RuntimeException("No tests found in class path using suffix: " + jarSuffix);
         }
@@ -109,25 +122,25 @@ public class JarTestSuiteRunner extends Suite {
         return classes;
     }
 
-    private static Runner getFinalizerTest(Class<?> suiteClass, RunnerBuilder runnerBuilder) {
-        FinalizerTest finalizerTestAnnotation = suiteClass.getAnnotation(FinalizerTest.class);
-        if (finalizerTestAnnotation != null) {
-            System.out.printf("Found finalizer test: %s%n", finalizerTestAnnotation.value());
-            return runnerBuilder.safeRunnerForClass(finalizerTestAnnotation.value());
-        }
-        return null;
-    }
 
     @Override
     protected Statement classBlock(RunNotifier notifier) {
         // Note: we run the finalizer test here instead of adding it to the list of child runners
         // because the finalizer test should not be subject to test filters, sharding, sorting, etc.
         Statement delegate = super.classBlock(notifier);
+        boolean[] succeeded = new boolean[] {true};
+        notifier.addListener(
+                new RunListener() {
+                    @Override
+                    public void testFailure(Failure failure) throws Exception {
+                        succeeded[0] = false;
+                    }
+                });
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
                 delegate.evaluate();
-                if (finalizerTest != null) {
+                if (finalizerTest != null && succeeded[0]) {
                     finalizerTest.run(notifier);
                 }
             }
