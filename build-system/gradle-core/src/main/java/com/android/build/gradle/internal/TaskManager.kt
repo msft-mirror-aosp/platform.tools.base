@@ -2378,14 +2378,12 @@ abstract class TaskManager(
         }
 
         private fun createCoreLibraryDesugaringConfig(project: Project) {
-            var coreLibraryDesugaring =
-                    project.configurations.findByName(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING)
-            if (coreLibraryDesugaring == null) {
-                coreLibraryDesugaring =
-                        project.configurations.create(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING)
-                coreLibraryDesugaring.isVisible = false
-                coreLibraryDesugaring.isCanBeConsumed = false
-                coreLibraryDesugaring.description = "Configuration to desugar libraries"
+            if (!project.configurations.names.contains(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING)) {
+                project.configurations.register(VariantDependencies.CONFIG_NAME_CORE_LIBRARY_DESUGARING) {
+                    it.isVisible = false
+                    it.isCanBeConsumed = false
+                    it.description = "Configuration to desugar libraries"
+                }
             }
         }
 
