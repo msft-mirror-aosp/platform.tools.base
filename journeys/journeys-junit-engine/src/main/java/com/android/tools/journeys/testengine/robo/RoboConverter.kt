@@ -83,7 +83,7 @@ object RoboConverter {
     }
 
     private fun isAssertion(element: Element): Boolean {
-        return assertionKeywords.any { element.textContent.lowercase().startsWith("$it") }
+        return assertionKeywords.any { element.textContent.trim().lowercase().startsWith(it) }
     }
 
     /**

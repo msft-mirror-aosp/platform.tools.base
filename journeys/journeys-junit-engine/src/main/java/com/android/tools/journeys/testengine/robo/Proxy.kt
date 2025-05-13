@@ -90,8 +90,14 @@ class Proxy(
             } else {
                 stopInstrumentation(instrumentationProcess, false)
             }
+        } catch (e: JourneyExecutionException) {
+            throw e
         } catch (e: Exception) {
-            throw JourneyExecutionException("Journey execution failed. Cause: ${e.message}", e)
+            throw JourneyExecutionException(
+                "An unexpected error occurred during journey execution: ${e.message}",
+                e,
+                JourneyFailureReason.UNKNOWN_FAILURE
+            )
         } finally {
             cleanup(hostPort)
         }
@@ -104,8 +110,16 @@ class Proxy(
      * @return The converted roboscript.
      */
     private fun readJourneyScript(journeyPath: Path): String {
-        return journeyPath.inputStream().use { inputStream ->
-            RoboConverter.convert(inputStream)
+        try {
+            return journeyPath.inputStream().use { inputStream ->
+                RoboConverter.convert(inputStream)
+            }
+        } catch (e: Exception) {
+            throw JourneyExecutionException(
+                "Failed to read journey: ${e.message}",
+                e,
+                JourneyFailureReason.JOURNEY_READ_FAILED
+            )
         }
     }
 
@@ -115,22 +129,38 @@ class Proxy(
      * @return The started instrumentation process.
      */
     private fun setupInstrumentation(): Process {
-        // Install apks required for instrumentation process.
-        val deviceApiLevel = adb.getDeviceApiLevel()
-        adb.install(crawlerAppApkPath, getCrawlerInstallFlags(deviceApiLevel))
-        adb.install(appApkPath, getAppInstallFlags(deviceApiLevel))
-
-        val instrumentation = adb.runInstrumentation(
-            RoboConfigConstants.CRAWLER_PACKAGE_ID,
-            RoboConfigConstants.TEST_RUNNER_CLASS,
-            args = mapOf(
-                RoboConfigConstants.ROBO_V2_APP_PACKAGE_FLAG to applicationId,
-                RoboConfigConstants.ROBO_V2_UI_AUTOMATOR_ONLY_MODE to "true",
-                RoboConfigConstants.ROBO_ADB_FORWARD to "true",
-                RoboConfigConstants.ROBO_PICK_OPEN_PORT to "true"
+        try {
+            // Install apks required for instrumentation process.
+            val deviceApiLevel = adb.getDeviceApiLevel()
+            adb.install(crawlerAppApkPath, getCrawlerInstallFlags(deviceApiLevel))
+            adb.install(appApkPath, getAppInstallFlags(deviceApiLevel))
+        } catch (e: Exception) {
+            throw JourneyExecutionException(
+                "Installation failure: ${e.message}",
+                e,
+                JourneyFailureReason.ADB_INSTALL_FAILED
             )
-        )
-        return instrumentation
+        }
+
+        try {
+            val instrumentation = adb.runInstrumentation(
+                RoboConfigConstants.CRAWLER_PACKAGE_ID,
+                RoboConfigConstants.TEST_RUNNER_CLASS,
+                args = mapOf(
+                    RoboConfigConstants.ROBO_V2_APP_PACKAGE_FLAG to applicationId,
+                    RoboConfigConstants.ROBO_V2_UI_AUTOMATOR_ONLY_MODE to "true",
+                    RoboConfigConstants.ROBO_ADB_FORWARD to "true",
+                    RoboConfigConstants.ROBO_PICK_OPEN_PORT to "true"
+                )
+            )
+            return instrumentation
+        } catch (e: Exception) {
+            throw JourneyExecutionException(
+                "Failed to run instrumentation: ${e.message}",
+                e,
+                JourneyFailureReason.INSTRUMENTATION_FAILED
+            )
+        }
     }
 
     /**
@@ -181,19 +211,19 @@ class Proxy(
     private fun cleanup(hostPort: Int) {
         try {
             adb.removeForward(hostPort)
-        } catch (e: IllegalStateException) {
+        } catch (e: Exception) {
             System.err.println(e.message)
         }
 
         try {
             adb.uninstall(applicationId)
-        } catch (e: IllegalStateException) {
+        } catch (e: Exception) {
             System.err.println(e.message)
         }
 
         try {
             adb.uninstall(RoboConfigConstants.CRAWLER_PACKAGE_ID)
-        } catch (e: IllegalStateException) {
+        } catch (e: Exception) {
             System.err.println(e.message)
         }
     }
@@ -221,7 +251,10 @@ class Proxy(
         ).any { fullOut.contains(it, ignoreCase = true) }
 
         if (failed) {
-            throw IllegalStateException("Instrumentation failed (exit code: $exitValue). Output:\n$fullOut")
+            throw JourneyExecutionException(
+                "Instrumentation failed (exit code: $exitValue). Output:\n$fullOut",
+                reason = JourneyFailureReason.INSTRUMENTATION_FAILED
+            )
         }
     }
 
@@ -234,23 +267,30 @@ class Proxy(
     private fun setupAdbForward(): Int {
         val roboDevicePort = extractRoboPortNumber()
         if (roboDevicePort == 0) {
-            throw IllegalStateException("Could not determine Robo device port.")
+            throw JourneyExecutionException(
+                "Could not determine Robo device port.",
+                reason = JourneyFailureReason.ROBO_PORT_EXTRACTION_FAILED
+            )
         }
 
-        return retryIf(
-            block = {
-                val hostPort = findAvailablePort()
-                if (hostPort != 0) {
-                    adb.forward(hostPort, roboDevicePort)
-                    hostPort
-                } else {
-                    0
-                }
-            },
-            retryCondition = { hostPort -> hostPort == 0 },
-            blockDoc = "setup adb forward",
-            maxRetries = 5
-        )
+        try {
+            return retryIf(
+                block = {
+                    val hostPort = findAvailablePort()
+                    if (hostPort != 0) {
+                        adb.forward(hostPort, roboDevicePort)
+                        hostPort
+                    } else {
+                        0
+                    }
+                },
+                retryCondition = { hostPort -> hostPort == 0 },
+                blockDoc = "setup adb forward",
+                maxRetries = 5
+            )
+        } catch (e: Exception) {
+            throw JourneyExecutionException(e.message, e, JourneyFailureReason.ADB_FORWARDING_FAILED)
+        }
     }
 
     /**
@@ -260,24 +300,28 @@ class Proxy(
      * @return The robo port number, or `0` if it cannot be extracted after retries.
      */
     private fun extractRoboPortNumber(): Int {
-        return retryIf(
-            block = {
-                val dumpsysOutput = adb.dumpsys(
-                    "${RoboConfigConstants.CRAWLER_PACKAGE_ID}/${RoboConfigConstants.PROXY_SERVICE}"
-                )
-                val matcher =
-                    RoboConfigConstants.ROBO_PROXY_PORT_IS_BOUND_PATTERN.matcher(dumpsysOutput)
-                if (!matcher.find()) {
-                    0
-                } else {
-                    matcher.group(1)?.toIntOrNull() ?: 0
-                }
-            },
-            retryCondition = { devicePort -> devicePort == 0 },
-            blockDoc = "obtain device port",
-            sleepBetweenRetries = 3000, // Wait 3 seconds for service to potentially bind port
-            maxRetries = 10 // Retry up to 10 times (total 30 seconds wait)
-        )
+        try {
+            return retryIf(
+                block = {
+                    val dumpsysOutput = adb.dumpsys(
+                        "${RoboConfigConstants.CRAWLER_PACKAGE_ID}/${RoboConfigConstants.PROXY_SERVICE}"
+                    )
+                    val matcher =
+                        RoboConfigConstants.ROBO_PROXY_PORT_IS_BOUND_PATTERN.matcher(dumpsysOutput)
+                    if (!matcher.find()) {
+                        0
+                    } else {
+                        matcher.group(1)?.toIntOrNull() ?: 0
+                    }
+                },
+                retryCondition = { devicePort -> devicePort == 0 },
+                blockDoc = "obtain device port",
+                sleepBetweenRetries = 3000, // Wait 3 seconds for service to potentially bind port
+                maxRetries = 10 // Retry up to 10 times (total 30 seconds wait)
+            )
+        } catch (e: Exception) {
+            throw JourneyExecutionException(e.message, e, JourneyFailureReason.ROBO_PORT_EXTRACTION_FAILED)
+        }
     }
 
     /**
@@ -350,7 +394,8 @@ class Proxy(
         val grpcClient = GrpcClient(channel, null, artifactProcessor)
         try {
             val clientLogger = Logger.getLogger(
-                "${RoboConfigConstants.CRAWLER_PACKAGE_ID}.client.GrpcClient")
+                "${RoboConfigConstants.CRAWLER_PACKAGE_ID}.client.GrpcClient"
+            )
             clientLogger.setLevel(Level.WARNING)
         } catch (e: Exception) {
             System.err.println("Failed to disable connection logs with error: ${e.message}")
@@ -379,9 +424,10 @@ class Proxy(
             impersonated.refresh()
             return impersonated
         } catch (e: Exception) {
-            throw IllegalStateException(
+            throw JourneyExecutionException(
                 "Failed to obtain credentials for establishing connection with backend. " +
-                "Make sure you are logged in to Android Studio before re-trying."
+                        "Make sure you are logged in to Android Studio before re-trying.",
+                reason = JourneyFailureReason.AUTHENTICATION_FAILED
             )
         }
     }
@@ -439,14 +485,6 @@ class Proxy(
         }
         throw IllegalStateException("Failed to $blockDoc after $maxRetries attempts.")
     }
-
-    /**
-     * Custom exception type for errors occurring during Journey execution via the Proxy.
-     */
-    class JourneyExecutionException(message: String, cause: Throwable? = null) : RuntimeException(
-        message,
-        cause
-    )
 
     /**
      * A gRPC client interceptor that adds [CallCredentials] to outgoing calls.

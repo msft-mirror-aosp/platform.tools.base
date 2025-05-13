@@ -123,7 +123,7 @@ class ProgressReporter(
      * @param promptDescriptor The parent [PromptDescriptor] under which to report these actions.
      */
     private fun handleAllActions(actions: List<ModelAction>, promptDescriptor: PromptDescriptor) {
-        actions.filter { action -> action.description != TERMINATE_ACTION_DESCRIPTION }
+        actions.filter { action -> shouldReportAction(action.description) }
             .forEach { action ->
                 val id = "ActionPerformed.action${action.index}"
                 promptDescriptor.reportEntry("$id.description", action.description)
@@ -140,6 +140,17 @@ class ProgressReporter(
                     )
                 }
             }
+    }
+
+    /**
+     * Checks whether an action should be reported as metadata based on its description.
+     * Skips terminate crawl action and dummy wait actions added for assertions.
+     *
+     * @param description The action description to check.
+     */
+    private fun shouldReportAction(description: String): Boolean {
+        return !(description == TERMINATE_ACTION_DESCRIPTION || description.trim()
+            .startsWith(RoboConfigConstants.ASSERTION_PROMPT_PREFIX, ignoreCase = true))
     }
 
     /**
@@ -163,11 +174,30 @@ class ProgressReporter(
                 continue
             }
 
-            val lastInActionListRoboScriptIndex =
-                action.roboScriptDetailsList.lastOrNull()?.actionIndex ?: -1
+            // Builtin roboscripts are appended at end of all actions in results.
+            // To make our parsing work, we find the first non-builtin roboscript from
+            // the end of list and treat it as the last instead.
+            var lastElementIndex = action.roboScriptDetailsList.lastIndex
+            var lastRoboScript = action.roboScriptDetailsList.getOrNull(lastElementIndex)
+            while (lastElementIndex > 0 && RoboConfigConstants.ALLOWED_BUILTIN_ROBOSCRIPT_IDS.contains(
+                    lastRoboScript?.activeRoboScriptId ?: -1
+                )
+            ) {
+                lastElementIndex--
+                lastRoboScript = action.roboScriptDetailsList.getOrNull(lastElementIndex)
+            }
+            val lastInActionListRoboScriptIndex = lastRoboScript?.actionIndex ?: -1
 
             action.roboScriptDetailsList.forEach { roboScript ->
                 if (roboScript.actionIndex == -1) return@forEach
+
+                // TODO(b/416457494): Improve handling for built-in roboscripts.
+                // For now, we just skip showing builtin roboscript actions.
+                if (
+                    RoboConfigConstants.ALLOWED_BUILTIN_ROBOSCRIPT_IDS.contains(
+                        roboScript.activeRoboScriptId
+                    )
+                ) return@forEach
 
                 state.addModelDetail(roboScript.modelDetails)
                 val roboIndex = roboScript.actionIndex
@@ -215,10 +245,27 @@ class ProgressReporter(
 
             else -> {
                 val errorMessage = state.getModelReasoning(roboScript.modelDetails.id)?.let {
-                    "RoboScript terminated unexpectedly with model response: $it"
-                } ?: "Roboscript terminated with error: ${roboScript.terminationCause.name}"
+                    "Journey terminated unexpectedly with model response: $it"
+                } ?: getErrorMessageFromTerminationCause(roboScript.terminationCause)
                 TestExecutionResult.failed(AssertionError(errorMessage))
             }
+        }
+    }
+
+    private fun getErrorMessageFromTerminationCause(
+        terminationCause: RoboScriptDetails.TerminationCause
+    ): String {
+        return when (terminationCause) {
+            RoboScriptDetails.TerminationCause.ACTION_FAILED,
+            RoboScriptDetails.TerminationCause.ASSERTION_FAILED,
+            RoboScriptDetails.TerminationCause.PROMPT_EVALUATION_FAILED -> "Encountered failure while executing the action"
+
+            RoboScriptDetails.TerminationCause.ELEMENT_NOT_FOUND -> "Encountered missing element on screen while executing the action"
+            RoboScriptDetails.TerminationCause.PROMPT_EVALUATION_LIMIT_REACHED -> "Could not successfully complete the action in max allowed attempts"
+            RoboScriptDetails.TerminationCause.TIMED_OUT -> "Timed out while executing the action"
+            RoboScriptDetails.TerminationCause.END_OF_SCRIPT,
+            RoboScriptDetails.TerminationCause.NOT_A_TERMINATION -> "Not a failure"
+            else -> "Journey terminated with unexpected error: ${terminationCause.name}"
         }
     }
 
@@ -331,7 +378,6 @@ class ProgressReporter(
     }
 
     private companion object {
-
         const val TERMINATE_ACTION_DESCRIPTION = "crawlTerminated"
     }
 }
