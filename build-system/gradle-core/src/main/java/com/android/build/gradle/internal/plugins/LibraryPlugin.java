@@ -342,6 +342,7 @@ public class LibraryPlugin
                             variants,
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
+            @NonNull Collection<? extends TestSuiteCreationConfig> testSuites,
             @NonNull GlobalTaskCreationConfig globalTaskCreationConfig,
             @NonNull TaskManagerConfig localConfig,
             @NonNull BaseExtension extension) {
@@ -350,6 +351,7 @@ public class LibraryPlugin
                 variants,
                 testComponents,
                 testFixturesComponents,
+                testSuites,
                 globalTaskCreationConfig,
                 localConfig,
                 extension);

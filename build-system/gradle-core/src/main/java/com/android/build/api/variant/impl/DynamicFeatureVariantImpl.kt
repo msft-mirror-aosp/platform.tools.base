@@ -37,7 +37,6 @@ import com.android.build.api.variant.Renderscript
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.DynamicFeatureVariantDslInfo
@@ -233,8 +232,6 @@ open class DynamicFeatureVariantImpl @Inject constructor(
     override fun addDeviceTest(testTypeName: String, deviceTest: DeviceTest) {
         internalDeviceTests[testTypeName] = deviceTest
     }
-
-    override val testSuites: List<TestSuiteCreationConfig> = listOf()
 
     // ---------------------------------------------------------------------------------------------
     // Private stuff

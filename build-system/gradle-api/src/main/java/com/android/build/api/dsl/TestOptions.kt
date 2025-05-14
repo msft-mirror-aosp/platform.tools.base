@@ -231,7 +231,6 @@ interface TestOptions {
      *
      * The types of test suites available depend on the other plugins applied to your project.
      */
-    /** @suppress */
     @get:Incubating
     val suites: ExtensiblePolymorphicDomainObjectContainer<AgpTestSuite>
 }

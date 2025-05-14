@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
-import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.JUnitEngineSpec
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.model.ObjectFactory
@@ -52,6 +51,4 @@ abstract class AgpTestSuiteImpl(
     override fun getTargets(): ExtensiblePolymorphicDomainObjectContainer<out TestSuiteTarget> {
         return objects.polymorphicDomainObjectContainer(TestSuiteTarget::class.java)
     }
-
-    override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)
 }

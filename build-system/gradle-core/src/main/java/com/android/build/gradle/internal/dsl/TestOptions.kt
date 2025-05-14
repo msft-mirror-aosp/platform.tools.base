@@ -193,8 +193,8 @@ abstract class TestOptions @Inject constructor(
             targetSdkApiVersion = apiVersionFromString(value)
         }
 
-    override val suites: ExtensiblePolymorphicDomainObjectContainer< AgpTestSuite> =
-        dslServices.polymorphicDomainObjectContainer( AgpTestSuite::class.java).apply {
+    override val suites: ExtensiblePolymorphicDomainObjectContainer< com.android.build.api.dsl.AgpTestSuite> =
+        dslServices.polymorphicDomainObjectContainer( com.android.build.api.dsl.AgpTestSuite::class.java).apply {
             registerBinding(
                 AgpTestSuite::class.java,
                 AgpTestSuiteImpl::class.java

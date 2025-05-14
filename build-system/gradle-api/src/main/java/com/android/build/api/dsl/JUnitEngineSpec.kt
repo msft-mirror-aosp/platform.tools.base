@@ -21,13 +21,10 @@ import org.gradle.api.Incubating
 /**
  * Spec for running a JUnit engine against a test suite.
  */
-/** @suppress */
 @Incubating
 interface JUnitEngineSpec {
 
-    // TODO : We should reconcile this with org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
-    @get:Incubating
-    val includeEngines: MutableSet<String>
+    // TODO : Add APIs to identify the test engine, provide dependencies, etc...
 
     /**
      * Identifies the inputs required by the junit engine running the test suite.

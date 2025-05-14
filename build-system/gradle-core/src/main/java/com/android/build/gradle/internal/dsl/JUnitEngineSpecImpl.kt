@@ -21,6 +21,5 @@ import com.android.build.api.dsl.JUnitEngineSpec
 
 abstract class JUnitEngineSpecImpl: JUnitEngineSpec {
 
-    override val includeEngines = mutableSetOf<String>()
     override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
 }

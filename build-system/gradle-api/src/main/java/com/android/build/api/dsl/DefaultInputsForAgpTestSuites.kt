@@ -37,7 +37,6 @@ import org.gradle.api.Incubating
  * }
  * ```
  */
-/** @suppress */
 enum class DefaultInputsForAgpTestSuites(
     /**
      * List of properties that will be made available to the junit test engine by the test task.

@@ -32,9 +32,7 @@ import org.gradle.testing.base.TestSuite
  *
  * TODO : resolve : should we allow to target BuildTypes ?
  * A subsequent CL will introduce sub types for host vs devices tests and this comment
- *
  */
-/** @suppress */
 @Suppress("UnstableApiUsage")
 @Incubating
 interface AgpTestSuite: TestSuite {
@@ -76,10 +74,4 @@ interface AgpTestSuite: TestSuite {
      */
     @get:Incubating
     val targetVariants: MutableList<String>
-
-    /**
-     * Dependency handler for this test suite.
-     */
-    @get:Incubating
-    val dependencies: AgpTestSuiteDependencies
 }

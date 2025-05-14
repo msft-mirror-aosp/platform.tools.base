@@ -53,15 +53,12 @@ class TestOptionsTest {
         }
 
         private val jUnitEngineSpec = object: JUnitEngineSpec {
-            override val includeEngines = mutableSetOf<String>()
             override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
         }
 
         override val useJunitEngine: JUnitEngineSpec = jUnitEngineSpec
         override val targetProductFlavors: MutableList<Pair<String, String>> = mutableListOf<Pair<String, String>>()
         override val targetVariants: MutableList<String> = mutableListOf<String>()
-        override val dependencies: AgpTestSuiteDependencies
-            get() = throw RuntimeException("Unexpected call")
     }
 
     @Before
@@ -97,7 +94,6 @@ class TestOptionsTest {
             override var instructions: String = ""
             override val useJunitEngine: JUnitEngineSpec =
                 object: JUnitEngineSpec {
-                    override val includeEngines = mutableSetOf<String>()
                     override val inputs = mutableListOf<AgpTestSuiteInputParameters>()
                 }
 

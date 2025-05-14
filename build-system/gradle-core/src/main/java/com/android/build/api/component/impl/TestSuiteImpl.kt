@@ -16,11 +16,11 @@
 
 package com.android.build.api.component.impl
 
+import com.android.build.api.artifact.impl.ArtifactsImpl
+
 import com.android.build.api.variant.impl.JUnitEngineSpecImpl
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.dependency.TestSuiteClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
@@ -34,12 +34,10 @@ import org.gradle.api.tasks.testing.Test
  */
 class TestSuiteImpl(
     testSuiteBuilder: TestSuiteBuilderImpl,
-    override val sources: TestSuiteSourceSet,
-    override val testSuiteClasspath: TestSuiteClasspath,
     override val testedVariant: VariantCreationConfig,
     val variantServices: VariantServices,
     override val services: TaskCreationServices,
-) : TestSuite, TestSuiteCreationConfig {
+    ) : TestSuite, TestSuiteCreationConfig {
 
     private val _name = testSuiteBuilder.name
 

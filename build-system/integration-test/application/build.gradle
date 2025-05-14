@@ -44,7 +44,6 @@ dependencies {
     testImplementation libs.google_api_client
     testImplementation libs.google_storage_client
     testImplementation libs.junit
-    testImplementation 'org.junit.platform:junit-platform-engine:1.9.2'
     testImplementation libs.protobuf
     testImplementation libs.protobuf_util
     testImplementation libs.truth

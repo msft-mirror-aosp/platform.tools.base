@@ -18,27 +18,34 @@ package com.android.build.gradle.internal.testsuites.impl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.JUnitEngineSpec
+import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
-import com.android.build.gradle.internal.services.BaseServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
-import com.android.build.gradle.internal.testsuites.TestSuiteDependencies
 import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
 
 class TestSuiteBuilderImpl(
     private val _name: String,
     override var enable: Boolean,
-    _junitEngineSpec: JUnitEngineSpec,
-    internal val dslDeclaredDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies,
-    services: BaseServices,
+    _junitEngineSpec: JUnitEngineSpec
 ): TestSuiteBuilder {
 
     companion object {
+
+        private fun forAgpTestSuite(
+            name: String,
+            useJUnitEngine: JUnitEngineSpec,
+        ): TestSuiteBuilder = TestSuiteBuilderImpl(
+            _name = name,
+            enable = true,
+            _junitEngineSpec = useJUnitEngine,
+        )
 
         /**
          * Create the list of test suites for this component, the list is driven by
          * the passed [dslDefinedTestSuiteDefinitions] which is the list of
          * test suites implicitly or explicitly defined by the Component type and its DSL.
          */
+        // TODO: Improve this once the Screenshot tests specific types are removed.
         fun create(
             dslDefinedTestSuiteDefinitions: List<AgpTestSuiteImpl>,
             variantBuilderServices: VariantBuilderServices,
@@ -49,21 +56,14 @@ class TestSuiteBuilderImpl(
                     ?: throw RuntimeException("Test suites must use junit engines for now")
                 agpTestSuite.name to
                         // TODO: lock JUnitEngineSpec instance.
-                        TestSuiteBuilderImpl(
-                            _name = agpTestSuite.name,
-                            enable = true,
-                            _junitEngineSpec = junitTestEngine,
-                            dslDeclaredDependencies = agpTestSuite.dependencies,
-                            services = variantBuilderServices
+                        forAgpTestSuite(
+                            agpTestSuite.name,
+                            junitTestEngine,
                         )
             }
     }
 
     override val junitEngineSpec: JUnitEngineSpec = object : JUnitEngineSpec {
-        override val includeEngines: MutableSet<String> =
-            mutableSetOf<String>().also { list ->
-                list.addAll(_junitEngineSpec.includeEngines)
-            }
         override val inputs: MutableList<AgpTestSuiteInputParameters> =
             mutableListOf<AgpTestSuiteInputParameters>().also { list ->
                 list.addAll(_junitEngineSpec.inputs)
@@ -71,7 +71,4 @@ class TestSuiteBuilderImpl(
     }
 
     override fun getName(): String = _name
-
-    override val dependencies: TestSuiteDependencies =
-        services.newInstance(TestSuiteDependencies::class.java)
 }
