@@ -43,6 +43,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
+        "//tools/adt/idea/.idea/libraries:agp-version",
     ],
 )
 
