@@ -44,7 +44,6 @@ import com.android.build.gradle.internal.VariantTaskManager
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.features.DeviceTestOptionsDslInfoImpl
@@ -345,7 +344,6 @@ abstract class BasePlugin<
         variants: Collection<ComponentInfo<VariantBuilderT, CreationConfigT>>,
         testComponents: Collection<TestComponentCreationConfig>,
         testFixturesComponents: Collection<TestFixturesCreationConfig>,
-        testSuites: Collection<TestSuiteCreationConfig>,
         globalTaskCreationConfig: GlobalTaskCreationConfig,
         localConfig: TaskManagerConfig,
         extension: BaseExtension,
@@ -765,7 +763,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
             variantComponents,
             variantManager.testComponents,
             variantManager.testFixturesComponents,
-            variantManager.testSuites,
             globalConfig,
             taskManagerConfig,
             extension

@@ -35,7 +35,6 @@ import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.VariantOutputConfiguration
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
@@ -48,7 +47,6 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
-import com.android.build.gradle.internal.testsuites.HasTestSuites
 import com.android.build.gradle.internal.utils.DefaultApkOutput
 import com.android.build.gradle.internal.utils.toImmutableMap
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -92,12 +90,9 @@ open class ApplicationVariantImpl @Inject constructor(
     ApplicationCreationConfig,
     HasDeviceTestsCreationConfig,
     HasHostTestsCreationConfig,
-    HasTestSuitesCreationConfig,
     HasTestFixtures,
     HasHostTests,
-    HasUnitTest,
-    HasTestSuites
-{
+    HasUnitTest {
 
     // ---------------------------------------------------------------------------------------------
     // PUBLIC API
@@ -146,8 +141,6 @@ open class ApplicationVariantImpl @Inject constructor(
         get() = internalHostTests.toImmutableMap() // immutableMap so java users cannot modify it.
     override val deviceTests: Map<String, DeviceTest>
         get() = internalDeviceTests
-    override val suites: Map<String, TestSuiteCreationConfig>
-        get() = internalTestSuites.toImmutableMap()
 
     override var testFixtures: TestFixturesImpl? = null
 
@@ -239,10 +232,6 @@ open class ApplicationVariantImpl @Inject constructor(
         internalHostTests[testTypeName] = testComponent
     }
 
-    override fun addTestSuite(testName: String, testComponent: TestSuiteCreationConfig) {
-        internalTestSuites[testName] =  testComponent
-    }
-
     override fun addDeviceTest(testTypeName: String, deviceTest: DeviceTest) {
         internalDeviceTests[testTypeName] = deviceTest
     }
@@ -256,7 +245,6 @@ open class ApplicationVariantImpl @Inject constructor(
      */
     private val internalHostTests = mutableMapOf<String, HostTestCreationConfig>()
     private val internalDeviceTests = mutableMapOf<String, DeviceTest>()
-    private val internalTestSuites = mutableMapOf<String, TestSuiteCreationConfig>()
 
     override val shrinkingWithDynamicFeatures: Boolean
         get() = optimizationCreationConfig.minifiedEnabled && global.hasDynamicFeatures

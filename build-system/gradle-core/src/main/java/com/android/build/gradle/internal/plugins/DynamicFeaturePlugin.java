@@ -31,7 +31,6 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.core.dsl.DynamicFeatureVariantDslInfo;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
@@ -284,7 +283,6 @@ public class DynamicFeaturePlugin
                             variants,
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
-            @NonNull Collection<? extends TestSuiteCreationConfig> testSuites,
             @NonNull GlobalTaskCreationConfig globalTaskCreationConfig,
             @NonNull TaskManagerConfig localConfig,
             @NonNull BaseExtension extension) {
@@ -293,7 +291,6 @@ public class DynamicFeaturePlugin
                 variants,
                 testComponents,
                 testFixturesComponents,
-                testSuites,
                 globalTaskCreationConfig,
                 localConfig,
                 extension);

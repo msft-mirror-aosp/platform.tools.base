@@ -37,7 +37,6 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TestApplicationTaskManager;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.component.TestVariantCreationConfig;
 import com.android.build.gradle.internal.core.dsl.TestProjectVariantDslInfo;
 import com.android.build.gradle.internal.dsl.BuildType;
@@ -276,7 +275,6 @@ public class TestPlugin
                             variants,
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
-            @NonNull Collection<? extends TestSuiteCreationConfig> testSuites,
             @NonNull GlobalTaskCreationConfig globalTaskCreationConfig,
             @NonNull TaskManagerConfig localConfig,
             @NonNull BaseExtension extension) {
@@ -285,7 +283,6 @@ public class TestPlugin
                 variants,
                 testComponents,
                 testFixturesComponents,
-                testSuites,
                 globalTaskCreationConfig,
                 localConfig,
                 extension);

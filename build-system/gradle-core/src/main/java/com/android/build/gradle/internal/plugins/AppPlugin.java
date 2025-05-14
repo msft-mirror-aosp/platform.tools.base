@@ -38,7 +38,6 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.component.ApplicationCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo;
 import com.android.build.gradle.internal.dsl.ApplicationExtensionImpl;
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension;
@@ -328,7 +327,6 @@ public class AppPlugin
                             variants,
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
-            @NonNull Collection<? extends TestSuiteCreationConfig> testSuites,
             @NonNull GlobalTaskCreationConfig globalTaskCreationConfig,
             @NonNull TaskManagerConfig localConfig,
             @NonNull BaseExtension extension) {
@@ -337,7 +335,6 @@ public class AppPlugin
                 variants,
                 testComponents,
                 testFixturesComponents,
-                testSuites,
                 globalTaskCreationConfig,
                 localConfig,
                 extension);

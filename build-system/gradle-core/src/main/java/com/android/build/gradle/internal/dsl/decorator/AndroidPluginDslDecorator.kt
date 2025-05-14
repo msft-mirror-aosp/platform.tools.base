@@ -48,7 +48,6 @@ import com.android.build.api.dsl.ExternalNativeBuild
 import com.android.build.api.dsl.FusedLibraryExtension
 import com.android.build.api.dsl.JavaCompileOptions
 import com.android.build.api.dsl.JniLibsPackaging
-import com.android.build.api.dsl.JUnitEngineSpec
 import com.android.build.api.dsl.KeepRules
 import com.android.build.api.dsl.KmpOptimization
 import com.android.build.api.dsl.LibraryKeepRules
@@ -179,7 +178,6 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
     SupportedPropertyType.Block(MultiDexConfig::class.java, MultiDexConfigImpl::class.java),
     SupportedPropertyType.Block(VcsInfo::class.java, VcsInfoImpl::class.java),
     SupportedPropertyType.Block(AgpTestSuite::class.java, com.android.build.gradle.internal.dsl.AgpTestSuiteImpl::class.java),
-    SupportedPropertyType.Block(JUnitEngineSpec::class.java, com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl::class.java),
 
     // FusedLibrary Extensions.
     SupportedPropertyType.Block(PrivacySandboxSdkOptimization::class.java, PrivacySandboxSdkOptimizationImpl::class.java),

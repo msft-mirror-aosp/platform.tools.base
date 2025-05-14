@@ -33,9 +33,7 @@ import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslIn
 import com.android.build.gradle.internal.core.dsl.features.PrivacySandboxDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.features.AndroidResourcesDslInfoImpl
 import com.android.build.gradle.internal.core.dsl.impl.features.PrivacySandboxDslInfoImpl
-import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.DefaultConfig
-import com.android.build.gradle.internal.scope.ProjectDslInfo
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.AbstractProductFlavor
 import com.android.builder.core.ComponentType
@@ -43,7 +41,7 @@ import com.google.common.collect.ImmutableMap
 import org.gradle.api.file.DirectoryProperty
 
 internal abstract class ComponentDslInfoImpl internal constructor(
-    final override val componentIdentity: ComponentIdentity,
+    override val componentIdentity: ComponentIdentity,
     final override val componentType: ComponentType,
     protected val defaultConfig: DefaultConfig,
     /**
@@ -89,9 +87,6 @@ internal abstract class ComponentDslInfoImpl internal constructor(
             { javaCompileOptions as JavaCompileOptions }
         )
     }
-
-    final override val projectDslInfo: ProjectDslInfo
-        get() = ProjectDslInfo(extension.testOptions.suites.filterIsInstance<AgpTestSuiteImpl>().toList())
 
     // merged flavor delegates
 
@@ -143,8 +138,8 @@ internal abstract class ComponentDslInfoImpl internal constructor(
 
     // TODO : we should provide a generic setting in build type to enable code coverage for any
     // host test instance.
-    override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest>
-        get() = listOf(
+    override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest> =
+        listOf(
             ComponentDslInfo.DslDefinedHostTest(
                 HostTestBuilder.UNIT_TEST_TYPE,
                 buildTypeObj.enableUnitTestCoverage || buildTypeObj.isTestCoverageEnabled
@@ -155,14 +150,12 @@ internal abstract class ComponentDslInfoImpl internal constructor(
             ),
         )
 
-    override val dslDefinedTestSuites: List<AgpTestSuiteImpl>
-        get() = projectDslInfo.suitesApplyingToComponent(componentIdentity)
-
-    override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest>
-        get() = listOf(
+    override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> =
+        listOf(
             ComponentDslInfo.DslDefinedDeviceTest(
                 DeviceTestBuilder.ANDROID_TEST_TYPE,
                 buildTypeObj.enableAndroidTestCoverage || buildTypeObj.isTestCoverageEnabled
             )
         )
+
 }

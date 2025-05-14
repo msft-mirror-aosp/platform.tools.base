@@ -19,7 +19,6 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.component.impl.DeviceTestImpl
 import com.android.build.api.component.impl.TestFixturesImpl
-import com.android.build.api.component.impl.TestSuiteImpl
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
@@ -45,7 +44,6 @@ import com.android.build.api.variant.impl.HasTestFixtures
 import com.android.build.api.variant.impl.HostTestBuilderImpl
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
-import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
@@ -58,7 +56,6 @@ import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.AndroidTestComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
@@ -94,8 +91,6 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.createSigningOverride
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
-import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
-import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.DimensionCombination
 import com.android.build.gradle.internal.variant.DimensionCombinator
@@ -110,7 +105,6 @@ import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.TestOptions
-import com.android.utils.appendCapitalized
 import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.google.wireless.android.sdk.stats.ApiVersion
@@ -141,7 +135,7 @@ class VariantManager<
 ) {
 
     private val variantBuilderServices: VariantBuilderServices
-    private val variantServices: VariantServicesImpl
+    private val variantPropertiesApiServices: VariantServicesImpl
     private val taskCreationServices: TaskCreationServices
     private val variantFilter: VariantFilter
     private val variants: MutableList<ComponentInfo<VariantBuilderT, VariantT>> =
@@ -174,11 +168,6 @@ class VariantManager<
      */
     val testComponents: MutableList<TestComponentCreationConfig> =
             Lists.newArrayList()
-
-    /**
-     * Returns a list of all test suites.
-     */
-    val testSuites = mutableListOf<TestSuiteCreationConfig>()
 
     /**
      * Returns a list of all test fixtures components.
@@ -297,7 +286,7 @@ class VariantManager<
                     defaultConfigSourceProvider.manifestFile,
                     componentType.requiresManifest,
                 ),
-                variantServices,
+                variantPropertiesApiServices,
                 dslExtension,
                 project.layout.buildDirectory,
                 dslServices
@@ -408,7 +397,7 @@ class VariantManager<
         val variantData = variantFactory.createVariantData(
             componentIdentity,
             artifacts,
-            variantServices
+            variantPropertiesApiServices
         )
 
         // then the new Variant which will contain the 2 old objects.
@@ -423,7 +412,7 @@ class VariantManager<
             artifacts,
             variantData,
             taskContainer,
-            variantServices,
+            variantPropertiesApiServices,
             taskCreationServices,
             globalTaskCreationConfig,
         )
@@ -495,7 +484,7 @@ class VariantManager<
                 testFixturesSourceSet.manifestFile,
                 testFixturesComponentType.requiresManifest
             ),
-            variantServices,
+            variantPropertiesApiServices,
             extension = dslExtension,
             buildDirectory = project.layout.buildDirectory,
             dslServices = dslServices
@@ -602,7 +591,7 @@ class VariantManager<
             artifacts,
             taskContainer,
             mainComponentInfo.variant,
-            variantServices,
+            variantPropertiesApiServices,
             taskCreationServices,
             globalTaskCreationConfig
         )
@@ -637,7 +626,7 @@ class VariantManager<
                     testSourceSet.manifestFile,
                     componentType.requiresManifest
                 ),
-                variantServices,
+                variantPropertiesApiServices,
                 extension = dslExtension,
                 buildDirectory = project.layout.buildDirectory,
                 dslServices = dslServices
@@ -733,7 +722,7 @@ class VariantManager<
         val testVariantData = TestVariantData(
             componentIdentity,
             artifacts,
-            variantServices,
+            variantPropertiesApiServices,
             taskContainer
         )
 
@@ -755,7 +744,7 @@ class VariantManager<
                     testVariantData,
                     taskContainer,
                     testedComponentInfo.variant,
-                    variantServices,
+                    variantPropertiesApiServices,
                     taskCreationServices,
                     globalTaskCreationConfig,
                     testBuilder as DeviceTestBuilderImpl,
@@ -779,7 +768,7 @@ class VariantManager<
                     testVariantData,
                     taskContainer,
                     testedComponentInfo.variant,
-                    variantServices,
+                    variantPropertiesApiServices,
                     taskCreationServices,
                     globalTaskCreationConfig,
                     testBuilder as HostTestBuilderImpl,
@@ -802,7 +791,7 @@ class VariantManager<
                     testVariantData,
                     taskContainer,
                     testedComponentInfo.variant,
-                    variantServices,
+                    variantPropertiesApiServices,
                     taskCreationServices,
                     globalTaskCreationConfig,
                     testBuilder as HostTestBuilderImpl,
@@ -950,19 +939,6 @@ class VariantManager<
                     (variant as HasHostTestsCreationConfig)
                         .addTestComponent(hostTestBuilder.type, testComponent as HostTestCreationConfig)
             }
-
-            (variantBuilder as? HasTestSuitesBuilder)?.suites
-                ?.forEach { (_, hostTestBuilder) ->
-                    val testComponent = TestSuiteImpl(
-                        hostTestBuilder as TestSuiteBuilderImpl,
-                        variantInfo.variant,
-                        variantServices,
-                        taskCreationServices,
-                    )
-                    testSuites.add(testComponent)
-                    (variant as HasTestSuitesCreationConfig)
-                        .addTestSuite(hostTestBuilder.name, testComponent)
-                }
         }
 
         // Now that unitTest and/or androidTest have been created and added to the main
@@ -1110,7 +1086,7 @@ class VariantManager<
     }
 
     fun lockVariantProperties() {
-        variantServices.lockProperties()
+        variantPropertiesApiServices.lockProperties()
     }
 
     fun finalizeAllVariants() {
@@ -1123,7 +1099,7 @@ class VariantManager<
         signingOverride = createSigningOverride(dslServices)
         variantFilter = VariantFilter(ReadOnlyObjectProvider())
         variantBuilderServices = VariantBuilderServicesImpl(projectServices)
-        variantServices = VariantServicesImpl(
+        variantPropertiesApiServices = VariantServicesImpl(
             projectServices,
             // detects whether we are running the plugin under unit test mode
             forUnitTesting = project.extensions.extraProperties.has("_agp_internal_test_mode_"),

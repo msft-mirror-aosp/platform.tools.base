@@ -28,7 +28,7 @@ open class HostTestBuilderImpl(
     override var enable: Boolean,
     override var type: String,
     val componentType: ComponentType,
-    internal var _enableCodeCoverage: Boolean
+    var _enableCodeCoverage: Boolean
 ) : HostTestBuilder {
 
     override var enableCodeCoverage: Boolean
@@ -51,7 +51,7 @@ open class HostTestBuilderImpl(
         private fun forScreenshotTest(
             experimentalProperties: Map<String, Any>,
             enableCodeCoverage: Boolean,
-        ): HostTestBuilderImpl = HostTestBuilderImpl(
+            ): HostTestBuilderImpl = HostTestBuilderImpl(
             ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST.getValue(experimentalProperties),
             HostTestBuilder.SCREENSHOT_TEST_TYPE,
             ComponentTypeImpl.SCREENSHOT_TEST,
@@ -72,19 +72,21 @@ open class HostTestBuilderImpl(
             dslDefinedHostTestsDefinitions.associate { it.type to
                     when(it.type) {
                         HostTestBuilder.UNIT_TEST_TYPE ->
-                            forUnitTest(
+                            HostTestBuilderImpl.forUnitTest(
                                 variantBuilderServices,
                                 it.codeCoverageEnabled,
                             )
 
                         HostTestBuilder.SCREENSHOT_TEST_TYPE ->
-                            forScreenshotTest(
+                            HostTestBuilderImpl.forScreenshotTest(
                                 experimentalProperties,
                                 it.codeCoverageEnabled,
                             )
-                        else -> throw RuntimeException("Unknown host test type : ${it.type}")
+                        else ->
+                            throw RuntimeException("Unknown host test type : ${it.type}")
                     }
             }
+
     }
 }
 

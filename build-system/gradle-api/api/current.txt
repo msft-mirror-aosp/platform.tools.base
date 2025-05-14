@@ -3098,6 +3098,7 @@ package com.android.build.api.variant {
     method @org.gradle.api.Incubating public String getType();
     method @org.gradle.api.Incubating public void setEnable(boolean);
     method @org.gradle.api.Incubating public void setEnableCodeCoverage(boolean);
+    method @org.gradle.api.Incubating public void setType(String);
     property @org.gradle.api.Incubating public abstract boolean enable;
     property @Deprecated @org.gradle.api.Incubating public abstract boolean enableCodeCoverage;
     property @org.gradle.api.Incubating public abstract String type;
