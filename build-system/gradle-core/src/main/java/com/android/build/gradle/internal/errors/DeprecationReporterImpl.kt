@@ -203,9 +203,10 @@ class DeprecationReporterImpl(
         }
 
         val useSimulatedVersionBehavior =
-            projectOptions.simulatedAGPVersion != null && option is BooleanOption && option.futureStage != null && option.futureStage.version.compareTo(
-                projectOptions.simulatedAGPVersion
-            ) <= 0
+            projectOptions.simulatedAGPVersion != null
+                    && option is BooleanOption
+                    && option.futureStage != null
+                    && option.futureStage.version.agpVersion <= projectOptions.simulatedAGPVersion
 
         val status =
             if (useSimulatedVersionBehavior) option.futureStage.stage.status else option.status

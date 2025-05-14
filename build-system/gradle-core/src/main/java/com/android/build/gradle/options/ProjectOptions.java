@@ -102,7 +102,7 @@ public final class ProjectOptions {
 
             if (simulatedAGPVersion != null
                     && futureStage != null
-                    && futureStage.getVersion().compareTo(simulatedAGPVersion) <= 0) {
+                    && futureStage.getVersion().getAgpVersion().compareTo(simulatedAGPVersion) <= 0) {
                 return futureStage.getDefaultValue();
             }
 

@@ -16,9 +16,7 @@
 
 package com.android.build.gradle.options
 
-import com.android.ide.common.repository.AgpVersion
-
 /**
  * Represents the proposed state of an [Option] in a future AGP version.
  */
-data class FutureStage(val defaultValue: Boolean, val stage: Stage, val version: AgpVersion)
+data class FutureStage(val defaultValue: Boolean, val stage: Stage, val version: Version)
