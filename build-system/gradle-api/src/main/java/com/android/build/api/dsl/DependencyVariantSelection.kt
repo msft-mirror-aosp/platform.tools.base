@@ -22,7 +22,7 @@ import org.gradle.api.provider.MapProperty
 
 /**
  * Specifies options for doing variant selection for external Android dependencies
- * based on build types and product flavours
+ * based on build types and product flavors
  */
 @Incubating
 @Deprecated("Replaced by LocalDependencySelection")
