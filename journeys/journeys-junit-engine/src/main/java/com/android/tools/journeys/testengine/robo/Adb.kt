@@ -150,6 +150,16 @@ class Adb(
     }
 
     /**
+     * Executes 'shell settings put global [key] [value]' on the device.
+     */
+    fun setGlobalSettingsValue(key: String, value: String, timeoutSeconds: Long = 10) {
+        execCmdSync(
+            adbCmd = "shell settings put global $key $value",
+            timeoutSeconds = timeoutSeconds
+        )
+    }
+
+    /**
      * Executes an ADB command synchronously, handling process execution, timeout,
      * stream reading, and result validation.
      *

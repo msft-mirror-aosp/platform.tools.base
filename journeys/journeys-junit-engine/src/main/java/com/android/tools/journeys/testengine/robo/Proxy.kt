@@ -132,6 +132,10 @@ class Proxy(
         try {
             // Install apks required for instrumentation process.
             val deviceApiLevel = adb.getDeviceApiLevel()
+            if (deviceApiLevel >= 33) {
+                // Disable "Unsafe app blocked" dialog. b/407500906.
+                adb.setGlobalSettingsValue("verifier_verify_adb_installs", "0")
+            }
             adb.install(crawlerAppApkPath, getCrawlerInstallFlags(deviceApiLevel))
             adb.install(appApkPath, getAppInstallFlags(deviceApiLevel))
         } catch (e: Exception) {
