@@ -181,7 +181,7 @@ fun maybeCreateUtpConfigurations(creationConfig: ComponentCreationConfig) {
     val configurations = creationConfig.services.configurations
     val dependencies = creationConfig.services.dependencies
     UtpDependency.values().forEach { nitrogenDependency ->
-        if (configurations.findByName(nitrogenDependency.configurationName) == null) {
+        if (!configurations.names.contains(nitrogenDependency.configurationName)) {
             configurations.register(nitrogenDependency.configurationName) {
                 it.isVisible = false
                 it.isTransitive = true
