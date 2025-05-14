@@ -75,6 +75,7 @@ fun RecipeExecutor.automotiveMediaServiceRecipe(
     // TODO: It may be better to not rely on the hard-coded module name
     addModuleDependency("implementation", sharedModule, projectData.rootDir.resolve("mobile"))
     addModuleDependency("implementation", sharedModule, projectData.rootDir.resolve("automotive"))
+    addModuleDependency("implementation", sharedModule, projectData.rootDir.resolve("app"))
   }
   else {
     serviceManifestOut = moduleData.manifestDir
