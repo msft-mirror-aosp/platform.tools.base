@@ -17,6 +17,7 @@
 package com.android.tools.deploy.liveedit;
 
 import com.android.deploy.asm.Type;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -155,7 +156,8 @@ class LiveEditClass {
             Log.v(
                     "live.deploy",
                     String.format(
-                            "Super of %s has changed; proxy objects may need to be recreated.\n\t%s -> %s",
+                            "Super of %s has changed; proxy objects may need to be recreated.\n"
+                                    + "\t%s -> %s",
                             this.bytecode.getInternalName(),
                             this.bytecode.getSuperName(),
                             bytecode.getSuperName()));
@@ -166,7 +168,10 @@ class LiveEditClass {
             Log.v(
                     "live.deploy",
                     String.format(
-                            "Interfaces of %s have changed; proxy objects may need to be recreated.\n\told: %s\n\tnew: %s",
+                            "Interfaces of %s have changed; proxy objects may need to be"
+                                    + " recreated.\n"
+                                    + "\told: %s\n"
+                                    + "\tnew: %s",
                             this.bytecode.getInternalName(),
                             Arrays.stream(this.bytecode.getInterfaces())
                                     .sorted()
@@ -181,7 +186,9 @@ class LiveEditClass {
             Log.v(
                     "live.deploy",
                     String.format(
-                            "Fields of %s have changed; proxy objects may need to be recreated.\n\told: %s\n\tnew: %s",
+                            "Fields of %s have changed; proxy objects may need to be recreated.\n"
+                                    + "\told: %s\n"
+                                    + "\tnew: %s",
                             this.bytecode.getInternalName(),
                             this.bytecode.getFieldNames().stream()
                                     .sorted()
@@ -203,6 +210,7 @@ class LiveEditClass {
 
         HashSet<Class<?>> interfaceClasses = new HashSet<>();
         interfaceClasses.add(ProxyClass.class);
+        interfaceClasses.add(SourceLocationAware.class);
 
         LinkedList<Class<?>> queue = new LinkedList<>();
         queue.add(classForName(bytecode.getSuperName()));

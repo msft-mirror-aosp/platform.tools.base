@@ -15,11 +15,13 @@
  */
 package com.android.build.gradle.internal
 
+import android.databinding.tool.ext.toCamelCase
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.component.impl.DeviceTestImpl
 import com.android.build.api.component.impl.TestFixturesImpl
-import com.android.build.api.component.impl.TestSuiteImpl
+import com.android.build.api.variant.impl.TestSuiteImpl
+import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
@@ -50,7 +52,6 @@ import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
-import com.android.build.gradle.internal.api.AndroidSourceSetName
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
 import com.android.build.gradle.internal.api.SingleTestSuiteSourceSet
@@ -228,9 +229,6 @@ class VariantManager<
                 flavorDimensionList)
         val variants = computer.computeVariants()
 
-        // get some info related to testing
-        val testBuildTypeData = testBuildTypeData
-
         val globalConfig = GlobalVariantBuilderConfigImpl(dslExtension)
 
         // loop on all the new variant objects to create the public instances (both legacy and new
@@ -315,6 +313,7 @@ class VariantManager<
         val variantBuilder = variantFactory.createVariantBuilder(
             globalConfig, componentIdentity, variantDslInfo, variantBuilderServices,
         )
+        postVariantBuilderCreation(variantBuilder, buildTypeData)
 
         // now that we have the variant, create the analytics object,
         val configuratorService = getBuildService(
@@ -914,7 +913,7 @@ class VariantManager<
 
         if (variantFactory.componentType.hasTestComponents) {
             (variantBuilder as? HasDeviceTestsBuilder)?.deviceTests?.values
-                ?.filter { it.enable && buildTypeData == testBuildTypeData }
+                ?.filter { it.enable }
                 ?.forEach { deviceTestBuilder ->
                     val deviceTest = createTestComponents<AndroidTestComponentDslInfo>(
                         dimensionCombination,
@@ -964,6 +963,9 @@ class VariantManager<
                     }
 
                     // Create the TestSuite instance, its sources and various classpath configurations
+                    val componentName = "${testSuiteBuilder.name}${variantInfo.variant.name
+                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                    }"
                     variant.addTestSuite(
                         testSuiteBuilder.name,
                         TestSuiteImpl(
@@ -982,8 +984,11 @@ class VariantManager<
                                 variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
                             ).build(),
                             variantInfo.variant,
+                            globalTaskCreationConfig,
                             variantServices,
                             taskCreationServices,
+                            ArtifactsImpl(project, componentName),
+                            computeTaskName(variantBuilder.name, "test${testSuiteBuilder.name.toCamelCase()}","TestSuite" )
                         )
                     )
                 }
@@ -1126,6 +1131,24 @@ class VariantManager<
 
     private val canParseManifest = projectServices.objectFactory.property(Boolean::class.java).also {
         it.set(!dslServices.projectOptions[BooleanOption.DISABLE_EARLY_MANIFEST_PARSING])
+    }
+
+    /**
+     * Post configuration of the [VariantBuilderT] instance.
+     */
+    fun postVariantBuilderCreation(
+        variantBuilder: VariantBuilderT,
+        buildTypeData: BuildTypeData<BuildType>,
+    ) {
+        (variantBuilder as? HasDeviceTestsBuilder)?.deviceTests?.forEach { (_, deviceTestBuilder) ->
+            deviceTestBuilder.enable =
+                !variantBuilderServices.projectOptions[BooleanOption.ENABLE_NEW_TEST_DSL]
+                        && (testBuildTypeData == null || buildTypeData == testBuildTypeData)
+        }
+        (variantBuilder as? HasHostTestsBuilder)?.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.let { unitTest ->
+            unitTest.enable = !variantBuilderServices.projectOptions[BooleanOption.ENABLE_NEW_TEST_DSL] &&
+                    (!variantBuilderServices.projectOptions[BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE] || testBuildTypeData == null || testBuildTypeData == buildTypeData)
+        }
     }
 
     fun setHasCreatedTasks(hasCreatedTasks: Boolean) {

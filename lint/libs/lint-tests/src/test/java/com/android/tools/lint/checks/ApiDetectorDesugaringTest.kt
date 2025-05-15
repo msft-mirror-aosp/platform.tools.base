@@ -864,7 +864,7 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
         """
         buildscript {
             repositories {
-                jcenter()
+                mavenCentral()
             }
             dependencies {
                 classpath 'com.android.tools.build:gradle:2.4.0-alpha8'
@@ -884,7 +884,7 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
         """
         buildscript {
             repositories {
-                jcenter()
+                mavenCentral()
             }
             dependencies {
                 classpath 'com.android.tools.build:gradle:2.4.0-alpha8'
@@ -904,7 +904,7 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
         """
         buildscript {
             repositories {
-                jcenter()
+                mavenCentral()
             }
             dependencies {
                 classpath 'com.android.tools.build:gradle:2.3.1'

@@ -90,6 +90,9 @@ open class Context(
   val scope: EnumSet<Scope>
     get() = driver.scope
 
+  /** Whether this context is for a test file. */
+  var isTestSource: Boolean = project.isTestProject == true
+
   /**
    * Returns the main project if this project is a library project, or self if this is not a library
    * project. The main project is the root project of all library projects, not necessarily the

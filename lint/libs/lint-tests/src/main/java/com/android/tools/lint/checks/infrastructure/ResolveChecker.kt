@@ -39,10 +39,13 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import java.io.StringWriter
 import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.resolution.KaCallInfo
+import org.jetbrains.kotlin.analysis.api.resolution.KaSuccessCallInfo
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.KtNameReferenceExpression
+import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
@@ -295,6 +298,18 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
       ): Boolean {
         val name = node.resolvedName ?: node.identifier
         if (applicableReferences.contains(name) && node.resolve() == null) {
+          val sourcePsi = node.sourcePsi
+          if (sourcePsi is KtReferenceExpression) {
+            // Imports of top level extension properties for example does
+            // not always work using UAST so use the analysis API as a second
+            // safeguard
+            analyze(sourcePsi) {
+              val resolved: KaCallInfo? = sourcePsi.resolveToCall()
+              if (resolved is KaSuccessCallInfo) {
+                return super.visitSimpleNameReferenceExpression(node)
+              }
+            }
+          }
           val context: JavaContext = this@checkFile
           reportResolveProblem(
             context,

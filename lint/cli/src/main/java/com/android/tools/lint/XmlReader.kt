@@ -391,7 +391,8 @@ class XmlReader(
 
   private fun readFixAnnotate(): LintFix {
     var source: String? = null
-    var replace = true
+    var replace = false
+    var selectPattern: String? = null
     var displayName: String? = null
     var familyName: String? = null
     var robot = false
@@ -404,6 +405,7 @@ class XmlReader(
       when (name) {
         ATTR_SOURCE -> source = value
         ATTR_REPLACE -> replace = true
+        ATTR_SELECT_PATTERN -> selectPattern = value
         ATTR_DESCRIPTION -> displayName = value
         ATTR_FAMILY -> familyName = value
         ATTR_INDEPENDENT -> independent = true
@@ -418,6 +420,7 @@ class XmlReader(
       .name(displayName)
       .sharedName(familyName)
       .annotate(source!!, null, null, replace)
+      .select(selectPattern)
       .autoFix(robot, independent)
       .build()
   }

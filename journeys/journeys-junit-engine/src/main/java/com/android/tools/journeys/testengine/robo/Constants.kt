@@ -62,11 +62,14 @@ object RoboConfigConstants {
     /** The timeout for the crawl to complete. */
     const val TEST_TIMEOUT_SECONDS = 3600L
 
+    /** The prefix for model description of assertion prompts. */
+    const val ASSERTION_PROMPT_PREFIX = "Assertion prompt:"
+
     /** Description of a goal complete model detail. */
-    const val GOAL_COMPLETE_DESCRIPTION = "Goal Complete"
+    private const val GOAL_COMPLETE_DESCRIPTION = "Goal Complete"
 
     /** Description of a goal failed model detail. */
-    const val GOAL_FAILED_DESCRIPTION = "Goal Failed"
+    private const val GOAL_FAILED_DESCRIPTION = "Goal Failed"
 
     /** Default timeout duration for platform connection. */
     val DEFAULT_PLATFORM_TIMEOUT: Duration = Duration.ofSeconds(60)
@@ -85,4 +88,7 @@ object RoboConfigConstants {
 
     /** Model descriptions which specify goal state. */
     val GOAL_STATUS_MODEL_DESCRIPTION = setOf(GOAL_COMPLETE_DESCRIPTION, GOAL_FAILED_DESCRIPTION)
+
+    /** IDs of Builtin roboscripts allowed in context of journeys. */
+    val ALLOWED_BUILTIN_ROBOSCRIPT_IDS = setOf(35)
 }

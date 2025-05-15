@@ -23,6 +23,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
 import com.android.build.api.dsl.LibraryAndroidResources
+import com.android.build.api.dsl.LocalDependencySelection
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.internal.coverage.JacocoOptions
@@ -57,9 +58,19 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         ).copyToSigningConfig(signingConfig)
     }
 
-    override val dependencyVariantSelection: DependencyVariantSelection =
-        dslServices.newDecoratedInstance(DependencyVariantSelectionImpl::class.java, dslServices, objectFactory)
+    final override val localDependencySelection: LocalDependencySelection = dslServices.newDecoratedInstance(
+        LocalDependencySelectionImpl::class.java, dslServices, objectFactory
+    )
 
+    override fun localDependencySelection(action: LocalDependencySelection.() -> Unit) {
+        action.invoke(localDependencySelection)
+    }
+
+    @Deprecated("Use localDependencySelection instead. This API will be removed in AGP 9.0")
+    override val dependencyVariantSelection: DependencyVariantSelection =
+        dslServices.newDecoratedInstance(DependencyVariantSelectionImpl::class.java, dslServices, localDependencySelection, objectFactory)
+
+    @Deprecated("Use localDependencySelection instead. This API will be removed in AGP 9.0")
     override fun dependencyVariantSelection(action: DependencyVariantSelection.() -> Unit) {
         action.invoke(dependencyVariantSelection)
     }

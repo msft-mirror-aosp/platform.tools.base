@@ -29,7 +29,7 @@ import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 
-class CompressTestPrepareAssetsTask {
+class CompressAssetsTaskTest {
 
     @get:Rule
     val rule = GradleRule.from {
@@ -59,11 +59,11 @@ class CompressTestPrepareAssetsTask {
                 val prepareAssetsTask =
                     project.tasks.register(
                         "${variant.name}PrepareAssets",
-                        PrepareAssetsTask::class.java
+                        CompressTestPrepareAssetsTask::class.java
                     )
                 variant.sources.assets?.addGeneratedSourceDirectory(
                     prepareAssetsTask,
-                    PrepareAssetsTask::outputDirectory
+                    CompressTestPrepareAssetsTask::outputDirectory
                 )
             }
         }
@@ -76,7 +76,7 @@ class CompressTestPrepareAssetsTask {
     }
 }
 
-abstract class PrepareAssetsTask : DefaultTask() {
+abstract class CompressTestPrepareAssetsTask : DefaultTask() {
 
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty

@@ -20,7 +20,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.Proxy;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ProxySourceLocationTest {
@@ -45,8 +46,25 @@ public class ProxySourceLocationTest {
     }
 
     private Map<String, Object> resolve(Object lambda) {
-        ProxyClassHandler ih = (ProxyClassHandler) Proxy.getInvocationHandler(lambda);
-        return ih.getLocation();
+        try {
+            Method method = null;
+            for (Class<?> i : lambda.getClass().getInterfaces()) {
+                if (i.getTypeName()
+                        .equals("com.android.tools.deploy.liveedit.SourceLocationAware")) {
+                    method = i.getDeclaredMethod("getSourceLocationInfo");
+                    break;
+                }
+            }
+
+            if (method == null) {
+                return new HashMap<>();
+            }
+
+            //noinspection unchecked
+            return (Map<String, Object>) method.invoke(lambda);
+        } catch (Exception e) {
+            return new HashMap<>();
+        }
     }
 
     private void assertLocation(Object lambda, String lambdaName, int start, int end) {

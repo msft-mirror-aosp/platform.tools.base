@@ -14,31 +14,36 @@
  * limitations under the License.
  */
 
-package com.android.build.api.component.impl
+package com.android.build.api.variant.impl
 
-import com.android.build.api.variant.impl.JUnitEngineSpecImpl
+import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dependency.TestSuiteClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
 import com.android.build.gradle.internal.testsuites.TestSuite
+import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 /**
- * Implementation of [TestSuite] for test suites declared via the DSL.
+ * Implementation of [com.android.build.gradle.internal.testsuites.TestSuite] for test suites declared via the DSL.
  */
-class TestSuiteImpl(
+class TestSuiteImpl internal constructor(
     testSuiteBuilder: TestSuiteBuilderImpl,
     override val sources: TestSuiteSourceSet,
     override val testSuiteClasspath: TestSuiteClasspath,
     override val testedVariant: VariantCreationConfig,
+    override val global: GlobalTaskCreationConfig,
     val variantServices: VariantServices,
     override val services: TaskCreationServices,
+    override val artifacts: ArtifactsImpl,
+    override val testTaskName: String,
 ) : TestSuite, TestSuiteCreationConfig {
 
     private val _name = testSuiteBuilder.name
@@ -46,7 +51,10 @@ class TestSuiteImpl(
     override fun getName() = _name
 
     override val junitEngineSpec: JUnitEngineSpec =
-            JUnitEngineSpecImpl(testSuiteBuilder.junitEngineSpec, variantServices)
+            JUnitEngineSpecImplForVariant(
+                testSuiteBuilder.junitEngineSpec as JUnitEngineSpecForVariantBuilder,
+                { variantServices.mapPropertyOf(String::class.java, String::class.java, mapOf()) }
+            )
 
     override fun configureTestTask(action: (Test) -> Unit) {
         throw RuntimeException("Not yet implemented")

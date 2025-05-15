@@ -55,11 +55,11 @@ fun getPrefabFromMaven(
         return services.files(it)
     }
 
-    services.configurations.findByName(PREFAB_CONFIG_NAME)?.let {
-        return getPrefabArtifact(it)
+    if (services.configurations.names.contains(PREFAB_CONFIG_NAME)) {
+        return getPrefabArtifact(services.configurations.named(PREFAB_CONFIG_NAME).get())
     }
 
-    val config = services.configurations.create(PREFAB_CONFIG_NAME) {
+    val config = services.configurations.register(PREFAB_CONFIG_NAME) {
         it.isVisible = false
         it.isTransitive = false
         it.isCanBeConsumed = false
@@ -77,5 +77,5 @@ fun getPrefabFromMaven(
         )
     )
 
-    return getPrefabArtifact(config)
+    return getPrefabArtifact(config.get())
 }

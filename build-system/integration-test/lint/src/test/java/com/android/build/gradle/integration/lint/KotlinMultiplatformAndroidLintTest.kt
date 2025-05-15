@@ -30,7 +30,6 @@ import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Assume
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -560,7 +559,6 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
     }
 
     @Test
-    @Ignore("b/400831865")
     fun `test lint on KMP project with no android or jvm targets`() {
         Assume.assumeTrue(lintAnalysisPerComponent)
         TestFileUtils.searchAndReplace(

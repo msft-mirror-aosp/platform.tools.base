@@ -16,15 +16,19 @@
 
 package com.android.build.gradle.internal.component
 
+import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.dependency.TestSuiteClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
 import com.android.build.gradle.internal.testsuites.TestSuite
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 interface TestSuiteCreationConfig: TestSuite {
+
+    val global: GlobalTaskCreationConfig
 
     fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>)
 
@@ -51,4 +55,14 @@ interface TestSuiteCreationConfig: TestSuite {
      * Returns the sources for this test suite.
      */
     val sources: TestSuiteSourceSet
+
+    /**
+     * Artifacts specific to this Test suite.
+     */
+    val artifacts: ArtifactsImpl
+
+    /**
+     * Test task name, within the current project scope.
+     */
+    val testTaskName: String
 }

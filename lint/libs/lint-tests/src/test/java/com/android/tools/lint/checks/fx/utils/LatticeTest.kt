@@ -78,7 +78,7 @@ abstract class LatticeTest<L>(private val lattice: Lattice<L>, poolInits: List<L
   @Test fun `top is annihilator of join`() = forall { x -> x join top == top && top join x == top }
 
   @Test
-  fun `join gives greatest common lower bound`() = forall { x, y ->
+  fun `join gives lowest common upper bound`() = forall { x, y ->
     val j = x join y
     (x precedes j && y precedes j) &&
       pool.all { u -> (x precedes u && y precedes u) implies { j precedes u } }
@@ -99,6 +99,29 @@ abstract class LatticeTest<L>(private val lattice: Lattice<L>, poolInits: List<L
   protected fun forall(p: (L, L, L) -> Boolean) {
     for (x in pool) for (y in pool) for (z in pool) {
       assert(p(x, y, z)) { "$x, $y, $z fails" }
+    }
+  }
+
+  protected fun testInductiveWidening(init: L, vararg nextAndWidened: Pair<L, L>) {
+    var acc = init
+
+    fun checkSubsumed(narrow: L, wide: L) = Truth.assertThat(widen(narrow, wide)).isEqualTo(wide)
+
+    // Test each next widened value are as expected
+    for ((vI, widenedI) in nextAndWidened) {
+      val oldAcc = acc
+      acc = widen(acc, vI)
+      Truth.assertThat(acc).isEqualTo(widenedI)
+      checkSubsumed(oldAcc, acc)
+      checkSubsumed(vI, acc)
+    }
+
+    // Test final value subsuming all past intermediate values
+    checkSubsumed(init, acc)
+    Truth.assertThat(widen(init, acc)).isEqualTo(acc)
+    for ((vI, widenedI) in nextAndWidened) {
+      checkSubsumed(vI, acc)
+      checkSubsumed(widenedI, acc)
     }
   }
 }

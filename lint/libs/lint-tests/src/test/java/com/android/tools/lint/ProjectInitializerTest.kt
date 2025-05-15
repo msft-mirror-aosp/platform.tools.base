@@ -43,6 +43,7 @@ import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.checks.infrastructure.dos2unix
 import com.android.tools.lint.client.api.LintListener
 import com.android.tools.lint.client.api.LintListener.EventType.REGISTERED_PROJECT
+import com.android.tools.lint.client.api.LintListener.EventType.SCANNING_FILE
 import com.android.tools.lint.client.api.LintListener.EventType.STARTING
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
@@ -53,6 +54,7 @@ import com.android.tools.lint.detector.api.Project.DependencyKind
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.XmlContext
 import com.android.utils.XmlUtils.getFirstSubTagByName
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
@@ -66,6 +68,7 @@ import org.intellij.lang.annotations.Language
 import org.jetbrains.uast.UClass
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assume
 import org.junit.ClassRule
@@ -2445,6 +2448,279 @@ class ProjectInitializerTest {
       null,
       null,
     )
+  }
+
+  @Test
+  fun testGeneratedAndTestFile() {
+    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
+    // Lint's K1 project structure, so we can only test on K2.
+    Assume.assumeTrue(useFirUast())
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          xml(
+              "lint.xml",
+              """
+              <lint checkTestSources="true" checkGeneratedSources="true">
+              </lint>
+              """,
+            )
+            .indented(),
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="test" android="true" library="false" compute_source_roots="false">
+                  <src file="com/example/A.java" test="true"/>
+                  <src file="com/example/B.java" generated="true"/>
+                  <src file="com/example/C.java" test="true" generated="true"/>
+                  <src file="com/example/D.java"/>
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/A.java",
+              """
+              package com.example;
+              class A {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/B.java",
+              """
+              package com.example;
+              class B {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/C.java",
+              """
+              package com.example;
+              class C {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/D.java",
+              """
+              package com.example;
+              class D {}
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+    val configFile = File(projects[0], "lint.xml")
+
+    var numFilesVisited = 0
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      arrayOf(
+        "--check",
+        "IgnoreWithoutReason",
+        "--project",
+        descriptorFile.path,
+        "--config",
+        configFile.path,
+      ),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "A.java" -> {
+                context as JavaContext
+                assertTrue(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "B.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertTrue(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "C.java" -> {
+                context as JavaContext
+                assertTrue(context.isTestSource)
+                assertTrue(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "D.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+            }
+          }
+          else -> {}
+        }
+      },
+    )
+    assertEquals(4, numFilesVisited)
+  }
+
+  @Test
+  fun testTestProjectWithXml() {
+    // Modules can be marked as test="true", which causes context.isTestSource to be true for
+    // manifests and resources. Note that Lint will still visit these "test" XML files, without
+    // requiring the TEST_SOURCES scope or checkTestSources flag (unlike test Java/Kotlin sources).
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          xml(
+              "lint.xml",
+              """
+              <lint checkTestSources="true" checkGeneratedSources="true">
+              </lint>
+              """,
+            )
+            .indented(),
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="test" android="true" library="false" test="true" compute_source_roots="false">
+                  <src file="com/example/A.java"/>
+                  <src file="com/example/B.java" generated="true"/>
+                  <manifest file="com/example/AndroidManifest.xml" />
+                  <merged-manifest file="com/example/AndroidManifest.xml" />
+                  <resource file="com/example/res/values/strings.xml" />
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          xml(
+              "com/example/AndroidManifest.xml",
+              """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                  package="com.example.app">
+
+                  <uses-sdk
+                      android:minSdkVersion="14"
+                      android:targetSdkVersion="33" />
+
+                  <application>
+                      <activity
+                          android:name="com.google.example.Activity"
+                          android:exported="true" />
+                      <action android:name="android.intent.action.MAIN" />
+                      <category android:name="android.intent.category.LAUNCHER" />
+                  </application>
+
+              </manifest>
+              """,
+            )
+            .indented(),
+          xml(
+              "com/example/res/values/strings.xml",
+              """
+              <resources>
+                <string name="string1">String 1</string>
+                <string name="string1">String 2</string>
+                <string name="string3">String 3</string>
+                <string name="string3">String 4</string>
+              </resources>
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/A.java",
+              """
+              package com.example;
+              class A {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/B.java",
+              """
+              package com.example;
+              class B {}
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+    val configFile = File(projects[0], "lint.xml")
+
+    var numFilesVisited = 0
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      // These checks are chosen to get a scope that includes JAVA_FILE, MANIFEST, and
+      // RESOURCE_FILE (the values folders), and with no extra phases requested.
+      arrayOf(
+        "--check",
+        "ButtonOrder,ShortAlarm",
+        "--project",
+        descriptorFile.path,
+        "--config",
+        configFile.path,
+      ),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "A.java" -> {
+                context as JavaContext
+                assertEquals(true, context.project.isTestProject)
+                assertTrue(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "B.java" -> {
+                context as JavaContext
+                assertEquals(true, context.project.isTestProject)
+                assertTrue(context.isTestSource)
+                assertTrue(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "strings.xml" -> {
+                context as XmlContext
+                assertEquals(true, context.project.isTestProject)
+                assertTrue(context.isTestSource)
+                ++numFilesVisited
+              }
+              "AndroidManifest.xml" -> {
+                context as XmlContext
+                assertEquals(true, context.project.isTestProject)
+                assertTrue(context.isTestSource)
+                ++numFilesVisited
+              }
+            }
+          }
+          else -> {}
+        }
+      },
+    )
+    assertEquals(4, numFilesVisited)
   }
 
   @Test

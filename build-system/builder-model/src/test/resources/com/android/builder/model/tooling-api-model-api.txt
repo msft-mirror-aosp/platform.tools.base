@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-9a107496f1e5e46e996149fc9f5323e684ea277193c5cdedf1e6f8900682ae72
+7cd2bdcec2c6aea5f33747f5c6f6b41e4b9285cdfccd3213f2773ebe6ee8d8bd
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -673,6 +673,8 @@ com.android.builder.model.v2.ide.GraphItem.getRequestedCoordinates: java.lang.St
 com.android.builder.model.v2.ide.Installation implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.Installation.getInstallOptions: java.util.Collection<java.lang.String> ()
 com.android.builder.model.v2.ide.Installation.getTimeOutInMs: int ()
+com.android.builder.model.v2.ide.JUnitEngineInfo
+com.android.builder.model.v2.ide.JUnitEngineInfo.getIncludedEngines: java.util.Set<java.lang.String> ()
 com.android.builder.model.v2.ide.JavaArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.JavaArtifact.getMockablePlatformJar: java.io.File ()
 com.android.builder.model.v2.ide.JavaArtifact.getRuntimeResourceFolder: java.io.File ()
@@ -789,6 +791,11 @@ com.android.builder.model.v2.ide.TestInfo.getAdditionalRuntimeApks: java.util.Co
 com.android.builder.model.v2.ide.TestInfo.getAnimationsDisabled: boolean ()
 com.android.builder.model.v2.ide.TestInfo.getExecution: com.android.builder.model.v2.ide.TestInfo$Execution ()
 com.android.builder.model.v2.ide.TestInfo.getInstrumentedTestTaskName: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.TestSuiteArtifact.getTestInfo: com.android.builder.model.v2.ide.TestSuiteTestInfo ()
+com.android.builder.model.v2.ide.TestSuiteTestInfo
+com.android.builder.model.v2.ide.TestSuiteTestInfo.getJunitInfo: com.android.builder.model.v2.ide.JUnitEngineInfo ()
+com.android.builder.model.v2.ide.TestSuiteTestInfo.getTestTaskName: java.lang.String ()
 com.android.builder.model.v2.ide.TestedTargetVariant implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestedTargetVariant.getTargetProjectPath: java.lang.String ()
 com.android.builder.model.v2.ide.TestedTargetVariant.getTargetVariant: java.lang.String ()
@@ -807,6 +814,7 @@ com.android.builder.model.v2.ide.Variant.getMainArtifact: com.android.builder.mo
 com.android.builder.model.v2.ide.Variant.getName: java.lang.String ()
 com.android.builder.model.v2.ide.Variant.getRunTestInSeparateProcess: boolean ()
 com.android.builder.model.v2.ide.Variant.getTestFixturesArtifact: com.android.builder.model.v2.ide.AndroidArtifact ()
+com.android.builder.model.v2.ide.Variant.getTestSuiteArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.TestSuiteArtifact> ()
 com.android.builder.model.v2.ide.Variant.getTestedTargetVariant: com.android.builder.model.v2.ide.TestedTargetVariant ()
 com.android.builder.model.v2.ide.Variant.getUnitTestArtifact: com.android.builder.model.v2.ide.JavaArtifact ()
 com.android.builder.model.v2.ide.Variant.isInstantAppCompatible: boolean ()

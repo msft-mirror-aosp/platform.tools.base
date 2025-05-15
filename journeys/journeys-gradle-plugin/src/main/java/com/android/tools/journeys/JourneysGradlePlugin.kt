@@ -213,7 +213,7 @@ class JourneysGradlePlugin : Plugin<Project> {
 
             dependencies.add(
                 crawlerApkConfigName,
-                "com.google.android.appcrawler:appcrawler-app:0.0.1-alpha01@apk"
+                "com.google.android.appcrawler:appcrawler-app:0.0.1-alpha02@apk"
             )
         }
     }

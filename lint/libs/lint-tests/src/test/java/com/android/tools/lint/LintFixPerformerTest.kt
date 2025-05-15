@@ -632,6 +632,61 @@ class LintFixPerformerTest {
   }
 
   @Test
+  fun testClassInSamePackage() {
+    val source =
+      """
+      package test.pkg;
+
+      public class MyHiddenMethodCaller {
+          public void callHiddenMethod(BaseClass base) throws Exception {
+              Class.forName("test.pkg.MyHiddenMethodCaller.BaseClass").getDeclaredMethod("hiddenMethod").invoke(base);
+          }
+      }
+      """
+        .trimIndent()
+
+    val (file, range) =
+      getFileAndRange("Test.java", source, source.indexOf("public void callHiddenMethod"))
+    val fix =
+      fix()
+        .annotate(
+          "@GenerateKeepForMethod(\n" +
+            "  className = \"test.pkg.MyHiddenMethodCaller.BaseClass\",\n" +
+            "  methodName = \"hiddenMethod\",\n" +
+            "  params = {}\n" +
+            ")"
+        )
+        .range(range)
+        .autoFix()
+        .build()
+
+    // Just apply the quickfix; no imports added, no references shortened
+    check(
+      file,
+      source,
+      fix,
+      expected =
+        """
+        package test.pkg;
+
+        public class MyHiddenMethodCaller {
+            @GenerateKeepForMethod(
+              className = "test.pkg.MyHiddenMethodCaller.BaseClass",
+              methodName = "hiddenMethod",
+              params = {}
+            )
+            public void callHiddenMethod(BaseClass base) throws Exception {
+                Class.forName("test.pkg.MyHiddenMethodCaller.BaseClass").getDeclaredMethod("hiddenMethod").invoke(base);
+            }
+        }
+        """
+          .trimIndent(),
+      includeMarkers = true,
+      updateImports = true,
+    )
+  }
+
+  @Test
   fun testInvalidTextReplaceFix() {
     val source =
       """
@@ -1417,6 +1472,7 @@ class LintFixPerformerTest {
       fix()
         .annotate("@kotlin.Suppress(\"SomeInspection2\")", null, null, false)
         .range(range)
+        .select("Some(.*)2")
         .build()
     check(
       file,
@@ -1426,12 +1482,14 @@ class LintFixPerformerTest {
         """
         package p1.p2
         /** My Property */
-        @Suppress("SomeInspection2")
+        @Suppress("Some[Inspection]|2")
         @Suppress("SomeInspection1")
         const val someProperty = ""
         """
           .trimIndent(),
       requireAutoFixable = false,
+      // Verify selection markers
+      includeMarkers = true,
     )
   }
 

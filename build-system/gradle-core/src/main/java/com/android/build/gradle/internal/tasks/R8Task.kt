@@ -1017,8 +1017,10 @@ abstract class R8Task @Inject constructor(
 fun ConsumableCreationConfig.getPartialShrinkingConfig(): PartialShrinkingConfig? {
     if (this !is VariantCreationConfig) return null
     val properties = experimentalProperties.get()
-    ModulePropertyKey.OptionalBoolean.R8_EXPERIMENTAL_PARTIAL_SHRINKING_ENABLED.getValue(properties)
-        ?: return null
+    if (ModulePropertyKey.OptionalBoolean.R8_EXPERIMENTAL_PARTIAL_SHRINKING_ENABLED.getValue(
+            properties
+        ) != true
+    ) return null
     return PartialShrinkingConfig(
         includedPatterns = ModulePropertyKey.OptionalString.R8_EXPERIMENTAL_PARTIAL_SHRINKING_INCLUDE_PATTERNS.getValue(
             properties

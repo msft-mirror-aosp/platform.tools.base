@@ -2183,6 +2183,13 @@ class LintDriver(
             context.isGeneratedSource = true
             generatedContexts.add(context)
           }
+          project.isTestProject == true -> {
+            // If the entire project is marked as a test project then we still want to treat this
+            // as a test file (even though none of the above folders matched).
+            context.sourceSetType = SourceSetType.UNKNOWN_TEST
+            context.isTestSource = true
+            testContexts.add(context)
+          }
           else -> {
             context.sourceSetType = SourceSetType.MAIN
             contexts.add(context)

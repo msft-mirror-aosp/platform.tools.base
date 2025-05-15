@@ -17,8 +17,19 @@ package com.android.tools.deploy.liveedit;
 
 import kotlin.jvm.internal.Lambda;
 
-public final class LiveEditLambda<R> extends Lambda<R> {
-    public LiveEditLambda(int arity) {
+import java.lang.reflect.Proxy;
+import java.util.Map;
+
+public final class LiveEditLambda<R> extends Lambda<R> implements SourceLocationAware {
+    private final ProxyClassHandler handler;
+
+    public LiveEditLambda(int arity, Object proxy) {
         super(arity);
+        this.handler = (ProxyClassHandler) Proxy.getInvocationHandler(proxy);
+    }
+
+    @Override
+    public Map<String, Object> getSourceLocationInfo() {
+        return handler.getSourceLineLocation();
     }
 }

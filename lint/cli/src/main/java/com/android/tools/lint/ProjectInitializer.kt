@@ -514,6 +514,21 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     val computeSourceRoots = moduleElement.getAttribute(ATTR_COMPUTE_SOURCE_ROOTS) != VALUE_FALSE
     val kotlinPlatforms: String? = moduleElement.getAttribute(ATTR_KOTLIN_PLATFORMS)
 
+    val isTest: Boolean? =
+      when (moduleElement.getAttribute(ATTR_TEST)) {
+        VALUE_TRUE -> true
+        VALUE_FALSE -> false
+        else -> {
+          if (moduleElement.hasAttribute(ATTR_TEST)) {
+            reportError(
+              "Invalid test attribute value (should be \"true\" or \"false\")",
+              moduleElement,
+            )
+          }
+          null
+        }
+      }
+
     if (android) {
       this.android = true
     }
@@ -586,6 +601,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
         generatedSources,
         model?.defaultVariant(),
         kotlinPlatforms,
+        isTest,
       )
     modules[name] = module
 
@@ -610,10 +626,19 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
         }
         TAG_SRC -> {
           val file = getFile(child, dir)
-          when {
-            child.getAttribute(ATTR_GENERATED) == VALUE_TRUE -> generatedSources.add(file)
-            child.getAttribute(ATTR_TEST) == VALUE_TRUE -> testSources.add(file)
-            else -> sources.add(file)
+          // We potentially add the file to both generatedSources and testSources.
+          // See getUastSourceList.
+          var added = false
+          if (child.getAttribute(ATTR_GENERATED) == VALUE_TRUE) {
+            generatedSources.add(file)
+            added = true
+          }
+          if (child.getAttribute(ATTR_TEST) == VALUE_TRUE || module.isTestProject == true) {
+            testSources.add(file)
+            added = true
+          }
+          if (!added) {
+            sources.add(file)
           }
         }
         TAG_RESOURCE -> {
@@ -1133,6 +1158,7 @@ internal class ManualProject(
   private val generatedFiles: List<File>,
   private val variant: LintModelVariant? = null,
   val kotlinPlatforms: String? = null,
+  private val isTest: Boolean? = null,
 ) : Project(client, dir, dir, partialResultsDir) {
 
   init {
@@ -1151,6 +1177,10 @@ internal class ManualProject(
   /** Adds the given project as a dependency from this project. */
   fun addDirectDependency(project: ManualProject) {
     directLibraries.add(project)
+  }
+
+  override fun isTestProject(): Boolean? {
+    return isTest
   }
 
   override fun isAndroidProject(): Boolean = android
@@ -1212,7 +1242,12 @@ internal class ManualProject(
       if (files == null) {
         files = mutableListOf()
       }
-      files.addAll(sources)
+      val existingFiles = HashSet(files)
+      for (source in sources) {
+        if (source !in existingFiles) {
+          files.add(source)
+        }
+      }
     }
   }
 
@@ -1276,7 +1311,7 @@ internal class ManualProject(
           path.endsWith(SdkConstants.DOT_KTS) -> {
             gradleKtsContexts.add(context)
           }
-          testSet.contains(file) -> {
+          testSet.contains(file) || this.isTest == true -> {
             context.sourceSetType = SourceSetType.UNIT_TESTS
             context.isTestSource = true
             if (generatedSet.contains(file)) { // files can be both tests and generated

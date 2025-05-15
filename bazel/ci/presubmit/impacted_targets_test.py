@@ -2,6 +2,7 @@
 
 import json
 import pathlib
+import subprocess
 from typing import Iterable, List
 from unittest import mock
 
@@ -118,6 +119,27 @@ class ImpactedTargetsTest(absltest.TestCase):
             '--build_metadata=selective_presubmit_package_distance=(1:1),(2:1)',
         ]
     )
+
+  def test_get_impacted_targets_failure(self):
+    self._mock_generate_hash_file('hash-file')
+    self.enter_context(
+        mock.patch.object(
+            bazel_diff,
+            'get_impacted_targets',
+            side_effect=subprocess.CalledProcessError(returncode=1, cmd=[]),
+        )
+    )
+
+    parent_hash_path = self.build_env.tmp_path / 'parent.json'
+    parent_hash_path.write_text('parent-hash-file')
+    gce.upload_to_gcs(
+        parent_hash_path,
+        'adt-byob',
+        'bazel-diff-hashes/v8/789-studio-test.json',
+    )
+
+    with self.assertRaises(impacted_targets.ImpactedTargetsNotFoundError):
+      impacted_targets.get_impacted_targets_info(self.build_env, [], '')
 
   def test_generate_and_upload_hash_file(self):
     mock_generate = self._mock_generate_hash_file('hash-file')

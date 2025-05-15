@@ -327,6 +327,12 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
                   <artifactId>lifecycle-common</artifactId>
                   <version>2.6.1</version>
                   <scope>runtime</scope>
+                  <exclusions>
+                    <exclusion>
+                      <artifactId>*</artifactId>
+                      <groupId>androidx.annotation</groupId>
+                    </exclusion>
+                  </exclusions>
                 </dependency>
               </dependencies>
             </project>
@@ -471,6 +477,21 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
             Dependency.parse("androidx.core:core-ktx:1.13.0"),
             Dependency.parse("androidx.lifecycle:lifecycle-viewmodel:2.6.1"),
             Dependency.parse("org.jetbrains.kotlin:kotlin-stdlib:1.8.22"),
+        )
+    }
+
+    @Test
+    fun testExclusions() {
+        val repo =
+            StubGoogleMavenRepository(builtInData = builtInData) // no cache dir set: will only read built-in index
+        val version = repo.findVersion("androidx.activity", "activity-compose")
+        val dependencies =
+            repo.findDependencies("androidx.activity", "activity-compose", version!!, "runtime")
+        assertThat(dependencies).containsExactly(
+            Dependency.parse("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"),
+            Dependency.parse("androidx.lifecycle:lifecycle-runtime:2.6.1"),
+            Dependency.parse("androidx.savedstate:savedstate:1.2.1"),
+            Dependency.parse("androidx.lifecycle:lifecycle-common:2.6.1"),
         )
     }
 }

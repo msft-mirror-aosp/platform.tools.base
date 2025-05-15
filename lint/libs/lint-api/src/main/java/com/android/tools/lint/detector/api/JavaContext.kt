@@ -87,9 +87,6 @@ open class JavaContext(
   /** The parser which produced the parse tree. */
   lateinit var uastParser: UastParser
 
-  /** Whether this context is in a test source folder. */
-  var isTestSource: Boolean = false
-
   /** Whether this context is in a generated source folder. */
   var isGeneratedSource: Boolean = false
 

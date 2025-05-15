@@ -35,6 +35,7 @@ import com.intellij.psi.PsiClassObjectAccessExpression
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
+import com.intellij.psi.PsiLiteral
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiParameter
@@ -81,6 +82,7 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UForEachExpression
+import org.jetbrains.uast.UImportStatement
 import org.jetbrains.uast.ULabeledExpression
 import org.jetbrains.uast.ULambdaExpression
 import org.jetbrains.uast.ULocalVariable
@@ -3356,11 +3358,14 @@ class UastTest : TestCase() {
         ),
         kotlin(
           """
-            import test.*
+            import java.util.function.Consumer
+            import test.inlineFun
+            import test.reifiedFun
 
             fun test() {
               Any().inlineFun()
               Any().reifiedFun()
+              Consumer(Any::reifiedFun)
             }
           """
         ),
@@ -3369,6 +3374,15 @@ class UastTest : TestCase() {
     check(*testFiles) { file ->
       file.accept(
         object : AbstractUastVisitor() {
+          override fun visitImportStatement(node: UImportStatement): Boolean {
+            // b/415335843
+            // https://youtrack.jetbrains.com/issue/KTIJ-34040
+            val txt = node.sourcePsi?.text
+            val resolved = node.resolve()
+            assertNotNull(txt, resolved)
+            return super.visitImportStatement(node)
+          }
+
           override fun visitCallExpression(node: UCallExpression): Boolean {
             if (node.isConstructorCall()) {
               // Like Any()
@@ -3394,6 +3408,141 @@ class UastTest : TestCase() {
             assertEquals(txt, 2, resolved.annotations.size)
             assertTrue(txt, resolved.hasAnnotation("test.MyAnnotation"))
 
+            return super.visitCallExpression(node)
+          }
+
+          override fun visitCallableReferenceExpression(
+            node: UCallableReferenceExpression
+          ): Boolean {
+            // b/400512375
+            // https://youtrack.jetbrains.com/issue/KTIJ-33333
+            val txt = node.sourcePsi?.text
+            val resolved = node.resolve() as? PsiMethod
+            assertNotNull(txt, resolved)
+            resolved!!
+
+            val facadeOrPart =
+              if (useFirUast() && resolved.name == "reifiedFun") "test.UtilKt"
+              else "test.UtilKt__UtilKt"
+            assertEquals(txt, facadeOrPart, resolved.containingClass?.qualifiedName)
+
+            return super.visitCallableReferenceExpression(node)
+          }
+        }
+      )
+    }
+  }
+
+  fun testResolveProtectedInlineFromSuperClassWithTypeSubstitution() {
+    val testFiles =
+      arrayOf(
+        kotlin(
+            """
+          package my.pkg
+
+          class Baz : Bar<Any>() {
+            fun test() {
+              foo<String>(42)
+            }
+          }
+        """
+          )
+          .indented(),
+        bytecode(
+          "libs/lib.jar",
+          kotlin(
+              """
+              package my.pkg
+
+              abstract class Foo<F> {
+                protected inline fun <reified T : F> foo(
+                  arg1: Int,
+                  noinline arg2: () -> Unit = {}
+                ): T = TODO()
+              }
+
+              abstract class Bar<F> : Foo<F>()
+            """
+            )
+            .indented(),
+          0x886dbdc7,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBihQYtBiAAD1Iry9GAAAAA==
+                """,
+          """
+                my/pkg/Bar.class:
+                H4sIAAAAAAAA/01Qy07CQBQ905YCpQriC3y78bWwakxMhJCoSSNJ1UQNG1YD
+                NDgCU9MORnd8i3/gysSFIS79KOMtkujmnHvOnDv3znx9v38AOMQag9V7dh46
+                beeUh0kwhs2ye+zd80fudLlsO1eNe7+pShVvHHODoHzrliqlv06ykjAYzLKQ
+                QlUY9K3tmg0TSQsJpBgMdSciBtv7G0XtU14nUF0hnQtf8RZXnDyt96jTYiyG
+                dAxgYB3yn0Ss9qhq7TM4w4FtaQXNGg7GlNooDAc7Rmo4yLGDVN7Ia+dsTztN
+                fL6YWk6P2w7oJvffErQ1DTSJdjuKdjwLWj5D1hPSv+z3Gn54yxtdcvJe0OTd
+                Gg9FrMdm+ka0JVf9kGrrJuiHTd8V8UHxui+V6Pk1EQlKnkgZKK5EICNjHRp9
+                x/hN8e8QLpByRhpI7Lwh/UqFhkVCc2RaWCK0fwOkMsQ6lkcpHSsjLmKV+Igy
+                NmUm6tCrmKwiW0UOU1QiX8U0ZupgEWYxV4cRIRNhPkIhQvIHKwfi/QwCAAA=
+                """,
+          """
+                my/pkg/Foo＄foo＄1.class:
+                H4sIAAAAAAAA/61TXU8TQRQ9s1va7VClKH6AX4iopajbKn7RijZI44aCxiKJ
+                4WnaLnXpdtZ0dxt447f4C1ATTTQxxEd/lPHOtkRE1BebzMzt3HPunXvv2W/f
+                P30BMIMSQ7q9Zb5uNc2y502u08onwBgWKy0vcB1pbnTbpiMDuyOFa1ZEu9YQ
+                hf2+9VDWA8eTvlnuW7ninv+FdILCXIFh7M/BEogxnP97wATiDPGiQ+HmGPTM
+                1CpDLGNNraZggHMMYJAugleOz3CscrAeyh93ZNdr2QwjmanKhugK0xWyaT6t
+                bdj1oJDCEJIcGoYZBvc9PYHjDIa1XF0pLc8vMBz5pa4UTuBkEiM4RaBi3Y1e
+                px4UhRpT7qNJss4yDO8Rl+xANEQg6Elau6vTCJjakmoDA2spQyfnpqOsHbIa
+                eYbc7jbntLS0xjVDT+9uj2k5NsGN3e20dppltSf6RMxgaf0J//omrhkxxbtJ
+                xRSF9ORW2wt96ptKsEKrzMB/9iiBGwRUjWrY6yJ0A4aVzL4eFqx/TJsAv3X0
+                0CbnQKXEKeSNFiXJHiqwqhd26vZjuxY2FzYDW/qUgZo10BVuSONbrC6VnvFe
+                CL4Y8Xm2Or5nlfn0eH687z4oA56t8Pyl/LV8bpbsBU6KmfcatlKMVxfuqug4
+                oubaK2pjGKo40l4O2zW7079JWVLanXlX+L5NOhtakHXX8x3ZpKG+8hoMyarT
+                lCIIOwTmvULKjmKOHFYVw+jzUAZO2151fIcylKT0AhE1l+FM32fJ7m9e5ElV
+                AzRN+lAxqmRGUomRTdKj/S79myQEDRzxrP4RqbeRuO7Rnurd4kjEGVa67zOm
+                IwwtBdZwP4L1wD+JrEdMl4iY7hNvKlnRaWQ/4Ng7nN75C9/oJzbo2XuJTxFa
+                /QY/Q3v5EWfe49zb6CKBWdo5wXqAURSiOk1KWYyS6HgQnbcwR+f/1AYeUsBZ
+                Sn2eGn1hDbqFcQsXLUzgkkXdvWzhCq6ugfnIYGoNAz6yPqZ9XPNx3afuPCL+
+                UeLP0Lod4e78AFrcEWN0BQAA
+                """,
+          """
+                my/pkg/Foo.class:
+                H4sIAAAAAAAA/4VUXU8bVxA9d732rhcTNia0QBO6SdxgXJo1bmhTTJwSwGUj
+                MFXtIEU8LWaBxfautR80famsqn3sD8hr/0H7QtRIjUWlPvRHVZ27NmACEn6Y
+                OzN3Zu6ZM7P+978//wLwCM8ZlNYPeruxr5ddVwJjyC6WF9YPzSNTb5rOvr65
+                c2jVg2LpsotBfd8nQWRILNqOHZQYYtmZrRQSkBTEITOIwYHtM6TWz1+kIrE9
+                12WYzxrrDTdo2o5+eNTS90KnHtiu4+vlvpYvzlwF4clibWGhVi6Wrs1fPL1/
+                QeiKpeJMrUb5ountF2SMMEwNpNtOYHmO2dQNJ/Bsx7frvoSbDGP1A6veqLhB
+                JWw2vzU9s2VRIMN09jK2AU+VF9kvcjZGcUtBGmMMk/33qJrRajetlkWP7q56
+                nutJ+JBhJXu5woUez0CuWHtm2AyWqd3AC+uB622YXsPyij36JxSMY5JBztiZ
+                vUzENjN6nc8xaNfRzjBEOZnd3iMMtezg/K6dmnGZmSsHOX3ue+H4YbvtekTH
+                ZtvyTF5o9VXdanNFwj2GSjWkC61uNpu+9r0dHGh9eBo1FXImfc1xA+2sjmY7
+                Gt8+LaAAK5jVTqEuaNScjAzN9gq+ewQ+UHAf07Tu531zGjNzEmaIVqNSrS1V
+                llcZ0uvvRxRT+BSzSeTw2cUNu4IqCTpDPNP7SG6e8rphBeauGZhEkdA6itFX
+                y7hIcgGaZIP8r2xu5UnbpYn+0u1MKcK4oHQ7iqByIYukyJFNbkHlV/KD8W4n
+                J8rdjsoKQl54Fj/5LSGosefzqjgprMXvKTJT4+MsJzzudgoJNTEp5KXCDVlR
+                5Uk5LaaFvJJPrp38LP/9hnU7Ue7QyU+CpMTlk9eFPONgCoSvzCKYNc5Ov6XB
+                3UoQVQ8btFbisrtrMYys245VCVs7llczd5oWT3NpzlumZ3O770xW7X3HDEKP
+                9OFqYNYbG2a7f5cyHMfylpum71vEpFJ1Q69ulW1+N/Fd6AR2y9qyfZuClxza
+                kmi/fPEuBPqb4r8YAaZ/LZLPyNI5fDrjuWMkfydFwDLJROSMYYVkqhcABUOA
+                eovsYYriydvkFekcnU2rb/BBrPQW4y+ZyI7x0bsLpWR6j5fKUbhMZW7jDvhQ
+                R3tFI22KfCzSRvAx5a5GFW6oSWi420f7Kz3Iu9AnxH8w/Bb3X6Y/OUb23Z34
+                j6+h/IGHXeQ3rgYTQ5mkCGEkFcFKR8hFjBHA23RmBiBmBiDqmOtD1M8g6n2I
+                Ir4hSyFfLoqY6IOOYS06l2DQuUn3BYL9+TZiBh4ZmDfwBb4kFY8NfIWFbTAf
+                RSxuI+VjyMcTHyUfks/Npz6mInPEx9eRMvw/XZEkXt8GAAA=
+                """,
+        ),
+      )
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            if (node.sourcePsi?.text?.startsWith("foo") != true) {
+              return super.visitCallExpression(node)
+            }
+            val resolved = node.resolve()
+            assertNotNull(resolved)
+            assertEquals("foo", resolved!!.name)
+            assertEquals("my.pkg.Foo", resolved.containingClass?.qualifiedName)
             return super.visitCallExpression(node)
           }
         }
@@ -4398,6 +4547,63 @@ class UastTest : TestCase() {
     }
     // Test and anonymous Object
     assertEquals(2, count)
+  }
+
+  fun testAnnotationOnDeclarationWithValueClass() {
+    // b/402629264
+    // https://youtrack.jetbrains.com/issue/KTIJ-33916
+    val source =
+      kotlin(
+          """
+          annotation class MySuppress(
+            val message: String
+          )
+
+          class Test {
+            @MySuppress("Somehow")
+            fun test (x: Result<Any>): String {
+              return x.getOrNull()?.toString()
+            }
+          }
+        """
+        )
+        .indented()
+
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitMethod(node: UMethod): Boolean {
+            if (node.name != "test") return super.visitMethod(node)
+
+            val uAnno = node.uAnnotations.find { it.qualifiedName == "MySuppress" }
+            assertNotNull(uAnno)
+            assertEquals("MySuppress", uAnno!!.qualifiedName)
+
+            val uAttr = uAnno.findAttributeValue("message")
+            assertEquals("Somehow", uAttr?.evaluate())
+            val jAttr = uAnno.javaPsi!!.findAttributeValue("message")
+            assertEquals("Somehow", (jAttr as? PsiLiteral)?.value)
+
+            // Intentionally calling previously unimplemented UastFakeLightMethodBase#getAnnotation
+            @Suppress("UElementAsPsi") val psiAnno = node.getAnnotation("MySuppress")
+            assertNotNull(psiAnno)
+            assertEquals("MySuppress", psiAnno!!.qualifiedName)
+            assertEquals(psiAnno.qualifiedName, uAnno.javaPsi?.qualifiedName)
+
+            val pAttr = psiAnno.findAttributeValue("message")
+            assertEquals("Somehow", (pAttr as? PsiLiteral)?.value)
+
+            val javaPsiAnno = node.javaPsi.getAnnotation("MySuppress")
+            assertNotNull(javaPsiAnno)
+            assertEquals("MySuppress", javaPsiAnno!!.qualifiedName)
+
+            assertEquals(psiAnno, javaPsiAnno)
+
+            return super.visitMethod(node)
+          }
+        }
+      )
+    }
   }
 
   fun testMethodsBelongToValueClass_source() {

@@ -27,6 +27,7 @@ import static com.android.build.gradle.internal.publishing.AndroidArtifacts.Publ
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType.RUNTIME_ELEMENTS;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType.RUNTIME_PUBLICATION;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType.SOURCE_PUBLICATION;
+import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID;
 import static com.android.build.gradle.internal.utils.KgpUtils.isKotlinAndroidPluginApplied;
 import static com.android.build.gradle.internal.utils.KgpUtils.isKotlinPluginAppliedInTheSameClassloader;
 
@@ -739,16 +740,20 @@ public class VariantDependenciesBuilder {
                         + "=false to gradle.properties");
     }
 
-    // TODO(b/338596003) Update this method to handle built-in kotlin support
     private boolean shouldConfigureKotlinPlatformAttribute(
             ProjectOptions projectOptions, ComponentType componentType) {
         if (projectOptions.get(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP)) {
             return false;
         }
-        if (componentType.isForScreenshotPreview() || componentType.isTestFixturesComponent()) {
-            return true;
-        }
-        return !kgpApplied();
+        boolean kotlinPluginApplied = kgpApplied() || project.getPluginManager().hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID);
+        // If KGP (legacy or built-in) is not applied, AGP should add the attribute.
+        // If KGP (legacy or built-in) is applied, it will add the attribute, so AGP should not
+        // add it, except for screenshot-test and test-fixture components (these components are
+        // handled slightly differently and do not trigger the KGP code path that adds the
+        // attribute, so AGP should still add it).
+        return !kotlinPluginApplied
+                || componentType.isForScreenshotPreview()
+                || componentType.isTestFixturesComponent();
     }
 
     private boolean kgpApplied() {

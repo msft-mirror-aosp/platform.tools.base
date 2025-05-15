@@ -20,15 +20,29 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.JavaVersion
+import org.gradle.api.Project
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import java.nio.file.Files
+import java.util.zip.ZipFile
 import kotlin.io.path.readLines
 
-class FusedLibraryMergeResourcesTaskTest {
+@RunWith(Parameterized::class)
+class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolean) {
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
 
     @get:Rule
     val rule = GradleRule.configure()
@@ -45,6 +59,7 @@ class FusedLibraryMergeResourcesTaskTest {
                     """.trimIndent())
         }.from {
             androidLibrary(":androidLib1") {
+                pluginCallbacks += AndroidLibraryConfigureMavenPublishCallback::class.java
                 android {
                     namespace = "com.example.androidLib1"
                 }
@@ -115,6 +130,7 @@ class FusedLibraryMergeResourcesTaskTest {
                     """.trimIndent())
             }
             fusedLibrary(":fusedLib1") {
+                pluginCallbacks += FusedLibraryConfigureMavenPublishCallback::class.java
                 androidFusedLibrary {
                     namespace = "com.example.fusedLib1"
                     minSdk = 1
@@ -158,6 +174,7 @@ class FusedLibraryMergeResourcesTaskTest {
             }
             gradleProperties {
                 add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
+                add(BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE, publicationOnlyMode)
                 add(BooleanOption.USE_ANDROID_X, true)
             }
         }
@@ -254,7 +271,13 @@ class FusedLibraryMergeResourcesTaskTest {
             }
         }
 
-        build.executor.run(":app:assembleDebug", ":fusedLib1:assemble")
+        if (!publicationOnlyMode) {
+            build.executor.run(":app:assembleDebug", ":fusedLib1:assemble")
+        } else {
+            val failure = build.executor.expectFailure().run(":app:assembleDebug", ":fusedLib1:assemble")
+            failure.assertErrorContains("No matching variant of project :fusedLib1 was found.")
+            return
+        }
 
         build.fusedLibrary(":fusedLib1").assertAar(AarSelector.NO_BUILD_TYPE) {
             textSymbolFile().isEqualTo(
@@ -277,5 +300,103 @@ class FusedLibraryMergeResourcesTaskTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun testPublishedFusedLibraryAarResourcesAccessibleFromApp() {
+        val build = rule.build {
+            androidApplication {
+                dependencies {
+                    implementation("company:my-fused-library:1.0")
+                }
+            }
+        }
+        build.executor.run(
+            "publishReleasePublicationToMyrepoRepository",
+        )
+        build.reconfigureSettings {
+            addRepository("repo")
+        }
+
+        val newFolder = temporaryFolder.newFolder()
+        val rTxtFile = newFolder.resolve("R.txt")
+        ZipFile(build.fusedLibrary(":fusedLib1").buildDir.resolve("outputs/aar/fusedLib1.aar").toFile()).use {
+            val rTxtInputStream = it.getInputStream(it.getEntry("R.txt"))
+            Files.copy(rTxtInputStream, rTxtFile.toPath())
+        }
+
+        assertThat(rTxtFile.readText()).isEqualTo(
+            """
+                    int id androidlib3_textview 0x0
+                    int id string_from_android_lib_1 0x0
+                    int layout layout 0x0
+                    int string string_from_android_lib_2 0x0
+                    int string string_from_android_lib_3 0x0
+                    int string string_overridden 0x0
+
+                    """.trimIndent()
+        )
+
+        build.executor.run(":app:assembleDebug")
+
+        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+            classes().apply {
+                classDefinition("com/example/fusedLib1/R\$string").fields().containsExactly(
+                    "string_from_android_lib_2",
+                    "string_from_android_lib_3",
+                    "string_overridden"
+                )
+            }
+        }
+    }
+
+    private class FusedLibraryConfigureMavenPublishCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            project.plugins.apply("maven-publish")
+
+            val publishing = project.extensions.findByType(PublishingExtension::class.java)
+                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+            publishing.apply {
+                publications.create("release", MavenPublication::class.java) {
+                    it.groupId = "company"
+                    it.artifactId = "my-fused-library"
+                    it.version = "1.0"
+                    it.from(project.components.getByName(
+                        FusedLibraryConstants.FUSED_LIBRARY_PUBLICATION_COMPONENT_NAME))
+                }
+                repositories {
+                    it.maven {
+                        it.name = "myrepo"
+                        it.url = project.uri(project.layout.projectDirectory.asFile.parentFile.resolve("repo"))
+                    }
+                }
+            }
+        }
+    }
+
+    private class AndroidLibraryConfigureMavenPublishCallback : GenericCallback {
+
+        override fun handleProject(project: Project) {
+            project.plugins.apply("maven-publish")
+
+            val publishing = project.extensions.findByType(PublishingExtension::class.java)
+                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+            publishing.apply {
+                publications.create("release", MavenPublication::class.java)
+                repositories {
+                    it.maven {
+                        it.name = "myrepo"
+                        it.url =
+                            project.uri(project.layout.projectDirectory.asFile.parentFile.resolve("repo"))
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        @JvmStatic
+        @Parameterized.Parameters
+        fun publicationOnlyMode() = listOf(true, false)
     }
 }

@@ -2929,7 +2929,7 @@ public final class SdkConstants {
      * lint) can safely recommend during its development cycle. If an up-to-date version is
      * required, consider using `LatestKnownPluginVersionProvider` instead.
      */
-    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "7.0.3";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = Version.LAST_STABLE_ANDROID_GRADLE_PLUGIN_VERSION;
 
     /**
      * The version of NDK to use as default. If no specific version of NDK is specified in

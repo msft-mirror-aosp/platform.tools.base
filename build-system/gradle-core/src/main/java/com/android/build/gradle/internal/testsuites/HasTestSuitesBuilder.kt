@@ -18,6 +18,9 @@ package com.android.build.gradle.internal.testsuites
 
 import org.gradle.api.Incubating
 
+/**
+ * Container of [TestSuiteBuilder]
+ */
 @Incubating
 interface HasTestSuitesBuilder {
     /**

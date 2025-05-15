@@ -456,7 +456,7 @@ dependencies {
       createMocker(
         """buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:1.5.1'

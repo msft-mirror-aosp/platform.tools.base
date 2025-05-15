@@ -66,6 +66,10 @@ def main():
       sys.stdout.write('TN:{}\n'.format(test_name))
       sys.stdout.write('SF:{}\n'.format(filepath))
       for line_num in data[pkg_name][sfile_name]['instrumented']:
+        # line numbers have to be positive so if we have a nonpositive one skip it, but log it
+        if line_num < 1:
+          sys.stderr.write('Invalid line number {} in file {} in package {}\n'.format(line_num, sfile_name, pkg_name))
+          continue
         # format is DA:{line number},{number of hits}, but we don't care about
         # detailed hit numbers so just use 1 for covered lines
         sys.stdout.write('DA:{},{}\n'.format(

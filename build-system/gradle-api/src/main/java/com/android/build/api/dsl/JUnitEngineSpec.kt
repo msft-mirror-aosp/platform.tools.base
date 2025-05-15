@@ -17,6 +17,7 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
+import org.gradle.api.provider.Provider
 
 /**
  * Spec for running a JUnit engine against a test suite.
@@ -28,6 +29,19 @@ interface JUnitEngineSpec {
     // TODO : We should reconcile this with org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
     @get:Incubating
     val includeEngines: MutableSet<String>
+
+    /**
+     * Adds a new key value pair property to the list of inputs for this test engine.
+     */
+    @Incubating
+    fun addInputProperty(propertyName: String, propertyValue: String)
+
+    /**
+     * Adds a new key value pair property to the list of inputs of this test engine, the value
+     * will only be resolved at execution time.
+     */
+    @Incubating
+    fun addInputProperty(propertyName: String, propertyValue: Provider<String>)
 
     /**
      * Identifies the inputs required by the junit engine running the test suite.

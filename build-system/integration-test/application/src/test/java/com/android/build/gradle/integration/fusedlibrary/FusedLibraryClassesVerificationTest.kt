@@ -34,12 +34,15 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Tests to verify the classes that are packaged within the AAR are correct or cause an expected
  * build time failure when invalid.
  */
-class FusedLibraryClassesVerificationTest {
+@RunWith(Parameterized::class)
+class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boolean) {
 
     @get:Rule
     val temporaryFolder = TemporaryFolder()
@@ -264,6 +267,7 @@ class FusedLibraryClassesVerificationTest {
             }
             gradleProperties {
                 add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
+                add(BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE, publicationOnlyMode)
                 add(BooleanOption.USE_ANDROID_X, true)
             }
         }
@@ -411,17 +415,21 @@ class FusedLibraryClassesVerificationTest {
             """.trimIndent()
         )
 
-        build.executor.run(":app:assembleDebug")
-
-        appProject.assertApk(ApkSelector.DEBUG) {
-            classes().containsExactly(
-                TestClass::class.qualifiedName?.replace(".", "/").toString(),
-                "com/example/myapp/R",
-                "com/example/fusedLib1/R",
-                "kotlin/",
-                "org/intellij/",
-                "org/jetbrains/"
-            )
+        if (publicationOnlyMode) {
+            val appRun = build.executor.expectFailure().run(":app:assembleDebug")
+            appRun.assertErrorContains("No matching variant of project :fusedLib1 was found.")
+        } else {
+            build.executor.run(":app:assembleDebug")
+            appProject.assertApk(ApkSelector.DEBUG) {
+                classes().containsExactly(
+                    TestClass::class.qualifiedName?.replace(".", "/").toString(),
+                    "com/example/myapp/R",
+                    "com/example/fusedLib1/R",
+                    "kotlin/",
+                    "org/intellij/",
+                    "org/jetbrains/"
+                )
+            }
         }
     }
 
@@ -730,6 +738,10 @@ class FusedLibraryClassesVerificationTest {
         const val ANDROID_LIB_WITH_EXTERNAL_LIB_WITH_CIRCULAR_DEP = "androidLibWithExternalLibWithCircularDep"
         const val ANDROID_LIB_WITH_DATABINDING = "androidLibWithDatabinding"
         const val FUSED_LIBRARY_R_CLASS = "com/example/fusedLib1/R.class"
+
+        @JvmStatic
+        @Parameterized.Parameters
+        fun publicationOnlyMode() = listOf(true, false)
     }
 }
 

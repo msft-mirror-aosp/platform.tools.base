@@ -62,7 +62,8 @@ class BooleanOptionTest {
             BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS,
             BooleanOption.ENABLE_LEGACY_API,
             BooleanOption.FULL_R8,
-            BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES
+            BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES,
+            BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE,
         )
 
         val violatingOptions = BooleanOption.values().filter {
@@ -104,6 +105,7 @@ class BooleanOptionTest {
                 BooleanOption.EXCLUDE_RES_SOURCES_FOR_RELEASE_BUNDLES,
                 BooleanOption.RUN_LINT_IN_PROCESS,
                 BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES,
+                BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE
         )
 
         val violatingOptions = BooleanOption.values().filter {

@@ -43,7 +43,7 @@ import org.gradle.internal.extensions.stdlib.capitalized
  * TODO: reconcile with VariantDependenciesBuilder and see if there are common pattern that can
  * abstracted into a supertype.
  */
-class TestSuiteDependenciesBuilder(
+class TestSuiteDependenciesBuilder internal constructor(
     project: Project,
     private val projectOptions: ProjectOptions,
     issueReporter: IssueReporter,

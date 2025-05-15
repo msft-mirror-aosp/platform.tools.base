@@ -118,7 +118,7 @@ public class SdkVersionInfo {
     /**
      * The lowest active API for XR, minimum required by libraries.
      */
-    public static final int LOWEST_ACTIVE_API_XR = 30;
+    public static final int LOWEST_ACTIVE_API_XR = 34;
 
     /**
      * The lowest api level we can accept for compileSdkVersion for

@@ -15,11 +15,14 @@
  */
 package com.android.tools.deploy.liveedit;
 
-import java.lang.reflect.Proxy;
 import kotlin.coroutines.Continuation;
 import kotlin.coroutines.jvm.internal.RestrictedSuspendLambda;
 
-public final class LiveEditRestrictedSuspendLambda extends RestrictedSuspendLambda {
+import java.lang.reflect.Proxy;
+import java.util.Map;
+
+public final class LiveEditRestrictedSuspendLambda extends RestrictedSuspendLambda
+        implements SourceLocationAware {
     private final Object proxy;
     private final ProxyClassHandler handler;
 
@@ -35,5 +38,10 @@ public final class LiveEditRestrictedSuspendLambda extends RestrictedSuspendLamb
                 "invokeSuspend",
                 "(Ljava/lang/Object;)Ljava/lang/Object;",
                 new Object[] {object});
+    }
+
+    @Override
+    public Map<String, Object> getSourceLocationInfo() {
+        return handler.getSourceLineLocation();
     }
 }

@@ -22,7 +22,6 @@ import com.android.resources.ResourceFolderType
 import com.android.tools.lint.checks.AbstractCheckTest
 import com.android.tools.lint.checks.ManifestDetector
 import com.android.tools.lint.checks.SdCardDetector
-import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.client.api.JarFileIssueRegistryTest.Companion.lintApiStubs
 import com.android.tools.lint.detector.api.Category
@@ -33,6 +32,7 @@ import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.LayoutDetector
 import com.android.tools.lint.detector.api.Location
+import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.ResourceXmlDetector
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
@@ -115,6 +115,50 @@ class LintDriverCrashTest : AbstractCheckTest() {
         assertThat(it).contains("1 error")
       })
     LintDriver.clearCrashCount()
+  }
+
+  fun testDisableLintDriverError() {
+    // b/416046484
+    lint()
+      .files(
+        xml("res/layout/foo.xml", "<LinearLayout/>"),
+        java(
+          """
+                    package test.pkg;
+                    @SuppressWarnings("ALL") class Foo {
+                    }
+                    """
+        ),
+        xml(
+          "lint.xml",
+          """
+            <lint
+                checkTestSources='false'
+                ignoreTestSources='false'
+                checkGeneratedSources='false'
+                explainIssues='false'
+            >
+                <issue id="_TestCrash_But_Ignore" severity="ignore"/>
+            </lint>
+            """,
+        ),
+      )
+      .clientFactory {
+        object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
+          override fun getConfiguration(project: Project, driver: LintDriver?): Configuration {
+            // Make sure we don't pick up the special TestConfiguration;
+            // we want the real configuration lint would create in production
+            return configurations.getConfigurationForProject(project)
+          }
+        }
+      }
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .issues(CrashingYetDisabledDetector.CRASHING_ISSUE)
+      // stack traces will differ between the test modes
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expectClean()
   }
 
   fun testErrorThrownInAbstractDetector() {
@@ -597,6 +641,30 @@ class LintDriverCrashTest : AbstractCheckTest() {
           10,
           Severity.FATAL,
           Implementation(CrashingDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+    }
+  }
+
+  class CrashingYetDisabledDetector : CrashingDetector() {
+    override fun createUastHandler(context: JavaContext): UElementHandler {
+      val superHandler = super.createUastHandler(context)
+
+      return object : UElementHandler() {
+        override fun visitFile(node: UFile) = superHandler.visitFile(node)
+      }
+    }
+
+    companion object {
+      @Suppress("LintImplTextFormat")
+      val CRASHING_ISSUE =
+        Issue.create(
+          "_TestCrash_But_Ignore",
+          "test",
+          "test",
+          Category.LINT,
+          10,
+          Severity.ERROR,
+          Implementation(CrashingYetDisabledDetector::class.java, Scope.JAVA_FILE_SCOPE),
         )
     }
   }

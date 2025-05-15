@@ -23,7 +23,7 @@ public final class LambdaFactory {
     public static Object create(String superInternalName, Object[] args, Object proxy) {
         switch (superInternalName) {
             case "kotlin/jvm/internal/Lambda":
-                return makeLambda(args);
+                return makeLambda(args, proxy);
             case "kotlin/jvm/internal/FunctionReferenceImpl":
                 // Base class for function references (MyClass::method)
                 return makeFunctionReferenceImpl(args);
@@ -42,8 +42,8 @@ public final class LambdaFactory {
         }
     }
 
-    private static Object makeLambda(Object[] args) {
-        return new LiveEditLambda((int) args[0]);
+    private static Object makeLambda(Object[] args, Object proxy) {
+        return new LiveEditLambda((int) args[0], proxy);
     }
 
     private static Object makeFunctionReferenceImpl(Object[] args) {

@@ -17,22 +17,62 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.DependencyVariantSelection
+import com.android.build.api.dsl.LocalDependencySelection
+import com.android.build.api.dsl.ProductFlavorDimensionSpec
 import com.android.build.gradle.internal.services.DslServices
+import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import javax.inject.Inject
 
+/**
+ * Implementation of the deprecated dependencyVariantSelection block in KMP-Android DSL
+ * It just delegates to the given replacement block [LocalDependencySelectionImpl]
+ */
 abstract class DependencyVariantSelectionImpl@Inject constructor(
-    dslServices: DslServices,
-    objectFactory: ObjectFactory
+    internal val dslServices: DslServices,
+    internal val delegate: LocalDependencySelectionImpl,
+    internal val objectFactory: ObjectFactory
 ): DependencyVariantSelection {
-    // In kmp, there is only a single variant so when a kmp library consumes android library which
-    // typically expose multiple build type variants (debug, release, etc) we want to have a default
-    // build type to consumer (unless specified directly through the DSL). We use Gradle Property's
-    // convention to do this
-    override val buildTypes: ListProperty<String> = objectFactory.listProperty(String::class.java).also {
-        it.convention(listOf("debug"))
+    @Deprecated("Replaced by LocalDependencySelection.selectBuildTypeFrom")
+    override val buildTypes: ListProperty<String>
+        get() = delegate.selectBuildTypeFrom
+
+    @Deprecated("Replaced by LocalDependencySelection.productFlavorDimension")
+    override val productFlavors: MapProperty<String, List<String>>
+        get() = delegate.productFlavorsMap
+}
+
+abstract class LocalDependencySelectionImpl@Inject constructor(
+    internal val dslServices: DslServices,
+    internal val objectFactory: ObjectFactory
+): LocalDependencySelection {
+
+    val productFlavorsMap: MapProperty<String, List<String>> = objectFactory.mapProperty(
+        String::class.java,
+        List::class.java as Class<List<String>>
+    )
+
+    override val selectBuildTypeFrom: ListProperty<String> = objectFactory.listProperty(String::class.java).also {
+        it.value(listOf("release"))
         it.finalizeValueOnRead()
     }
+
+    override fun productFlavorDimension(
+        dimension: String,
+        action: Action<ProductFlavorDimensionSpec>
+    ) {
+        val spec =  ProductFlavorDimensionSpecImpl(objectFactory)
+        action.execute(spec)
+        productFlavorsMap.put(dimension, spec.selectFrom)
+    }
+
+    fun getDimensions(): Map<String, List<String>> = productFlavorsMap.get().toMap()
+}
+
+class ProductFlavorDimensionSpecImpl(
+    objectFactory: ObjectFactory
+) : ProductFlavorDimensionSpec {
+    override val selectFrom: ListProperty<String> = objectFactory.listProperty(String::class.java)
 }

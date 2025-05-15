@@ -19,15 +19,21 @@ package com.android.build.gradle.internal.testsuites.impl
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.JUnitEngineSpec
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
+import com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl
 import com.android.build.gradle.internal.services.BaseServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
 import com.android.build.gradle.internal.testsuites.TestSuiteDependencies
 import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Provider
+import javax.inject.Inject
 
-class TestSuiteBuilderImpl(
+internal class TestSuiteBuilderImpl @Inject internal constructor(
+    objects: ObjectFactory,
     private val _name: String,
     override var enable: Boolean,
-    _junitEngineSpec: JUnitEngineSpec,
+    _junitEngineSpec: JUnitEngineSpecImpl,
     internal val dslDeclaredDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies,
     services: BaseServices,
 ): TestSuiteBuilder {
@@ -49,29 +55,52 @@ class TestSuiteBuilderImpl(
                     ?: throw RuntimeException("Test suites must use junit engines for now")
                 agpTestSuite.name to
                         // TODO: lock JUnitEngineSpec instance.
-                        TestSuiteBuilderImpl(
-                            _name = agpTestSuite.name,
-                            enable = true,
-                            _junitEngineSpec = junitTestEngine,
-                            dslDeclaredDependencies = agpTestSuite.dependencies,
-                            services = variantBuilderServices
+                        variantBuilderServices.newInstance(
+                            TestSuiteBuilderImpl::class.java,
+                            agpTestSuite.name,
+                            true,
+                            junitTestEngine,
+                            agpTestSuite.dependencies,
+                            variantBuilderServices
                         )
             }
     }
 
-    override val junitEngineSpec: JUnitEngineSpec = object : JUnitEngineSpec {
-        override val includeEngines: MutableSet<String> =
-            mutableSetOf<String>().also { list ->
-                list.addAll(_junitEngineSpec.includeEngines)
-            }
-        override val inputs: MutableList<AgpTestSuiteInputParameters> =
-            mutableListOf<AgpTestSuiteInputParameters>().also { list ->
-                list.addAll(_junitEngineSpec.inputs)
-            }
-    }
+    override val junitEngineSpec: JUnitEngineSpec =
+        JUnitEngineSpecForVariantBuilder(objects, _junitEngineSpec)
 
     override fun getName(): String = _name
 
     override val dependencies: TestSuiteDependencies =
         services.newInstance(TestSuiteDependencies::class.java)
+}
+
+internal class JUnitEngineSpecForVariantBuilder(
+    objects: ObjectFactory,
+    dslDefinedJUnitEngineSpec: JUnitEngineSpecImpl
+): JUnitEngineSpec {
+    override val includeEngines: MutableSet<String> =
+        mutableSetOf<String>().also { list ->
+            list.addAll(dslDefinedJUnitEngineSpec.includeEngines)
+        }
+    override val inputs: MutableList<AgpTestSuiteInputParameters> =
+        mutableListOf<AgpTestSuiteInputParameters>().also { list ->
+            list.addAll(dslDefinedJUnitEngineSpec.inputs)
+        }
+
+    override fun addInputProperty(propertyName: String, propertyValue: String) {
+        inputProperties.put(propertyName, propertyValue)
+    }
+
+    override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
+        inputProperties.put(propertyName, propertyValue)
+    }
+
+    internal val inputProperties: MapProperty<String, String> =
+        objects.mapProperty(String::class.java, String::class.java).also {
+            it.putAll(dslDefinedJUnitEngineSpec.inputStaticProperties)
+            dslDefinedJUnitEngineSpec.inputProperties.forEach { (t, u) ->
+                it.put(t, u)
+            }
+        }
 }

@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.testsuites.impl
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import java.io.File
 
 /**
@@ -48,7 +49,7 @@ data class TestEngineInputProperties(val properties: List<TestEngineInputPropert
     }
 
     fun save(output: File) {
-        output.writeText( Gson().toJson(this))
+        output.writeText(GsonBuilder().setPrettyPrinting().create().toJson(this))
     }
 
     fun get(name: String): String {

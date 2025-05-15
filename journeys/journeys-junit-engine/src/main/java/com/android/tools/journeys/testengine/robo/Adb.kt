@@ -42,10 +42,13 @@ class Adb(
         timeoutSeconds: Long = Long.MAX_VALUE
     ) {
         execCmdSync(
-            adbCmd = if (flags.isEmpty()) {
-                "install $apkFilePath"
-            } else {
-                "install ${flags.joinToString(" ")} $apkFilePath"
+            adbCmdParts = buildList {
+                add(adbPath)
+                add("-s")
+                add(deviceId)
+                add("install")
+                addAll(flags)
+                add(apkFilePath)
             },
             timeoutSeconds = timeoutSeconds,
             hasFailed = {
@@ -147,6 +150,16 @@ class Adb(
     }
 
     /**
+     * Executes 'shell settings put global [key] [value]' on the device.
+     */
+    fun setGlobalSettingsValue(key: String, value: String, timeoutSeconds: Long = 10) {
+        execCmdSync(
+            adbCmd = "shell settings put global $key $value",
+            timeoutSeconds = timeoutSeconds
+        )
+    }
+
+    /**
      * Executes an ADB command synchronously, handling process execution, timeout,
      * stream reading, and result validation.
      *
@@ -167,10 +180,32 @@ class Adb(
     ): ProcessResult {
         val cmd = buildAdbCommand(adbCmd)
         val cmdParts = cmd.trim().split(Regex("\\s+"))
-        val process = ProcessBuilder(cmdParts).start()
+        return execCmdSync(cmdParts, timeoutSeconds, hasFailed, crashIfTimeout)
+    }
+
+    /**
+     * Executes an ADB command synchronously, handling process execution, timeout,
+     * stream reading, and result validation.
+     *
+     * @param adbCmdParts The adb command split into parts which can be directly fed to ProcessBuilder.
+     * @param timeoutSeconds The maximum time to wait for the process to finish.
+     * @param hasFailed A lambda with [ProcessResult] as receiver to determine if the execution failed.
+     * Defaults to checking if the exit value is non-zero.
+     * @param crashIfTimeout If true, throws [IllegalStateException] on timeout; otherwise, proceeds.
+     * @return A [ProcessResult] containing exit code, stdout, and stderr.
+     * @throws IllegalStateException if the command times out (and [crashIfTimeout] is true)
+     * or if the [hasFailed] predicate returns true.
+     */
+    private fun execCmdSync(
+        adbCmdParts: List<String>,
+        timeoutSeconds: Long = 30,
+        hasFailed: ProcessResult.() -> (Boolean) = { exitValue != 0 },
+        crashIfTimeout: Boolean = true
+    ): ProcessResult {
+        val process = ProcessBuilder(adbCmdParts).start()
         val waitFor = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
         if (!waitFor && crashIfTimeout) {
-            throw IllegalStateException("Timeout waiting for ${cmdParts.joinToString(" ")}")
+            throw IllegalStateException("Timeout waiting for ${adbCmdParts.joinToString(" ")}")
         }
 
         val stdout = process.inputStream.bufferedReader().use { it.readText() }
@@ -184,7 +219,7 @@ class Adb(
         val processResult = ProcessResult(process.exitValue(), stdout, stderr)
         if (hasFailed(processResult)) {
             throw IllegalStateException(
-                "Command `${cmdParts.joinToString(" ")}` failed (exit code ${processResult.exitValue}) with output:\n$fullOutputForLog"
+                "Command `${adbCmdParts.joinToString(" ")}` failed (exit code ${processResult.exitValue}) with output:\n$fullOutputForLog"
             )
         }
         return processResult

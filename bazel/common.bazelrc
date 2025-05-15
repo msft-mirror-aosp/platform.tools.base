@@ -24,6 +24,13 @@ build --jvmopt='-XX:+UseG1GC'
 build --jvmopt='-XX:+ErrorFileToStderr'
 build --verbose_failures
 
+common --noincompatible_disallow_empty_glob
+# TODO(b/411436577) Remove structs as providers.
+common --incompatible_disallow_struct_provider_syntax=false
+# TODO(b/416777191) PerfgateDataCollector relies on zipped test outputs.
+test --zip_undeclared_test_outputs
+common --enable_workspace
+
 # Needed by rules_android.
 common --experimental_google_legacy_api
 common --experimental_enable_android_migration_apis
@@ -129,7 +136,7 @@ build:release --copt=-w
 ## Base RBE configuration
 build:_remote_base --bes_timeout=240s
 build:_remote_base --grpc_keepalive_time=30s
-build:_remote_base --experimental_build_event_upload_max_retries=10
+build:_remote_base --build_event_upload_max_retries=10
 build:_remote_base --google_default_credentials
 build:_remote_base --remote_cache=remotebuildexecution.googleapis.com
 build:_remote_base --remote_instance_name=projects/google.com:android-studio-alphasource/instances/default_instance

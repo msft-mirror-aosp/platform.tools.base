@@ -25,6 +25,7 @@ import org.gradle.api.Named
  *
  * TODO : Provide example before moving to public interfaces
  */
+/** @suppress */
 interface TestSuiteBuilder: Named {
 
     /**

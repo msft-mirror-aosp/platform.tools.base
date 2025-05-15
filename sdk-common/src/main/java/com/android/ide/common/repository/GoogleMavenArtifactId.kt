@@ -294,6 +294,9 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   // Lifecycle
   ANDROIDX_LIFECYCLE_VIEWMODEL_KTX("androidx.lifecycle", "lifecycle-viewmodel-ktx"),
 
+  // Activity
+  ACTIVITY_COMPOSE("androidx.activity", "activity-compose"),
+
   // Core-Ktx
   ANDROIDX_CORE_KTX("androidx.core", "core-ktx"),
   ;
@@ -304,11 +307,14 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   override fun toString(): String = displayName
 
   companion object {
+    private val ENTRIES_BY_MODULEID = entries.associateBy { it.toString() }
+    private val ENTRIES_BY_GROUP_ARTIFACT_PAIR = entries.associateBy { it.mavenGroupId to it.artifactId }
+
     @JvmStatic fun find(moduleId: String): GoogleMavenArtifactId? =
-        values().asSequence().find { it.toString() == moduleId }
+        ENTRIES_BY_MODULEID[moduleId]
 
     @JvmStatic fun find(groupId: String, artifactId: String): GoogleMavenArtifactId? =
-        values().asSequence().find { it.mavenGroupId == groupId && it.mavenArtifactId == artifactId }
+        ENTRIES_BY_GROUP_ARTIFACT_PAIR[groupId to artifactId]
 
     @JvmStatic fun androidxIdOf(id: GoogleMavenArtifactId): GoogleMavenArtifactId =
         find(AndroidxNameUtils.getCoordinateMapping(id.toString())) ?: id

@@ -58,7 +58,7 @@ open class VariantApiBaseTest(
 
         val generalRepos = listOf(
                 "google()",
-                "jcenter()")
+                "mavenCentral()")
 
         /**
          * List of custom repositories where all projects dependencies can be satisfied.

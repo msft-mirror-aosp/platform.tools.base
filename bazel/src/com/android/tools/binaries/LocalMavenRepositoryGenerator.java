@@ -491,7 +491,7 @@ public class LocalMavenRepositoryGenerator {
                     System.err.println("Invalid argument after --remote-repo: " + args[i + 1]);
                     System.exit(1);
                 }
-                remoteRepositories.put(remoteRepo[0], remoteRepo[1]);
+                remoteRepositories.put(remoteRepo[0], remoteRepo[1].replace("\"", ""));
                 i++;
                 continue;
             }

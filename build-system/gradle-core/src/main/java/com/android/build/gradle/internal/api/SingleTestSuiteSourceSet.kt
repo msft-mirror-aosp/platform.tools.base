@@ -41,7 +41,7 @@ class SingleTestSuiteSourceSet(
     ).also {
         it.addSource(FileBasedDirectoryEntryImpl(
             name = sourceSetName,
-            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/test/$sourceSetName"),
+            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName"),
             filter = null,
             isUserAdded = false,
             shouldBeAddedToIdeModel = true
