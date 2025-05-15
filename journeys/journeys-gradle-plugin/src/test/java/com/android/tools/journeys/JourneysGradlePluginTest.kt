@@ -94,24 +94,26 @@ class JourneysGradlePluginTest {
             AndroidPluginVersion(8, 9, 0).alpha(1),
             AndroidPluginVersion(8, 10, 0).alpha(1),
             AndroidPluginVersion(8, 11, 0).alpha(1),
+            AndroidPluginVersion(8, 12, 0).alpha(1),
+            AndroidPluginVersion(8, 12, 0)
         )
         val unsupportedVersionsTooNew = listOf(
-            AndroidPluginVersion(8, 12, 0).alpha(1),
-            AndroidPluginVersion(8, 12),
+            AndroidPluginVersion(8, 13, 0).alpha(1),
+            AndroidPluginVersion(8, 13),
         )
         unsupportedVersionsTooOld.forEach {
             val e = assertThrows(IllegalStateException::class.java) {
                 applyJourneysPlugin(it)
             }
             assertThat(e).hasMessageThat()
-                .contains("requires Android Gradle plugin version between 8.2.1 and 8.11.")
+                .contains("requires Android Gradle plugin version between 8.2.1 and 8.12.")
         }
         unsupportedVersionsTooNew.forEach {
             val e = assertThrows(IllegalStateException::class.java) {
                 applyJourneysPlugin(it)
             }
             assertThat(e).hasMessageThat()
-                .contains("requires Android Gradle plugin version between 8.2.1 and 8.11.")
+                .contains("requires Android Gradle plugin version between 8.2.1 and 8.12.")
         }
         supportedVersions.forEach {
             applyJourneysPlugin(it)
