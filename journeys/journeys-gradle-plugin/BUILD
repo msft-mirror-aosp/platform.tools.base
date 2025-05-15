@@ -50,6 +50,7 @@ JOURNEYS_GRADLE_PLUGIN_SOURCE_FILES = [
     ":gradle_project_files",
     "//tools:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",
+    "//tools/base/journeys:release_version.gradle",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",
 ]

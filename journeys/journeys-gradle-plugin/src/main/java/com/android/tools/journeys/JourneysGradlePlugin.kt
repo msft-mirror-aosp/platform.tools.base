@@ -51,6 +51,16 @@ class JourneysGradlePlugin : Plugin<Project> {
                     }
                 }
         }
+
+        val APPCRAWLER_VERSION: String by lazy {
+            requireNotNull(JourneysGradlePlugin::class.java.getResourceAsStream("/version.properties"))
+                .buffered().use { stream ->
+                    Properties().let { properties ->
+                        properties.load(stream)
+                        properties.getProperty("appcrawlerVersion")
+                    }
+                }
+        }
     }
 
     override fun apply(project: Project) {
@@ -213,7 +223,7 @@ class JourneysGradlePlugin : Plugin<Project> {
 
             dependencies.add(
                 crawlerApkConfigName,
-                "com.google.android.appcrawler:appcrawler-app:0.0.1-alpha02@apk"
+                "com.google.android.appcrawler:appcrawler-app:${APPCRAWLER_VERSION}@apk"
             )
         }
     }
