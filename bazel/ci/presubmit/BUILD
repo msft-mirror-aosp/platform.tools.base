@@ -58,6 +58,7 @@ py_library(
     srcs = ["impacted_targets.py"],
     deps = [
         ":bazel_diff",
+        ":gerrit",
         "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:gce",
     ],
@@ -69,6 +70,7 @@ py_test(
     deps = [
         ":bazel_diff",
         ":impacted_targets",
+        ":gerrit",
         "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:fake_build_env",
         "//tools/base/bazel/ci:fake_gce",

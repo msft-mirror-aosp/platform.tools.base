@@ -22,6 +22,7 @@ class GerritChange:
   """Gerrit change data for a build."""
   change_id: str
   change_number: str
+  project: str
   patchset: str
   file_infos: List[FileInfo]
   owner: str
@@ -138,6 +139,7 @@ def get_gerrit_changes(bid: str) -> List[GerritChange]:
     gerrit_change = GerritChange(
         change_id=change['changeId'],
         change_number=change['changeNumber'],
+        project=change['project'],
         patchset=change['revisions'][0]['patchSet'],
         file_infos=file_infos,
         owner=owner,

@@ -58,6 +58,7 @@ class PresubmitTest(parameterized.TestCase):
   @parameterized.named_parameters(
       dict(
           testcase_name='basic',
+          gerrit_project='platform/tools/base',
           tags=[],
           failed_tests=[],
           impacted_targets=['target1', 'target2', 'target3', 'target4'],
@@ -73,6 +74,7 @@ class PresubmitTest(parameterized.TestCase):
       ),
       dict(
           testcase_name='with_default_presubmit_test',
+          gerrit_project='platform/tools/base',
           tags=[('Presubmit-Test', 'default')],
           failed_tests=[],
           impacted_targets=['target1', 'target2'],
@@ -85,6 +87,7 @@ class PresubmitTest(parameterized.TestCase):
       ),
       dict(
           testcase_name='with_other_target_name',
+          gerrit_project='platform/tools/base',
           tags=[('Presubmit-Test', 'studio-other:target3')],
           failed_tests=[],
           impacted_targets=['target1', 'target2'],
@@ -100,6 +103,7 @@ class PresubmitTest(parameterized.TestCase):
       ),
       dict(
           testcase_name='with_multiple_explicit_targets',
+          gerrit_project='platform/tools/base',
           tags=[
               ('Presubmit-Test', 'target3'),
               ('Presubmit-Test', 'target4'),
@@ -118,6 +122,7 @@ class PresubmitTest(parameterized.TestCase):
       ),
       dict(
           testcase_name='with_failed_tests',
+          gerrit_project='platform/tools/base',
           tags=[
               ('Presubmit-Test', 'target3'),
               ('Presubmit-Test', 'target4'),
@@ -133,10 +138,24 @@ class PresubmitTest(parameterized.TestCase):
               '--build_metadata=selective_presubmit_found=False',
           ],
       ),
+      dict(
+          testcase_name='with_opted_out_project',
+          gerrit_project='platform/tools/vendor/google_prebuilts/studio/intellij-sdk',
+          tags=[],
+          failed_tests=[],
+          impacted_targets=[],
+          query_targets=[],
+          expected_targets=['base_target1', 'base_target2'],
+          expected_flags=[
+              '--build_metadata=selective_presubmit_strategy=default_fallback',
+              '--build_metadata=selective_presubmit_found=False',
+          ],
+      ),
   )
   def test_find_test_targets(
       self,
       tags,
+      gerrit_project,
       failed_tests,
       impacted_targets,
       query_targets,
@@ -165,7 +184,7 @@ class PresubmitTest(parameterized.TestCase):
         'adt-byob',
         'bazel-diff-hashes/v8/789-studio-test.json',
     )
-    self.gce.add_change('owner', 'message', tags)
+    self.gce.add_change('owner', 'message', tags, gerrit_project)
     self.gce.changes[0].topic = 'topic'
 
     result = presubmit.find_test_targets(

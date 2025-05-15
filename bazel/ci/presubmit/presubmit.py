@@ -97,6 +97,7 @@ def find_test_targets(
   try:
     impacted_targets_info = impacted_targets.get_impacted_targets_info(
         build_env,
+        gerrit_info,
         base_targets,
         test_flag_filters,
     )

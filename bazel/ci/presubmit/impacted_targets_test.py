@@ -13,6 +13,7 @@ from tools.base.bazel.ci import fake_gce
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import bazel_diff
 from tools.base.bazel.ci.presubmit import impacted_targets
+from tools.base.bazel.ci.presubmit import gerrit
 
 
 class ImpactedTargetsTest(absltest.TestCase):
@@ -85,8 +86,9 @@ class ImpactedTargetsTest(absltest.TestCase):
         'bazel-diff-hashes/v8/789-studio-test.json',
     )
 
-    info = impacted_targets.get_impacted_targets_info(self.build_env, [], '')
-
+    info = impacted_targets.get_impacted_targets_info(
+        self.build_env, gerrit.GerritInfo(_build_env=self.build_env, changes=[], changes_hash=''), [], ''
+    )
     self.assertEqual(
         info,
         impacted_targets.ImpactedTargetsInfo(
@@ -139,7 +141,14 @@ class ImpactedTargetsTest(absltest.TestCase):
     )
 
     with self.assertRaises(impacted_targets.ImpactedTargetsNotFoundError):
-      impacted_targets.get_impacted_targets_info(self.build_env, [], '')
+      impacted_targets.get_impacted_targets_info(
+          self.build_env,
+          gerrit.GerritInfo(
+              _build_env=self.build_env, changes=[], changes_hash=''
+          ),
+          [],
+          '',
+      )
 
   def test_generate_and_upload_hash_file(self):
     mock_generate = self._mock_generate_hash_file('hash-file')
