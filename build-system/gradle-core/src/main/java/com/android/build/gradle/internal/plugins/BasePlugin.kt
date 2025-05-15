@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.SdkConstants
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryExtension
@@ -45,7 +44,6 @@ import com.android.build.gradle.internal.VariantTaskManager
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.features.DeviceTestOptionsDslInfoImpl
@@ -259,19 +257,19 @@ abstract class BasePlugin<
         }
     }
 
+
     @get:VisibleForTesting
     val variantInputModel: LegacyVariantInputManager by lazy {
         withProject("LegacyVariantInputManager") { project ->
             LegacyVariantInputManager(
+            dslServices,
+            variantFactory.componentType,
+            SourceSetManager(
+                project,
+                isPackagePublished(),
                 dslServices,
-                variantFactory.componentType,
-                SourceSetManager(
-                    project,
-                    isPackagePublished(),
-                    dslServices,
-                    DelayedActionsExecutor()
-                )
-            )
+                DelayedActionsExecutor()
+            ))
         }
     }
 

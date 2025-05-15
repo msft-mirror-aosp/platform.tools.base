@@ -10,7 +10,6 @@ import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.tasks.LintModelMetadataTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -359,9 +358,6 @@ class LintTaskManager constructor(
                             // TODO(karimai): b/337867828 add Screenshot Test support for Lint variant.
                         }
                     }
-                }
-                is TestSuiteCreationConfig -> {
-                    // TODO(jedo): add support for lint variant.
                 }
                 else -> throw IllegalStateException("Unexpected test component type")
             }

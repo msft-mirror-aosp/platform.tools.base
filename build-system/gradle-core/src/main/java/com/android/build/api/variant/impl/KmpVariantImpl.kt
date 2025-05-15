@@ -46,7 +46,6 @@ import com.android.build.gradle.internal.DependencyConfigurator
 import com.android.build.gradle.internal.KotlinMultiplatformCompileOptionsImpl
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.features.NativeBuildCreationConfig
 import com.android.build.gradle.internal.component.features.RenderscriptCreationConfig
 import com.android.build.gradle.internal.component.features.ShadersCreationConfig
@@ -289,5 +288,4 @@ open class KmpVariantImpl @Inject constructor(
     override val nativeBuildCreationConfig: NativeBuildCreationConfig? = null
     override fun <T> getExtension(type: Class<T>): T?  = null
     override val testFixtures: TestFixtures? = null
-    override val testSuites: List<TestSuiteCreationConfig> = listOf()
 }

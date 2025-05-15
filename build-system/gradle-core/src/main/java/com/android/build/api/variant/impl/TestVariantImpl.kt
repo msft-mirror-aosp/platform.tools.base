@@ -30,7 +30,6 @@ import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.TestVariant
 import com.android.build.gradle.internal.component.HostTestCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
 import com.android.build.gradle.internal.core.VariantSources
@@ -234,8 +233,6 @@ open class TestVariantImpl @Inject constructor(
         get() = false
 
     val hostTests = mapOf<String, HostTestCreationConfig>()
-
-    override val testSuites: List<TestSuiteCreationConfig> = listOf()
 
     // ---------------------------------------------------------------------------------------------
     // Private stuff

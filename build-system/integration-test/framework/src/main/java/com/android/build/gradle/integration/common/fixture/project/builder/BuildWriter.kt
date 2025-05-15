@@ -273,7 +273,7 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
     abstract fun mapOf(value: Map<*, *>): String
 
     override fun writeCollectionAdd(name: String, value: Any?) {
-        indent().put(name).put(".add(").put(value.toFormattedString()).put(")").endLine()
+        indent().put(name).put(" += ").put(value.toFormattedString()).endLine()
     }
 
     override fun writeCollectionAddAll(name: String, items: Collection<*>) {

@@ -32,8 +32,6 @@ interface VariantCreationConfig: ConsumableCreationConfig {
 
     val nestedComponents: List<ComponentCreationConfig>
 
-    val testSuites: List<TestSuiteCreationConfig>
-
     fun <T: Component> createUserVisibleVariantObject(
         stats: GradleBuildVariant.Builder?
     ): T

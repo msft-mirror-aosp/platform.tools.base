@@ -37,7 +37,6 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TestApplicationTaskManager;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.component.TestVariantCreationConfig;
 import com.android.build.gradle.internal.core.dsl.TestProjectVariantDslInfo;
 import com.android.build.gradle.internal.dsl.BuildType;
