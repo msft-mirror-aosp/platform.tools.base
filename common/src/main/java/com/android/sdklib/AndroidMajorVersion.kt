@@ -26,6 +26,12 @@ constructor(val apiLevel: Int, val codename: String? = null) : Comparable<Androi
   val apiString
     get() = codename ?: apiLevel.toString()
 
+  val isPreview: Boolean
+    get() = codename != null
+
+  val featureLevel: Int
+    get() = if (isPreview) apiLevel + 1 else apiLevel
+
   override fun compareTo(other: AndroidMajorVersion): Int = comparator.compare(this, other)
 
   companion object {

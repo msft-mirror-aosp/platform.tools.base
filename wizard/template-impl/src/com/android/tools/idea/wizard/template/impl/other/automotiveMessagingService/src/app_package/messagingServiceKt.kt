@@ -16,7 +16,6 @@
 
 package com.android.tools.idea.wizard.template.impl.other.automotiveMessagingService.src.app_package
 
-import com.android.tools.idea.wizard.template.ApiVersion
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 

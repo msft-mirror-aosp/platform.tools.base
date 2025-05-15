@@ -16,6 +16,8 @@
 package com.android.tools.idea.wizard.template
 
 import com.android.ide.common.repository.AgpVersion
+import com.android.sdklib.AndroidMajorVersion
+import com.android.sdklib.AndroidVersion
 import java.io.File
 import java.net.URL
 
@@ -84,9 +86,9 @@ enum class BuildConfigurationLanguageForNewModule(
 }
 
 data class ApiTemplateData(
-  val buildApi: ApiVersion,
-  val targetApi: ApiVersion,
-  val minApi: ApiVersion,
+  val buildApi: AndroidVersion,
+  val targetApi: AndroidMajorVersion,
+  val minApi: AndroidMajorVersion,
   val appCompatVersion: Int
 )
 
