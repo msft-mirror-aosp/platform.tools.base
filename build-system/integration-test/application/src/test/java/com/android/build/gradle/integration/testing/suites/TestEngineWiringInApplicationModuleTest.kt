@@ -46,7 +46,7 @@ class TestEngineWiringInApplicationModuleTest {
             jar("com.google.truth:truth:0.44")
             jar("org.junit.platform:junit-platform-engine:1.10.1")
             jar("org.junit.platform:junit-platform-launcher:1.10.1")
-            jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
+            jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
             jar("com.test:toy-junit-engine:1.0")
                 .addClasses(
                     ToyJunitEngineForTesting::class.java,
@@ -71,7 +71,7 @@ class TestEngineWiringInApplicationModuleTest {
                                 "[engine:toy-junit-engine-for-tests]"
                             )
                         }
-                        it.dependencies.implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
+                        it.dependencies.implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
                         it.dependencies.implementation.add("com.google.code.gson:gson:2.11.0")
                         it.dependencies.runtimeOnly.add("org.junit.platform:junit-platform-launcher")
                         it.dependencies.runtimeOnly.add("com.test:toy-junit-engine:1.0")
