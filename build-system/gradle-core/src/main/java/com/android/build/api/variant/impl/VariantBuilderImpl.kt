@@ -23,6 +23,7 @@ import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.services.VariantBuilderServices
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter
 
 abstract class VariantBuilderImpl(
@@ -65,7 +66,18 @@ abstract class VariantBuilderImpl(
      * TargetSdkVersion usable in the Variant API
      */
     internal val targetSdkVersion: AndroidVersion
-        get() = mutableTargetSdk?.sanitize() ?: minSdkVersion
+        get() {
+            val sanitizedMutableTargetSdk = mutableTargetSdk?.sanitize()
+            // Defaulting to compileSdk when mutableTargetSdk is null will become the default
+            // behavior in AGP 9.0.
+            return if (variantBuilderServices.projectOptions.get(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET)) {
+                sanitizedMutableTargetSdk
+                    ?: globalVariantBuilderConfig.compileSdk
+                    ?: minSdkVersion
+            } else {
+                sanitizedMutableTargetSdk ?: minSdkVersion
+            }
+        }
 
     /**
      * backing property for [targetSdk] and [targetSdkPreview]

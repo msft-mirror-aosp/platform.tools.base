@@ -18,6 +18,7 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.dsl.DependenciesInfo
 import com.android.build.gradle.internal.core.dsl.features.DeviceTestOptionsDslInfo
+import com.android.build.api.variant.AndroidVersion
 
 /**
  * Global Config for VariantBuilder objects.
@@ -36,4 +37,6 @@ interface GlobalVariantBuilderConfig {
     val dependenciesInfo: DependenciesInfo
 
     val deviceTestOptions: DeviceTestOptionsDslInfo
+
+    val compileSdk: AndroidVersion?
 }
