@@ -260,10 +260,6 @@ fun GradleBuildDefinition.buildPrivacySandboxSampleProject() {
 
             requiredSdk(project(":privacy-sandbox-sdk-b"))
         }
-        files.add(
-            "proguard-rules.pro",
-            """-keep class com.example.androidlib.Example { *; }
-                """.trimMargin())
     }
     // A library module included in the :privacy-sandbox-sdk SDK module.
     privacySandboxSdkLibraryProject(":android-lib") {
