@@ -35,13 +35,13 @@ void TransformCache::Init() {
 }
 
 bool TransformCache::ReadClass(const std::string& class_name,
-                               std::vector<dex::u4>* class_bytes) const {
+                               std::vector<dex::u1>* class_bytes) const {
   std::string path = GetCachePath(class_name);
   return deploy::ReadFile(path, class_bytes);
 }
 
 bool TransformCache::WriteClass(const std::string& class_name,
-                                const std::vector<dex::u4>& class_bytes) const {
+                                const std::vector<dex::u1>& class_bytes) const {
   const std::string& path = GetCachePath(class_name);
   return deploy::WriteFile(path, class_bytes);
 }
@@ -53,13 +53,13 @@ std::string TransformCache::GetCachePath(const std::string& class_name) const {
 }
 
 bool DisabledTransformCache::ReadClass(
-    const std::string& class_name, std::vector<dex::u4>* class_bytes) const {
+    const std::string& class_name, std::vector<dex::u1>* class_bytes) const {
   ErrEvent("Attempted ReadClass on DisabledTransformCache");
   return false;
 }
 bool DisabledTransformCache::WriteClass(
     const std::string& class_name,
-    const std::vector<dex::u4>& class_bytes) const {
+    const std::vector<dex::u1>& class_bytes) const {
   ErrEvent("Attempted WriteClass on DisabledTransformCache");
   return false;
 }

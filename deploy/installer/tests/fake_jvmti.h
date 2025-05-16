@@ -41,6 +41,9 @@ class FakeJvmtiEnv : public jvmtiEnv {
 
   static jvmtiError DisposeEnvironment(jvmtiEnv* env);
 
+  static jvmtiError Allocate(jvmtiEnv* env, jlong size,
+                             unsigned char** mem_ptr);
+
   static jvmtiError Deallocate(jvmtiEnv* env, unsigned char* mem);
 
   static jvmtiError GetClassSignature(jvmtiEnv* env, jclass klass,

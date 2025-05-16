@@ -27,6 +27,7 @@
 
 #include "tools/base/deploy/agent/native/class_finder.h"
 #include "tools/base/deploy/agent/native/crash_logger.h"
+#include "tools/base/deploy/agent/native/hotswap.h"
 #include "tools/base/deploy/agent/native/jni/jni_class.h"
 #include "tools/base/deploy/agent/native/jni/jni_util.h"
 #include "tools/base/deploy/agent/native/native_callbacks.h"
@@ -103,7 +104,7 @@ const Transform* current_transform = nullptr;
 
 // Holds the transformed bytes of the last class transformed by
 // Agent_ClassFileLoadHook.
-std::vector<dex::u4> last_class_bytes;
+std::vector<dex::u1> last_class_bytes;
 
 // Event that fires when the agent loads a class file.
 extern "C" void JNICALL Agent_ClassFileLoadHook(
@@ -140,9 +141,6 @@ extern "C" void JNICALL Agent_ClassFileLoadHook(
   last_class_bytes.clear();
   last_class_bytes.resize(new_image_size);
   memcpy(last_class_bytes.data(), new_image, new_image_size);
-
-  *new_class_data_len = new_image_size;
-  *new_class_data = new_image;
 }
 
 }  // namespace
@@ -253,9 +251,9 @@ bool Instrumenter::Instrument(
 bool Instrumenter::ApplyCachedTransforms(
     const std::vector<jclass> classes,
     const std::vector<const Transform*>& transforms) const {
-  std::vector<std::vector<dex::u4>> cached_classes;
+  std::vector<std::vector<dex::u1>> cached_classes;
   for (const auto& transform : transforms) {
-    std::vector<dex::u4> dex;
+    std::vector<dex::u1> dex;
     if (!cache_->ReadClass(transform->GetClassName(), &dex)) {
       return false;
     }
@@ -269,8 +267,7 @@ bool Instrumenter::ApplyCachedTransforms(
     jvmtiClassDefinition def;
     def.klass = classes[i];
     def.class_byte_count = cached_classes[i].size();
-    def.class_bytes =
-        reinterpret_cast<const unsigned char*>(cached_classes[i].data());
+    def.class_bytes = cached_classes[i].data();
     defs.push_back(def);
   }
 
@@ -294,18 +291,46 @@ bool Instrumenter::ApplyTransforms(
   }
 
   // Instead of using slicer to instrument the dex, which is expensive, attempt
-  // to read previously instrumented classes from a cache and use
-  // RedefineClasses instead of RetransformClasses.
+  // to read previously instrumented classes from a cache.
   if (caching_enabled_ && ApplyCachedTransforms(classes, transforms)) {
     return true;
   }
 
+  // For each transformation, apply the transform to the class via
+  // RetransformClasses, then pass the created dex image to RedefineCLasses so
+  // structural redefinition can be utilized when available.
   std::vector<std::string> failed_classes;
   for (int i = 0; i < classes.size(); ++i) {
     current_transform = transforms[i];
+
     bool success = CheckJvmti(
         jvmti_->RetransformClasses(1, &classes[i]),
         "Could not retransform class: " + transforms[i]->GetClassName());
+
+    // This needs to be reset; otherwise, we leave around a dangling pointer to
+    // a Transform. We also reset here because RedefineClasses will cause
+    // Agent_ClassFileLoadHook to fire, and we don't want to re-apply the same
+    // transformation.
+    current_transform = nullptr;
+
+    jvmtiClassDefinition def;
+    def.klass = classes[i];
+    def.class_bytes = last_class_bytes.data();
+    def.class_byte_count = last_class_bytes.size();
+
+    const jvmtiExtensionFunction extension =
+        GetExtensionFunctionVoid(jni_, jvmti_, STRUCTRUAL_REDEFINE_EXTENSION);
+
+    if (extension == nullptr) {
+      success &= CheckJvmti(
+          jvmti_->RedefineClasses(1, &def),
+          "Could not redefine class: " + transforms[i]->GetClassName());
+    } else {
+      success &= CheckJvmti((*extension)(jvmti_, 1, &def),
+                            "Could not structurally redefine class: " +
+                                transforms[i]->GetClassName());
+    }
+
     jni_->DeleteLocalRef(classes[i]);
 
     // We intentionally do not stop if one transformation fails, because it's
@@ -322,10 +347,6 @@ bool Instrumenter::ApplyTransforms(
       cache_->WriteClass(transforms[i]->GetClassName(), last_class_bytes);
     }
   }
-
-  // This needs to be reset; otherwise, we leave around a pointer to memory
-  // that this method doesn't own.
-  current_transform = nullptr;
 
   if (!failed_classes.empty()) {
     CrashLogger::Instance().LogInstrumentationFailures(failed_classes);

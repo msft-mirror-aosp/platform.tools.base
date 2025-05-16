@@ -1,3 +1,4 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "cc_grpc_proto_library")
 
 filegroup(
@@ -30,6 +31,30 @@ android_java_proto_library(
     visibility = ["//visibility:public"],
 )
 
+genrule(
+    name = "gen_dex_bytes",
+    srcs = [
+        "data/min.dex",
+    ],
+    outs = [
+        "min.dex.cc",
+    ],
+    cmd = "$(location //tools/base/bazel:bin2c) -lang=cxx -variable=min_dex" +
+          " -output=$(location min.dex.cc)" +
+          " $(location data/min.dex)",
+    tools = [
+        "//tools/base/bazel:bin2c",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "dex_header",
+    hdrs = [
+        ":min.dex.cc",
+    ],
+)
+
 cc_binary(
     name = "fake_app",
     srcs = [
@@ -48,11 +73,13 @@ cc_binary(
     }),
     visibility = ["//visibility:public"],
     deps = [
+        ":dex_header",
         ":proto",
         "//prebuilts/studio/jdk:jni_headers",
         "//tools/base/deploy/agent/native:jvmti_android",
         "//tools/base/deploy/common:common_lib",
         "//tools/base/deploy/common:log",
+        "@slicer",
     ],
 )
 

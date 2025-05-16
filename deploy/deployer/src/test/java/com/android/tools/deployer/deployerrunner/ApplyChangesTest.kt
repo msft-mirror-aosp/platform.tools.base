@@ -937,8 +937,8 @@ class ApplyChangesTest : DeployRunnerTestBase(){
         val logcat = getLogcatContent(device)
 
         // We currently determine if the agent is using transform caching by inspecting JVMTI
-        // invocations. The agent uses RetransformClasses when cached classes are not available, and
-        // uses RedefineClasses when cached classes are present.
+        // invocations. The agent uses RetransformClasses + RedefineClasses when cached classes are
+        // not available, and only uses RedefineClasses when cached classes are present.
 
         // Should only have one retransform of each of these classes.
         assertRetransformed(
@@ -948,9 +948,13 @@ class ApplyChangesTest : DeployRunnerTestBase(){
             "dalvik.system.DexPathList",
             "android.app.LoadedApk"
         )
-        // Should have redefined each of these classes twice, once per restart.
+        // Should have redefined each of these classes three times, once per restart.
         assertRedefined(
             logcat,
+            "android.app.ApplicationLoaders",
+            "java.lang.Thread",
+            "dalvik.system.DexPathList",
+            "android.app.LoadedApk",
             "android.app.ApplicationLoaders",
             "java.lang.Thread",
             "dalvik.system.DexPathList",

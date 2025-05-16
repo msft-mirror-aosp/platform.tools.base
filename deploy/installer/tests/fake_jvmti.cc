@@ -1,9 +1,16 @@
 #include "tools/base/deploy/installer/tests/fake_jvmti.h"
 
+#include <slicer/dex_ir_builder.h>
+#include <slicer/reader.h>
+#include <slicer/writer.h>
 #include <string.h>
+
+#include <fstream>
+#include <string>
 
 #include "tools/base/deploy/agent/native/jvmti/android.h"
 #include "tools/base/deploy/installer/tests/fake_jni.h"
+#include "tools/base/deploy/installer/tests/min.dex.cc"
 
 #define FAKE_JVMTI(NAME, ARGS...)                      \
   jvmtiError FakeJvmtiEnv::NAME(jvmtiEnv* env, ARGS) { \
@@ -12,9 +19,31 @@
   }
 
 namespace deploy {
+namespace {
+
+const jvmtiEventCallbacks* callbacks_;
+
+class Allocator final : public dex::Writer::Allocator {
+ public:
+  Allocator() = default;
+  void* Allocate(size_t size) override {
+    void* alloc = malloc(size);
+    return alloc;
+  }
+
+  void Free(void* ptr) override {
+    if (ptr == nullptr) {
+      return;
+    }
+
+    free(ptr);
+  }
+};
+}  // namespace
 
 FakeJvmtiEnv::FakeJvmtiEnv() : functions_{0} {
   functions_.AddCapabilities = &AddCapabilities;
+  functions_.Allocate = &Allocate;
   functions_.SetEventCallbacks = &SetEventCallbacks;
   functions_.DisposeEnvironment = &DisposeEnvironment;
   functions_.Deallocate = &Deallocate;
@@ -34,9 +63,18 @@ FAKE_JVMTI(AddCapabilities, const jvmtiCapabilities* capabilities_ptr)
 
 FAKE_JVMTI(AddToBootstrapClassLoaderSearch, const char* segment)
 
-// If you decide to implement Deallocate, you should also change
-// GetExtensionFunctions to return freeable stuff (not freeable as of now).
-FAKE_JVMTI(Deallocate, unsigned char* mem)
+jvmtiError FakeJvmtiEnv::Allocate(jvmtiEnv* env, const jlong size,
+                                  unsigned char** mem_ptr) {
+  *mem_ptr = static_cast<unsigned char*>(malloc(size));
+  return JVMTI_ERROR_NONE;
+}
+
+jvmtiError FakeJvmtiEnv::Deallocate(jvmtiEnv* env, unsigned char* mem) {
+  if (mem != nullptr) {
+    free(mem);
+  }
+  return JVMTI_ERROR_NONE;
+}
 
 jvmtiError FakeJvmtiEnv::DisposeEnvironment(jvmtiEnv* env) {
   Log::I("JVMTI::DisposeEnvironment");
@@ -73,34 +111,38 @@ char* ToChar(const std::string& s) {
 jvmtiError FakeJvmtiEnv::GetExtensionFunctions(
     jvmtiEnv* env, jint* extension_count_ptr,
     jvmtiExtensionFunctionInfo** extensions) {
-  static jvmtiExtensionFunctionInfo info[] = {
-      {.func = (jvmtiExtensionFunction)
-           FakeJVMTIExtension::FakeGetHiddenApiEnforcementPolicy,
-       .id = ToChar(android::jvmti::kGetFuncKey),
-       .short_description = nullptr,
-       .param_count = 0,
-       .params = nullptr,
-       .error_count = 0,
-       .errors = nullptr},
-      {.func = (jvmtiExtensionFunction)
-           FakeJVMTIExtension::FakeSetHiddenApiEnforcementPolicy,
-       .id = ToChar(android::jvmti::kSetFuncKey),
-       .short_description = nullptr,
-       .param_count = 0,
-       .params = nullptr,
-       .error_count = 0,
-       .errors = nullptr},
-      {.func = (jvmtiExtensionFunction)
-           FakeJVMTIExtension::FakeDisableHiddenApiEnforcementPolicy,
-       .id = ToChar(android::jvmti::kDisFuncKey),
-       .short_description = nullptr,
-       .param_count = 0,
-       .params = nullptr,
-       .error_count = 0,
-       .errors = nullptr}};
+  *extension_count_ptr = 3;
+  const auto info = static_cast<jvmtiExtensionFunctionInfo*>(
+      malloc(sizeof(jvmtiExtensionFunctionInfo) * *extension_count_ptr));
+  info[0].func = reinterpret_cast<jvmtiExtensionFunction>(
+      FakeJVMTIExtension::FakeGetHiddenApiEnforcementPolicy);
+  info[0].id = ToChar(android::jvmti::kGetFuncKey);
+  info[0].short_description = nullptr;
+  info[0].param_count = 0;
+  info[0].params = nullptr;
+  info[0].error_count = 0;
+  info[0].errors = nullptr;
+
+  info[1].func = reinterpret_cast<jvmtiExtensionFunction>(
+      FakeJVMTIExtension::FakeGetHiddenApiEnforcementPolicy);
+  info[1].id = ToChar(android::jvmti::kSetFuncKey);
+  info[1].short_description = nullptr;
+  info[1].param_count = 0;
+  info[1].params = nullptr;
+  info[1].error_count = 0;
+  info[1].errors = nullptr;
+
+  info[2].func = reinterpret_cast<jvmtiExtensionFunction>(
+      FakeJVMTIExtension::FakeGetHiddenApiEnforcementPolicy);
+  info[2].id = ToChar(android::jvmti::kDisFuncKey);
+  info[2].short_description = nullptr;
+  info[2].param_count = 0;
+  info[2].params = nullptr;
+  info[2].error_count = 0;
+  info[2].errors = nullptr;
+
   *extensions = info;
   Log::I("JVMTI::GetExtensionFunctions");
-  *extension_count_ptr = sizeof(info) / sizeof(info[0]);
   return JVMTI_ERROR_NONE;
 }
 
@@ -124,15 +166,43 @@ jvmtiError FakeJvmtiEnv::RedefineClasses(
 jvmtiError FakeJvmtiEnv::RetransformClasses(jvmtiEnv* jvmtiEnv,
                                             jint class_count,
                                             const jclass* classes) {
+  // Minimal dex file (from tools/dexter/testdata/min.dex). Used by/transformed
+  // by RetransformClasses so ClassFileLoadHook can always be called with a sane
+  // dex file with the proper class name.
   for (int i = 0; i < class_count; ++i) {
-    FakeClass* clazz = (FakeClass*)classes[i];
+    const auto* clazz = (FakeClass*)classes[i];
+    if (callbacks_ != nullptr && callbacks_->ClassFileLoadHook != nullptr) {
+      dex::Reader reader(min_dex, sizeof(min_dex));
+      reader.CreateFullIr();
+      const auto dx = reader.GetIr();
+
+      ir::Builder builder(dx);
+      const auto name = "L" + clazz->name + ";";
+      const auto t = builder.GetType(name.c_str());
+      const auto c = dx->Alloc<ir::Class>();
+      c->type = t;
+      t->class_def = c;
+
+      dex::Writer writer(dx);
+      Allocator alloc;
+      size_t size;
+      const auto image = writer.CreateImage(&alloc, &size);
+      (*callbacks_->ClassFileLoadHook)(
+          jvmtiEnv, nullptr, classes[i], nullptr, clazz->name.c_str(), nullptr,
+          static_cast<jint>(size), image, nullptr, nullptr);
+    }
     Log::I("JVMTI::RetransformClasses:%s", clazz->name.c_str());
   }
   return JVMTI_ERROR_NONE;
 }
 
-FAKE_JVMTI(SetEventCallbacks, const jvmtiEventCallbacks* callbacks,
-           jint size_of_callbacks)
+jvmtiError FakeJvmtiEnv::SetEventCallbacks(jvmtiEnv* jvmti_env,
+                                           const jvmtiEventCallbacks* callbacks,
+                                           jint size_of_callbacks) {
+  Log::I("JVMTI::SetEventCallbacks");
+  callbacks_ = callbacks;
+  return JVMTI_ERROR_NONE;
+}
 
 FAKE_JVMTI(SetEventNotificationMode, jvmtiEventMode mode, jvmtiEvent event_type,
            jthread event_thread, ...)
