@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.options
+package com.android.build.gradle.internal.ide.v2
 
-/**
- * Represents the proposed state of an [Option] in a future AGP version.
- */
-data class FutureStage(val defaultValue: Boolean, val stage: Stage, val version: Version)
+import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
+import java.io.File
+import java.io.Serializable
+
+class BasicTestSuiteArtifactImpl(
+    override val sources: Set<File>
+): BasicTestSuiteArtifact, Serializable {
+    companion object {
+        @JvmStatic
+        private val serialVersionUID: Long = 2L
+    }
+}

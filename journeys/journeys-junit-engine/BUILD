@@ -1,6 +1,7 @@
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
+load("//tools/base/journeys:release_version.bzl", "JOURNEYS_TEST_PLUGIN_VERSION_RELEASE")
 load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_PLUGIN_GRADLE_PROPERTIES")
 
 # A file group that contains gradle build file and source files to build journeys gradle
@@ -31,7 +32,7 @@ maven_repository(
     name = "maven_dependencies",
     # keep sorted
     artifacts = [
-        "@maven//:com.google.android.appcrawler.appcrawler-platform_0.0.1-alpha02",
+        "@maven//:com.google.android.appcrawler.appcrawler-platform_" + JOURNEYS_TEST_PLUGIN_VERSION_RELEASE,
         "@maven//:com.google.auth.google-auth-library-oauth2-http_1.24.0",
         "@maven//:com.google.guava.guava_33.2.1-jre",
         "@maven//:com.google.oauth-client.google-oauth-client_1.34.1",
@@ -42,7 +43,7 @@ maven_repository(
     name = "maven_test_dependencies",
     # keep sorted
     artifacts = [
-        "@maven//:com.google.android.appcrawler.appcrawler-platform_0.0.1-alpha02",
+        "@maven//:com.google.android.appcrawler.appcrawler-platform_" + JOURNEYS_TEST_PLUGIN_VERSION_RELEASE,
         "@maven//:com.google.auth.google-auth-library-oauth2-http_1.24.0",
         "@maven//:com.google.guava.guava_33.2.1-jre",
         "@maven//:com.google.oauth-client.google-oauth-client_1.34.1",
@@ -57,6 +58,7 @@ JOURNEYS_JUNIT_ENGINE_SOURCE_FILES = [
     ":gradle_project_files",
     "//tools:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",
+    "//tools/base/journeys:release_version.gradle",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",
 ]

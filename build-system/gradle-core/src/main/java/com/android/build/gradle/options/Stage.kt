@@ -116,7 +116,7 @@ sealed class FeatureStage(status: Option.Status) : Stage(status) {
      *     corresponding [Option] will be removed (hence this parameter has type
      *     `DeprecationTarget`)
      */
-    class SoftlyEnforced(enforcementTarget: DeprecationReporter.DeprecationTarget) :
+    class SoftlyEnforced(val enforcementTarget: DeprecationReporter.DeprecationTarget) :
         FeatureStage(Option.Status.Deprecated(enforcementTarget))
 
     /**
@@ -136,7 +136,7 @@ sealed class FeatureStage(status: Option.Status) : Stage(status) {
      *
      * @param removalTarget a target when the feature and the corresponding [Option] will be removed
      */
-    class Deprecated(removalTarget: DeprecationReporter.DeprecationTarget) :
+    class Deprecated(val removalTarget: DeprecationReporter.DeprecationTarget) :
         FeatureStage(Option.Status.Deprecated(removalTarget))
 
     /**

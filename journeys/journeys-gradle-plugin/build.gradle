@@ -27,20 +27,7 @@ base {
     archivesName = 'journeys-gradle-plugin'
 }
 
-if (findProperty('hybrid-build-embedded-in-bazel')?.toBoolean()) {
-    version = getProperty('JOURNEYS_TEST_PLUGIN_VERSION')
-} else {
-    Properties properties = new Properties()
-    File versionRootDir = rootDir
-    String relativeVersionPath = 'base/journeys/release_version.bzl'
-    File versionProperties = new File(versionRootDir, relativeVersionPath)
-    versionProperties.withReader { properties.load(it) }
-    if (findProperty('release')?.toBoolean()) {
-        version = properties.getProperty('JOURNEYS_TEST_PLUGIN_VERSION_RELEASE').replaceAll('"', '')
-    } else {
-        version = properties.getProperty('JOURNEYS_TEST_PLUGIN_VERSION_DEV').replaceAll('"', '')
-    }
-}
+apply from: '../release_version.gradle'
 
 def generateVersionPropertiesResourceFile = tasks.register('generateVersionPropertiesResourceFile') {
     def resourceFile = project.layout.buildDirectory.file("generated/resources/version.properties")
@@ -50,6 +37,7 @@ def generateVersionPropertiesResourceFile = tasks.register('generateVersionPrope
         resourceFile.get().asFile.parentFile.mkdirs()
         resourceFile.get().asFile.withWriter { writer ->
             writer.writeLine("buildVersion=$version")
+            writer.writeLine("appcrawlerVersion=$project.ext.appcrawlerVersion")
         }
     }
 }

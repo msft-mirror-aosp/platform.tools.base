@@ -276,10 +276,11 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
     }
 
     private fun createAndroidJdkImageConfiguration(project: Project) {
-        val config = project.configurations.create(CONFIG_NAME_ANDROID_JDK_IMAGE)
-        config.isVisible = false
-        config.isCanBeConsumed = false
-        config.description = "Configuration providing JDK image for compiling Java 9+ sources"
+        project.configurations.register(CONFIG_NAME_ANDROID_JDK_IMAGE) { config ->
+            config.isVisible = false
+            config.isCanBeConsumed = false
+            config.description = "Configuration providing JDK image for compiling Java 9+ sources"
+        }
 
         project.dependencies
             .add(

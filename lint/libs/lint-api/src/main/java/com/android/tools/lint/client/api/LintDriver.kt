@@ -683,7 +683,7 @@ class LintDriver(
     // lint jar, "add" them (this will replace the issue registry with
     // a CompositeIssueRegistry containing the original issue registry
     // plus JarFileIssueRegistry instances for each lint jar
-    val jarFiles = Sets.newHashSet<File>()
+    val jarFiles = LinkedHashSet<File>()
     for (project in projects) {
       jarFiles.addAll(client.findRuleJars(project))
       for (library in project.allLibraries) {

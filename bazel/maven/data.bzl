@@ -673,8 +673,8 @@ DATA = [
     "com.google.accompanist:accompanist-swiperefresh:0.28.0",  # Dependency of architecture-samples
     "com.google.ai.client.generativeai:generativeai:0.9.0",
     "com.google.android:android:4.1.1.4",
-    "com.google.android.appcrawler:appcrawler-app:0.0.1-alpha02",
-    "com.google.android.appcrawler:appcrawler-platform:0.0.1-alpha02",
+    "com.google.android.appcrawler:appcrawler-app:0.0.1-alpha03",
+    "com.google.android.appcrawler:appcrawler-platform:0.0.1-alpha03",
     "com.google.android.gms:play-services-ads:20.6.0",
     "com.google.android.gms:play-services-ads:21.5.0",
     "com.google.android.gms:play-services-ads:9.8.0",

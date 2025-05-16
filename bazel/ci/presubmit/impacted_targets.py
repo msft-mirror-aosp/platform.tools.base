@@ -11,12 +11,23 @@ from typing import List, Sequence, Set
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import bazel_diff
+from tools.base.bazel.ci.presubmit import gerrit
 
 
 _BUCKET = 'adt-byob'
 _FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
 _LOCAL_REPOSITORIES = [
     'maven',
+]
+
+# Projects that are opted out of selective presubmit.
+#
+# Selective presubmit is not enabled for these projects because they change
+# external bazel dependencies that are not recognized by bazel-diff, and not
+# tracked by impacted_targets._LOCAL_REPOSITORIES
+SELECTIVE_PRESUBMIT_PROJECTS_OPT_OUT = [
+    # Responsible for '@intellij' repo.
+    'platform/tools/vendor/google_prebuilts/studio/intellij-sdk',
 ]
 
 
@@ -64,6 +75,7 @@ class ImpactedTargetsInfo:
 
 def get_impacted_targets_info(
     build_env: bazel.BuildEnv,
+    gerrit_info: gerrit.GerritInfo,
     base_targets: Sequence[str],
     test_flag_filters: str,
 ) -> ImpactedTargetsInfo:
@@ -83,6 +95,12 @@ def get_impacted_targets_info(
   Raises:
     ImpactedTargetsNotFoundError: If impacted targets could not be determined.
   """
+  for change in gerrit_info.changes:
+    if change.project in SELECTIVE_PRESUBMIT_PROJECTS_OPT_OUT:
+      raise ImpactedTargetsNotFoundError(
+          f'Selective presubmit is disabled for project {change.project}'
+      )
+
   impacted_targets_info = ImpactedTargetsInfo(
       all_targets=_find_impacted_targets(build_env),
       baseline_targets=_query_baseline_targets(

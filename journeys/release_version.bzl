@@ -1,4 +1,4 @@
 # buildifier: disable=module-docstring
 # This file is also loaded as Java properties file from Gradle build files.
-JOURNEYS_TEST_PLUGIN_VERSION_RELEASE = "0.0.1-alpha02"
+JOURNEYS_TEST_PLUGIN_VERSION_RELEASE = "0.0.1-alpha03"
 JOURNEYS_TEST_PLUGIN_VERSION_DEV = "0.0.1-dev"

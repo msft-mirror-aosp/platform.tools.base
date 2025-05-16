@@ -22,13 +22,12 @@ import org.gradle.api.provider.ListProperty
 
 /**
  * Specifies options for doing Gradle variant selection for external Android dependencies
- * based on build types and product flavours.
+ * based on build types and product flavors.
  *
  * Note that this only affects dependency selection within this
  * gradle project and does not affect the resolution of dependencies in other Gradle
  * projects that depend on this project or the artifacts published from this project
  */
-@Incubating
 interface LocalDependencySelection {
     /**
      * Specifies a list of build types that the plugin should try to use when a
@@ -40,14 +39,12 @@ interface LocalDependencySelection {
      * If you want to preserve the default value use `selectBuildTypeFrom.add()` and if you
      * would like to set your own list of build types use `selectBuildTypeFrom.set()`
      */
-    @get:Incubating
     val selectBuildTypeFrom: ListProperty<String>
 
     /**
      * Configures a single product flavor dimension that the plugin should try to use when a
      * direct variant match with a dependency is not possible.
      */
-    @Incubating
     fun productFlavorDimension(dimension: String, action: Action<ProductFlavorDimensionSpec>)
 }
 

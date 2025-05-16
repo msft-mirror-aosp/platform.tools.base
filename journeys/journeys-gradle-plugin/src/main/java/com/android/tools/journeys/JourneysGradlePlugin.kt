@@ -33,7 +33,7 @@ import java.io.FileOutputStream
 import java.util.Properties
 
 private val minAgpVersion = AndroidPluginVersion(8, 2, 1)
-private val maxAgpVersion = AndroidPluginVersion(8, 11, 255)
+private val maxAgpVersion = AndroidPluginVersion(8, 12, 255)
 
 /**
  * An entry point for Journeys plugin that adds support for Journeys testing.
@@ -48,6 +48,16 @@ class JourneysGradlePlugin : Plugin<Project> {
                     Properties().let { properties ->
                         properties.load(stream)
                         properties.getProperty("buildVersion")
+                    }
+                }
+        }
+
+        val APPCRAWLER_VERSION: String by lazy {
+            requireNotNull(JourneysGradlePlugin::class.java.getResourceAsStream("/version.properties"))
+                .buffered().use { stream ->
+                    Properties().let { properties ->
+                        properties.load(stream)
+                        properties.getProperty("appcrawlerVersion")
                     }
                 }
         }
@@ -213,7 +223,7 @@ class JourneysGradlePlugin : Plugin<Project> {
 
             dependencies.add(
                 crawlerApkConfigName,
-                "com.google.android.appcrawler:appcrawler-app:0.0.1-alpha02@apk"
+                "com.google.android.appcrawler:appcrawler-app:${APPCRAWLER_VERSION}@apk"
             )
         }
     }

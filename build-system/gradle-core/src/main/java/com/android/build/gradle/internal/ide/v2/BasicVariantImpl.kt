@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.v2.ide.BasicArtifact
+import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
 import com.android.builder.model.v2.ide.BasicVariant
 import com.android.builder.model.v2.ide.Variant
 import java.io.Serializable
@@ -30,6 +31,7 @@ data class BasicVariantImpl(
     override val mainArtifact: BasicArtifact,
     override val deviceTestArtifacts: Map<String, BasicArtifact>,
     override val hostTestArtifacts: Map<String, BasicArtifact>,
+    override val testSuiteArtifacts: Map<String, BasicTestSuiteArtifact>,
     override val testFixturesArtifact: BasicArtifact?,
     override val buildType: String?,
     override val productFlavors: List<String>,

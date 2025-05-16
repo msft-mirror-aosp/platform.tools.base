@@ -156,7 +156,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
 
     /**
      * Specifies options for doing variant selection for external Android dependencies
-     * based on build types and product flavours
+     * based on build types and product flavors
      *
      * For more information about the properties you can configure in this block, see [DependencyVariantSelection].
      */
@@ -166,7 +166,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
 
     /**
      * Specifies options for doing variant selection for external Android dependencies
-     * based on build types and product flavours
+     * based on build types and product flavors
      *
      * For more information about the properties you can configure in this block, see [DependencyVariantSelection].
      */
@@ -176,20 +176,18 @@ interface KotlinMultiplatformAndroidLibraryExtension {
 
     /**
      * Specifies options for doing variant selection for external Android dependencies
-     * based on build types and product flavours
+     * based on build types and product flavors
      *
      * For more information about the properties you can configure in this block, see [LocalDependencySelection].
      */
-    @Incubating
     fun localDependencySelection(action: LocalDependencySelection.() -> Unit)
 
     /**
      * Specifies options for doing variant selection for external Android dependencies
-     * based on build types and product flavours
+     * based on build types and product flavors
      *
      * For more information about the properties you can configure in this block, see [LocalDependencySelection].
      */
-    @get:Incubating
     val localDependencySelection: LocalDependencySelection
 
     /**

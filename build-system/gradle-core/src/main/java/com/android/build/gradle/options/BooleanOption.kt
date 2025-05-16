@@ -37,13 +37,12 @@ import com.android.builder.model.PROPERTY_DEPLOY_AS_INSTANT_APP
 import com.android.builder.model.PROPERTY_EXTRACT_INSTANT_APK
 import com.android.builder.model.PROPERTY_INVOKED_FROM_IDE
 import com.android.builder.model.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL
-import com.android.ide.common.repository.AgpVersion
 
 enum class BooleanOption(
     override val propertyName: String,
     override val defaultValue: Boolean,
     val stage: Stage,
-    val futureStage: FutureStage? = null
+    futureStage: FutureStage? = null
 ) : Option<Boolean> {
 
     /* -----------
@@ -79,7 +78,7 @@ enum class BooleanOption(
         FutureStage(
             false,
             ApiStage.Stable,
-            AgpVersion.parse("9.0.0")
+            Version.VERSION_9_0
         )
     ),
     BUILD_FEATURE_SHADERS(
@@ -89,7 +88,7 @@ enum class BooleanOption(
         FutureStage(
             false,
             ApiStage.Stable,
-            AgpVersion.parse("9.0.0")
+            Version.VERSION_9_0
         )
     ),
     BUILD_FEATURE_VIEWBINDING("android.defaults.buildfeatures.viewbinding", false, ApiStage.Stable),
@@ -106,7 +105,7 @@ enum class BooleanOption(
         FutureStage(
             true,
             ApiStage.Stable,
-            AgpVersion.parse("9.0.0")
+            Version.VERSION_9_0
         )
     ),
     ENABLE_JETIFIER("android.enableJetifier", false, ApiStage.Stable),
@@ -168,7 +167,7 @@ enum class BooleanOption(
         FutureStage(
             true,
             ApiStage.Stable,
-            AgpVersion.parse("9.0.0")
+            Version.VERSION_9_0
         )
     ),
 
@@ -195,7 +194,7 @@ enum class BooleanOption(
         FutureStage(
             true,
             FeatureStage.Supported,
-            AgpVersion.parse("9.0.0")
+            Version.VERSION_9_0
         )
     ),
 
@@ -250,7 +249,7 @@ enum class BooleanOption(
         FutureStage(
             true,
             FeatureStage.Supported,
-            AgpVersion.parse("9.0.0")
+            Version.VERSION_9_0
         )
     ),
 
@@ -338,7 +337,7 @@ enum class BooleanOption(
         FutureStage(
             true,
             FeatureStage.SoftlyEnforced(VERSION_10_0),
-            AgpVersion.parse("9.0.0")
+            Version.VERSION_9_0
         )
     ),
     ENABLE_EXTRACT_ANNOTATIONS("android.enableExtractAnnotations", true, FeatureStage.Experimental),
@@ -520,7 +519,7 @@ enum class BooleanOption(
         FutureStage(
             true,
             FeatureStage.Enforced(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
+            Version.VERSION_9_0
         )
     ),
 
@@ -532,7 +531,7 @@ enum class BooleanOption(
         FutureStage(
             true,
             FeatureStage.Experimental,
-            AgpVersion.parse("10.0.0")
+            Version.VERSION_10_0
         )
     ),
 
@@ -543,55 +542,30 @@ enum class BooleanOption(
         "android.enableResourceOptimizations",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0),
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     ),
 
     ENABLE_EMULATOR_CONTROL(
         "android.experimental.androidTest.enableEmulatorControl",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0),
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     ),
 
     ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM(
         "android.experimental.androidTest.useUnifiedTestPlatform",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0),
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     ),
 
     ENABLE_NEW_RESOURCE_SHRINKER_PRECISE(
         "android.enableNewResourceShrinker.preciseShrinking",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0),
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     ),
 
     DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES(
         "android.disableMinifyLocalDependenciesForLibraries",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0),
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     ),
 
     /**
@@ -602,11 +576,6 @@ enum class BooleanOption(
         "android.experimental.lint.analysisPerComponent",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0),
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     ),
 
     /**
@@ -643,11 +612,6 @@ enum class BooleanOption(
         "android.defaults.buildfeatures.aidl",
         false,
         ApiStage.Deprecated(VERSION_9_0),
-        FutureStage(
-            false,
-            ApiStage.Removed(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     ),
 
     // TODO(b/254305041) move to ApiStage.Removed
@@ -655,11 +619,6 @@ enum class BooleanOption(
         "android.defaults.buildfeatures.renderscript",
         false,
         ApiStage.Deprecated(VERSION_9_0),
-        FutureStage(
-            false,
-            ApiStage.Removed(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     ),
 
     // TODO(b/254305041) move to ApiStage.Removed
@@ -667,11 +626,6 @@ enum class BooleanOption(
         "android.defaults.buildfeatures.buildconfig",
         false,
         ApiStage.Deprecated(BUILD_CONFIG_GLOBAL_PROPERTY),
-        FutureStage(
-            false,
-            ApiStage.Removed(Version.VERSION_9_0),
-            AgpVersion.parse("9.0.0")
-        )
     )
     ,
 
@@ -1130,6 +1084,34 @@ enum class BooleanOption(
     ; // end of enums
 
     override val status = stage.status
+
+    val futureStage: FutureStage? = when (stage) {
+        is FeatureStage.SoftlyEnforced -> {
+            check(futureStage == null) {
+                "Do not set ${FutureStage::class.simpleName} for property '$propertyName' manually" +
+                        " because it has stage ${FeatureStage.SoftlyEnforced::class.simpleName}" +
+                        " which already contains the necessary information to infer its ${FutureStage::class.simpleName}."
+            }
+            FutureStage(
+                defaultValue = true,
+                stage = FeatureStage.Enforced(enforcedVersion = stage.enforcementTarget.removalTarget),
+                version = stage.enforcementTarget.removalTarget
+            )
+        }
+        is FeatureStage.Deprecated -> {
+            check(futureStage == null) {
+                "Do not set ${FutureStage::class.simpleName} for property '$propertyName' manually" +
+                        " because it has stage ${FeatureStage.Deprecated::class.simpleName}" +
+                        " which already contains the necessary information to infer its ${FutureStage::class.simpleName}."
+            }
+            FutureStage(
+                defaultValue = false,
+                stage = FeatureStage.Removed(removedVersion = stage.removalTarget.removalTarget),
+                version = stage.removalTarget.removalTarget
+            )
+        }
+        else -> futureStage
+    }
 
     override fun parse(value: Any): Boolean {
         return parseBoolean(propertyName, value)

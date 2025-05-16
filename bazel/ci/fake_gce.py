@@ -80,6 +80,7 @@ class FakeGCE:
         json_changes.append({
             'changeId': change.change_id,
             'changeNumber': change.change_number,
+            'project': change.project,
             'revisions': [{
                 'patchSet': change.patchset,
                 'commit': {
@@ -95,7 +96,13 @@ class FakeGCE:
 
     raise NotImplementedError(f'Unsupported curl call: {method_url}')
 
-  def add_change(self, owner: str, message: str, tags: List[Tuple[str, str]]) -> gce.GerritChange:
+  def add_change(
+      self,
+      owner: str,
+      message: str,
+      tags: List[Tuple[str, str]],
+      project: str = '',
+  ) -> gce.GerritChange:
     """Adds and returns a new fake Gerrit change.
 
     The change ID, change number, and patchset are automatically generated. All
@@ -110,6 +117,7 @@ class FakeGCE:
     change = gce.GerritChange(
         change_id=f'changeid{index}',
         change_number=str(index),
+        project=project,
         patchset=index,
         file_infos=[],
         owner=f'{owner}@google.com',

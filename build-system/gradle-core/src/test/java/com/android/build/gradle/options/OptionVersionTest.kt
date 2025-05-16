@@ -29,7 +29,10 @@ class OptionVersionTest {
          * The AGP stable version that is going to be published (ignoring dot releases for the
          * purpose of this test).
          */
-        private val AGP_STABLE_VERSION: AgpVersion = getStableAgpVersionIgnoringDotReleases(ANDROID_GRADLE_PLUGIN_VERSION)
+        private val AGP_STABLE_VERSION: AgpVersion = run {
+            val agpVersion = AgpVersion.parse(ANDROID_GRADLE_PLUGIN_VERSION)
+            AgpVersion(agpVersion.major, agpVersion.minor, 0)
+        }
 
         /**
          * Deprecated [Option]s that have invalid target removal versions.
@@ -43,27 +46,16 @@ class OptionVersionTest {
          */
         private val INVALID_DEPRECATED_OPTIONS: List<Option<*>> = listOf(
         )
-        private fun getStableAgpVersionIgnoringDotReleases(versionString: String): AgpVersion {
-            // Normalize the version string first (e.g., "7.0" => "7.0.0")
-            val normalizedVersionString = if (versionString.count { it=='.' }==1) {
-                "$versionString.0"
-            } else {
-                versionString
-            }
-            val gradleVersion = AgpVersion.parse(normalizedVersionString)
-            return AgpVersion(gradleVersion.major, gradleVersion.minor, 0)
-        }
+
     }
 
     @Test
     fun `check deprecated options have deprecation versions in the future`() {
         val violatingOptions = getAllOptions()
-                .filter { it.status is Option.Status.Deprecated }
-                .filter {
-                    val deprecationVersion = getStableAgpVersionIgnoringDotReleases(
-                            (it.status as Option.Status.Deprecated).deprecationTarget.removalTarget.versionString!!)
-                    deprecationVersion <= AGP_STABLE_VERSION
-                }
+            .filter { it.status is Option.Status.Deprecated }
+            .filter {
+                (it.status as Option.Status.Deprecated).deprecationTarget.removalTarget.agpVersion <= AGP_STABLE_VERSION
+            }
 
         checkViolatingProjectOptions(
                 violatingOptions = violatingOptions,
@@ -80,13 +72,10 @@ class OptionVersionTest {
     @Test
     fun `check removed options do not have removed versions in the future`() {
         val violatingOptions = getAllOptions()
-                .filter { it.status is Option.Status.Removed }
-                .filter { option ->
-                    val removedVersion = (option.status as Option.Status.Removed).removedVersion.versionString?.let {
-                        getStableAgpVersionIgnoringDotReleases(it)
-                    }
-                    removedVersion?.let { removedVersion > AGP_STABLE_VERSION } ?: false
-                }
+            .filter { it.status is Option.Status.Removed }
+            .filter {
+                (it.status as Option.Status.Removed).removedVersion.agpVersion > AGP_STABLE_VERSION
+            }
 
         checkViolatingProjectOptions(
                 violatingOptions = violatingOptions,
