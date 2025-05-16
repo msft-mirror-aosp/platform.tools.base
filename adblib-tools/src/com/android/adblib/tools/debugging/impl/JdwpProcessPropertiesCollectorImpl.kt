@@ -79,6 +79,11 @@ internal class JdwpProcessPropertiesCollectorImpl(
 
         // Launch external collectors (e.g. out of process inventory) if available
         processScope.launch(device.session.ioDispatcher) {
+            if (device.useAppInfo()) {
+                // Don't call external collectors if we use app info, because app info
+                // is always the source of truth
+                return@launch
+            }
             device.session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { factory ->
                 factory.create(process)
             }.forEach { externalCollector ->
