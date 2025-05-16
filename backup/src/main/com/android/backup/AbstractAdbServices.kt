@@ -211,39 +211,32 @@ abstract class AbstractAdbServices(
     }
   }
 
-  override suspend fun isInstalled(applicationId: String): Boolean {
-    try {
-      val lines = executeCommand("pm list packages $applicationId").stdout.lines()
-      return lines.contains("package:$applicationId")
-    } catch (e: BackupException) {
-      // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
-      // problem.
-      if (e.errorCode != DEVICE_DISCONNECTED) {
-        logger.warn(e.message, e)
-      }
-      return false
-    }
-  }
+  override suspend fun getAppInfo(applicationId: String, withPermissions: Boolean): AppInfo? {
+    val lines = executeCommand("dumpsys package $applicationId").stdout.lines()
+    val flags =
+      lines
+        .find { it.trim().startsWith("pkgFlags=") }
+        ?.substringAfter('[')
+        ?.substringBefore(']')
+        ?.trim()
+        ?.split(' ') ?: return null
+    val allowBackup = flags.contains("ALLOW_BACKUP")
+    val debuggable = flags.contains("DEBUGGABLE")
 
-  override suspend fun isBackupEnabled(applicationId: String): Boolean {
-    try {
-      val lines = executeCommand("dumpsys package $applicationId").stdout.lines()
-      val flags =
-        (lines
-          .find { it.trim().startsWith("pkgFlags=") }
-          ?.substringAfter('[')
-          ?.substringBefore(']')
-          ?.trim()
-          ?.split(' ') ?: emptyList())
-      return flags.contains("ALLOW_BACKUP")
-    } catch (e: BackupException) {
-      // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
-      // problem.
-      if (e.errorCode != DEVICE_DISCONNECTED) {
-        logger.warn(e.message, e)
+    val grantedPermissions = buildList {
+      if (withPermissions) {
+        val user = executeCommand("am get-current-user").stdout.trim()
+        lines
+          .dropWhile { !it.startsWith("  Package [$applicationId] ") }
+          .dropWhile { !it.startsWith("    User $user: ") }
+          .dropWhile { it != "      runtime permissions:" }
+          .drop(1)
+          .takeWhile { it.startsWith("        ") }
+          .filter { it.contains("granted=true") && !it.contains("ONE_TIME") }
+          .forEach { add(it.trim().substringBefore(':')) }
       }
-      return false
     }
+    return AppInfo(debuggable, allowBackup, grantedPermissions)
   }
 
   override suspend fun isPlayStoreInstalled(): Boolean {
@@ -266,25 +259,6 @@ abstract class AbstractAdbServices(
       executeCommand("pm grant $applicationId $permission")
     } catch (e: BackupException) {
       logger.warn("Failed to restore permission $permission on $applicationId", e)
-    }
-  }
-
-  override suspend fun getGrantedPermissions(applicationId: String): List<String> {
-    return try {
-      val user = executeCommand("am get-current-user").stdout.trim()
-      executeCommand("dumpsys package $applicationId")
-        .stdout
-        .lineSequence()
-        .dropWhile { !it.startsWith("  Package [$applicationId] ") }
-        .dropWhile { !it.startsWith("    User $user: ") }
-        .dropWhile { it != "      runtime permissions:" }
-        .drop(1)
-        .takeWhile { it.startsWith("        ") }
-        .filter { it.contains("granted=true") && !it.contains("ONE_TIME") }
-        .mapTo(mutableListOf()) { it.trim().substringBefore(':') }
-    } catch (e: BackupException) {
-      logger.warn("Failed to get granted permissions for $applicationId", e)
-      emptyList()
     }
   }
 

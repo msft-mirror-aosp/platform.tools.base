@@ -22,6 +22,7 @@ import com.android.backup.BackupResult.WithoutAppData
 import com.android.backup.BackupType.CLOUD
 import com.android.backup.BackupType.CLOUD_UNENCRYPTED
 import com.android.backup.BackupType.DEVICE_TO_DEVICE
+import com.android.backup.ErrorCode.APP_NOT_DEBUGGABLE
 import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
@@ -75,7 +76,8 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
+        "am get-current-user",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -85,12 +87,9 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
-        "am get-current-user",
-        "dumpsys package com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
-        "dumpsys package com.app",
       )
       .inOrder()
     val files = backupFile.unzip()
@@ -129,7 +128,8 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
+        "am get-current-user",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -139,12 +139,9 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 1",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
-        "am get-current-user",
-        "dumpsys package com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
-        "dumpsys package com.app",
       )
       .inOrder()
     assertThat(adbServices.testMode).isEqualTo(0)
@@ -183,7 +180,8 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
+        "am get-current-user",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -193,12 +191,9 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 2",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
-        "am get-current-user",
-        "dumpsys package com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
-        "dumpsys package com.app",
       )
       .inOrder()
     assertThat(adbServices.testMode).isEqualTo(0)
@@ -246,7 +241,12 @@ class BackupServiceImplTest {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val adbServicesFactory =
       FakeAdbServicesFactory("com.app") {
-        it.addCommandOverride(Output("dumpsys package com.app", ""))
+        it.addCommandOverride(
+          Output(
+            "dumpsys package com.app",
+            "pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ]",
+          )
+        )
         it.addContentOverride(
           "content://com.google.android.gms.fileprovider/backup_testing_flows/auth_backup",
           "valid",
@@ -264,7 +264,12 @@ class BackupServiceImplTest {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val adbServicesFactory =
       FakeAdbServicesFactory("com.app") {
-        it.addCommandOverride(Output("dumpsys package com.app", ""))
+        it.addCommandOverride(
+          Output(
+            "dumpsys package com.app",
+            "pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ]",
+          )
+        )
         it.addContentOverride(
           "content://com.google.android.gms.fileprovider/backup_testing_flows/auth_backup",
           "",
@@ -290,7 +295,8 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
+        "am get-current-user",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "settings put secure backup_enable_testing_flows 1",
@@ -299,11 +305,8 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
-        "am get-current-user",
-        "dumpsys package com.app",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
-        "dumpsys package com.app",
       )
       .inOrder()
   }
@@ -313,7 +316,7 @@ class BackupServiceImplTest {
     val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
     val adbServicesFactory =
       FakeAdbServicesFactory("com.app") {
-        it.addCommandOverride(Output("pm list packages com.app", ""))
+        it.addCommandOverride(Output("dumpsys package com.app", ""))
       }
     val backupServices = BackupServiceImpl(adbServicesFactory)
 
@@ -322,7 +325,7 @@ class BackupServiceImplTest {
     val adbServices = adbServicesFactory.adbServices
     val error = result as Error
     assertThat(error.errorCode).isEqualTo(APP_NOT_INSTALLED)
-    assertThat(adbServices.getCommands()).containsExactly("pm list packages com.app")
+    assertThat(adbServices.getCommands()).containsExactly("dumpsys package com.app")
   }
 
   @Test
@@ -340,7 +343,8 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
+        "am get-current-user",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -350,11 +354,8 @@ class BackupServiceImplTest {
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
         "bmgr backupnow @pm@ com.app --non-incremental --monitor",
-        "am get-current-user",
-        "dumpsys package com.app",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
-        "dumpsys package com.app",
       )
       .inOrder()
   }
@@ -591,7 +592,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -625,7 +626,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -664,7 +665,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -700,7 +701,7 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "settings put secure backup_enable_testing_flows 1",
@@ -732,7 +733,7 @@ class BackupServiceImplTest {
     val adbServices = adbServicesFactory.adbServices
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "pm list packages com.app",
+        "dumpsys package com.app",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -791,6 +792,23 @@ class BackupServiceImplTest {
     val result = backupService.restore("serial", backupFile, null)
 
     assertThat(result).isEqualTo(Success)
+  }
+
+  @Test
+  fun restore_notDebuggable(): Unit = runBlocking {
+    val backupFile =
+      backupFileHelper.createBackupFile("com.app", "11223344556677889900", CLOUD, withAuth = false)
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.addCommandOverride(Output("dumpsys package com.app", "pkgFlags=[ ALLOW_BACKUP ]"))
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    val result = backupService.restore("serial", backupFile, null)
+
+    val error = result as Error
+    assertThat(error.errorCode).isEqualTo(APP_NOT_DEBUGGABLE)
+    assertThat(error.throwable.message).isEqualTo("Application 'com.app' is not debuggable")
   }
 
   @Test
@@ -892,7 +910,7 @@ class BackupServiceImplTest {
     val backupService =
       BackupServiceImpl(
         FakeAdbServicesFactory("com.app") {
-          it.addCommandOverride(Output("pm list packages com.app", ""))
+          it.addCommandOverride(Output("dumpsys package com.app", ""))
         }
       )
 
