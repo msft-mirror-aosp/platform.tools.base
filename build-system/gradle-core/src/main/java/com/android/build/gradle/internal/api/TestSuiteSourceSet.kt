@@ -17,9 +17,8 @@
 package com.android.build.gradle.internal.api
 
 import com.android.build.api.variant.SourceDirectories
+import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
 import org.gradle.api.Incubating
-import org.gradle.api.file.Directory
-import org.gradle.api.provider.Provider
 
 /**
  * Simplistic version of a test suite source set.
@@ -29,10 +28,34 @@ import org.gradle.api.provider.Provider
  */
 /** @suppress */
 @Incubating
-interface TestSuiteSourceSet{
-    @Incubating
-    fun getByName(name: String): SourceDirectories.Flat
+sealed interface TestSuiteSourceSet{
+
+    val type:  BaseTestSuiteSourceIdentity.SourceType
 
     @Incubating
-    fun all(): Provider<out Collection<Directory>>
+    interface Assets: TestSuiteSourceSet {
+        @Incubating
+        fun get(): SourceDirectories.Flat
+
+        override val type: BaseTestSuiteSourceIdentity.SourceType
+            get() = BaseTestSuiteSourceIdentity.SourceType.ASSETS
+    }
+
+    @Incubating
+    interface HostJar: TestSuiteSourceSet {
+        @Incubating
+        fun get(): SourceDirectories.Flat
+
+        override val type: BaseTestSuiteSourceIdentity.SourceType
+            get() = BaseTestSuiteSourceIdentity.SourceType.HOST_JAR
+    }
+
+    @Incubating
+    interface TestApk: TestSuiteSourceSet {
+        @Incubating
+        fun getByName(name: String): SourceDirectories.Flat
+
+        override val type: BaseTestSuiteSourceIdentity.SourceType
+            get() = BaseTestSuiteSourceIdentity.SourceType.TEST_APK
+    }
 }

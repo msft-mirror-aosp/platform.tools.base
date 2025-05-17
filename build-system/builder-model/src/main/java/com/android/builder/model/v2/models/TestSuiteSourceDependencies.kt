@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.ide.v2
+package com.android.builder.model.v2.models
 
-import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
-import java.io.File
-import java.io.Serializable
+import com.android.builder.model.v2.ide.ArtifactDependencies
 
-class BasicTestSuiteArtifactImpl(
-    override val testSuiteName: String,
-): BasicTestSuiteArtifact, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+/**
+ * Single test suite source dependencies.
+ *
+ * Each test suite can have multiple test suite sources, hence multiple distinct dependencies.
+ */
+interface TestSuiteSourceDependencies: BaseTestSuiteSourceIdentity {
+
+    /**
+     * [ArtifactDependencies] for this test suite source.
+     */
+    val artifactDependencies: ArtifactDependencies
 }

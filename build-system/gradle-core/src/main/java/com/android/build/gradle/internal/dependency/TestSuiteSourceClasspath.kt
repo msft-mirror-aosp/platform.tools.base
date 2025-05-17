@@ -33,21 +33,20 @@ import org.gradle.api.model.ObjectFactory
  * Resolvable dependencies of a test suite. Do not resolve these configurations before execution
  * phase.
  */
-class TestSuiteClasspath(
+class TestSuiteSourceClasspath(
     /**
      * The test suite classpath that can be used to compile the test suite sources
      */
     val compileClasspath: Configuration,
 
     /**
-     * The test suite runtime classpath that can be used when configuring the test task.
+     * The test suite runtime classpath that can be used when configuring the test task or to
+     * package in the resulting test APK depending on source type.
      */
     val runtimeClasspath: Configuration,
 
     val objectFactory: ObjectFactory,
 ): ResolutionResultProvider {
-
-
 
     fun resolvedArtifacts(
         artifactCollection: ArtifactCollection,

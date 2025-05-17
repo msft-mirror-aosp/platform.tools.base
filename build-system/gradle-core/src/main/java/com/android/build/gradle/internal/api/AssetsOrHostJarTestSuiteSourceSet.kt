@@ -20,8 +20,6 @@ import com.android.build.api.variant.SourceDirectories
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
-import org.gradle.api.file.Directory
-import org.gradle.api.provider.Provider
 import java.io.File
 
 /**
@@ -29,10 +27,10 @@ import java.io.File
  *
  * @param sourceSetName the name of the folder under src/test
  */
-class SingleTestSuiteSourceSet(
+internal abstract class AssetsOrHostJarTestSuiteSourceSet(
     private val sourceSetName: String,
     private val variantServices: VariantServices,
-): TestSuiteSourceSet {
+) {
 
     private val testSuiteSourcesFolder = FlatSourceDirectoriesImpl(
         sourceSetName,
@@ -49,11 +47,5 @@ class SingleTestSuiteSourceSet(
     }
 
 
-    override fun getByName(name: String): SourceDirectories.Flat {
-        return if (name == sourceSetName) {
-            testSuiteSourcesFolder
-        } else throw IllegalArgumentException("$name not known to this Sources")
-    }
-
-    override fun all(): Provider<out Collection<Directory>> = testSuiteSourcesFolder.all
+    fun get(): SourceDirectories.Flat = testSuiteSourcesFolder
 }

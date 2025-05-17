@@ -355,6 +355,7 @@ class SourceSetBuilderTest {
             { "debug" },
             { variantsList },
             { testComponentList },
+            { listOf() },
             {
                 BuildFeatureValuesImpl(
                     dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java),

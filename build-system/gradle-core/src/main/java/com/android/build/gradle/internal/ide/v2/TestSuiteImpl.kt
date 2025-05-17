@@ -16,15 +16,12 @@
 
 package com.android.build.gradle.internal.ide.v2
 
-import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
-import java.io.File
+import com.android.builder.model.v2.AndroidModel
+import com.android.builder.model.v2.ide.JUnitEngineInfo
+import com.android.builder.model.v2.ide.TestSuite
 import java.io.Serializable
 
-class BasicTestSuiteArtifactImpl(
-    override val testSuiteName: String,
-): BasicTestSuiteArtifact, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
-}
+class TestSuiteImpl(
+    override val name: String,
+    override val junitEngineInfo: JUnitEngineInfo
+): TestSuite, AndroidModel, Serializable

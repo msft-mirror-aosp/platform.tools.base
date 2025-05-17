@@ -37,9 +37,4 @@ interface TestSuiteBuilder: Named {
      * Configure the [JUnitEngineSpec] for this test suite in this variant.
      */
     val junitEngineSpec: JUnitEngineSpec
-
-    /**
-     * Variant specific dependency handler for this test suite.
-     */
-    val dependencies: TestSuiteDependencies
 }

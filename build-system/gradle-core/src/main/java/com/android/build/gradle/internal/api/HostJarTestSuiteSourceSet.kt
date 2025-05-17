@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.ide.v2
+package com.android.build.gradle.internal.api
 
-import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
-import java.io.File
-import java.io.Serializable
+import com.android.build.gradle.internal.services.VariantServices
 
-class BasicTestSuiteArtifactImpl(
-    override val testSuiteName: String,
-): BasicTestSuiteArtifact, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+internal class HostJarTestSuiteSourceSet(
+    sourceSetName: String,
+    private val variantServices: VariantServices,
+): AssetsOrHostJarTestSuiteSourceSet(
+    sourceSetName,
+    variantServices
+), TestSuiteSourceSet.HostJar {
 }

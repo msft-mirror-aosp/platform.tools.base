@@ -17,8 +17,7 @@
 package com.android.build.gradle.internal.component
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
-import com.android.build.gradle.internal.dependency.TestSuiteClasspath
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
@@ -47,14 +46,9 @@ interface TestSuiteCreationConfig: TestSuite {
     val testedVariant: VariantCreationConfig
 
     /**
-     * Returns all the classpath Configurations for this test suite
-     */
-    val testSuiteClasspath: TestSuiteClasspath
-
-    /**
      * Returns the sources for this test suite.
      */
-    val sources: TestSuiteSourceSet
+    val sources: Collection<TestSuiteSourceContainer>
 
     /**
      * Artifacts specific to this Test suite.

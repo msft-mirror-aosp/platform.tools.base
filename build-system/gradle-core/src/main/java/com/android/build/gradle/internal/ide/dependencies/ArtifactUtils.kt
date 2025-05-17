@@ -19,6 +19,7 @@
 package com.android.build.gradle.internal.ide.dependencies
 
 import com.android.build.api.attributes.AgpVersionAttr
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
@@ -296,11 +297,11 @@ fun getArtifactsForModelBuilder(
 }
 
 fun getArtifactsForModelBuilder(
-    testSuite: TestSuiteCreationConfig,
+    testSuiteSourceContainer: TestSuiteSourceContainer,
     configType: AndroidArtifacts.ConsumedConfigType,
 ): Set<ResolvedArtifact> =
-    testSuite.testSuiteClasspath.resolvedArtifacts(
-        testSuite.testSuiteClasspath.getArtifactCollectionForToolingModel(
+    testSuiteSourceContainer.dependencies.resolvedArtifacts(
+        testSuiteSourceContainer.dependencies.getArtifactCollectionForToolingModel(
             configType,
             AndroidArtifacts.ArtifactType.AAR_OR_JAR,
         )

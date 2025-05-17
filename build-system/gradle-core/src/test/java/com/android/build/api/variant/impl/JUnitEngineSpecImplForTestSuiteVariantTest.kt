@@ -21,12 +21,17 @@ import com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl
 import com.android.build.gradle.internal.fixtures.ProjectFactory
 import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.junit.Test
+import org.mockito.Mockito
 
 class JUnitEngineSpecImplForTestSuiteVariantTest {
 
     private val objects = ProjectFactory.project.objects
-    private val dslDefinedJUnitEngineSpec = object: JUnitEngineSpecImpl() { }
+    private val dslDefinedJUnitEngineSpec = object: JUnitEngineSpecImpl() {
+        override val enginesDependencies: DependencyCollector
+            get() = Mockito.mock(DependencyCollector::class.java)
+    }
 
     @Test
     fun testInputParameters() {

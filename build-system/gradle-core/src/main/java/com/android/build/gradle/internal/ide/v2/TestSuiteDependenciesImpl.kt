@@ -16,15 +16,15 @@
 
 package com.android.build.gradle.internal.ide.v2
 
-import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
-import java.io.File
+import com.android.builder.model.v2.models.TestSuiteDependencies
+import com.android.builder.model.v2.models.TestSuiteSourceDependencies
 import java.io.Serializable
 
-class BasicTestSuiteArtifactImpl(
-    override val testSuiteName: String,
-): BasicTestSuiteArtifact, Serializable {
+data class TestSuiteDependenciesImpl(
+    override val sourcesDependencies: Collection<TestSuiteSourceDependencies>
+): TestSuiteDependencies, Serializable {
     companion object {
         @JvmStatic
-        private val serialVersionUID: Long = 2L
+        private val serialVersionUID: Long = 1L
     }
 }

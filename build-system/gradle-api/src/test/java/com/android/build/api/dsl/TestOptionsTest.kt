@@ -25,6 +25,7 @@ import org.mockito.quality.Strictness
 import com.google.common.truth.Truth
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Project
+import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.Provider
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testing.base.TestSuite
@@ -58,14 +59,16 @@ class TestOptionsTest {
         override val useJunitEngine: JUnitEngineSpec = jUnitEngineSpec
         override val targetProductFlavors: MutableList<Pair<String, String>> = mutableListOf<Pair<String, String>>()
         override val targetVariants: MutableList<String> = mutableListOf<String>()
-        override val dependencies: AgpTestSuiteDependencies
-            get() = throw RuntimeException("Unexpected call")
-
         override fun useJunitEngine(action: JUnitEngineSpec.() -> Unit) {
             throw RuntimeException("Unexpected call")
         }
-
-        override fun dependencies(action: AgpTestSuiteDependencies.() -> Unit) {
+        override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
+            throw RuntimeException("Unexpected call")
+        }
+        override fun hostJar(action: TestSuiteHostJarSpec.() -> Unit) {
+            throw RuntimeException("Unexpected call")
+        }
+        override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
             throw RuntimeException("Unexpected call")
         }
     }
@@ -143,5 +146,8 @@ class TestOptionsTest {
             propertyName: String,
             propertyValue: Provider<String>
         ) { }
+
+        override val enginesDependencies: DependencyCollector
+            get() = throw RuntimeException("Unexpected call")
     }
 }

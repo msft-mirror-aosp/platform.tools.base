@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.ide.v2
+package com.android.build.api.dsl
 
-import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
-import java.io.File
-import java.io.Serializable
+import org.gradle.api.Incubating
 
-class BasicTestSuiteArtifactImpl(
-    override val testSuiteName: String,
-): BasicTestSuiteArtifact, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+/**
+ * Definition of host test sources for a test suite. Host test source files are compiled and
+ * therefore dependencies can be attached to them.
+ */
+/** @suppress */
+@Incubating
+interface TestSuiteHostJarSpec {
+
+    /**
+     * Dependency handler for this sources
+     */
+    @get:Incubating
+    val dependencies: AgpTestSuiteDependencies
+
+    /**
+     * Specifies dependency information for this test suite.
+     */
+    @Incubating
+    fun dependencies(action: AgpTestSuiteDependencies.() -> Unit)
 }

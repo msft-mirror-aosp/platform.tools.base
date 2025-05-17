@@ -41,9 +41,19 @@ import org.gradle.api.Incubating
  */
 /** @suppress */
 enum class AgpTestSuiteInputParameters(val propertyName: String) {
+
+    /**
+     * [java.io.File.pathSeparator] separated list of directories containing the static source
+     * files for the test suite. The test suite must have been configured using the
+     * [AgpTestSuite.assets] method.
+     */
+    @Incubating
+    STATIC_FILES("com.android.agp.test.STATIC_FILES"),
+
     /**
      * [java.io.File.pathSeparator] separated list of folders containing test classes for this
      * suite.
+     * The test suite must have been configured using the [AgpTestSuite.hostJar].
      */
     @Incubating
     TEST_CLASSES("com.android.agp.test.TEST_CLASSES"),
@@ -64,6 +74,8 @@ enum class AgpTestSuiteInputParameters(val propertyName: String) {
      * TODO: provide an access through the BuiltArtifactsLoader (moved out of gradle-api) ?
      *
      * [java.io.File.pathSeparator] separated list of APK files to be tested.
+     *
+     * The test suite must have been configured using the [AgpTestSuite.testApk].
      */
     @Incubating
     TESTED_APKS("com.android.agp.test.TESTED_APKS"),

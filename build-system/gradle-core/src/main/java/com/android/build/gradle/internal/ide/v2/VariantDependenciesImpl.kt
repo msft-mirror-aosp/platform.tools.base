@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.v2.ide.ArtifactDependencies
 import com.android.builder.model.v2.ide.Library
+import com.android.builder.model.v2.models.TestSuiteDependencies
 import com.android.builder.model.v2.models.VariantDependencies
 import java.io.Serializable
 
@@ -30,7 +31,7 @@ data class VariantDependenciesImpl(
     override val mainArtifact: ArtifactDependencies,
     override val deviceTestArtifacts: Map<String, ArtifactDependencies>,
     override val hostTestArtifacts: Map<String, ArtifactDependencies>,
-    override val testSuiteArtifacts: Map<String, ArtifactDependencies>,
+    override val testSuiteArtifacts: Map<String, TestSuiteDependencies>,
     override val testFixturesArtifact: ArtifactDependencies?,
     override val libraries: Map<String, Library>
 ) : VariantDependencies, Serializable {

@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Action
 import org.gradle.api.Incubating
+import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.testing.base.TestSuite
 
 /**
@@ -32,8 +33,52 @@ import org.gradle.testing.base.TestSuite
  * variant individually.
  *
  * TODO : resolve : should we allow to target BuildTypes ?
- * A subsequent CL will introduce sub types for host vs devices tests and this comment
  *
+ * Defines how different types of source files are organized and declared for a test suite
+ * within the Android Gradle Plugin. Test suites can incorporate various kinds of sources,
+ * each serving a distinct purpose and following specific conventions.
+ *
+ * All sources for a given test suite (e.g., one named `myTestSuite`) are typically organized
+ * under the `src/myTestSuite/` directory, relative to the module's root. Within this
+ * directory, specific source types will reside in conventional subdirectories.
+ *
+ * Three primary types of sources can be associated with a test suite using the methods
+ * on this interface:
+ *
+ * 1.  **Asset Test Sources (configured via `assets`)**:
+ *     -   **Content**: A single folder containing static files like XML, JSON, or other
+ *         declarative resources that describe or support tests. These files are not compiled.
+ *     -   **Purpose**: Typically interpreted directly by test execution engines (e.g., JUnit).
+ *     -   **Default Location**: `src/<testSuiteName>/assets/`
+ *
+ * 2.  **Host Test Sources (configured via `hostJar`)**:
+ *     -   **Content**: A single folder containing compilable source code (e.g., Kotlin or Java)
+ *         intended for tests that run on the host machine (JVM).
+ *     -   **Purpose**: Compiled before test execution. The compiled classes are then used by
+ *         test engines.
+ *     -   **Default Location**: `src/<testSuiteName>/` (which would then contain standard
+ *         source layouts like `java/`, `kotlin/`, `resources/`)
+ *
+ * 3.  **Device Test Sources (configured via `testApk`)**:
+ *     -   **Content**: A standard Android source set structure, including compilable
+ *         source code (Kotlin/Java), Android resources (`res/`), Android assets (`assets/`),
+ *         and an AndroidManifest.xml file.
+ *     -   **Purpose**: Compiled into a test APK that runs on an Android device or emulator.
+ *     -   **Default Location**: `src/<testSuiteName>/androidTest/` (which would then contain
+ *         standard Android source layouts like `java/`, `res/`, `assets/`, etc.)
+ *
+ * **Configuration Notes:**
+ * -   A test suite can include one or more of these source types. For example, a suite
+ *     might define both `hostTest` sources and `assetTest` sources.
+ * -   Currently, it is not possible to declare the same type of source (e.g., two `hostTest`
+ *     blocks) for a single test suite.
+ * -   Future versions of this API may introduce more flexibility, such as allowing multiple
+ *     instances of the same source type or providing ways to customize the default
+ *     directory names.
+ *
+ * Test execution engines can retrieve the locations or outputs of these configured sources
+ * through properties defined in `com.android.build.api.variant.AgpTestSuiteInputParameters`
+ * (e.g., `STATIC_FILES`, `TEST_CLASSES`, `TESTED_APKS`). *
  */
 /** @suppress */
 @Suppress("UnstableApiUsage")
@@ -85,17 +130,41 @@ interface AgpTestSuite: TestSuite {
     val targetVariants: MutableList<String>
 
     /**
-     * Dependency handler for this test suite. For now, both the test sources dependencies as well
-     * as the test engines dependencies must be configured through this object. However, in a
-     * future version of this API, the test sources dependencies will move to the source set
-     * definition.
-     */
-    @get:Incubating
-    val dependencies: AgpTestSuiteDependencies
-
-    /**
-     * Specifies dependency information for this test suite.
+     * Adds a asset folder to this test suite sources, containing static sources like xml, or json files.
+     *
+     * The folder will be named 'assets' by default and will be therefore located at
+     * `src/<testSuiteName>/assets/`
+     *
+     * No compilation of the sources will be performed and the sources files will be provided to the
+     * configured junit engines using the [AgpTestSuiteInputParameters.STATIC_FILES]
      */
     @Incubating
-    fun dependencies(action: AgpTestSuiteDependencies.() -> Unit)
+    fun assets(action: TestSuiteAssetsSpec.() -> Unit)
+
+    /**
+     * Adds a host test folder to this test suite sources, containing kotlin sources that will be
+     * compiled.
+     *
+     * The folder will be named 'test' by default. It's the root path of the sources and may
+     * contain subfolders like 'java', 'kotlin' and 'resources'. The full path will be by default
+     * `src/<testSuiteName>/test/
+     *
+     * questionable :
+     * Configured test engines can retrieve the compiled classes using the
+     * [AgpTestSuiteInputParameters.TEST_CLASSES] property.
+     */
+    @Incubating
+    fun hostJar(action: TestSuiteHostJarSpec.() -> Unit)
+
+    /**
+     * Adds a device test source folder to this test suite, containing all necessary sources to
+     * create an APK.
+     *
+     * The parent folder will be 'androidTest' by default.
+     *
+     * The sources will be compiled to produce a test APK that can be retrieved by the test engine
+     * using the [AgpTestSuiteInputParameters.TESTED_APKS] property.
+     */
+    @Incubating
+    fun testApk(action: TestSuiteTestApkSpec.() -> Unit)
 }

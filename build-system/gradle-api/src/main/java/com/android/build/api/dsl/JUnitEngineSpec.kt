@@ -17,6 +17,7 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
+import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.Provider
 
 /**
@@ -48,4 +49,11 @@ interface JUnitEngineSpec {
      */
     @get:Incubating
     val inputs: MutableList<AgpTestSuiteInputParameters>
+
+    /**
+     * Returns a [DependencyCollector] that collects the set of runtime-only dependencies to find
+     * and load configured junit engines.
+     */
+    @get:Incubating
+    val enginesDependencies: DependencyCollector
 }

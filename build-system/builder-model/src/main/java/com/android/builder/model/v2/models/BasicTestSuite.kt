@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.ide.v2
+package com.android.builder.model.v2.models
 
-import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
-import java.io.File
-import java.io.Serializable
+/**
+ * Information about a test suite attached to the project.
+ */
+interface BasicTestSuite {
 
-class BasicTestSuiteArtifactImpl(
-    override val testSuiteName: String,
-): BasicTestSuiteArtifact, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+    val name: String
+
+    /**
+     * source folder(s) for this test suite.
+     */
+    val sources: Collection<TestSuiteSource>
 }

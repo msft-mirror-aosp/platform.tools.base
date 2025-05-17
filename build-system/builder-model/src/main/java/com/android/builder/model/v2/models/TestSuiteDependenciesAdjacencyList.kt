@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.ide.v2
+package com.android.builder.model.v2.models
 
-import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
-import java.io.File
-import java.io.Serializable
-
-class BasicTestSuiteArtifactImpl(
-    override val testSuiteName: String,
-): BasicTestSuiteArtifact, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+/**
+ * Defines all dependencies with adjacency list for a test suite.
+ *
+ * Each test suite can have 1 to many source folders, and each source folder can have its
+ * own set of dependencies. Use [TestSuiteSource.name] and [BaseTestSuiteSourceIdentity.name] to
+ * match sources and sources dependencies.
+ */
+interface TestSuiteDependenciesAdjacencyList {
+    /**
+     * The collection of dependencies adjacency list per test sources.
+     */
+    val sourcesDependencies: Collection<TestSuiteSourceDependenciesAdjacencyList>
 }

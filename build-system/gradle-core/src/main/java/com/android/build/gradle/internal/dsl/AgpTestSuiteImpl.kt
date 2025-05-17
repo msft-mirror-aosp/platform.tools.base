@@ -17,8 +17,11 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
-import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.JUnitEngineSpec
+import com.android.build.api.dsl.TestSuiteAssetsSpec
+import com.android.build.api.dsl.TestSuiteHostJarSpec
+import com.android.build.api.dsl.TestSuiteTestApkSpec
+import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
@@ -66,13 +69,39 @@ abstract class AgpTestSuiteImpl(
         return objects.polymorphicDomainObjectContainer(TestSuiteTarget::class.java)
     }
 
-    override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)
-
-    fun dependencies(action:Action<AgpTestSuiteDependencies>) {
-        action.execute(dependencies)
+    override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
+        throw RuntimeException("Not yet implemented")
     }
 
-    override fun dependencies(action: AgpTestSuiteDependencies.() -> Unit) {
-        action.invoke(dependencies)
+    override fun hostJar(action: TestSuiteHostJarSpec.() -> Unit) {
+
+        if (sources.isNotEmpty()) {
+            throw RuntimeException(
+                "It is not yet possible to register multiple sources for a test suite")
+        }
+        objects.newInstance(
+            TestSuiteHostJarSpecImpl::class.java,
+            name
+        ).also { newSources ->
+            sources.add(newSources)
+            action.invoke(newSources)
+        }
     }
+
+    fun hostJar(action: Action<TestSuiteHostJarSpec>) {
+        hostJar { action.execute(this) }
+    }
+
+    override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
+        throw RuntimeException("Not yet implemented")
+    }
+
+    fun testApk(action: Action<TestSuiteTestApkSpec>) {
+        testApk { action.execute(this) }
+    }
+
+    private val sources = mutableListOf<TestSuiteSourceCreationConfig>()
+
+    internal fun  getSourceContainers(): Collection<TestSuiteSourceCreationConfig> =
+        sources
 }

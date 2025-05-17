@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.variant
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.gradle.internal.SdkComponentsBuildService.VersionedSdkLoader
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.DefaultConfig
@@ -59,6 +60,11 @@ interface VariantModel {
      * the test components (android test, unit test)
      */
     val testComponents: List<TestComponentCreationConfig>
+
+    /**
+     * the declared test suites
+     */
+    val testSuites: List<TestSuiteCreationConfig>
 
     val defaultVariant: String?
 
