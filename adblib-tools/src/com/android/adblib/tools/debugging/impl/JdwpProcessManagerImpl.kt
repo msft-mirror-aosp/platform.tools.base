@@ -28,7 +28,6 @@ import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_MANAGER_REFRESH_DELAY
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
 import com.android.adblib.tools.debugging.CustomJdwpProxySocketServerProvider
-import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
@@ -45,7 +44,6 @@ import com.android.adblib.waitForDevice
 import com.android.adblib.withDevicePrefix
 import com.android.adblib.withPrefix
 import com.android.adblib.withScopeContext
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -65,71 +63,10 @@ import java.time.Duration
 import java.util.TreeMap
 
 /**
- * Maintains a list of active [JdwpProcess] instances of a given [ConnectedDevice].
- *
- * The [addProcesses] method allows callers to retrieve [JdwpProcess] instances, which are
- * automatically closed when the corresponding processes exit on the device.
- *
- * A [JdwpProcessManager] instance, as well as all [JdwpProcess] instances, are closed when
- * the [ConnectedDevice.scope] is cancelled (i.e. when the device is disconnected).
- *
- * Note: All methods of this class are thread-safe.
- */
-internal interface JdwpProcessManager {
-
-    /**
-     * The [device] this manager is tied to.
-     */
-    val device: ConnectedDevice
-
-    /**
-     * Add [processIds] to the list of active processes and returns a [Map]
-     * of these process IDs to [JdwpProcess] instances. This is an atomic
-     * operation to ensure thread-safety, i.e. it is guaranteed that [Map.keys]
-     * of the returned [Map] is the same [Set] as [processIds].
-     *
-     * Note that calling this method multiple times with the same process ID
-     * may result in identical [JdwpProcess] instances returned.
-     *
-     * Note it is valid to call this method with process IDS of processes that
-     * do not (yet) exist on the device, the returned [JdwpProcess] instances will
-     * simply remain active for a little while before being closed. This behavior is
-     * needed to ensure smooth behavior due to the asynchronous nature of process
-     * creation and termination.
-     *
-     * The lifetime of the returned [JdwpProcess] instances is managed by this
-     * [JdwpProcessManager], i.e. [JdwpProcess.scope] is valid until the process
-     * has terminated on the device. Given the asynchronous behavior of process
-     * termination, there may be a short delay between the process termination
-     * and the [JdwpProcess.scope] being [cancelled][CoroutineScope.cancel].
-     */
-    fun addProcesses(processIds: Set<Int>): Map<Int, JdwpProcess>
-}
-
-/**
- * Returns the [JdwpProcessManager] for this [ConnectedDevice].
- */
-internal val ConnectedDevice.jdwpProcessManager: JdwpProcessManager
-    get() = jdwpProcessManagerImpl
-
-private val jdwpProcessManagerKey =
-    CoroutineScopeCache.Key<JdwpProcessManagerImpl>(JdwpProcessManagerImpl::class.java.simpleName)
-
-/**
- * Returns the [JdwpProcessManagerImpl] for this [ConnectedDevice].
- */
-private val ConnectedDevice.jdwpProcessManagerImpl: JdwpProcessManagerImpl
-    get() {
-        return cache.getOrPutSynchronized(jdwpProcessManagerKey) {
-            JdwpProcessManagerImpl(device = this)
-        }
-    }
-
-/**
  * Implementation of [JdwpProcessManager], automatically closed when stored in the
  * [ConnectedDevice.cache] of a [device].
  */
-private class JdwpProcessManagerImpl(
+internal class JdwpProcessManagerImpl(
     override val device: ConnectedDevice,
 ): JdwpProcessManager, AutoCloseable {
 
