@@ -21,7 +21,6 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidResources
 import com.android.build.api.variant.ApplicationVariantBuilder
 import com.android.build.api.variant.ScopedArtifacts
-import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.AbstractAppTaskManager
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.ApkCreationConfig
@@ -29,7 +28,6 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.dsl.AbstractPublishing
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -64,7 +62,6 @@ class ApplicationTaskManager(
     testFixturesComponents: Collection<TestFixturesCreationConfig>,
     globalConfig: GlobalTaskCreationConfig,
     localConfig: TaskManagerConfig,
-    extension: BaseExtension,
 ) : AbstractAppTaskManager<ApplicationVariantBuilder, ApplicationCreationConfig>(
     project,
     variants,
@@ -72,7 +69,6 @@ class ApplicationTaskManager(
     testFixturesComponents,
     globalConfig,
     localConfig,
-    extension,
 ) {
 
     override fun doCreateTasksForVariant(

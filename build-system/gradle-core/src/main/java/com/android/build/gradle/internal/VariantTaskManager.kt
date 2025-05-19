@@ -85,7 +85,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     private val testFixturesComponents: Collection<TestFixturesCreationConfig>,
     globalConfig: GlobalTaskCreationConfig,
     @JvmField protected val localConfig: TaskManagerConfig,
-    @JvmField protected val extension: BaseExtension,
 ): TaskManager(project, globalConfig) {
 
     @JvmField

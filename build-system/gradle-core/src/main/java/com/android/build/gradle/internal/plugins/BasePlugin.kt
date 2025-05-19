@@ -348,7 +348,6 @@ abstract class BasePlugin<
         testFixturesComponents: Collection<TestFixturesCreationConfig>,
         globalTaskCreationConfig: GlobalTaskCreationConfig,
         localConfig: TaskManagerConfig,
-        extension: BaseExtension,
     ): VariantTaskManager<VariantBuilderT, CreationConfigT>
 
     protected abstract fun getProjectType(): Int
@@ -768,7 +767,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
             variantManager.testFixturesComponents,
             globalConfig,
             taskManagerConfig,
-            extension
         )
         taskManager.createTasks(variantFactory.componentType, createVariantModel(globalConfig))
         val anyVariantSupportsSdkConsumption =
