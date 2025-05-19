@@ -21,6 +21,7 @@ import com.android.build.api.dsl.AssetPackExtension
 import com.android.build.gradle.internal.dsl.AssetPackExtensionImpl
 import com.android.build.gradle.internal.tasks.AssetPackManifestGenerationTask
 import com.android.build.gradle.internal.tasks.UsesAnalytics
+import com.android.build.gradle.internal.utils.maybeRegister
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -45,10 +46,12 @@ class AssetPackPlugin : Plugin<Project> {
             manifestGenerationTask.instantDeliveryType.setDisallowChanges(extension.dynamicDelivery.instantDeliveryType)
         }
 
-        val assetPackFiles = project.configurations.maybeCreate("packElements")
-        val assetPackManifest = project.configurations.maybeCreate("manifestElements")
-        assetPackFiles.isCanBeConsumed = true
-        assetPackManifest.isCanBeConsumed = true
+        project.configurations.maybeRegister("packElements") {
+            isCanBeConsumed = true
+        }
+        project.configurations.maybeRegister("manifestElements") {
+            isCanBeConsumed = true
+        }
         project.artifacts.add("manifestElements", manifestGenerationTaskProvider.flatMap { it.manifestFile })
         project.artifacts.add("packElements", project.layout.projectDirectory.dir("src/main/assets"))
     }
