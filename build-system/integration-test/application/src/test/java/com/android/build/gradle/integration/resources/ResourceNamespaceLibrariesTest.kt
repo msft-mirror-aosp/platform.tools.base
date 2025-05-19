@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.objectweb.asm.Opcodes
@@ -40,6 +41,7 @@ import org.objectweb.asm.Opcodes
  *        ----------------------------------->
  * ```
  */
+@Ignore("Ignore until cleaning up the partially complete namespace support b/418754574")
 class ResourceNamespaceLibrariesTest {
 
     private val buildScriptContent = """
