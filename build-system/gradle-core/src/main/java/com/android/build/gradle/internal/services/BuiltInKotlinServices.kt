@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.gradle.Version
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
@@ -45,6 +46,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinJvmFactory
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilationFactory
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
@@ -203,7 +205,12 @@ internal fun ComponentCreationConfig.createKotlinCompilation(
         val constructor = KotlinJvmAndroidCompilationFactory::class.java.getConstructor(KotlinAndroidTarget::class.java, BaseVariant::class.java)
         constructor.isAccessible = true
         val kotlinCompilationFactory = constructor.newInstance(kotlinServices.kotlinAndroidProjectExtension.target, variant)
-        kotlinCompilationFactory.create(name)
+        kotlinCompilationFactory.create(name).also {
+            // Also add it to KotlinAndroidTarget.compilations
+            @Suppress("UNCHECKED_CAST")
+            (kotlinServices.kotlinAndroidProjectExtension.target.compilations as NamedDomainObjectContainer<KotlinJvmAndroidCompilation>)
+                .add(it)
+        }
     } else {
         // For a screenshot-test or test-fixtures component, there isn't a corresponding old
         // BaseVariant, so we need to create a custom KotlinCompilation instance.
