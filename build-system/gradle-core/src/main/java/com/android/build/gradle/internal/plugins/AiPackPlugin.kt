@@ -21,6 +21,7 @@ import com.android.build.api.dsl.AiPackExtension
 import com.android.build.gradle.internal.dsl.AiPackExtensionImpl
 import com.android.build.gradle.internal.tasks.AssetPackManifestGenerationTask
 import com.android.build.gradle.internal.tasks.UsesAnalytics
+import com.android.build.gradle.internal.utils.maybeRegister
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -47,10 +48,12 @@ class AiPackPlugin : Plugin<Project> {
             manifestGenerationTask.aiModelDependencyPackageName.setDisallowChanges(aiPackExtension.modelDependency.aiModelPackageName)
         }
 
-        val aiPackFiles = project.configurations.maybeCreate("packElements")
-        val aiPackManifest = project.configurations.maybeCreate("manifestElements")
-        aiPackFiles.isCanBeConsumed = true
-        aiPackManifest.isCanBeConsumed = true
+        project.configurations.maybeRegister("packElements") {
+            isCanBeConsumed = true
+        }
+        project.configurations.maybeRegister("manifestElements") {
+            isCanBeConsumed = true
+        }
         project.artifacts.add("manifestElements", manifestGenerationTaskProvider.flatMap { it.manifestFile })
         project.artifacts.add("packElements", project.layout.projectDirectory.dir("src/main/assets"))
     }
