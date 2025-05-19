@@ -103,6 +103,9 @@ class ProjectInfo(private val project: Project) {
     fun <T> getExtension(extensionType: Class<T>): T =
         project.extensions.getByType<T>(extensionType)
 
+    fun <T> findExtension(extensionType: Class<T>): T? =
+        project.extensions.findByType(extensionType)
+
     fun getTestResultsFolder(): Provider<Directory> {
         return buildDirectory.dir("test-results")
     }
