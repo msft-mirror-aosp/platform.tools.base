@@ -34,6 +34,7 @@ import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
+import javax.inject.Inject
 
 open class BaseAppModuleExtensionInternal(
     dslServices: DslServices,
@@ -69,7 +70,7 @@ open class BaseAppModuleExtensionInternal(
 }
 
 /** The `android` extension for base feature module (application plugin).  */
-open class BaseAppModuleExtension(
+open class BaseAppModuleExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
     buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,

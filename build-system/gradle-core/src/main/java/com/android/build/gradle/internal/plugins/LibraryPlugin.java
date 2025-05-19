@@ -19,7 +19,6 @@ import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_
 
 import com.android.AndroidProjectTypes;
 import com.android.annotations.NonNull;
-import com.android.build.api.dsl.LibraryBuildFeatures;
 import com.android.build.api.dsl.LibraryExtension;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.LibraryAndroidComponentsExtensionImpl;
@@ -28,14 +27,12 @@ import com.android.build.api.variant.AndroidComponentsExtension;
 import com.android.build.api.variant.LibraryAndroidComponentsExtension;
 import com.android.build.api.variant.LibraryVariant;
 import com.android.build.api.variant.LibraryVariantBuilder;
-import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.LibraryExtensionInternal;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.LibraryTaskManager;
 import com.android.build.gradle.internal.component.LibraryCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
@@ -161,6 +158,29 @@ public class LibraryPlugin
             initExtensionFromSettings(libraryExtension);
             setupDependencies(android);
             return new ExtensionData<>(android, libraryExtension, bootClasspathConfig);
+        }
+
+        if (getProjectServices()
+                .getProjectOptions()
+                .get(BooleanOption.USE_NEW_DSL)) {
+            project.getExtensions().add(new TypeOf<>() {}, "android", libraryExtension);
+
+            initExtensionFromSettings(libraryExtension);
+
+            // Create an instance of the old extension to pass around AGP internally.
+            // This is not exposed externally
+            // TODO(b/418804641): Clean up all the internal users of the BaseExtension hierarchy
+            com.android.build.gradle.LibraryExtension internalOnly =
+                    dslServices.newInstance(
+                            com.android.build.gradle.LibraryExtension.class,
+                            dslServices,
+                            bootClasspathConfig,
+                            buildOutputs,
+                            dslContainers.getSourceSetManager(),
+                            libraryExtension,
+                            stats != null ? stats : GradleBuildProject.newBuilder());
+
+            return new ExtensionData<>(internalOnly, libraryExtension, bootClasspathConfig);
         }
 
         if (getProjectServices().getProjectOptions().get(BooleanOption.USE_NEW_DSL_INTERFACES)) {

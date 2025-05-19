@@ -48,6 +48,7 @@ dependencies {
     testImplementation(project(':base:build-system:gradle-core')) {
         transitive = false
     }
+    testImplementation(project(':base:gradle-api'))
 }
 
 configurations {

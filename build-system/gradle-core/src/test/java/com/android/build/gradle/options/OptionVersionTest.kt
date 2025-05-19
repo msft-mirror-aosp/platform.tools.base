@@ -84,6 +84,7 @@ class OptionVersionTest {
             BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED,
             BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED,
             BooleanOption.TEST_SUITE_SUPPORT,
+            BooleanOption.USE_NEW_DSL,
         )
 
     }

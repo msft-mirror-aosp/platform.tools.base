@@ -326,7 +326,18 @@ enum class BooleanOption(
 
     ENABLE_TEST_FIXTURES("android.experimental.enableTestFixtures", false, FeatureStage.Experimental),
 
-    USE_NEW_DSL_INTERFACES("android.experimental.newDslInterfaces", false, FeatureStage.Experimental),
+    /**
+     * Expose only the new DSL.
+     *
+     * No longer use the legacy implementation classes to back the DSL.
+     *
+     * The legacy implementation classes also includes the legacy variant API, so setting this
+     * subsumes setting `android.enableLegacyVariantApi`
+     */
+    USE_NEW_DSL("android.newDsl", false, FeatureStage.Experimental,
+        FutureStage(true, FeatureStage.SoftlyEnforced(VERSION_10_0), Version.VERSION_9_0),
+    ),
+
     USE_DECLARATIVE_INTERFACES("android.experimental.declarative", false, FeatureStage.Experimental),
 
     /** Whether to force the APK to be deterministic. */
@@ -708,8 +719,11 @@ enum class BooleanOption(
         ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
     ),
 
-    /** This flag is subsumed by android.enableLegacyVariantApi. */
+    /** This flag is subsumed by android.enableLegacyVariantApi ([ENABLE_LEGACY_VARIANT_API]) */
     ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Deprecated(VERSION_10_0)),
+
+    /** This is subsumed by `android.newDsl` ([USE_NEW_DSL]) which also affects groovy scripts and plugins. */
+    USE_NEW_DSL_INTERFACES("android.experimental.newDslInterfaces", false, FeatureStage.Deprecated(VERSION_10_0)),
 
     /* -----------------
      * ENFORCED FEATURES
