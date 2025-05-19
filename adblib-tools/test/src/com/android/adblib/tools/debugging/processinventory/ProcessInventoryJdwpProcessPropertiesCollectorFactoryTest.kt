@@ -48,7 +48,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.job
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.net.InetSocketAddress
@@ -68,7 +67,6 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
     @Rule
     val closeables = CloseablesRule()
 
-    @Ignore("b/413042433")
     @Test
     fun testJdwpPropertiesCollectionIsDistributed(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
@@ -120,7 +118,6 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             })
         }
 
-    @Ignore("b/413042433")
     @Test
     fun testDistributedJdwpPropertiesCollectionRecoversFromSessionClosing(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
@@ -336,9 +333,9 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             deviceModel = "test2",
             release = "model",
             sdk = AndroidApiLevel(apiLevel),
-            hostConnectionType = com.android.fakeadbserver.DeviceState.HostConnectionType.USB
+            hostConnectionType = DeviceState.HostConnectionType.USB
         ).also {
-            it.deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE
+            it.deviceStatus = DeviceState.DeviceStatus.ONLINE
         }
     }
 

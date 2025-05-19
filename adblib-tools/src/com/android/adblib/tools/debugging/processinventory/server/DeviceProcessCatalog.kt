@@ -22,6 +22,10 @@ import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.DeviceId
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.JdwpProcessInfo
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.OptionalBool
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.OptionalInt32
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.OptionalString
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.OptionalStringList
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessUpdate
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessUpdates
 import com.android.adblib.withPrefix
@@ -220,22 +224,58 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
 
     /**
      * Returns a [JdwpProcessInfo] instances resulting from the merging of properties of this
-     * [JdwpProcessInfo] with [other].
+     * [JdwpProcessInfo] with [newer].
      */
-    private fun JdwpProcessInfo.mergeWith(other: JdwpProcessInfo): JdwpProcessInfo {
+    private fun JdwpProcessInfo.mergeWith(newer: JdwpProcessInfo): JdwpProcessInfo {
         return JdwpProcessInfo.newBuilder(this)
             .also { proto ->
-                proto.pid = other.pid
-                if (other.hasProcessName()) proto.processName = other.processName
-                if (other.hasPackageNames()) proto.packageNames = other.packageNames
-                if (other.hasUserId()) proto.userId = other.userId
-                if (other.hasInstructionSet()) proto.instructionSet = other.instructionSet
-                if (other.hasVmIdentifier()) proto.vmIdentifier = other.vmIdentifier
-                if (other.hasJvmFlags()) proto.jvmFlags = other.jvmFlags
-                if (other.hasNativeDebuggable()) proto.nativeDebuggable = other.nativeDebuggable
-                if (other.hasWaitingForDebugger()) proto.waitingForDebugger = other.waitingForDebugger
-                if (other.hasFeatures()) proto.features = other.features
+                proto.pid = newer.pid
+                proto.processName = newer.processName.orElse(proto.processName)
+                proto.packageNames = newer.packageNames.orElse(proto.packageNames)
+                proto.userId = newer.userId.orElse(proto.userId)
+                proto.instructionSet = newer.instructionSet.orElse(proto.instructionSet)
+                proto.vmIdentifier = newer.vmIdentifier.orElse(proto.vmIdentifier)
+                proto.jvmFlags = newer.jvmFlags.orElse(proto.jvmFlags)
+                proto.nativeDebuggable = newer.nativeDebuggable.orElse(proto.nativeDebuggable)
+                proto.waitingForDebugger = newer.waitingForDebugger.orElse(proto.waitingForDebugger)
+                proto.features = newer.features.orElse(proto.features)
             }
             .build()
+    }
+
+    private fun OptionalBool.orElse(other: OptionalBool): OptionalBool {
+        return when {
+            this.hasValue -> this
+            other.hasValue -> other
+            this.isError -> this
+            else -> other
+        }
+    }
+
+    private fun OptionalInt32.orElse(other: OptionalInt32): OptionalInt32 {
+        return when {
+            this.hasValue -> this
+            other.hasValue -> other
+            this.isError -> this
+            else -> other
+        }
+    }
+
+    private fun OptionalString.orElse(other: OptionalString): OptionalString {
+        return when {
+            this.hasValue -> this
+            other.hasValue -> other
+            this.isError -> this
+            else -> other
+        }
+    }
+
+    private fun OptionalStringList.orElse(other: OptionalStringList): OptionalStringList {
+        return when {
+            this.hasValue -> this
+            other.hasValue -> other
+            this.isError -> this
+            else -> other
+        }
     }
 }
