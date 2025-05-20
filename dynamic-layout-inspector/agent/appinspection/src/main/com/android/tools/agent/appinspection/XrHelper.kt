@@ -18,6 +18,7 @@ package com.android.tools.agent.appinspection
 
 import android.util.Log
 import android.view.View
+import android.view.inspector.WindowInspector
 import androidx.inspection.InspectorEnvironment
 import com.android.tools.agent.appinspection.xr.getXrViewsUsingReflection
 
@@ -35,13 +36,22 @@ class XrHelper(private val environment: InspectorEnvironment) {
             return emptyList()
         }
 
-        val xrViews = runCatching { com.android.tools.agent.appinspection.xr.getXrViews(environment) }.getOrNull()
-        return if (xrViews.isNullOrEmpty()) {
+        val xrViewsFromApi = runCatching { com.android.tools.agent.appinspection.xr.getXrViews(environment) }.getOrNull()
+        val xrViews = if (xrViewsFromApi.isNullOrEmpty()) {
             Log.w(SPAM_LOG_TAG, "Getting XR views using reflection.")
             runCatching { getXrViewsUsingReflection(environment) }.getOrNull() ?: emptyList()
         }
         else {
-            xrViews
+            xrViewsFromApi
         }
+
+        // TODO(b/418942993): Move this code back to `XrViewsProvider` once we remove the reflection code
+        //  and therefore abandon support for scenecore alpha03 and lower.
+        val windowViews = WindowInspector.getGlobalWindowViews()
+
+        // Views for ActivityPanelNodes are not returned but the XrExtensions API. But can be obtained
+        // through the WindowInspector, since they are in the main panel. For this reason we merge
+        // the views obtained with XrExtensions with the views from the WindowInspector.
+        return xrViews.union(windowViews).toList()
     }
 }
