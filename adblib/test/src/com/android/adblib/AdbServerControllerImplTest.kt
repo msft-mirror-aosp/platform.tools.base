@@ -689,10 +689,11 @@ class AdbServerControllerImplTest {
         }
         controller.start()
         processRunner.throwOnNextCommand =
-                IllegalStateException("Exception in a call to `controller.restart()`")
+                IOException("Exception in a call to `controller.restart()`")
         try {
             controller.restart()
-        } catch (_: IllegalStateException) {
+            fail("Should not reach")
+        } catch (_: IOException) {
             // Ignore: This exception is expected
         }
         processRunner.reset()
@@ -796,12 +797,13 @@ class AdbServerControllerImplTest {
             )
         }
         processRunner.throwOnNextCommand =
-                IllegalStateException("Exception in a call to `controller.start()`")
+                IOException("Exception in a call to `controller.start()`")
 
         // Act: put controller into a failed started state
         try {
             controller.start()
-        } catch (_: IllegalStateException) {
+            fail("Should not reach")
+        } catch (_: IOException) {
             // Ignore: This exception is expected
         }
 
@@ -811,11 +813,12 @@ class AdbServerControllerImplTest {
 
         // Prepare: Try restart from a failed start state and make it fail
         processRunner.throwOnNextCommand =
-                IllegalStateException("Exception in a call to `controller.restart()`")
+                IOException("Exception in a call to `controller.restart()`")
         // Act: Try restart from a failed start state
         try {
             controller.restart()
-        } catch (_: IllegalStateException) {
+            fail("Should not reach")
+        } catch (_: IOException) {
             // Ignore: This exception is expected
         }
         // Assert
@@ -1006,11 +1009,11 @@ class AdbServerControllerImplTest {
 
         // Act
         processRunner.throwOnNextCommand =
-            IllegalStateException("Exception in a first call to `controller.start()`")
+            IOException("Exception in a first call to `controller.start()`")
         try {
             controller.start()
             fail("Should not reach")
-        } catch (_: IllegalStateException) {
+        } catch (_: IOException) {
             // Ignore: This exception is expected
         }
 
