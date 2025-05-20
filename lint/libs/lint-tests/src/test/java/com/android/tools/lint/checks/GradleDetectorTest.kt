@@ -43,6 +43,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.EXPIRING_TARGET_SD
 import com.android.tools.lint.checks.GradleDetector.Companion.GRADLE_GETTER
 import com.android.tools.lint.checks.GradleDetector.Companion.GRADLE_PLUGIN_COMPATIBILITY
 import com.android.tools.lint.checks.GradleDetector.Companion.HIGH_APP_VERSION_CODE
+import com.android.tools.lint.checks.GradleDetector.Companion.INSTANT_APP_DEPRECATION
 import com.android.tools.lint.checks.GradleDetector.Companion.JAVA_PLUGIN_LANGUAGE_LEVEL
 import com.android.tools.lint.checks.GradleDetector.Companion.JCENTER_REPOSITORY_OBSOLETE
 import com.android.tools.lint.checks.GradleDetector.Companion.KAPT_USAGE_INSTEAD_OF_KSP
@@ -6686,6 +6687,58 @@ class GradleDetectorTest : AbstractCheckTest() {
       .issues(LIFECYCLE_ANNOTATION_PROCESSOR_WITH_JAVA8)
       .run()
       .expectClean()
+  }
+
+  fun testInstntAppDeprectedDependencies() {
+    lint()
+      .files(
+        gradle(
+            """
+                dependencies {
+                    implementation 'com.google.android.gms:play-services-instantapps:18.1.0'
+                }
+                """
+          )
+          .indented()
+      )
+      .issues(INSTANT_APP_DEPRECATION)
+      .run()
+      .expect(
+        """
+        build.gradle:2: Warning: Instant Apps support will be removed by Google Play in December 2025. Publishing and all Google Play Instant APIs will no longer work. Tooling support will be removed in Android Studio Otter Feature Drop. [InstantAppDeprecation]
+            implementation 'com.google.android.gms:play-services-instantapps:18.1.0'
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testInstntAppDeprectedDependenciesInCatalog() {
+    lint()
+      .files(
+        gradleToml(
+            """
+                [versions]
+                intantVersion = "18.1.0"
+                dagger="1.2.0"
+
+                [libraries]
+                instant = { module = "com.google.android.gms:play-services-instantapps", version.ref = "intantVersion"}
+                dagger-lib = { group = "com.squareup.dagger", name ="dagger", version.ref = "dagger" }
+          """
+          )
+          .indented()
+      )
+      .issues(INSTANT_APP_DEPRECATION)
+      .run()
+      .expect(
+        """
+        ../gradle/libs.versions.toml:6: Warning: Instant Apps support will be removed by Google Play in December 2025. Publishing and all Google Play Instant APIs will no longer work. Tooling support will be removed in Android Studio Otter Feature Drop. [InstantAppDeprecation]
+        instant = { module = "com.google.android.gms:play-services-instantapps", version.ref = "intantVersion"}
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
   }
 
   fun testCompileDeprecationInConsumableModule() {

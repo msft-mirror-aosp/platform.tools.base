@@ -192,6 +192,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           GradleDetector.GRADLE_PLUGIN_COMPATIBILITY,
           GradleDetector.HIGH_APP_VERSION_CODE,
           GradleDetector.IDE_SUPPORT,
+          GradleDetector.INSTANT_APP_DEPRECATION,
           GradleDetector.JAVA_PLUGIN_LANGUAGE_LEVEL,
           GradleDetector.JCENTER_REPOSITORY_OBSOLETE,
           GradleDetector.KAPT_USAGE_INSTEAD_OF_KSP,
