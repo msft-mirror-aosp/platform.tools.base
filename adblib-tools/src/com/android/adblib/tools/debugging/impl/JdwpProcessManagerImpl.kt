@@ -18,9 +18,10 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.ProcessIdList
 import com.android.adblib.adbLogger
 import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.getOrPutSynchronized
+import com.android.adblib.emptyProcessIdList
 import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
@@ -28,10 +29,11 @@ import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_MANAGER_REFRESH_DELAY
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
 import com.android.adblib.tools.debugging.CustomJdwpProxySocketServerProvider
+import com.android.adblib.tools.debugging.JdwpProcessIdList
 import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
-import com.android.adblib.tools.debugging.impl.JdwpProcessManagerImpl.Companion.JdwpProcessIdsFlowEntry.Companion.StartOfFlow
+import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.isTrackAppSupported
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.scope
@@ -88,6 +90,11 @@ internal class JdwpProcessManagerImpl(
         }
 
     /**
+     * Helper class to track process IDs for the given [device]
+     */
+    private val jdwpProcessIdTracker = JdwpProcessIdTracker(device)
+
+    /**
      * Lock for [jdwpProcessMap]
      */
     private val lock = Any()
@@ -110,8 +117,8 @@ internal class JdwpProcessManagerImpl(
     /**
      * The flow of process ids as tracked by the [processIdsStateFlowUpdaterJob] job
      */
-    private val processIdsStateFlow: StateFlow<JdwpProcessIdsFlowEntry>
-        get() = device.jdwpProcessIdStateFlow
+    private val processIdsStateFlow: StateFlow<JdwpProcessIdList>
+        get() = jdwpProcessIdTracker.processIdsStateFlow
 
     /**
      * Starts a [Job] to track the list of active JDWP process ids and call [setActiveProcessIds]
@@ -121,16 +128,16 @@ internal class JdwpProcessManagerImpl(
         scope.launch {
             runCatching {
                 JobTracker(this).use { jobTracker ->
-                    device.jdwpProcessIdStateFlow.filter { entry ->
+                    jdwpProcessIdTracker.processIdsStateFlow.filter { processIds ->
                         // Skip the very first value of the flow, because it is always empty
                         // and does not reflect the "current" list of active process IDs.
-                        !entry.isStartOfFlow
-                    }.collect { entry ->
+                        !processIds.flowStatus.isStartOfFlow
+                    }.collect { processIds ->
                         jobTracker.cancelPreviousAndLaunch {
                             // Delay for a little bit so that we get cancelled if another
                             // set of process IDs is emitted in the meantime.
                             delay(jdwpProcessMapRefreshDelay.toMillis())
-                            setActiveProcessIds(entry.processIds)
+                            setActiveProcessIds(processIds.toSet())
                         }
                     }
                 }
@@ -170,7 +177,7 @@ internal class JdwpProcessManagerImpl(
             // Update our map given the process IDs we received as parameter
             jdwpProcessMap.addProcesses(processIds)
             processIds.map { pid ->
-                jdwpProcessMap.getProcessOrNull(pid)?: run {
+                jdwpProcessMap.getProcessOrNull(pid) ?: run {
                     // A `null` result should never happen, given we called `addProcesses` above
                     throwProcessNotFoundInternalError(pid)
                 }
@@ -194,7 +201,7 @@ internal class JdwpProcessManagerImpl(
 
         // Wait until the PID shows up (it may never succeed if the process has already
         // exited, that's fine, the caller will cancel this coroutine if that is the case
-        val processIds = processIdsStateFlow.first { it.processIds.contains(pid) }.processIds
+        val processIds = processIdsStateFlow.first { it.contains(pid) }.toSet()
 
         // Synchronize our internal list of processes to the list of process IDs we got.
         // * If our process id flow is faster than the external tracker, we may create processes
@@ -239,20 +246,9 @@ internal class JdwpProcessManagerImpl(
     }
 
     companion object {
-
-        private val JdwpProcessIdTrackerKey =
-            CoroutineScopeCache.Key<JdwpProcessIdTracker>(JdwpProcessIdTracker::class.simpleName!!)
-
-        private val ConnectedDevice.jdwpProcessIdStateFlow: StateFlow<JdwpProcessIdsFlowEntry>
-            get() {
-                return cache.getOrPutSynchronized(JdwpProcessIdTrackerKey) {
-                    JdwpProcessIdTracker(this)
-                }.stateFlow
-            }
-
         /**
          * Tracks the process IDs of all JDWP processes of a given [device], exposing a
-         * [StateFlow] of [JdwpProcessIdsFlowEntry] (see [stateFlow] property).
+         * [StateFlow] of [JdwpProcessIdList] (see [processIdsStateFlow] property).
          *
          * Note: The implementation uses the best available JDWP process ID tracker,
          * i.e. either [ConnectedDevice.trackApp] or [ConnectedDevice.trackJdwp].
@@ -261,7 +257,8 @@ internal class JdwpProcessManagerImpl(
 
             private val logger = adbLogger(device.session).withDevicePrefix(device)
 
-            private val mutableFlow = MutableStateFlow(StartOfFlow)
+            private val mutableFlow =
+                MutableStateFlow(JdwpProcessIdList(emptyProcessIdList(), StateFlowStatus.startOfFlow))
 
             private val trackingJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
                 device.scope.launch {
@@ -273,7 +270,7 @@ internal class JdwpProcessManagerImpl(
                 }
             }
 
-            val stateFlow: StateFlow<JdwpProcessIdsFlowEntry> = mutableFlow.asStateFlow()
+            val processIdsStateFlow: StateFlow<JdwpProcessIdList> = mutableFlow.asStateFlow()
                 get() {
                     // Note: We rely on "lazy" to ensure the tracking coroutine is launched only once
                     trackingJob
@@ -288,21 +285,23 @@ internal class JdwpProcessManagerImpl(
                         device.trackApp.stateFlow.filter { appProcessEntryList ->
                             // Skip first entry, it is always empty
                             !appProcessEntryList.flowStatus.isStartOfFlow
-                        }.map { appProcessEntryList ->
-                            appProcessEntryList.filter { it.debuggable }.map { it.pid }.toSet()
-                        }.collect { processIds ->
+                        }.collect { appProcessEntryList ->
+                            val processIds = appProcessEntryList
+                                .filter { it.debuggable }
+                                .map { it.pid }
                             logger.verbose { "Updating (track-app) state flow of process IDS: $processIds" }
-                            mutableFlow.value = JdwpProcessIdsFlowEntry(processIds)
+                            mutableFlow.value = JdwpProcessIdList(
+                                list = ProcessIdList(processIds, errors = emptyList()),
+                                flowStatus = appProcessEntryList.flowStatus
+                            )
                         }
                     } else {
                         device.trackJdwp.stateFlow.filter { processIds ->
                             // Skip first entry, it is always empty
                             !processIds.flowStatus.isStartOfFlow
-                        }.map { processIds ->
-                            processIds.toSet()
                         }.collect { processIds ->
                             logger.verbose { "Updating (track-jdwp) state flow of process IDS: $processIds" }
-                            mutableFlow.value = JdwpProcessIdsFlowEntry(processIds)
+                            mutableFlow.value = processIds
                         }
                     }
                 }.withRetry { throwable ->
@@ -314,43 +313,6 @@ internal class JdwpProcessManagerImpl(
                 }.withFinally {
                     logger.debug { "Exiting process ID tracking" }
                 }.execute()
-            }
-        }
-
-        /**
-         * An entry of the [StateFlow] exposed by [JdwpProcessIdTracker].
-         *
-         * Note that it is important to rely on the default (reference) equality to make sure
-         * that [StartOfFlow] is considered a different value than an entry an empty set of
-         * process IDs. This allows the consumer of the [StateFlow] to distinguish between
-         * an empty set corresponding to "we don't know yet" and an empty set corresponding to
-         * "the device has no active processes".
-         */
-        private class JdwpProcessIdsFlowEntry(
-            /**
-             * The [Set] of JDWP process IDs of this flow entry.
-             */
-            val processIds: Set<Int>
-        ) {
-
-            /**
-             * Whether this is the very first entry of the flow, emitted once before the actual list
-             * of processes has been retrieved for the first time.
-             */
-            val isStartOfFlow: Boolean
-                get() = (this == StartOfFlow)
-
-            override fun toString(): String {
-                val desc = when {
-                    isStartOfFlow -> "StartOfFlow"
-                    else -> "$processIds"
-                }
-                return "${this::class.simpleName}($desc)"
-            }
-
-            companion object {
-
-                val StartOfFlow = JdwpProcessIdsFlowEntry(emptySet())
             }
         }
     }
