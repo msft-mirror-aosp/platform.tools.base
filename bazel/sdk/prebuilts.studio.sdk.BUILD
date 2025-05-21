@@ -98,7 +98,6 @@ filegroup(
         "//tools/adt/idea/apkanalyzer/gradle/integration-tests:__pkg__",
         "//tools/adt/idea/old-agp-tests:__pkg__",
         "//tools/adt/idea/sync-perf-tests:__pkg__",
-        "//tools/vendor/google/android-ndk:__pkg__",
     ],
 )
 
