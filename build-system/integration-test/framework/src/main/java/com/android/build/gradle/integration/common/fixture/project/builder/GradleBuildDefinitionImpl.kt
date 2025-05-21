@@ -379,7 +379,7 @@ internal class GradleBuildDefinitionImpl(
                     project.applyPlugin(plugin)
                 }
                 if (createMinimumAndroidProject) {
-                    project.androidLibrary {
+                    project.android {
                         namespace = "pkg.name${path.replace(':', '.').replace('-', '_')}"
                         compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
                     }

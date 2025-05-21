@@ -6,7 +6,7 @@ plugins {
 }
 
 kotlin {
-  androidLibrary {
+  android {
     withJava()
     withHostTestBuilder {}.configure { isIncludeAndroidResources = true }
 

@@ -32,7 +32,7 @@ class KotlinMultiplatformKspTest {
         }.from {
             androidKotlinMultiplatformLibrary(":shared", createMinimumProject = false) {
                 applyPlugin(PluginType.KSP)
-                androidLibrary {
+                android {
                     namespace = "com.shared.android"
                     compileSdk = DEFAULT_COMPILE_SDK_VERSION
 

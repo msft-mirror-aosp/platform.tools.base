@@ -37,7 +37,7 @@ class KotlinMultiplatformAndroidMinificationTest {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
-                kotlin.androidLibrary {
+                kotlin.android {
                     optimization {
                         minify = true
                         consumerKeepRules.files.add(

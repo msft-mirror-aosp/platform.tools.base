@@ -27,7 +27,7 @@ interface KotlinMultiplatformAndroidCompilationBuilder {
      * object using
      * ```
      * kotlin {
-     *   androidLibrary {
+     *   android {
      *     compilations.getByName("main") {
      *       // configure compilation
      *     }

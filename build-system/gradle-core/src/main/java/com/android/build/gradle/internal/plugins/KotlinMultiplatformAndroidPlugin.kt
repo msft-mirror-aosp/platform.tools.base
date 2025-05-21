@@ -328,7 +328,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             "compileSdk version is not set.\n" +
                     "Specify the compileSdk version in the module's build file like so:\n" +
                     "kotlin {\n" +
-                    "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
+                    "    $DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
                     "        compileSdk = ${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.apiLevel}\n" +
                     "    }\n" +
                     "}\n"
@@ -763,7 +763,8 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
 
     companion object {
         internal const val ANDROID_TARGET_NAME = "android"
-        const val ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME = "androidLibrary"
+        const val DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME = "androidLibrary"
+        const val ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME = "android"
         fun String.getNamePrefixedWithAndroidTarget() = ANDROID_TARGET_NAME.appendCapitalized(this)
     }
 }

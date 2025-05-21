@@ -273,7 +273,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * options, you can modify it on the kotlin compilation as follows:
      * ```
      * kotlin {
-     *   androidLibrary {
+     *   android {
      *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java) {
      *       // configure options
      *     }
@@ -298,7 +298,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * The returned object can be used to configure [KotlinMultiplatformAndroidHostTest] as follows:
      * ```
      * kotlin {
-     *   androidLibrary {
+     *   android {
      *     withHostTestBuilder {
      *     }.configure {
      *       isIncludeAndroidResources = true
@@ -311,7 +311,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * options, you can modify it on the kotlin compilation as follows:
      * ```
      * kotlin {
-     *   androidLibrary {
+     *   android {
      *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation::class.java) {
      *       // configure options
      *     }
@@ -343,7 +343,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * options, you can modify it on the kotlin compilation as follows:
      * ```
      * kotlin {
-     *   androidLibrary {
+     *   android {
      *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation::class.java) {
      *       // configure options
      *     }
@@ -368,7 +368,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * The returned object can be used to configure [KotlinMultiplatformAndroidDeviceTest] as follows:
      * ```
      * kotlin {
-     *   androidLibrary {
+     *   android {
      *     withDeviceTestBuilder {
      *     }.configure {
      *       instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -381,7 +381,7 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * options, you can modify it on the kotlin compilation as follows:
      * ```
      * kotlin {
-     *   androidLibrary {
+     *   android {
      *     compilations.withType(com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation::class.java) {
      *       // configure options
      *     }
