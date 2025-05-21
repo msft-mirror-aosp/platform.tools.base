@@ -84,6 +84,7 @@ filegroup(
         "//tools/adt/idea/project-system-gradle-upgrade:__pkg__",
         "//tools/adt/idea/sync-perf-tests:__pkg__",
         "//tools/base/build-system/previous-versions:__pkg__",
+        "//tools/vendor/google/android-ndk:__pkg__",
     ],
 )
 
