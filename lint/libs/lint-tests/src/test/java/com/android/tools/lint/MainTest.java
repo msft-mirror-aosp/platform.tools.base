@@ -1277,12 +1277,12 @@ public class MainTest extends AbstractCheckTest {
 
         try {
             checkDriver(
-                    "src/test/pkg/Test.java:1: Error: Android API 100.0, future preview (Preview)"
+                    "src/test/pkg/Test.java:1: Error: Android API 100.0, future preview, extension level 3 (Preview)"
                         + " requires a newer version of Lint than $CURRENT_VERSION: Lint API checks"
                         + " unavailable. [NewApi]\n"
                         + "package test.pkg;\n"
                         + "~~~~~~~~~~~~~~~~~\n"
-                        + "src/test/pkg/test2.kt:1: Error: Android API 100.0, future preview"
+                        + "src/test/pkg/test2.kt:1: Error: Android API 100.0, future preview, extension level 3"
                         + " (Preview) requires a newer version of Lint than $CURRENT_VERSION: Lint"
                         + " API checks unavailable. [NewApi]\n"
                         + "package test.pkg\n"
