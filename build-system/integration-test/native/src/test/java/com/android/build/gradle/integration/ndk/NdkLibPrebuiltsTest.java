@@ -32,7 +32,6 @@ public class NdkLibPrebuiltsTest {
     public static GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("ndkLibPrebuilts")
-                    .addGradleProperties("android.useDeprecatedNdk=true")
                     .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
                     .create();
 

@@ -80,7 +80,6 @@ public class NdkConnectedCheckTest {
     public static GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(app)
-                    .addGradleProperties("android.useDeprecatedNdk=true")
                     .create();
 
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();
