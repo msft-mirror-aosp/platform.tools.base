@@ -246,9 +246,6 @@ build:dynamic --strategy=zipmerger=dynamic
 build:dynamic --strategy=chkplugin=dynamic
 build:dynamic --strategy=stamper=dynamic
 build:dynamic --strategy=PythonZipper=dynamic
-# Disables verbose failures to avoid triggering --materialize_param_files, see
-# b/160150358#comment30
-build:dynamic --noverbose_failures
 # Multiplex workers are not sandboxed, and are not ready to be used with
 # dynamic scheduling.
 build:dynamic --noexperimental_worker_multiplex
