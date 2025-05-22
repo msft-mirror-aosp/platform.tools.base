@@ -83,7 +83,7 @@ fun JavaCompile.configureProperties(creationConfig: ComponentCreationConfig) {
 
     if (compileOptions.sourceCompatibility.isJava9Compatible) {
         checkSdkCompatibility(creationConfig.global.compileSdkHashString, creationConfig.services.issueReporter)
-        checkNotNull(this.project.configurations.findByName(CONFIG_NAME_ANDROID_JDK_IMAGE)) {
+        check(this.project.configurations.names.contains(CONFIG_NAME_ANDROID_JDK_IMAGE)) {
             "The $CONFIG_NAME_ANDROID_JDK_IMAGE configuration must exist for Java 9+ sources."
         }
 
