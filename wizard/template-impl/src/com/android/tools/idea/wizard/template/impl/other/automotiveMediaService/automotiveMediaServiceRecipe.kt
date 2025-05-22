@@ -57,14 +57,15 @@ fun RecipeExecutor.automotiveMediaServiceRecipe(
     sharedPackageName = "$packageName.$sharedModule"
 
     save(
-      // TODO: This should be created through a gradle build model instead of creating from text,
-      //         creating this way given that this is the only place to create a build.gradle for anther module.
+      // TODO(b/419624430): This should be created through a gradle build model instead of creating from text,
+      // creating this way given that this is the only place to create a build.gradle for anther module.
       source = buildGradle(
+        agpVersion = projectData.agpVersion,
         packageName = sharedPackageName,
-        buildApiString = apis.buildApi.apiString,
+        buildApi = apis.buildApi,
         generateKotlin = projectData.language == Language.Kotlin,
-        minApi = apis.minApi.apiString,
-        targetApi = apis.targetApi.apiString,
+        minApi = apis.minApi,
+        targetApi = apis.targetApi,
         useAndroidX = useAndroidX),
       to = projectData.rootDir.resolve(sharedModule).resolve("build.gradle"),
     )

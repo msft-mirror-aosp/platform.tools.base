@@ -16,15 +16,22 @@
 
 package com.android.tools.idea.wizard.template.impl.other.automotiveMediaService
 
+import com.android.ide.common.repository.AgpVersion
+import com.android.sdklib.AndroidMajorVersion
+import com.android.sdklib.AndroidVersion
 import com.android.tools.idea.wizard.template.getMaterialComponentName
+import com.android.tools.idea.wizard.template.impl.compileSdk
+import com.android.tools.idea.wizard.template.impl.minSdk
+import com.android.tools.idea.wizard.template.impl.targetSdk
 import com.android.tools.idea.wizard.template.renderIf
 
 fun buildGradle(
+  agpVersion: AgpVersion,
   packageName: String,
-  buildApiString: String?,
+  buildApi: AndroidVersion,
   generateKotlin: Boolean,
-  minApi: String,
-  targetApi: String,
+  minApi: AndroidMajorVersion,
+  targetApi: AndroidMajorVersion,
   useAndroidX: Boolean
 ): String {
   return """
@@ -34,11 +41,11 @@ plugins {
 }
 android {
     namespace '$packageName'
-    compileSdkVersion ${buildApiString?.toIntOrNull() ?: "\"$buildApiString\""}
+    ${compileSdk(buildApi, agpVersion)}
 
     defaultConfig {
-        minSdkVersion ${minApi.toIntOrNull() ?: "\"$minApi\""}
-        targetSdkVersion ${targetApi.toIntOrNull() ?: "\"$targetApi\""}
+        ${minSdk(minApi, agpVersion)}
+        ${targetSdk(targetApi, agpVersion)}
 
         testInstrumentationRunner "${getMaterialComponentName("android.support.test.runner.AndroidJUnitRunner", useAndroidX)}"
     }
