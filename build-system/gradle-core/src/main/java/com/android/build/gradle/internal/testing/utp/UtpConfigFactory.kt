@@ -707,7 +707,7 @@ class UtpConfigFactory {
         return ANDROID_TEST_PLUGIN_APK_INSTALLER.toExtensionProto(
             utpDependencies, AndroidApkInstallerConfig::newBuilder
         ) {
-
+            instrumentationTargetPackageId = testData.instrumentationTargetPackageId
             if (extractedSdkApks.isNotEmpty() && extractedSdkApks[0].isNotEmpty()) {
                 extractedSdkApks.forEach { apks ->
                     addApksToInstallBuilder().apply {

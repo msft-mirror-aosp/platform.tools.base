@@ -75,4 +75,7 @@ message InstallableApk {
 
 message AndroidApkInstallerConfig {
     repeated InstallableApk apks_to_install = 1;
+
+    // Package name of target apk
+    string instrumentation_target_package_id = 2;
 }
