@@ -16,6 +16,7 @@
 package com.android.adblib
 
 import com.android.adblib.impl.TimeoutTracker
+import com.android.adblib.utils.rethrowCancellation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
@@ -281,33 +282,28 @@ internal class AdbServerControllerImpl(
             return configurationFlow.first { it.serverPort != null }
         }
 
-        suspend fun runKillServerProcess(
-            path: Path,
-            port: Int,
-            envVars: Map<String, String>
-        ): Boolean {
+        suspend fun runKillServerProcess(path: Path, port: Int, envVars: Map<String, String>) {
             val commandArgs = getAdbStopCommandArgs(port)
-            return try {
-                processRunner.runProcess(path, commandArgs, envVars)
-                true
-            } catch (e: IOException) {
-                logger.info(e) { "failed running process `$path $commandArgs`" }
-                false
-            }
+            runAdbProcess(path, commandArgs, envVars, "failed running adb kill server process")
         }
 
-        suspend fun runStartServerProcess(
-            path: Path,
-            port: Int,
-            envVars: Map<String, String>,
-        ): Boolean {
+        suspend fun runStartServerProcess(path: Path, port: Int, envVars: Map<String, String>) {
             val commandArgs = getAdbLaunchCommandArgs(port)
-            return try {
+            runAdbProcess(path, commandArgs, envVars, "failed running adb start server process")
+        }
+
+        private suspend fun runAdbProcess(
+            path: Path,
+            commandArgs: List<String>,
+            envVars: Map<String, String>,
+            failedLogMessage: String
+        ) {
+            try {
                 processRunner.runProcess(path, commandArgs, envVars)
-                true
-            } catch (e: IOException) {
-                logger.info(e) { "failed running process `$path $commandArgs`" }
-                false
+            } catch (e: Throwable) {
+                e.rethrowCancellation()
+                logger.info(e) { "$failedLogMessage: `$path $commandArgs`" }
+                throw e
             }
         }
 

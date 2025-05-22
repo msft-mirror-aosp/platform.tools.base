@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package kexter.core
+package com.android.build.gradle.internal.utils
 
-internal class TypeIds(private val span: Span, private val dex: DexImpl) {
-  private val cache: MutableMap<UInt, String> = mutableMapOf()
+import org.gradle.api.NamedDomainObjectProvider
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ConfigurationContainer
 
-  fun get(index: UInt): String {
-    return cache.computeIfAbsent(index) {
-      if (index > span.count) {
-        dex.logger.error("Bad typeId index $index (max = ${span.count})")
-      }
-      val reader = dex.reader(span.offset + index * 4u)
-      val descriptorIndex = reader.uint()
-      dex.stringIds.get(descriptorIndex)
+/**
+ * Looks for an item with the given name, registering it and adding it to this container if it does
+ * not exist
+ */
+fun ConfigurationContainer.maybeRegister(name: String, configuration: Configuration.() -> Unit = {}): NamedDomainObjectProvider<Configuration> {
+    return if (this.names.contains(name)) {
+        this.named(name)
+    } else {
+        this.register(name, configuration)
     }
-  }
 }

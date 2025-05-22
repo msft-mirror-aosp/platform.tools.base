@@ -103,14 +103,14 @@ fun RecipeExecutor.androidTVActivityRecipe(
         Language.Java -> mainFragmentJava(
             detailsActivityClass,
             mainFragmentClass,
-            moduleData.apis.minApi.api,
+            moduleData.apis.minApi.apiLevel,
             packageName
         )
 
         Language.Kotlin -> mainFragmentKt(
             detailsActivityClass,
             mainFragmentClass,
-            moduleData.apis.minApi.api,
+            moduleData.apis.minApi.apiLevel,
             packageName
         )
     }
@@ -138,7 +138,7 @@ fun RecipeExecutor.androidTVActivityRecipe(
             activityClass,
             detailsActivityClass,
             detailsFragmentClass,
-            moduleData.apis.minApi.api,
+            moduleData.apis.minApi.apiLevel,
             packageName
         )
 
@@ -146,7 +146,7 @@ fun RecipeExecutor.androidTVActivityRecipe(
             activityClass,
             detailsActivityClass,
             detailsFragmentClass,
-            moduleData.apis.minApi.api,
+            moduleData.apis.minApi.apiLevel,
             packageName
         )
     }
@@ -183,8 +183,8 @@ fun RecipeExecutor.androidTVActivityRecipe(
     save(playbackActivity, srcOut.resolve("PlaybackActivity.${ktOrJavaExt}"))
 
     val playbackVideoFragment = when (projectData.language) {
-        Language.Java -> playbackVideoFragmentJava(moduleData.apis.minApi.api, packageName)
-        Language.Kotlin -> playbackVideoFragmentKt(moduleData.apis.minApi.api, packageName)
+        Language.Java -> playbackVideoFragmentJava(moduleData.apis.minApi.apiLevel, packageName)
+        Language.Kotlin -> playbackVideoFragmentKt(moduleData.apis.minApi.apiLevel, packageName)
     }
     save(playbackVideoFragment, srcOut.resolve("PlaybackVideoFragment.${ktOrJavaExt}"))
 
@@ -195,8 +195,8 @@ fun RecipeExecutor.androidTVActivityRecipe(
     save(browseErrorActivity, srcOut.resolve("BrowseErrorActivity.${ktOrJavaExt}"))
 
     val errorFragment = when (projectData.language) {
-        Language.Java -> errorFragmentJava(moduleData.apis.minApi.api, packageName)
-        Language.Kotlin -> errorFragmentKt(moduleData.apis.minApi.api, packageName)
+        Language.Java -> errorFragmentJava(moduleData.apis.minApi.apiLevel, packageName)
+        Language.Kotlin -> errorFragmentKt(moduleData.apis.minApi.apiLevel, packageName)
     }
     save(errorFragment, srcOut.resolve("ErrorFragment.${ktOrJavaExt}"))
 

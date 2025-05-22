@@ -152,7 +152,7 @@ fun RecipeExecutor.generateResponsiveActivity(
   mergeXml(
     navigationDrawerHeaderXml(
       appCompatVersion = apis.appCompatVersion,
-      targetApi = apis.targetApi.api,
+      targetApi = apis.targetApi.apiLevel,
       isLibraryProject = moduleTemplateData.isLibrary
     ),
     resOut.resolve("layout/${navHeaderLayoutName}.xml")

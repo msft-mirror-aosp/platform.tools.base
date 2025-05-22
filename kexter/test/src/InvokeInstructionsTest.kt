@@ -18,8 +18,11 @@ import kexter.InvokeInstruction
 import kexter.Opcode
 import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class InvokeInstructionsTest {
+@RunWith(Parameterized::class)
+class InvokeInstructionsTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive) {
   @Test
   fun testInvokeStatic() {
     testTopLevelFunction(
@@ -132,29 +135,30 @@ class InvokeInstructionsTest {
       MethodInfo(name = "baseRange", owner = "LinvokeInstructions/Base;", signature = "(IIIII)V"),
     )
   }
-}
 
-private fun test(
-  className: String,
-  methodName: String,
-  expectedOpcode: Opcode,
-  expectedInfo: MethodInfo,
-) {
-  val fetchedInfos = mutableSetOf<Pair<Opcode, MethodInfo>>()
-  val instructions = DexArchive.getByteCode(className, methodName).instructions
-  for (insn in instructions) {
-    if (insn is InvokeInstruction) {
-      val info = DexArchive.dex.retrieveMethod(insn.methodIndex())?.toMethodInfo() ?: continue
-      fetchedInfos.add(insn.opcode to info)
+  private fun test(
+    className: String,
+    methodName: String,
+    expectedOpcode: Opcode,
+    expectedInfo: MethodInfo,
+  ) {
+    val dex = archive.getDex(className)
+    val fetchedInfos = mutableSetOf<Pair<Opcode, MethodInfo>>()
+    val instructions = archive.getByteCode(className, methodName).instructions
+    for (insn in instructions) {
+      if (insn is InvokeInstruction) {
+        val info = dex.retrieveMethod(insn.methodIndex())?.toMethodInfo() ?: continue
+        fetchedInfos.add(insn.opcode to info)
+      }
     }
+    Assert.assertTrue((expectedOpcode to expectedInfo) in fetchedInfos)
   }
-  Assert.assertTrue((expectedOpcode to expectedInfo) in fetchedInfos)
-}
 
-private fun testTopLevelFunction(
-  methodName: String,
-  expectedOpcode: Opcode,
-  expectedInfo: MethodInfo,
-) {
-  test("LinvokeInstructions/InvokeInstructionsKt;", methodName, expectedOpcode, expectedInfo)
+  private fun testTopLevelFunction(
+    methodName: String,
+    expectedOpcode: Opcode,
+    expectedInfo: MethodInfo,
+  ) {
+    test("LinvokeInstructions/InvokeInstructionsKt;", methodName, expectedOpcode, expectedInfo)
+  }
 }

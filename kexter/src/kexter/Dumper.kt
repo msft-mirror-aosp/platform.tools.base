@@ -30,6 +30,12 @@ class DexDumper {
       dump(dex, logger)
     }
 
+    fun dump(container: DexContainer, logger: Logger = Logger(), prefix: String = "") {
+      for (dex in container.dexFiles) {
+        dump(dex, logger, prefix)
+      }
+    }
+
     fun dump(dex: Dex, logger: Logger = Logger(), prefix: String = "") {
       dex.classes.values.forEach { clazz ->
         logger.debug("${prefix}${clazz.name}")

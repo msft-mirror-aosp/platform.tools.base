@@ -23,112 +23,112 @@ import java.util.Locale
  * how much memory to initialize a system with, what mode a system should use by default).
  */
 sealed class Flag<T> constructor(
-  /** Returns the [FlagGroup] that this flag is part of. */
-  val group: FlagGroup,
-  name: String,
-  /** Returns a user-friendly display name for this flag. */
-  val displayName: String,
-  /** Returns a user-friendly description for what feature this flag gates. */
-  val description: String,
-  val default: FlagDefault<T>,
-  private val valueConverter: ValueConverter<T>
+    /** Returns the [FlagGroup] that this flag is part of. */
+    val group: FlagGroup,
+    name: String,
+    /** Returns a user-friendly display name for this flag. */
+    val displayName: String,
+    /** Returns a user-friendly description for what feature this flag gates. */
+    val description: String,
+    val default: FlagDefault<T>,
+    private val valueConverter: ValueConverter<T>
 ) {
 
-  /**
-   * Returns a unique ID for this flag. It will be composed of the group's name prefixed to this
-   * flag's name.
-   */
-  val id: String = group.name + "." + name
-  private var _defaultValue: T? = null
-  private val defaultValue get(): T = _defaultValue ?: default.get().also { _defaultValue = it }
-
-  init {
-    group.flags.register(this)
-  }
-
-  /** Verifies that this flag has valid information */
-  fun validate() {
-    group.validate()
-    verifyDefaultValue(defaultValue, valueConverter)
-    verifyFlagIdFormat(id)
-    verifyDisplayTextFormat(displayName)
-    verifyDisplayTextFormat(description)
-  }
-
-  /** Returns the value of this flag. */
-  fun get(): T {
-    val strValue = group.flags.getOverriddenValue(this) ?: return defaultValue
-
-    return try {
-      valueConverter.deserialize(strValue)
-    } catch (_: Exception) {
-      defaultValue
-    }
-  }
-
-  /**
-   * Override the value of this flag at runtime.
-   *
-   * This method does not modify this flag definition directly, but instead adds an entry into its
-   * parent [Flags.getOverrides] collection.
-   */
-  fun override(overrideValue: T) {
-    group.flags.overrides.put(this, valueConverter.serialize(overrideValue))
-  }
-
-  /** Clear any override previously set by [.override]. */
-  fun clearOverride() {
-    group.flags.overrides.remove(this)
-  }
-
-  val isOverridden: Boolean
-    get() = group.flags.overrides[this] != null
-
-  /**
-   * Simple interface for converting a value to and from a String. This is useful as all flags are
-   * really strings underneath, although it's convenient to expose, say, boolean flags to users
-   * instead.
-   */
-  protected interface ValueConverter<T> {
-    fun serialize(value: T): String
-
-    fun deserialize(strValue: String): T
-  }
-
-  companion object {
     /**
-     * Verify that a flag's ID is correctly formatted, i.e. consisting of only lower-case letters,
-     * numbers, and periods. Furthermore, the first character of an ID must be a letter and cannot
-     * end with one.
+     * Returns a unique ID for this flag. It will be composed of the group's name prefixed to this
+     * flag's name.
      */
-    @JvmStatic
-    fun verifyFlagIdFormat(id: String) {
-      require(id.matches("[a-z][a-z0-9]*(\\.[a-z0-9]+)*".toRegex())) { "Invalid id: $id" }
+    val id: String = group.name + "." + name
+    private var _defaultValue: T? = null
+    private val defaultValue get(): T = _defaultValue ?: default.get().also { _defaultValue = it }
+
+    init {
+        group.flags.register(this)
     }
 
-    /** Verify that display text is correctly formatted. */
-    @JvmStatic
-    fun verifyDisplayTextFormat(name: String) {
-      require(name.isNotEmpty() && name[0] != ' ' && name[name.length - 1] != ' ') {
-        "Invalid name: $name"
-      }
+    /** Verifies that this flag has valid information */
+    fun validate() {
+        group.validate()
+        verifyDefaultValue(defaultValue, valueConverter)
+        verifyFlagIdFormat(id)
+        verifyDisplayTextFormat(displayName)
+        verifyDisplayTextFormat(description)
     }
 
-    private fun <T> verifyDefaultValue(
-      defaultValue: T,
-      converter: ValueConverter<T>
-    ) {
-      val serialized = try { converter.serialize(defaultValue) } catch (e: Exception) { throw IllegalArgumentException("Default value cannot be serialized", e) }
-      val deserialized =
-        try {
-          converter.deserialize(serialized)
-        } catch (e: Exception) {
-          throw IllegalArgumentException("Default value cannot be deserialized.")
+    /** Returns the value of this flag. */
+    fun get(): T {
+        val strValue = group.flags.getOverriddenValue(this) ?: return defaultValue
+
+        return try {
+            valueConverter.deserialize(strValue)
+        } catch (_: Exception) {
+            defaultValue
+        }
+    }
+
+    /**
+     * Override the value of this flag at runtime.
+     *
+     * This method does not modify this flag definition directly, but instead adds an entry into its
+     * parent [Flags.getOverrides] collection.
+     */
+    fun override(overrideValue: T) {
+        group.flags.overrides.put(this, valueConverter.serialize(overrideValue))
+    }
+
+    /** Clear any override previously set by [.override]. */
+    fun clearOverride() {
+        group.flags.overrides.remove(this)
+    }
+
+    val isOverridden: Boolean
+        get() = group.flags.overrides[this] != null
+
+    /**
+     * Simple interface for converting a value to and from a String. This is useful as all flags are
+     * really strings underneath, although it's convenient to expose, say, boolean flags to users
+     * instead.
+     */
+    protected interface ValueConverter<T> {
+        fun serialize(value: T): String
+
+        fun deserialize(strValue: String): T
+    }
+
+    companion object {
+        /**
+         * Verify that a flag's ID is correctly formatted, i.e. consisting of only lower-case letters,
+         * numbers, and periods. Furthermore, the first character of an ID must be a letter and cannot
+         * end with one.
+         */
+        @JvmStatic
+        fun verifyFlagIdFormat(id: String) {
+            require(id.matches("[a-z][a-z0-9]*(\\.[a-z0-9]+)*".toRegex())) { "Invalid id: $id" }
         }
 
-      require(deserialized == defaultValue) { "Deserialized value does not match default value." }
+        /** Verify that display text is correctly formatted. */
+        @JvmStatic
+        fun verifyDisplayTextFormat(name: String) {
+            require(name.isNotEmpty() && name[0] != ' ' && name[name.length - 1] != ' ') {
+                "Invalid name: $name"
+            }
+        }
+
+        private fun <T> verifyDefaultValue(
+            defaultValue: T,
+            converter: ValueConverter<T>
+        ) {
+            val serialized = try { converter.serialize(defaultValue) } catch (e: Exception) { throw IllegalArgumentException("Default value cannot be serialized", e) }
+            val deserialized =
+                try {
+                    converter.deserialize(serialized)
+                } catch (e: Exception) {
+                    throw IllegalArgumentException("Default value cannot be deserialized.")
+                }
+
+            require(deserialized == defaultValue) { "Deserialized value does not match default value." }
+        }
     }
-  }
 }
 
 class MendelFlag constructor(
@@ -156,132 +156,132 @@ class MendelFlag constructor(
 }
 
 class BooleanFlag constructor(
-  group: FlagGroup,
-  name: String,
-  displayName: String,
-  description: String,
-  default: FlagDefault<Boolean>,
-) : Flag<Boolean>(group, name, displayName, description, default, Converter) {
-
-  constructor(
     group: FlagGroup,
     name: String,
     displayName: String,
     description: String,
-    defaultValue: Boolean,
+    default: FlagDefault<Boolean>,
+) : Flag<Boolean>(group, name, displayName, description, default, Converter) {
+
+    constructor(
+        group: FlagGroup,
+        name: String,
+        displayName: String,
+        description: String,
+        defaultValue: Boolean,
     ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue))
 
-  object Converter : ValueConverter<Boolean> {
-    override fun serialize(value: Boolean) = value.toString()
+    object Converter : ValueConverter<Boolean> {
+        override fun serialize(value: Boolean) = value.toString()
 
-    override fun deserialize(strValue: String) = strValue.toBoolean()
-  }
+        override fun deserialize(strValue: String) = strValue.toBoolean()
+    }
 }
 
 class IntFlag constructor(
-  group: FlagGroup,
-  name: String,
-  displayName: String,
-  description: String,
-  default: FlagDefault<Int>,
-) : Flag<Int>(group, name, displayName, description, default, Converter) {
-
-  constructor(
     group: FlagGroup,
     name: String,
     displayName: String,
     description: String,
-    defaultValue: Int,
-  ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue))
+    default: FlagDefault<Int>,
+) : Flag<Int>(group, name, displayName, description, default, Converter) {
 
-  object Converter : ValueConverter<Int> {
-    override fun serialize(value: Int) = value.toString()
+    constructor(
+        group: FlagGroup,
+        name: String,
+        displayName: String,
+        description: String,
+        defaultValue: Int,
+    ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue))
 
-    override fun deserialize(strValue: String) = strValue.toInt()
-  }
+    object Converter : ValueConverter<Int> {
+        override fun serialize(value: Int) = value.toString()
+
+        override fun deserialize(strValue: String) = strValue.toInt()
+    }
 }
 
 class LongFlag constructor(
-  group: FlagGroup,
-  name: String,
-  displayName: String,
-  description: String,
-  defaultValueProvider: FlagDefault<Long>
-) : Flag<Long>(group, name, displayName, description, defaultValueProvider, Converter) {
-
-  constructor(
     group: FlagGroup,
     name: String,
     displayName: String,
     description: String,
-    defaultValue: Long,
-  ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue))
+    defaultValueProvider: FlagDefault<Long>
+) : Flag<Long>(group, name, displayName, description, defaultValueProvider, Converter) {
 
-  object Converter : ValueConverter<Long> {
-    override fun serialize(value: Long) = value.toString()
+    constructor(
+        group: FlagGroup,
+        name: String,
+        displayName: String,
+        description: String,
+        defaultValue: Long,
+    ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue))
 
-    override fun deserialize(strValue: String) = strValue.toLong()
-  }
+    object Converter : ValueConverter<Long> {
+        override fun serialize(value: Long) = value.toString()
+
+        override fun deserialize(strValue: String) = strValue.toLong()
+    }
 }
 
 class StringFlag constructor(
-  group: FlagGroup,
-  name: String,
-  displayName: String,
-  description: String,
-  defaultValueSupplier: FlagDefault<String>,
- ) : Flag<String>(group, name, displayName, description, defaultValueSupplier, Converter) {
-
-  constructor(
     group: FlagGroup,
     name: String,
     displayName: String,
     description: String,
-    defaultValue: String,
-  ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue))
+    defaultValueSupplier: FlagDefault<String>,
+) : Flag<String>(group, name, displayName, description, defaultValueSupplier, Converter) {
 
-  object Converter : ValueConverter<String> {
-    override fun serialize(value: String) = value
+    constructor(
+        group: FlagGroup,
+        name: String,
+        displayName: String,
+        description: String,
+        defaultValue: String,
+    ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue))
 
-    override fun deserialize(strValue: String) = strValue
-  }
+    object Converter : ValueConverter<String> {
+        override fun serialize(value: String) = value
+
+        override fun deserialize(strValue: String) = strValue
+    }
 }
 
 class EnumFlag<T : Enum<T>> constructor(
-  group: FlagGroup,
-  name: String,
-  displayName: String,
-  description: String,
-  defaultValueSupplier: FlagDefault<T>,
-  valueClass: Class<T>
-) :
-  Flag<T>(
-    group,
-    name,
-    displayName,
-    description,
-    defaultValueSupplier,
-    EnumConverter(valueClass)
-  ) {
-
-  constructor(
     group: FlagGroup,
     name: String,
     displayName: String,
     description: String,
-    defaultValue: T,
-  ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue), defaultValue.javaClass)
+    defaultValueSupplier: FlagDefault<T>,
+    valueClass: Class<T>
+) :
+    Flag<T>(
+        group,
+        name,
+        displayName,
+        description,
+        defaultValueSupplier,
+        EnumConverter(valueClass)
+    ) {
 
-  /**
-   * Creates a [ValueConverter] for the given enum class. Values are stored using their names, to
-   * make it easier to override them using JVM properties (lower-case names are also recognized).
-   *
-   * @see Enum#name()
-   */
-  private class EnumConverter<T : Enum<T>>(private val enumClass: Class<T>) : ValueConverter<T> {
-    override fun serialize(value: T) = value.name
+    constructor(
+        group: FlagGroup,
+        name: String,
+        displayName: String,
+        description: String,
+        defaultValue: T,
+    ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue), defaultValue.javaClass)
 
-    override fun deserialize(strValue: String): T =
-      java.lang.Enum.valueOf(enumClass, strValue.uppercase(Locale.US))
-  }
+    /**
+     * Creates a [ValueConverter] for the given enum class. Values are stored using their names, to
+     * make it easier to override them using JVM properties (lower-case names are also recognized).
+     *
+     * @see Enum#name()
+     */
+    private class EnumConverter<T : Enum<T>>(private val enumClass: Class<T>) : ValueConverter<T> {
+        override fun serialize(value: T) = value.name
+
+        override fun deserialize(strValue: String): T =
+            java.lang.Enum.valueOf(enumClass, strValue.uppercase(Locale.US))
+    }
 }

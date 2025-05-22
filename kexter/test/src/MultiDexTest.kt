@@ -24,7 +24,10 @@ class MultiDexTest {
   @Test
   fun testClasses() {
     val logger = Logger()
-    val dex = OtherDexArchive.dex
+    val container = OtherDexArchive.container
+    Assert.assertEquals(1, container.dexFiles.size)
+
+    val dex = container.dexFiles.first()
     val expectedClasses = listOf("LTestClassFromOtherDex;")
     logger.info("Classes: ${dex.classes.keys.joinToString()}")
     for (clazz in expectedClasses) {

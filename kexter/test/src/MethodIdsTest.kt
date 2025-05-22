@@ -17,8 +17,11 @@
 import kexter.core.DexImpl
 import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class MethodIdsTest {
+@RunWith(Parameterized::class)
+class MethodIdsTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive) {
   @Test
   fun testAllIdsArePresent() {
     val expectedMethodInfos =
@@ -51,11 +54,13 @@ class MethodIdsTest {
         MethodInfo(name = "x", owner = "LX;", signature = "()I"),
       )
 
-    val dex = DexArchive.dex as DexImpl
     val retrievedInfos = mutableSetOf<MethodInfo>()
-    for (id in 0u..dex.methodIds.numElements()) {
-      val methodInfo = dex.retrieveMethod(id)?.toMethodInfo() ?: continue
-      retrievedInfos.add(methodInfo)
+    for (dex in archive.container.dexFiles) {
+      val dex = dex as DexImpl
+      for (id in 0u..dex.methodIds.numElements()) {
+        val methodInfo = dex.retrieveMethod(id)?.toMethodInfo() ?: continue
+        retrievedInfos.add(methodInfo)
+      }
     }
     for (info in expectedMethodInfos) {
       Assert.assertTrue(info in retrievedInfos)

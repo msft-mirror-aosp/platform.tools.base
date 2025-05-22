@@ -30,78 +30,95 @@ internal enum class EndianTag(val value: UInt) {
   }
 }
 
+internal class DexHeader(
+  val magic: ByteArray,
+  val checksum: UInt,
+  val sha1Hash: ByteArray,
+  val fileSize: UInt,
+  val headerSize: UInt,
+  val endianTag: EndianTag,
+  val link: Span,
+  val mapOffset: UInt,
+  val stringIds: Span,
+  val typeIds: Span,
+  val protoIds: Span,
+  val fieldIds: Span,
+  val methodsIds: Span,
+  val classDefs: Span,
+  val data: Span,
+) {
+  companion object {
+    private const val MAGIC_PREFIX = "dex\n" // 0x64 0x65 0x78 0x0a
+    private const val MAGIC_SUFFIX = "\u0000"
+
+    fun parse(reader: DexReader): DexHeader {
+      val magic = reader.bytes(8u)
+      val magicString = String(magic, StandardCharsets.UTF_8)
+      if (!magicString.startsWith(MAGIC_PREFIX) || !magicString.endsWith(MAGIC_SUFFIX)) {
+        throw IllegalStateException("Bad dex magic number ('${magic.toHexString()}')!")
+      }
+
+      // TODO Allow checksum
+      val checksum = reader.uint()
+      // TODO Allow sha1 checksum
+      val sha1Hash = reader.bytes(20u)
+      val fileSize = reader.uint()
+      val headerSize = reader.uint()
+      val endianTag = EndianTag.fromUInt(reader.uint())
+      val link = reader.span()
+      val mapOffset = reader.uint()
+      val stringIds = reader.span()
+      val typeIds = reader.span()
+      val protoIds = reader.span()
+      val fieldIds = reader.span()
+      val methodsIds = reader.span()
+      val classDefs = reader.span()
+      val data = reader.span()
+
+      return DexHeader(
+        magic,
+        checksum,
+        sha1Hash,
+        fileSize,
+        headerSize,
+        endianTag,
+        link,
+        mapOffset,
+        stringIds,
+        typeIds,
+        protoIds,
+        fieldIds,
+        methodsIds,
+        classDefs,
+        data,
+      )
+    }
+  }
+
+  override fun toString(): String {
+    return """
+			Magic      : '${magic.toHexString()}'
+			Checksum   : $checksum
+			Sha1 hash  : ${sha1Hash.toSha1String()}
+			File size  : ${fileSize.nice()}
+			Header size: ${headerSize.nice()}
+			Endian Tag : $endianTag
+			Link       : $link
+			Map offset : $mapOffset
+			String ids : $stringIds
+			Type ids   : $typeIds
+			Proto ids  : $protoIds
+			Field ids  : $fieldIds
+			Method ids : $methodsIds
+			Class defs : $classDefs
+			Data       : $data
+		"""
+      .trimIndent()
+  }
+}
+
 private fun ByteArray.toHexString() = joinToString(",") { "0x%02x".format(it) }
 
 private fun ByteArray.toSha1String() = joinToString("") { "%02x".format(it) }
 
 private fun UInt.nice() = "%,d".format(this.toInt())
-
-private const val MAGIC_PREFIX = "dex\n" // 0x64 0x65 0x78 0x0a
-private const val MAGIC_SUFFIX = "\u0000"
-
-internal class DexHeader(reader: DexReader) {
-  val magic: ByteArray
-  val checksum: UInt
-  val sha1Hash: ByteArray
-  val fileSize: UInt
-  val headerSize: UInt
-  val endianTag: EndianTag
-  val link: Span
-  val mapOffset: UInt
-  val stringIds: Span
-  val typeIds: Span
-  val protoIds: Span
-  val fieldIds: Span
-  val methodsIds: Span
-  val classDefs: Span
-  val data: Span
-
-  init {
-    magic = reader.bytes(8u)
-    val magicString = String(magic, StandardCharsets.UTF_8)
-    if (!magicString.startsWith(MAGIC_PREFIX) || !magicString.endsWith(MAGIC_SUFFIX)) {
-      throw IllegalStateException("Bad dex magic number ('${magic.toHexString()}')!")
-    }
-
-    // TODO Allow checksum
-    checksum = reader.uint()
-    // TODO Allow sha1 checksum
-    sha1Hash = reader.bytes(20u)
-    fileSize = reader.uint()
-    headerSize = reader.uint()
-    endianTag = EndianTag.fromUInt(reader.uint())
-    link = reader.span()
-    mapOffset = reader.uint()
-    stringIds = reader.span()
-    typeIds = reader.span()
-    protoIds = reader.span()
-    fieldIds = reader.span()
-    methodsIds = reader.span()
-    classDefs = reader.span()
-    data = reader.span()
-
-    // Dex header grows with new features. Keep track of
-    // what we may not have parsed.
-    val extraBytes = headerSize - reader.position
-
-    reader.skip(headerSize)
-
-    // Logging
-    // println("Magic      : '${magic.toHexString()}'")
-    // println("Checksum   : $checksum")
-    // println("Sha1 hash  : ${sha1Hash.toSha1String()}")
-    // println("File size  : ${fileSize.nice()}")
-    // println("Header size: ${fileSize.nice()}")
-    // println("Endian Tag : $endianTag")
-    // println("Link       : $link")
-    // println("Map offset : $mapOffset")
-    // println("String ids : $stringIds")
-    // println("Type ids   : $typeIds")
-    // println("Proto ids  : $protoIds")
-    // println("Field ids  : $fieldIds")
-    // println("Method ids : $methodsIds")
-    // println("Class defs : $classDefs")
-    // println("Data       : $data")
-    // println("Not parsed : $extraBytes")
-  }
-}

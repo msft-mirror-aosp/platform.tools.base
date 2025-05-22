@@ -5,9 +5,10 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test/src" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/test/resources/src" isTestSource="true" />
+			<sourceFolder url="file://$MODULE_DIR$/test/resources/container/src" isTestSource="true" />
+			<sourceFolder url="file://$MODULE_DIR$/test/resources/main/src" isTestSource="true" />
+			<sourceFolder url="file://$MODULE_DIR$/test/resources/other/src" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/tools/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/test/resources_second_dex/src" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" name="studio-sdk" level="project" />

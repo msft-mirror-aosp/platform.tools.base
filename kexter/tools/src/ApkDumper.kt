@@ -41,8 +41,8 @@ class ApkDumper {
           }
           logger.info("Dex file: ${entry.name}")
           val dexFile = repo.getContent(entry.name).array()
-          val dex = Dex.fromBytes(dexFile)
-          DexDumper.dump(dex, logger)
+          val container = Dex.fromBytes(dexFile)
+          DexDumper.dump(container, logger)
         }
       }
     }

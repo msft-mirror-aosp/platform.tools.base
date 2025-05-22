@@ -38,10 +38,9 @@ class BooleanOptionTest {
                 FeatureStage.Removed::class.java
         )
 
-        val options = BooleanOption.values()
-        for (index in 1 until options.size) {
-            val currentOption = options[index]
-            val previousOption = options[index - 1]
+        BooleanOption.entries.forEachIndexed { index, currentOption ->
+            if (index == 0) return@forEachIndexed
+            val previousOption = BooleanOption.entries[index - 1]
             assertWithMessage(
                 "Boolean option `${previousOption.name}` with stage `${previousOption.stage.javaClass.name}`" +
                         " should be positioned after Boolean option `${currentOption.name}` with stage `${currentOption.stage.javaClass.name}`." +
@@ -53,7 +52,12 @@ class BooleanOptionTest {
 
     @Test
     fun `check features are not in SUPPORTED stage`() {
-        // Ignore working-as-intended options (or those that we postpone fixing)
+        // The use of FeatureStage.Supported is not recommended as it doesn't specify a clear
+        // timeline and the feature may stay in this stage for too long, thus increasing maintenance
+        // cost to AGP and users.
+        // In some cases, FeatureStage.Supported may be suitable (e.g., if we don't want to show a
+        // warning when users set a different value than the default). If so, we can add the feature
+        // to the following ignore list.
         val ignoreList = listOf(
             BooleanOption.ENABLE_SDK_DOWNLOAD,
             BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES,
@@ -66,70 +70,43 @@ class BooleanOptionTest {
             BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE,
         )
 
-        val violatingOptions = BooleanOption.values().filter {
-            it.stage is FeatureStage.Supported
-        }
         checkViolatingProjectOptions(
-            violatingOptions = violatingOptions,
+            violatingOptions = BooleanOption.entries.filter { it.stage is FeatureStage.Supported },
             ignoreList = ignoreList,
             requirement = "Features should not be in `FeatureStage.Supported` stage."
         )
     }
 
     @Test
-    fun `check softly-enforced, enforced features have default value 'true'`() {
-
-        val violatingOptions = BooleanOption.values().filter {
-            (it.stage is FeatureStage.SoftlyEnforced || it.stage is FeatureStage.Enforced)
-                    && !it.defaultValue
-        }
+    fun `check softly-enforced and enforced features have default value 'true'`() {
         checkViolatingProjectOptions(
-                violatingOptions = violatingOptions,
-                requirement = "Softly-enforced or enforced features must have default value `true`."
+            violatingOptions = BooleanOption.entries.filter {
+                (it.stage is FeatureStage.SoftlyEnforced || it.stage is FeatureStage.Enforced)
+                        && !it.defaultValue
+            },
+            requirement = "Softly-enforced and enforced features must have default value `true`."
         )
     }
 
     @Test
-    fun `check experimental, deprecated, removed features have default value 'false'`() {
-        // Ignore working-as-intended options (or those that we postpone fixing)
-        val ignoreList = listOf(
-                BooleanOption.ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT,
-                BooleanOption.ENABLE_EXTRACT_ANNOTATIONS,
-                BooleanOption.CONVERT_NON_NAMESPACED_DEPENDENCIES,
-                BooleanOption.BUILD_ONLY_TARGET_ABI,
-                BooleanOption.ENABLE_SIDE_BY_SIDE_CMAKE,
-                BooleanOption.ENABLE_PROGUARD_RULES_EXTRACTION,
-                BooleanOption.USE_DEPENDENCY_CONSTRAINTS,
-                BooleanOption.ENABLE_DUPLICATE_CLASSES_CHECK,
-                BooleanOption.MINIMAL_KEEP_RULES,
-                BooleanOption.EXCLUDE_RES_SOURCES_FOR_RELEASE_BUNDLES,
-                BooleanOption.RUN_LINT_IN_PROCESS,
-                BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES,
-                BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE
-        )
-
-        val violatingOptions = BooleanOption.values().filter {
-            (it.stage == FeatureStage.Experimental || it.stage is FeatureStage.Deprecated || it.stage is FeatureStage.Removed)
-                    && it.defaultValue
-        }
+    fun `check deprecated and removed features have default value 'false'`() {
         checkViolatingProjectOptions(
-                violatingOptions = violatingOptions,
-                ignoreList = ignoreList,
-                requirement = "Experimental, deprecated, or removed features must have default value `false`."
+            violatingOptions = BooleanOption.entries.filter {
+                (it.stage is FeatureStage.Deprecated || it.stage is FeatureStage.Removed)
+                        && it.defaultValue
+            },
+            requirement = "Deprecated and removed features must have default value `false`."
         )
     }
 
     @Test
-    fun `check that each Boolean option's futureStage is unique`() {
-
-        val violatingOptions = BooleanOption.entries.filter {
-            it.futureStage != null
-                    && it.defaultValue == it.futureStage.defaultValue
-                    && it.stage::class == it.futureStage.stage::class
-        }
+    fun `check that FutureStage is different from the current stage`() {
         checkViolatingProjectOptions(
-            violatingOptions = violatingOptions,
-            requirement = "Future Stage must be unique compared to the default option or null."
+            violatingOptions = BooleanOption.entries.filter {
+                it.futureStage != null && it.futureStage.stage::class == it.stage::class
+                        && it.futureStage.defaultValue == it.defaultValue
+            },
+            requirement = "FutureStage must be different from the current stage."
         )
     }
 }

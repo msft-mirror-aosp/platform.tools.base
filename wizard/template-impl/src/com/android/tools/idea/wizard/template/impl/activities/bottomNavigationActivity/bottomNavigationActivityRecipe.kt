@@ -54,7 +54,7 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
 
-  if (moduleData.apis.minApi.api < 21) {
+  if (moduleData.apis.minApi.apiLevel < 21) {
     addDependency("com.android.support:support-vector-drawable:${appCompatVersion}.+")
   }
 

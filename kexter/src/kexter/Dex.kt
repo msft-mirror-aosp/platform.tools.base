@@ -18,6 +18,8 @@ package kexter
 
 import java.nio.file.Files
 import java.nio.file.Path
+import kexter.core.DexImpl
+import kexter.core.parseHeaders
 
 abstract class Dex {
   abstract val classes: Map<String, DexClass>
@@ -26,13 +28,15 @@ abstract class Dex {
   abstract fun retrieveMethod(id: UInt): DexMethod?
 
   companion object {
-    fun fromPath(path: Path, logger: Logger = Logger()): Dex {
+    fun fromPath(path: Path, logger: Logger = Logger()): DexContainer {
       val dexBytes = Files.readAllBytes(path)
       return fromBytes(dexBytes, logger)
     }
 
-    fun fromBytes(bytes: ByteArray, logger: Logger = Logger()): Dex {
-      return kexter.core.DexImpl(bytes, logger)
+    fun fromBytes(bytes: ByteArray, logger: Logger = Logger()): DexContainer {
+      val headers = parseHeaders(bytes)
+      val dexFiles = headers.map { DexImpl(it, bytes, logger) }
+      return DexContainer(dexFiles)
     }
   }
 }

@@ -84,13 +84,13 @@ class OptionVersionTest {
     }
 
     private fun getAllOptions(): List<Option<Any>> =
-            (BooleanOption.values().toList() as List<Option<Boolean>>) +
-                    OptionalBooleanOption.values() +
-                    StringOption.values() +
-                    IntegerOption.values()
+            (BooleanOption.entries as List<Option<Boolean>>) +
+                    OptionalBooleanOption.entries +
+                    StringOption.entries +
+                    IntegerOption.entries
 }
 
-fun checkViolatingProjectOptions(
+internal fun checkViolatingProjectOptions(
         violatingOptions: List<Option<*>>,
         ignoreList: List<Option<*>> = emptyList(),
         requirement: String,

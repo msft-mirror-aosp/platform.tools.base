@@ -85,10 +85,10 @@ fun RecipeExecutor.loginActivityRecipe(
   mergeXml(dimensXmlHorizontalMargin(48), resOut.resolve("values-w600dp/dimens.xml"))
   mergeXml(dimensXmlHorizontalMargin(200), resOut.resolve("values-w1240dp/dimens.xml"))
   mergeXml(stringsXml(simpleName, activityClass, moduleData.isNewModule), resOut.resolve("values/strings.xml"))
-  save(activityLoginXml(activityClass, packageName, useAndroidX, apis.minApi.api), resOut.resolve("layout/${layoutName}.xml"))
+  save(activityLoginXml(activityClass, packageName, useAndroidX, apis.minApi.apiLevel), resOut.resolve("layout/${layoutName}.xml"))
   // We can use the same layout in the layout and layout-w1240dp directories
-  save(activityLoginXml(activityClass, packageName, useAndroidX, apis.minApi.api), resOut.resolve("layout-w1240dp/${layoutName}.xml"))
-  save(activityLoginXmlW936dp(activityClass, packageName, useAndroidX, apis.minApi.api), resOut.resolve("layout-w936dp/${layoutName}.xml"))
+  save(activityLoginXml(activityClass, packageName, useAndroidX, apis.minApi.apiLevel), resOut.resolve("layout-w1240dp/${layoutName}.xml"))
+  save(activityLoginXmlW936dp(activityClass, packageName, useAndroidX, apis.minApi.apiLevel), resOut.resolve("layout-w936dp/${layoutName}.xml"))
 
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
   val loginActivity = when (projectData.language) {

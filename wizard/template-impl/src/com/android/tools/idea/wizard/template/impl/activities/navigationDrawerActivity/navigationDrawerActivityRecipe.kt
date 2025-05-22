@@ -59,7 +59,7 @@ fun RecipeExecutor.generateNavigationDrawer(
   val (projectTemplateData, srcOut, resOut, _, _, _, _, _, isNewModule) = data
   val apis = data.apis
   val (_, targetApi, minApi, appCompatVersion) = apis
-  val includeImageDrawables = minApi.api < 21
+  val includeImageDrawables = minApi.apiLevel < 21
   val language = projectTemplateData.language
   val useAndroidX = projectTemplateData.androidXSupport
 
@@ -163,7 +163,7 @@ fun RecipeExecutor.generateNavigationDrawer(
     resOut.resolve("layout/${layoutName}.xml")
   )
   save(
-    navigationHeaderXml(appCompatVersion, targetApi.api, data.isLibrary),
+    navigationHeaderXml(appCompatVersion, targetApi.apiLevel, data.isLibrary),
     resOut.resolve("layout/${navHeaderLayoutName}.xml")
   )
   save(

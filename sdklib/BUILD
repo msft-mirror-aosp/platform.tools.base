@@ -267,8 +267,6 @@ sdk_package(
         ":retrace",
         ":resourceshrinker",
         "//tools/base/apkparser/cli:apkanalyzer",
-        # b/135688047
-        # "//tools/base/jobb:jobb",
         "//tools/base/lint/cli:lint",
         "//tools/base/misc/screenshot2:screenshot2",
         "//tools/base/profgen/profgen-cli:profgen",

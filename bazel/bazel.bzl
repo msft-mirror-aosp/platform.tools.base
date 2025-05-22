@@ -916,10 +916,11 @@ def _validate_split_test_filter(test_filter):
     """Validates the test_filter matches a package or FQCN format."""
     if not test_filter:
         return
-    if test_filter.startswith("."):
-        # Allow trailing packages, e.g. ".gradle", which could for example match
-        # against "test.subpackage1.gradle" AND "test.subpackage2.gradle"
-        test_filter = test_filter[1:]
+    # Allow trailing packages, e.g. ".gradle", which could for example match
+    # against "test.subpackage1.gradle" AND "test.subpackage2.gradle"
+    test_filter = test_filter.removeprefix(".")
+    # Allow trailing "." in filters.
+    test_filter = test_filter.removesuffix("\\.")
     for split in test_filter.split("."):
         if not (split.isalnum()):
             fail("invalid test_filter '%s'. Must be package name or FQCN" % test_filter)

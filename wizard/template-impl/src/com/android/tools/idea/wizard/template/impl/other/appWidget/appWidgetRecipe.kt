@@ -85,7 +85,7 @@ fun RecipeExecutor.appWidgetRecipe(
       packageName = packageName,
       placement = placement,
       resizeable = resizable,
-      withSFeatures = moduleData.apis.targetApi.api >= 31
+      withSFeatures = moduleData.apis.targetApi.apiLevel >= 31
     ),
     resOut.resolve("xml/${layoutName}_info.xml")
   )
@@ -96,7 +96,7 @@ fun RecipeExecutor.appWidgetRecipe(
   mergeXml(themesXml(moduleData.themesData), resOut.resolve("values/themes.xml"))
   mergeXml(stylesXml(moduleData.themesData), resOut.resolve("values/styles.xml"))
   mergeXml(stylesXmlV21(moduleData.themesData), resOut.resolve("values-v21/styles.xml"))
-  if (moduleData.apis.targetApi.api >= 31) {
+  if (moduleData.apis.targetApi.apiLevel >= 31) {
     // android:clipToOutline is only available with S SDK
     mergeXml(stylesXmlV31(moduleData.themesData), resOut.resolve("values-v31/styles.xml"))
     // Restrict to generate the themes for v31 because

@@ -50,6 +50,7 @@ class BuiltInKotlinCompilerPluginTest {
         result.assertOutputContains("Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation 'debug'")
 
         // Also check KotlinCompilation details
+        result.assertOutputContains("KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugUnitTest, release, releaseUnitTest]")
         result.assertOutputContains(
             """
             Details of KotlinCompilation 'debug':
@@ -228,7 +229,13 @@ class BuiltInKotlinCompilerPluginTest {
 
         androidApplication().files.update("build.gradle.kts").append(
             exampleKotlinCompilerGradlePlugin + "\n\n" +
-            "apply<ExampleKotlinCompilerGradlePlugin>()"
+            """
+            apply<ExampleKotlinCompilerGradlePlugin>()
+
+            afterEvaluate {
+                println("KotlinAndroidTarget.compilations = " + kotlin.target.compilations.map { it.name })
+            }
+            """.trimIndent()
         )
     }
 

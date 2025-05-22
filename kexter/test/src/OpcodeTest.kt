@@ -17,11 +17,14 @@
 import kexter.Opcode
 import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class OpcodeTest {
+@RunWith(Parameterized::class)
+class OpcodeTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(archive) {
 
   private fun checkClassesHasOpcode(className: String, methodName: String, opcode: Opcode) {
-    val instructions = DexArchive.getByteCode(className, methodName).instructions
+    val instructions = archive.getByteCode(className, methodName).instructions
     instructions.forEach {
       if (it.opcode == opcode) {
         return
