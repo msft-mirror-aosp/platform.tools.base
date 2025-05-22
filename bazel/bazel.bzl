@@ -615,20 +615,18 @@ def iml_module(
             target_compatible_with = target_compatible_with,
         )
 
-        # Android Studio has switched to Kotlin K2 mode by default (b/373746515),
-        # but we still want to avoid regressions in K1 support for a little while.
         if generate_k1_tests:
             _gen_tests(
-                name = name + "_k1",
+                name = name + "_k2",
                 split_test_targets = split_test_targets,
                 test_flaky = test_flaky,
                 test_shard_count = test_shard_count,
-                test_tags = (test_tags or []) + ["kotlin-plugin-k1"],
+                test_tags = (test_tags or []) + ["kotlin-plugin-k2"],
                 test_data = test_data,
                 runtime_deps = [":" + name + "_testlib"] + test_utils,
                 jvm_flags = test_jvm_flags + [
                     "-Dtest.suite.jar=" + name + "_test.jar",
-                    "-Didea.kotlin.plugin.use.k2=false",
+                    "-Didea.kotlin.plugin.use.k2=true",
                 ],
                 main_class = test_main_class,
                 test_class = test_class,
