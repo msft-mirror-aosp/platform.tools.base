@@ -112,6 +112,39 @@ class FakeSimpleperfGetFeatures final : public Simpleperf {
   string features_;
 };
 
+TEST(SimpleperfTest, RecordCommandParamsForPreQ) {
+  FakeSimpleperfGetFeatures simpleperf{DeviceInfo::P, true};
+  string record_command = simpleperf.GetRecordCommand(3039, "my.package", "arm",
+                                                      kFakeTracePath, 100);
+  EXPECT_THAT(record_command, StartsWith("/fake/path/simpleperf_arm record"));
+  EXPECT_THAT(record_command, Not(HasArgument("--log-to-android-buffer")));
+}
+
+TEST(SimpleperfTest, RecordCommandParamsForQ) {
+  FakeSimpleperfGetFeatures simpleperf{DeviceInfo::Q, true};
+
+  string record_command = simpleperf.GetRecordCommand(3039, "my.package", "arm",
+                                                      kFakeTracePath, 100);
+
+  // simpleperf binary + "record"
+  EXPECT_THAT(record_command, StartsWith("/system/bin/simpleperf record"));
+  // PID
+  EXPECT_THAT(record_command, HasArgument("-p 3039"));
+  // package name
+  EXPECT_THAT(record_command, HasArgument("--app my.package"));
+  // trace path
+  EXPECT_THAT(record_command, HasArgument("-o /tmp/fake-trace"));
+  // Sampling frequency. Note sampling interval is 100us, so frequency is 10000
+  // samples per second.
+  EXPECT_THAT(record_command, HasArgument("-f 10000"));
+  // always use cpu-clock event flag
+  EXPECT_THAT(record_command, HasArgument("-e cpu-clock"));
+  // TODO(203714971): add --exit-with-parent flag back.
+  EXPECT_THAT(record_command, Not(HasArgument("--exit-with-parent")));
+  // --log-to-android-buffer flag
+  EXPECT_THAT(record_command, Not(HasArgument("--log-to-android-buffer")));
+}
+
 TEST(SimpleperfTest, RecordCommandParamsForRPlus) {
   FakeSimpleperfGetFeatures simpleperf{DeviceInfo::R, true};
 
@@ -119,7 +152,7 @@ TEST(SimpleperfTest, RecordCommandParamsForRPlus) {
                                                       kFakeTracePath, 100);
 
   // simpleperf binary + "record"
-  EXPECT_THAT(record_command, StartsWith("/fake/path/simpleperf_arm record"));
+  EXPECT_THAT(record_command, StartsWith("/system/bin/simpleperf record"));
   // PID
   EXPECT_THAT(record_command, HasArgument("-p 3039"));
   // package name
@@ -164,7 +197,7 @@ TEST(SimpleperfTest, NonUserBuildWithStartupUsesRunAs) {
       kStartupProfilingPid, "my.package", "arm", kFakeTracePath, 100);
 
   // Record should not be run as root
-  EXPECT_THAT(record_command, StartsWith("/fake/path/simpleperf_arm record"));
+  EXPECT_THAT(record_command, StartsWith("/system/bin/simpleperf record"));
   // PID should not be present as it's not available
   EXPECT_THAT(record_command, Not(HasArgument("-p")));
   // package name should be present
@@ -178,7 +211,7 @@ TEST(SimpleperfTest, UserBuildAlwaysUsesRunAs) {
       kStartupProfilingPid, "my.package", "arm", kFakeTracePath, 100);
 
   // Record should not be run as root
-  EXPECT_THAT(record_command, StartsWith("/fake/path/simpleperf_arm record"));
+  EXPECT_THAT(record_command, StartsWith("/system/bin/simpleperf record"));
   // PID should not be present as it's not available
   EXPECT_THAT(record_command, Not(HasArgument("-p")));
   // package name should be present
@@ -188,7 +221,7 @@ TEST(SimpleperfTest, UserBuildAlwaysUsesRunAs) {
       20 /* any other PID */, "my.package", "arm", kFakeTracePath, 100);
 
   // Record should not be run as root
-  EXPECT_THAT(record_command, StartsWith("/fake/path/simpleperf_arm record"));
+  EXPECT_THAT(record_command, StartsWith("/system/bin/simpleperf record"));
   // PID should be present
   EXPECT_THAT(record_command, HasArgument("-p 20"));
   // package name should be present
@@ -207,7 +240,8 @@ TEST(SimpleperfTest, StartupProfilingPid) {
 }
 
 TEST(SimpleperfTest, SimpleperfBinaryName) {
-  FakeSimpleperfGetFeatures simpleperf;
+  FakeSimpleperfGetFeatures simpleperf{DeviceInfo::P, true};
+  // Sideloaded Simpleperf Binaries are only used for API < 29
   int pid = 42;
   string app = "my.good.app";
   int sampling_interval = 100;
