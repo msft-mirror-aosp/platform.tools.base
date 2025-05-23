@@ -26,7 +26,7 @@ import com.android.buildanalyzer.common.TaskCategory
 import com.android.utils.FileUtils
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
@@ -48,7 +48,7 @@ abstract class ValidateResourcesTask @Inject constructor(
 ) : NonIncrementalTask() {
 
     @get:Nested
-    abstract val resources: MapProperty<String, DependencyResourcesComputer.ResourceSourceSetInput>
+    abstract val resources: SetProperty<DependencyResourcesComputer.ResourceSourceSetInput>
 
     @get:OutputFile
     abstract val validationReportFile: RegularFileProperty
@@ -66,7 +66,7 @@ abstract class ValidateResourcesTask @Inject constructor(
      * Warning will be shown once we find such situation.
      */
     private fun verifyNestedResources(): String {
-        val fileCollection = resources.get().values.map { it.sourceDirectories }
+        val fileCollection = resources.get().map { it.sourceDirectories }
         val dirs = fileCollection.flatten()
             .map {
                 if (Files.isSymbolicLink(it.toPath()))
@@ -140,10 +140,11 @@ abstract class ValidateResourcesTask @Inject constructor(
             creationConfig.sources.res { resSources ->
                 val resourceMap = resSources.getVariantSourcesWithFilter { !it.isGenerated }
 
-                resourceMap.forEach { (name, providerOfDirectories) ->
-                    task.resources.put(name,
-                        creationConfig.services.newInstance(DependencyResourcesComputer.ResourceSourceSetInput::class.java)
-                            .also { it.sourceDirectories.fromDisallowChanges(providerOfDirectories) })
+                resourceMap.forEach { (_, providerOfDirectories) ->
+                    task.resources.add(creationConfig.services.newInstance(
+                        DependencyResourcesComputer.ResourceSourceSetInput::class.java
+                    )
+                        .also { it.sourceDirectories.fromDisallowChanges(providerOfDirectories) })
                 }
             }
             task.resources.disallowChanges()
