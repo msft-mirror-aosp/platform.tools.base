@@ -853,6 +853,7 @@ DATA = [
     "com.squareup.wire:wire-kotlin-generator:5.3.1",
     "com.squareup.wire:wire-runtime:5.3.1",
     "com.squareup.wire:wire-schema:5.3.1",
+    "commons-io:commons-io:1.3.2",
     "commons-lang:commons-lang:2.4",
     "info.picocli:picocli:4.7.4",
     "io.grpc:grpc-inprocess:1.66.0",
@@ -875,7 +876,6 @@ DATA = [
     "net.java.dev.jna:jna:jna:5.13.0",
     "net.java.dev.jna:jna-platform:5.13.0",
     "org.apache.commons:commons-compress:1.20",
-    "org.apache.commons:commons-io:1.3.2",
     "org.apache.commons:commons-lang3:3.13.0",
     "org.apache.commons:commons-text:1.11.0",
     "org.apache.lucene:lucene-queryparser:9.12.0",  # Match the version of Lucene with the one used by IntelliJ
@@ -1204,7 +1204,6 @@ DATA = [
     "junit:junit:jar:sources:4.13.2",
     "org.brotli:dec:jar:sources:0.1.2",
     "org.commonmark:commonmark:jar:sources:0.24.0",
-    "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose-desktop:jar:sources:2.8.2",
     "org.jetbrains.compose.animation:animation-core-desktop:jar:sources:1.7.3",
     "org.jetbrains.compose.animation:animation-desktop:jar:sources:1.7.3",
     "org.jetbrains.compose.components:components-resources:jar:sources:1.7.3",
