@@ -585,11 +585,16 @@ public class XmlElement extends OrphanXmlElement {
             // merge explicit attributes from lower priority node.
             for (XmlAttribute lowerPriorityAttribute : lowerPriorityNode.getAttributes()) {
                 processCancellationChecker.check();
-                lowerPriorityAttribute.mergeInHigherPriorityElement(this, mergingReport);
+                boolean skipIfNotPresentOnBothManifests = false;
+                if (lowerPriorityAttribute.getModel() != null) {
+                    skipIfNotPresentOnBothManifests = lowerPriorityAttribute.getModel().getMergingPolicy().removeIfNotPresentOnBothManifests();
+                }
+                lowerPriorityAttribute.mergeInHigherPriorityElement(this, mergingReport, skipIfNotPresentOnBothManifests);
                 if (lowerPriorityAttribute.getModel() != null) {
                     attributeModels.remove(lowerPriorityAttribute.getModel());
                 }
             }
+
             // merge implicit default values from lower priority node when we have an explicit
             // attribute declared on this node.
             for (AttributeModel attributeModel : attributeModels) {
@@ -602,7 +607,24 @@ public class XmlElement extends OrphanXmlElement {
                                             mergingReport, lowerPriorityNode));
                 }
             }
+
+            // Remove attributes that are only in higher priority manifest if removeIfNotPresentOnBothManifests is true
+            List<XmlAttribute> higherPriorityAttributes = getAttributes();
+            for (XmlAttribute attribute : higherPriorityAttributes) {
+                if (attribute.getModel() != null && attribute.getModel().getMergingPolicy().removeIfNotPresentOnBothManifests()) {
+                    if (lowerPriorityNode.getAttribute(attribute.getName()).isEmpty()) {
+                        // record the fact the attribute was actively removed in the merge.
+                        mergingReport.getActionRecorder().recordAttributeAction(
+                                attribute,
+                                Actions.ActionType.MERGED,
+                                AttributeOperationType.REMOVE);
+                        removeAttribute(attribute.getName().toString());
+                    }
+                }
+            }
         }
+
+
         // are we supposed to merge children ?
         if (mSelectorsAndMergeRuleMarkers.getNodeOperationType()
                 != NodeOperationType.MERGE_ONLY_ATTRIBUTES) {

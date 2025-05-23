@@ -238,6 +238,9 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
     private static final AttributeModel.BooleanValidator BOOLEAN_VALIDATOR =
             new AttributeModel.BooleanValidator();
 
+    private static final AttributeModel.IntegerValueValidator INTEGER_VALIDATOR =
+            new AttributeModel.IntegerValueValidator();
+
     private static final boolean MULTIPLE_DECLARATION_FOR_SAME_KEY_ALLOWED = true;
 
     /**
@@ -707,6 +710,30 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                         .setDefaultValue(SdkConstants.VALUE_FALSE)
                         .setOnReadValidator(BOOLEAN_VALIDATOR)
                         .setMergingPolicy(AND_MERGING_POLICY)),
+
+        /**
+         * Purpose (contained in uses-permission) <br>
+         * <b>See also : </b> {@link <a
+         * href=http://developer.android.com/guide/topics/manifest/uses-permission-element.html>
+         * Uses-permission Xml documentation</a>}
+         *
+         * <p>In the case where there are duplicate purposes when the manifests are merged, they
+         * will be deduped. If any of the purposes have minSdkVersion/maxSdkVersion attributes, they
+         * will be consolidated in the merged manifest. For the minSdkVersion, the minimum of all
+         * specified versions will be taken. For the maxSdkVersion, the maximum will be taken. When
+         * minSdkVersion and maxSdkVersion are omitted from any purpose, they are treated as having no
+         * bounds.
+         */
+        PURPOSE(
+                MergeType.MERGE,
+                DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                AttributeModel.newModel(SdkConstants.ATTR_NAME),
+                AttributeModel.newModel("minSdkVersion")
+                        .setMergingPolicy(AttributeModel.PURPOSE_MIN_SDK_VERSION_MERGING_POLICY)
+                        .setOnReadValidator(INTEGER_VALIDATOR),
+                AttributeModel.newModel("maxSdkVersion")
+                        .setMergingPolicy(AttributeModel.PURPOSE_MAX_SDK_VERSION_MERGING_POLICY)
+                        .setOnReadValidator(INTEGER_VALIDATOR)),
 
         /**
          * Uses-permission-sdk-23 (contained in manifest) <br>

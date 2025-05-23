@@ -1127,6 +1127,7 @@ public final class SdkConstants {
     public static final String TAG_PACKAGE = "package";
     public static final String TAG_PROPERTY = "property";
     public static final String TAG_PROVIDER = "provider";
+    public static final String TAG_PURPOSE = "purpose";
     public static final String TAG_GRANT_PERMISSION = "grant-uri-permission";
     public static final String TAG_PATH_PERMISSION = "path-permission";
     public static final String TAG_ACTION = "action";
