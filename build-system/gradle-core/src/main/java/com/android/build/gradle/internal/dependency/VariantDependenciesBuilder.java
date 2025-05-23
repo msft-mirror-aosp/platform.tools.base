@@ -899,7 +899,7 @@ public class VariantDependenciesBuilder {
             @NonNull ConfigurationContainer configurations,
             @NonNull String oldConfigName,
             @NonNull String newConfigName) {
-        if (configurations.findByName(oldConfigName) != null) {
+        if (configurations.getNames().contains(oldConfigName)) {
             throw new RuntimeException(
                     String.format(
                             "Configuration with old name %s found. Use new name %s instead.",
