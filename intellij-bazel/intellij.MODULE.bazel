@@ -37,6 +37,12 @@ intellij.remote_platform(
     top_level_dir = "idea-IC-251.23774.16",
     url = "https://download.jetbrains.com/idea/ideaIC-251.23774.16.tar.gz",
 )
+intellij.remote_platform(
+    name = "intellij_ce_2025_2",
+    sha256 = "f5ba31d4d908979197d40a02b27db1dac130a78870719b94d3f239c43cf7bafa",
+    top_level_dir = "idea-IC-252.16512.17",
+    url = "https://download.jetbrains.com/idea/ideaIC-252.16512.17.tar.gz",
+)
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
-use_repo(intellij, "intellij", "intellij_ce_2024_1", "intellij_ce_2024_2", "intellij_ce_2024_3", "intellij_ce_2025_1")
+use_repo(intellij, "intellij", "intellij_ce_2024_1", "intellij_ce_2024_2", "intellij_ce_2024_3", "intellij_ce_2025_1", "intellij_ce_2025_2")
