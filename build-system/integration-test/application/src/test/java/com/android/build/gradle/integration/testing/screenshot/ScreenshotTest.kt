@@ -79,23 +79,7 @@ class ScreenshotTest {
     val temporaryFolder = TemporaryFolder()
 
     private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.setupProject(addEmptyJarToClassPath: Boolean = true) {
-        applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.KOTLIN_VERSION_FOR_TESTS)
-        applyPlugin(
-            PluginType.Custom(
-                id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
-                version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
-                artifact = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin",
-                hasMarker = false,
-            )
-        )
-        applyPlugin(
-            PluginType.Custom(
-                id = "com.android.compose.screenshot",
-                version = "+",
-                artifact = "com.android.compose.screenshot:screenshot-test-gradle-plugin",
-                hasMarker = false,
-            )
-        )
+        setupProjectNoScreenshotTestSource()
 
         if (addEmptyJarToClassPath) {
             val customJarName = UUID.randomUUID().toString() + ".jar"
@@ -105,64 +89,12 @@ class ScreenshotTest {
                 })
             }
         }
-        android {
-            defaultConfig {
-                minSdk = 24
-                testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            }
 
-            buildFeatures {
-                compose = true
-            }
-            composeOptions {
-                useLiveLiterals = false
-                kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
-            }
-            experimentalProperties["android.experimental.enableScreenshotTest"] = true
-        }
         dependencies {
             screenshotTestImplementation("com.android.tools.screenshot:screenshot-validation-api:+")
-            testImplementation("junit:junit:4.13.2")
-            implementation("androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}")
-            implementation("androidx.compose.ui:ui-tooling-preview:${TaskManager.COMPOSE_UI_VERSION}")
-            implementation("androidx.compose.material:material:${TaskManager.COMPOSE_UI_VERSION}")
         }
-        kotlin {
-            jvmToolchain(17)
-        }
-        pluginCallbacks += ScreenshotCallback::class.java
 
         files {
-            add(
-                "src/main/java/com/Example.kt",
-                //language=kotlin
-                """
-                    package pkg.name
-
-                    import androidx.compose.material.Text
-                    import androidx.compose.runtime.Composable
-
-                    @Composable
-                    fun SimpleComposable(text: String = "Hello World") {
-                        Text(text)
-                    }
-                """.trimIndent()
-            )
-            add(
-                "src/main/java/com/ParameterProviders.kt",
-                //language=kotlin
-                """
-                    package pkg.name
-
-                    import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-
-                    class SimplePreviewParameterProvider : PreviewParameterProvider<String> {
-                        override val values = sequenceOf(
-                            "Primary text", "Secondary text"
-                        )
-                    }
-                """.trimIndent()
-            )
             add(
                 "src/screenshotTest/java/com/AnotherPreviewParameterProvider.kt",
                 //language=kotlin
@@ -246,6 +178,85 @@ class ScreenshotTest {
                     @Composable
                     fun simpleComposableTest_3() {
                         SimpleComposable()
+                    }
+                """.trimIndent()
+            )
+        }
+    }
+
+    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.setupProjectNoScreenshotTestSource() {
+        applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.KOTLIN_VERSION_FOR_TESTS)
+        applyPlugin(
+            PluginType.Custom(
+                id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
+                version = TestUtils.KOTLIN_VERSION_FOR_TESTS,
+                artifact = "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin",
+                hasMarker = false,
+            )
+        )
+        applyPlugin(
+            PluginType.Custom(
+                id = "com.android.compose.screenshot",
+                version = "+",
+                artifact = "com.android.compose.screenshot:screenshot-test-gradle-plugin",
+                hasMarker = false,
+            )
+        )
+
+        android {
+            defaultConfig {
+                minSdk = 24
+                testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            }
+
+            buildFeatures {
+                compose = true
+            }
+            composeOptions {
+                useLiveLiterals = false
+                kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
+            }
+            experimentalProperties["android.experimental.enableScreenshotTest"] = true
+        }
+        dependencies {
+            testImplementation("junit:junit:4.13.2")
+            implementation("androidx.compose.ui:ui-tooling:${TaskManager.COMPOSE_UI_VERSION}")
+            implementation("androidx.compose.ui:ui-tooling-preview:${TaskManager.COMPOSE_UI_VERSION}")
+            implementation("androidx.compose.material:material:${TaskManager.COMPOSE_UI_VERSION}")
+        }
+        kotlin {
+            jvmToolchain(17)
+        }
+        pluginCallbacks += ScreenshotCallback::class.java
+
+        files {
+            add(
+                "src/main/java/com/Example.kt",
+                //language=kotlin
+                """
+                    package pkg.name
+
+                    import androidx.compose.material.Text
+                    import androidx.compose.runtime.Composable
+
+                    @Composable
+                    fun SimpleComposable(text: String = "Hello World") {
+                        Text(text)
+                    }
+                """.trimIndent()
+            )
+            add(
+                "src/main/java/com/ParameterProviders.kt",
+                //language=kotlin
+                """
+                    package pkg.name
+
+                    import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+
+                    class SimplePreviewParameterProvider : PreviewParameterProvider<String> {
+                        override val values = sequenceOf(
+                            "Primary text", "Secondary text"
+                        )
                     }
                 """.trimIndent()
             )
@@ -627,6 +638,17 @@ class ScreenshotTest {
 
         val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
         result.assertErrorContains("Missing required runtime dependency. Please add androidx.compose.ui:ui-tooling as a screenshotTestImplementation dependency.")
+    }
+
+    @Test
+    fun runScreenshotTestWithNoSource() {
+        val build = rule.build {
+            androidApplication(":appWithNoSource") {
+                setupProjectNoScreenshotTestSource()
+            }
+        }
+        updateReferenceImage(projectName = "appWithNoSource")
+        build.sstExecutor().run(":appWithNoSource:validateDebugScreenshotTest")
     }
 
     @Test
