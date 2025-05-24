@@ -177,7 +177,12 @@ internal class AdbServerControllerImpl(
             connectProvider.createChannel(tracker.remainingNanos, TimeUnit.NANOSECONDS)
         } catch (e: IOException) {
             logger.debug(e) { "Failed `createChannel` on port ${currentState.params.lastUsedConfig.value?.serverPort}" }
-            // Failed to create channel. Try to restart adb server / update configuration and try again.
+            // Failed to create channel. Try to restart adb server / update configuration and try
+            // again, but first ensure we are still in a good state, because the controller could
+            // have ended up in a stopped state by now.
+            host.timeProvider.withErrorTimeout(tracker.remainingMills) {
+                currentState.waitIsStarted()
+            }
             host.timeProvider.withErrorTimeout(tracker.remainingMills) {
                 try {
                     restart()
