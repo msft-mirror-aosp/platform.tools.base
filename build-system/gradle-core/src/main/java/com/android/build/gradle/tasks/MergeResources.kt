@@ -144,7 +144,6 @@ abstract class MergeResources : NewIncrementalTask() {
     @get:Input
     abstract val viewBindingEnabled: Property<Boolean>
 
-    @get:Optional
     @get:Input
     abstract val namespace: Property<String>
 
