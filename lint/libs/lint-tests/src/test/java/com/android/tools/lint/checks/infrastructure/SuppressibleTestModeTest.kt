@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks.infrastructure
 
+import com.android.ide.common.util.Diffs
 import com.android.testutils.TestUtils
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
@@ -50,7 +51,7 @@ class SuppressibleTestModeTest {
       val expected = file.contents
       val actual = target.readText()
       sb.append(file.targetRelativePath).append(":\n")
-      val diff = TestLintResult.getDiff(expected, actual, windowSize = 1)
+      val diff = Diffs.diff(expected, actual, windowSize = 1, trimEnds = true)
       sb.append(diff).append("\n")
 
       // To debug, uncomment the following to see before/after instead of
@@ -148,27 +149,27 @@ class SuppressibleTestModeTest {
       output,
       files,
       """
-            res/menu/menu.xml:
-            @@ -3 +3
-                  <item
-            -         android:id="@+id/item1"
-            +         tools:ignore="HardcodedText" android:id="@+id/item1"
-                      android:icon="@drawable/icon1"
-            @@ -8 +8
-                  <item
-            -         android:id="@+id/item2"
-            +         tools:ignore="HardcodedText" android:id="@+id/item2"
-                      android:icon="@drawable/icon2"
-            res/values/duplicate-strings.xml:
-            @@ -1 +1
-            - <resources>
-            + <resources xmlns:tools="http://schemas.android.com/tools">
-                  <string name="app_name">App Name</string>
-                  <string name="hello_world">Hello world!</string>
-            -     <string name="app_name">App Name 1</string>
-            +     <string tools:ignore="DuplicateDefinition" name="app_name">App Name 1</string>
-                  <string name="app_name2">App Name 2</string>
-            """
+      res/menu/menu.xml:
+      @@ -2,3 +2,3 @@
+           <item
+      -        android:id="@+id/item1"
+      +        tools:ignore="HardcodedText" android:id="@+id/item1"
+               android:icon="@drawable/icon1"
+      @@ -7,3 +7,3 @@
+           <item
+      -        android:id="@+id/item2"
+      +        tools:ignore="HardcodedText" android:id="@+id/item2"
+               android:icon="@drawable/icon2"
+      res/values/duplicate-strings.xml:
+      @@ -1,5 +1,5 @@
+      -<resources>
+      +<resources xmlns:tools="http://schemas.android.com/tools">
+           <string name="app_name">App Name</string>
+           <string name="hello_world">Hello world!</string>
+      -    <string name="app_name">App Name 1</string>
+      +    <string tools:ignore="DuplicateDefinition" name="app_name">App Name 1</string>
+           <string name="app_name2">App Name 2</string>
+      """
         .trimIndent(),
     )
   }
@@ -205,16 +206,16 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            res/xml/nfc_tech_list_formatted.xml:
-            @@ -1 +1
-            - <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" >
-            + <resources xmlns:tools="http://schemas.android.com/tools" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" >
+      res/xml/nfc_tech_list_formatted.xml:
+      @@ -1,2 +1,2 @@
+      -<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" >
+      +<resources xmlns:tools="http://schemas.android.com/tools" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" >
 
-            @@ -5 +5
-                  <tech-list>
-            -         <tech>
-            +         <tech tools:ignore="NfcTechWhitespace">
-                      android.nfc.tech.NfcA
+      @@ -4,3 +4,3 @@
+           <tech-list>
+      -        <tech>
+      +        <tech tools:ignore="NfcTechWhitespace">
+               android.nfc.tech.NfcA
             """,
     )
   }
@@ -252,13 +253,13 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            res/values-nb/strings.xml:
-            @@ -4 +4
-                  xmlns:tools="http://schemas.android.com/tools"
-            -     tools:ignore="ExtraTranslation">
-            +     tools:ignore="NamespaceTypo,ExtraTranslation">
-                  <string name="bar">Bar</string>
-            """,
+      res/values-nb/strings.xml:
+      @@ -3,3 +3,3 @@
+           xmlns:tools="http://schemas.android.com/tools"
+      -    tools:ignore="ExtraTranslation">
+      +    tools:ignore="NamespaceTypo,ExtraTranslation">
+           <string name="bar">Bar</string>
+      """,
     )
   }
 
@@ -316,13 +317,13 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            src/test/pkg/AlarmTest.java:
-            @@ -6 +6
-              public class AlarmTest {
-            -     public void test(AlarmManager alarmManager) {
-            +     @SuppressWarnings("ShortAlarm") public void test(AlarmManager alarmManager) {
-                      alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 5000, 60000, null); // OK
-            """,
+      src/test/pkg/AlarmTest.java:
+      @@ -5,3 +5,3 @@
+       public class AlarmTest {
+      -    public void test(AlarmManager alarmManager) {
+      +    @SuppressWarnings("ShortAlarm") public void test(AlarmManager alarmManager) {
+               alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 5000, 60000, null); // OK
+      """,
     )
   }
 
@@ -365,15 +366,15 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            test/pkg/TestReflection.java:
-            @@ -8 +8
-                      TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            -         Field deniedField = TelephonyManager.class.getDeclaredField("NETWORK_TYPES"); // ERROR 1
-            -         Field maybeField = TelephonyManager.class.getDeclaredField("OTASP_NEEDED"); // ERROR 2
-            +         @SuppressWarnings("BlockedPrivateApi") Field deniedField = TelephonyManager.class.getDeclaredField("NETWORK_TYPES"); // ERROR 1
-            +         @SuppressWarnings({"BlockedPrivateApi", "SoonBlockedPrivateApi"}) Field maybeField = TelephonyManager.class.getDeclaredField("OTASP_NEEDED"); // ERROR 2
-                  }
-            """,
+      test/pkg/TestReflection.java:
+      @@ -7,4 +7,4 @@
+               TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+      -        Field deniedField = TelephonyManager.class.getDeclaredField("NETWORK_TYPES"); // ERROR 1
+      -        Field maybeField = TelephonyManager.class.getDeclaredField("OTASP_NEEDED"); // ERROR 2
+      +        @SuppressWarnings("BlockedPrivateApi") Field deniedField = TelephonyManager.class.getDeclaredField("NETWORK_TYPES"); // ERROR 1
+      +        @SuppressWarnings({"BlockedPrivateApi", "SoonBlockedPrivateApi"}) Field maybeField = TelephonyManager.class.getDeclaredField("OTASP_NEEDED"); // ERROR 2
+           }
+      """,
     )
   }
 
@@ -418,13 +419,13 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            test/pkg/PowerManagerFlagTest.java:
-            @@ -10 +10
-              public class PowerManagerFlagTest {
-            -     @SuppressWarnings("deprecation")
-            +     @SuppressWarnings({"Wakelock", "deprecation"})
-                  public void test(Context context) {
-            """,
+      test/pkg/PowerManagerFlagTest.java:
+      @@ -9,3 +9,3 @@
+       public class PowerManagerFlagTest {
+      -    @SuppressWarnings("deprecation")
+      +    @SuppressWarnings({"Wakelock", "deprecation"})
+           public void test(Context context) {
+      """,
     )
   }
 
@@ -538,39 +539,39 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            test/pkg/KotlinSuppressTest.kt:
-            @@ -1 +1
-            - package test.pkg
-            + @file:Suppress("TestId1") package test.pkg
-            + //noinspection TestId2
-              import java.io.File
-            - class KotlinSuppressTest(val var1: String, file: File) {
-            -     var property1 = 5
-            -     var property2: String get() = ""
-            -         set(value) {}
-            + @Suppress("TestId3") class KotlinSuppressTest(@Suppress("TestId4") val var1: String, @Suppress("TestId5") file: File) {
-            +     @Suppress("TestId6") var property1 = 5
-            +     @Suppress("TestId7") var property2: String @Suppress("TestId8") get() = ""
-            +         @Suppress("TestId9") set(value) {}
-              }
-            - fun methodTest(pair: Pair<String,String>) {
-            -     var test = 5
-            + @Suppress("TestId23", "TestId22", "TestId15", "TestId14", "TestId10") fun methodTest(@Suppress("TestId12", "TestId11") pair: Pair<String,String>) {
-            +     @Suppress("TestId13") var test = 5
-                  methodTest(pair)
-            -     val (x,y) = pair
-            -     val c = object : Runnable {
-            -         override fun run() {
-            +     val (@Suppress("TestId16") x,y) = pair
-            +     val c = @Suppress("TestId17") object : Runnable {
-            +         @Suppress("TestId19", "TestId18") override fun run() {
-                          methodTest(pair)
-            @@ -17 +18
-                  }
-            -     val a = { i: Int -> i + 1 }
-            +     @Suppress("TestId21", "TestId20") val a = { i: Int -> i + 1 }
-                  "foo".myMethod().myMethod()
-            """,
+      test/pkg/KotlinSuppressTest.kt:
+      @@ -1,14 +1,15 @@
+      -package test.pkg
+      +@file:Suppress("TestId1") package test.pkg
+      +//noinspection TestId2
+       import java.io.File
+      -class KotlinSuppressTest(val var1: String, file: File) {
+      -    var property1 = 5
+      -    var property2: String get() = ""
+      -        set(value) {}
+      +@Suppress("TestId3") class KotlinSuppressTest(@Suppress("TestId4") val var1: String, @Suppress("TestId5") file: File) {
+      +    @Suppress("TestId6") var property1 = 5
+      +    @Suppress("TestId7") var property2: String @Suppress("TestId8") get() = ""
+      +        @Suppress("TestId9") set(value) {}
+       }
+      -fun methodTest(pair: Pair<String,String>) {
+      -    var test = 5
+      +@Suppress("TestId23", "TestId22", "TestId15", "TestId14", "TestId10") fun methodTest(@Suppress("TestId12", "TestId11") pair: Pair<String,String>) {
+      +    @Suppress("TestId13") var test = 5
+           methodTest(pair)
+      -    val (x,y) = pair
+      -    val c = object : Runnable {
+      -        override fun run() {
+      +    val (@Suppress("TestId16") x,y) = pair
+      +    val c = @Suppress("TestId17") object : Runnable {
+      +        @Suppress("TestId19", "TestId18") override fun run() {
+                   methodTest(pair)
+      @@ -16,3 +17,3 @@
+           }
+      -    val a = { i: Int -> i + 1 }
+      +    @Suppress("TestId21", "TestId20") val a = { i: Int -> i + 1 }
+           "foo".myMethod().myMethod()
+      """,
     )
   }
 
@@ -627,25 +628,25 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            test/pkg/KotlinSuppressTest2.kt:
-            @@ -2 +2
-              package test.pkg
-            - //noinspection test1
-            + //noinspection TestId,test1
-              import java.io.File
-            + //noinspection TestId
-              import java.util.Base64
-              class KotlinSuppressTest2() {
-            -     fun test1() {}
-            -     fun test1b() {}
-            -     @Suppress("test1") fun test2() {}
-            -     @Suppress("test1", "test2") fun test3() {}
-            +     @Suppress("TestId") fun test1() {}
-            +     @Suppress("TestId2", "TestId") fun test1b() {}
-            +     @Suppress("TestId", "test1") fun test2() {}
-            +     @Suppress("TestId2", "TestId", "test1", "test2") fun test3() {}
-              }
-            """,
+      test/pkg/KotlinSuppressTest2.kt:
+      @@ -1,10 +1,11 @@
+       package test.pkg
+      -//noinspection test1
+      +//noinspection TestId,test1
+       import java.io.File
+      +//noinspection TestId
+       import java.util.Base64
+       class KotlinSuppressTest2() {
+      -    fun test1() {}
+      -    fun test1b() {}
+      -    @Suppress("test1") fun test2() {}
+      -    @Suppress("test1", "test2") fun test3() {}
+      +    @Suppress("TestId") fun test1() {}
+      +    @Suppress("TestId2", "TestId") fun test1b() {}
+      +    @Suppress("TestId", "test1") fun test2() {}
+      +    @Suppress("TestId2", "TestId", "test1", "test2") fun test3() {}
+       }
+      """,
     )
   }
 
@@ -699,21 +700,21 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            test/pkg/Hidden1.java:
-            @@ -3 +3
-              public class Hidden1 {
-            +     //noinspection StopShip
-                  // STOPSHIP
-            +     //noinspection StopShip
-                  /* We must STOPSHIP! */
-            test/pkg/Hidden2.kt:
-            @@ -3 +3
-              class Hidden2 {
-            +     //noinspection StopShip
-                  // STOPSHIP
-            +     //noinspection StopShip
-                  /* We must STOPSHIP! */
-            """,
+      test/pkg/Hidden1.java:
+      @@ -2,3 +2,5 @@
+       public class Hidden1 {
+      +    //noinspection StopShip
+           // STOPSHIP
+      +    //noinspection StopShip
+           /* We must STOPSHIP! */
+      test/pkg/Hidden2.kt:
+      @@ -2,3 +2,5 @@
+       class Hidden2 {
+      +    //noinspection StopShip
+           // STOPSHIP
+      +    //noinspection StopShip
+           /* We must STOPSHIP! */
+      """,
     )
   }
 
@@ -785,19 +786,19 @@ class SuppressibleTestModeTest {
       output,
       testFiles,
       """
-            test/pkg/Bar.java:
-            @@ -3 +3
-              class Bar {
-            -     public void test() {
-            +     @SuppressWarnings("TestId") public void test() {
-                      Bar.create(param -> null);
-            test/pkg/Bar2.kt:
-            @@ -4 +4
-              class Bar2 {
-            -     fun test() {
-            +     @Suppress("TestId") fun test() {
-                      create { param: Any? -> null }
-            """,
+      test/pkg/Bar.java:
+      @@ -2,3 +2,3 @@
+       class Bar {
+      -    public void test() {
+      +    @SuppressWarnings("TestId") public void test() {
+               Bar.create(param -> null);
+      test/pkg/Bar2.kt:
+      @@ -3,3 +3,3 @@
+       class Bar2 {
+      -    fun test() {
+      +    @Suppress("TestId") fun test() {
+               create { param: Any? -> null }
+      """,
     )
   }
 
@@ -883,19 +884,19 @@ class SuppressibleTestModeTest {
       testFiles,
       // Don't attempt to put annotation on a label-able expression
       """
-        test/pkg/Foo.kt:
-        @@ -5 +5
-            open fun getFoo() : Foo {
-        -     val x = object : Foo() {} // OK
-        +     val x = @Suppress("TestId") object : Foo() {} // OK
-              return object : Foo() {} // Nope
-        @@ -10 +10
-              return object : Foo() { // Nope
-        -       override fun getFoo(): Foo {
-        -         val foo = object : Foo() {} // OK
-        +       @Suppress("TestId") override fun getFoo(): Foo {
-        +         val foo = @Suppress("TestId") object : Foo() {} // OK
-                  return foo // Nope
+      test/pkg/Foo.kt:
+      @@ -4,3 +4,3 @@
+         open fun getFoo() : Foo {
+      -    val x = object : Foo() {} // OK
+      +    val x = @Suppress("TestId") object : Foo() {} // OK
+           return object : Foo() {} // Nope
+      @@ -9,4 +9,4 @@
+           return object : Foo() { // Nope
+      -      override fun getFoo(): Foo {
+      -        val foo = object : Foo() {} // OK
+      +      @Suppress("TestId") override fun getFoo(): Foo {
+      +        val foo = @Suppress("TestId") object : Foo() {} // OK
+               return foo // Nope
       """,
     )
   }

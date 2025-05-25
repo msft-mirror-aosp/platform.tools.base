@@ -618,21 +618,37 @@ public class TestUtils {
         }
     }
 
+    /**
+     * @deprecated Use com.android.ide.common.util.Diffs.getDiff instead
+     */
+    @Deprecated
     @NonNull
     public static String getDiff(@NonNull String before, @NonNull  String after) {
         return getDiff(before, after, 0);
     }
 
+    /**
+     * @deprecated Use com.android.ide.common.util.Diffs.getDiff instead
+     */
+    @Deprecated
     @NonNull
     public static String getDiff(@NonNull String before, @NonNull  String after, int windowSize) {
         return getDiff(before.split("\n"), after.split("\n"), windowSize);
     }
 
+    /**
+     * @deprecated Use com.android.ide.common.util.Diffs.getDiff instead
+     */
+    @Deprecated
     @NonNull
     public static String getDiff(@NonNull String[] before, @NonNull String[] after) {
         return getDiff(before, after, 0);
     }
 
+    /**
+     * @deprecated Use com.android.ide.common.util.Diffs.getDiff instead
+     */
+    @Deprecated
     public static String getDiff(@NonNull String[] before, @NonNull String[] after,
             int windowSize) {
         // Based on the LCS section in http://introcs.cs.princeton.edu/java/96optimization/

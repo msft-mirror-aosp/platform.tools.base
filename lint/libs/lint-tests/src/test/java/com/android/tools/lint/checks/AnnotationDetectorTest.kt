@@ -1143,41 +1143,41 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/WrongUsagesJava.java line 5: Replace with `@RequiresApi`:
-        @@ -4 +4
-        + import androidx.annotation.RequiresApi;
-        @@ -5 +6
-        - @TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
-        + @RequiresApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
+        @@ -3,0 +4 @@
+        +import androidx.annotation.RequiresApi;
+        @@ -5 +6 @@
+        -@TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
+        +@RequiresApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
         Autofix for src/test/pkg/WrongUsagesJava.java line 7: Replace with `@RequiresApi`:
-        @@ -4 +4
-        + import androidx.annotation.RequiresApi;
-        @@ -7 +8
-        -     @TargetApi(31) // ERROR 2
-        +     @RequiresApi(31) // ERROR 2
+        @@ -3,0 +4 @@
+        +import androidx.annotation.RequiresApi;
+        @@ -7 +8 @@
+        -    @TargetApi(31) // ERROR 2
+        +    @RequiresApi(31) // ERROR 2
         Autofix for src/test/pkg/WrongUsagesJava.java line 10: Replace with `@RequiresApi`:
-        @@ -4 +4
-        + import androidx.annotation.RequiresApi;
-        @@ -10 +11
-        -     @TargetApi(value = 32) // ERROR 3
-        +     @RequiresApi(value = 32) // ERROR 3
+        @@ -3,0 +4 @@
+        +import androidx.annotation.RequiresApi;
+        @@ -10 +11 @@
+        -    @TargetApi(value = 32) // ERROR 3
+        +    @RequiresApi(value = 32) // ERROR 3
         Autofix for src/test/pkg/WrongUsagesKotlin.kt line 7: Replace with `@RequiresApi`:
-        @@ -5 +5
-        + import androidx.annotation.RequiresApi
-        @@ -7 +8
-        -     @field:TargetApi(value = 31) // ERROR 4
-        +     @field:RequiresApi(value = 31) // ERROR 4
+        @@ -4,0 +5 @@
+        +import androidx.annotation.RequiresApi
+        @@ -7 +8 @@
+        -    @field:TargetApi(value = 31) // ERROR 4
+        +    @field:RequiresApi(value = 31) // ERROR 4
         Autofix for src/test/pkg/WrongUsagesKotlin.kt line 8: Replace with `@RequiresApi`:
-        @@ -5 +5
-        + import androidx.annotation.RequiresApi
-        @@ -8 +9
-        -     @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
-        +     @get:RequiresApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
+        @@ -4,0 +5 @@
+        +import androidx.annotation.RequiresApi
+        @@ -8 +9 @@
+        -    @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
+        +    @get:RequiresApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
         Autofix for src/test/pkg/WrongUsagesKotlin.kt line 11: Replace with `@RequiresApi`:
-        @@ -5 +5
-        + import androidx.annotation.RequiresApi
-        @@ -11 +12
-        -     @TargetApi(31) // ERROR 6
-        +     @RequiresApi(31) // ERROR 6
+        @@ -4,0 +5 @@
+        +import androidx.annotation.RequiresApi
+        @@ -11 +12 @@
+        -    @TargetApi(31) // ERROR 6
+        +    @RequiresApi(31) // ERROR 6
         """
       )
   }
