@@ -515,25 +515,23 @@ internal open class Analysis<FX : Any>(
                     Result(t, recvFx join restFx)
                   }
                   else -> {
-                    fun appBaseline() =
+                    fun onNotFound(exc: Module.MethodLookupException? = null) =
                       Result(getType(e), fxInstantiationLattice.unsure).also {
                         log(
-                          "WARNING: Don't know what method `$methodName` is in `${e.uastParent?.renderAbbrev()}` in `$targetName`"
+                          when (exc) {
+                            null,
+                            is Module.MethodLookupException.NotFound ->
+                              "WARNING: Don't know what method `$methodName` is in `${e.uastParent?.renderAbbrev()}` in `$targetName`"
+                            is Module.MethodLookupException.Ambiguous ->
+                              "ERROR: ${exc.candidates.size} methods found for name ${exc.name}"
+                          }
                         )
                       }
 
                     val (appType, appFx) =
                       when (methodName) {
-                        null -> appBaseline()
-                        else ->
-                          try {
-                            invokeWildGuess(rec, recvType, methodName, restTypes)
-                          } catch (_: Module.MethodNotFoundException) {
-                            appBaseline()
-                          } catch (exc: Module.AmbiguousMethodException) {
-                            log("ERROR: ${exc.candidates.size} methods found for name ${exc.name}")
-                            appBaseline()
-                          }
+                        null -> onNotFound()
+                        else -> invokeWildGuess(rec, recvType, methodName, restTypes, ::onNotFound)
                       }
 
                     Result(appType, recvFx join restFx join onInvocationEffect(e, appFx))
@@ -984,25 +982,27 @@ internal open class Analysis<FX : Any>(
     receiver: Type<FX>,
     methodName: String,
     args: List<Type<FX>>,
+    notFound: (Module.MethodLookupException) -> InstAns<FX>,
   ): InstAns<FX> =
     when (receiver) {
       // TODO pass class type arguments too
       is Type.Application ->
-        rec[
-          module.findMethodByName(methodName, receiver.constructor, args), listOf(receiver) + args]
+        try {
+          rec[
+            module.findMethodByName(methodName, receiver.constructor, args),
+            listOf(receiver) + args]
+        } catch (e: Module.MethodLookupException) {
+          notFound(e)
+        }
       is Type.Lambda -> rec[receiver, listOf(receiver) + args]
       is Type.MethodRef -> rec[receiver, args]
       is Type.SpecializedMethodRef -> rec[receiver.ref, listOf(receiver.receiver) + args]
       is Type.Union ->
         receiver.cases.joinedOver(instantiationLattice) {
-          invokeWildGuess(rec, it, methodName, args)
+          invokeWildGuess(rec, it, methodName, args, notFound)
         }
       is Type.Sym,
-      is Type.WildCard ->
-        throw Module.MethodNotFoundException(
-          methodName,
-          "Don't know what `$methodName` is to create symbolic invocation `$receiver.$methodName(${args.joinToString()})`",
-        )
+      is Type.WildCard -> notFound(Module.MethodLookupException.NotFound(methodName))
       is Type.Ellipsis ->
         throw IllegalArgumentException("Unexpected invocation $receiver.$methodName($args)")
       is Type.Sym.Rec -> throw IllegalStateException("Unbound recursive variable $receiver")

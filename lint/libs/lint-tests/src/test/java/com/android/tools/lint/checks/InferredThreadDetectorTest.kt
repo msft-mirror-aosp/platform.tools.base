@@ -33,6 +33,9 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
     task.skipTestModes(TestMode.PARENTHESIZED, TestMode.FULLY_QUALIFIED, TestMode.REORDER_ARGUMENTS)
 
     task.skipTestModes(TestMode.JVM_OVERLOADS) // TODO
+
+    // `TYPE_ALIAS` generates nonsense code, declaring top-level alias to local type
+    task.skipTestModes(TestMode.TYPE_ALIAS)
     return task
   }
 
@@ -1141,8 +1144,7 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
-  // TODO enable after 251 merge
-  fun ignore_testLocalFunction() {
+  fun testLocalFunction() {
     lint()
       .files(
         kotlin(

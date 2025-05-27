@@ -130,7 +130,8 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
     receiver: ClassId,
     args: List<Type<FX>>,
   ): Type.MethodRef {
-    val cl = classes[receiver] ?: throw MethodNotFoundException(name) // TODO search superclasses?
+    val cl =
+      classes[receiver] ?: throw MethodLookupException.NotFound(name) // TODO search superclasses?
     val candidates =
       cl.methods.filterKeys { id ->
         id.name == name &&
@@ -141,17 +142,17 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
           }
       }
     return when (candidates.size) {
-      0 -> throw MethodNotFoundException(name)
+      0 -> throw MethodLookupException.NotFound(name)
       1 -> Type.MethodRef(receiver, candidates.asSequence().first().key)
-      else -> throw AmbiguousMethodException(name, candidates.map { it.key })
+      else -> throw MethodLookupException.Ambiguous(name, candidates.map { it.key })
     }
   }
 
-  internal data class MethodNotFoundException(val name: String, val msg: String? = null) :
-    Exception()
+  internal sealed class MethodLookupException(val name: String) : Exception() {
+    class NotFound(name: String, val msg: String? = null) : MethodLookupException(name)
 
-  internal data class AmbiguousMethodException(val name: String, val candidates: List<MethodId>) :
-    Exception()
+    class Ambiguous(name: String, val candidates: List<MethodId>) : MethodLookupException(name)
+  }
 
   class Builder<FX : Any>(private val annotationParser: AnnotationParser<FX>) {
     private val classes = HashMap<ClassId, ClassBody<FX>>()
