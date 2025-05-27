@@ -36,7 +36,6 @@ import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
-import kotlin.time.measureTimedValue
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.toPersistentSet
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -97,12 +96,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>) :
           }
         }
 
-        fun log(msg: String) = context.log(null, msg)
-
-        val (summaries, t) =
-          measureTimedValue { Analysis(program, effects /*, ::log*/).leastFixPoint(entries) }
-
-        log("${context.project.name}: Took $t to reach fixpoint over ${summaries.size} entries.")
+        val summaries = Analysis(program, effects).leastFixPoint(entries)
 
         buildMap {
           for ((k, v) in summaries) {
