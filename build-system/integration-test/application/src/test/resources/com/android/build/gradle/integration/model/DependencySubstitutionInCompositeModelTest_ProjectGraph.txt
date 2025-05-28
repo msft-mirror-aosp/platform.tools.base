@@ -1,0 +1,2 @@
+- ProjectGraph:
+   - resolvedVariants = {:lib=debug}

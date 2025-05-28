@@ -132,3 +132,50 @@ class CompositeBuildWithSameNameTest: ModelComparator() {
         )
     }
 }
+
+class DependencySubstitutionInCompositeModelTest: ModelComparator() {
+    @get:Rule
+    val rule = GradleRule.from {
+        androidApplication {
+            dependencies {
+                implementation("com.example.included:lib:1.0")
+            }
+        }
+        includedBuild("includedBuild") {
+            androidLibrary(":lib") {
+                group = "com.example.included"
+                version = "1.0"
+            }
+            settings {
+                dependencySubstitution {
+                    substitute(module("com.example.included:lib")).using(project(":lib"))
+                }
+            }
+        }
+    }
+
+    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+
+    @Before
+    fun setup() {
+        result = rule.build.modelBuilder
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+            .fetchModels(variantName = "debug")
+    }
+
+    @Test
+    fun `test VariantDependencies`() {
+        with(result).compareVariantDependencies(
+            projectAction = { getProject(":app") },
+            goldenFile = "VariantDependencies"
+        )
+    }
+
+    @Test
+    fun `test ProjectGraph`() {
+        with(result).compareProjectGraph(
+            projectAction = { getProject(":app") },
+            goldenFile = "ProjectGraph"
+        )
+    }
+}

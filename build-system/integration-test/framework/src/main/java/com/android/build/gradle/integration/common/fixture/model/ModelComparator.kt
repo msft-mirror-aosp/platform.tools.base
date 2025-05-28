@@ -251,6 +251,20 @@ class Comparator(
         )
     }
 
+    fun compareProjectGraph(
+        projectAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo = { getProject() },
+        goldenFile: String
+    ) {
+        compareModel(
+            projectAction = projectAction,
+            modelName = "ProjectGraph",
+            modelAction = { projectGraph },
+            snapshotAction = { snapshotProjectGraph() },
+            goldenFile = goldenFile
+        )
+    }
+
+
     fun ensureVariantDependenciesIsEmpty(
         projectAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo = { getProject() },
     ) {

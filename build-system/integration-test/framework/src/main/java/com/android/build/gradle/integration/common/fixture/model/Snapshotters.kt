@@ -58,6 +58,7 @@ import com.android.builder.model.v2.ide.ViewBindingOptions
 import com.android.builder.model.v2.models.AndroidDsl
 import com.android.builder.model.v2.models.AndroidProject
 import com.android.builder.model.v2.models.BasicAndroidProject
+import com.android.builder.model.v2.models.ProjectGraph
 import com.android.builder.model.v2.models.VariantDependencies
 import com.android.builder.model.v2.models.Versions
 import com.android.builder.model.v2.models.Versions.Version
@@ -547,6 +548,11 @@ private fun ModelSnapshotter<LintOptions>.snapshotLintOptions() {
     item("targetSdk", LintOptions::targetSdk)
 }
 
+internal fun ModelSnapshotter<ProjectGraph>.snapshotProjectGraph() {
+    item("resolvedVariants", ProjectGraph::resolvedVariants)
+}
+
+
 internal fun ModelSnapshotter<VariantDependencies>.snapshotVariantDependencies() {
     item("name", VariantDependencies::name)
     dataObject("mainArtifact", VariantDependencies::mainArtifact) {
@@ -571,30 +577,7 @@ internal fun ModelSnapshotter<VariantDependencies>.snapshotVariantDependencies()
         item("type", Library::type)
         item("artifact", Library::artifact)
         dataObject("projectInfo", Library::projectInfo) {
-            item("buildId", ProjectInfo::buildId)
-            item("projectPath", ProjectInfo::projectPath)
-            item("isTestFixtures", ComponentInfo::isTestFixtures)
-            item("buildType", ComponentInfo::buildType)
-            valueList(
-                name = "productFlavors",
-                propertyAction = { productFlavors.entries },
-                formatAction = { "$key -> $value" }
-            ) { collection ->
-                collection?.sortedBy { it.key }
-            }
-            valueList(
-                name = "attributes",
-                propertyAction = { attributes.entries },
-                formatAction = { "$key -> $value" }
-            ) { collection ->
-                collection?.sortedBy { it.key }
-            }
-            valueList(
-                name = "capabilities",
-                propertyAction = ComponentInfo::capabilities
-            ) { collection ->
-                collection?.sortedBy { it }
-            }
+            snapshotProjectInfo()
         }
         dataObject("libraryInfo", Library::libraryInfo) {
             item("group", LibraryInfo::group)
@@ -639,6 +622,33 @@ internal fun ModelSnapshotter<VariantDependencies>.snapshotVariantDependencies()
             item("publicResources", AndroidLibraryData::publicResources)
             item("symbolFile", AndroidLibraryData::symbolFile)
         }
+    }
+}
+
+private fun ModelSnapshotter<ProjectInfo>.snapshotProjectInfo() {
+    item("buildId", ProjectInfo::buildId)
+    item("projectPath", ProjectInfo::projectPath)
+    item("isTestFixtures", ComponentInfo::isTestFixtures)
+    item("buildType", ComponentInfo::buildType)
+    valueList(
+        name = "productFlavors",
+        propertyAction = { productFlavors.entries },
+        formatAction = { "$key -> $value" }
+    ) { collection ->
+        collection?.sortedBy { it.key }
+    }
+    valueList(
+        name = "attributes",
+        propertyAction = { attributes.entries },
+        formatAction = { "$key -> $value" }
+    ) { collection ->
+        collection?.sortedBy { it.key }
+    }
+    valueList(
+        name = "capabilities",
+        propertyAction = ComponentInfo::capabilities
+    ) { collection ->
+        collection?.sortedBy { it }
     }
 }
 

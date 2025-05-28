@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture
 import com.android.builder.model.v2.models.AndroidDsl
 import com.android.builder.model.v2.models.AndroidProject
 import com.android.builder.model.v2.models.BasicAndroidProject
+import com.android.builder.model.v2.models.ProjectGraph
 import com.android.builder.model.v2.models.Versions
 import com.android.builder.model.v2.models.ProjectSyncIssues
 import com.android.builder.model.v2.models.VariantDependencies
@@ -61,6 +62,7 @@ class ModelContainerV2(
         val androidProject: AndroidProject?,
         val androidDsl: AndroidDsl?,
         val variantDependencies: VariantDependencies?,
+        val projectGraph: ProjectGraph?,
         val nativeModule: NativeModule?,
         val issues: ProjectSyncIssues?
     ): Serializable {
