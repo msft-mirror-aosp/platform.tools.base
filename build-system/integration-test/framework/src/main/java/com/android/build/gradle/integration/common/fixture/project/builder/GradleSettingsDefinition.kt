@@ -20,6 +20,8 @@ import com.android.build.api.dsl.SettingsExtension
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDefinition
+import com.android.build.gradle.integration.common.fixture.project.DependencySubstitutionsBuilder
+import com.android.build.gradle.integration.common.fixture.project.DependencySubstitutionsBuilderImpl
 import java.nio.file.Path
 import kotlin.io.path.writeText
 
@@ -61,6 +63,11 @@ interface GradleSettingsDefinition: ExtensionAwareDefinition {
      * The path must be relative to the build folder.
      */
     fun addRepository(location: String)
+
+    /**
+     * Configures dependency substitution rules for the build.
+     */
+    fun dependencySubstitution(action: DependencySubstitutionsBuilder.() -> Unit)
 }
 
 internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
@@ -74,6 +81,8 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
 
     private var localCacheLocation: Path? = null
     private val extraRepositories = mutableListOf<String>()
+
+    private val dependencySubstitutionBuilder = DependencySubstitutionsBuilderImpl()
 
     override fun applyPlugin(type: PluginType, version: String?, applyFirst: Boolean) {
         if (!type.isSettings) {
@@ -128,12 +137,16 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
         extraRepositories.add(location)
     }
 
+    override fun dependencySubstitution(action: DependencySubstitutionsBuilder.() -> Unit) {
+        action(dependencySubstitutionBuilder)
+    }
+
     internal fun write(
         name: String,
         location: Path,
         useOldPluginStyle: Boolean,
         repositories: Collection<Path>?,
-        includedBuildNames: Collection<String>,
+        includedBuilds: Collection<GradleBuildDefinitionImpl>,
         subProjectPaths: Collection<String>,
         buildWriter: BuildWriter,
     ) {
@@ -200,9 +213,20 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
                 emptyLine()
             }
 
-            if (includedBuildNames.isNotEmpty()) {
-                for (build in includedBuildNames) {
-                    method("includeBuild", build)
+            if (includedBuilds.isNotEmpty()) {
+                for (build in includedBuilds) {
+                    if (build.settings.dependencySubstitutionBuilder.substitutions.isNotEmpty()) {
+                        block(name="includeBuild", parameters = listOf(build.name), build) {
+                            block("dependencySubstitution") {
+                                build.settings.dependencySubstitutionBuilder.substitutions.forEach { substitution ->
+                                    dependencySubstitution(substitution, substitution.using)
+                                }
+                            }
+                            emptyLine()
+                        }
+                    } else {
+                        method("includeBuild", build.name)
+                    }
                 }
                 emptyLine()
             }

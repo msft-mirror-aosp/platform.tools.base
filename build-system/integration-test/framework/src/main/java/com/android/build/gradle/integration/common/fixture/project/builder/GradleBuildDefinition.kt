@@ -23,6 +23,7 @@ import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.project.AiPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
+import com.android.build.gradle.integration.common.fixture.project.DependencySubstitutionsBuilder
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
@@ -255,4 +256,7 @@ interface GradleBuildDefinition {
      * configures the Gradle properties for this build
      */
     fun gradleProperties(action: GradlePropertiesBuilder.() -> Unit)
+
+    /** Configures dependency substitution rules via settings. */
+    fun dependencySubstitution(action: DependencySubstitutionsBuilder.() -> Unit)
 }

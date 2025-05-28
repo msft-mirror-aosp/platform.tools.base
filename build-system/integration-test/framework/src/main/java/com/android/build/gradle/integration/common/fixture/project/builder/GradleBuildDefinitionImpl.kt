@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.fixture.project.AssetPackBund
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.DependencySubstitutionsBuilder
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
@@ -64,6 +65,10 @@ internal class GradleBuildDefinitionImpl(
     override var useOldPluginStyleForSeparateClassloaders: Boolean = false
 
     internal lateinit var globalDefinitionState: GlobalDefinitionState
+
+    override fun dependencySubstitution(action: DependencySubstitutionsBuilder.() -> Unit) {
+        settings.dependencySubstitution(action)
+    }
 
     override fun settings(action: GradleSettingsDefinition.() -> Unit) {
         action(settings)
@@ -489,7 +494,7 @@ internal class GradleBuildDefinitionImpl(
             location = location,
             useOldPluginStyle = useOldPluginStyleForSeparateClassloaders,
             repositories = globalDefinitionState.repositories,
-            includedBuildNames = includedBuilds.values.map { it.name},
+            includedBuilds = includedBuilds.values,
             subProjectPaths = subProjects.values.map { it.path },
             buildWriter = buildFileType.getNewWriter(),
         )
