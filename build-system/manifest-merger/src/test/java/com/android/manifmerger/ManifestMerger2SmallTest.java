@@ -87,18 +87,18 @@ public class ManifestMerger2SmallTest {
     public void testValidationFailure() throws Exception {
 
         MockLog mockLog = new MockLog();
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\" />\n"
-                + "\n"
-                + "        <activity android:name=\"activityOne\" "
-                + "             tools:replace=\"exported\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\" />\n"
+                        + "\n"
+                        + "        <activity android:name=\"activityOne\" "
+                        + "             tools:replace=\"exported\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
         File tmpFile = TestUtils.inputAsFile("ManifestMerger2Test_testValidationFailure", input);
         assertTrue(tmpFile.exists());
@@ -119,16 +119,16 @@ public class ManifestMerger2SmallTest {
     public void testToolsAnnotationRemoval() throws Exception {
 
         MockLog mockLog = new MockLog();
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\" "
-                + "         tools:replace=\"label\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\" "
+                        + "         tools:replace=\"label\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
         File tmpFile = TestUtils.inputAsFile("testToolsAnnotationRemoval", input);
         assertTrue(tmpFile.exists());
@@ -143,7 +143,7 @@ public class ManifestMerger2SmallTest {
             Document xmlDocument =
                     parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
             NodeList applications = xmlDocument.getElementsByTagName(SdkConstants.TAG_APPLICATION);
-            assertTrue(applications.getLength() == 1);
+            assertEquals(1, applications.getLength());
             Node replace = applications.item(0).getAttributes()
                     .getNamedItemNS(SdkConstants.TOOLS_URI, "replace");
             assertNull(replace);
@@ -155,41 +155,42 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testToolsAnnotationRemovalForLibraries() throws Exception {
         MockLog mockLog = new MockLog();
-        String overlay = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.app1\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\">\n"
-                + "       <activity tools:node=\"removeAll\">\n"
-                + "        </activity>\n"
-                + "    </application>"
-                + "\n"
-                + "</manifest>";
+        String overlay =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\">\n"
+                        + "       <activity tools:node=\"removeAll\">\n"
+                        + "        </activity>\n"
+                        + "    </application>"
+                        + "\n"
+                        + "</manifest>";
 
         File overlayFile = TestUtils.inputAsFile("testToolsAnnotationRemoval", overlay);
         assertTrue(overlayFile.exists());
 
-        String libraryInput = ""
-                + "<manifest\n"
-                + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "package=\"com.example.app1\">\n"
-                + "\n"
-                + "<application android:name=\"TheApp\" >\n"
-                + "    <!-- Activity to configure widget -->\n"
-                + "    <activity\n"
-                + "            android:icon=\"@drawable/widget_icon\"\n"
-                + "            android:label=\"Configure Widget\"\n"
-                + "            android:name=\"com.example.lib1.WidgetConfigurationUI\"\n"
-                + "            android:theme=\"@style/Theme.WidgetConfigurationUI\" >\n"
-                + "        <intent-filter >\n"
-                + "            <action android:name=\"android.appwidget.action.APPWIDGET_CONFIGURE\" />\n"
-                + "        </intent-filter>\n"
-                + "    </activity>\n"
-                + "</application>\n"
-                + "\n"
-                + "</manifest>";
+        String libraryInput =
+                "<manifest\n"
+                        + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "package=\"com.example.app1\">\n"
+                        + "\n"
+                        + "<application android:name=\"TheApp\" >\n"
+                        + "    <!-- Activity to configure widget -->\n"
+                        + "    <activity\n"
+                        + "            android:icon=\"@drawable/widget_icon\"\n"
+                        + "            android:label=\"Configure Widget\"\n"
+                        + "            android:name=\"com.example.lib1.WidgetConfigurationUI\"\n"
+                        + "            android:theme=\"@style/Theme.WidgetConfigurationUI\" >\n"
+                        + "        <intent-filter >\n"
+                        + "            <action"
+                        + " android:name=\"android.appwidget.action.APPWIDGET_CONFIGURE\" />\n"
+                        + "        </intent-filter>\n"
+                        + "    </activity>\n"
+                        + "</application>\n"
+                        + "\n"
+                        + "</manifest>";
         File libFile = TestUtils.inputAsFile("testToolsAnnotationRemoval", libraryInput);
 
 
@@ -204,7 +205,7 @@ public class ManifestMerger2SmallTest {
             Document xmlDocument =
                     parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
             NodeList applications = xmlDocument.getElementsByTagName(SdkConstants.TAG_ACTIVITY);
-            assertTrue(applications.getLength() == 0);
+            assertEquals(0, applications.getLength());
         } finally {
             assertTrue(overlayFile.delete());
             assertTrue(libFile.delete());
@@ -217,8 +218,7 @@ public class ManifestMerger2SmallTest {
         // are used in library manifests but not in the main manifest.
         MockLog mockLog = new MockLog();
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.app1\">\n"
                         + "\n"
@@ -229,8 +229,7 @@ public class ManifestMerger2SmallTest {
         File inputFile = TestUtils.inputAsFile("testToolsInLibrariesNotMain", xml);
 
         String libraryInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.lib1\">\n"
@@ -262,16 +261,16 @@ public class ManifestMerger2SmallTest {
     public void testToolsAnnotationPresence() throws Exception {
 
         MockLog mockLog = new MockLog();
-        String input = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                + "    package=\"com.example.lib3\">\n"
-                + "\n"
-                + "    <application android:label=\"@string/lib_name\" "
-                + "         tools:replace=\"label\"/>\n"
-                + "\n"
-                + "</manifest>";
+        String input =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\" "
+                        + "         tools:replace=\"label\"/>\n"
+                        + "\n"
+                        + "</manifest>";
 
         File tmpFile = TestUtils.inputAsFile("testToolsAnnotationRemoval", input);
         assertTrue(tmpFile.exists());
@@ -285,7 +284,7 @@ public class ManifestMerger2SmallTest {
             Document xmlDocument =
                     parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
             NodeList applications = xmlDocument.getElementsByTagName(SdkConstants.TAG_APPLICATION);
-            assertTrue(applications.getLength() == 1);
+            assertEquals(1, applications.getLength());
             Node replace = applications.item(0).getAttributes()
                     .getNamedItemNS(SdkConstants.TOOLS_URI, "replace");
             assertNotNull(replace);
@@ -298,12 +297,12 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testPackageOverride() throws Exception {
-        String xml = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\""
-                + "    package=\"com.foo.old\" >\n"
-                + "    <activity android:name=\"activityOne\"/>\n"
-                + "</manifest>";
+        String xml =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + "    package=\"com.foo.old\" >\n"
+                        + "    <activity android:name=\"activityOne\"/>\n"
+                        + "</manifest>";
 
         XmlDocument refDocument =
                 TestUtils.xmlDocumentFromString(
@@ -316,11 +315,11 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testMissingPackageOverride() throws Exception {
-        String xml = ""
-                + "<manifest\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
-                + "    <activity android:name=\"activityOne\"/>\n"
-                + "</manifest>";
+        String xml =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <activity android:name=\"activityOne\"/>\n"
+                        + "</manifest>";
 
         XmlDocument refDocument =
                 TestUtils.xmlDocumentFromString(
@@ -393,12 +392,12 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testOverridingSystemProperties() throws Exception {
-        String xml = ""
-                + "<manifest versionCode=\"34\" versionName=\"3.4\"\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
-                + "    <uses-sdk minSdkVersion=\"9\" targetSdkVersion=\".9\"/>\n"
-                + "    <activity android:name=\"activityOne\"/>\n"
-                + "</manifest>";
+        String xml =
+                "<manifest versionCode=\"34\" versionName=\"3.4\"\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <uses-sdk minSdkVersion=\"9\" targetSdkVersion=\".9\"/>\n"
+                        + "    <activity android:name=\"activityOne\"/>\n"
+                        + "</manifest>";
 
         XmlDocument document =
                 TestUtils.xmlDocumentFromString(
@@ -435,10 +434,10 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testPlaceholderSubstitution() throws Exception {
         String xml =
-                ""
-                        + "<manifest package=\"foo.bar\" versionCode=\"34\" versionName=\"3.4\"\n"
+                "<manifest package=\"foo.bar\" versionCode=\"34\" versionName=\"3.4\"\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
-                        + "    <activity android:name=\".activityOne\" android:label=\"${labelName}\"/>\n"
+                        + "    <activity android:name=\".activityOne\""
+                        + " android:label=\"${labelName}\"/>\n"
                         + "</manifest>";
 
         Map<String, Object> placeholders = ImmutableMap.of("labelName", "injectedLabelName");
@@ -467,11 +466,11 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testApplicationIdSubstitution() throws Exception {
-        String xml = ""
-                + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
-                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
-                + "    <activity android:name=\"${applicationId}.activityOne\"/>\n"
-                + "</manifest>";
+        String xml =
+                "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <activity android:name=\"${applicationId}.activityOne\"/>\n"
+                        + "</manifest>";
 
         MockLog mockLog = new MockLog();
         File inputFile = TestUtils.inputAsFile("testPlaceholderSubstitution", xml);
@@ -512,8 +511,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testNoApplicationIdValueProvided() throws Exception {
         String xml =
-                ""
-                        + "<manifest package=\"foo.bar\" versionCode=\"34\" versionName=\"3.4\"\n"
+                "<manifest package=\"foo.bar\" versionCode=\"34\" versionName=\"3.4\"\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity android:name=\"${applicationId}.activityOne\"/>\n"
                         + "</manifest>";
@@ -555,16 +553,16 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testNoFqcnsExtraction() throws Exception {
-        String xml = ""
-                + "<manifest\n"
-                + "    package=\"com.foo.example\""
-                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
-                + "    <activity t:name=\"activityOne\"/>\n"
-                + "    <activity t:name=\"com.foo.bar.example.activityTwo\"/>\n"
-                + "    <activity t:name=\"com.foo.example.activityThree\"/>\n"
-                + "    <application t:name=\".applicationOne\" "
-                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
-                + "</manifest>";
+        String xml =
+                "<manifest\n"
+                        + "    package=\"com.foo.example\""
+                        + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <activity t:name=\"activityOne\"/>\n"
+                        + "    <activity t:name=\"com.foo.bar.example.activityTwo\"/>\n"
+                        + "    <activity t:name=\"com.foo.example.activityThree\"/>\n"
+                        + "    <application t:name=\".applicationOne\" "
+                        + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                        + "</manifest>";
 
         File inputFile = TestUtils.inputAsFile("testFcqnsExtraction", xml);
 
@@ -597,8 +595,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testFqcnsExtraction() throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.example\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity t:name=\"activityOne\"/>\n"
@@ -679,8 +676,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testFqcnsExtractionWithNamespace() throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar.example\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity t:name=\"activityOne\"/>\n"
@@ -731,14 +727,14 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testNoPlaceholderReplacement() throws Exception {
-        String xml = ""
-                + "<manifest\n"
-                + "    package=\"${applicationId}\""
-                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
-                + "    <activity t:name=\"activityOne\"/>\n"
-                + "    <application t:name=\".applicationOne\" "
-                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
-                + "</manifest>";
+        String xml =
+                "<manifest\n"
+                        + "    package=\"${applicationId}\""
+                        + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <activity t:name=\"activityOne\"/>\n"
+                        + "    <application t:name=\".applicationOne\" "
+                        + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                        + "</manifest>";
 
         File inputFile = TestUtils.inputAsFile("testNoPlaceHolderReplacement", xml);
 
@@ -760,14 +756,14 @@ public class ManifestMerger2SmallTest {
         // This test is identical to testNoPlaceholderReplacement but instead
         // of reading from a string, we test the ManifestMerger's ability to
         // supply a custom input stream
-        final String xml = ""
-                + "<manifest\n"
-                + "    package=\"${applicationId}\""
-                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
-                + "    <activity t:name=\"activityOne\"/>\n"
-                + "    <application t:name=\".applicationOne\" "
-                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
-                + "</manifest>";
+        final String xml =
+                "<manifest\n"
+                        + "    package=\"${applicationId}\""
+                        + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <activity t:name=\"activityOne\"/>\n"
+                        + "    <application t:name=\".applicationOne\" "
+                        + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                        + "</manifest>";
         String staleContent = "<manifest />";
 
         // Note: disk content is wrong/stale; make sure we read the live content instead
@@ -795,22 +791,22 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testOverlayOnMainMerge() throws Exception {
-        String xmlInput = ""
-                     + "<manifest\n"
-                     + "    package=\"com.foo.example\""
-                     + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
-                     + "    <activity t:name=\"activityOne\"/>\n"
-                     + "    <application t:name=\".applicationOne\" "
-                     + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
-                     + "</manifest>";
+        String xmlInput =
+                "<manifest\n"
+                        + "    package=\"com.foo.example\""
+                        + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <activity t:name=\"activityOne\"/>\n"
+                        + "    <application t:name=\".applicationOne\" "
+                        + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                        + "</manifest>";
 
-        String xmlToMerge = ""
-                     + "<manifest\n"
-                     + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
-                     + "    <application>\n"
-                     + "        <activity t:name=\"activityTwo\"/>\n"
-                     + "    </application>\n"
-                     + "</manifest>";
+        String xmlToMerge =
+                "<manifest\n"
+                        + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <application>\n"
+                        + "        <activity t:name=\"activityTwo\"/>\n"
+                        + "    </application>\n"
+                        + "</manifest>";
 
         File inputFile = TestUtils.inputAsFile("testOverlayOnMainMerge1", xmlInput);
         File overlayFile = TestUtils.inputAsFile("testOverlayOnMainMerge2", xmlToMerge);
@@ -839,8 +835,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testOverlayOnOverlayMerge() throws Exception {
         String xmlInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity t:name=\"activityOne\"/>\n"
                         + "    <application t:name=\".applicationOne\" "
@@ -848,8 +843,7 @@ public class ManifestMerger2SmallTest {
                         + "</manifest>";
 
         String xmlToMerge =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application>\n"
                         + "        <activity t:name=\"activityTwo\"/>\n"
@@ -871,16 +865,19 @@ public class ManifestMerger2SmallTest {
         Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
 
         NodeList activityList = xmlDocument.getElementsByTagName("activity");
-        assertEquals(".activityOne", activityList.item(0).getAttributes().getNamedItem("t:name").getNodeValue());
-        assertEquals(".activityTwo", activityList.item(1).getAttributes().getNamedItem("t:name").getNodeValue());
+        assertEquals(
+                ".activityOne",
+                activityList.item(0).getAttributes().getNamedItem("t:name").getNodeValue());
+        assertEquals(
+                ".activityTwo",
+                activityList.item(1).getAttributes().getNamedItem("t:name").getNodeValue());
     }
 
     @Test
     public void testMergeWithImpliedPreviewTargetSdk() throws Exception {
         // sdk version "foo" is acting as a preview code.
         String xmlInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"foo.main\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <uses-sdk android:minSdkVersion=\"foo\"\n"
@@ -888,8 +885,7 @@ public class ManifestMerger2SmallTest {
                         + "</manifest>";
 
         String xmlToMerge =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"lib\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <uses-sdk android:minSdkVersion=\"foo\"/>\n"
@@ -933,16 +929,14 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testWhenHasCodeIsFalseInMainAndUnspecifiedInOverlay() throws Exception {
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application android:hasCode=\"false\"/>\n"
                         + "</manifest>";
 
         String overlay =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application/>\n"
                         + "</manifest>";
@@ -982,16 +976,14 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testWhenHasCodeIsFalseInMainAndTrueInOverlay() throws Exception {
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application android:hasCode=\"false\"/>\n"
                         + "</manifest>";
 
         String overlay =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application android:hasCode=\"true\"/>\n"
                         + "</manifest>";
@@ -1027,16 +1019,14 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testThatHasCodeFromLibraryIsNotMerged() throws Exception {
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application/>\n"
                         + "</manifest>";
 
         String library =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.baz\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application android:hasCode=\"false\"/>\n"
@@ -1069,16 +1059,14 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testThatDistModuleFromOverlayIsMerged() throws Exception {
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application android:hasCode=\"false\"/>\n"
                         + "</manifest>";
 
         String overlay =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:dist=\"http://schemas.android.com/apk/distribution\">\n"
                         + "    <dist:module dist:onDemand=\"true\" dist:title=\"foo\">\n"
@@ -1121,16 +1109,14 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testThatDistModuleFromLibraryIsNotMerged() throws Exception {
         String input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application/>\n"
                         + "</manifest>";
 
         String library =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.baz\""
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:dist=\"http://schemas.android.com/apk/distribution\">\n"
@@ -1158,14 +1144,14 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testAddingTestOnlyAttribute() throws Exception {
-        String xml = ""
-                + "<manifest\n"
-                + "    package=\"com.foo.bar\""
-                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
-                + "    <activity t:name=\"activityOne\"/>\n"
-                + "    <application t:name=\".applicationOne\" "
-                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
-                + "</manifest>";
+        String xml =
+                "<manifest\n"
+                        + "    package=\"com.foo.bar\""
+                        + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                        + "    <activity t:name=\"activityOne\"/>\n"
+                        + "    <application t:name=\".applicationOne\" "
+                        + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                        + "</manifest>";
 
         File inputFile = TestUtils.inputAsFile("testNoPlaceHolderReplacement", xml);
 
@@ -1188,8 +1174,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testAddingDebuggableAttribute() throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity t:name=\"activityOne\"/>\n"
@@ -1226,8 +1211,7 @@ public class ManifestMerger2SmallTest {
 
     private void doTestAddingMultiDexApplicationWhenMissing(boolean useAndroidX) throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity t:name=\"activityOne\"/>\n"
@@ -1264,8 +1248,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testAddingMultiDexApplicationNotAddedWhenPresent() throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.bar\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity t:name=\"activityOne\"/>\n"
@@ -1297,8 +1280,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testInternetPermissionAdded() throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"foo.bar\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity t:name=\"activityOne\"/>\n"
@@ -1330,8 +1312,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testInternetPermissionNotDupped() throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"foo.bar\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <uses-permission t:name=\"android.permission.INTERNET\"/>\n"
@@ -1364,8 +1345,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testMissingApplicationInManifest() throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.example\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <activity t:name=\"activityOne\"/>\n"
@@ -1405,8 +1385,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testFeatureMetadataMinSdkStripped() throws Exception {
         String xml =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.foo.example\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application t:name=\".applicationOne\">\n"
@@ -1455,8 +1434,7 @@ public class ManifestMerger2SmallTest {
     public void testMainAppWithDynamicFeature() throws Exception {
         MockLog mockLog = new MockLog();
         String app =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.app1\">\n"
@@ -1469,8 +1447,7 @@ public class ManifestMerger2SmallTest {
                 TestUtils.inputAsFile("testMainAppWithDynamicFeatureForInstantAppManifest", app);
 
         String featureInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.example.feature\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application t:name=\".applicationOne\">\n"
@@ -1521,8 +1498,7 @@ public class ManifestMerger2SmallTest {
             throws Exception {
         MockLog mockLog = new MockLog();
         String app =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    t:targetSandboxVersion = \"1\"\n"
@@ -1536,8 +1512,7 @@ public class ManifestMerger2SmallTest {
                 TestUtils.inputAsFile("testMainAppWithDynamicFeatureForInstantAppManifest", app);
 
         String featureInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    package=\"com.example.feature\""
                         + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
                         + "    <application t:name=\".applicationOne\">\n"
@@ -1575,8 +1550,7 @@ public class ManifestMerger2SmallTest {
     public void testAutomaticallyHandlingAttributeConflicts() throws Exception {
         MockLog mockLog = new MockLog();
         String overlay =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.app1\">\n"
                         + "\n"
@@ -1593,8 +1567,7 @@ public class ManifestMerger2SmallTest {
         assertTrue(overlayFile.exists());
 
         String libraryInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "package=\"com.example.app1\">\n"
                         + "\n"
@@ -1631,8 +1604,7 @@ public class ManifestMerger2SmallTest {
     public void testToolsCommentRemovalForLibraries() throws Exception {
         MockLog mockLog = new MockLog();
         String overlay =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.app1\">\n"
@@ -1656,27 +1628,26 @@ public class ManifestMerger2SmallTest {
         assertTrue(overlayFile.exists());
 
         String libraryInput =
-                ""
-                        + "<manifest\n"
-                        + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "package=\"com.example.app1\">\n"
-                        + "\n"
-                        + "<application android:name=\"TheApp\" >\n"
-                        + "    <meta-data android:name=\"foo\"/>"
-                        + "    <meta-data android:name=\"bar\"/>"
-                        + "    <!-- Activity to configure widget -->\n"
-                        + "    <activity\n"
-                        + "            android:icon=\"@drawable/widget_icon\"\n"
-                        + "            android:label=\"Configure Widget\"\n"
-                        + "            android:name=\"com.example.lib1.WidgetConfigurationUI\"\n"
-                        + "            android:theme=\"@style/Theme.WidgetConfigurationUI\" >\n"
-                        + "        <intent-filter >\n"
-                        + "            <action android:name=\"android.appwidget.action.APPWIDGET_CONFIGURE\" />\n"
-                        + "        </intent-filter>\n"
-                        + "    </activity>\n"
-                        + "</application>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest\n"
+                    + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "package=\"com.example.app1\">\n"
+                    + "\n"
+                    + "<application android:name=\"TheApp\" >\n"
+                    + "    <meta-data android:name=\"foo\"/>    <meta-data android:name=\"bar\"/>  "
+                    + "  <!-- Activity to configure widget -->\n"
+                    + "    <activity\n"
+                    + "            android:icon=\"@drawable/widget_icon\"\n"
+                    + "            android:label=\"Configure Widget\"\n"
+                    + "            android:name=\"com.example.lib1.WidgetConfigurationUI\"\n"
+                    + "            android:theme=\"@style/Theme.WidgetConfigurationUI\" >\n"
+                    + "        <intent-filter >\n"
+                    + "            <action"
+                    + " android:name=\"android.appwidget.action.APPWIDGET_CONFIGURE\" />\n"
+                    + "        </intent-filter>\n"
+                    + "    </activity>\n"
+                    + "</application>\n"
+                    + "\n"
+                    + "</manifest>";
         File libFile = TestUtils.inputAsFile("testToolsCommentRemoval", libraryInput);
 
         try {
@@ -1760,8 +1731,7 @@ public class ManifestMerger2SmallTest {
 
         MockLog mockLog = new MockLog();
         String featureMainManifestText =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"foo.bar\" split=\"feature1\">\n"
                         + "        <activity android:name=\"foo.bar.MainActivity\" />\n"
@@ -1771,8 +1741,7 @@ public class ManifestMerger2SmallTest {
         assertTrue(featureManifest.exists());
 
         String featureOverlayManifestText =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    split=\"feature1\">\n"
                         + "</manifest>";
@@ -1798,7 +1767,8 @@ public class ManifestMerger2SmallTest {
                     "The Android Gradle plugin includes it for you when building your project.");
             assertStringPresenceInLogRecords(
                     mergingReport,
-                    "See https://d.android.com/r/studio-ui/dynamic-delivery/dynamic-feature-manifest for details");
+                    "See https://d.android.com/r/studio-ui/dynamic-delivery/dynamic-feature-manifest"
+                        + " for details");
             assertNotNull(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
             assertThat(mergingReport.getMergedDocument(MergedManifestKind.MERGED))
                     .doesNotContain("split");
@@ -2169,8 +2139,7 @@ public class ManifestMerger2SmallTest {
     public void testProviderTags() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.app1\">\n"
@@ -2191,8 +2160,7 @@ public class ManifestMerger2SmallTest {
         assertTrue(appFile.exists());
 
         String lib1Input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "package=\"com.example.lib1\">\n"
                         + "\n"
@@ -2207,8 +2175,7 @@ public class ManifestMerger2SmallTest {
         File lib1File = TestUtils.inputAsFile("providerTagsHandlingLib", lib1Input);
 
         String lib2Input =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "package=\"com.example.lib2\">\n"
                         + "\n"
@@ -2275,8 +2242,7 @@ public class ManifestMerger2SmallTest {
     public void testPropertyTags() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.app1\">\n"
@@ -2291,8 +2257,7 @@ public class ManifestMerger2SmallTest {
         assertTrue(appFile.exists());
 
         String libInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "package=\"com.example.lib1\">\n"
                         + "\n"
@@ -2343,8 +2308,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testDifferentIntentMerging() throws Exception {
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.app1\">\n"
@@ -2363,8 +2327,7 @@ public class ManifestMerger2SmallTest {
                         + "</manifest>";
 
         String libInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "package=\"com.example.lib1\">\n"
                         + "\n"
@@ -2381,8 +2344,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testSameIntentMerging() throws Exception {
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.app1\">\n"
@@ -2401,8 +2363,7 @@ public class ManifestMerger2SmallTest {
                         + "</manifest>";
 
         String libInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "package=\"com.example.lib1\">\n"
                         + "\n"
@@ -2420,8 +2381,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testIntentWithDifferentMimeTypeMerging() throws Exception {
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.app1\">\n"
@@ -2440,8 +2400,7 @@ public class ManifestMerger2SmallTest {
                         + "</manifest>";
 
         String libInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "package=\"com.example.lib1\">\n"
                         + "\n"
@@ -2459,8 +2418,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testDifferentDataIntentMerging() throws Exception {
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
                         + "    package=\"com.example.app1\">\n"
@@ -2479,8 +2437,7 @@ public class ManifestMerger2SmallTest {
                         + "</manifest>";
 
         String libInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "package=\"com.example.lib1\">\n"
                         + "\n"
@@ -2500,27 +2457,26 @@ public class ManifestMerger2SmallTest {
     public void testAndroidExportedAttributeWithIntentFilterInActivity() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    package=\"com.example.myapplication\">\n"
-                        + "    <uses-sdk\n"
-                        + "        android:minSdkVersion=\"31\"\n"
-                        + "        android:targetSdkVersion=\"31\" />"
-                        + "    <application\n"
-                        + "        android:label=\"@string/app_name\">\n"
-                        + "        <activity\n"
-                        + "            android:name=\".MainActivity\"\n"
-                        + "            android:label=\"@string/app_name\"\n"
-                        + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
-                        + "            <intent-filter>\n"
-                        + "                <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "        </activity>\n"
-                        + "    </application>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.myapplication\">\n"
+                    + "    <uses-sdk\n"
+                    + "        android:minSdkVersion=\"31\"\n"
+                    + "        android:targetSdkVersion=\"31\" />    <application\n"
+                    + "        android:label=\"@string/app_name\">\n"
+                    + "        <activity\n"
+                    + "            android:name=\".MainActivity\"\n"
+                    + "            android:label=\"@string/app_name\"\n"
+                    + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
+                    + "            <intent-filter>\n"
+                    + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "        </activity>\n"
+                    + "    </application>\n"
+                    + "\n"
+                    + "</manifest>";
         File appFile = TestUtils.inputAsFile("appFile", appInput);
         try {
             MergingReport mergingReport =
@@ -2532,7 +2488,8 @@ public class ManifestMerger2SmallTest {
             String loggingRecordsString = mergingReport.getLoggingRecords().toString();
             assertThat(loggingRecordsString)
                     .contains(
-                            "android:exported needs to be explicitly specified for element <activity#com.example.myapplication.MainActivity>.");
+                            "android:exported needs to be explicitly specified for element"
+                                    + " <activity#com.example.myapplication.MainActivity>.");
             assertThat(loggingRecordsString).contains(".xml:7:9-16:20 Error");
         } finally {
             assertThat(appFile.delete()).named("appFile was deleted").isTrue();
@@ -2543,31 +2500,30 @@ public class ManifestMerger2SmallTest {
     public void testAndroidExportedAttributeWithIntentFilterInActivityAlias() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    package=\"com.example.myapplication\">\n"
-                        + "    <uses-sdk\n"
-                        + "        android:minSdkVersion=\"31\"\n"
-                        + "        android:targetSdkVersion=\"31\" />"
-                        + "    <application\n"
-                        + "        android:label=\"@string/app_name\">\n"
-                        + "        <activity\n"
-                        + "            android:name=\".MyActivity\"\n"
-                        + "            android:label=\"@string/app_name\"\n"
-                        + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
-                        + "        </activity>\n"
-                        + "        <activity-alias\n"
-                        + "            android:name=\".MainActivity\"\n"
-                        + "            android:targetActivity=\".MyActivity\">\n"
-                        + "            <intent-filter>\n"
-                        + "                <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "        </activity-alias>\n"
-                        + "    </application>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.myapplication\">\n"
+                    + "    <uses-sdk\n"
+                    + "        android:minSdkVersion=\"31\"\n"
+                    + "        android:targetSdkVersion=\"31\" />    <application\n"
+                    + "        android:label=\"@string/app_name\">\n"
+                    + "        <activity\n"
+                    + "            android:name=\".MyActivity\"\n"
+                    + "            android:label=\"@string/app_name\"\n"
+                    + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
+                    + "        </activity>\n"
+                    + "        <activity-alias\n"
+                    + "            android:name=\".MainActivity\"\n"
+                    + "            android:targetActivity=\".MyActivity\">\n"
+                    + "            <intent-filter>\n"
+                    + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "        </activity-alias>\n"
+                    + "    </application>\n"
+                    + "\n"
+                    + "</manifest>";
         File appFile = TestUtils.inputAsFile("appFile", appInput);
         try {
             MergingReport mergingReport =
@@ -2579,7 +2535,8 @@ public class ManifestMerger2SmallTest {
             String loggingRecordsString = mergingReport.getLoggingRecords().toString();
             assertThat(loggingRecordsString)
                     .contains(
-                            "android:exported needs to be explicitly specified for element <activity-alias#com.example.myapplication.MainActivity>.");
+                            "android:exported needs to be explicitly specified for element"
+                                    + " <activity-alias#com.example.myapplication.MainActivity>.");
             assertThat(loggingRecordsString).contains(".xml:12:9-20:26 Error");
         } finally {
             assertThat(appFile.delete()).named("appFile was deleted").isTrue();
@@ -2589,23 +2546,23 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testCloneAndTransformUpdate() throws Exception {
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    package=\"com.example.myapplication\">\n"
-                        + "    <uses-sdk\n"
-                        + "        android:minSdkVersion=\"31\"\n"
-                        + "        android:targetSdkVersion=\"31\" />"
-                        + "    <application\n"
-                        + "        android:label=\"@string/app_name\">\n"
-                        + "         <service android:description=\"string resource\"\n"
-                        + "                  android:name=\".MainActivity\">\n"
-                        + "                  <intent-filter>\n"
-                        + "                        <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "                        <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "                  </intent-filter>\n"
-                        + "         </service>\n"
-                        + "    </application>\n"
-                        + "</manifest>";
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.myapplication\">\n"
+                    + "    <uses-sdk\n"
+                    + "        android:minSdkVersion=\"31\"\n"
+                    + "        android:targetSdkVersion=\"31\" />    <application\n"
+                    + "        android:label=\"@string/app_name\">\n"
+                    + "         <service android:description=\"string resource\"\n"
+                    + "                  android:name=\".MainActivity\">\n"
+                    + "                  <intent-filter>\n"
+                    + "                        <action android:name=\"android.intent.action.MAIN\""
+                    + " />\n"
+                    + "                        <category"
+                    + " android:name=\"android.intent.category.LAUNCHER\" />\n"
+                    + "                  </intent-filter>\n"
+                    + "         </service>\n"
+                    + "    </application>\n"
+                    + "</manifest>";
         Pair<Document, Boolean> output =
                 DomMergeUtils.cloneAndTransform(
                         parse(appInput),
@@ -2655,25 +2612,25 @@ public class ManifestMerger2SmallTest {
     public void testAndroidExportedAttributeWithIntentFilterInService() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    package=\"com.example.myapplication\">\n"
-                        + "    <uses-sdk\n"
-                        + "        android:minSdkVersion=\"31\"\n"
-                        + "        android:targetSdkVersion=\"31\" />"
-                        + "    <application\n"
-                        + "        android:label=\"@string/app_name\">\n"
-                        + "         <service android:description=\"string resource\"\n"
-                        + "                  android:name=\".MainActivity\">\n"
-                        + "                  <intent-filter>\n"
-                        + "                        <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                        <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "                  </intent-filter>\n"
-                        + "         </service>\n"
-                        + "    </application>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.myapplication\">\n"
+                    + "    <uses-sdk\n"
+                    + "        android:minSdkVersion=\"31\"\n"
+                    + "        android:targetSdkVersion=\"31\" />    <application\n"
+                    + "        android:label=\"@string/app_name\">\n"
+                    + "         <service android:description=\"string resource\"\n"
+                    + "                  android:name=\".MainActivity\">\n"
+                    + "                  <intent-filter>\n"
+                    + "                        <action android:name=\"android.intent.action.MAIN\""
+                    + " />\n"
+                    + "\n"
+                    + "                        <category"
+                    + " android:name=\"android.intent.category.LAUNCHER\" />\n"
+                    + "                  </intent-filter>\n"
+                    + "         </service>\n"
+                    + "    </application>\n"
+                    + "\n"
+                    + "</manifest>";
         File appFile = TestUtils.inputAsFile("appFile", appInput);
         try {
             MergingReport mergingReport =
@@ -2685,7 +2642,8 @@ public class ManifestMerger2SmallTest {
             String loggingRecordsString = mergingReport.getLoggingRecords().toString();
             assertThat(loggingRecordsString)
                     .contains(
-                            "android:exported needs to be explicitly specified for element <service#com.example.myapplication.MainActivity>.");
+                            "android:exported needs to be explicitly specified for element"
+                                    + " <service#com.example.myapplication.MainActivity>.");
             assertThat(loggingRecordsString).contains(".xml:7:10-14:20 Error");
         } finally {
             assertThat(appFile.delete()).named("appFile was deleted").isTrue();
@@ -2696,25 +2654,25 @@ public class ManifestMerger2SmallTest {
     public void testAndroidExportedAttributeWithIntentFilterInReceiver() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    package=\"com.example.myapplication\">\n"
-                        + "    <uses-sdk\n"
-                        + "        android:minSdkVersion=\"31\"\n"
-                        + "        android:targetSdkVersion=\"31\" />"
-                        + "    <application\n"
-                        + "        android:label=\"@string/app_name\">\n"
-                        + "         <receiver android:directBootAware=\"true\"\n"
-                        + "                  android:name=\".MainActivity\">\n"
-                        + "                  <intent-filter>\n"
-                        + "                        <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                        <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "                  </intent-filter>\n"
-                        + "         </receiver>\n"
-                        + "    </application>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.myapplication\">\n"
+                    + "    <uses-sdk\n"
+                    + "        android:minSdkVersion=\"31\"\n"
+                    + "        android:targetSdkVersion=\"31\" />    <application\n"
+                    + "        android:label=\"@string/app_name\">\n"
+                    + "         <receiver android:directBootAware=\"true\"\n"
+                    + "                  android:name=\".MainActivity\">\n"
+                    + "                  <intent-filter>\n"
+                    + "                        <action android:name=\"android.intent.action.MAIN\""
+                    + " />\n"
+                    + "\n"
+                    + "                        <category"
+                    + " android:name=\"android.intent.category.LAUNCHER\" />\n"
+                    + "                  </intent-filter>\n"
+                    + "         </receiver>\n"
+                    + "    </application>\n"
+                    + "\n"
+                    + "</manifest>";
         File appFile = TestUtils.inputAsFile("appFile", appInput);
         try {
             MergingReport mergingReport =
@@ -2726,7 +2684,8 @@ public class ManifestMerger2SmallTest {
             String loggingRecordsString = mergingReport.getLoggingRecords().toString();
             assertThat(loggingRecordsString)
                     .contains(
-                            "android:exported needs to be explicitly specified for element <receiver#com.example.myapplication.MainActivity>.");
+                            "android:exported needs to be explicitly specified for element"
+                                    + " <receiver#com.example.myapplication.MainActivity>.");
             assertThat(loggingRecordsString).contains(".xml:7:10-14:21 Error");
         } finally {
             assertThat(appFile.delete()).named("appFile was deleted").isTrue();
@@ -2737,61 +2696,62 @@ public class ManifestMerger2SmallTest {
     public void testAndroidExportedAttributeWithIntentFilter2() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                        + "    package=\"com.example.myapplication\">\n"
-                        + "    <uses-sdk\n"
-                        + "        android:minSdkVersion=\"16\"\n"
-                        + "        android:targetSdkVersion=\"31\" />"
-                        + "    <application\n"
-                        + "        android:label=\"@string/app_name\">\n"
-                        + "        <activity\n"
-                        + "            android:name=\".MainActivity\"\n"
-                        + "            android:label=\"@string/app_name\"\n"
-                        + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\"\n"
-                        + "            android:exported=\"true\">\n"
-                        + "            <intent-filter>\n"
-                        + "                <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "        </activity>\n"
-                        + "        <activity\n"
-                        + "            android:name=\".MyActivity\"\n"
-                        + "            android:label=\"@string/app_name\"\n"
-                        + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
-                        + "        </activity>\n"
-                        + "        <activity-alias\n"
-                        + "             android:exported=\"true\""
-                        + "            android:name=\".OtherMainActivity\"\n"
-                        + "            android:targetActivity=\".MyActivity\">\n"
-                        + "            <intent-filter>\n"
-                        + "                <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "        </activity-alias>\n"
-                        + "         <service android:description=\"string resource\"\n"
-                        + "             android:exported=\"true\""
-                        + "             android:name=\".MainActivity\">\n"
-                        + "             <intent-filter>\n"
-                        + "                 <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                 <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "         </service>\n"
-                        + "         <receiver android:directBootAware=\"true\"\n"
-                        + "             android:name=\".MainActivity\">"
-                        + "             <intent-filter tools:node=\"remove\">\n"
-                        + "                 <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                 <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "         </receiver>"
-                        + "    </application>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.myapplication\">\n"
+                    + "    <uses-sdk\n"
+                    + "        android:minSdkVersion=\"16\"\n"
+                    + "        android:targetSdkVersion=\"31\" />    <application\n"
+                    + "        android:label=\"@string/app_name\">\n"
+                    + "        <activity\n"
+                    + "            android:name=\".MainActivity\"\n"
+                    + "            android:label=\"@string/app_name\"\n"
+                    + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\"\n"
+                    + "            android:exported=\"true\">\n"
+                    + "            <intent-filter>\n"
+                    + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "        </activity>\n"
+                    + "        <activity\n"
+                    + "            android:name=\".MyActivity\"\n"
+                    + "            android:label=\"@string/app_name\"\n"
+                    + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
+                    + "        </activity>\n"
+                    + "        <activity-alias\n"
+                    + "             android:exported=\"true\"           "
+                    + " android:name=\".OtherMainActivity\"\n"
+                    + "            android:targetActivity=\".MyActivity\">\n"
+                    + "            <intent-filter>\n"
+                    + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "        </activity-alias>\n"
+                    + "         <service android:description=\"string resource\"\n"
+                    + "             android:exported=\"true\"            "
+                    + " android:name=\".MainActivity\">\n"
+                    + "             <intent-filter>\n"
+                    + "                 <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                 <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "         </service>\n"
+                    + "         <receiver android:directBootAware=\"true\"\n"
+                    + "             android:name=\".MainActivity\">             <intent-filter"
+                    + " tools:node=\"remove\">\n"
+                    + "                 <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                 <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "         </receiver>    </application>\n"
+                    + "\n"
+                    + "</manifest>";
         File appFile = TestUtils.inputAsFile("appFile", appInput);
         try {
             MergingReport mergingReport =
@@ -2810,43 +2770,42 @@ public class ManifestMerger2SmallTest {
     public void testIntentFilterLessThanAndroidS() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    package=\"com.example.myapplication\">\n"
-                        + "    <uses-sdk\n"
-                        + "        android:minSdkVersion=\"16\"\n"
-                        + "        android:targetSdkVersion=\"29\" />"
-                        + "    <application\n"
-                        + "        android:label=\"@string/app_name\">\n"
-                        + "        <activity\n"
-                        + "            android:name=\".MainActivity\"\n"
-                        + "            android:label=\"@string/app_name\"\n"
-                        + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
-                        + "            <intent-filter>\n"
-                        + "                <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "        </activity>\n"
-                        + "         <service android:description=\"string resource\"\n"
-                        + "             android:name=\".MainActivity\">\n"
-                        + "             <intent-filter>\n"
-                        + "                 <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                 <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "         </service>\n"
-                        + "         <receiver android:directBootAware=\"true\"\n"
-                        + "             android:name=\".MainActivity\">"
-                        + "             <intent-filter>\n"
-                        + "                 <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                 <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "         </receiver>"
-                        + "    </application>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.myapplication\">\n"
+                    + "    <uses-sdk\n"
+                    + "        android:minSdkVersion=\"16\"\n"
+                    + "        android:targetSdkVersion=\"29\" />    <application\n"
+                    + "        android:label=\"@string/app_name\">\n"
+                    + "        <activity\n"
+                    + "            android:name=\".MainActivity\"\n"
+                    + "            android:label=\"@string/app_name\"\n"
+                    + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
+                    + "            <intent-filter>\n"
+                    + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "        </activity>\n"
+                    + "         <service android:description=\"string resource\"\n"
+                    + "             android:name=\".MainActivity\">\n"
+                    + "             <intent-filter>\n"
+                    + "                 <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                 <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "         </service>\n"
+                    + "         <receiver android:directBootAware=\"true\"\n"
+                    + "             android:name=\".MainActivity\">             <intent-filter>\n"
+                    + "                 <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                 <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "         </receiver>    </application>\n"
+                    + "\n"
+                    + "</manifest>";
         File appFile = TestUtils.inputAsFile("appFile", appInput);
         try {
             MergingReport mergingReport =
@@ -2863,8 +2822,7 @@ public class ManifestMerger2SmallTest {
     public void testAndroidExportedAttributeNoIntentFilter() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.myapplication\">\n"
                         + "    <uses-sdk\n"
                         + "        android:minSdkVersion=\"31\"\n"
@@ -2909,27 +2867,26 @@ public class ManifestMerger2SmallTest {
     public void testAndroidExportedAttributeWithAPILessThan30() throws Exception {
         MockLog mockLog = new MockLog();
         String appInput =
-                ""
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    package=\"com.example.myapplication\">\n"
-                        + "    <uses-sdk\n"
-                        + "        android:minSdkVersion=\"29\"\n"
-                        + "        android:targetSdkVersion=\"29\" />"
-                        + "    <application\n"
-                        + "        android:label=\"@string/app_name\">\n"
-                        + "        <activity\n"
-                        + "            android:name=\".MainActivity\"\n"
-                        + "            android:label=\"@string/app_name\"\n"
-                        + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
-                        + "            <intent-filter>\n"
-                        + "                <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "\n"
-                        + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "        </activity>\n"
-                        + "    </application>\n"
-                        + "\n"
-                        + "</manifest>";
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.myapplication\">\n"
+                    + "    <uses-sdk\n"
+                    + "        android:minSdkVersion=\"29\"\n"
+                    + "        android:targetSdkVersion=\"29\" />    <application\n"
+                    + "        android:label=\"@string/app_name\">\n"
+                    + "        <activity\n"
+                    + "            android:name=\".MainActivity\"\n"
+                    + "            android:label=\"@string/app_name\"\n"
+                    + "            android:theme=\"@style/Theme.MyApplication.NoActionBar\">\n"
+                    + "            <intent-filter>\n"
+                    + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "\n"
+                    + "                <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "        </activity>\n"
+                    + "    </application>\n"
+                    + "\n"
+                    + "</manifest>";
         File appFile = TestUtils.inputAsFile("appFile", appInput);
         try {
             MergingReport mergingReport =
@@ -2989,8 +2946,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testMergingWithOverlayTags() throws Exception {
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.app1\">\n"
                         + "\n"
@@ -3001,8 +2957,7 @@ public class ManifestMerger2SmallTest {
                         + "</manifest>";
 
         String libInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.lib1\">\n"
                         + "\n"
@@ -3042,8 +2997,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testWrongManifestError() throws Exception {
         String manifestWithBug =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.app1\">\n"
                         + "    <uses-sdk android=\"31\" >\n" // uses-sdk tag is not closed
@@ -3067,16 +3021,14 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testDisableMinSdkLibraryFlag() throws Exception {
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.app1\">\n"
                         + "    <uses-sdk android:minSdkVersion=\"31\" />\n"
                         + "</manifest>";
 
         String libInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.lib1\">\n"
                         + "    <uses-sdk android:minSdkVersion=\"32\" />\n"
@@ -3196,8 +3148,7 @@ public class ManifestMerger2SmallTest {
     @Test
     public void testLocaleConfigIsAddedWhenRequested() throws Exception {
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.app1\">\n"
                         + "    <application/>\n"
@@ -3233,8 +3184,7 @@ public class ManifestMerger2SmallTest {
     // Regression test for b/409968284
     public void testHandlesMajorMinorTargetAPIRepresentation() throws Exception {
         String appInput =
-                ""
-                        + "<manifest\n"
+                "<manifest\n"
                         + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                         + "    package=\"com.example.app1\">\n"
                         + "</manifest>";
