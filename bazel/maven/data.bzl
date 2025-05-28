@@ -885,6 +885,7 @@ DATA = [
     "org.bytedeco:ffmpeg-platform:6.0-1.5.9",
     "org.bytedeco:javacpp-platform:1.5.9",
     "org.codehaus.mojo:animal-sniffer-annotations:1.19",
+    "org.duckdb:duckdb_jdbc:1.3.0.0",
     "org.gradle:gradle-core:4.2.1",
     "org.hamcrest:hamcrest-core:2.2",
     "org.jacoco:org.jacoco.agent:0.7.4.201502262128",  # Keep old Jacoco version for testing.
