@@ -29,7 +29,6 @@ import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.Installation
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestExtension
-import com.android.build.api.variant.Component
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
@@ -66,6 +65,7 @@ import com.android.build.gradle.internal.ide.dependencies.FullDependencyGraphBui
 import com.android.build.gradle.internal.ide.dependencies.GraphEdgeCache
 import com.android.build.gradle.internal.ide.dependencies.LibraryService
 import com.android.build.gradle.internal.ide.dependencies.LibraryServiceImpl
+import com.android.build.gradle.internal.ide.dependencies.ResolvedArtifact
 import com.android.build.gradle.internal.ide.dependencies.getArtifactsForModelBuilder
 import com.android.build.gradle.internal.ide.dependencies.getVariantName
 import com.android.build.gradle.internal.lint.getLocalCustomLintChecksForModel
@@ -125,7 +125,6 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.Project
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentSelector
 import org.gradle.internal.resolve.ModuleVersionResolveException
 import org.gradle.tooling.provider.model.ParameterizedToolingModelBuilder
@@ -223,9 +222,15 @@ class ModelBuilder<
     private fun buildProjectGraphModel(project: Project, parameter: ModelBuilderParameter): ProjectGraph? {
         val variantName = parameter.variantName
         val variant = variantModel.variants.singleOrNull { it.name == variantName } ?: return null
+        val globalLibraryBuildService = getBuildService(
+            project.gradle.sharedServices,
+            GlobalSyncService::class.java
+        ).get()
+
+        val libraryService = LibraryServiceImpl(globalLibraryBuildService.libraryCache)
 
         return ProjectGraphImpl(
-            resolvedVariants = (variant.variantDependencies.getArtifactCollectionForToolingModel(
+            resolvedVariantsWithProjectInfo = (variant.variantDependencies.getArtifactCollectionForToolingModel(
                 RUNTIME_CLASSPATH, AndroidArtifacts.ArtifactScope.PROJECT, AndroidArtifacts.ArtifactType.JAR
             ) {
                 // Make a copy of the runtime classpath configuration and replace all non-project
@@ -241,10 +246,23 @@ class ModelBuilder<
                 }
             }).artifacts.associateNotNull {
                 // Requesting artifacts because asking for the resolution root is more expensive
-                val resolvedVariantResult = it.variant
-                val projectPath =  (resolvedVariantResult.owner as? ProjectComponentIdentifier)?.projectPath ?: return@associateNotNull null
-                val resolvedVariantName = resolvedVariantResult.attributes.getAttribute(VariantAttr.ATTRIBUTE)?.name ?: return@associateNotNull null
-                projectPath to resolvedVariantName
+                val resolvedVariantName = it.variant.attributes.getAttribute(VariantAttr.ATTRIBUTE)?.name
+                    ?: return@associateNotNull null
+                // At this point we know this is an Android project because of the variant attribute
+                val resolvedArtifact = ResolvedArtifact(
+                    mainArtifactResult = it,
+                    artifactFile = it.file,
+                    extractedFolder = null,
+                    publishedLintJar = null,
+                    dependencyType = ResolvedArtifact.DependencyType.ANDROID,
+                    isWrappedModule = false,
+                )
+                // Note: Additional artifacts shouldn't be relevant to this query as everything
+                // will be subprojects, not published libraries.
+                // Note: This must be a project info at this point, but being lenient just in case it's not.
+                libraryService.getLibrary(resolvedArtifact, AdditionalArtifacts.EMPTY).projectInfo?.let {
+                    it to resolvedVariantName
+                }
             }
         )
     }
@@ -269,7 +287,7 @@ class ModelBuilder<
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(14, 0, humanReadable = "Android Gradle Plugin 8.11")
+        val modelProducer = VersionImpl(15, 0, humanReadable = "Android Gradle Plugin 8.12")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.

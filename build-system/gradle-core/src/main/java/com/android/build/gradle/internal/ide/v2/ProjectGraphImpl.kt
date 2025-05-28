@@ -16,13 +16,17 @@
 
 package com.android.build.gradle.internal.ide.v2
 
+import com.android.builder.model.v2.ide.ProjectInfo
 import com.android.builder.model.v2.models.ProjectGraph
 import java.io.Serializable
 
-data class ProjectGraphImpl(override val resolvedVariants: Map<String, String>)
-    : ProjectGraph, Serializable {
+data class ProjectGraphImpl(
+    @Deprecated("Model with missing data. Use resolvedVariantsWithProjectInfo")
+    override val resolvedVariants: Map<String, String>? = null,
+    override val resolvedVariantsWithProjectInfo: Map<ProjectInfo, String>
+): ProjectGraph, Serializable {
     companion object {
         @JvmStatic
-        private val serialVersionUID: Long = 1L
+        private val serialVersionUID: Long = 2L
     }
 }

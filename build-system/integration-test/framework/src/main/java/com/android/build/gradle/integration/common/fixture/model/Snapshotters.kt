@@ -549,7 +549,15 @@ private fun ModelSnapshotter<LintOptions>.snapshotLintOptions() {
 }
 
 internal fun ModelSnapshotter<ProjectGraph>.snapshotProjectGraph() {
-    item("resolvedVariants", ProjectGraph::resolvedVariants)
+    objectList(
+        name = "variant",
+        propertyAction = { resolvedVariantsWithProjectInfo?.entries },
+        nameAction = { this.value.toString() },
+    ) { this
+        dataObject("projectInfo", { it.key } ) {
+            snapshotProjectInfo()
+        }
+    }
 }
 
 

@@ -22,4 +22,8 @@ import java.io.File
 /**
  * Data class containing javadoc, source and sample source locations of a given [Library].
  */
-data class AdditionalArtifacts(val javadoc: File?, val sources: List<File>)
+data class AdditionalArtifacts(val javadoc: File?, val sources: List<File>) {
+    companion object {
+        val EMPTY = AdditionalArtifacts(javadoc = null, emptyList())
+    }
+}
