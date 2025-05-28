@@ -25,8 +25,10 @@ import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityPropertie
 import com.android.adblib.ddmlibcompatibility.debugging.ProcessTrackerHost.ClientUpdateKind
 import com.android.adblib.property
 import com.android.adblib.scope
-import com.android.adblib.serialNumber
 import com.android.adblib.tools.debugging.isTrackAppSupported
+import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.waitForDevice
+import com.android.adblib.waitUntilOnline
 import com.android.adblib.withPrefix
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.Client
@@ -39,8 +41,6 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
@@ -85,10 +85,6 @@ internal class AdbLibDeviceClientManager(
 
     fun startDeviceTracking() {
         session.scope.launch {
-            ddmlibEventQueue.runDispatcher()
-        }
-
-        session.scope.launch {
             // Wait for the device to show in the list of tracked devices
             val connectedDevice = withTimeoutOrNull(session.property(DEVICE_TRACKER_WAIT_TIMEOUT).toMillis()) {
                 waitForConnectedDevice(iDevice.serialNumber)
@@ -98,26 +94,29 @@ internal class AdbLibDeviceClientManager(
                 throw CancellationException(msg)
             }
 
-            waitForDeviceOnline(connectedDevice)
+            // Track processes in the device scope to ensure prompt cancellation when
+            // the device is disconnected
+            connectedDevice.scope.launch {
+                runCatching {
+                    launch {
+                        ddmlibEventQueue.runDispatcher()
+                    }
 
-            // Track processes running on the device
-            startProcessTracking(connectedDevice)
+                    connectedDevice.waitUntilOnline()
+
+                    // Track processes running on the device
+                    startProcessTracking(connectedDevice)
+                }.onFailure { throwable ->
+                    logger.logIOCompletionErrors(throwable)
+                }
+            }
         }
     }
 
     private suspend fun waitForConnectedDevice(serialNumber: String): ConnectedDevice {
         logger.debug { "Waiting for device '$serialNumber' to show up in device tracker" }
-        return session.connectedDevicesTracker.connectedDevices
-            .mapNotNull { connectedDevices ->
-                connectedDevices.firstOrNull { device -> device.serialNumber == serialNumber }
-            }.first().also {
-                logger.debug { "Found device '$serialNumber' ($it) in device tracker" }
-            }
-    }
-
-    private suspend fun waitForDeviceOnline(connectedDevice: ConnectedDevice) {
-        connectedDevice.deviceInfoFlow.first { deviceInfo ->
-            deviceInfo.deviceState == com.android.adblib.DeviceState.ONLINE
+        return session.connectedDevicesTracker.waitForDevice(serialNumber).also {
+            logger.debug { "Found device '$serialNumber' ($it) in device tracker" }
         }
     }
 
