@@ -25,7 +25,8 @@ import java.net.URL
 enum class WFFVersion(val version: String) {
     WFFVersion1("1"),
     WFFVersion2("2"),
-    WFFVersion3("3");
+    WFFVersion3("3"),
+    WFFVersion4("4");
 
     val schemaUrl: URL =
         checkNotNull(this::class.java.getResource("/specification/documents/$version/watchface.xsd"))
