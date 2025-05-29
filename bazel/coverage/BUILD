@@ -1188,7 +1188,7 @@ coverage_report(
         "//tools/base/pixelprobe:studio.android.sdktools.pixelprobe_tests",
         "//tools/base/profiler/tests/perf-test:NativeBinarySizeTest",
         "//tools/base/repository:studio.android.sdktools.repository_tests",
-        "//tools/base/repository:tools.tests",
+        "//tools/base/repository:tools.tests.test",
         "//tools/base/resource-repository:studio.android.sdktools.resource-repository_tests",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common_tests",
         "//tools/base/sdk-common:tools.tests.test",
