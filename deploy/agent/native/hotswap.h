@@ -30,6 +30,9 @@
 
 namespace deploy {
 
+jvmtiExtensionFunction GetExtensionFunctionVoid(JNIEnv* env, jvmtiEnv* jvmti,
+                                                const std::string& name);
+
 struct SwapResult {
   enum Status {
     SUCCESS,

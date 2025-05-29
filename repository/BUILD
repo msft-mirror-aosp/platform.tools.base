@@ -1,8 +1,7 @@
-load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 load("//tools/base/bazel:utils.bzl", "fileset")
@@ -76,6 +75,7 @@ kotlin_library(
         "@maven//:org.apache.commons.commons-compress",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
@@ -107,13 +107,17 @@ maven_library(
         "@maven//:org.apache.commons.commons-compress",
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
-java_library(
+kotlin_library(
     name = "tools.testlib",
     # buildifier: disable=bad-recursive-glob
-    srcs = glob(["src/testFixtures/java/**/*.java"]),
+    srcs = glob([
+        "src/testFixtures/java/**/*.java",
+        "src/testFixtures/java/**/*.kt",
+    ]),
     visibility = ["//visibility:public"],  # contains com.android.repository.testframework
     deps = [
         ":tools.repository",
@@ -121,15 +125,23 @@ java_library(
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.jimfs.jimfs",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
-coverage_java_test(
+kotlin_test(
     name = "tools.tests",
     # buildifier: disable=bad-recursive-glob
-    srcs = glob(["src/test/java/**/*.java"]),
+    srcs = glob([
+        "src/test/java/**/*.java",
+        "src/test/java/**/*.kt",
+    ]),
     add_opens = [
         "java.base/java.nio.charset",
+    ],
+    friends = [
+        ":tools.repository",
+        ":tools.testlib",
     ],
     jvm_flags = ["-Dtest.suite.jar=tools.tests.jar"],
     resources = glob(["src/test/resources/**"]),
@@ -146,6 +158,7 @@ coverage_java_test(
         "@maven//:jakarta.xml.bind.jakarta.xml.bind-api",
         "@maven//:junit.junit",
         "@maven//:org.apache.commons.commons-compress",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.mockito-core",
     ],
 )

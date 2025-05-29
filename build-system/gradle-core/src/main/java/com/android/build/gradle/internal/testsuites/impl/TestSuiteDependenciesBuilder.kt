@@ -117,8 +117,9 @@ class TestSuiteDependenciesBuilder internal constructor(
         addAttributes(runtimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
 
         return TestSuiteClasspath(
-            compileClasspath,
-            runtimeClasspath
+            compileClasspath = compileClasspath,
+            runtimeClasspath = runtimeClasspath,
+            objectFactory = project.objects
         )
     }
 

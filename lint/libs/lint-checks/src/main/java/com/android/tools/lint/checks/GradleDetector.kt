@@ -1796,6 +1796,10 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       report(context, cookie, BUNDLED_GMS, message)
     }
 
+    if (GMS_GROUP_ID == groupId && artifactId == "play-services-instantapps") {
+      report(context, statementCookie, INSTANT_APP_DEPRECATION, INSTANT_DEPRECATION_MESSAGE, null)
+    }
+
     if (GMS_GROUP_ID == groupId && "play-services-appindexing" == artifactId) {
       val message =
         "Deprecated: Replace '" +
@@ -3253,6 +3257,11 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     var reservedQuickfixNames: MutableMap<String, MutableSet<String>>? = null
     val reservedQuickfixNamesLock: Any = Object()
 
+    val INSTANT_DEPRECATION_MESSAGE =
+      "Instant Apps support will be removed by Google Play in December 2025. " +
+        "Publishing and all Google Play Instant APIs will no longer work. " +
+        "Tooling support will be removed in Android Studio Otter Feature Drop."
+
     /** targetSdkVersion about to expire */
     @JvmField
     val EXPIRING_TARGET_SDK_VERSION =
@@ -3399,6 +3408,20 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         androidSpecific = true,
         implementation = IMPLEMENTATION_WITH_TOML,
         moreInfo = GOOGLE_PLAY_SDK_INDEX_URL,
+      )
+
+    /** Having instant application. */
+    @JvmField
+    val INSTANT_APP_DEPRECATION =
+      Issue.create(
+        id = "InstantAppDeprecation",
+        briefDescription = "Instant App Deprecation",
+        explanation = INSTANT_DEPRECATION_MESSAGE,
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION_WITH_TOML,
       )
 
     /** Using data binding with Kotlin but not Kotlin annotation processing. */

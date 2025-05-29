@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
@@ -164,7 +165,7 @@ class AdbServerControllerImplTest {
             exceptionRule.expect(IOException::class.java)
 
             // Act
-            // Give `start` an opportunity to being executing, and make sure that it completes
+            // Give `start` an opportunity to begin execution, and make sure that it completes
             // with expected exception.
             delay(100)
             processRunner.delayByMs = 0
@@ -207,7 +208,7 @@ class AdbServerControllerImplTest {
             exceptionRule.expect(IOException::class.java)
 
             // Act
-            // Give `stop` an opportunity to being executing, and make sure that it completes
+            // Give `stop` an opportunity to begin execution, and make sure that it completes
             // with expected exception.
             delay(100)
             processRunner.delayByMs = 0
@@ -217,6 +218,52 @@ class AdbServerControllerImplTest {
 
             // Assert
             fail("Should not reach")
+        }
+
+    @Test
+    fun testRestartThrowsIOException_whenItIsPreemptedByStop(): Unit =
+        runBlockingWithTimeout {
+            // This test makes sure `restart` throws an `IOException` and not a
+            // `CancellationException` when its `job` is cancelled by a call to `stop`.
+
+            // Prepare
+            val controller =
+                registerCloseable(
+                    AdbServerControllerImpl(
+                        host,
+                        configFlow
+                    )
+                )
+            configFlow.update {
+                it.copy(
+                    adbPath = ADB_FILE_PATH,
+                    serverPort = fakeAdb.port,
+                    isUnitTest = false
+                )
+            }
+            controller.start()
+
+            supervisorScope {
+                // Make sure restart() takes some time to run, so that we could interrupt it by a `stop()`
+                val restartResult = async {
+                    processRunner.delayByMs = 5000
+                    controller.restart()
+                }
+
+                // Act
+                // Give `restart` an opportunity to begin execution, and make sure that it completes
+                // with expected exception.
+                delay(100)
+                processRunner.delayByMs = 0
+                controller.stop()
+
+                // `restartResult` should throw
+                exceptionRule.expect(IOException::class.java)
+                restartResult.await()
+
+                // Assert
+                fail("Should not reach")
+            }
         }
 
     @Test

@@ -29,7 +29,7 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import javax.inject.Inject
 
-internal class TestSuiteBuilderImpl @Inject internal constructor(
+internal open class TestSuiteBuilderImpl @Inject internal constructor(
     objects: ObjectFactory,
     private val _name: String,
     override var enable: Boolean,

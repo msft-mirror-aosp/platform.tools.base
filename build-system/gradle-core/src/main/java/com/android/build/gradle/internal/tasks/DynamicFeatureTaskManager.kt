@@ -17,13 +17,11 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.build.api.variant.DynamicFeatureVariantBuilder
-import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.AbstractAppTaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportFeatureInfoTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
@@ -39,7 +37,6 @@ internal class DynamicFeatureTaskManager(
     testFixturesComponents: Collection<TestFixturesCreationConfig>,
     globalConfig: GlobalTaskCreationConfig,
     localConfig: TaskManagerConfig,
-    extension: BaseExtension,
 ) : AbstractAppTaskManager<DynamicFeatureVariantBuilder, DynamicFeatureCreationConfig>(
     project,
     variants,
@@ -47,7 +44,6 @@ internal class DynamicFeatureTaskManager(
     testFixturesComponents,
     globalConfig,
     localConfig,
-    extension,
 ) {
 
     override fun doCreateTasksForVariant(

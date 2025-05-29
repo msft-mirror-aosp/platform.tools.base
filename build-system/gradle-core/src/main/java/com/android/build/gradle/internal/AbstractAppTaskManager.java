@@ -21,14 +21,12 @@ import static com.android.build.gradle.internal.services.BuildServicesKt.getBuil
 import com.android.annotations.NonNull;
 import com.android.build.api.artifact.impl.InternalScopedArtifacts;
 import com.android.build.api.variant.VariantBuilder;
-import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.component.ApkCreationConfig;
 import com.android.build.gradle.internal.component.ApplicationCreationConfig;
 import com.android.build.gradle.internal.component.ComponentCreationConfig;
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.component.VariantCreationConfig;
 import com.android.build.gradle.internal.feature.BundleAllClasses;
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService;
@@ -78,16 +76,14 @@ public abstract class AbstractAppTaskManager<
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
             @NonNull GlobalTaskCreationConfig globalConfig,
-            @NonNull TaskManagerConfig localConfig,
-            @NonNull BaseExtension extension) {
+            @NonNull TaskManagerConfig localConfig) {
         super(
                 project,
                 variants,
                 testComponents,
                 testFixturesComponents,
                 globalConfig,
-                localConfig,
-                extension);
+                localConfig);
     }
 
     protected void createCommonTasks(@NonNull ComponentInfo<VariantBuilderT, VariantT> variant) {

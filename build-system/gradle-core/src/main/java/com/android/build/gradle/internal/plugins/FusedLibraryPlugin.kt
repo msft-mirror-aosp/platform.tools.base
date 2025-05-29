@@ -144,7 +144,7 @@ class FusedLibraryPlugin @Inject constructor(
                 .getArtifactContainer(FusedLibraryInternalArtifactType.BUNDLED_LIBRARY)
                 .getFinalProvider()
 
-        val runtimePublication = project.configurations.create("runtimePublication").also {
+        val runtimePublication = project.configurations.register("runtimePublication") {
             it.isCanBeConsumed = false
             it.isCanBeResolved = false
             it.isVisible = false
@@ -184,7 +184,7 @@ class FusedLibraryPlugin @Inject constructor(
         // add it to the list of components that this project declares
         project.components.add(adhocComponent)
 
-        adhocComponent.addVariantsFromConfiguration(runtimePublication) {
+        adhocComponent.addVariantsFromConfiguration(runtimePublication.get()) {
             it.mapToMavenScope("runtime")
         }
 
@@ -284,7 +284,7 @@ class FusedLibraryPlugin @Inject constructor(
 
         // 'include' is the configuration that users will use to indicate which dependencies should
         // be fused.
-        val include = project.configurations.create(FusedLibraryConstants.INCLUDE_CONFIGURATION_NAME).also { include ->
+        val include = project.configurations.register(FusedLibraryConstants.INCLUDE_CONFIGURATION_NAME) { include ->
             include.description =
                 "Used for declaring dependencies that should be packaged in the fused artifact."
             include.isCanBeConsumed = false
@@ -301,8 +301,7 @@ class FusedLibraryPlugin @Inject constructor(
         // be extended or resolved from other configurations. It is only used to ensure consistent
         // version resolution of non-transitive dependencies.
         fun getIncludeTransitiveResolved(name: String, usage: String): Configuration =
-            project.configurations.create(name)
-                .also { includePlatform ->
+            project.configurations.register(name) { includePlatform ->
                     includePlatform.description =
                         "Used for resolving transitive dependency version constraints of include dependencies."
                     includePlatform.isCanBeDeclared = false
@@ -319,8 +318,8 @@ class FusedLibraryPlugin @Inject constructor(
                         Usage.USAGE_ATTRIBUTE,
                         project.objects.named(Usage::class.java, usage)
                     )
-                    includePlatform.extendsFrom(include)
-                }
+                    includePlatform.extendsFrom(include.get())
+                }.get()
 
         val includeTransitiveApiResolved = getIncludeTransitiveResolved("includeTransitiveResolvedApi",Usage.JAVA_API)
         val includeTransitiveRuntimeResolved = getIncludeTransitiveResolved("includeTransitiveResolvedRuntime", Usage.JAVA_RUNTIME)
@@ -328,8 +327,7 @@ class FusedLibraryPlugin @Inject constructor(
         // This is the internal configuration that will be used to feed tasks that require access
         // to the resolved 'include' dependency.
         val fusedApi =
-            project.configurations.create(FusedLibraryConstants.FUSED_API_CONFIGURATION_NAME)
-                .also { apiClasspath ->
+            project.configurations.register(FusedLibraryConstants.FUSED_API_CONFIGURATION_NAME) { apiClasspath ->
                 apiClasspath.isCanBeConsumed = false
                 apiClasspath.isCanBeResolved = true
                 apiClasspath.isTransitive = false
@@ -345,14 +343,13 @@ class FusedLibraryPlugin @Inject constructor(
                     buildType,
                 )
                 apiClasspath.shouldResolveConsistentlyWith(includeTransitiveApiResolved)
-                apiClasspath.extendsFrom(include)
+                apiClasspath.extendsFrom(include.get())
             }
 
         // This is the internal configuration that will be used to feed tasks that require access
         // to the resolved 'include' dependency.
         val fusedRuntime =
-            project.configurations.create(FusedLibraryConstants.FUSED_RUNTIME_CONFIGURATION_NAME)
-                .also { runtimeClasspath ->
+            project.configurations.register(FusedLibraryConstants.FUSED_RUNTIME_CONFIGURATION_NAME) { runtimeClasspath ->
                 runtimeClasspath.isCanBeConsumed = false
                 runtimeClasspath.isCanBeResolved = true
                 runtimeClasspath.isTransitive = false
@@ -368,7 +365,7 @@ class FusedLibraryPlugin @Inject constructor(
                     buildType,
                 )
                 runtimeClasspath.shouldResolveConsistentlyWith(includeTransitiveRuntimeResolved)
-                runtimeClasspath.extendsFrom(include)
+                runtimeClasspath.extendsFrom(include.get())
             }
 
         if (projectServices.projectOptions[BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE]) {
@@ -385,7 +382,7 @@ class FusedLibraryPlugin @Inject constructor(
         } else {
             // This is the configuration that will contain all the JAVA_RUNTIME dependencies that are
             // not fused in the resulting aar library.
-            project.configurations.create("runtimeElements") { runtimeElements ->
+            project.configurations.register("runtimeElements") { runtimeElements ->
 
                 configureElements(
                     project,
@@ -397,11 +394,11 @@ class FusedLibraryPlugin @Inject constructor(
                                 AndroidArtifacts.ArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME
                     )
                 )
-                runtimeElements.extendsFrom(include)
+                runtimeElements.extendsFrom(include.get())
             }
         }
 
-        val resolvableConfigurations = listOf(fusedApi, fusedRuntime)
+        val resolvableConfigurations = listOf(fusedApi.get(), fusedRuntime.get())
         variantScope.incomingConfigurations.addAll(resolvableConfigurations)
 
         val dependenciesModuleVersionIds =

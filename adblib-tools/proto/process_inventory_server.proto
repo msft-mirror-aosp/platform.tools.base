@@ -226,7 +226,7 @@ message OptionalInt32 {
     bool has_value = 1;
     bool is_error = 2;
     optional string error_message = 3;
-    optional int32 in32_value = 4;
+    optional int32 int32_value = 4;
 }
 
 message OptionalStringList {

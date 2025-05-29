@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.integration.testing.suites
 
-import com.android.build.api.component.analytics.AnalyticsEnabledApplicationVariant
-import com.android.build.api.component.analytics.AnalyticsEnabledApplicationVariantBuilder
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
@@ -76,7 +74,7 @@ class MyAppCallback: ApplicationComponentCallback {
         }
 
         androidComponents.beforeVariants(androidComponents.selector().withBuildType("debug")) { variantBuilder ->
-            val testSuitesBuilder = (variantBuilder as AnalyticsEnabledApplicationVariantBuilder).delegate as HasTestSuitesBuilder
+            val testSuitesBuilder = variantBuilder as HasTestSuitesBuilder
             val listOfTestSuites = testSuitesBuilder.suites.values.joinToString { it.name }
             if (testSuitesBuilder.suites.size != 1) {
                 throw RuntimeException("Expected 1 testSuites Tests, got $listOfTestSuites")
@@ -96,7 +94,7 @@ class MyAppCallback: ApplicationComponentCallback {
 
         }
         androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
-            val testSuites = (variant as AnalyticsEnabledApplicationVariant).delegate as HasTestSuites
+            val testSuites = variant as HasTestSuites
             val firstTestSuite = testSuites.suites["first"]
                 ?: throw RuntimeException(
                     "Cannot find first test suite in test suites : " +
@@ -110,7 +108,7 @@ class MyAppCallback: ApplicationComponentCallback {
         }
 
         androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
-            val testSuites = (variant as AnalyticsEnabledApplicationVariant).delegate as HasTestSuites
+            val testSuites = variant as HasTestSuites
             val firstTestSuite = testSuites.suites["first"]
                 ?: throw RuntimeException(
                     "Cannot find first test suite in test suites : " +

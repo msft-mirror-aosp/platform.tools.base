@@ -38,6 +38,7 @@ using std::string;
 namespace {
 
 const char* const kSimpleperfExecutable = "simpleperf";
+const char* const kSystemSimpleperfExecutable = "/system/bin/simpleperf";
 
 }  // namespace
 
@@ -210,8 +211,14 @@ string Simpleperf::GetFeatures(const string& abi_arch) const {
 
 string Simpleperf::GetSimpleperfPath(const string& abi_arch) const {
   ostringstream path;
-  path << simpleperf_dir_;
-  path << kSimpleperfExecutable << "_" << abi_arch;
+  bool run_sideload_simpleperf = feature_level_ < DeviceInfo::Q;
+  if (run_sideload_simpleperf) {
+    path << simpleperf_dir_;
+    path << kSimpleperfExecutable << "_" << abi_arch;
+  } else {
+    path << kSystemSimpleperfExecutable;
+  }
+
   return path.str();
 }
 

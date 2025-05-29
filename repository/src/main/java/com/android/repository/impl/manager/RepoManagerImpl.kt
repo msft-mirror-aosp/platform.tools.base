@@ -17,7 +17,6 @@ package com.android.repository.impl.manager
 
 import com.android.annotations.concurrency.GuardedBy
 import com.android.annotations.concurrency.Slow
-import com.android.repository.api.ConsoleProgressIndicator
 import com.android.repository.api.Downloader
 import com.android.repository.api.FallbackLocalRepoLoader
 import com.android.repository.api.FallbackRemoteRepoLoader
@@ -41,7 +40,7 @@ import java.time.Instant
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.CountDownLatch
+import kotlinx.coroutines.CompletableDeferred
 import org.w3c.dom.ls.LSResourceResolver
 
 /**
@@ -255,7 +254,7 @@ internal constructor(
     val onError = onError ?: emptyList()
 
     // So we can block until complete in the synchronous case.
-    val completed = CountDownLatch(1)
+    val isComplete = CompletableDeferred<Unit>()
 
     // If we created the currently running task, we need to clean it up at the end.
     val createNewTask: Boolean
@@ -266,22 +265,19 @@ internal constructor(
       createNewTask = currentTask == null
       if (createNewTask) {
         task = LoadTask(cacheExpirationMs, downloader, settings)
-        task.addCallbacks(onLocalComplete, onSuccess, onError, null)
+        task.addCallbacks(onLocalComplete, onSuccess, onError)
         this.task = task
         taskCreateTime = Clock.systemUTC().instant()
       } else {
         task = currentTask
         // If there's a task running already, just add our callbacks to it.
-        task.addCallbacks(onLocalComplete, onSuccess, onError, runner)
+        task.addCallbacks(onLocalComplete, onSuccess, onError)
         if (sync) {
           // If we're running synchronously, signal completion after the run completes.
-          // Use a fake runner to ensure we don't try to run on a different thread and
-          // then block trying to release the latch.
           task.addCallbacks(
             onLocalComplete = emptyList(),
-            onSuccess = listOf(RepoLoadedListener { completed.countDown() }),
-            onError = listOf(Runnable { completed.countDown() }),
-            runner = DirectProgressRunner(ConsoleProgressIndicator()),
+            onSuccess = listOf(RepoLoadedListener { isComplete.complete(Unit) }),
+            onError = listOf(Runnable { isComplete.complete(Unit) }),
           )
         }
       }
@@ -295,16 +291,8 @@ internal constructor(
         runner.runAsyncWithProgress(task)
       }
     } else if (sync) {
-      // Otherwise wait for the callback to complete if we're running synchronously.
-      runner.runSyncWithProgress(
-        ProgressRunnable { _, _ ->
-          try {
-            completed.await()
-          } catch (_: InterruptedException) {
-            /* shouldn't happen*/
-          }
-        }
-      )
+      // Wait for the task to complete if we're running synchronously.
+      runner.runSyncWithProgress { _, _ -> isComplete.await() }
     }
   }
 
@@ -357,25 +345,12 @@ internal constructor(
     private val downloader: Downloader?,
     private val settings: SettingsController?,
   ) : ProgressRunnable {
-    @GuardedBy("taskLock") private val onSuccesses = mutableListOf<Callback>()
+    @GuardedBy("taskLock") private val onSuccesses = mutableListOf<RepoLoadedListener>()
     @GuardedBy("taskLock") private val onErrors = mutableListOf<Runnable>()
     // Must be synchronized since new elements can be added while the task is still in progress
     // (that is, before task is set to null).
-    private val onLocalCompletes: Queue<Callback> = ConcurrentLinkedQueue<Callback>()
-
-    /**
-     * If callbacks get added to an already-running task, they might have a different
-     * [ProgressRunner] than the one used to run the task. Here we keep the callback along with the
-     * runner so the callback can be invoked correctly.
-     */
-    private inner class Callback(
-      val callback: RepoLoadedListener,
-      private val runner: ProgressRunner?,
-    ) {
-      fun getRunner(defaultRunner: ProgressRunner): ProgressRunner {
-        return runner ?: defaultRunner
-      }
-    }
+    private val onLocalCompletes: Queue<RepoLoadedListener> =
+      ConcurrentLinkedQueue<RepoLoadedListener>()
 
     /**
      * Add callbacks to this task (if e.g. [.load] is called again while a task is already running).
@@ -384,13 +359,12 @@ internal constructor(
       onLocalComplete: List<RepoLoadedListener>,
       onSuccess: List<RepoLoadedListener>,
       onError: List<Runnable>,
-      runner: ProgressRunner?,
     ) {
       for (local in onLocalComplete) {
-        onLocalCompletes.add(Callback(local, runner))
+        onLocalCompletes.add(local)
       }
       for (success in onSuccess) {
-        onSuccesses.add(Callback(success, runner))
+        onSuccesses.add(success)
       }
       onErrors.addAll(onError)
     }
@@ -401,7 +375,7 @@ internal constructor(
      * @param indicator [ProgressIndicator] for logging and showing actual progress
      * @param runner [ProgressRunner] for running asynchronous tasks and callbacks.
      */
-    override fun run(indicator: ProgressIndicator, runner: ProgressRunner) {
+    override suspend fun run(indicator: ProgressIndicator, runner: ProgressRunner) {
       var success = false
       var localSuccess = false
       val wasIndeterminate = indicator.isIndeterminate()
@@ -434,12 +408,11 @@ internal constructor(
 
         // Access using the synchronized queue interface so we don't have to worry about
         // more elements getting added while we're in the middle of processing.
-        var onLocalComplete = onLocalCompletes.poll()
-        while (onLocalComplete != null) {
-          onLocalComplete
-            .getRunner(runner)
-            .runSyncWithoutProgress(CallbackRunnable(onLocalComplete.callback, packages))
-          onLocalComplete = onLocalCompletes.poll()
+        while (true) {
+          when (val onLocalComplete = onLocalCompletes.poll()) {
+            null -> break
+            else -> onLocalComplete.loaded(packages)
+          }
         }
         indicator.setText("Fetch remote repository...")
         indicator.setSecondaryText("")
@@ -476,7 +449,7 @@ internal constructor(
         success = true
       } finally {
         indicator.setIndeterminate(wasIndeterminate)
-        val onSuccesses: List<Callback>
+        val onSuccesses: List<RepoLoadedListener>
         val onErrors: List<Runnable>
         synchronized(taskLock) {
           // The processing of the task is now complete.
@@ -495,16 +468,12 @@ internal constructor(
         // in case some were added by another call in the interim.
         if (localSuccess) {
           for (onLocalComplete in onLocalCompletes) {
-            onLocalComplete
-              .getRunner(runner)
-              .runSyncWithoutProgress(CallbackRunnable(onLocalComplete.callback, packages))
+            onLocalComplete.loaded(packages)
           }
         }
         if (success) {
           for (onSuccess in onSuccesses) {
-            onSuccess
-              .getRunner(runner)
-              .runSyncWithoutProgress(CallbackRunnable(onSuccess.callback, packages))
+            onSuccess.loaded(packages)
           }
         } else {
           for (onError in onErrors) {
@@ -536,16 +505,6 @@ internal constructor(
   private inner class RemoteRepoLoaderFactoryImpl : RemoteRepoLoaderFactory {
     override fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader =
       RemoteRepoLoaderImpl(sourceProviders, fallbackRemoteRepoLoader)
-  }
-
-  /** A [Runnable] that wraps a [RepoLoadedListener] and calls it with the appropriate args. */
-  private class CallbackRunnable(
-    var callback: RepoLoadedListener,
-    var packages: RepositoryPackages,
-  ) : Runnable {
-    override fun run() {
-      callback.loaded(packages)
-    }
   }
 
   companion object {

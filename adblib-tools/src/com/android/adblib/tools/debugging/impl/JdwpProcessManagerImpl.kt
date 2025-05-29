@@ -18,9 +18,10 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.ProcessIdList
 import com.android.adblib.adbLogger
 import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.getOrPutSynchronized
+import com.android.adblib.emptyProcessIdList
 import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
@@ -28,10 +29,11 @@ import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_MANAGER_REFRESH_DELAY
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
 import com.android.adblib.tools.debugging.CustomJdwpProxySocketServerProvider
+import com.android.adblib.tools.debugging.JdwpProcessIdList
 import com.android.adblib.tools.debugging.JdwpProxySocketServer
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.SharedJdwpSession
-import com.android.adblib.tools.debugging.impl.JdwpProcessManagerImpl.Companion.JdwpProcessIdsFlowEntry.Companion.StartOfFlow
+import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.isTrackAppSupported
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.scope
@@ -55,7 +57,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -88,6 +89,11 @@ internal class JdwpProcessManagerImpl(
         }
 
     /**
+     * Helper class to track process IDs for the given [device]
+     */
+    private val jdwpProcessIdTracker = JdwpProcessIdTracker(device)
+
+    /**
      * Lock for [jdwpProcessMap]
      */
     private val lock = Any()
@@ -110,8 +116,8 @@ internal class JdwpProcessManagerImpl(
     /**
      * The flow of process ids as tracked by the [processIdsStateFlowUpdaterJob] job
      */
-    private val processIdsStateFlow: StateFlow<JdwpProcessIdsFlowEntry>
-        get() = device.jdwpProcessIdStateFlow
+    private val processIdsStateFlow: StateFlow<JdwpProcessIdList>
+        get() = jdwpProcessIdTracker.processIdsStateFlow
 
     /**
      * Starts a [Job] to track the list of active JDWP process ids and call [setActiveProcessIds]
@@ -121,16 +127,16 @@ internal class JdwpProcessManagerImpl(
         scope.launch {
             runCatching {
                 JobTracker(this).use { jobTracker ->
-                    device.jdwpProcessIdStateFlow.filter { entry ->
+                    jdwpProcessIdTracker.processIdsStateFlow.filter { processIds ->
                         // Skip the very first value of the flow, because it is always empty
                         // and does not reflect the "current" list of active process IDs.
-                        !entry.isStartOfFlow
-                    }.collect { entry ->
+                        !processIds.flowStatus.isStartOfFlow
+                    }.collect { processIds ->
                         jobTracker.cancelPreviousAndLaunch {
                             // Delay for a little bit so that we get cancelled if another
                             // set of process IDs is emitted in the meantime.
                             delay(jdwpProcessMapRefreshDelay.toMillis())
-                            setActiveProcessIds(entry.processIds)
+                            setActiveProcessIds(processIds.toSet())
                         }
                     }
                 }
@@ -170,7 +176,7 @@ internal class JdwpProcessManagerImpl(
             // Update our map given the process IDs we received as parameter
             jdwpProcessMap.addProcesses(processIds)
             processIds.map { pid ->
-                jdwpProcessMap.getProcessOrNull(pid)?: run {
+                jdwpProcessMap.getProcessOrNull(pid) ?: run {
                     // A `null` result should never happen, given we called `addProcesses` above
                     throwProcessNotFoundInternalError(pid)
                 }
@@ -194,7 +200,7 @@ internal class JdwpProcessManagerImpl(
 
         // Wait until the PID shows up (it may never succeed if the process has already
         // exited, that's fine, the caller will cancel this coroutine if that is the case
-        val processIds = processIdsStateFlow.first { it.processIds.contains(pid) }.processIds
+        val processIds = processIdsStateFlow.first { it.contains(pid) }.toSet()
 
         // Synchronize our internal list of processes to the list of process IDs we got.
         // * If our process id flow is faster than the external tracker, we may create processes
@@ -238,359 +244,312 @@ internal class JdwpProcessManagerImpl(
         throw IllegalStateException(message)
     }
 
-    companion object {
-
-        private val JdwpProcessIdTrackerKey =
-            CoroutineScopeCache.Key<JdwpProcessIdTracker>(JdwpProcessIdTracker::class.simpleName!!)
-
-        private val ConnectedDevice.jdwpProcessIdStateFlow: StateFlow<JdwpProcessIdsFlowEntry>
-            get() {
-                return cache.getOrPutSynchronized(JdwpProcessIdTrackerKey) {
-                    JdwpProcessIdTracker(this)
-                }.stateFlow
-            }
-
-        /**
-         * Tracks the process IDs of all JDWP processes of a given [device], exposing a
-         * [StateFlow] of [JdwpProcessIdsFlowEntry] (see [stateFlow] property).
-         *
-         * Note: The implementation uses the best available JDWP process ID tracker,
-         * i.e. either [ConnectedDevice.trackApp] or [ConnectedDevice.trackJdwp].
-         */
-        private class JdwpProcessIdTracker(private val device: ConnectedDevice) {
-
-            private val logger = adbLogger(device.session).withDevicePrefix(device)
-
-            private val mutableFlow = MutableStateFlow(StartOfFlow)
-
-            private val trackingJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-                device.scope.launch {
-                    runCatching {
-                        trackProcesses()
-                    }.onFailure { throwable ->
-                        logger.logIOCompletionErrors(throwable)
-                    }
-                }
-            }
-
-            val stateFlow: StateFlow<JdwpProcessIdsFlowEntry> = mutableFlow.asStateFlow()
-                get() {
-                    // Note: We rely on "lazy" to ensure the tracking coroutine is launched only once
-                    trackingJob
-                    return field
-                }
-
-            private suspend fun trackProcesses() {
-                device.withScopeContext {
-                    logger.debug { "Starting process ID tracking" }
-                    // Use the best available tracking mechanism
-                    if (device.isTrackAppSupported()) {
-                        device.trackApp.stateFlow.filter { appProcessEntryList ->
-                            // Skip first entry, it is always empty
-                            !appProcessEntryList.flowStatus.isStartOfFlow
-                        }.map { appProcessEntryList ->
-                            appProcessEntryList.filter { it.debuggable }.map { it.pid }.toSet()
-                        }.collect { processIds ->
-                            logger.verbose { "Updating (track-app) state flow of process IDS: $processIds" }
-                            mutableFlow.value = JdwpProcessIdsFlowEntry(processIds)
-                        }
-                    } else {
-                        device.trackJdwp.stateFlow.filter { processIds ->
-                            // Skip first entry, it is always empty
-                            !processIds.flowStatus.isStartOfFlow
-                        }.map { processIds ->
-                            processIds.toSet()
-                        }.collect { processIds ->
-                            logger.verbose { "Updating (track-jdwp) state flow of process IDS: $processIds" }
-                            mutableFlow.value = JdwpProcessIdsFlowEntry(processIds)
-                        }
-                    }
-                }.withRetry { throwable ->
-                    // Retry as long as device scope is active
-                    logger.logIOCompletionErrors(throwable)
-                    val delay = device.session.property(JDWP_PROCESS_TRACKER_RETRY_DELAY)
-                    delay(delay.toMillis())
-                    true
-                }.withFinally {
-                    logger.debug { "Exiting process ID tracking" }
-                }.execute()
-            }
-        }
-
-        /**
-         * An entry of the [StateFlow] exposed by [JdwpProcessIdTracker].
-         *
-         * Note that it is important to rely on the default (reference) equality to make sure
-         * that [StartOfFlow] is considered a different value than an entry an empty set of
-         * process IDs. This allows the consumer of the [StateFlow] to distinguish between
-         * an empty set corresponding to "we don't know yet" and an empty set corresponding to
-         * "the device has no active processes".
-         */
-        private class JdwpProcessIdsFlowEntry(
-            /**
-             * The [Set] of JDWP process IDs of this flow entry.
-             */
-            val processIds: Set<Int>
-        ) {
-
-            /**
-             * Whether this is the very first entry of the flow, emitted once before the actual list
-             * of processes has been retrieved for the first time.
-             */
-            val isStartOfFlow: Boolean
-                get() = (this == StartOfFlow)
-
-            override fun toString(): String {
-                val desc = when {
-                    isStartOfFlow -> "StartOfFlow"
-                    else -> "$processIds"
-                }
-                return "${this::class.simpleName}($desc)"
-            }
-
-            companion object {
-
-                val StartOfFlow = JdwpProcessIdsFlowEntry(emptySet())
-            }
-        }
-    }
-}
-
-/**
- * A map from [pid][Int] to [AbstractJdwpProcess] for a given [ConnectedDevice].
- * [AbstractJdwpProcess] instances are created on-demand and [closed][AbstractJdwpProcess.close]
- * when the process is removed from the map.
- *
- * The map should be [cleared][clear] when [device] is disconnected.
- */
-private class AbstractJdwpProcessMap(
-    private val device: ConnectedDevice,
-    private val factory: (ConnectedDevice, Int) -> AbstractJdwpProcess
-) {
-
-    private val logger = adbLogger(device.session)
-        .withPrefix("${device.session} - $device - ")
-
     /**
-     * The [MutableMap] of active processes.
-     * * [Map.keys] is the list of currently known process IDs.
-     * * [Map.values] contains either `null` if the process has not been used yet,
-     * or an [AbstractJdwpProcess] instance created by [factory].
+     * Tracks the process IDs of all JDWP processes of a given [device], exposing a
+     * [StateFlow] of [JdwpProcessIdList] (see [processIdsStateFlow] property).
      *
-     * Note: We use a [TreeMap] to keep entries sorted by process ID
+     * Note: The implementation uses the best available JDWP process ID tracker,
+     * i.e. either [ConnectedDevice.trackApp] or [ConnectedDevice.trackJdwp].
      */
-    private val map: MutableMap<Int, AbstractJdwpProcess?> = TreeMap()
+    private class JdwpProcessIdTracker(private val device: ConnectedDevice) {
 
-    /**
-     * Returns the [AbstractJdwpProcess] instance for the process [pid] of this [device], or
-     * `null` if the [pid] is not the pid of an active process set by the last call to
-     * [setActiveProcessIds].
-     */
-    fun getProcessOrNull(pid: Int): AbstractJdwpProcess? {
-        // Ensure pid is known
-        if (!map.contains(pid)) {
-            return null
-        }
+        private val logger = adbLogger(device.session).withDevicePrefix(device)
 
-        // Return existing instance or create one if needed
-        return map.getOrPut(pid) {
-            factory(device, pid).also { newProcess ->
-                logger.verbose { "Adding new process to map: '$newProcess' " }
-            }
-        }
-    }
+        private val mutableFlow =
+            MutableStateFlow(JdwpProcessIdList(emptyProcessIdList(), StateFlowStatus.startOfFlow))
 
-    fun addProcesses(processIds: Set<Int>) {
-        val newSet = map.keys + processIds
-        setActiveProcessIds(newSet)
-    }
-
-    /**
-     * Updates the list of active processes given their process ids.
-     * * Previously existing entries remain associated to the same [AbstractJdwpProcess] instances
-     * * New entries are initialized to `null` and created on demand with [getProcessOrNull]
-     * * Deleted entries are removed and the associated [AbstractJdwpProcess] instances are
-     * [closed][AbstractJdwpProcess.close]
-     */
-    fun setActiveProcessIds(processIds: Set<Int>) {
-        logger.verbose { "Setting list of active process ids: $processIds" }
-        val toClose = mutableListOf<AbstractJdwpProcess>()
-        val added = processIds - map.keys
-        val removed = map.keys - processIds
-        removed.forEach { pid ->
-            map.remove(pid)?.also {
-                toClose.add(it)
-            }
-        }
-        added.forEach { pid ->
-            logger.verbose { "Adding `null` entry for pid=$pid" }
-            map[pid] = null
-        }
-        assert(processIds == map.keys)
-        closeJdwpProcessList(toClose)
-    }
-
-    /**
-     * Clears the map, [closing][AbstractJdwpProcess.close] all existing
-     * [AbstractJdwpProcess] entries.
-     */
-    fun clear() {
-        logger.debug { "clear(): # of entries=${map.size}" }
-        val toClose = map.values.filterNotNull()
-        map.clear()
-        closeJdwpProcessList(toClose)
-    }
-
-    private fun closeJdwpProcessList(toClose: List<AbstractJdwpProcess>) {
-        toClose.forEach { jdwpProcess ->
-            logger.verbose { "Removing process from map: $jdwpProcess" }
-            closeJdwpProcess(jdwpProcess)
-        }
-    }
-
-    private fun closeJdwpProcess(jdwpProcess: AbstractJdwpProcess) {
-        val delayMillis = device.session.property(AdbLibToolsProperties.JDWP_PROCESS_TRACKER_CLOSE_NOTIFICATION_DELAY).toMillis()
-        if (delayMillis > 0) {
+        private val trackingJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
             device.scope.launch {
-                withTimeoutOrNull(delayMillis) {
-                    jdwpProcess.awaitReadyToClose()
-                } ?: run {
-                    logger.info { "JDWP process was not ready to close within $delayMillis milliseconds" }
+                runCatching {
+                    trackProcesses()
+                }.onFailure { throwable ->
+                    logger.logIOCompletionErrors(throwable)
                 }
-            }.invokeOnCompletion {
-                jdwpProcess.close()
-            }
-        } else {
-            jdwpProcess.close()
-        }
-    }
-}
-
-/**
- * A [AbstractJdwpProcess] that uses a [device] from one [AdbSession], but delegates
- * the rest of the implementation to a [AbstractJdwpProcess] from another [AdbSession], so
- * that the underlying JDWP connection can be shared across [AdbSession].
- *
- * The [close] method should be called by the owner (the [JdwpProcessTrackerImpl] or the
- * [AppProcessTrackerImpl]) when the process terminates.
- */
-private class JdwpProcessDelegate(
-    override val device: ConnectedDevice,
-    override val pid: Int,
-    private val delegateSession: AdbSession
-) : AbstractJdwpProcess(), CustomJdwpProxySocketServerProvider {
-
-    private val processDescription = "${device.session} - $device - pid=$pid"
-
-    private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
-
-    private val withJdwpSessionTracker = BlockActivationTracker()
-
-    override val jdwpSessionActivationCount: StateFlow<Int>
-        get() = withJdwpSessionTracker.activationCount
-
-    override val cache = CoroutineScopeCache.create(device.scope, processDescription)
-
-    private val deferredDelegateProcess: Deferred<AbstractJdwpProcess> =
-        cache.scope.async {
-            // Note: Waiting for the equivalent device in "delegateSession" may seem brittle,
-            // but is actually reliable:
-            // * If the delegate device has not been discovered yet, waiting for it is good
-            // enough
-            // * If the delegate device has been removed, it implies this device will also
-            // eventually be seen as disconnected, and its scope will be cancelled, so
-            // the "wait" operation will be cancelled.
-            val delegateDevice = delegateSession.connectedDevicesTracker.waitForDevice(device.serialNumber)
-
-            // Note: Waiting for the equivalent process in "delegateDevice" may also seem
-            // brittle, but is actually reliable:
-            // * If the delegate process has not been discovered yet, waiting for it is good
-            // enough
-            // * If the delegate process is already gone, it implies this process will also
-            // eventually be closed, meaning our scope will be cancelled, so the "wait"
-            // operation will be cancelled.
-            delegateDevice.jdwpProcessManagerImpl.waitForProcess(pid)
-        }
-
-    override suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T {
-        return withJdwpSessionTracker.track {
-            // Get the SharedJdwpSession of the delegate process, then wrap it to call "block"
-            deferredDelegateProcess.await().withJdwpSession {
-                logger.debug { "Acquired delegate process JDWP session, calling 'block'" }
-                SharedJdwpSessionDelegate(device, this).block()
             }
         }
-    }
 
-    override suspend fun awaitReadyToClose() {
-        // Wait until no active JDWP session
-        withJdwpSessionTracker.waitWhileActive()
-        logger.debug { "Ready to close" }
-    }
-
-    override fun createProxy(): JdwpProxySocketServer {
-        return JdwpProxySocketServerDelegate(this)
-    }
-
-    override fun close() {
-        logger.debug { "close()" }
-        cache.close()
-        deferredDelegateProcess.cancel()
-    }
-
-    override fun toString(): String {
-        return "${this::class.simpleName}(session=${device.session}, device=$device, pid=$pid)"
-    }
-
-    /**
-     * Delegates [SharedJdwpSession] methods while exposing a custom [device] property passed
-     * as constructor parameter.
-     */
-    private class SharedJdwpSessionDelegate(
-        override val device: ConnectedDevice,
-        private val delegateJdwpSession: SharedJdwpSession,
-    ) : SharedJdwpSession by delegateJdwpSession
-
-    /**
-     * Delegates [JdwpProxySocketServer] methods while exposing a custom [process] property passed
-     * as constructor parameter.
-     */
-    private class JdwpProxySocketServerDelegate(
-        override val process: JdwpProcessDelegate
-    ) : JdwpProxySocketServer {
-
-        private val processDescription = "${device.session} - $device - pid=${process.pid}"
-
-        private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
-
-        private val device: ConnectedDevice
-            get() = process.device
-
-        private val proxyStatusMutableFlow = MutableStateFlow(JdwpProxySocketServerStatus(process.pid))
-
-        private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-            forwardStateFlowFromDelegateProcess()
-        }
-
-        override val proxyStatusFlow = proxyStatusMutableFlow.asStateFlow()
+        val processIdsStateFlow: StateFlow<JdwpProcessIdList> = mutableFlow.asStateFlow()
             get() {
-                lazyStartMonitoring
+                // Note: We rely on "lazy" to ensure the tracking coroutine is launched only once
+                trackingJob
                 return field
             }
 
-        private fun forwardStateFlowFromDelegateProcess() {
-            logger.debug { "Forwarding proxy state flow from delegate" }
-            process.scope.launch {
-                runCatching {
-                    process.deferredDelegateProcess.await().also { delegateProcess ->
-                        logger.debug { "Acquired delegate process, starting forwarding" }
-                        delegateProcess.jdwpProxySocketServer.proxyStatusFlow.collect { newStatus ->
-                            logger.verbose { "Forwarding new proxy status: $newStatus" }
-                            proxyStatusMutableFlow.update { newStatus }
-                        }
+        private suspend fun trackProcesses() {
+            device.withScopeContext {
+                logger.debug { "Starting process ID tracking" }
+                // Use the best available tracking mechanism
+                if (device.isTrackAppSupported()) {
+                    device.trackApp.stateFlow.filter { appProcessEntryList ->
+                        // Skip first entry, it is always empty
+                        !appProcessEntryList.flowStatus.isStartOfFlow
+                    }.collect { appProcessEntryList ->
+                        val processIds = appProcessEntryList
+                            .filter { it.debuggable }
+                            .map { it.pid }
+                        logger.verbose { "Updating (track-app) state flow of process IDS: $processIds" }
+                        mutableFlow.value = JdwpProcessIdList(
+                            list = ProcessIdList(processIds, errors = emptyList()),
+                            flowStatus = appProcessEntryList.flowStatus
+                        )
                     }
-                }.onFailure { throwable ->
-                    logger.logIOCompletionErrors(throwable)
+                } else {
+                    device.trackJdwp.stateFlow.filter { processIds ->
+                        // Skip first entry, it is always empty
+                        !processIds.flowStatus.isStartOfFlow
+                    }.collect { processIds ->
+                        logger.verbose { "Updating (track-jdwp) state flow of process IDS: $processIds" }
+                        mutableFlow.value = processIds
+                    }
+                }
+            }.withRetry { throwable ->
+                // Retry as long as device scope is active
+                logger.logIOCompletionErrors(throwable)
+                val delay = device.session.property(JDWP_PROCESS_TRACKER_RETRY_DELAY)
+                delay(delay.toMillis())
+                true
+            }.withFinally {
+                logger.debug { "Exiting process ID tracking" }
+            }.execute()
+        }
+    }
+
+    /**
+     * A map from [pid][Int] to [AbstractJdwpProcess] for a given [ConnectedDevice].
+     * [AbstractJdwpProcess] instances are created on-demand and [closed][AbstractJdwpProcess.close]
+     * when the process is removed from the map.
+     *
+     * The map should be [cleared][clear] when [device] is disconnected.
+     */
+    private class AbstractJdwpProcessMap(
+        private val device: ConnectedDevice,
+        private val factory: (ConnectedDevice, Int) -> AbstractJdwpProcess
+    ) {
+
+        private val logger = adbLogger(device.session)
+            .withPrefix("${device.session} - $device - ")
+
+        /**
+         * The [MutableMap] of active processes.
+         * * [Map.keys] is the list of currently known process IDs.
+         * * [Map.values] contains either `null` if the process has not been used yet,
+         * or an [AbstractJdwpProcess] instance created by [factory].
+         *
+         * Note: We use a [TreeMap] to keep entries sorted by process ID
+         */
+        private val map: MutableMap<Int, AbstractJdwpProcess?> = TreeMap()
+
+        /**
+         * Returns the [AbstractJdwpProcess] instance for the process [pid] of this [device], or
+         * `null` if the [pid] is not the pid of an active process set by the last call to
+         * [setActiveProcessIds].
+         */
+        fun getProcessOrNull(pid: Int): AbstractJdwpProcess? {
+            // Ensure pid is known
+            if (!map.contains(pid)) {
+                return null
+            }
+
+            // Return existing instance or create one if needed
+            return map.getOrPut(pid) {
+                factory(device, pid).also { newProcess ->
+                    logger.verbose { "Adding new process to map: '$newProcess' " }
+                }
+            }
+        }
+
+        fun addProcesses(processIds: Set<Int>) {
+            val newSet = map.keys + processIds
+            setActiveProcessIds(newSet)
+        }
+
+        /**
+         * Updates the list of active processes given their process ids.
+         * * Previously existing entries remain associated to the same [AbstractJdwpProcess] instances
+         * * New entries are initialized to `null` and created on demand with [getProcessOrNull]
+         * * Deleted entries are removed and the associated [AbstractJdwpProcess] instances are
+         * [closed][AbstractJdwpProcess.close]
+         */
+        fun setActiveProcessIds(processIds: Set<Int>) {
+            logger.verbose { "Setting list of active process ids: $processIds" }
+            val toClose = mutableListOf<AbstractJdwpProcess>()
+            val added = processIds - map.keys
+            val removed = map.keys - processIds
+            removed.forEach { pid ->
+                map.remove(pid)?.also {
+                    toClose.add(it)
+                }
+            }
+            added.forEach { pid ->
+                logger.verbose { "Adding `null` entry for pid=$pid" }
+                map[pid] = null
+            }
+            assert(processIds == map.keys)
+            closeJdwpProcessList(toClose)
+        }
+
+        /**
+         * Clears the map, [closing][AbstractJdwpProcess.close] all existing
+         * [AbstractJdwpProcess] entries.
+         */
+        fun clear() {
+            logger.debug { "clear(): # of entries=${map.size}" }
+            val toClose = map.values.filterNotNull()
+            map.clear()
+            closeJdwpProcessList(toClose)
+        }
+
+        private fun closeJdwpProcessList(toClose: List<AbstractJdwpProcess>) {
+            toClose.forEach { jdwpProcess ->
+                logger.verbose { "Removing process from map: $jdwpProcess" }
+                closeJdwpProcess(jdwpProcess)
+            }
+        }
+
+        private fun closeJdwpProcess(jdwpProcess: AbstractJdwpProcess) {
+            val delayMillis = device.session.property(AdbLibToolsProperties.JDWP_PROCESS_TRACKER_CLOSE_NOTIFICATION_DELAY).toMillis()
+            if (delayMillis > 0) {
+                device.scope.launch {
+                    withTimeoutOrNull(delayMillis) {
+                        jdwpProcess.awaitReadyToClose()
+                    } ?: run {
+                        logger.info { "JDWP process was not ready to close within $delayMillis milliseconds" }
+                    }
+                }.invokeOnCompletion {
+                    jdwpProcess.close()
+                }
+            } else {
+                jdwpProcess.close()
+            }
+        }
+    }
+
+    /**
+     * A [AbstractJdwpProcess] that uses a [device] from one [AdbSession], but delegates
+     * the rest of the implementation to a [AbstractJdwpProcess] from another [AdbSession], so
+     * that the underlying JDWP connection can be shared across [AdbSession].
+     *
+     * The [close] method should be called by the owner (the [JdwpProcessTrackerImpl] or the
+     * [AppProcessTrackerImpl]) when the process terminates.
+     */
+    private class JdwpProcessDelegate(
+        override val device: ConnectedDevice,
+        override val pid: Int,
+        private val delegateSession: AdbSession
+    ) : AbstractJdwpProcess(), CustomJdwpProxySocketServerProvider {
+
+        private val processDescription = "${device.session} - $device - pid=$pid"
+
+        private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
+
+        private val withJdwpSessionTracker = BlockActivationTracker()
+
+        override val jdwpSessionActivationCount: StateFlow<Int>
+            get() = withJdwpSessionTracker.activationCount
+
+        override val cache = CoroutineScopeCache.create(device.scope, processDescription)
+
+        private val deferredDelegateProcess: Deferred<AbstractJdwpProcess> =
+            cache.scope.async {
+                // Note: Waiting for the equivalent device in "delegateSession" may seem brittle,
+                // but is actually reliable:
+                // * If the delegate device has not been discovered yet, waiting for it is good
+                // enough
+                // * If the delegate device has been removed, it implies this device will also
+                // eventually be seen as disconnected, and its scope will be cancelled, so
+                // the "wait" operation will be cancelled.
+                val delegateDevice = delegateSession.connectedDevicesTracker.waitForDevice(device.serialNumber)
+
+                // Note: Waiting for the equivalent process in "delegateDevice" may also seem
+                // brittle, but is actually reliable:
+                // * If the delegate process has not been discovered yet, waiting for it is good
+                // enough
+                // * If the delegate process is already gone, it implies this process will also
+                // eventually be closed, meaning our scope will be cancelled, so the "wait"
+                // operation will be cancelled.
+                delegateDevice.jdwpProcessManagerImpl.waitForProcess(pid)
+            }
+
+        override suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T {
+            return withJdwpSessionTracker.track {
+                // Get the SharedJdwpSession of the delegate process, then wrap it to call "block"
+                deferredDelegateProcess.await().withJdwpSession {
+                    logger.debug { "Acquired delegate process JDWP session, calling 'block'" }
+                    SharedJdwpSessionDelegate(device, this).block()
+                }
+            }
+        }
+
+        override suspend fun awaitReadyToClose() {
+            // Wait until no active JDWP session
+            withJdwpSessionTracker.waitWhileActive()
+            logger.debug { "Ready to close" }
+        }
+
+        override fun createProxy(): JdwpProxySocketServer {
+            return JdwpProxySocketServerDelegate(this)
+        }
+
+        override fun close() {
+            logger.debug { "close()" }
+            cache.close()
+            deferredDelegateProcess.cancel()
+        }
+
+        override fun toString(): String {
+            return "${this::class.simpleName}(session=${device.session}, device=$device, pid=$pid)"
+        }
+
+        /**
+         * Delegates [SharedJdwpSession] methods while exposing a custom [device] property passed
+         * as constructor parameter.
+         */
+        private class SharedJdwpSessionDelegate(
+            override val device: ConnectedDevice,
+            private val delegateJdwpSession: SharedJdwpSession,
+        ) : SharedJdwpSession by delegateJdwpSession
+
+        /**
+         * Delegates [JdwpProxySocketServer] methods while exposing a custom [process] property passed
+         * as constructor parameter.
+         */
+        private class JdwpProxySocketServerDelegate(
+            override val process: JdwpProcessDelegate
+        ) : JdwpProxySocketServer {
+
+            private val processDescription = "${device.session} - $device - pid=${process.pid}"
+
+            private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
+
+            private val device: ConnectedDevice
+                get() = process.device
+
+            private val proxyStatusMutableFlow = MutableStateFlow(JdwpProxySocketServerStatus(process.pid))
+
+            private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+                forwardStateFlowFromDelegateProcess()
+            }
+
+            override val proxyStatusFlow = proxyStatusMutableFlow.asStateFlow()
+                get() {
+                    lazyStartMonitoring
+                    return field
+                }
+
+            private fun forwardStateFlowFromDelegateProcess() {
+                logger.debug { "Forwarding proxy state flow from delegate" }
+                process.scope.launch {
+                    runCatching {
+                        process.deferredDelegateProcess.await().also { delegateProcess ->
+                            logger.debug { "Acquired delegate process, starting forwarding" }
+                            delegateProcess.jdwpProxySocketServer.proxyStatusFlow.collect { newStatus ->
+                                logger.verbose { "Forwarding new proxy status: $newStatus" }
+                                proxyStatusMutableFlow.update { newStatus }
+                            }
+                        }
+                    }.onFailure { throwable ->
+                        logger.logIOCompletionErrors(throwable)
+                    }
                 }
             }
         }

@@ -49,6 +49,11 @@ abstract class PreviewScreenshotUpdateTask : JavaExec() {
 
     @TaskAction
     override fun exec() = analyticsService.get().recordTaskAction(path) {
+        if (testEngineInput.testProjectJars.get().isEmpty() &&
+            testEngineInput.testProjectClassDirs.get().isEmpty()) {
+            return@recordTaskAction
+        }
+
         testEngineInput.testProjectJars.get().forEach {
             args("--scan-class-path=${it.asFile.absolutePath}")
         }

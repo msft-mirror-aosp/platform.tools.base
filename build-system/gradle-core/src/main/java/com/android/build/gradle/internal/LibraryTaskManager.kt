@@ -85,15 +85,13 @@ class LibraryTaskManager(
     testFixturesComponents: Collection<TestFixturesCreationConfig>,
     globalConfig: GlobalTaskCreationConfig,
     localConfig: TaskManagerConfig,
-    extension: BaseExtension
 ) : VariantTaskManager<LibraryVariantBuilder, LibraryCreationConfig>(
     project,
     variants,
     testComponents,
     testFixturesComponents,
     globalConfig,
-    localConfig,
-    extension
+    localConfig
 ) {
     override fun doCreateTasksForVariant(
         variantInfo: ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>

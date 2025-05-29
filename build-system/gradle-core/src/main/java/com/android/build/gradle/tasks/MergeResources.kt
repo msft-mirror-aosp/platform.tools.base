@@ -144,7 +144,6 @@ abstract class MergeResources : NewIncrementalTask() {
     @get:Input
     abstract val viewBindingEnabled: Property<Boolean>
 
-    @get:Optional
     @get:Input
     abstract val namespace: Property<String>
 
@@ -823,13 +822,18 @@ abstract class MergeResources : NewIncrementalTask() {
             )
             creationConfig.services.initializeAapt2Input(task.aapt2, task)
             task.aaptEnv
-                .set(
+                .setDisallowChanges(
                     creationConfig
                         .services
                         .gradleEnvironmentProvider
                         .getEnvVariable(ANDROID_AAPT_IGNORE)
                 )
-            task.projectRootDir.set(task.project.rootDir)
+
+            with(task.projectRootDir) {
+                set(task.project.rootDir)
+                disallowChanges()
+            }
+
             task.errorFormatMode = SyncOptions.getErrorFormatMode(
                 creationConfig.services.projectOptions
             )
@@ -978,7 +982,7 @@ abstract class MergeResources : NewIncrementalTask() {
                 (mergeType == TaskManager.MergeType.MERGE && !isLibrary
                         && androidResourcesCreationConfig.isPrecompileDependenciesResourcesEnabled)
             task.resourceDirsOutsideRootProjectDir
-                .set(
+                .setDisallowChanges(
                     task.project
                         .provider {
                             getResourcesDirsOutsideRoot(
@@ -987,7 +991,6 @@ abstract class MergeResources : NewIncrementalTask() {
                                 isViewBindingEnabled
                             )
                         })
-            task.resourceDirsOutsideRootProjectDir.disallowChanges()
             task.dependsOn(creationConfig.taskContainer.resourceGenTask)
 
             task.aapt2ThreadPoolBuildService.setDisallowChanges(
@@ -998,13 +1001,16 @@ abstract class MergeResources : NewIncrementalTask() {
             )
             creationConfig.services.initializeAapt2Input(task.aapt2, task)
             task.aaptEnv
-                .set(
+                .setDisallowChanges(
                     creationConfig
                         .services
                         .gradleEnvironmentProvider
                         .getEnvVariable(ANDROID_AAPT_IGNORE)
                 )
-            task.projectRootDir.set(task.project.rootDir)
+            with(task.projectRootDir) {
+                set(task.project.rootDir)
+                disallowChanges()
+            }
         }
     }
 

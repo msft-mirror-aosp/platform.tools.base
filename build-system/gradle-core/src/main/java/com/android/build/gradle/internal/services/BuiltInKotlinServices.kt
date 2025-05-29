@@ -61,14 +61,14 @@ interface BuiltInKotlinServices {
     val kotlinBaseApiVersion: KotlinBaseApiVersion
 
     val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension
-    val baseExtension: BaseExtension // Currently required (KT-77300)
+    val baseExtension: BaseExtension? // Currently required (KT-77300)
 
     companion object {
 
         fun createFromPlugin(
             kotlinBaseApiPlugin: KotlinBaseApiPlugin,
             kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
-            baseExtension: BaseExtension,
+            baseExtension: BaseExtension?,
             projectName: String
         ): BuiltInKotlinServices {
             getKotlinPluginVersionFromPlugin(kotlinBaseApiPlugin)?.let {
@@ -93,7 +93,7 @@ interface BuiltInKotlinServices {
                 override val factory: KotlinJvmFactory = kotlinBaseApiPlugin
                 override val kotlinBaseApiVersion = kgpVersion.kotlinBaseApiVersion()
                 override val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension = kotlinAndroidProjectExtension
-                override val baseExtension: BaseExtension = baseExtension
+                override val baseExtension: BaseExtension? = baseExtension
             }
         }
     }
@@ -196,7 +196,7 @@ internal fun ComponentCreationConfig.createKotlinCompilation(
 ): KotlinCompilation<KotlinJvmOptions> {
     val kotlinServices = services.builtInKotlinServices
     // Creating a KotlinCompilation instance currently requires access to the old BaseVariant (KT-77300)
-    val variant = toBaseVariant(kotlinServices.baseExtension)
+    val variant = kotlinServices.baseExtension?.let { toBaseVariant(it) }
     return if (variant != null) {
         // TODO(b/409528883): Use KGP API to create a KotlinCompilation instance once it is
         // available (KT-77023).

@@ -18,13 +18,17 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Action
 import org.gradle.api.Incubating
+import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 interface KotlinMultiplatformAndroidCompilation: KotlinCompilation<KotlinCommonOptions> {
     override val compilerOptions: HasCompilerOptions<KotlinJvmCompilerOptions>
+
+    override val compileTaskProvider: TaskProvider<out KotlinCompilationTask<KotlinJvmCompilerOptions>>
 
     @Deprecated("Use compilerOptions instead of kotlinOptions to configure compilations")
     override val kotlinOptions: KotlinCommonOptions

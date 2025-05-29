@@ -36,6 +36,7 @@ import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.DefaultLogger
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.impl.CoreProgressManager
 import com.intellij.openapi.roots.LanguageLevelProjectExtension
@@ -50,12 +51,15 @@ import com.intellij.psi.PsiNameHelper
 import com.intellij.psi.augment.PsiAugmentProvider
 import com.intellij.psi.impl.PsiNameHelperImpl
 import com.intellij.psi.impl.RecordAugmentProvider
+import com.intellij.psi.search.GlobalSearchScope
 import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.collections.plus
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.impl.base.util.LibraryUtils
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.PluginStructureProvider
+import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.StandaloneProjectFactory
 import org.jetbrains.kotlin.analysis.decompiler.konan.KlibMetaFileType
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleBuilder
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleProviderBuilder
@@ -309,8 +313,20 @@ internal fun configureAnalysisApiProjectStructure(
         m.classpathRoots.isNotEmpty() -> {
           buildKtLibraryModule {
             platform = mPlatform
-            addBinaryPaths(m.classpathRoots.toPathCollection())
+            val paths = m.classpathRoots.toPathCollection()
+            addBinaryPaths(paths)
             libraryName = m.name
+            if (!paths.hasVirtual()) {
+              contentScope =
+                LibraryRootsSearchScope(
+                  StandaloneProjectFactory.getVirtualFilesForLibraryRoots(
+                    paths.physicalDirectories + paths.physicalFiles,
+                    coreApplicationEnvironment,
+                  )
+                )
+            }
+            // Otherwise, use upstream file-based library search scope
+            // by not setting `contentScope`.
           }
         }
         else -> continue
@@ -319,6 +335,45 @@ internal fun configureAnalysisApiProjectStructure(
     addModule(ktModule)
     builtKtModuleByProject[proj] = ktModule
   }
+}
+
+private class SimpleTrie(paths: List<String>) {
+  class TrieNode {
+    var isTerminal: Boolean = false
+  }
+
+  val root = TrieNode()
+
+  private val m =
+    mutableMapOf<Pair<TrieNode, String>, TrieNode>().apply {
+      paths.forEach { path ->
+        var p = root
+        for (d in path.trim('/').split('/')) {
+          p = getOrPut(Pair(p, d)) { TrieNode() }
+        }
+        p.isTerminal = true
+      }
+    }
+
+  fun contains(s: String): Boolean {
+    var p = root
+    for (d in s.trim('/').split('/')) {
+      p = m.get(Pair(p, d))?.also { if (it.isTerminal) return true } ?: return false
+    }
+    return false
+  }
+}
+
+private class LibraryRootsSearchScope(roots: List<VirtualFile>) : GlobalSearchScope() {
+  val trie: SimpleTrie = SimpleTrie(roots.map { it.path })
+
+  override fun contains(file: VirtualFile): Boolean {
+    return trie.contains(file.path)
+  }
+
+  override fun isSearchInModuleContent(aModule: Module): Boolean = false
+
+  override fun isSearchInLibraries(): Boolean = true
 }
 
 // In parallel builds the Kotlin compiler will reuse the application environment

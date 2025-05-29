@@ -323,7 +323,7 @@ private class ProcessInventoryServerConnectionForDevice(
 
         private fun ProcessInventoryServerProto.OptionalInt32.toOptionalInt(): OptionalValue<Int> {
             return if (hasValue) {
-                    OptionalValue.of(in32Value)
+                    OptionalValue.of(int32Value)
             } else if (isError) {
                 OptionalValue.ofError(errorMessage)
             } else {
@@ -390,7 +390,7 @@ private class ProcessInventoryServerConnectionForDevice(
                         proto.errorMessage = getErrorMessageOrThrow()
                     } else if (hasValue) {
                         proto.hasValue = true
-                        proto.in32Value = getOrThrow()
+                        proto.int32Value = getOrThrow()
                     }
                 }
                 .build()

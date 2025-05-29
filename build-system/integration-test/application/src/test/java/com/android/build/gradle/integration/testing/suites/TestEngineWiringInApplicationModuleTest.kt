@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperti
 import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.utils.getDebugVariant
+import com.android.builder.model.v2.ide.Library
 import com.google.common.truth.Truth
 import java.time.LocalDateTime
 import org.junit.Rule
@@ -46,7 +47,7 @@ class TestEngineWiringInApplicationModuleTest {
             jar("com.google.truth:truth:0.44")
             jar("org.junit.platform:junit-platform-engine:1.10.1")
             jar("org.junit.platform:junit-platform-launcher:1.10.1")
-            jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
+            jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
             jar("com.test:toy-junit-engine:1.0")
                 .addClasses(
                     ToyJunitEngineForTesting::class.java,
@@ -71,7 +72,7 @@ class TestEngineWiringInApplicationModuleTest {
                                 "[engine:toy-junit-engine-for-tests]"
                             )
                         }
-                        it.dependencies.implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
+                        it.dependencies.implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
                         it.dependencies.implementation.add("com.google.code.gson:gson:2.11.0")
                         it.dependencies.runtimeOnly.add("org.junit.platform:junit-platform-launcher")
                         it.dependencies.runtimeOnly.add("com.test:toy-junit-engine:1.0")
@@ -124,6 +125,26 @@ class TestEngineWiringInApplicationModuleTest {
         Truth.assertThat(firstTestSuite).isNotNull()
         Truth.assertThat(firstTestSuite!!.testInfo.testTaskName).isEqualTo("testFirstDebugTestSuite")
         Truth.assertThat(firstTestSuite.testInfo.junitInfo.includedEngines.single()).isEqualTo("[engine:toy-junit-engine-for-tests]")
+    }
+
+    @Test
+    fun testDependenciesModel() {
+        val project = rule.build
+        val result = project.modelBuilder.fetchVariantDependencies("debug")
+        Truth.assertThat(result).isNotNull()
+        val models = result.container.getProject(":app")
+        val libraries = models.variantDependencies?.libraries
+        val resolvedLibraries = models.variantDependencies?.testSuiteArtifacts["first"]?.compileDependencies?.map { graphItem ->
+            libraries!![graphItem.key]
+        }
+        Truth.assertThat(resolvedLibraries).hasSize(3)
+        resolvedLibraries!!.forEach { library: Library? ->
+            Truth.assertThat(library).isNotNull()
+            Truth.assertThat(library!!.artifact!!.exists()).isTrue()
+        }
+        Truth.assertThat(
+            resolvedLibraries.map { it!!.libraryInfo!!.name }
+        ).containsExactly("truth", "gson", "kotlin-stdlib")
     }
 }
 

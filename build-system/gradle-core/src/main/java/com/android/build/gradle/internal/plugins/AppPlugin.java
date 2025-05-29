@@ -329,16 +329,14 @@ public class AppPlugin
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
             @NonNull GlobalTaskCreationConfig globalTaskCreationConfig,
-            @NonNull TaskManagerConfig localConfig,
-            @NonNull BaseExtension extension) {
+            @NonNull TaskManagerConfig localConfig) {
         return new ApplicationTaskManager(
                 project,
                 variants,
                 testComponents,
                 testFixturesComponents,
                 globalTaskCreationConfig,
-                localConfig,
-                extension);
+                localConfig);
     }
 
     @NonNull

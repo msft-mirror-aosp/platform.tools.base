@@ -845,8 +845,7 @@ public class ApiLookupTest extends AbstractCheckTest {
             fail("Lookup for future version should have thrown an unsupported version exception");
         } catch (ApiLookup.UnsupportedVersionException e) {
             assertEquals(
-                    "Android API 100.0, future preview (Preview) requires a newer version of Lint"
-                            + " Unit Tests than unittest",
+                    "Android API 100.0, future preview, extension level 3 (Preview) requires a newer version of Lint Unit Tests than unittest",
                     e.getDisplayMessage(client));
             // Make sure second attempt doesn't throw an exception
             assertNull(ApiLookup.get(client, target));

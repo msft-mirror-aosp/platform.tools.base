@@ -277,16 +277,14 @@ public class TestPlugin
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
             @NonNull GlobalTaskCreationConfig globalTaskCreationConfig,
-            @NonNull TaskManagerConfig localConfig,
-            @NonNull BaseExtension extension) {
+            @NonNull TaskManagerConfig localConfig) {
         return new TestApplicationTaskManager(
                 project,
                 variants,
                 testComponents,
                 testFixturesComponents,
                 globalTaskCreationConfig,
-                localConfig,
-                extension);
+                localConfig);
     }
 
     @Override

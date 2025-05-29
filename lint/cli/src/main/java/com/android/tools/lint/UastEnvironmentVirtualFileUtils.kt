@@ -179,6 +179,8 @@ internal class PathCollection(
 
   fun hasFiles(): Boolean = physicalFiles.isNotEmpty() || virtualFiles.isNotEmpty()
 
+  internal fun hasVirtual(): Boolean = virtualFiles.isNotEmpty() || virtualDirectories.isNotEmpty()
+
   fun isNotEmpty(): Boolean = !isEmpty()
 
   /** Partition the paths into those that satisfy [keepVirtual] and don't, respectively */

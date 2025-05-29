@@ -14,12 +14,6 @@ intellij.local_platform(
     target = "@//prebuilts/studio/intellij-sdk:studio-sdk",
 )
 intellij.remote_platform(
-    name = "intellij_ce_2024_1",
-    sha256 = "7d5e4cdb5a7cb1c376ca66957481350571561edadc3f45e6fce422e14af0fc16",
-    top_level_dir = "idea-IC-241.18034.62",
-    url = "https://download.jetbrains.com/idea/ideaIC-2024.1.4.tar.gz",
-)
-intellij.remote_platform(
     name = "intellij_ce_2024_2",
     sha256 = "781cc03526d5811061c6ffd211942698b3d18ed2f055a04f384956686a7aa0a6",
     top_level_dir = "idea-IC-242.21829.142",
@@ -37,6 +31,12 @@ intellij.remote_platform(
     top_level_dir = "idea-IC-251.23774.16",
     url = "https://download.jetbrains.com/idea/ideaIC-251.23774.16.tar.gz",
 )
+intellij.remote_platform(
+    name = "intellij_ce_2025_2",
+    sha256 = "f5ba31d4d908979197d40a02b27db1dac130a78870719b94d3f239c43cf7bafa",
+    top_level_dir = "idea-IC-252.16512.17",
+    url = "https://download.jetbrains.com/idea/ideaIC-252.16512.17.tar.gz",
+)
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
-use_repo(intellij, "intellij", "intellij_ce_2024_1", "intellij_ce_2024_2", "intellij_ce_2024_3", "intellij_ce_2025_1")
+use_repo(intellij, "intellij", "intellij_ce_2024_2", "intellij_ce_2024_3", "intellij_ce_2025_1", "intellij_ce_2025_2")

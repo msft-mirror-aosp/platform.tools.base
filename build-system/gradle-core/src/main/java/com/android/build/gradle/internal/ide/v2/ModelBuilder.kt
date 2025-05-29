@@ -804,6 +804,17 @@ class ModelBuilder<
                     )
             }
 
+            val testSuiteArtifacts = mutableMapOf<String, ArtifactDependenciesAdjacencyList>()
+            (variant as? HasTestSuitesCreationConfig)?.suites?.values?.forEach { testSuite ->
+                testSuiteArtifacts[testSuite.name] =
+                    createDependenciesWithAdjacencyList(
+                        testSuite,
+                        libraryService,
+                        graphEdgeCache,
+                        parameter.dontBuildUnitTestRuntimeClasspath
+                    )
+            }
+
             return VariantDependenciesAdjacencyListImpl(
                     name = variantName,
                     mainArtifact = createDependenciesWithAdjacencyList(
@@ -846,6 +857,16 @@ class ModelBuilder<
                     parameter.additionalArtifactsInModel,
                 )
             }
+
+            val testSuiteArtifacts = mutableMapOf<String, ArtifactDependencies>()
+            (variant as? HasTestSuitesCreationConfig)?.suites?.values?.forEach { testSuite ->
+                testSuiteArtifacts[testSuite.name] =
+                    createDependencies(
+                        testSuite,
+                        libraryService,
+                    )
+            }
+
             return VariantDependenciesImpl(
                     name = variantName,
                     mainArtifact = createDependencies(
@@ -856,6 +877,7 @@ class ModelBuilder<
                     ),
                     deviceTestArtifacts = deviceTestArtifacts,
                     hostTestArtifacts = hostTestArtifacts,
+                    testSuiteArtifacts = testSuiteArtifacts,
                     testFixturesArtifact = (variant as? HasTestFixtures)?.testFixtures?.let {
                         createDependencies(
                             it,
@@ -1207,6 +1229,11 @@ class ModelBuilder<
         additionalArtifactsInModel: Boolean,
     ) = getGraphBuilder(dontBuildRuntimeClasspath, additionalArtifactsInModel, component, libraryService).build()
 
+    private fun createDependencies(
+        testSuite: TestSuiteCreationConfig,
+        libraryServices: LibraryService,
+    ) = getGraphBuilder(testSuite, libraryServices).build()
+
     private fun createDependenciesWithAdjacencyList(
         component: ComponentCreationConfig,
         libraryService: LibraryService,
@@ -1216,6 +1243,17 @@ class ModelBuilder<
     ): ArtifactDependenciesAdjacencyList = getGraphBuilder(
         dontBuildRuntimeClasspath,
         additionalArtifactsInModel,
+        component,
+        libraryService,
+        graphEdgeCache
+    ).buildWithAdjacencyList()
+
+    private fun createDependenciesWithAdjacencyList(
+        component: TestSuiteCreationConfig,
+        libraryService: LibraryService,
+        graphEdgeCache: GraphEdgeCache,
+        dontBuildRuntimeClasspath: Boolean
+    ): ArtifactDependenciesAdjacencyList = getGraphBuilder(
         component,
         libraryService,
         graphEdgeCache
@@ -1236,6 +1274,22 @@ class ModelBuilder<
         additionalArtifactsInModel,
         dontBuildRuntimeClasspath
     )
+
+    private fun getGraphBuilder(
+        testSuite: TestSuiteCreationConfig,
+        libraryService: LibraryService,
+        graphEdgeCache: GraphEdgeCache? = null,
+    ) = FullDependencyGraphBuilder(
+        artifactsProvider = { configType, root -> getArtifactsForModelBuilder(testSuite, configType) },
+        projectPath = project.path,
+        resolutionResultProvider = testSuite.testSuiteClasspath,
+        libraryService = libraryService,
+        graphEdgeCache = graphEdgeCache,
+        addAdditionalArtifactsInModel = false,
+        dontBuildRuntimeClasspath = true,
+    )
+
+
 
     private fun getBundleInfo(
         component: ComponentCreationConfig

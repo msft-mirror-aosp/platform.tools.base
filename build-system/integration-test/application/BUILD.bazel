@@ -863,6 +863,32 @@ gradle_integration_test(
 )
 
 gradle_integration_test(
+    name = "suites-tests",
+    timeout = "long",
+    srcs = glob(
+        [
+            "src/test/java/com/android/build/gradle/integration/testing/suites/*.java",
+            "src/test/java/com/android/build/gradle/integration/testing/suites/*.kt",
+        ],
+    ),
+    data = TEST_DATA,
+    maven_repo_zips = [
+        "//tools/base/build-system:android_gradle_plugin",
+    ],
+    maven_repos = [
+        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
+        "//tools/base/build-system/integration-test:androidx_latest",
+        "//tools/base/build-system/integration-test:support_library_latest",
+        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
+        "//tools/base/build-system/integration-test/application:prebuilts",
+    ],
+    resources = glob(["src/test/resources/**"]),
+    deps = TEST_DEPS + [
+        "@maven//:org.junit.platform.junit-platform-engine",
+    ],
+)
+
+gradle_integration_test(
     name = "mlkit-tests",
     timeout = "long",
     srcs = glob(

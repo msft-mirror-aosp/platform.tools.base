@@ -24,6 +24,7 @@ import com.android.SdkConstants.FN_FRAMEWORK_LIBRARY
 import com.android.SdkConstants.FN_SOURCE_PROP
 import com.android.SdkConstants.VALUE_FALSE
 import com.android.SdkConstants.VALUE_TRUE
+import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.BuildToolInfo
@@ -99,7 +100,7 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
       } else {
         targets.lastOrNull { it.isPlatform && it.version.codename == null }
       } ?: return null
-    return if (latest.version.apiLevel >= minApi) latest else null
+    return if (latest.version.androidApiLevel.majorVersion >= minApi) latest else null
   }
 
   /**
@@ -155,10 +156,12 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
     private fun platformFromPackageXml(location: File, packageXml: File): IAndroidTarget? {
       var buildTargetHash: String? = null
       var codeName: String? = null
-      var apiLevel = -1
+      var apiLevel: AndroidApiLevel? = null
       var vendorId: String? = null
       var nameId: String? = null
       var revision = 1
+      var extensionLevel: Int? = null
+      var isBaseExtension = true
 
       try {
         packageXml.bufferedReader().use { reader ->
@@ -185,7 +188,19 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
                 "api-level" -> {
                   if (parser.next() == XmlPullParser.TEXT) {
                     val text = parser.text
-                    text.toIntOrNull()?.let { api -> apiLevel = api }
+                    apiLevel = AndroidApiLevel.fromString(text)
+                  }
+                }
+                "extension-level" -> {
+                  if (parser.next() == XmlPullParser.TEXT) {
+                    val text = parser.text
+                    text.toIntOrNull()?.let { api -> extensionLevel = api }
+                  }
+                }
+                "base-extension" -> {
+                  if (parser.next() == XmlPullParser.TEXT) {
+                    val text = parser.text
+                    isBaseExtension = text != VALUE_FALSE
                   }
                 }
                 "codename" -> {
@@ -228,18 +243,21 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
             }
           }
         }
-      } catch (ignore: Exception) {}
+      } catch (_: Exception) {}
 
+      if (apiLevel == null) {
+        return null
+      }
       var platform = true
-      val version = AndroidVersion(apiLevel, codeName)
-      if (nameId != null && vendorId != null && apiLevel != -1) {
+      val version = AndroidVersion(apiLevel, codeName, extensionLevel, isBaseExtension)
+      if (nameId != null && vendorId != null) {
         // Add-on
-        buildTargetHash = AndroidTargetHash.getAddonHashString(vendorId!!, nameId!!, version)
+        buildTargetHash = AndroidTargetHash.getAddonHashString(vendorId, nameId, version)
         platform = false
       }
 
-      return if (buildTargetHash != null && apiLevel != -1) {
-        PlatformTarget(location, buildTargetHash!!, version, revision, platform)
+      return if (buildTargetHash != null) {
+        PlatformTarget(location, buildTargetHash, version, revision, platform)
       } else {
         null
       }
@@ -254,19 +272,29 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
 
           val platformVersion = prop.getProperty("Platform.Version")
           val revision = prop.getProperty("Pkg.Revision")?.toIntOrNull() ?: 1
-          val apiLevel = prop.getProperty("AndroidVersion.ApiLevel")?.toInt()
           val codeName = prop.getProperty("AndroidVersion.CodeName")
-          if (platformVersion != null && apiLevel != null) {
+          val extensionLevel = prop.getProperty("AndroidVersion.ExtensionLevel")?.toIntOrNull()
+          val isBaseExtension = prop.getProperty("AndroidVersion.IsBaseSdk") != "false"
+          val androidVersion =
+            prop.getProperty("AndroidVersion.ApiLevel")?.let {
+              val level = AndroidApiLevel.fromString(it)
+              if (level != null) {
+                AndroidVersion(level, codeName, extensionLevel, isBaseExtension)
+              } else {
+                null
+              }
+            }
+          if (platformVersion != null && androidVersion != null) {
             return PlatformTarget(
               location,
               sourceProperties.parentFile!!.name,
-              AndroidVersion(apiLevel, codeName),
+              androidVersion,
               revision,
               true,
             )
           }
         }
-      } catch (ignore: IOException) {}
+      } catch (_: IOException) {}
       return null
     }
 
@@ -451,7 +479,7 @@ internal class SimplePlatformLookup(private val sdkHome: File) : PlatformLookup 
 
     override fun getOptionalLibraries(): List<OptionalLibrary> {
       return optionalLibraries
-        ?: run { Companion.getOptionalLibraries(location).also { optionalLibraries = it } }
+        ?: run { getOptionalLibraries(location).also { optionalLibraries = it } }
     }
 
     // Sort in ascending order

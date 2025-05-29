@@ -92,7 +92,7 @@ class ProjectServices constructor(
         BuiltInKotlinServices.createFromPlugin(
             kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
             kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
-            baseExtension = projectInfo.getExtension(BaseExtension::class.java),
+            baseExtension = projectInfo.findExtension(BaseExtension::class.java),
             projectName = projectInfo.name
         )
     }

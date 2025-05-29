@@ -70,16 +70,14 @@ public class TestApplicationTaskManager
             @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
             @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
             @NonNull GlobalTaskCreationConfig globalConfig,
-            @NonNull TaskManagerConfig localConfig,
-            @NonNull BaseExtension extension) {
+            @NonNull TaskManagerConfig localConfig) {
         super(
                 project,
                 variants,
                 testComponents,
                 testFixturesComponents,
                 globalConfig,
-                localConfig,
-                extension);
+                localConfig);
     }
 
     private SeparateTestModuleTestData getTestData(

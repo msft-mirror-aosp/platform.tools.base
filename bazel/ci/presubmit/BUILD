@@ -69,8 +69,8 @@ py_test(
     srcs = ["impacted_targets_test.py"],
     deps = [
         ":bazel_diff",
-        ":impacted_targets",
         ":gerrit",
+        ":impacted_targets",
         "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:fake_build_env",
         "//tools/base/bazel/ci:fake_gce",
@@ -112,6 +112,9 @@ py_library(
     srcs = ["runs_per_test.py"],
     deps = [
         ":gerrit",
+        ":impacted_targets",
+        "//tools/base/bazel/ci:bazel",
+        "//tools/base/bazel/ci:gce",
     ],
 )
 
@@ -120,9 +123,12 @@ py_test(
     srcs = ["runs_per_test_test.py"],
     deps = [
         ":gerrit",
+        ":impacted_targets",
         ":runs_per_test",
+        "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:fake_build_env",
         "//tools/base/bazel/ci:fake_gce",
+        "//tools/base/bazel/ci:gce",
         "@absl-py//absl/testing:absltest",
     ],
 )

@@ -51,9 +51,9 @@ class TransformCache {
   virtual void Init();
 
   virtual bool ReadClass(const std::string& class_name,
-                         std::vector<dex::u4>* class_bytes) const;
+                         std::vector<dex::u1>* class_bytes) const;
   virtual bool WriteClass(const std::string& class_name,
-                          const std::vector<dex::u4>& class_bytes) const;
+                          const std::vector<dex::u1>& class_bytes) const;
 
  private:
   const std::string cache_path_;
@@ -67,9 +67,9 @@ class DisabledTransformCache : public TransformCache {
   void Init() override {}
 
   bool ReadClass(const std::string& class_name,
-                 std::vector<dex::u4>* class_bytes) const override;
+                 std::vector<dex::u1>* class_bytes) const override;
   bool WriteClass(const std::string& class_name,
-                  const std::vector<dex::u4>& class_bytes) const override;
+                  const std::vector<dex::u1>& class_bytes) const override;
 };
 
 struct BytecodeConvertingVisitor : public lir::Visitor {

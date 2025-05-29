@@ -118,10 +118,22 @@ class SimplePlatformLookupTest {
         "Platform android-31; api=API 31, rev=2",
         lookup.getLatestSdkTarget(includePreviews = false).describe(),
       )
-      //            assertEquals(
-      //                "Platform android-S; api=API 30, S preview, rev=2",
-      //                lookup.getLatestSdkTarget(includePreviews = true).describe()
-      //            )
+    }
+  }
+
+  @Test
+  fun test36() {
+    // Regression test for b/419294997
+    val sdkFolder = createSampleSdk()
+    val sdk = File(temporaryFolder.root, "sdk")
+    createSamplePlatform(sdk, "android-36", 36, null, 2, 0)
+    createSamplePlatform(sdk, "android-36.1", 36, null, 2, 1)
+
+    checkWithSimple(sdkFolder) { lookup ->
+      assertEquals(
+        "Platform android-36.1; api=API 36.1, extension level 17, rev=2",
+        lookup.getLatestSdkTarget(includePreviews = false).describe(),
+      )
     }
   }
 
@@ -416,6 +428,7 @@ class SimplePlatformLookupTest {
     api: Int,
     codename: String?,
     revision: Int,
+    minor: Int = 0,
   ) {
     val platforms = File(sdk, "platforms")
     val folder = File(platforms, hash)
@@ -428,7 +441,7 @@ class SimplePlatformLookupTest {
       val content =
         """
                 <?xml version="1.0" encoding="UTF-8" standalone="yes"?><ns5:sdk-repository xmlns:ns2="http://schemas.android.com/repository/android/common/01" xmlns:ns3="http://schemas.android.com/sdk/android/repo/addon2/01" xmlns:ns4="http://schemas.android.com/sdk/android/repo/sys-img2/01" xmlns:ns5="http://schemas.android.com/sdk/android/repo/repository2/01">
-                <localPackage path="platforms;$hash" obsolete="false"><type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:platformDetailsType"><api-level>$api</api-level>${if (codename != null || api <= 21) "<codename>${codename ?: ""}</codename>" else ""}<layoutlib api="12"/></type-details><revision><major>$revision</major></revision><display-name>Android SDK Platform 15, rev 5</display-name><dependencies><dependency path="tools"><min-revision><major>21</major></min-revision></dependency></dependencies></localPackage></ns5:sdk-repository>
+                <localPackage path="platforms;$hash" obsolete="false"><type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns5:platformDetailsType"><api-level>$api${if (api >= 36) ".$minor" else ""}</api-level>${if (codename != null || api <= 21) "<codename>${codename ?: ""}</codename>" else ""}${if (api >= 36) "<extension-level>17</extension-level><base-extension>true</base-extension>" else ""}<layoutlib api="12"/></type-details><revision><major>$revision</major></revision><display-name>Android SDK Platform 15, rev 5</display-name><dependencies><dependency path="tools"><min-revision><major>21</major></min-revision></dependency></dependencies></localPackage></ns5:sdk-repository>
                 """
           .trimIndent()
       File(folder, "package.xml").writeText(content)
@@ -449,9 +462,9 @@ class SimplePlatformLookupTest {
                 Platform.CodeName=${SdkVersionInfo.getBuildCode(api) ?: ""}
                 """
             .trimIndent()
-        else
+        else if (api < 36)
           """
-                Pkg.Desc=Android SDK Platform $version
+                Pkg.Desc=Android SDK Platform ${codename ?: version}
                 Pkg.UserSrc=false
                 Platform.Version=$version
                 Platform.CodeName=
@@ -462,6 +475,22 @@ class SimplePlatformLookupTest {
                 Platform.MinToolsRev=22
                 """
             .trimIndent()
+        else
+          """
+                Pkg.Desc=Android SDK Platform ${codename ?: "$version.$minor"}
+                Pkg.UserSrc=false
+                Platform.Version=$version
+                Platform.CodeName=
+                Pkg.Revision=$revision
+                AndroidVersion.ApiLevel=$api.$minor
+                AndroidVersion.ExtensionLevel=17
+                AndroidVersion.IsBaseSdk=true
+                ${if (codename != null) "AndroidVersion.CodeName=$codename\n" else ""}Layoutlib.Api=15
+                Layoutlib.Revision=$revision
+                Platform.MinToolsRev=22
+                """
+            .trimIndent()
+
       File(folder, "source.properties").writeText(content)
     }
 

@@ -245,6 +245,7 @@ com.android.tools:repository
     org.apache.commons:commons-compress (runtime)
     org.glassfish.jaxb:jaxb-runtime (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
 
 com.android.tools:sdk-common
   pomName=com.android.tools.sdk-common

@@ -19,17 +19,23 @@ package com.android.build.api.variant.impl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.getNamePrefixedWithAndroidTarget
 import org.gradle.api.Action
+import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinCompilation
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 @OptIn(ExternalKotlinTargetApi::class)
 open class KotlinMultiplatformAndroidCompilationImpl(
     delegate: Delegate
 ) : DecoratedExternalKotlinCompilation(delegate), KotlinMultiplatformAndroidCompilation {
+
+    @Suppress("UNCHECKED_CAST")
+    override val compileTaskProvider: TaskProvider<out KotlinCompilationTask<KotlinJvmCompilerOptions>>
+        get() = super.compileTaskProvider as TaskProvider<KotlinCompilationTask<KotlinJvmCompilerOptions>>
 
     // This is a workaround for non-removable parametrization for compiler options, it should be
     // safe to cast as the type will always be KotlinJvmCompilerOptions
