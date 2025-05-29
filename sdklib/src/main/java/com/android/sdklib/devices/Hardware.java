@@ -21,8 +21,10 @@ import com.android.annotations.Nullable;
 import com.android.resources.Keyboard;
 import com.android.resources.Navigation;
 import com.android.resources.UiMode;
+
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -359,43 +361,86 @@ public class Hardware {
         hash = 31 * hash + temp;
         hash = 31 * hash + (mMic ? 1 : 0);
         hash = 31 * hash + (mSdCard ? 1 : 0);
-        hash = mCameras.hashCode();
-        hash = 31 * hash + mKeyboard.ordinal();
-        hash = 31 * hash + mNav.ordinal();
-        hash = 31 * hash + mRam.hashCode();
-        hash = 31 * hash + mButtons.ordinal();
-        hash = 31 * hash + mInternalStorage.hashCode();
-        hash = 31 * hash + mRemovableStorage.hashCode();
+        hash = 31 * hash + mCameras.hashCode();
+
+        if (mKeyboard != null) {
+            hash = 31 * hash + mKeyboard.ordinal();
+        } else {
+            hash = 31 * hash;
+        }
+
+        if (mNav != null) {
+            hash = 31 * hash + mNav.ordinal();
+        } else {
+            hash = 31 * hash;
+        }
+
+        if (mRam != null) {
+            hash = 31 * hash + mRam.hashCode();
+        } else {
+            hash = 31 * hash;
+        }
+
+        if (mButtons != null) {
+            hash = 31 * hash + mButtons.ordinal();
+        } else {
+            hash = 31 * hash;
+        }
+
+        if (mInternalStorage != null) {
+            hash = 31 * hash + mInternalStorage.hashCode();
+        } else {
+            hash = 31 * hash;
+        }
+
+        if (mRemovableStorage != null) {
+            hash = 31 * hash + mRemovableStorage.hashCode();
+        } else {
+            hash = 31 * hash;
+        }
+
         if (mSkinFile != null) {
             hash = 31 * hash + mSkinFile.hashCode();
         }
 
-        for (Character c : mCpu.toCharArray()) {
-            hash = 31 * hash + c;
+        if (mCpu != null) {
+            for (Character c : mCpu.toCharArray()) {
+                hash = 31 * hash + c;
+            }
         }
 
-        for (Character c : mGpu.toCharArray()) {
-            hash = 31 * hash + c;
+        if (mGpu != null) {
+            for (Character c : mGpu.toCharArray()) {
+                hash = 31 * hash + c;
+            }
         }
 
         temp = 0;
-        for (Abi a : mAbis) {
-            temp |= 1 << a.ordinal();
+        if (mAbis != null) {
+            for (Abi a : mAbis) {
+                temp |= 1 << a.ordinal();
+            }
         }
         hash = 31 * hash + temp;
 
         temp = 0;
-        for (Abi a : mTranslatedAbis) {
-            temp |= 1 << a.ordinal();
+        if (mTranslatedAbis != null) {
+            for (Abi a : mTranslatedAbis) {
+                temp |= 1 << a.ordinal();
+            }
         }
         hash = 31 * hash + temp;
 
         temp = 0;
-        for (UiMode ui : mUiModes) {
-            temp |= 1 << ui.ordinal();
+        if (mUiModes != null) {
+            for (UiMode ui : mUiModes) {
+                temp |= 1 << ui.ordinal();
+            }
         }
         hash = 31 * hash + temp;
-
+        if (mPluggedIn != null) {
+            hash = 31 * hash + mPluggedIn.ordinal();
+        }
         return hash;
     }
 
