@@ -177,12 +177,7 @@ internal class AdbServerControllerImpl(
             connectProvider.createChannel(tracker.remainingNanos, TimeUnit.NANOSECONDS)
         } catch (e: IOException) {
             logger.debug(e) { "Failed `createChannel` on port ${currentState.params.lastUsedConfig.value?.serverPort}" }
-            // Failed to create channel. Try to restart adb server / update configuration and try
-            // again, but first ensure we are still in a good state, because the controller could
-            // have ended up in a stopped state by now.
-            host.timeProvider.withErrorTimeout(tracker.remainingMills) {
-                currentState.waitIsStarted()
-            }
+            // Failed to create channel. Try to restart adb server / update configuration and try again.
             host.timeProvider.withErrorTimeout(tracker.remainingMills) {
                 try {
                     restart()
@@ -386,8 +381,8 @@ internal class AdbServerControllerImpl(
         }
 
         override fun restart(currentTransitionStatus: TransitionStatus): State {
-            // We are stopped => no-op
-            return this
+            // We are stopped => restart operation is invalid
+            throw IOException("`AdbServerController` cannot be restarted when it's in a stopped state")
         }
     }
 
@@ -479,8 +474,8 @@ internal class AdbServerControllerImpl(
         }
 
         override fun restart(currentTransitionStatus: TransitionStatus): State {
-            // We are stopping (or stopped) => no-op, as we should only when started
-            return this
+            // We are stopping (or stopped) => restart operation is invalid
+            throw IOException("`AdbServerController` cannot be restarted when it's in a stopping/stopped state")
         }
 
         suspend fun performStop() {
