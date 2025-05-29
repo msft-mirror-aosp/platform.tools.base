@@ -23,8 +23,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.utils.FileUtils;
 import com.android.utils.PathUtils;
 import com.google.common.base.Enums;
@@ -49,6 +47,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ManifestMergerTestUtil {
 
@@ -153,11 +153,11 @@ public class ManifestMergerTestUtil {
      * @return A new {@link ManifestMergerTestUtil.TestFiles} instance. Must not be null.
      * @throws Exception when things fail to load properly.
      */
-    @NonNull
+    @NotNull
     static TestFiles loadTestData(
-            @NonNull String testDataDirectory,
-            @NonNull final String filename,
-            @NonNull String className)
+            @NotNull String testDataDirectory,
+            @NotNull final String filename,
+            @NotNull String className)
             throws Exception {
 
         String resName = testDataDirectory + "/" + filename;
@@ -400,20 +400,20 @@ public class ManifestMergerTestUtil {
 
         /** Files used by a given test case. */
         public TestFiles(
-                @NonNull String testDataRelativePath,
+                @NotNull String testDataRelativePath,
                 boolean shouldFail,
-                @NonNull File[] overlayFiles,
-                @NonNull File main,
-                @NonNull File[] libs,
-                @NonNull Iterable<File> navigationFiles,
-                @NonNull Map<String, Boolean> features,
-                @NonNull Map<String, String> injectAttributes,
-                @NonNull List<String> dependencyFeatureNames,
+                @NotNull File[] overlayFiles,
+                @NotNull File main,
+                @NotNull File[] libs,
+                @NotNull Iterable<File> navigationFiles,
+                @NotNull Map<String, Boolean> features,
+                @NotNull Map<String, String> injectAttributes,
+                @NotNull List<String> dependencyFeatureNames,
                 @Nullable String packageOverride,
-                @NonNull MergingReport.MergedManifestKind resultKind,
+                @NotNull MergingReport.MergedManifestKind resultKind,
                 @Nullable File actualResult,
-                @NonNull String expectedResult,
-                @NonNull String expectedErrors) {
+                @NotNull String expectedResult,
+                @NotNull String expectedErrors) {
             mTestDataRelativePath = testDataRelativePath;
             mShouldFail = shouldFail;
             mMain = main;
@@ -438,37 +438,37 @@ public class ManifestMergerTestUtil {
             return mShouldFail;
         }
 
-        @NonNull
+        @NotNull
         public File[] getOverlayFiles() {
             return mOverlayFiles;
         }
 
-        @NonNull
+        @NotNull
         public File getMain() {
             return mMain;
         }
 
-        @NonNull
+        @NotNull
         public File[] getLibs() {
             return mLibs;
         }
 
-        @NonNull
+        @NotNull
         public List<File> getNavigationFiles() {
             return mNavigationFiles;
         }
 
-        @NonNull
+        @NotNull
         public Map<String, Boolean> getFeatures() {
             return mFeatures;
         }
 
-        @NonNull
+        @NotNull
         public Map<String, String> getInjectAttributes() {
             return mInjectAttributes;
         }
 
-        @NonNull
+        @NotNull
         public ImmutableList<String> getDependencyFeatureNames() {
             return mDependencyFeatureNames;
         }
@@ -478,7 +478,7 @@ public class ManifestMergerTestUtil {
             return mPackageOverride;
         }
 
-        @NonNull
+        @NotNull
         public MergingReport.MergedManifestKind getResultKind() {
             return mResultKind;
         }
@@ -488,7 +488,7 @@ public class ManifestMergerTestUtil {
             return mActualResult;
         }
 
-        @NonNull
+        @NotNull
         public String getExpectedResult() {
             return mExpectedResult;
         }

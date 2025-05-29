@@ -20,11 +20,11 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.xml.AndroidManifest.ATTRIBUTE_GLESVERSION;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
 import com.android.xml.AndroidManifest;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Attr;
 
 /**
@@ -55,8 +55,8 @@ public class ElementsTrimmer {
      * @param mergingReport the report to log errors and actions.
      */
     public static void trim(
-            @NonNull XmlDocument xmlDocument,
-            @NonNull MergingReport.Builder mergingReport) {
+            @NotNull XmlDocument xmlDocument,
+            @NotNull MergingReport.Builder mergingReport) {
 
         // I sort the glEsVersion declaration by value.
         NavigableMap<Integer, XmlElement> glEsVersionDeclarations = new TreeMap<Integer, XmlElement>();
@@ -147,7 +147,7 @@ public class ElementsTrimmer {
     }
 
     private static Integer getGlEsVersion(
-            @NonNull XmlElement xmlElement, MergingReport.Builder mergingReport) {
+            @NotNull XmlElement xmlElement, MergingReport.Builder mergingReport) {
         Attr glEsVersion = xmlElement.getAttributeNodeNS(ANDROID_URI, ATTRIBUTE_GLESVERSION);
         if (glEsVersion == null) {
             return null;
@@ -164,7 +164,7 @@ public class ElementsTrimmer {
         }
     }
 
-    private static Integer getHexValue(@NonNull Attr attribute) {
+    private static Integer getHexValue(@NotNull Attr attribute) {
         try {
             return Integer.decode(attribute.getValue());
         } catch (NumberFormatException e) {

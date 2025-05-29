@@ -19,7 +19,6 @@ package com.android.manifmerger;
 import static com.android.manifmerger.MergingReport.Result.ERROR;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
@@ -28,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 import kotlin.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -57,9 +57,9 @@ public class ToolsInstructionsCleaner {
      * @return the cleaned document or null if an error occurred.
      */
     public static Optional<Document> cleanToolsReferences(
-            @NonNull ManifestMerger2.MergeType mergeType,
-            @NonNull XmlDocument document,
-            @NonNull ILogger logger) {
+            @NotNull ManifestMerger2.MergeType mergeType,
+            @NotNull XmlDocument document,
+            @NotNull ILogger logger) {
 
         Preconditions.checkNotNull(document);
         Preconditions.checkNotNull(logger);
@@ -80,11 +80,11 @@ public class ToolsInstructionsCleaner {
         return Optional.absent();
     }
 
-    @NonNull
+    @NotNull
     private static Pair<MergingReport.Result, Boolean> cleanToolsReferences(
-            @NonNull ManifestMerger2.MergeType mergeType,
-            @NonNull Element element,
-            @NonNull ILogger logger) {
+            @NotNull ManifestMerger2.MergeType mergeType,
+            @NotNull Element element,
+            @NotNull ILogger logger) {
 
         if (SdkConstants.TOOLS_URI.equals(element.getNamespaceURI())) {
             // Delete the entire node

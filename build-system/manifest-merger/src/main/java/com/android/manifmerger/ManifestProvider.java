@@ -15,8 +15,8 @@
  */
 package com.android.manifmerger;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.io.File;
 
 /**
@@ -27,7 +27,7 @@ public interface ManifestProvider {
     /**
      * Returns the location of the manifest.
      */
-    @NonNull
+    @NotNull
     File getManifest();
 
     /**

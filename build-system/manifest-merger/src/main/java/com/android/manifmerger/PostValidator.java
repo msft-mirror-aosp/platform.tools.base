@@ -19,12 +19,12 @@ package com.android.manifmerger;
 import static com.android.manifmerger.Actions.ActionType;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
 import com.android.utils.XmlUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -57,8 +57,8 @@ public class PostValidator {
      * @param mergingReport report for errors and warnings.
      */
     public static void validate(
-            @NonNull XmlDocument xmlDocument,
-            @NonNull MergingReport.Builder mergingReport) {
+            @NotNull XmlDocument xmlDocument,
+            @NotNull MergingReport.Builder mergingReport) {
 
         Preconditions.checkNotNull(xmlDocument);
         Preconditions.checkNotNull(mergingReport);
@@ -77,7 +77,7 @@ public class PostValidator {
      * not requiring a xmlns: declaration. Yet the implicit elements handling may have added
      * attributes requiring the namespace declaration.
      */
-    private static void enforceAndroidNamespaceDeclaration(@NonNull XmlDocument xmlDocument) {
+    private static void enforceAndroidNamespaceDeclaration(@NotNull XmlDocument xmlDocument) {
         xmlDocument
                 .getRootNode()
                 .enforceNamespaceDeclaration(
@@ -90,7 +90,7 @@ public class PostValidator {
      * therefore not requiring a xmlns: declaration. Yet the implicit elements handling may have
      * added attributes requiring the namespace declaration.
      */
-    protected static void enforceToolsNamespaceDeclaration(@NonNull XmlDocument xmlDocument) {
+    protected static void enforceToolsNamespaceDeclaration(@NotNull XmlDocument xmlDocument) {
         final Element rootElement = xmlDocument.getRootNode().getXml();
         if (SdkConstants.TOOLS_PREFIX.equals(
                 XmlUtils.lookupNamespacePrefix(rootElement, SdkConstants.TOOLS_URI, null, false))) {
@@ -116,7 +116,7 @@ public class PostValidator {
      * </ul>
      * @param xmlElement the root element of the manifest document.
      */
-    private static void reOrderElements(@NonNull XmlElement xmlElement) {
+    private static void reOrderElements(@NotNull XmlElement xmlElement) {
 
         reOrderActivityAlias(xmlElement);
         reOrderApplication(xmlElement);
@@ -128,7 +128,7 @@ public class PostValidator {
      *
      * @param xmlElement the root element of the manifest document.
      */
-    private static void reOrderActivityAlias(@NonNull XmlElement xmlElement) {
+    private static void reOrderActivityAlias(@NotNull XmlElement xmlElement) {
 
         // look up application element.
         Optional<XmlElement> element = xmlElement
@@ -185,7 +185,7 @@ public class PostValidator {
      *
      * @param xmlElement the root element of the manifest document.
      */
-    private static void reOrderApplication(@NonNull XmlElement xmlElement) {
+    private static void reOrderApplication(@NotNull XmlElement xmlElement) {
 
         // look up application element.
         Optional<XmlElement> element = xmlElement
@@ -212,7 +212,7 @@ public class PostValidator {
      *
      * @param xmlElement the root element of the manifest document.
      */
-    private static void reOrderUsesSdk(@NonNull XmlElement xmlElement) {
+    private static void reOrderUsesSdk(@NotNull XmlElement xmlElement) {
 
         // look up uses-sdk element.
         Optional<XmlElement> element = xmlElement
@@ -250,9 +250,9 @@ public class PostValidator {
      * instructions were applied once or {@link MergingReport.Result#WARNING} otherwise.
      */
     private static void validate(
-            @NonNull XmlElement xmlElement,
-            @NonNull Actions actions,
-            @NonNull MergingReport.Builder mergingReport) {
+            @NotNull XmlElement xmlElement,
+            @NotNull Actions actions,
+            @NotNull MergingReport.Builder mergingReport) {
 
         NodeOperationType operationType = xmlElement.getOperationType();
         boolean ignoreWarning = checkIgnoreWarning(xmlElement);
@@ -298,12 +298,12 @@ public class PostValidator {
 
     /** Verifies that all merging attributes on a passed xml element were applied. */
     private static void validateAttributes(
-            @NonNull XmlElement xmlElement,
-            @NonNull Actions actions,
-            @NonNull MergingReport.Builder mergingReport,
+            @NotNull XmlElement xmlElement,
+            @NotNull Actions actions,
+            @NotNull MergingReport.Builder mergingReport,
             boolean ignoreWarning) {
 
-        @NonNull Collection<Map.Entry<XmlNode.NodeName, AttributeOperationType>> attributeOperations
+        @NotNull Collection<Map.Entry<XmlNode.NodeName, AttributeOperationType>> attributeOperations
                 = xmlElement.getAttributeOperations();
         for (Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation :
                 attributeOperations) {
@@ -352,7 +352,7 @@ public class PostValidator {
      * @return true if it was applied, false otherwise.
      */
     private static boolean isNodeOperationPresent(
-            @NonNull XmlElement xmlElement, @NonNull Actions actions, ActionType action) {
+            @NotNull XmlElement xmlElement, @NotNull Actions actions, ActionType action) {
 
         for (Actions.NodeRecord nodeRecord : actions.getNodeRecords(xmlElement.getId())) {
             if (nodeRecord.getActionType() == action) {
@@ -369,9 +369,9 @@ public class PostValidator {
      * @return true if it was applied, false otherwise.
      */
     private static boolean isAttributeOperationPresent(
-            @NonNull XmlElement xmlElement,
-            @NonNull Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation,
-            @NonNull Actions actions,
+            @NotNull XmlElement xmlElement,
+            @NotNull Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation,
+            @NotNull Actions actions,
             ActionType action) {
 
         for (Actions.AttributeRecord attributeRecord : actions.getAttributeRecords(
@@ -391,7 +391,7 @@ public class PostValidator {
      * @param mergingReport report for errors and warnings.
      */
     private static void validateAndroidAttributes(
-            @NonNull XmlElement xmlElement, @NonNull MergingReport.Builder mergingReport) {
+            @NotNull XmlElement xmlElement, @NotNull MergingReport.Builder mergingReport) {
 
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
             if (xmlAttribute.getModel() != null) {
@@ -411,8 +411,8 @@ public class PostValidator {
      * @return whether the ignoreWarning flag is set
      */
     @VisibleForTesting
-    static boolean checkIgnoreWarning(@NonNull XmlElement xmlElement) {
-        @NonNull
+    static boolean checkIgnoreWarning(@NotNull XmlElement xmlElement) {
+        @NotNull
         Collection<Map.Entry<XmlNode.NodeName, AttributeOperationType>> attributeOperations =
                 xmlElement.getAttributeOperations();
         for (Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation :
@@ -428,7 +428,7 @@ public class PostValidator {
     }
 
     private static void checkOnlyOneUsesSdk(
-            @NonNull XmlDocument manifest, @NonNull MergingReport.Builder mergingReport) {
+            @NotNull XmlDocument manifest, @NotNull MergingReport.Builder mergingReport) {
         XmlElement root = manifest.getRootNode();
         Preconditions.checkNotNull(root);
         var actions = mergingReport.build().getActions();

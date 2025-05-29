@@ -17,8 +17,6 @@
 package com.android.manifmerger;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Joiner;
@@ -26,6 +24,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
 
 /**
@@ -38,9 +38,9 @@ import org.w3c.dom.Attr;
  */
 public class XmlAttribute extends XmlNode {
 
-    @NonNull
+    @NotNull
     private final XmlElement mOwnerElement;
-    @NonNull
+    @NotNull
     private final Attr mXml;
     @Nullable
     private final AttributeModel mAttributeModel;
@@ -53,8 +53,8 @@ public class XmlAttribute extends XmlNode {
      * @param xml the xml definition of the attribute.
      */
     public XmlAttribute(
-            @NonNull XmlElement ownerElement,
-            @NonNull Attr xml,
+            @NotNull XmlElement ownerElement,
+            @NotNull Attr xml,
             @Nullable AttributeModel attributeModel) {
         this.mOwnerElement = Preconditions.checkNotNull(ownerElement);
         this.mXml = Preconditions.checkNotNull(xml);
@@ -104,7 +104,7 @@ public class XmlAttribute extends XmlNode {
     /**
      * Returns the attribute's name, providing isolation from details like namespaces handling.
      */
-    @NonNull
+    @NotNull
     @Override
     public NodeName getName() {
         return XmlNode.unwrapName(mXml);
@@ -113,7 +113,7 @@ public class XmlAttribute extends XmlNode {
     /**
      * Returns the attribute's value
      */
-    @NonNull
+    @NotNull
     public String getValue() {
         return mXml.getValue();
     }
@@ -122,7 +122,7 @@ public class XmlAttribute extends XmlNode {
      * Returns a display friendly identification string that can be used in machine and user
      * readable messages.
      */
-    @NonNull
+    @NotNull
     @Override
     public NodeKey getId() {
         // (Id of the parent element)@(my name)
@@ -130,7 +130,7 @@ public class XmlAttribute extends XmlNode {
         return new NodeKey(mOwnerElement.getId() + "@" + myName);
     }
 
-    @NonNull
+    @NotNull
     @Override
     public SourcePosition getPosition() {
         try {
@@ -140,7 +140,7 @@ public class XmlAttribute extends XmlNode {
         }
     }
 
-    @NonNull
+    @NotNull
     @Override
     public Attr getXml() {
         return mXml;
@@ -155,19 +155,19 @@ public class XmlAttribute extends XmlNode {
         return mAttributeModel;
     }
 
-    @NonNull
+    @NotNull
     XmlElement getOwnerElement() {
         return mOwnerElement;
     }
 
-    void mergeInHigherPriorityElement(@NonNull XmlElement higherPriorityElement,
-            @NonNull MergingReport.Builder mergingReport) {
+    void mergeInHigherPriorityElement(@NotNull XmlElement higherPriorityElement,
+            @NotNull MergingReport.Builder mergingReport) {
 
         // does the higher priority has the same attribute as myself ?
         Optional<XmlAttribute> higherPriorityAttributeOptional =
                 higherPriorityElement.getAttribute(getName());
 
-        @NonNull AttributeOperationType attributeOperationType =
+        @NotNull AttributeOperationType attributeOperationType =
                 higherPriorityElement.getAttributeOperationType(getName());
 
         if (higherPriorityAttributeOptional.isPresent()) {
@@ -214,8 +214,8 @@ public class XmlAttribute extends XmlNode {
      * @param operationType user operation type optionally requested by the user.
      */
     private void handleBothAttributePresent(
-            @NonNull MergingReport.Builder report,
-            @NonNull XmlAttribute higherPriority,
+            @NotNull MergingReport.Builder report,
+            @NotNull XmlAttribute higherPriority,
             AttributeOperationType operationType) {
 
         // check that this XmlAttribute's XmlDocument.Type is mergeable.
@@ -271,7 +271,7 @@ public class XmlAttribute extends XmlNode {
     }
 
     private boolean automaticallyRejected(
-            @NonNull MergingReport.Builder report, @NonNull XmlAttribute higherPriority) {
+            @NotNull MergingReport.Builder report, @NotNull XmlAttribute higherPriority) {
         if (mOwnerElement.getDocument().getModel().autoRejectConflicts()) {
             Actions.AttributeRecord attributeRecord =
                     report.getActionRecorder().getAttributeCreationRecord(higherPriority);
@@ -309,7 +309,7 @@ public class XmlAttribute extends XmlNode {
      * @param higherPriority the higherPriority attribute
      */
     private void handleBothToolsAttributePresent(
-            @NonNull XmlAttribute higherPriority) {
+            @NotNull XmlAttribute higherPriority) {
 
         // do not merge tools:node attributes, the higher priority one wins.
         if (getName().getLocalName().equals(NodeOperationType.NODE_LOCAL_NAME)) {
@@ -317,8 +317,8 @@ public class XmlAttribute extends XmlNode {
         }
 
         // everything else should be merged, duplicates should be eliminated.
-        @NonNull Splitter splitter = Splitter.on(',');
-        @NonNull ImmutableSet.Builder<String> targetValues = ImmutableSet.builder();
+        @NotNull Splitter splitter = Splitter.on(',');
+        @NotNull ImmutableSet.Builder<String> targetValues = ImmutableSet.builder();
         targetValues.addAll(splitter.split(higherPriority.getValue()));
         targetValues.addAll(splitter.split(getValue()));
         higherPriority.setValue(Joiner.on(',').join(targetValues.build()));
@@ -333,8 +333,8 @@ public class XmlAttribute extends XmlNode {
      * be stored.
      */
     @Nullable
-    private String mergeThisAndDefaultValue(@NonNull MergingReport.Builder mergingReport,
-            @NonNull XmlElement implicitNode) {
+    private String mergeThisAndDefaultValue(@NotNull MergingReport.Builder mergingReport,
+            @NotNull XmlElement implicitNode) {
 
         // check that this XmlAttribute's XmlDocument.Type is mergeable.
         if (isNonMergeableFromLowerPriorityNode()) {
@@ -381,7 +381,7 @@ public class XmlAttribute extends XmlNode {
      * @param implicitNode the lower priority node where the implicit attribute value resides.
      */
     void mergeWithLowerPriorityDefaultValue(
-            @NonNull MergingReport.Builder mergingReport, @NonNull XmlElement implicitNode) {
+            @NotNull MergingReport.Builder mergingReport, @NotNull XmlElement implicitNode) {
 
         if (mAttributeModel == null || mAttributeModel.getDefaultValue() == null
                 || !mAttributeModel.getMergingPolicy().shouldMergeDefaultValues()) {
@@ -413,9 +413,9 @@ public class XmlAttribute extends XmlNode {
     }
 
     private void addIllegalImplicitOverrideMessage(
-            @NonNull MergingReport.Builder mergingReport,
-            @NonNull AttributeModel attributeModel,
-            @NonNull XmlElement implicitNode) {
+            @NotNull MergingReport.Builder mergingReport,
+            @NotNull AttributeModel attributeModel,
+            @NotNull XmlElement implicitNode) {
         String error = String.format("Attribute %1$s value=(%2$s) at %3$s"
                         + " cannot override implicit default value=(%4$s) at %5$s",
                 getId(),
@@ -427,8 +427,8 @@ public class XmlAttribute extends XmlNode {
     }
 
     private void addConflictingValueMessage(
-            @NonNull MergingReport.Builder report,
-            @NonNull XmlAttribute higherPriority) {
+            @NotNull MergingReport.Builder report,
+            @NotNull XmlAttribute higherPriority) {
 
         Actions.AttributeRecord attributeRecord = report.getActionRecorder()
                 .getAttributeCreationRecord(higherPriority);
@@ -489,7 +489,7 @@ public class XmlAttribute extends XmlNode {
         return false;
     }
 
-    @NonNull
+    @NotNull
     @Override
     public SourceFile getSourceFile() {
         return getOwnerElement().getSourceFile();

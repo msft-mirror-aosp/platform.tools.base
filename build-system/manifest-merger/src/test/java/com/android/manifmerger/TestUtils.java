@@ -16,12 +16,12 @@
 
 package com.android.manifmerger;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFile;
 
 import com.google.common.io.Files;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -103,8 +103,8 @@ public class TestUtils {
     }
 
     static XmlDocument xmlDocumentFromString(
-            @NonNull KeyResolver<String> selectors,
-            @NonNull SourceFile location,
+            @NotNull KeyResolver<String> selectors,
+            @NotNull SourceFile location,
             String input,
             ManifestModel model)
             throws IOException, SAXException, ParserConfigurationException {
@@ -120,7 +120,7 @@ public class TestUtils {
     }
 
     /** Utility method to save a {@link String} XML into a file. */
-    public static File inputAsFile(@NonNull String testName, @NonNull String input)
+    public static File inputAsFile(@NotNull String testName, @NotNull String input)
             throws IOException {
         File tmpFile = File.createTempFile(testName, ".xml");
         tmpFile.deleteOnExit();

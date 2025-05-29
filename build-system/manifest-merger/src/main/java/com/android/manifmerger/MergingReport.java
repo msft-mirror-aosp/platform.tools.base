@@ -16,8 +16,6 @@
 
 package com.android.manifmerger;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
@@ -32,6 +30,8 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 import javax.xml.parsers.ParserConfigurationException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 /**
@@ -55,34 +55,34 @@ public class MergingReport {
         MERGED,
     }
 
-    @NonNull
+    @NotNull
     private final Map<MergedManifestKind, String> mergedDocuments;
-    @NonNull
+    @NotNull
     private final Map<MergedManifestKind, XmlDocument> mergedXmlDocuments;
-    @NonNull
+    @NotNull
     private final Result result;
     // list of logging events, ordered by their recording time.
-    @NonNull
+    @NotNull
     private final ImmutableList<Record> records;
-    @NonNull
+    @NotNull
     private final ImmutableList<String> intermediaryStages;
-    @NonNull
+    @NotNull
     private final Actions actions;
 
     /**
      * In some cases AAPT manifest is the same as merged one, so we can save time by reusing the
      * merged manifest
      */
-    @NonNull private final boolean isAaptSafeManifestUnchanged;
+    @NotNull private final boolean isAaptSafeManifestUnchanged;
 
     private MergingReport(
-            @NonNull Map<MergedManifestKind, String> mergedDocuments,
-            @NonNull Map<MergedManifestKind, XmlDocument> mergedXmlDocuments,
-            @NonNull Result result,
-            @NonNull ImmutableList<Record> records,
-            @NonNull ImmutableList<String> intermediaryStages,
-            @NonNull Actions actions,
-            @NonNull boolean isAaptSafeManifestUnchanged) {
+            @NotNull Map<MergedManifestKind, String> mergedDocuments,
+            @NotNull Map<MergedManifestKind, XmlDocument> mergedXmlDocuments,
+            @NotNull Result result,
+            @NotNull ImmutableList<Record> records,
+            @NotNull ImmutableList<String> intermediaryStages,
+            @NotNull Actions actions,
+            @NotNull boolean isAaptSafeManifestUnchanged) {
         this.mergedDocuments = mergedDocuments;
         this.mergedXmlDocuments = mergedXmlDocuments;
         this.result = result;
@@ -95,7 +95,7 @@ public class MergingReport {
     /**
      * dumps all logging records to a logger.
      */
-    public void log(@NonNull ILogger logger) {
+    public void log(@NotNull ILogger logger) {
         for (Record record : records) {
             switch(record.mSeverity) {
                 case WARNING:
@@ -121,7 +121,7 @@ public class MergingReport {
     }
 
     @Nullable
-    public String getMergedDocument(@NonNull MergedManifestKind state) {
+    public String getMergedDocument(@NotNull MergedManifestKind state) {
         return mergedDocuments.get(state);
     }
 
@@ -130,7 +130,7 @@ public class MergingReport {
     }
 
     @Nullable
-    public XmlDocument getMergedXmlDocument(@NonNull MergedManifestKind state) {
+    public XmlDocument getMergedXmlDocument(@NotNull MergedManifestKind state) {
         return mergedXmlDocuments.get(state);
     }
 
@@ -139,7 +139,7 @@ public class MergingReport {
      * {@link com.android.manifmerger.ManifestMerger2.Invoker.Feature#KEEP_INTERMEDIARY_STAGES}
      * is set.
      */
-    @NonNull
+    @NotNull
     public ImmutableList<String> getIntermediaryStages() {
         return intermediaryStages;
     }
@@ -167,22 +167,22 @@ public class MergingReport {
         }
     }
 
-    @NonNull
+    @NotNull
     public Result getResult() {
         return result;
     }
 
-    @NonNull
+    @NotNull
     public ImmutableList<Record> getLoggingRecords() {
         return records;
     }
 
-    @NonNull
+    @NotNull
     public Actions getActions() {
         return actions;
     }
 
-    @NonNull
+    @NotNull
     public String getReportString() {
         switch (result) {
             case SUCCESS:
@@ -208,38 +208,38 @@ public class MergingReport {
 
         public enum Severity {WARNING, ERROR, INFO }
 
-        @NonNull
+        @NotNull
         private final Severity mSeverity;
-        @NonNull
+        @NotNull
         private final String mLog;
-        @NonNull
+        @NotNull
         private final SourceFilePosition mSourceLocation;
 
         private Record(
-                @NonNull SourceFilePosition sourceLocation,
-                @NonNull Severity severity,
-                @NonNull String mLog) {
+                @NotNull SourceFilePosition sourceLocation,
+                @NotNull Severity severity,
+                @NotNull String mLog) {
             this.mSourceLocation = sourceLocation;
             this.mSeverity = severity;
             this.mLog = mLog;
         }
 
-        @NonNull
+        @NotNull
         public Severity getSeverity() {
             return mSeverity;
         }
 
-        @NonNull
+        @NotNull
         public String getMessage() {
             return mLog;
         }
 
-        @NonNull
+        @NotNull
         public SourceFilePosition getSourceLocation() {
             return mSourceLocation;
         }
 
-        @NonNull
+        @NotNull
         @Override
         public String toString() {
             return mSourceLocation.toString() // needs short string.
@@ -284,23 +284,23 @@ public class MergingReport {
         private Map<MergedManifestKind, XmlDocument> mergedXmlDocuments =
                 new EnumMap<>(MergedManifestKind.class);
 
-        @NonNull private ImmutableSet.Builder<Record> mRecordBuilder = new ImmutableSet.Builder<>();
+        @NotNull private ImmutableSet.Builder<Record> mRecordBuilder = new ImmutableSet.Builder<>();
 
-        @NonNull
+        @NotNull
         private ImmutableList.Builder<String> mIntermediaryStages = new ImmutableList.Builder<>();
 
         private boolean mHasWarnings = false;
         private boolean mHasErrors = false;
-        @NonNull
+        @NotNull
         private ActionRecorder mActionRecorder = new ActionRecorder();
-        @NonNull private final ILogger mLogger;
+        @NotNull private final ILogger mLogger;
         private boolean isAaptSafeManifestUnchanged = false;
 
-        Builder(@NonNull ILogger logger) {
+        Builder(@NotNull ILogger logger) {
             mLogger = logger;
         }
 
-        Builder setMergedDocument(@NonNull MergedManifestKind mergedManifestKind, @NonNull String mergedDocument) {
+        Builder setMergedDocument(@NotNull MergedManifestKind mergedManifestKind, @NotNull String mergedDocument) {
             this.mergedDocuments.put(mergedManifestKind, mergedDocument);
             return this;
         }
@@ -310,18 +310,18 @@ public class MergingReport {
             return this;
         }
 
-        Builder setMergedXmlDocument(@NonNull XmlDocument mergedDocument) {
+        Builder setMergedXmlDocument(@NotNull XmlDocument mergedDocument) {
             this.mergedXmlDocuments.put(MergedManifestKind.MERGED, mergedDocument);
             return this;
         }
 
-        @NonNull
+        @NotNull
         @VisibleForTesting
-        Builder addMessage(@NonNull SourceFile sourceFile,
+        Builder addMessage(@NotNull SourceFile sourceFile,
                 int line,
                 int column,
-                @NonNull Record.Severity severity,
-                @NonNull String message) {
+                @NotNull Record.Severity severity,
+                @NotNull String message) {
             // The line and column used are 1-based, but SourcePosition uses zero-based.
             return addMessage(
                     new SourceFilePosition(sourceFile, new SourcePosition(line - 1, column -1, -1)),
@@ -329,10 +329,10 @@ public class MergingReport {
                     message);
         }
 
-        @NonNull
-        Builder addMessage(@NonNull SourceFile sourceFile,
-                @NonNull Record.Severity severity,
-                @NonNull String message) {
+        @NotNull
+        Builder addMessage(@NotNull SourceFile sourceFile,
+                @NotNull Record.Severity severity,
+                @NotNull String message) {
             return addMessage(
                     new SourceFilePosition(sourceFile, SourcePosition.UNKNOWN),
                     severity,
@@ -340,26 +340,26 @@ public class MergingReport {
         }
 
         void addMessage(
-                @NonNull XmlElement element,
-                @NonNull MergingReport.Record.Severity severity,
-                @NonNull String message) {
+                @NotNull XmlElement element,
+                @NotNull MergingReport.Record.Severity severity,
+                @NotNull String message) {
             addMessage(element.getSourceFilePosition(), severity, message);
         }
 
-        @NonNull
+        @NotNull
         Builder addMessage(
-                @NonNull XmlAttribute attribute,
-                @NonNull MergingReport.Record.Severity severity,
-                @NonNull String message) {
+                @NotNull XmlAttribute attribute,
+                @NotNull MergingReport.Record.Severity severity,
+                @NotNull String message) {
             return addMessage(attribute, attribute.getPosition(), severity, message);
         }
 
-        @NonNull
+        @NotNull
         Builder addMessage(
-                @NonNull XmlAttribute attribute,
-                @NonNull SourcePosition position,
-                @NonNull MergingReport.Record.Severity severity,
-                @NonNull String message) {
+                @NotNull XmlAttribute attribute,
+                @NotNull SourcePosition position,
+                @NotNull MergingReport.Record.Severity severity,
+                @NotNull String message) {
             return addMessage(
                     new SourceFilePosition(
                             attribute.getOwnerElement().getDocument().getSourceFile(), position),
@@ -367,10 +367,10 @@ public class MergingReport {
                     message);
         }
 
-        @NonNull
-        Builder addMessage(@NonNull SourceFilePosition sourceFilePosition,
-                    @NonNull Record.Severity severity,
-                    @NonNull String message) {
+        @NotNull
+        Builder addMessage(@NotNull SourceFilePosition sourceFilePosition,
+                    @NotNull Record.Severity severity,
+                    @NotNull String message) {
             switch (severity) {
                 case ERROR:
                     mHasErrors = true;
@@ -383,8 +383,8 @@ public class MergingReport {
             return this;
         }
 
-        @NonNull
-        Builder addMergingStage(@NonNull String xml) {
+        @NotNull
+        Builder addMergingStage(@NotNull String xml) {
             mIntermediaryStages.add(xml);
             return this;
         }
@@ -396,12 +396,12 @@ public class MergingReport {
             return mHasErrors;
         }
 
-        @NonNull
+        @NotNull
         ActionRecorder getActionRecorder() {
             return mActionRecorder;
         }
 
-        @NonNull
+        @NotNull
         MergingReport build() {
             Result result = mHasErrors
                     ? Result.ERROR
@@ -419,7 +419,7 @@ public class MergingReport {
                     isAaptSafeManifestUnchanged);
         }
 
-        @NonNull
+        @NotNull
         public ILogger getLogger() {
             return mLogger;
         }

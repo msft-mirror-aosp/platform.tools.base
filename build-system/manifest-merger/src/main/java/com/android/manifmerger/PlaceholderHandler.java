@@ -17,11 +17,11 @@
 package com.android.manifmerger;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourcePosition;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Replaces all placeholders of the form ${name} with a tool invocation provided value
@@ -52,13 +52,13 @@ public class PlaceholderHandler {
          * Returns a placeholder value for the placeholder key or null if none exists.
          */
         @Nullable
-        String getValue(@NonNull T key);
+        String getValue(@NotNull T key);
     }
 
     /**
      * Returns true if the passed string is a placeholder value, false otherwise.
      */
-    public static boolean isPlaceHolder(@NonNull String string) {
+    public static boolean isPlaceHolder(@NotNull String string) {
         return PATTERN.matcher(string).matches();
     }
 
@@ -76,19 +76,19 @@ public class PlaceholderHandler {
      * @param mergingReportBuilder to report errors and log actions.
      */
     public static void visit(
-            @NonNull MergingReport.Record.Severity severity,
-            @NonNull XmlDocument xmlDocument,
-            @NonNull KeyBasedValueResolver<String> valueProvider,
-            @NonNull MergingReport.Builder mergingReportBuilder) {
+            @NotNull MergingReport.Record.Severity severity,
+            @NotNull XmlDocument xmlDocument,
+            @NotNull KeyBasedValueResolver<String> valueProvider,
+            @NotNull MergingReport.Builder mergingReportBuilder) {
 
         visit(severity, xmlDocument.getRootNode(), valueProvider, mergingReportBuilder);
     }
 
     private static void visit(
-            @NonNull MergingReport.Record.Severity severity,
-            @NonNull XmlElement xmlElement,
-            @NonNull KeyBasedValueResolver<String> valueProvider,
-            @NonNull MergingReport.Builder mergingReportBuilder) {
+            @NotNull MergingReport.Record.Severity severity,
+            @NotNull XmlElement xmlElement,
+            @NotNull KeyBasedValueResolver<String> valueProvider,
+            @NotNull MergingReport.Builder mergingReportBuilder) {
 
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
 

@@ -36,7 +36,6 @@ import static org.junit.Assert.fail;
 
 import com.android.AndroidXConstants;
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
 import com.android.ide.common.xml.XmlFormatPreferences;
 import com.android.ide.common.xml.XmlFormatStyle;
 import com.android.ide.common.xml.XmlPrettyPrinter;
@@ -50,6 +49,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.truth.Truth;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -775,7 +775,7 @@ public class ManifestMerger2SmallTest {
                 .withFeatures(Feature.NO_PLACEHOLDER_REPLACEMENT)
                 .withFileStreamProvider(new ManifestMerger2.FileStreamProvider() {
                     @Override
-                    protected InputStream getInputStream(@NonNull File file)
+                    protected InputStream getInputStream(@NotNull File file)
                             throws FileNotFoundException {
                         return new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
                     }
