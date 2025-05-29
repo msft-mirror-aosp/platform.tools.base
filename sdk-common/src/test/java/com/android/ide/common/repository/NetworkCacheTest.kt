@@ -243,6 +243,47 @@ class NetworkCacheTest {
         assertThat(networkEnabledCache.getContentAsString(windows)).isEqualTo("windows")
     }
 
+    @Test
+    fun testFullUrlsSentAsRelativePath() {
+        val url = "https://example.com/release-notes.html"
+        val servedContent = mapOf(
+            url to "Example release notes"
+        )
+        val networkEnabledCache = object : TestCache(networkEnabled = true) {
+            override fun readUrlData(url: String, timeout: Int, lastModified: Long) =
+                ReadUrlDataResult(servedContent[url]?.toByteArray(Charsets.UTF_8), true)
+        }
+        assertThat(networkEnabledCache.getContentAsString(url)).isEqualTo("Example release notes")
+    }
+
+    @Test
+    fun testRelativeUrlHasParameters() {
+        val url = "path1/path2:param1=value1;param2=value2"
+        val servedContent = mapOf(
+            url to "Example release notes"
+        )
+        val networkEnabledCache = object : TestCache(networkEnabled = true) {
+            override fun readUrlData(url: String, timeout: Int, lastModified: Long) =
+                ReadUrlDataResult(servedContent[url]?.toByteArray(Charsets.UTF_8), true)
+        }
+        assertThat(networkEnabledCache.getContentAsString(url)).isEqualTo("Example release notes")
+    }
+
+
+    @Test
+    fun testGetRelativePath() {
+        val cache = object : TestCache(networkEnabled = true) {
+            override fun readUrlData(url: String, timeout: Int, lastModified: Long) =
+                ReadUrlDataResult(null, true)
+        }
+
+        assertThat(cache.getRelativePath("https://example.com/release-notes.html")).isEqualTo("https-3A//example.com/release-notes.html")
+        assertThat(cache.getRelativePath("path1/path2:param1=value1;param2=value2")).isEqualTo("path1/path2-3Aparam1-3Dvalue1-3Bparam2-3Dvalue2")
+        assertThat(cache.getRelativePath("https://example.com/s?id=a&b")).isEqualTo("https-3A//example.com/s-3Fid-3Da-26b")
+        assertThat(cache.getRelativePath("https://example.com/s?id=ab")).isEqualTo("https-3A//example.com/s-3Fid-3Dab")
+    }
+
+
 
     private abstract class TestCache(
             cacheDir: Path = Files.createTempDirectory(""),
