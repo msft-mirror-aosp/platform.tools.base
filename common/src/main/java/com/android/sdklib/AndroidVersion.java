@@ -140,7 +140,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     public static final Pattern PREVIEW_PATTERN = Pattern.compile("^[A-Z][0-9A-Za-z_]*$");
     public static final Pattern API_LEVEL_PATTERN =
-            Pattern.compile("(\\d+)(\\.(\\d+))?(-ext(\\d+))?(-([A-Z][0-9A-Za-z_]*))?");
+            Pattern.compile("(\\d+)(\\.(\\d+))?(-ext(\\d+))?");
 
     private static final long serialVersionUID = 1L;
 
@@ -328,9 +328,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
                 int minorVersion = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
                 Integer extensionLevel = matcher.group(5) != null ? Integer.parseInt(matcher.group(5)) : null;
                 boolean isBaseExtension = extensionLevel == null || extensionLevel <= getBaseExtensionLevel(majorVersion);
-                String codename = matcher.group(7);
                 return new AndroidVersion(
-                        majorVersion, minorVersion, codename, extensionLevel, isBaseExtension);
+                        majorVersion, minorVersion, null, extensionLevel, isBaseExtension);
             }
         } catch (NumberFormatException ignore) {}
 
@@ -430,22 +429,20 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     private String getApiString(boolean withExtension) {
-        // There are four different valid formats for API strings:
+        // There are three different valid formats for API strings:
         // 1. version
-        // 2. version-codename (API >= 36)
-        // 3. version-extension
-        // 4. codename (API < 36)
+        // 2. version-extension
+        // 3. codename
         //
         // We don't display extension levels on previews because we don't display base extension
         // levels in general, and when the preview is released, its level will be the base extension
         // level.
-        if (mCodename == null) {
-            return mAndroidApiLevel
-                    + (withExtension && !mIsBaseExtension ? "-ext" + mExtensionLevel : "");
-        } else if (mAndroidApiLevel.getMajorVersion() >= 36) {
-            return mAndroidApiLevel + "-" + mCodename;
-        } else {
+        if (mCodename != null) {
             return mCodename;
+        } else if (withExtension && !mIsBaseExtension) {
+            return mAndroidApiLevel + "-ext" + mExtensionLevel;
+        } else {
+            return mAndroidApiLevel.toString();
         }
     }
 
@@ -485,21 +482,15 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      */
     @NonNull
     public String getPlatformHashString() {
-        // Prior to API 36, we only use either API level or codename.
-        if (mAndroidApiLevel.getMajorVersion() < 36) {
-            return PLATFORM_HASH_PREFIX + getApiStringWithExtension();
-        }
-
-        // Starting with API 36, we include both the API level and the codename (for previews).
         // The platform hash string for API 36 has to be "android-36" instead of "android-36.0".
-        String version =
-                mAndroidApiLevel.getMajorVersion() == 36 && mAndroidApiLevel.getMinorVersion() == 0
-                        ? "36"
-                        : mAndroidApiLevel.toString();
-        String extension = mIsBaseExtension ? "" : "-ext" + mExtensionLevel;
-        String codename = mCodename == null ? "" : "-" + mCodename;
-
-        return PLATFORM_HASH_PREFIX + version + extension + codename;
+        if (mAndroidApiLevel.getMajorVersion() == 36
+                && mAndroidApiLevel.getMinorVersion() == 0
+                && mCodename == null) {
+            return mIsBaseExtension
+                    ? PLATFORM_HASH_PREFIX + "36"
+                    : PLATFORM_HASH_PREFIX + "36-ext" + mExtensionLevel;
+        }
+        return PLATFORM_HASH_PREFIX + getApiStringWithExtension();
     }
 
     /**

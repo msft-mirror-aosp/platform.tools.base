@@ -36,6 +36,11 @@ public class AndroidTargetHashTest extends TestCase {
                 AndroidTargetHash.getPlatformHashString(
                         new AndroidVersion(10, null, 3, true).getApiStringWithoutExtension()));
 
+        assertEquals(
+                "android-CODE_NAME",
+                AndroidTargetHash.getPlatformHashString(
+                        new AndroidVersion(10, "CODE_NAME").getApiStringWithoutExtension()));
+
         // ignore extension level since AGP ApiVersion does not use extension level.
         assertEquals(
                 "android-10",
@@ -43,15 +48,6 @@ public class AndroidTargetHashTest extends TestCase {
                         new AndroidVersion(10, null, 3, false).getApiStringWithoutExtension()));
 
         assertEquals("android-Tiramisu", AndroidTargetHash.getPlatformHashString("Tiramisu"));
-
-        if (SdkVersionInfo.HIGHEST_KNOWN_API == 36) {
-            assertEquals(
-                    "android-36-CODE_NAME", AndroidTargetHash.getPlatformHashString("CODE_NAME"));
-        } else {
-            assertEquals(
-                    "android-" + SdkVersionInfo.HIGHEST_KNOWN_API + ".0-CODE_NAME",
-                    AndroidTargetHash.getPlatformHashString("CODE_NAME"));
-        }
     }
 
     public final void testGetAddonHashString() {
@@ -131,13 +127,14 @@ public class AndroidTargetHashTest extends TestCase {
             AndroidTargetHash.getPlatformVersion("android-36.1-ext21"));
 
         assertEquals(
-                new AndroidVersion(36, 0, "Baklava", null, true),
-                AndroidTargetHash.getPlatformVersion("android-36-Baklava"));
+                new AndroidVersion(35, 0, "Baklava", null, true),
+                AndroidTargetHash.getPlatformVersion("android-Baklava"));
         assertEquals(
-                new AndroidVersion(36, 1, "Baklava", null, true),
-                AndroidTargetHash.getPlatformVersion("android-36.1-Baklava"));
+                new AndroidVersion(36, 0, "Baklava.1", null, true),
+                AndroidTargetHash.getPlatformVersion("android-Baklava.1"));
         assertEquals(
-                new AndroidVersion(37, 0, "DEV", 99, false),
-                AndroidTargetHash.getPlatformVersion("android-37.0-ext99-DEV"));
+                new AndroidVersion(
+                        SdkVersionInfo.HIGHEST_KNOWN_API, 0, "FutureUnknownCodename", null, true),
+                AndroidTargetHash.getPlatformVersion("android-FutureUnknownCodename"));
     }
 }
