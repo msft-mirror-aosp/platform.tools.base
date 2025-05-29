@@ -29,12 +29,16 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
 import com.android.utils.FileUtils;
+
+import kotlin.io.FilesKt;
+
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import kotlin.io.FilesKt;
 
 /**
  * A Source File processor for AIDL files. This compiles each aidl file found by the SourceSearcher.
@@ -48,9 +52,10 @@ public class ShaderProcessor {
     public static final String EXT_FRAG = "frag";
     public static final String EXT_COMP = "comp";
 
-    public static File getGlslcLocation(@NonNull File ndkLocation) {
+    public static File getGlslcLocation(@NonNull File ndkLocation, @Nullable File customGlslc) {
         if (ndkLocation == null) {
-            throw new IllegalStateException("NDK location is missing. It is required to compile shaders.");
+            throw new IllegalStateException(
+                    "NDK location is missing. It is required to compile shaders.");
         }
 
         if (ndkLocation == null || !ndkLocation.isDirectory()) {
@@ -58,6 +63,23 @@ public class ShaderProcessor {
                     "NDK location does not exist. It is required to compile shaders: "
                             + ndkLocation);
         }
+
+        // trying custom location from local.properties first
+        if (customGlslc != null) {
+            if (customGlslc.isDirectory()) {
+                File glslcLocation = new File(customGlslc, SdkConstants.FN_GLSLC);
+                if (glslcLocation.isFile()) {
+                    return glslcLocation;
+                }
+            }
+            throw new IllegalStateException(
+                    "Custom `glslc.dir` location must point to existing directory with "
+                            + SdkConstants.FN_GLSLC
+                            + " execution file in it. Current: "
+                            + customGlslc);
+        }
+
+        // fall back to NDK
 
         // find the location of the compiler.
         File glslcRootFolder = new File(ndkLocation, SdkConstants.FD_SHADER_TOOLS);

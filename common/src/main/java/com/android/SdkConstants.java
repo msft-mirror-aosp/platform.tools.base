@@ -71,6 +71,9 @@ public final class SdkConstants {
     /** Fallback property in local.properties file that specifies the path of the Android SDK. */
     public static final String ANDROID_DIR_PROPERTY = "android.dir";
 
+    /** Property in local.properties to define shader compiler */
+    public static final String SHADE_COMPILER_DIR_PROPERTY = "glslc.dir";
+
     /**
      * A maximum version of the Android SDK that this version of AGP and Android Studio IDE can
      * safely recommend during its development cycle.
