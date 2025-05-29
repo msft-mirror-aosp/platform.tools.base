@@ -32,11 +32,13 @@ FusedLibraryInternalArtifactType<T : FileSystemLocation>(
     // Directory of classes for use in the fused library.
     object CLASSES_WITH_REWRITTEN_R_CLASS_REFS: FusedLibraryInternalArtifactType<Directory>(ArtifactKind.DIRECTORY), Replaceable
     object MERGED_CLASSES: FusedLibraryInternalArtifactType<Directory>(ArtifactKind.DIRECTORY), Replaceable
+    object MERGED_PUBLISHED_LINT_CLASSES: FusedLibraryInternalArtifactType<Directory>(ArtifactKind.DIRECTORY), Replaceable
     // Directory containing merged resources from all libraries and their dependencies.
     object MERGED_RES: FusedLibraryInternalArtifactType<Directory>(ArtifactKind.DIRECTORY), Replaceable
     // Directory containing blame log of fused library manifest merging
     object MERGED_RES_BLAME_LOG: FusedLibraryInternalArtifactType<Directory>(ArtifactKind.DIRECTORY), Replaceable
     object CLASSES_JAR: FusedLibraryInternalArtifactType<RegularFile>(ArtifactKind.FILE), Replaceable
+    object LINT_JAR: FusedLibraryInternalArtifactType<RegularFile>(ArtifactKind.FILE), Replaceable
     object BUNDLED_LIBRARY: FusedLibraryInternalArtifactType<RegularFile>(ArtifactKind.FILE), Replaceable
     // R Class containing all Android resource symbols from libraries contained in a fused library.
     object FUSED_R_CLASS : FusedLibraryInternalArtifactType<RegularFile>(FILE), Replaceable

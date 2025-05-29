@@ -243,8 +243,20 @@ class FusedLibraryPlugin @Inject constructor(
                         FusedLibraryClassesRewriteTask.CreationAction(variantScope),
                         FusedLibraryManifestMergerTask.CreationAction(variantScope),
                         FusedLibraryMergeResourcesTask.CreationAction(variantScope),
-                        FusedLibraryMergeClasses.FusedLibraryCreationAction(variantScope),
-                        FusedLibraryBundleClasses.CreationAction(variantScope),
+                        FusedLibraryMergeClasses.FusedLibraryCreationAction(
+                            variantScope,
+                            AndroidArtifacts.ArtifactType.CLASSES_JAR,
+                            FusedLibraryInternalArtifactType.MERGED_CLASSES,
+                            false
+                        ),
+                        FusedLibraryMergeClasses.FusedLibraryCreationAction(
+                            variantScope,
+                            AndroidArtifacts.ArtifactType.LINT,
+                            FusedLibraryInternalArtifactType.MERGED_PUBLISHED_LINT_CLASSES,
+                            true
+                        ),
+                        FusedLibraryBundleClasses.CreationActionClassesJar(variantScope),
+                        FusedLibraryBundleClasses.CreationActionLintJar(variantScope),
                         FusedLibraryBundleAar.CreationAction(variantScope),
                         MergeJavaResourceTask.FusedLibraryCreationAction(variantScope),
                         FusedLibraryMergeResourceCompileSymbolsTask.CreationAction(variantScope),

@@ -28,8 +28,9 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Globa
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
-import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
+import com.android.build.gradle.internal.ide.level2.JavaLibraryImpl
 import java.nio.file.Path
 
 /**
@@ -99,6 +100,12 @@ interface GradleBuild {
      * The project must exist and be a Fused Library project
      */
     fun fusedLibrary(path: String): FusedLibraryProject
+
+    /**
+     * Queries for a Java Library project via its gradle path.
+     * THe project must exist and be a Java Library project.
+     */
+    fun javaLibrary(path: String): JavaLibraryProject
 
     /**
      * Queries for a Kotlin multiplatform project via its gradle path.
@@ -285,6 +292,18 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
             """
                 Project with path '$path' is not a Fused Library project.
                 Possible options are ${getProjectListByType<FusedLibraryImpl>()}
+            """.trimIndent()
+        )
+    }
+
+    override fun javaLibrary(path: String): JavaLibraryProject {
+        val project = subProject(path)
+        if (project is JavaLibraryProject) return project
+
+        throw RuntimeException(
+            """
+                Project with path '$path' is not a Java Library project.
+                Possible options are ${getProjectListByType<JavaLibraryImpl>()}
             """.trimIndent()
         )
     }

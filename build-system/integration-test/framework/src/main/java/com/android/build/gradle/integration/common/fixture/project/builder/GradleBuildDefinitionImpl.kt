@@ -36,6 +36,9 @@ import com.android.build.gradle.integration.common.fixture.project.FusedLibraryD
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProject
+import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
@@ -342,6 +345,25 @@ internal class GradleBuildDefinitionImpl(
 
         project as? FusedLibraryDefinition
             ?: errorOnWrongType(project, path, "Fused Library")
+
+        action(project)
+
+        return project
+    }
+
+    override fun javaLibrary(
+        path: String,
+        action: JavaLibraryProjectDefinition.() -> Unit
+    ): JavaLibraryProjectDefinition {
+        if (path == ":") throw RuntimeException("root project cannot be a java library")
+        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val project = subProjects.computeIfAbsent(path) {
+            JavaLibraryProjectDefinitionImpl(it)
+        }
+
+        project as? JavaLibraryProjectDefinition
+            ?: errorOnWrongType(project, path, "java-library")
 
         action(project)
 

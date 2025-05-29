@@ -18,13 +18,17 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.tasks.FusedLibraryMergeArtifactTask
+import org.gradle.api.Project
+import org.gradle.api.tasks.bundling.Jar
 import org.junit.Rule
 import org.junit.Test
 
-/** Tests for [FusedLibraryMergeArtifactTask] */
-internal class FusedLibraryMergeArtifactTaskTest {
+/** Tests for merging and packaging of non classes.jar or resources artifacts. */
+internal class FusedLibraryMergeArtifactsTest {
 
     @get:Rule
     val rule = GradleRule.configure().from {
@@ -96,12 +100,71 @@ internal class FusedLibraryMergeArtifactTaskTest {
                 implementation(project(":androidLib1"))
             }
         }
+        androidLibrary(":libraryWithLint") {
+            android {
+                lint {
+                    textReport = true
+                    checkOnly += "UnitTestLintCheck"
+                    absolutePaths = false
+                }
+            }
+            dependencies {
+                lintPublish(project(":lintPublish1"))
+            }
+        }
+        javaLibrary(":lintPublish1") {
+            setUpLint(AddMyIssueRegistryManifestAttribute::class.java as Class<GenericCallback>)
+        }
+        androidLibrary(":libraryWithLint2") {
+            android {
+                lint {
+                    textReport = true
+                    checkOnly += "UnitTestLintCheck"
+                    absolutePaths = false
+                }
+            }
+            dependencies {
+                lintPublish(project(":lintPublish2"))
+            }
+        }
+        javaLibrary(":lintPublish2") {
+            setUpLint(AddMyIssueRegistryManifestAttribute::class.java as Class<GenericCallback>)
+            files {
+                add(
+                    "src/main/java/com/example/google/lintpublish2/ClassFromLintPublish2.java",
+                    //language=java
+                    """
+                    package com.example.google.lintpublish2;
+
+                    public class ClassFromLintPublish2 {
+                        public int foo() { return 0; }
+                    }
+                    """.trimIndent()
+                )
+            }
+        }
+        androidLibrary(":libraryWithLint3") {
+            android {
+                lint {
+                    textReport = true
+                    checkOnly += "UnitTestLintCheck"
+                    absolutePaths = false
+                }
+            }
+            dependencies {
+                lintPublish(project(":lintPublish3"))
+            }
+        }
+        javaLibrary(":lintPublish3") {
+            setUpLint(AddMyIssueRegistryManifest2Attribute::class.java as Class<GenericCallback>)
+        }
         fusedLibrary(":fusedLib1") {
             androidFusedLibrary {
                 namespace = "com.example.fusedLib1"
                 minSdk = 19
             }
             dependencies {
+                include(project(":libraryWithLint"))
                 include(project(":androidLib3"))
                 include(project(":androidLib2"))
                 include(project(":androidLib1"))
@@ -109,6 +172,120 @@ internal class FusedLibraryMergeArtifactTaskTest {
         }
         gradleProperties {
             add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
+        }
+    }
+    class AddMyIssueRegistryManifestAttribute: GenericCallback {
+        override fun handleProject(project: Project) {
+            val jar = project.tasks.named("jar", Jar::class.java)
+            jar.configure {
+                it.manifest {
+                    it.attributes(
+                        mutableMapOf<String, String>(
+                            "Lint-Registry-v2" to "com.example.google.lint.MyIssueRegistry"
+                        )
+                    )
+                }
+            }
+        }
+    }
+    class AddMyIssueRegistryManifest2Attribute: GenericCallback {
+        override fun handleProject(project: Project) {
+            val jar = project.tasks.named("jar", Jar::class.java)
+            jar.configure {
+                it.manifest {
+                    it.attributes(
+                        mutableMapOf<String, String>(
+                            "Lint-Registry-v2" to "com.example.google.lint.MyIssueRegistry2"
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun JavaLibraryProjectDefinition.setUpLint(callback: Class<GenericCallback>) {
+        pluginCallbacks += callback
+        dependencies {
+            compileOnly("com.android.tools:annotations:+")
+            compileOnly("com.android.tools.lint:lint-api:+")
+            compileOnly("com.android.tools.lint:lint-checks:+")
+        }
+        files {
+            add(
+                "src/main/java/com/example/google/lintpublish/MyIssueRegistry.java",
+                """
+                    package com.example.google.lintpublish;
+
+                    import com.android.tools.lint.client.api.IssueRegistry;
+                    import com.android.tools.lint.detector.api.Issue;
+                    import com.android.tools.lint.detector.api.ApiKt;
+                    import java.util.Collections;
+                    import java.util.List;
+
+                    public class MyIssueRegistry extends IssueRegistry {
+                        @Override
+                        public List<Issue> getIssues() {
+                            return Collections.singletonList(MainActivityDetector.ISSUE);
+                        }
+
+                        @Override
+                        public int getApi() {
+                            return com.android.tools.lint.detector.api.ApiKt.CURRENT_API;
+                        }
+                    }
+                    """.trimIndent()
+            )
+            add(
+                "src/main/java/com/example/google/lintpublish/MainActivityDetector.java",
+                """
+                    package com.example.google.lintpublish;
+
+                    import com.android.tools.lint.detector.api.Category;
+                    import com.android.tools.lint.detector.api.Implementation;
+                    import com.android.tools.lint.detector.api.Issue;
+                    import com.android.tools.lint.detector.api.ResourceXmlDetector;
+                    import com.android.tools.lint.detector.api.Scope;
+                    import com.android.tools.lint.detector.api.Severity;
+                    import com.android.tools.lint.detector.api.XmlContext;
+                    import com.android.tools.lint.detector.api.XmlScanner;
+                    import java.util.Collection;
+                    import java.util.Collections;
+                    import org.w3c.dom.Element;
+
+                    public class MainActivityDetector extends ResourceXmlDetector implements XmlScanner {
+                        public static final Issue ISSUE =
+                                Issue.create(
+                                                "UnitTestLintCheck",
+                                                "Custom Lint Check",
+                                                "This app should not have any activities.",
+                                                Category.CORRECTNESS,
+                                                8,
+                                                Severity.ERROR,
+                                                new Implementation(MainActivityDetector.class, Scope.MANIFEST_SCOPE))
+                                        .
+                                        // Make sure other integration tests don't pick this up.
+                                        // The unit test will turn it on with android.lintOptions.check <id>
+                                        setEnabledByDefault(false);
+
+                        public MainActivityDetector() {}
+
+                        @Override
+                        public Collection<String> getApplicableElements() {
+                            return Collections.singleton("activity");
+                        }
+
+                        @Override
+                        public void visitElement(XmlContext context, Element activityElement) {
+                            context.report(
+                                    ISSUE,
+                                    activityElement,
+                                    context.getLocation(activityElement),
+                                    "Should not specify <activity>.",
+                                    null);
+                        }
+                    }
+                            """.trimIndent()
+            )
         }
     }
 
@@ -225,5 +402,63 @@ internal class FusedLibraryMergeArtifactTaskTest {
         build.executor.expectFailure().run(":fusedLib1:assemble").assertErrorContains(
             "2 files found with path 'my_java_resource.txt'"
         )
+    }
+
+    @Test
+    fun testLintJarIsPackaged() {
+        val build = rule.build
+        build.executor.run(":fusedLib1:assemble")
+
+        val fusedLib = build.fusedLibrary(":fusedLib1")
+        fusedLib.assertAar(AarSelector.NO_BUILD_TYPE) {
+            // Fused AARs should contain the lint jars from their dependencies.
+            contains("lint.jar")
+            lintJar().classes {
+                // Classes are from :libraryWithLint1
+                contains("com/example/google/lintpublish/MainActivityDetector.class")
+                contains("com/example/google/lintpublish/MyIssueRegistry.class")
+                contains("META-INF/MANIFEST.MF")
+            }
+        }
+
+        // Check merging ignores duplicate lint classes from other lint.jar files.
+        build.fusedLibrary(":fusedLib1").reconfigure {
+            dependencies {
+                include(project(":libraryWithLint2"))
+            }
+        }
+        build.executor.run(":fusedLib1:assemble")
+        fusedLib.assertAar(AarSelector.NO_BUILD_TYPE) {
+            // Fused AARs should contain the lint jars from their dependencies.
+            contains("lint.jar")
+            lintJar().classes {
+                // Classes from :lintPublish2
+                contains("src/main/java/com/example/google/lintpublish2/ClassFromLintPublish2.class")
+                // Class from :lintPublish1 and :lintPublish2 (identical in both)
+                contains("com/example/google/lintpublish/MainActivityDetector.class")
+                contains("com/example/google/lintpublish/MyIssueRegistry.class")
+                contains("META-INF/MANIFEST.MF")
+            }
+        }
+        // Check a lint check with different contents triggers a conflict when fusing.
+        build.javaLibrary(":lintPublish2").reconfigure {
+            files.update("src/main/java/com/example/google/lintpublish/MyIssueRegistry.java") {
+                appendMethod("public int newMethod() { return 0; }")
+            }
+        }
+        build.executor.expectFailure().run(":fusedLib1:assemble")
+            .assertErrorContains(
+            "com/example/google/lintpublish/MyIssueRegistry.class is present in multiple jars with different contents"
+        )
+
+        // Build fails on a conflicting lint.jar MANIFEST.MF file.
+        build.fusedLibrary(":fusedLib1").reconfigure {
+            dependencies {
+                remove("include", project(":libraryWithLint2"))
+                include(project(":libraryWithLint3"))
+            }
+        }
+        build.executor.expectFailure().run(":fusedLib1:assemble")
+            .assertErrorContains("META-INF/MANIFEST.MF is present in multiple jars")
     }
 }
