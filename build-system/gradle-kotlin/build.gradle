@@ -4,6 +4,7 @@ plugins {
     id 'com.android.tools.publish'
     id 'java-gradle-plugin'
     id 'license-report'
+    id 'jvm-toolchains'
 }
 
 gradlePlugin {

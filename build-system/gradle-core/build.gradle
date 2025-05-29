@@ -9,6 +9,7 @@ plugins {
     id 'license-report'
     id 'com.google.protobuf'
     id 'idea'
+    id 'jvm-toolchains'
 }
 
 idea.module {
