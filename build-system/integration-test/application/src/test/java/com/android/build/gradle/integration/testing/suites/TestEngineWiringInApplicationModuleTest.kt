@@ -22,7 +22,9 @@ import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperti
 import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.utils.getDebugVariant
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.Library
+import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import java.time.LocalDateTime
 import org.junit.Rule
@@ -61,6 +63,9 @@ class TestEngineWiringInApplicationModuleTest {
                     ToyJunitEngineForTesting::class.java.name)
 
         }.from {
+            gradleProperties {
+                add(BooleanOption.TEST_SUITE_SUPPORT, true)
+            }
             androidApplication {
                 android {
                     testOptions.suites.create("first", AgpTestSuite::class.java) {
@@ -98,7 +103,7 @@ class TestEngineWiringInApplicationModuleTest {
     @Test
     fun testBasicModel() {
         val project = rule.build
-        val result = project.modelBuilder.fetchModels()
+        val result = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
         Truth.assertThat(result).isNotNull()
         val models = result.container.getProject(":app")
         val testSuiteArtifacts = models.basicAndroidProject?.variants?.first { variant ->
@@ -117,7 +122,7 @@ class TestEngineWiringInApplicationModuleTest {
 
     @Test
     fun testModel() {
-        val result = rule.build.modelBuilder.fetchModels()
+        val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
         Truth.assertThat(result).isNotNull()
         val testSuites = result.container.getProject(":app").androidProject?.getDebugVariant()?.testSuiteArtifacts
         Truth.assertThat(testSuites).isNotNull()
@@ -130,7 +135,7 @@ class TestEngineWiringInApplicationModuleTest {
     @Test
     fun testDependenciesModel() {
         val project = rule.build
-        val result = project.modelBuilder.fetchVariantDependencies("debug")
+        val result = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchVariantDependencies("debug")
         Truth.assertThat(result).isNotNull()
         val models = result.container.getProject(":app")
         val libraries = models.variantDependencies?.libraries

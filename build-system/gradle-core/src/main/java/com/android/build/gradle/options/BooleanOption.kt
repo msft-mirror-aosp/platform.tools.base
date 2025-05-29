@@ -549,6 +549,17 @@ enum class BooleanOption(
         )
     ),
 
+    TEST_SUITE_SUPPORT(
+        "android.experimental.testSuiteSupport",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_9_0),
+            Version.VERSION_9_0
+        )
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */
