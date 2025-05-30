@@ -155,8 +155,7 @@ open class FlagConfiguration(configurations: ConfigurationHierarchy) :
     // Exclude the inter-procedural check from the "enable all warnings" flag;
     // it's much slower and still triggers various bugs in UAST that can affect
     // other checks.
-    @Suppress("SpellCheckingInspection")
-    return issue.id == "WrongThreadInterprocedural" || issue.id == "ThreadConstraint"
+    @Suppress("SpellCheckingInspection") return issue.id == "WrongThreadInterprocedural"
   }
 
   private fun computeSeverity(

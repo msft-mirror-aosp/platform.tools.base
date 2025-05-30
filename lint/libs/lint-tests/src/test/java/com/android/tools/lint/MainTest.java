@@ -988,7 +988,17 @@ public class MainTest extends AbstractCheckTest {
                                         + "}\n"),
                         SUPPORT_ANNOTATIONS_JAR);
         checkDriver(
-                "No issues found.",
+            // TODO(b/419866848) the new detector is expected to be reasonable, so included
+            "src/test/pkg/Runnable.java:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]\n"
+                + "  @UiThread static void uiThreadStatic() { unannotatedStatic(); }\n"
+                + "                                           ~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/Runnable.java:16: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]\n"
+                + "  @UiThread void uiThread() { unannotated(); }\n"
+                + "                              ~~~~~~~~~~~~~\n"
+                + "src/test/pkg/Runnable.java:23: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]\n"
+                + "    runIt(() -> runUi());\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~\n"
+                + "3 errors",
                 "",
 
                 // Expected exit code
