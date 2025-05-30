@@ -83,8 +83,7 @@ internal object PsiTypeAdapter : TypeAdapter<PsiType> {
           Type.Union(
             t.disjunctions.map(::loop).fold(persistentSetOf<Type<Nothing>>()) { acc, t -> acc + t }
           )
-        is UastErrorType ->
-          Type.WildCard.also { println("WARNING: Translating `UastErrorType` to $it") }
+        is UastErrorType -> Type.WildCard
         is PsiCapturedWildcardType -> Type.WildCard // TODO
         else -> throw NotImplementedError("Translate $t of type ${t::class.java}")
       }
