@@ -217,59 +217,58 @@ class ServiceCastDetectorTest : AbstractCheckTest() {
       .expect(expected)
       .expectFixDiffs(
         """
-        Fix for src/test/pkg/WifiManagerTest.java line 13: Add getApplicationContext():
-        @@ -14 +14
-        -         someActivity.getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
-        +         someActivity.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
         Fix for src/test/pkg/WifiManagerTest.java line 14: Add getApplicationContext():
-        @@ -15 +15
-        -         someService.getSystemService(Context.WIFI_SERVICE);  // ERROR: Service context
-        +         someService.getApplicationContext().getSystemService(Context.WIFI_SERVICE);  // ERROR: Service context
+        @@ -14 +14 @@
+        -        someActivity.getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
+        +        someActivity.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
         Fix for src/test/pkg/WifiManagerTest.java line 15: Add getApplicationContext():
-        @@ -16 +16
-        -         fragment.getActivity().getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
-        +         fragment.getActivity().getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
+        @@ -15 +15 @@
+        -        someService.getSystemService(Context.WIFI_SERVICE);  // ERROR: Service context
+        +        someService.getApplicationContext().getSystemService(Context.WIFI_SERVICE);  // ERROR: Service context
         Fix for src/test/pkg/WifiManagerTest.java line 16: Add getApplicationContext():
-        @@ -17 +17
-        -         fragment.getContext().getSystemService(Context.WIFI_SERVICE); // ERROR: FragmentHost context
-        +         fragment.getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: FragmentHost context
-        Fix for src/test/pkg/WifiManagerTest.java line 28: Add getApplicationContext():
-        @@ -29 +29
-        -         context.getSystemService(Context.WIFI_SERVICE); // ERROR
-        +         context.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR
-        Fix for src/test/pkg/WifiManagerTest.java line 33: Add getApplicationContext():
-        @@ -34 +34
-        -         mActivity.getSystemService(Context.WIFI_SERVICE); // ERROR: activity service
-        +         mActivity.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: activity service
-        Fix for src/test/pkg/WifiManagerTest.java line 52: Add getApplicationContext():
-        @@ -53 +53
-        -             getSystemService(WIFI_SERVICE); // ERROR: Activity context
-        +             getApplicationContext().getSystemService(WIFI_SERVICE); // ERROR: Activity context
+        @@ -16 +16 @@
+        -        fragment.getActivity().getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
+        +        fragment.getActivity().getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
+        Fix for src/test/pkg/WifiManagerTest.java line 17: Add getApplicationContext():
+        @@ -17 +17 @@
+        -        fragment.getContext().getSystemService(Context.WIFI_SERVICE); // ERROR: FragmentHost context
+        +        fragment.getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: FragmentHost context
+        Fix for src/test/pkg/WifiManagerTest.java line 29: Add getApplicationContext():
+        @@ -29 +29 @@
+        -        context.getSystemService(Context.WIFI_SERVICE); // ERROR
+        +        context.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR
+        Fix for src/test/pkg/WifiManagerTest.java line 34: Add getApplicationContext():
+        @@ -34 +34 @@
+        -        mActivity.getSystemService(Context.WIFI_SERVICE); // ERROR: activity service
+        +        mActivity.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: activity service
         Fix for src/test/pkg/WifiManagerTest.java line 53: Add getApplicationContext():
-        @@ -54 +54
-        -             this.getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
-        +             this.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
-        Fix for src/test/pkg/WifiManagerTest.java line 65: Add getApplicationContext():
-        @@ -66 +66
-        -             getSystemService(WIFI_SERVICE); // ERROR: Service context
-        +             getApplicationContext().getSystemService(WIFI_SERVICE); // ERROR: Service context
-        Fix for src/test/pkg/WifiManagerTest.java line 75: Add getApplicationContext():
-        @@ -76 +76
-        -             getContext().getSystemService(Context.WIFI_SERVICE); // ERROR: View context
-        +             getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: View context
-        Fix for src/test/pkg/WifiManagerTest.java line 31: Add getApplicationContext():
-        @@ -32 +32
-        -         foreignContext.getSystemService(Context.WIFI_SERVICE); // UNKNOWN
-        +         foreignContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // UNKNOWN
+        @@ -53 +53 @@
+        -            getSystemService(WIFI_SERVICE); // ERROR: Activity context
+        +            getApplicationContext().getSystemService(WIFI_SERVICE); // ERROR: Activity context
+        Fix for src/test/pkg/WifiManagerTest.java line 54: Add getApplicationContext():
+        @@ -54 +54 @@
+        -            this.getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
+        +            this.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: Activity context
+        Fix for src/test/pkg/WifiManagerTest.java line 66: Add getApplicationContext():
+        @@ -66 +66 @@
+        -            getSystemService(WIFI_SERVICE); // ERROR: Service context
+        +            getApplicationContext().getSystemService(WIFI_SERVICE); // ERROR: Service context
+        Fix for src/test/pkg/WifiManagerTest.java line 76: Add getApplicationContext():
+        @@ -76 +76 @@
+        -            getContext().getSystemService(Context.WIFI_SERVICE); // ERROR: View context
+        +            getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE); // ERROR: View context
         Fix for src/test/pkg/WifiManagerTest.java line 32: Add getApplicationContext():
-        @@ -33 +33
-        -         mContext.getSystemService(Context.WIFI_SERVICE); // UNKNOWN
-        +         mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // UNKNOWN
-        Fix for src/test/pkg/WifiManagerTest.java line 40: Add getApplicationContext():
-        @@ -41 +41
-        -         ctx.getSystemService(Context.WIFI_SERVICE); // UNKNOWN (though likely)
-        +         ctx.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // UNKNOWN (though likely)
-
+        @@ -32 +32 @@
+        -        foreignContext.getSystemService(Context.WIFI_SERVICE); // UNKNOWN
+        +        foreignContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // UNKNOWN
+        Fix for src/test/pkg/WifiManagerTest.java line 33: Add getApplicationContext():
+        @@ -33 +33 @@
+        -        mContext.getSystemService(Context.WIFI_SERVICE); // UNKNOWN
+        +        mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // UNKNOWN
+        Fix for src/test/pkg/WifiManagerTest.java line 41: Add getApplicationContext():
+        @@ -41 +41 @@
+        -        ctx.getSystemService(Context.WIFI_SERVICE); // UNKNOWN (though likely)
+        +        ctx.getApplicationContext().getSystemService(Context.WIFI_SERVICE); // UNKNOWN (though likely)
         """
       )
   }

@@ -55,13 +55,13 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for AndroidManifest.xml line 5: Replace with permission:
-          @@ -5 +5
-          -     <provider android:name="test.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name="test.pkg.JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -5 +5 @@
+          -    <provider android:name="test.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name="test.pkg.JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
           Fix for AndroidManifest.xml line 6: Replace with permission:
-          @@ -6 +6
-          -     <provider android:name="test.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name="test.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -6 +6 @@
+          -    <provider android:name="test.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name="test.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
       )
   }
@@ -100,13 +100,13 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for AndroidManifest.xml line 5: Replace with permission:
-          @@ -5 +5
-          -     <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name=".JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -5 +5 @@
+          -    <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name=".JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
           Fix for AndroidManifest.xml line 6: Replace with permission:
-          @@ -6 +6
-          -     <provider android:name=".KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name=".KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -6 +6 @@
+          -    <provider android:name=".KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name=".KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
       )
   }
@@ -145,13 +145,13 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for AndroidManifest.xml line 5: Replace with permission:
-          @@ -5 +5
-          -     <provider android:name="test.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name="test.pkg.JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -5 +5 @@
+          -    <provider android:name="test.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name="test.pkg.JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
           Fix for AndroidManifest.xml line 6: Replace with permission:
-          @@ -6 +6
-          -     <provider android:name="test.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name="test.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -6 +6 @@
+          -    <provider android:name="test.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name="test.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
       )
   }
@@ -259,9 +259,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
         """
           Fix for src/test/pkg/JavaTestContentProvider.java line 7: Replace with permission:
           AndroidManifest.xml:
-          @@ -5 +5
-          -     <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name=".JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -5 +5 @@
+          -    <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name=".JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
       )
   }
@@ -318,9 +318,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
         """
           Fix for ../lib/src/test/jv/pkg/JavaTestContentProvider.java line 7: Replace with permission:
           AndroidManifest.xml:
-          @@ -5 +5
-          -     <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA" />
-          +     <provider android:name=".JavaTestContentProvider" android:permission="android.permission.READ_DATA" />
+          @@ -5 +5 @@
+          -    <provider android:name=".JavaTestContentProvider" android:readPermission="android.permission.READ_DATA" />
+          +    <provider android:name=".JavaTestContentProvider" android:permission="android.permission.READ_DATA" />
         """
       )
   }
@@ -414,13 +414,13 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for AndroidManifest.xml line 5: Replace with permission:
-          @@ -5 +5
-          -     <provider android:name="test.jv.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name="test.jv.pkg.JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -5 +5 @@
+          -    <provider android:name="test.jv.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name="test.jv.pkg.JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
           Fix for AndroidManifest.xml line 6: Replace with permission:
-          @@ -6 +6
-          -     <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -6 +6 @@
+          -    <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
       )
   }
@@ -491,13 +491,13 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for AndroidManifest.xml line 5: Replace with permission:
-          @@ -5 +5
-          -     <provider android:name="test.jv.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name="test.jv.pkg.JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -5 +5 @@
+          -    <provider android:name="test.jv.pkg.JavaTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name="test.jv.pkg.JavaTestContentProvider" android:permission="android.permission.READ_DATA"/>
           Fix for AndroidManifest.xml line 6: Replace with permission:
-          @@ -6 +6
-          -     <provider android:name=".KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name=".KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -6 +6 @@
+          -    <provider android:name=".KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name=".KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
       )
   }
@@ -596,9 +596,9 @@ class ProviderPermissionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for lib/AndroidManifest.xml line 5: Replace with permission:
-          @@ -5 +5
-          -     <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
-          +     <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
+          @@ -5 +5 @@
+          -    <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:readPermission="android.permission.READ_DATA"/>
+          +    <provider android:name="test.kt.pkg.KotlinTestContentProvider" android:permission="android.permission.READ_DATA"/>
         """
       )
   }

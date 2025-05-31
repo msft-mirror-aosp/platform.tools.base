@@ -110,69 +110,69 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE);
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Add FLAG_NO_CREATE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 11: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_IMMUTABLE);
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 11: Add FLAG_NO_CREATE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_IMMUTABLE);
+        @@ -13 +13 @@
+        -    PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -13 +13 @@
+        -    PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 14: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -14 +14
-        -     PendingIntent.getActivities(null, 0, { new Intent(), mIntent }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { new Intent(), mIntent }, PendingIntent.FLAG_IMMUTABLE);
+        @@ -14 +14 @@
+        -    PendingIntent.getActivities(null, 0, { new Intent(), mIntent }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { new Intent(), mIntent }, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 14: Add FLAG_NO_CREATE:
-        @@ -14 +14
-        -     PendingIntent.getActivities(null, 0, { new Intent(), mIntent }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { new Intent(), mIntent }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -14 +14 @@
+        -    PendingIntent.getActivities(null, 0, { new Intent(), mIntent }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { new Intent(), mIntent }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 10: Add FLAG_NO_CREATE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 11: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_IMMUTABLE)
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 11: Add FLAG_NO_CREATE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_IMMUTABLE)
+        @@ -13 +13 @@
+        -    PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -13 +13 @@
+        -    PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, mIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 14: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -14 +14
-        -     PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_IMMUTABLE)
+        @@ -14 +14 @@
+        -    PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 14: Add FLAG_NO_CREATE:
-        @@ -14 +14
-        -     PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -14 +14 @@
+        -    PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(Intent(), mIntent), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
       )
   }
@@ -265,85 +265,85 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE);
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Add FLAG_NO_CREATE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 11: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_IMMUTABLE);
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 11: Add FLAG_NO_CREATE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 12: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -12 +12
-        -     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE);
+        @@ -12 +12 @@
+        -    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 12: Add FLAG_NO_CREATE:
-        @@ -12 +12
-        -     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -12 +12 @@
+        -    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_IMMUTABLE);
+        @@ -13 +13 @@
+        -    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -13 +13 @@
+        -    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 14: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -14 +14
-        -     PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_IMMUTABLE);
+        @@ -14 +14 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 14: Add FLAG_NO_CREATE:
-        @@ -14 +14
-        -     PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -14 +14 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 10: Add FLAG_NO_CREATE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 11: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_IMMUTABLE)
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 11: Add FLAG_NO_CREATE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 12: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -12 +12
-        -     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE)
+        @@ -12 +12 @@
+        -    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 12: Add FLAG_NO_CREATE:
-        @@ -12 +12
-        -     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -12 +12 @@
+        -    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_IMMUTABLE)
+        @@ -13 +13 @@
+        -    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -13 +13 @@
+        -    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 14: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -14 +14
-        -     PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_IMMUTABLE)
+        @@ -14 +14 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 14: Add FLAG_NO_CREATE:
-        @@ -14 +14
-        -     PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -14 +14 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
       )
   }
@@ -466,117 +466,117 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE);
+        @@ -13 +13 @@
+        -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -13 +13 @@
+        -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 14: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -14 +14
-        -     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE);
+        @@ -14 +14 @@
+        -    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 14: Add FLAG_NO_CREATE:
-        @@ -14 +14
-        -     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -14 +14 @@
+        -    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 15: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -15 +15
-        -     PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_IMMUTABLE);
+        @@ -15 +15 @@
+        -    PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 15: Add FLAG_NO_CREATE:
-        @@ -15 +15
-        -     PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -15 +15 @@
+        -    PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 16: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -16 +16
-        -     PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_IMMUTABLE);
+        @@ -16 +16 @@
+        -    PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 16: Add FLAG_NO_CREATE:
-        @@ -16 +16
-        -     PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -16 +16 @@
+        -    PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 17: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -17 +17
-        -     PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentThree }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentThree }, PendingIntent.FLAG_IMMUTABLE);
+        @@ -17 +17 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentThree }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentThree }, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 17: Add FLAG_NO_CREATE:
-        @@ -17 +17
-        -     PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentThree }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentThree }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -17 +17 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentThree }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentThree }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 19: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -19 +19
-        -     PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_IMMUTABLE);
+        @@ -19 +19 @@
+        -    PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 19: Add FLAG_NO_CREATE:
-        @@ -19 +19
-        -     PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -19 +19 @@
+        -    PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 23: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_IMMUTABLE);
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 23: Add FLAG_NO_CREATE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE)
+        @@ -13 +13 @@
+        -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -13 +13 @@
+        -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 14: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -14 +14
-        -     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE)
+        @@ -14 +14 @@
+        -    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 14: Add FLAG_NO_CREATE:
-        @@ -14 +14
-        -     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -14 +14 @@
+        -    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 15: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -15 +15
-        -     PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_IMMUTABLE)
+        @@ -15 +15 @@
+        -    PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 15: Add FLAG_NO_CREATE:
-        @@ -15 +15
-        -     PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -15 +15 @@
+        -    PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, intentThree, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 16: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -16 +16
-        -     PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_IMMUTABLE)
+        @@ -16 +16 @@
+        -    PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 16: Add FLAG_NO_CREATE:
-        @@ -16 +16
-        -     PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -16 +16 @@
+        -    PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 17: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -17 +17
-        -     PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentThree), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentThree), PendingIntent.FLAG_IMMUTABLE)
+        @@ -17 +17 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentThree), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentThree), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 17: Add FLAG_NO_CREATE:
-        @@ -17 +17
-        -     PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentThree), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentThree), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -17 +17 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentThree), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentThree), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 19: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -19 +19
-        -     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_IMMUTABLE)
+        @@ -19 +19 @@
+        -    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 19: Add FLAG_NO_CREATE:
-        @@ -19 +19
-        -     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -19 +19 @@
+        -    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 23: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_IMMUTABLE)
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 23: Add FLAG_NO_CREATE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
       )
   }
@@ -883,93 +883,93 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 16: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -16 +16
-        -     PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE); // complains
+        @@ -16 +16 @@
+        -    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 16: Add FLAG_NO_CREATE:
-        @@ -16 +16
-        -     PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
+        @@ -16 +16 @@
+        -    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 19: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -19 +19
-        -     PendingIntent.getActivities(null, 0, { intentOne.setPackage(null), intentOne }, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getActivities(null, 0, { intentOne.setPackage(null), intentOne }, PendingIntent.FLAG_IMMUTABLE); // complains
+        @@ -19 +19 @@
+        -    PendingIntent.getActivities(null, 0, { intentOne.setPackage(null), intentOne }, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getActivities(null, 0, { intentOne.setPackage(null), intentOne }, PendingIntent.FLAG_IMMUTABLE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 19: Add FLAG_NO_CREATE:
-        @@ -19 +19
-        -     PendingIntent.getActivities(null, 0, { intentOne.setPackage(null), intentOne }, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getActivities(null, 0, { intentOne.setPackage(null), intentOne }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
+        @@ -19 +19 @@
+        -    PendingIntent.getActivities(null, 0, { intentOne.setPackage(null), intentOne }, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getActivities(null, 0, { intentOne.setPackage(null), intentOne }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 20: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -20 +20
-        -     PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentOne }, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentOne }, PendingIntent.FLAG_IMMUTABLE); // complains
+        @@ -20 +20 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentOne }, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentOne }, PendingIntent.FLAG_IMMUTABLE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 20: Add FLAG_NO_CREATE:
-        @@ -20 +20
-        -     PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentOne }, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentOne }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
+        @@ -20 +20 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentOne }, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getActivities(null, 0, new Intent[] {  intentOne, intentOne }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 28: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -28 +28
-        -     PendingIntent.getActivities(null, 0, intentsOneWithDimensions, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getActivities(null, 0, intentsOneWithDimensions, PendingIntent.FLAG_IMMUTABLE); // complains
+        @@ -28 +28 @@
+        -    PendingIntent.getActivities(null, 0, intentsOneWithDimensions, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getActivities(null, 0, intentsOneWithDimensions, PendingIntent.FLAG_IMMUTABLE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 28: Add FLAG_NO_CREATE:
-        @@ -28 +28
-        -     PendingIntent.getActivities(null, 0, intentsOneWithDimensions, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getActivities(null, 0, intentsOneWithDimensions, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
+        @@ -28 +28 @@
+        -    PendingIntent.getActivities(null, 0, intentsOneWithDimensions, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getActivities(null, 0, intentsOneWithDimensions, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 32: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -32 +32
-        -     PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE); // complains
+        @@ -32 +32 @@
+        -    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE); // complains
         Fix for src/test/pkg/PendingIntentJavaTest.java line 32: Add FLAG_NO_CREATE:
-        @@ -32 +32
-        -     PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE); // complains
-        +     PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
+        @@ -32 +32 @@
+        -    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE); // complains
+        +    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE); // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 16: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -16 +16
-        -     PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE) // complains
+        @@ -16 +16 @@
+        -    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 16: Add FLAG_NO_CREATE:
-        @@ -16 +16
-        -     PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
+        @@ -16 +16 @@
+        -    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getBroadcast(null, 0, intentOne, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 19: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -19 +19
-        -     PendingIntent.getService(null, 0, intentOne.setPackage(null), PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getService(null, 0, intentOne.setPackage(null), PendingIntent.FLAG_IMMUTABLE) // complains
+        @@ -19 +19 @@
+        -    PendingIntent.getService(null, 0, intentOne.setPackage(null), PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getService(null, 0, intentOne.setPackage(null), PendingIntent.FLAG_IMMUTABLE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 19: Add FLAG_NO_CREATE:
-        @@ -19 +19
-        -     PendingIntent.getService(null, 0, intentOne.setPackage(null), PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getService(null, 0, intentOne.setPackage(null), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
+        @@ -19 +19 @@
+        -    PendingIntent.getService(null, 0, intentOne.setPackage(null), PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getService(null, 0, intentOne.setPackage(null), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 20: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -20 +20
-        -     PendingIntent.getActivities(null, 0, listOf(intentOne.setPackage(null), intentOne), PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getActivities(null, 0, listOf(intentOne.setPackage(null), intentOne), PendingIntent.FLAG_IMMUTABLE) // complains
+        @@ -20 +20 @@
+        -    PendingIntent.getActivities(null, 0, listOf(intentOne.setPackage(null), intentOne), PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getActivities(null, 0, listOf(intentOne.setPackage(null), intentOne), PendingIntent.FLAG_IMMUTABLE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 20: Add FLAG_NO_CREATE:
-        @@ -20 +20
-        -     PendingIntent.getActivities(null, 0, listOf(intentOne.setPackage(null), intentOne), PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getActivities(null, 0, listOf(intentOne.setPackage(null), intentOne), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
+        @@ -20 +20 @@
+        -    PendingIntent.getActivities(null, 0, listOf(intentOne.setPackage(null), intentOne), PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getActivities(null, 0, listOf(intentOne.setPackage(null), intentOne), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 21: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -21 +21
-        -     PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentOne), PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentOne), PendingIntent.FLAG_IMMUTABLE) // complains
+        @@ -21 +21 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentOne), PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentOne), PendingIntent.FLAG_IMMUTABLE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 21: Add FLAG_NO_CREATE:
-        @@ -21 +21
-        -     PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentOne), PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentOne), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
+        @@ -21 +21 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentOne), PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getActivities(null, 0, arrayOf(intentOne, intentOne), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 29: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -29 +29
-        -     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_IMMUTABLE) // complains
+        @@ -29 +29 @@
+        -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_IMMUTABLE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 29: Add FLAG_NO_CREATE:
-        @@ -29 +29
-        -     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
+        @@ -29 +29 @@
+        -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 33: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -33 +33
-        -     PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE) // complains
+        @@ -33 +33 @@
+        -    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE) // complains
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 33: Add FLAG_NO_CREATE:
-        @@ -33 +33
-        -     PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE) // complains
-        +     PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
+        @@ -33 +33 @@
+        -    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE) // complains
+        +    PendingIntent.getActivity(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE) // complains
         """
       )
   }
@@ -1486,213 +1486,213 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 18: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -18 +18
-        -     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE);
+        @@ -18 +18 @@
+        -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 18: Add FLAG_NO_CREATE:
-        @@ -18 +18
-        -     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -18 +18 @@
+        -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 19: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -19 +19
-        -     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE);
+        @@ -19 +19 @@
+        -    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 19: Add FLAG_NO_CREATE:
-        @@ -19 +19
-        -     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -19 +19 @@
+        -    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 20: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -20 +20
-        -     PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_IMMUTABLE);
+        @@ -20 +20 @@
+        -    PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 20: Add FLAG_NO_CREATE:
-        @@ -20 +20
-        -     PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -20 +20 @@
+        -    PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 21: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -21 +21
-        -     PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_IMMUTABLE);
+        @@ -21 +21 @@
+        -    PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 21: Add FLAG_NO_CREATE:
-        @@ -21 +21
-        -     PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -21 +21 @@
+        -    PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { intentOne, intentTwo }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 22: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -22 +22
-        -     PendingIntent.getActivities(null, 0, new Intent[] { intentOne, intentThree }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, new Intent[] { intentOne, intentThree }, PendingIntent.FLAG_IMMUTABLE);
+        @@ -22 +22 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] { intentOne, intentThree }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, new Intent[] { intentOne, intentThree }, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 22: Add FLAG_NO_CREATE:
-        @@ -22 +22
-        -     PendingIntent.getActivities(null, 0, new Intent[] { intentOne, intentThree }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, new Intent[] { intentOne, intentThree }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -22 +22 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] { intentOne, intentThree }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, new Intent[] { intentOne, intentThree }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 27: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -27 +27
-        -     PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_IMMUTABLE);
+        @@ -27 +27 @@
+        -    PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 27: Add FLAG_NO_CREATE:
-        @@ -27 +27
-        -     PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -27 +27 @@
+        -    PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, intentsWithInitializer, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 31: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -31 +31
-        -     PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_IMMUTABLE);
+        @@ -31 +31 @@
+        -    PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 31: Add FLAG_NO_CREATE:
-        @@ -31 +31
-        -     PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -31 +31 @@
+        -    PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, intentsWithDimensions, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 18: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -18 +18
-        -     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE)
+        @@ -18 +18 @@
+        -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 18: Add FLAG_NO_CREATE:
-        @@ -18 +18
-        -     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -18 +18 @@
+        -    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, intentOne, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 19: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -19 +19
-        -     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE)
+        @@ -19 +19 @@
+        -    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 19: Add FLAG_NO_CREATE:
-        @@ -19 +19
-        -     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -19 +19 @@
+        -    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, intentTwo, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 20: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -20 +20
-        -     PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_IMMUTABLE)
+        @@ -20 +20 @@
+        -    PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 20: Add FLAG_NO_CREATE:
-        @@ -20 +20
-        -     PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -20 +20 @@
+        -    PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, intentThree.setIdentifier("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 21: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -21 +21
-        -     PendingIntent.getService(null, 0, Intent().setAction("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, Intent().setAction("TEST"), PendingIntent.FLAG_IMMUTABLE)
+        @@ -21 +21 @@
+        -    PendingIntent.getService(null, 0, Intent().setAction("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, Intent().setAction("TEST"), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 21: Add FLAG_NO_CREATE:
-        @@ -21 +21
-        -     PendingIntent.getService(null, 0, Intent().setAction("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, Intent().setAction("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -21 +21 @@
+        -    PendingIntent.getService(null, 0, Intent().setAction("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, Intent().setAction("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 22: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -22 +22
-        -     PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_IMMUTABLE)
+        @@ -22 +22 @@
+        -    PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 22: Add FLAG_NO_CREATE:
-        @@ -22 +22
-        -     PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -22 +22 @@
+        -    PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(intentOne, intentTwo), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 23: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, arrayOf(intentThree, Intent().setIdentifier("TEST")), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayOf(intentThree, Intent().setIdentifier("TEST")), PendingIntent.FLAG_IMMUTABLE)
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(intentThree, Intent().setIdentifier("TEST")), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayOf(intentThree, Intent().setIdentifier("TEST")), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 23: Add FLAG_NO_CREATE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, arrayOf(intentThree, Intent().setIdentifier("TEST")), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayOf(intentThree, Intent().setIdentifier("TEST")), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(intentThree, Intent().setIdentifier("TEST")), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayOf(intentThree, Intent().setIdentifier("TEST")), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 25: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -25 +25
-        -     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_IMMUTABLE)
+        @@ -25 +25 @@
+        -    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 25: Add FLAG_NO_CREATE:
-        @@ -25 +25
-        -     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -25 +25 @@
+        -    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 29: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -29 +29
-        -     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_IMMUTABLE)
+        @@ -29 +29 @@
+        -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 29: Add FLAG_NO_CREATE:
-        @@ -29 +29
-        -     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -29 +29 @@
+        -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 33: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -33 +33
-        -     PendingIntent.getActivity(null, 0, intentFour, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, intentFour, PendingIntent.FLAG_IMMUTABLE)
+        @@ -33 +33 @@
+        -    PendingIntent.getActivity(null, 0, intentFour, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, intentFour, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 33: Add FLAG_NO_CREATE:
-        @@ -33 +33
-        -     PendingIntent.getActivity(null, 0, intentFour, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, intentFour, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -33 +33 @@
+        -    PendingIntent.getActivity(null, 0, intentFour, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, intentFour, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 34: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -34 +34
-        -     PendingIntent.getBroadcast(null, 0, intentFive.run { setAction("TEST") }, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, intentFive.run { setAction("TEST") }, PendingIntent.FLAG_IMMUTABLE)
+        @@ -34 +34 @@
+        -    PendingIntent.getBroadcast(null, 0, intentFive.run { setAction("TEST") }, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, intentFive.run { setAction("TEST") }, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 34: Add FLAG_NO_CREATE:
-        @@ -34 +34
-        -     PendingIntent.getBroadcast(null, 0, intentFive.run { setAction("TEST") }, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, intentFive.run { setAction("TEST") }, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -34 +34 @@
+        -    PendingIntent.getBroadcast(null, 0, intentFive.run { setAction("TEST") }, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, intentFive.run { setAction("TEST") }, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 35: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -35 +35
-        -     PendingIntent.getService(null, 0, with(intentSix) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, with(intentSix) { setIdentifier("TEST") }, PendingIntent.FLAG_IMMUTABLE)
+        @@ -35 +35 @@
+        -    PendingIntent.getService(null, 0, with(intentSix) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, with(intentSix) { setIdentifier("TEST") }, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 35: Add FLAG_NO_CREATE:
-        @@ -35 +35
-        -     PendingIntent.getService(null, 0, with(intentSix) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, with(intentSix) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -35 +35 @@
+        -    PendingIntent.getService(null, 0, with(intentSix) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, with(intentSix) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 36: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -36 +36
-        -     PendingIntent.getService(null, 0, with(Intent()) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, with(Intent()) { setIdentifier("TEST") }, PendingIntent.FLAG_IMMUTABLE)
+        @@ -36 +36 @@
+        -    PendingIntent.getService(null, 0, with(Intent()) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, with(Intent()) { setIdentifier("TEST") }, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 36: Add FLAG_NO_CREATE:
-        @@ -36 +36
-        -     PendingIntent.getService(null, 0, with(Intent()) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, with(Intent()) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -36 +36 @@
+        -    PendingIntent.getService(null, 0, with(Intent()) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, with(Intent()) { setIdentifier("TEST") }, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 37: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -37 +37
-        -     PendingIntent.getService(null, 0, Intent().also { it.setAction("TEST") }, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, Intent().also { it.setAction("TEST") }, PendingIntent.FLAG_IMMUTABLE)
+        @@ -37 +37 @@
+        -    PendingIntent.getService(null, 0, Intent().also { it.setAction("TEST") }, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, Intent().also { it.setAction("TEST") }, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 37: Add FLAG_NO_CREATE:
-        @@ -37 +37
-        -     PendingIntent.getService(null, 0, Intent().also { it.setAction("TEST") }, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, Intent().also { it.setAction("TEST") }, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -37 +37 @@
+        -    PendingIntent.getService(null, 0, Intent().also { it.setAction("TEST") }, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, Intent().also { it.setAction("TEST") }, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 38: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -38 +38
-        -     PendingIntent.getService(null, 0, with(block = { setIdentifier("TEST") }, receiver = Intent()), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, with(block = { setIdentifier("TEST") }, receiver = Intent()), PendingIntent.FLAG_IMMUTABLE)
+        @@ -38 +38 @@
+        -    PendingIntent.getService(null, 0, with(block = { setIdentifier("TEST") }, receiver = Intent()), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, with(block = { setIdentifier("TEST") }, receiver = Intent()), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 38: Add FLAG_NO_CREATE:
-        @@ -38 +38
-        -     PendingIntent.getService(null, 0, with(block = { setIdentifier("TEST") }, receiver = Intent()), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, with(block = { setIdentifier("TEST") }, receiver = Intent()), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -38 +38 @@
+        -    PendingIntent.getService(null, 0, with(block = { setIdentifier("TEST") }, receiver = Intent()), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, with(block = { setIdentifier("TEST") }, receiver = Intent()), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 41: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -41 +41
-        -     PendingIntent.getActivity(null, 0, intentSeven, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, intentSeven, PendingIntent.FLAG_IMMUTABLE)
+        @@ -41 +41 @@
+        -    PendingIntent.getActivity(null, 0, intentSeven, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, intentSeven, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 41: Add FLAG_NO_CREATE:
-        @@ -41 +41
-        -     PendingIntent.getActivity(null, 0, intentSeven, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, intentSeven, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -41 +41 @@
+        -    PendingIntent.getActivity(null, 0, intentSeven, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, intentSeven, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 45: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -45 +45
-        -     PendingIntent.getActivities(null, 0, listOf(intentFour, intentFive), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(intentFour, intentFive), PendingIntent.FLAG_IMMUTABLE)
+        @@ -45 +45 @@
+        -    PendingIntent.getActivities(null, 0, listOf(intentFour, intentFive), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(intentFour, intentFive), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 45: Add FLAG_NO_CREATE:
-        @@ -45 +45
-        -     PendingIntent.getActivities(null, 0, listOf(intentFour, intentFive), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(intentFour, intentFive), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -45 +45 @@
+        -    PendingIntent.getActivities(null, 0, listOf(intentFour, intentFive), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(intentFour, intentFive), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 46: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -46 +46
-        -     PendingIntent.getActivities(null, 0, arrayOf(Intent().let { it.setAction("TEST") } , Intent().apply { setData(mUri) }), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayOf(Intent().let { it.setAction("TEST") } , Intent().apply { setData(mUri) }), PendingIntent.FLAG_IMMUTABLE)
+        @@ -46 +46 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(Intent().let { it.setAction("TEST") } , Intent().apply { setData(mUri) }), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayOf(Intent().let { it.setAction("TEST") } , Intent().apply { setData(mUri) }), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 46: Add FLAG_NO_CREATE:
-        @@ -46 +46
-        -     PendingIntent.getActivities(null, 0, arrayOf(Intent().let { it.setAction("TEST") } , Intent().apply { setData(mUri) }), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayOf(Intent().let { it.setAction("TEST") } , Intent().apply { setData(mUri) }), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -46 +46 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(Intent().let { it.setAction("TEST") } , Intent().apply { setData(mUri) }), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayOf(Intent().let { it.setAction("TEST") } , Intent().apply { setData(mUri) }), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 48: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -48 +48
-        -     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_IMMUTABLE)
+        @@ -48 +48 @@
+        -    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 48: Add FLAG_NO_CREATE:
-        @@ -48 +48
-        -     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -48 +48 @@
+        -    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentList, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 52: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -52 +52
-        -     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_IMMUTABLE)
+        @@ -52 +52 @@
+        -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 52: Add FLAG_NO_CREATE:
-        @@ -52 +52
-        -     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -52 +52 @@
+        -    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, intentArray, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
       )
   }
@@ -1999,69 +1999,69 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_IMMUTABLE);
+        @@ -13 +13 @@
+        -    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -13 +13 @@
+        -    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 15: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -15 +15
-        -     PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_IMMUTABLE);
+        @@ -15 +15 @@
+        -    PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 15: Add FLAG_NO_CREATE:
-        @@ -15 +15
-        -     PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -15 +15 @@
+        -    PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 23: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_IMMUTABLE);
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 23: Add FLAG_NO_CREATE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 27: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -27 +27
-        -     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_IMMUTABLE);
+        @@ -27 +27 @@
+        -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 27: Add FLAG_NO_CREATE:
-        @@ -27 +27
-        -     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -27 +27 @@
+        -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_IMMUTABLE)
+        @@ -13 +13 @@
+        -    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -13 +13 @@
+        -    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, kIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 15: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -15 +15
-        -     PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_IMMUTABLE)
+        @@ -15 +15 @@
+        -    PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 15: Add FLAG_NO_CREATE:
-        @@ -15 +15
-        -     PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -15 +15 @@
+        -    PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, mIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 23: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_IMMUTABLE)
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 23: Add FLAG_NO_CREATE:
-        @@ -23 +23
-        -     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -23 +23 @@
+        -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 27: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -27 +27
-        -     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_IMMUTABLE)
+        @@ -27 +27 @@
+        -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 27: Add FLAG_NO_CREATE:
-        @@ -27 +27
-        -     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -27 +27 @@
+        -    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, arrayIntent, PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
       )
   }
@@ -2146,69 +2146,69 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE);
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 10: Add FLAG_NO_CREATE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 11: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_IMMUTABLE);
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 11: Add FLAG_NO_CREATE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 12: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -12 +12
-        -     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE);
+        @@ -12 +12 @@
+        -    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 12: Add FLAG_NO_CREATE:
-        @@ -12 +12
-        -     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -12 +12 @@
+        -    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_IMMUTABLE);
+        @@ -13 +13 @@
+        -    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -13 +13 @@
+        -    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 10: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 10: Add FLAG_NO_CREATE:
-        @@ -10 +10
-        -     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -10 +10 @@
+        -    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 11: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_IMMUTABLE)
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 11: Add FLAG_NO_CREATE:
-        @@ -11 +11
-        -     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -11 +11 @@
+        -    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 12: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -12 +12
-        -     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE)
+        @@ -12 +12 @@
+        -    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 12: Add FLAG_NO_CREATE:
-        @@ -12 +12
-        -     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -12 +12 @@
+        -    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_IMMUTABLE)
+        @@ -13 +13 @@
+        -    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -13 +13 @@
+        -    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         """
       )
   }
@@ -2364,93 +2364,93 @@ class PendingIntentMutableImplicitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/PendingIntentJavaTest.java line 12: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -12 +12
-        -     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT);
-        +     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT);
+        @@ -12 +12 @@
+        -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT);
+        +    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 12: Add FLAG_NO_CREATE:
-        @@ -12 +12
-        -     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT);
-        +     PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_NO_CREATE);
+        @@ -12 +12 @@
+        -    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT);
+        +    PendingIntent.getActivity(null, 0, new Intent(), PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        @@ -13 +13 @@
+        -    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
-        +     PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
+        @@ -13 +13 @@
+        -    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
+        +    PendingIntent.getBroadcast(null, 0, new Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 14: Add FLAG_NO_CREATE:
-        @@ -14 +14
-        -     PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutableAndCancel);
-        +     PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutableAndCancel | PendingIntent.FLAG_NO_CREATE);
+        @@ -14 +14 @@
+        -    PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutableAndCancel);
+        +    PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutableAndCancel | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 15: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -15 +15
-        -     PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutable);
-        +     PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE);
+        @@ -15 +15 @@
+        -    PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutable);
+        +    PendingIntent.getService(null, 0, new Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 15: Add FLAG_NO_CREATE:
-        @@ -15 +15
-        -     PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutable);
-        +     PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutable | PendingIntent.FLAG_NO_CREATE);
+        @@ -15 +15 @@
+        -    PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutable);
+        +    PendingIntent.getService(null, 0, new Intent("TEST", mUri), mMutable | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 16: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -16 +16
-        -     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, mMutable | PendingIntent.FLAG_UPDATE_CURRENT);
-        +     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        @@ -16 +16 @@
+        -    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, mMutable | PendingIntent.FLAG_UPDATE_CURRENT);
+        +    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 16: Add FLAG_NO_CREATE:
-        @@ -16 +16
-        -     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, mMutable | PendingIntent.FLAG_UPDATE_CURRENT);
-        +     PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, mMutable | PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_NO_CREATE);
+        @@ -16 +16 @@
+        -    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, mMutable | PendingIntent.FLAG_UPDATE_CURRENT);
+        +    PendingIntent.getActivities(null, 0, { new Intent(), new Intent("TEST") }, mMutable | PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 17: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -17 +17
-        -     PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_UPDATE_CURRENT | mMutable);
-        +     PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        @@ -17 +17 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_UPDATE_CURRENT | mMutable);
+        +    PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Fix for src/test/pkg/PendingIntentJavaTest.java line 17: Add FLAG_NO_CREATE:
-        @@ -17 +17
-        -     PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_UPDATE_CURRENT | mMutable);
-        +     PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_UPDATE_CURRENT | mMutable | PendingIntent.FLAG_NO_CREATE);
+        @@ -17 +17 @@
+        -    PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_UPDATE_CURRENT | mMutable);
+        +    PendingIntent.getActivities(null, 0, new Intent[] { new Intent("TEST"), new Intent("TEST", mUri) }, PendingIntent.FLAG_UPDATE_CURRENT | mMutable | PendingIntent.FLAG_NO_CREATE);
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 12: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -12 +12
-        -     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ONE_SHOT)
-        +     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT)
+        @@ -12 +12 @@
+        -    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ONE_SHOT)
+        +    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 12: Add FLAG_NO_CREATE:
-        @@ -12 +12
-        -     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ONE_SHOT)
-        +     PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_NO_CREATE)
+        @@ -12 +12 @@
+        -    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ONE_SHOT)
+        +    PendingIntent.getActivity(null, 0, Intent(), PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -13 +13
-        -     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        @@ -13 +13 @@
+        -    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 13: Add FLAG_NO_CREATE:
-        @@ -13 +13
-        -     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
-        +     PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
+        @@ -13 +13 @@
+        -    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
+        +    PendingIntent.getBroadcast(null, 0, Intent("TEST"), PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 14: Add FLAG_NO_CREATE:
-        @@ -14 +14
-        -     PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutableAndCancel)
-        +     PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutableAndCancel or PendingIntent.FLAG_NO_CREATE)
+        @@ -14 +14 @@
+        -    PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutableAndCancel)
+        +    PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutableAndCancel or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 15: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -15 +15
-        -     PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutable)
-        +     PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE)
+        @@ -15 +15 @@
+        -    PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutable)
+        +    PendingIntent.getService(null, 0, Intent("TEST", mUri), PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 15: Add FLAG_NO_CREATE:
-        @@ -15 +15
-        -     PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutable)
-        +     PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutable or PendingIntent.FLAG_NO_CREATE)
+        @@ -15 +15 @@
+        -    PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutable)
+        +    PendingIntent.getService(null, 0, Intent("TEST", mUri), mMutable or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 16: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -16 +16
-        -     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), mMutable or PendingIntent.FLAG_UPDATE_CURRENT)
-        +     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        @@ -16 +16 @@
+        -    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), mMutable or PendingIntent.FLAG_UPDATE_CURRENT)
+        +    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 16: Add FLAG_NO_CREATE:
-        @@ -16 +16
-        -     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), mMutable or PendingIntent.FLAG_UPDATE_CURRENT)
-        +     PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), mMutable or PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_NO_CREATE)
+        @@ -16 +16 @@
+        -    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), mMutable or PendingIntent.FLAG_UPDATE_CURRENT)
+        +    PendingIntent.getActivities(null, 0, listOf(Intent(), Intent("TEST")), mMutable or PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_NO_CREATE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 17: Replace FLAG_MUTABLE with FLAG_IMMUTABLE:
-        @@ -17 +17
-        -     PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or mMutable)
-        +     PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        @@ -17 +17 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or mMutable)
+        +    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         Fix for src/test/pkg/PendingIntentKotlinTest.kt line 17: Add FLAG_NO_CREATE:
-        @@ -17 +17
-        -     PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or mMutable)
-        +     PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or mMutable or PendingIntent.FLAG_NO_CREATE)
+        @@ -17 +17 @@
+        -    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or mMutable)
+        +    PendingIntent.getActivities(null, 0, arrayOf(Intent("TEST"), Intent("TEST", mUri)), PendingIntent.FLAG_UPDATE_CURRENT or mMutable or PendingIntent.FLAG_NO_CREATE)
         """
       )
   }

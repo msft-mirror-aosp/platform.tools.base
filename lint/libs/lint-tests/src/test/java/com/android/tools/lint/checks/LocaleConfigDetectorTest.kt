@@ -118,28 +118,28 @@ class LocaleConfigDetectorTest : AbstractCheckTest() {
         """
             Fix for AndroidManifest.xml line 4: Add ar to locale_config.xml:
             res/xml/locale_config.xml:
-            @@ -2 +2
-              <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
-            +     <locale android:name="ar"/>
-                  <locale android:name="en-us"/>
+            @@ -1,2 +1,3 @@
+             <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+            +    <locale android:name="ar"/>
+                 <locale android:name="en-us"/>
             Fix for AndroidManifest.xml line 4: Add es to locale_config.xml:
             res/xml/locale_config.xml:
-            @@ -3 +3
-                  <locale android:name="en-us"/>
-            +     <locale android:name="es"/>
-                  <locale android:name="nor-NOR"/>
+            @@ -2,2 +2,3 @@
+                 <locale android:name="en-us"/>
+            +    <locale android:name="es"/>
+                 <locale android:name="nor-NOR"/>
             Fix for AndroidManifest.xml line 4: Add nb to locale_config.xml:
             res/xml/locale_config.xml:
-            @@ -3 +3
-                  <locale android:name="en-us"/>
-            +     <locale android:name="nb"/>
-                  <locale android:name="nor-NOR"/>
+            @@ -2,2 +2,3 @@
+                 <locale android:name="en-us"/>
+            +    <locale android:name="nb"/>
+                 <locale android:name="nor-NOR"/>
             Fix for AndroidManifest.xml line 4: Add zh to locale_config.xml:
             res/xml/locale_config.xml:
-            @@ -5 +5
-                  <locale android:name="pt"/>
-            +     <locale android:name="zh"/>
-              </locale-config>
+            @@ -4,2 +4,3 @@
+                 <locale android:name="pt"/>
+            +    <locale android:name="zh"/>
+             </locale-config>
             """
       )
   }
@@ -202,10 +202,10 @@ class LocaleConfigDetectorTest : AbstractCheckTest() {
         """
             Fix for AndroidManifest.xml line 4: Add nb to locale_config.xml:
             res/xml/locale_config.xml:
-            @@ -3 +3
-                  <locale a:name="en-us"/>
-            +     <locale a:name="nb"/>
-              </locale-config>
+            @@ -2,2 +2,3 @@
+                 <locale a:name="en-us"/>
+            +    <locale a:name="nb"/>
+             </locale-config>
             """
       )
   }

@@ -574,10 +574,10 @@ class DeprecationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 4: Set sharedUserMaxSdkVersion="32":
-            @@ -4 +4
-            -     android:sharedUserId="0" >
-            +     android:sharedUserId="0"
-            +     android:sharedUserMaxSdkVersion="32" >
+            @@ -4 +4,2 @@
+            -    android:sharedUserId="0" >
+            +    android:sharedUserId="0"
+            +    android:sharedUserMaxSdkVersion="32" >
             """
       )
   }

@@ -170,63 +170,63 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/Test.kt line 14: Replace with the withStyledAttributes extension function:
-        @@ -8 +8
-        + import androidx.core.content.withStyledAttributes
-        @@ -14 +15
-        -         val styled = getContext().obtainStyledAttributes(style, styleable) // WARN 1
-        -         backgroundColor = styled.getColor(colorIndex,Color.argb(128, 80, 80, 80))
-        -         styled.recycle()
-        +         getContext().withStyledAttributes(style, styleable) { // WARN 1
-        +             backgroundColor = getColor(colorIndex,Color.argb(128, 80, 80, 80))
-        +         }
+        @@ -7,0 +8 @@
+        +import androidx.core.content.withStyledAttributes
+        @@ -14,3 +15,3 @@
+        -        val styled = getContext().obtainStyledAttributes(style, styleable) // WARN 1
+        -        backgroundColor = styled.getColor(colorIndex,Color.argb(128, 80, 80, 80))
+        -        styled.recycle()
+        +        getContext().withStyledAttributes(style, styleable) { // WARN 1
+        +            backgroundColor = getColor(colorIndex,Color.argb(128, 80, 80, 80))
+        +        }
         Autofix for src/test/pkg/Test.kt line 23: Replace with the withStyledAttributes extension function:
-        @@ -8 +8
-        + import androidx.core.content.withStyledAttributes
-        @@ -23 +24
-        -         val typedArray = obtainStyledAttributes(drawableAttr) // WARN 2
-        -         menu.findItem(id).icon = typedArray.getDrawable(0)
-        -         println(typedArray)
-        -         typedArray.recycle()
-        +         withStyledAttributes(null, drawableAttr) { // WARN 2
-        +             menu.findItem(id).icon = getDrawable(0)
-        +             println(this)
-        +         }
+        @@ -7,0 +8 @@
+        +import androidx.core.content.withStyledAttributes
+        @@ -23,4 +24,4 @@
+        -        val typedArray = obtainStyledAttributes(drawableAttr) // WARN 2
+        -        menu.findItem(id).icon = typedArray.getDrawable(0)
+        -        println(typedArray)
+        -        typedArray.recycle()
+        +        withStyledAttributes(null, drawableAttr) { // WARN 2
+        +            menu.findItem(id).icon = getDrawable(0)
+        +            println(this)
+        +        }
         Autofix for src/test/pkg/Test.kt line 37: Replace with the withStyledAttributes extension function:
-        @@ -8 +8
-        + import androidx.core.content.withStyledAttributes
-        @@ -37 +38
-        -         val typedArray = obtainStyledAttributes(drawableAttr) // WARN 3
-        -         menu.findItem(id).icon = typedArray.getDrawable(0)
-        -         // Make sure we preserve the .logType() and .apply calls when converting
-        -         // to block!
-        -         typedArray.logType().apply { println(getDrawable(0)) }.recycle()
-        +         withStyledAttributes(null, drawableAttr) { // WARN 3
-        +             menu.findItem(id).icon = getDrawable(0)
-        +             // Make sure we preserve the .logType() and .apply calls when converting
-        +             // to block!
-        +         logType().apply { println(getDrawable(0)) }}
+        @@ -7,0 +8 @@
+        +import androidx.core.content.withStyledAttributes
+        @@ -37,5 +38,5 @@
+        -        val typedArray = obtainStyledAttributes(drawableAttr) // WARN 3
+        -        menu.findItem(id).icon = typedArray.getDrawable(0)
+        -        // Make sure we preserve the .logType() and .apply calls when converting
+        -        // to block!
+        -        typedArray.logType().apply { println(getDrawable(0)) }.recycle()
+        +        withStyledAttributes(null, drawableAttr) { // WARN 3
+        +            menu.findItem(id).icon = getDrawable(0)
+        +            // Make sure we preserve the .logType() and .apply calls when converting
+        +            // to block!
+        +        logType().apply { println(getDrawable(0)) }}
         Autofix for src/test/pkg/Test2.kt line 28: Replace with the withStyledAttributes extension function:
-        @@ -9 +9
-        + import androidx.core.content.withStyledAttributes
-        @@ -28 +29
-        -         val array = context.obtainStyledAttributes(attrs, i1) // WARN 4
-        -         val iconId = array.getResourceId(icon1, -1)
-        -         val icon: Drawable? = if (iconId > 0) resources.getDrawable(iconId, null) else null
-        -         val contentDescription = array.getString(desc)
-        -         val label = array.getString(label2)
-        -         iconView.setImageDrawable(icon)
-        -         iconView.contentDescription = contentDescription
-        -         labelView.text = label
-        -         array.recycle()
-        +         context.withStyledAttributes(attrs, i1) { // WARN 4
-        +             val iconId = getResourceId(icon1, -1)
-        +             val icon: Drawable? = if (iconId > 0) resources.getDrawable(iconId, null) else null
-        +             val contentDescription = getString(desc)
-        +             val label = getString(label2)
-        +             iconView.setImageDrawable(icon)
-        +             iconView.contentDescription = contentDescription
-        +             labelView.text = label
-        +         }
+        @@ -8,0 +9 @@
+        +import androidx.core.content.withStyledAttributes
+        @@ -28,9 +29,9 @@
+        -        val array = context.obtainStyledAttributes(attrs, i1) // WARN 4
+        -        val iconId = array.getResourceId(icon1, -1)
+        -        val icon: Drawable? = if (iconId > 0) resources.getDrawable(iconId, null) else null
+        -        val contentDescription = array.getString(desc)
+        -        val label = array.getString(label2)
+        -        iconView.setImageDrawable(icon)
+        -        iconView.contentDescription = contentDescription
+        -        labelView.text = label
+        -        array.recycle()
+        +        context.withStyledAttributes(attrs, i1) { // WARN 4
+        +            val iconId = getResourceId(icon1, -1)
+        +            val icon: Drawable? = if (iconId > 0) resources.getDrawable(iconId, null) else null
+        +            val contentDescription = getString(desc)
+        +            val label = getString(label2)
+        +            iconView.setImageDrawable(icon)
+        +            iconView.contentDescription = contentDescription
+        +            labelView.text = label
+        +        }
         """
       )
   }
@@ -374,122 +374,122 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 8: Replace with the withStyledAttributes extension function:
-        @@ -6 +6
-          import android.content.res.TypedArray
-        + import androidx.core.content.withStyledAttributes
+        @@ -5,8 +5,9 @@
+         import android.content.res.TypedArray
+        +import androidx.core.content.withStyledAttributes
 
-          fun testUsingApply(context: Context, style: Int, attr: IntArray) {
-        -     context.obtainStyledAttributes(style, attr).apply { // WARN 1
-        +     context.withStyledAttributes(style, attr) { // WARN 1
-                  var color = getDrawable(0)
-                  var color2 = this.getDrawable(0)
-        -     }.recycle()
-        +     }
-          }
+         fun testUsingApply(context: Context, style: Int, attr: IntArray) {
+        -    context.obtainStyledAttributes(style, attr).apply { // WARN 1
+        +    context.withStyledAttributes(style, attr) { // WARN 1
+                 var color = getDrawable(0)
+                 var color2 = this.getDrawable(0)
+        -    }.recycle()
+        +    }
+         }
         Autofix for src/test/pkg/test.kt line 15: Replace with the withStyledAttributes extension function:
-        @@ -6 +6
-          import android.content.res.TypedArray
-        + import androidx.core.content.withStyledAttributes
+        @@ -5,2 +5,3 @@
+         import android.content.res.TypedArray
+        +import androidx.core.content.withStyledAttributes
 
-        @@ -15 +16
-          fun testUsingWith(context: Context, style: Int, attr: IntArray) {
-        -     with(context.obtainStyledAttributes(style, attr)) { // WARN 2
-        +     context.withStyledAttributes(style, attr) { // WARN 2
-                  var color = getDrawable(0)
-                  var color2 = this.getDrawable(0)
-        -         recycle()
-              }
+        @@ -14,6 +15,5 @@
+         fun testUsingWith(context: Context, style: Int, attr: IntArray) {
+        -    with(context.obtainStyledAttributes(style, attr)) { // WARN 2
+        +    context.withStyledAttributes(style, attr) { // WARN 2
+                 var color = getDrawable(0)
+                 var color2 = this.getDrawable(0)
+        -        recycle()
+             }
         Autofix for src/test/pkg/test.kt line 23: Replace with the withStyledAttributes extension function:
-        @@ -6 +6
-          import android.content.res.TypedArray
-        + import androidx.core.content.withStyledAttributes
+        @@ -5,2 +5,3 @@
+         import android.content.res.TypedArray
+        +import androidx.core.content.withStyledAttributes
 
-        @@ -23 +24
-          fun testUsingRun(context: Context, style: Int, attr: IntArray) {
-        -     context.obtainStyledAttributes(style, attr).run { // WARN 3
-        +     context.withStyledAttributes(style, attr) { // WARN 3
-                  var color = getDrawable(0)
-                  var color2 = this.getDrawable(0)
-        -         recycle()
-              }
+        @@ -22,6 +23,5 @@
+         fun testUsingRun(context: Context, style: Int, attr: IntArray) {
+        -    context.obtainStyledAttributes(style, attr).run { // WARN 3
+        +    context.withStyledAttributes(style, attr) { // WARN 3
+                 var color = getDrawable(0)
+                 var color2 = this.getDrawable(0)
+        -        recycle()
+             }
         Autofix for src/test/pkg/test.kt line 31: Replace with the withStyledAttributes extension function:
-        @@ -6 +6
-          import android.content.res.TypedArray
-        + import androidx.core.content.withStyledAttributes
+        @@ -5,2 +5,3 @@
+         import android.content.res.TypedArray
+        +import androidx.core.content.withStyledAttributes
 
-        @@ -31 +32
-          fun testUsingLet(context: Context, style: Int, attr: IntArray) {
-        -     context.obtainStyledAttributes(style, attr).let { // WARN 4
-        -         var color = it.getDrawable(0)
-        -         it.recycle()
-        +     context.withStyledAttributes(style, attr) { // WARN 4
-        +         var color = getDrawable(0)
-              }
+        @@ -30,5 +31,4 @@
+         fun testUsingLet(context: Context, style: Int, attr: IntArray) {
+        -    context.obtainStyledAttributes(style, attr).let { // WARN 4
+        -        var color = it.getDrawable(0)
+        -        it.recycle()
+        +    context.withStyledAttributes(style, attr) { // WARN 4
+        +        var color = getDrawable(0)
+             }
         Autofix for src/test/pkg/test.kt line 39: Replace with the withStyledAttributes extension function:
-        @@ -6 +6
-          import android.content.res.TypedArray
-        + import androidx.core.content.withStyledAttributes
+        @@ -5,2 +5,3 @@
+         import android.content.res.TypedArray
+        +import androidx.core.content.withStyledAttributes
 
-        @@ -39 +40
-          fun testUnrelatedIt(context: Context, style: Int, attr: IntArray, unrelated: TypedArray) {
-        -     context.obtainStyledAttributes(style, attr).let { // WARN 5
-        -         var color = it.getDrawable(0)
-        +     context.withStyledAttributes(style, attr) { // WARN 5
-        +         var color = getDrawable(0)
-                  run {
-        @@ -46 +47
-                  }
-        -         it.recycle()
-              }
+        @@ -38,4 +39,4 @@
+         fun testUnrelatedIt(context: Context, style: Int, attr: IntArray, unrelated: TypedArray) {
+        -    context.obtainStyledAttributes(style, attr).let { // WARN 5
+        -        var color = it.getDrawable(0)
+        +    context.withStyledAttributes(style, attr) { // WARN 5
+        +        var color = getDrawable(0)
+                 run {
+        @@ -45,3 +46,2 @@
+                 }
+        -        it.recycle()
+             }
         Autofix for src/test/pkg/test.kt line 51: Replace with the withStyledAttributes extension function:
-        @@ -6 +6
-          import android.content.res.TypedArray
-        + import androidx.core.content.withStyledAttributes
+        @@ -5,2 +5,3 @@
+         import android.content.res.TypedArray
+        +import androidx.core.content.withStyledAttributes
 
-        @@ -51 +52
-          fun testReferenceVarAndThis(context: Context, style: Int, attr: IntArray) {
-        -     val array = context.obtainStyledAttributes(style, attr) // WARN 6
-        -     array.apply {
-        -         val x = this.getDrawable(0)
-        -         val y = array.getDrawable(0)
-        -     }.recycle()
-        +     context.withStyledAttributes(style, attr) { // WARN 6
-        +         apply {
-        +             val x = this.getDrawable(0)
-        +             val y = getDrawable(0)
-        +     }}
-          }
-        Autofix for src/test/pkg/test.kt line 59: Replace with the withStyledAttributes extension function:
-        @@ -6 +6
-          import android.content.res.TypedArray
-        + import androidx.core.content.withStyledAttributes
-
-        @@ -59 +60
-          fun testUsingThisRecycle(context: Context, style: Int, attr: IntArray) {
-        -     with(context.obtainStyledAttributes(style, attr)) { // WARN 7
-        +     context.withStyledAttributes(style, attr) { // WARN 7
-                  var color = getDrawable(0)
-                  var color2 = this.getDrawable(0)
-        -         this.recycle()
-              }
-        Autofix for src/test/pkg/test.kt line 68: Replace with the withStyledAttributes extension function:
-        @@ -6 +6
-          import android.content.res.TypedArray
-        + import androidx.core.content.withStyledAttributes
-
-        @@ -68 +69
-             // Like 6B but with some extra parentheses
-        -    val array = (context).obtainStyledAttributes(style, attr) // WARN 8
-        -    ((array).apply {
+        @@ -50,7 +51,7 @@
+         fun testReferenceVarAndThis(context: Context, style: Int, attr: IntArray) {
+        -    val array = context.obtainStyledAttributes(style, attr) // WARN 6
+        -    array.apply {
         -        val x = this.getDrawable(0)
-        -        val y = (array).getDrawable(0)
-        -    }).recycle()
-        +    (context).withStyledAttributes(style, attr) { // WARN 8
-        +        ((this).apply {
+        -        val y = array.getDrawable(0)
+        -    }.recycle()
+        +    context.withStyledAttributes(style, attr) { // WARN 6
+        +        apply {
         +            val x = this.getDrawable(0)
-        +            val y = (this).getDrawable(0)
-        +    })}
-          }
+        +            val y = getDrawable(0)
+        +    }}
+         }
+        Autofix for src/test/pkg/test.kt line 59: Replace with the withStyledAttributes extension function:
+        @@ -5,2 +5,3 @@
+         import android.content.res.TypedArray
+        +import androidx.core.content.withStyledAttributes
+
+        @@ -58,6 +59,5 @@
+         fun testUsingThisRecycle(context: Context, style: Int, attr: IntArray) {
+        -    with(context.obtainStyledAttributes(style, attr)) { // WARN 7
+        +    context.withStyledAttributes(style, attr) { // WARN 7
+                 var color = getDrawable(0)
+                 var color2 = this.getDrawable(0)
+        -        this.recycle()
+             }
+        Autofix for src/test/pkg/test.kt line 68: Replace with the withStyledAttributes extension function:
+        @@ -5,2 +5,3 @@
+         import android.content.res.TypedArray
+        +import androidx.core.content.withStyledAttributes
+
+        @@ -67,7 +68,7 @@
+            // Like 6B but with some extra parentheses
+        -   val array = (context).obtainStyledAttributes(style, attr) // WARN 8
+        -   ((array).apply {
+        -       val x = this.getDrawable(0)
+        -       val y = (array).getDrawable(0)
+        -   }).recycle()
+        +   (context).withStyledAttributes(style, attr) { // WARN 8
+        +       ((this).apply {
+        +           val x = this.getDrawable(0)
+        +           val y = (this).getDrawable(0)
+        +   })}
+         }
         """
       )
   }
@@ -620,56 +620,56 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 7: Replace with the withStyledAttributes extension function:
-        @@ -5 +5
-          import android.util.AttributeSet
-        + import androidx.core.content.withStyledAttributes
+        @@ -4,7 +4,8 @@
+         import android.util.AttributeSet
+        +import androidx.core.content.withStyledAttributes
 
-          fun testUsingApply1(context: Context, style: Int, attrs: IntArray, set: AttributeSet) {
-        -     context.obtainStyledAttributes(style, attrs).apply { // WARN 1
-        +     context.withStyledAttributes(style, attrs) { // WARN 1
-                  var color = getDrawable(0)
-        -     }.recycle()
-        +     }
-          }
+         fun testUsingApply1(context: Context, style: Int, attrs: IntArray, set: AttributeSet) {
+        -    context.obtainStyledAttributes(style, attrs).apply { // WARN 1
+        +    context.withStyledAttributes(style, attrs) { // WARN 1
+                 var color = getDrawable(0)
+        -    }.recycle()
+        +    }
+         }
         Autofix for src/test/pkg/test.kt line 13: Replace with the withStyledAttributes extension function:
-        @@ -5 +5
-          import android.util.AttributeSet
-        + import androidx.core.content.withStyledAttributes
+        @@ -4,2 +4,3 @@
+         import android.util.AttributeSet
+        +import androidx.core.content.withStyledAttributes
 
-        @@ -13 +14
-              // Note: the quickfix here has to introduce a null first parameter
-        -     context.obtainStyledAttributes(attrs).apply { // WARN 2
-        +     context.withStyledAttributes(null, attrs) { // WARN 2
-                  var color = getDrawable(0)
-        -     }.recycle()
-        +     }
-          }
+        @@ -12,5 +13,5 @@
+             // Note: the quickfix here has to introduce a null first parameter
+        -    context.obtainStyledAttributes(attrs).apply { // WARN 2
+        +    context.withStyledAttributes(null, attrs) { // WARN 2
+                 var color = getDrawable(0)
+        -    }.recycle()
+        +    }
+         }
         Autofix for src/test/pkg/test.kt line 18: Replace with the withStyledAttributes extension function:
-        @@ -5 +5
-          import android.util.AttributeSet
-        + import androidx.core.content.withStyledAttributes
+        @@ -4,2 +4,3 @@
+         import android.util.AttributeSet
+        +import androidx.core.content.withStyledAttributes
 
-        @@ -18 +19
-          fun testUsingApply3(context: Context, style: Int, attrs: IntArray, set: AttributeSet) {
-        -     context.obtainStyledAttributes(set, attrs).apply { // WARN 3
-        +     context.withStyledAttributes(set, attrs) { // WARN 3
-                  var color = getDrawable(0)
-        -     }.recycle()
-        +     }
-          }
+        @@ -17,5 +18,5 @@
+         fun testUsingApply3(context: Context, style: Int, attrs: IntArray, set: AttributeSet) {
+        -    context.obtainStyledAttributes(set, attrs).apply { // WARN 3
+        +    context.withStyledAttributes(set, attrs) { // WARN 3
+                 var color = getDrawable(0)
+        -    }.recycle()
+        +    }
+         }
         Autofix for src/test/pkg/test.kt line 23: Replace with the withStyledAttributes extension function:
-        @@ -5 +5
-          import android.util.AttributeSet
-        + import androidx.core.content.withStyledAttributes
+        @@ -4,2 +4,3 @@
+         import android.util.AttributeSet
+        +import androidx.core.content.withStyledAttributes
 
-        @@ -23 +24
-          fun testUsingApply4(context: Context, style: Int, attrs: IntArray, set: AttributeSet) {
-        -     context.obtainStyledAttributes(set, attrs,0, 0).apply { // WARN 4
-        +     context.withStyledAttributes(set, attrs,0, 0) { // WARN 4
-                  var color = getDrawable(0)
-        -     }.recycle()
-        +     }
-          }
+        @@ -22,5 +23,5 @@
+         fun testUsingApply4(context: Context, style: Int, attrs: IntArray, set: AttributeSet) {
+        -    context.obtainStyledAttributes(set, attrs,0, 0).apply { // WARN 4
+        +    context.withStyledAttributes(set, attrs,0, 0) { // WARN 4
+                 var color = getDrawable(0)
+        -    }.recycle()
+        +    }
+         }
         """
       )
   }
@@ -740,51 +740,51 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 6: Replace with the edit extension function:
-        @@ -4 +4
-        + import androidx.core.content.edit
-        @@ -6 +7
-        -     sharedPreferences.edit() // WARN 1
-        -         .putBoolean("key", value)
-        -         .apply()
-        +     sharedPreferences.edit { // WARN 1
-        +             putBoolean("key", value)
-        +         }
+        @@ -3,0 +4 @@
+        +import androidx.core.content.edit
+        @@ -6,3 +7,3 @@
+        -    sharedPreferences.edit() // WARN 1
+        -        .putBoolean("key", value)
+        -        .apply()
+        +    sharedPreferences.edit { // WARN 1
+        +            putBoolean("key", value)
+        +        }
         Autofix for src/test/pkg/test.kt line 12: Replace with the edit extension function:
-        @@ -4 +4
-        + import androidx.core.content.edit
-        @@ -12 +13
-        -     sharedPreferences.edit() // WARN 2
-        -         .putBoolean("key", value)
-        -         .commit()
-        +     sharedPreferences.edit(commit = true) { // WARN 2
-        +             putBoolean("key", value)
-        +         }
+        @@ -3,0 +4 @@
+        +import androidx.core.content.edit
+        @@ -12,3 +13,3 @@
+        -    sharedPreferences.edit() // WARN 2
+        -        .putBoolean("key", value)
+        -        .commit()
+        +    sharedPreferences.edit(commit = true) { // WARN 2
+        +            putBoolean("key", value)
+        +        }
         Autofix for src/test/pkg/test.kt line 18: Replace with the edit extension function:
-        @@ -4 +4
-        + import androidx.core.content.edit
-        @@ -18 +19
-        -     val editor = sharedPreferences.edit() // WARN 3
-        -     editor.putBoolean("key", value)
-        -     editor.apply()
-        +     sharedPreferences.edit { // WARN 3
-        +         putBoolean("key", value)
-        +     }
+        @@ -3,0 +4 @@
+        +import androidx.core.content.edit
+        @@ -18,3 +19,3 @@
+        -    val editor = sharedPreferences.edit() // WARN 3
+        -    editor.putBoolean("key", value)
+        -    editor.apply()
+        +    sharedPreferences.edit { // WARN 3
+        +        putBoolean("key", value)
+        +    }
         Autofix for src/test/pkg/test.kt line 24: Replace with the edit extension function:
-        @@ -4 +4
-        + import androidx.core.content.edit
-        @@ -24 +25
-        -     val editor = sharedPreferences.edit() // WARN 4
-        -     editor.putBoolean("key", value)
-        -     editor.commit()
-        +     sharedPreferences.edit(commit = true) { // WARN 4
-        +         putBoolean("key", value)
-        +     }
+        @@ -3,0 +4 @@
+        +import androidx.core.content.edit
+        @@ -24,3 +25,3 @@
+        -    val editor = sharedPreferences.edit() // WARN 4
+        -    editor.putBoolean("key", value)
+        -    editor.commit()
+        +    sharedPreferences.edit(commit = true) { // WARN 4
+        +        putBoolean("key", value)
+        +    }
         Autofix for src/test/pkg/test.kt line 31: Replace with the edit extension function:
-        @@ -4 +4
-        + import androidx.core.content.edit
-        @@ -31 +32
-        -   prefs.edit().putString(FAVORITES_SETTINGS_KEY, value).apply() // WARN 5
-        +   prefs.edit {putString(FAVORITES_SETTINGS_KEY, value)} // WARN 5
+        @@ -3,0 +4 @@
+        +import androidx.core.content.edit
+        @@ -31 +32 @@
+        -  prefs.edit().putString(FAVORITES_SETTINGS_KEY, value).apply() // WARN 5
+        +  prefs.edit {putString(FAVORITES_SETTINGS_KEY, value)} // WARN 5
         """
       )
   }
@@ -986,149 +986,149 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 13: Replace with the withTranslation extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withTranslation
-        @@ -13 +14
-        -     canvas.save() // WARN 1
-        -     canvas.translate(200f, 300f)
-        -     canvas.drawCircle(10f, 10f, 10f, paint)
-        -     canvas.restore()
-        +     canvas.withTranslation(200f, 300f) { // WARN 1
-        +         drawCircle(10f, 10f, 10f, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withTranslation
+        @@ -13,4 +14,3 @@
+        -    canvas.save() // WARN 1
+        -    canvas.translate(200f, 300f)
+        -    canvas.drawCircle(10f, 10f, 10f, paint)
+        -    canvas.restore()
+        +    canvas.withTranslation(200f, 300f) { // WARN 1
+        +        drawCircle(10f, 10f, 10f, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 22: Replace with the withTranslation extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withTranslation
-        @@ -22 +23
-        -     val state = canvas.save() // WARN 2
-        -     canvas.translate(200f, 300f)
-        -     canvas.drawCircle(10f, 10f, 10f, paint)
-        -     canvas.restoreToCount(state)
-        +     canvas.withTranslation(200f, 300f) { // WARN 2
-        +         canvas.drawCircle(10f, 10f, 10f, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withTranslation
+        @@ -22,4 +23,3 @@
+        -    val state = canvas.save() // WARN 2
+        -    canvas.translate(200f, 300f)
+        -    canvas.drawCircle(10f, 10f, 10f, paint)
+        -    canvas.restoreToCount(state)
+        +    canvas.withTranslation(200f, 300f) { // WARN 2
+        +        canvas.drawCircle(10f, 10f, 10f, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 27: Replace with the withSave extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withSave
-        @@ -27 +28
-        -     val state2 = canvas.save() // WARN 3
-        -     canvas.drawCircle(10f, 10f, 10f, paint)
-        -     canvas.restoreToCount(state2)
-        +     canvas.withSave { // WARN 3
-        +         canvas.drawCircle(10f, 10f, 10f, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withSave
+        @@ -27,3 +28,3 @@
+        -    val state2 = canvas.save() // WARN 3
+        -    canvas.drawCircle(10f, 10f, 10f, paint)
+        -    canvas.restoreToCount(state2)
+        +    canvas.withSave { // WARN 3
+        +        canvas.drawCircle(10f, 10f, 10f, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 43: Replace with the withRotation extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withRotation
-        @@ -43 +44
-        -     val rotateCheckpoint = canvas.save() // WARN 4 -- innermost nest is allowed
-        -     canvas.rotate(45f)
-        -     canvas.restoreToCount(rotateCheckpoint)
-        +     canvas.withRotation(45f) { // WARN 4 -- innermost nest is allowed
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withRotation
+        @@ -43,3 +44,2 @@
+        -    val rotateCheckpoint = canvas.save() // WARN 4 -- innermost nest is allowed
+        -    canvas.rotate(45f)
+        -    canvas.restoreToCount(rotateCheckpoint)
+        +    canvas.withRotation(45f) { // WARN 4 -- innermost nest is allowed
+        +    }
         Autofix for src/test/pkg/test.kt line 62: Replace with the withScale extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withScale
-        @@ -62 +63
-        -     canvas.save() // WARN 5
-        -     canvas.scale(1F, 2F)
-        -     canvas.drawCircle(10f, 10f, 10f, paint)
-        -     canvas.restore()
-        +     canvas.withScale(1F, 2F) { // WARN 5
-        +         drawCircle(10f, 10f, 10f, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withScale
+        @@ -62,4 +63,3 @@
+        -    canvas.save() // WARN 5
+        -    canvas.scale(1F, 2F)
+        -    canvas.drawCircle(10f, 10f, 10f, paint)
+        -    canvas.restore()
+        +    canvas.withScale(1F, 2F) { // WARN 5
+        +        drawCircle(10f, 10f, 10f, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 69: Replace with the withSkew extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withSkew
-        @@ -69 +70
-        -     canvas.save() // WARN 6
-        -     canvas.skew(10F, 20F)
-        -     canvas.drawCircle(10f, 10f, 10f, paint)
-        -     canvas.restore()
-        +     canvas.withSkew(10F, 20F) { // WARN 6
-        +         drawCircle(10f, 10f, 10f, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withSkew
+        @@ -69,4 +70,3 @@
+        -    canvas.save() // WARN 6
+        -    canvas.skew(10F, 20F)
+        -    canvas.drawCircle(10f, 10f, 10f, paint)
+        -    canvas.restore()
+        +    canvas.withSkew(10F, 20F) { // WARN 6
+        +        drawCircle(10f, 10f, 10f, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 76: Replace with the withMatrix extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withMatrix
-        @@ -76 +77
-        -     canvas.save() // WARN 7
-        -     canvas.concat(matrix)
-        -     canvas.drawCircle(10f, 10f, 10f, paint)
-        -     canvas.restore()
-        +     canvas.withMatrix(matrix) { // WARN 7
-        +         drawCircle(10f, 10f, 10f, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withMatrix
+        @@ -76,4 +77,3 @@
+        -    canvas.save() // WARN 7
+        -    canvas.concat(matrix)
+        -    canvas.drawCircle(10f, 10f, 10f, paint)
+        -    canvas.restore()
+        +    canvas.withMatrix(matrix) { // WARN 7
+        +        drawCircle(10f, 10f, 10f, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 83: Replace with the withClip extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withClip
-        @@ -83 +84
-        -     canvas.save() // WARN 8
-        -     canvas.clipRect(rect)
-        -     canvas.drawRect(rect, paint)
-        -     canvas.restore()
-        +     canvas.withClip(rect) { // WARN 8
-        +         drawRect(rect, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withClip
+        @@ -83,4 +84,3 @@
+        -    canvas.save() // WARN 8
+        -    canvas.clipRect(rect)
+        -    canvas.drawRect(rect, paint)
+        -    canvas.restore()
+        +    canvas.withClip(rect) { // WARN 8
+        +        drawRect(rect, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 90: Replace with the withClip extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withClip
-        @@ -90 +91
-        -     canvas.save() // WARN 9
-        -     canvas.clipRect(rect)
-        -     canvas.drawRect(rect, paint)
-        -     canvas.restore()
-        +     canvas.withClip(rect) { // WARN 9
-        +         drawRect(rect, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withClip
+        @@ -90,4 +91,3 @@
+        -    canvas.save() // WARN 9
+        -    canvas.clipRect(rect)
+        -    canvas.drawRect(rect, paint)
+        -    canvas.restore()
+        +    canvas.withClip(rect) { // WARN 9
+        +        drawRect(rect, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 97: Replace with the withClip extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withClip
-        @@ -97 +98
-        -     canvas.save() // WARN 10
-        -     canvas.clipRect(0f, 0f, 100f, 100f)
-        -     canvas.drawRect(rect, paint)
-        -     canvas.restore()
-        +     canvas.withClip(0f, 0f, 100f, 100f) { // WARN 10
-        +         drawRect(rect, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withClip
+        @@ -97,4 +98,3 @@
+        -    canvas.save() // WARN 10
+        -    canvas.clipRect(0f, 0f, 100f, 100f)
+        -    canvas.drawRect(rect, paint)
+        -    canvas.restore()
+        +    canvas.withClip(0f, 0f, 100f, 100f) { // WARN 10
+        +        drawRect(rect, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 104: Replace with the withClip extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withClip
-        @@ -104 +105
-        -     canvas.save() // WARN 11
-        -     canvas.clipRect(0, 0, 100, 100)
-        -     canvas.drawRect(rect, paint)
-        -     canvas.restore()
-        +     canvas.withClip(0, 0, 100, 100) { // WARN 11
-        +         drawRect(rect, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withClip
+        @@ -104,4 +105,3 @@
+        -    canvas.save() // WARN 11
+        -    canvas.clipRect(0, 0, 100, 100)
+        -    canvas.drawRect(rect, paint)
+        -    canvas.restore()
+        +    canvas.withClip(0, 0, 100, 100) { // WARN 11
+        +        drawRect(rect, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 118: Replace with the withClip extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withClip
-        @@ -118 +119
-        -     canvas.save() // WARN 12
-        -     canvas.clipPath(path)
-        -     canvas.drawPath(path, paint)
-        -     canvas.restore()
-        +     canvas.withClip(path) { // WARN 12
-        +         drawPath(path, paint)
-        +     }
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withClip
+        @@ -118,4 +119,3 @@
+        -    canvas.save() // WARN 12
+        -    canvas.clipPath(path)
+        -    canvas.drawPath(path, paint)
+        -    canvas.restore()
+        +    canvas.withClip(path) { // WARN 12
+        +        drawPath(path, paint)
+        +    }
         Autofix for src/test/pkg/test.kt line 134: Replace with the withSave extension function:
-        @@ -10 +10
-        + import androidx.core.graphics.withSave
-        @@ -134 +135
-        -     canvas.save() // WARN 13
-        -     if (translate) {
-        -       canvas.translate(200f, 300f)
-        +     canvas.withSave { // WARN 13
-        +         if (translate) {
-        +           translate(200f, 300f)
-        +         }
-        +         drawCircle(10f, 10f, 10f, paint)
-        @@ -138 +141
-        -     canvas.drawCircle(10f, 10f, 10f, paint)
-        -     canvas.restore()
+        @@ -9,0 +10 @@
+        +import androidx.core.graphics.withSave
+        @@ -134,3 +135,5 @@
+        -    canvas.save() // WARN 13
+        -    if (translate) {
+        -      canvas.translate(200f, 300f)
+        +    canvas.withSave { // WARN 13
+        +        if (translate) {
+        +          translate(200f, 300f)
+        +        }
+        +        drawCircle(10f, 10f, 10f, paint)
+        @@ -138,2 +140,0 @@
+        -    canvas.drawCircle(10f, 10f, 10f, paint)
+        -    canvas.restore()
         """
       )
   }
@@ -1232,38 +1232,38 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 18: Replace with the withTranslation extension function:
-        @@ -6 +6
-        + import androidx.core.graphics.withTranslation
-        @@ -18 +19
-        -     canvas.save() // WARN 1
-        -     canvas.translate(
-        +     canvas.withTranslation(
-        @@ -22 +22
-        -     )
+        @@ -5,0 +6 @@
+        +import androidx.core.graphics.withTranslation
+        @@ -18,2 +19 @@
+        -    canvas.save() // WARN 1
+        -    canvas.translate(
+        +    canvas.withTranslation(
+        @@ -22,9 +22,8 @@
+        -    )
         -
-        -     // slide the viewPort over to make it window-relative
-        -     canvas.translate(
-        -         -viewportBoundsInWindow.left.toFloat(),
-        -         -viewportBoundsInWindow.top.toFloat()
-        -     )
-        -     // draw the content from the root view (DecorView) including the window background
-        -     composeView.rootView.draw(canvas)
-        +     ) { // WARN 1
-        +         // slide the viewPort over to make it window-relative
-        +         translate(
-        +             -viewportBoundsInWindow.left.toFloat(),
-        +             -viewportBoundsInWindow.top.toFloat()
-        +         )
-        +         // draw the content from the root view (DecorView) including the window background
-        +         composeView.rootView.draw(this)
-        @@ -32 +31
-        -     if (DEBUG) {
-        -         canvas.drawDebugOverlay()
-        +         if (DEBUG) {
-        +             drawDebugOverlay()
-        +         }
-        @@ -35 +35
-        -     canvas.restore()
+        -    // slide the viewPort over to make it window-relative
+        -    canvas.translate(
+        -        -viewportBoundsInWindow.left.toFloat(),
+        -        -viewportBoundsInWindow.top.toFloat()
+        -    )
+        -    // draw the content from the root view (DecorView) including the window background
+        -    composeView.rootView.draw(canvas)
+        +    ) { // WARN 1
+        +        // slide the viewPort over to make it window-relative
+        +        translate(
+        +            -viewportBoundsInWindow.left.toFloat(),
+        +            -viewportBoundsInWindow.top.toFloat()
+        +        )
+        +        // draw the content from the root view (DecorView) including the window background
+        +        composeView.rootView.draw(this)
+        @@ -32,2 +31,3 @@
+        -    if (DEBUG) {
+        -        canvas.drawDebugOverlay()
+        +        if (DEBUG) {
+        +            drawDebugOverlay()
+        +        }
+        @@ -35 +34,0 @@
+        -    canvas.restore()
         """
       )
   }
@@ -1386,91 +1386,91 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/SqlTest.kt line 15: Replace with the transaction extension function:
-        @@ -5 +5
-        + import androidx.core.database.sqlite.transaction
-        @@ -15 +16
-        -         database.beginTransaction() // WARN 1
-        -         try {
-        -             if (database.version > VERSION) {
-        -                 error("Downgrade not supported")
-        -             }
-        -             if (database.version < 1) {
-        -                 create(database)
-        -             } else {
-        -                 migrate(database)
-        +         database.transaction { // WARN 1
-        +             try {
-        +                 if (version > VERSION) {
-        +                     error("Downgrade not supported")
-        +                 }
-        +                 if (version < 1) {
-        +                     create(this)
-        +                 } else {
-        +                     migrate(this)
-        +                 }
-        +                 version = VERSION
-        +             } finally {
-        @@ -25 +29
-        -             database.version = VERSION
-        -             database.setTransactionSuccessful()
-        -         } finally {
-        -             database.endTransaction()
+        @@ -4,0 +5 @@
+        +import androidx.core.database.sqlite.transaction
+        @@ -15,9 +16,12 @@
+        -        database.beginTransaction() // WARN 1
+        -        try {
+        -            if (database.version > VERSION) {
+        -                error("Downgrade not supported")
+        -            }
+        -            if (database.version < 1) {
+        -                create(database)
+        -            } else {
+        -                migrate(database)
+        +        database.transaction { // WARN 1
+        +            try {
+        +                if (version > VERSION) {
+        +                    error("Downgrade not supported")
+        +                }
+        +                if (version < 1) {
+        +                    create(this)
+        +                } else {
+        +                    migrate(this)
+        +                }
+        +                version = VERSION
+        +            } finally {
+        @@ -25,4 +28,0 @@
+        -            database.version = VERSION
+        -            database.setTransactionSuccessful()
+        -        } finally {
+        -            database.endTransaction()
         Autofix for src/test/pkg/SqlTest.kt line 37: Replace with the transaction extension function:
-        @@ -5 +5
-        + import androidx.core.database.sqlite.transaction
-        @@ -37 +38
-        -         database.beginTransactionNonExclusive() // WARN 2
-        -         try {
-        -             create(database)
-        -             database.setTransactionSuccessful()
-        -         } finally {
-        -             database.endTransaction()
-        +         database.transaction(exclusive = false) { // WARN 2
-        +             try {
-        +                 create(this)
-        +             } finally {
-        +             }
+        @@ -4,0 +5 @@
+        +import androidx.core.database.sqlite.transaction
+        @@ -37,6 +38,5 @@
+        -        database.beginTransactionNonExclusive() // WARN 2
+        -        try {
+        -            create(database)
+        -            database.setTransactionSuccessful()
+        -        } finally {
+        -            database.endTransaction()
+        +        database.transaction(exclusive = false) { // WARN 2
+        +            try {
+        +                create(this)
+        +            } finally {
+        +            }
         Autofix for src/test/pkg/test.kt line 6: Replace with the transaction extension function:
-        @@ -4 +4
-        + import androidx.core.database.sqlite.transaction
-        @@ -6 +7
-        -     db.beginTransaction() // WARN 3
-        -     db.execSQL("DROP TABLE IF EXISTS folders")
-        -     db.execSQL(
-        -         "CREATE TABLE folders (" +
-        -                 "id INTEGER PRIMARY KEY," +
-        -                 "name TEXT, " +
-        -                 "last_updated INTEGER, " +
-        -                 "poll_class TEXT, " +
-        -                 "push_class TEXT, " +
-        -                 "display_class TEXT, " +
-        -                 "notify_class TEXT default 'INHERITED', " +
-        -                 "more_messages TEXT default \"unknown\"" +
-        -                 ")"
-        -     )
-        -     db.execSQL("CREATE INDEX IF NOT EXISTS folder_name ON folders (name)")
-        -     db.execSQL("DROP TABLE IF EXISTS messages")
-        -     db.version = 61
-        -     db.setTransactionSuccessful()
-        -     db.endTransaction()
-        +     db.transaction { // WARN 3
-        +         execSQL("DROP TABLE IF EXISTS folders")
-        +         execSQL(
-        +             "CREATE TABLE folders (" +
-        +                     "id INTEGER PRIMARY KEY," +
-        +                     "name TEXT, " +
-        +                     "last_updated INTEGER, " +
-        +                     "poll_class TEXT, " +
-        +                     "push_class TEXT, " +
-        +                     "display_class TEXT, " +
-        +                     "notify_class TEXT default 'INHERITED', " +
-        +                     "more_messages TEXT default \"unknown\"" +
-        +                     ")"
-        +         )
-        +         execSQL("CREATE INDEX IF NOT EXISTS folder_name ON folders (name)")
-        +         execSQL("DROP TABLE IF EXISTS messages")
-        +         version = 61
-        +     }
+        @@ -3,0 +4 @@
+        +import androidx.core.database.sqlite.transaction
+        @@ -6,19 +7,18 @@
+        -    db.beginTransaction() // WARN 3
+        -    db.execSQL("DROP TABLE IF EXISTS folders")
+        -    db.execSQL(
+        -        "CREATE TABLE folders (" +
+        -                "id INTEGER PRIMARY KEY," +
+        -                "name TEXT, " +
+        -                "last_updated INTEGER, " +
+        -                "poll_class TEXT, " +
+        -                "push_class TEXT, " +
+        -                "display_class TEXT, " +
+        -                "notify_class TEXT default 'INHERITED', " +
+        -                "more_messages TEXT default \"unknown\"" +
+        -                ")"
+        -    )
+        -    db.execSQL("CREATE INDEX IF NOT EXISTS folder_name ON folders (name)")
+        -    db.execSQL("DROP TABLE IF EXISTS messages")
+        -    db.version = 61
+        -    db.setTransactionSuccessful()
+        -    db.endTransaction()
+        +    db.transaction { // WARN 3
+        +        execSQL("DROP TABLE IF EXISTS folders")
+        +        execSQL(
+        +            "CREATE TABLE folders (" +
+        +                    "id INTEGER PRIMARY KEY," +
+        +                    "name TEXT, " +
+        +                    "last_updated INTEGER, " +
+        +                    "poll_class TEXT, " +
+        +                    "push_class TEXT, " +
+        +                    "display_class TEXT, " +
+        +                    "notify_class TEXT default 'INHERITED', " +
+        +                    "more_messages TEXT default \"unknown\"" +
+        +                    ")"
+        +        )
+        +        execSQL("CREATE INDEX IF NOT EXISTS folder_name ON folders (name)")
+        +        execSQL("DROP TABLE IF EXISTS messages")
+        +        version = 61
+        +    }
         """
       )
   }
@@ -1502,11 +1502,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 5: Replace with the htmlEncode extension function:
-        @@ -3 +3
-        + import androidx.core.text.htmlEncode
-        @@ -5 +6
-        -   val html = TextUtils.htmlEncode("Is x > y ?")
-        +   val html = "Is x > y ?".htmlEncode()
+        @@ -2,0 +3 @@
+        +import androidx.core.text.htmlEncode
+        @@ -5 +6 @@
+        -  val html = TextUtils.htmlEncode("Is x > y ?")
+        +  val html = "Is x > y ?".htmlEncode()
         """
       )
   }
@@ -1559,17 +1559,17 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 8: Replace with the toHtml extension function:
-        @@ -6 +6
-        + import androidx.core.text.toHtml
-        @@ -8 +9
-        -     val html1 = HtmlCompat.toHtml(spanned, TO_HTML_PARAGRAPH_LINES_CONSECUTIVE)
-        +     val html1 = spanned.toHtml()
+        @@ -5,0 +6 @@
+        +import androidx.core.text.toHtml
+        @@ -8 +9 @@
+        -    val html1 = HtmlCompat.toHtml(spanned, TO_HTML_PARAGRAPH_LINES_CONSECUTIVE)
+        +    val html1 = spanned.toHtml()
         Autofix for src/test/pkg/test.kt line 9: Replace with the toHtml extension function:
-        @@ -6 +6
-        + import androidx.core.text.toHtml
-        @@ -9 +10
-        -     val html2 = HtmlCompat.toHtml(spanned, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL)
-        +     val html2 = spanned.toHtml(TO_HTML_PARAGRAPH_LINES_INDIVIDUAL)
+        @@ -5,0 +6 @@
+        +import androidx.core.text.toHtml
+        @@ -9 +10 @@
+        -    val html2 = HtmlCompat.toHtml(spanned, TO_HTML_PARAGRAPH_LINES_INDIVIDUAL)
+        +    val html2 = spanned.toHtml(TO_HTML_PARAGRAPH_LINES_INDIVIDUAL)
         """
       )
   }
@@ -1777,9 +1777,9 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 7: Replace with the toUri extension function:
-        @@ -7 +7
-        -     android.net.Uri.parse(url)
-        +     url.toUri()
+        @@ -7 +7 @@
+        -    android.net.Uri.parse(url)
+        +    url.toUri()
         """
       )
   }
@@ -1823,29 +1823,29 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 5: Replace with the htmlEncode extension function:
-        @@ -3 +3
-        + import androidx.core.text.htmlEncode
-        @@ -5 +6
-        -   val html = TextUtils.htmlEncode("Is x > y ?")
-        +   val html = "Is x > y ?".htmlEncode()
+        @@ -2,0 +3 @@
+        +import androidx.core.text.htmlEncode
+        @@ -5 +6 @@
+        -  val html = TextUtils.htmlEncode("Is x > y ?")
+        +  val html = "Is x > y ?".htmlEncode()
         Autofix for src/test/pkg/test.kt line 6: Replace with the isDigitsOnly extension function:
-        @@ -3 +3
-        + import androidx.core.text.isDigitsOnly
-        @@ -6 +7
-        -   val digits = TextUtils.isDigitsOnly(html)
-        +   val digits = html.isDigitsOnly()
+        @@ -2,0 +3 @@
+        +import androidx.core.text.isDigitsOnly
+        @@ -6 +7 @@
+        -  val digits = TextUtils.isDigitsOnly(html)
+        +  val digits = html.isDigitsOnly()
         Autofix for src/test/pkg/test.kt line 7: Replace with the trimmedLength extension function:
-        @@ -3 +3
-        + import androidx.core.text.trimmedLength
-        @@ -7 +8
-        -   val length = android.text.TextUtils.getTrimmedLength(html)
-        +   val length = html.trimmedLength()
+        @@ -2,0 +3 @@
+        +import androidx.core.text.trimmedLength
+        @@ -7 +8 @@
+        -  val length = android.text.TextUtils.getTrimmedLength(html)
+        +  val length = html.trimmedLength()
         Autofix for src/test/pkg/test.kt line 8: Replace with the isDigitsOnly extension function:
-        @@ -3 +3
-        + import androidx.core.text.isDigitsOnly
-        @@ -8 +9
-        -   TextUtils.isDigitsOnly(html).not()
-        +   html.isDigitsOnly().not()
+        @@ -2,0 +3 @@
+        +import androidx.core.text.isDigitsOnly
+        @@ -8 +9 @@
+        -  TextUtils.isDigitsOnly(html).not()
+        +  html.isDigitsOnly().not()
         """
       )
   }
@@ -1877,11 +1877,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 5: Replace with the trimmedLength extension function:
-        @@ -3 +3
-        + import androidx.core.text.trimmedLength
-        @@ -5 +6
-        -   val length = getTrimmedLength("123")
-        +   val length = "123".trimmedLength()
+        @@ -2,0 +3 @@
+        +import androidx.core.text.trimmedLength
+        @@ -5 +6 @@
+        -  val length = getTrimmedLength("123")
+        +  val length = "123".trimmedLength()
         """
       )
   }
@@ -1975,35 +1975,35 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 8: Replace with the parseAsHtml extension function:
-        @@ -6 +6
-        + import androidx.core.text.parseAsHtml
-        @@ -8 +9
-        -     HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter, tagHandler) // WARN 1
-        +     "<html>".parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter, tagHandler) // WARN 1
+        @@ -5,0 +6 @@
+        +import androidx.core.text.parseAsHtml
+        @@ -8 +9 @@
+        -    HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter, tagHandler) // WARN 1
+        +    "<html>".parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter, tagHandler) // WARN 1
         Autofix for src/test/pkg/test.kt line 9: Replace with the parseAsHtml extension function:
-        @@ -6 +6
-        + import androidx.core.text.parseAsHtml
-        @@ -9 +10
-        -     HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter, null) // WARN 2
-        +     "<html>".parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter) // WARN 2
+        @@ -5,0 +6 @@
+        +import androidx.core.text.parseAsHtml
+        @@ -9 +10 @@
+        -    HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter, null) // WARN 2
+        +    "<html>".parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT, imageGetter) // WARN 2
         Autofix for src/test/pkg/test.kt line 10: Replace with the parseAsHtml extension function:
-        @@ -6 +6
-        + import androidx.core.text.parseAsHtml
-        @@ -10 +11
-        -     androidx.core.text.HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_COMPACT, null, null) // WARN 3
-        +     "<html>".parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT) // WARN 3
+        @@ -5,0 +6 @@
+        +import androidx.core.text.parseAsHtml
+        @@ -10 +11 @@
+        -    androidx.core.text.HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_COMPACT, null, null) // WARN 3
+        +    "<html>".parseAsHtml(HtmlCompat.FROM_HTML_MODE_COMPACT) // WARN 3
         Autofix for src/test/pkg/test.kt line 11: Replace with the parseAsHtml extension function:
-        @@ -6 +6
-        + import androidx.core.text.parseAsHtml
-        @@ -11 +12
-        -     HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_LEGACY, null, null)  // WARN 4
-        +     "<html>".parseAsHtml()  // WARN 4
+        @@ -5,0 +6 @@
+        +import androidx.core.text.parseAsHtml
+        @@ -11 +12 @@
+        -    HtmlCompat.fromHtml("<html>", HtmlCompat.FROM_HTML_MODE_LEGACY, null, null)  // WARN 4
+        +    "<html>".parseAsHtml()  // WARN 4
         Autofix for src/test/pkg/test.kt line 12: Replace with the parseAsHtml extension function:
-        @@ -6 +6
-        + import androidx.core.text.parseAsHtml
-        @@ -12 +13
-        -     HtmlCompat.fromHtml("<html>", FROM_HTML_MODE_LEGACY, null, null) // WARN 5
-        +     "<html>".parseAsHtml() // WARN 5
+        @@ -5,0 +6 @@
+        +import androidx.core.text.parseAsHtml
+        @@ -12 +13 @@
+        -    HtmlCompat.fromHtml("<html>", FROM_HTML_MODE_LEGACY, null, null) // WARN 5
+        +    "<html>".parseAsHtml() // WARN 5
         """
       )
   }
@@ -2037,11 +2037,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 7: Replace with the toUri extension function:
-        @@ -5 +5
-        + import androidx.core.net.toUri
-        @@ -7 +8
-        -     return setData((Uri.parse("custom://" + System.currentTimeMillis())))
-        +     return setData((("custom://" + System.currentTimeMillis()).toUri()))
+        @@ -4,0 +5 @@
+        +import androidx.core.net.toUri
+        @@ -7 +8 @@
+        -    return setData((Uri.parse("custom://" + System.currentTimeMillis())))
+        +    return setData((("custom://" + System.currentTimeMillis()).toUri()))
         """
       )
   }
@@ -2085,16 +2085,16 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 11: Replace with the scale extension function:
-        @@ -4 +4
-        + import androidx.core.graphics.scale
-        @@ -11 +12
-        -         scaledVideoBitmap = Bitmap.createScaledBitmap(
-        -             videoBitmap,
-        -             (videoBitmap.width / originalScale).toInt(),
-        -             (videoBitmap.height / originalScale).toInt(),
-        -             true
-        -         )
-        +         scaledVideoBitmap = videoBitmap.scale((videoBitmap.width / originalScale).toInt(), (videoBitmap.height / originalScale).toInt())
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.scale
+        @@ -11,6 +12 @@
+        -        scaledVideoBitmap = Bitmap.createScaledBitmap(
+        -            videoBitmap,
+        -            (videoBitmap.width / originalScale).toInt(),
+        -            (videoBitmap.height / originalScale).toInt(),
+        -            true
+        -        )
+        +        scaledVideoBitmap = videoBitmap.scale((videoBitmap.width / originalScale).toInt(), (videoBitmap.height / originalScale).toInt())
         """
       )
   }
@@ -2199,89 +2199,89 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 9: Replace with the containsValue extension function:
-        @@ -7 +7
-        + import androidx.core.util.containsValue
-        @@ -9 +10
-        -     array.indexOfValue("test") >= 0 // WARN 1: expect array.containsValue("test")
-        +     array.containsValue("test") // WARN 1: expect array.containsValue("test")
+        @@ -6,0 +7 @@
+        +import androidx.core.util.containsValue
+        @@ -9 +10 @@
+        -    array.indexOfValue("test") >= 0 // WARN 1: expect array.containsValue("test")
+        +    array.containsValue("test") // WARN 1: expect array.containsValue("test")
         Autofix for src/test/pkg/test.kt line 10: Replace with the containsValue extension function:
-        @@ -7 +7
-        + import androidx.core.util.containsValue
-        @@ -10 +11
-        -     array.indexOfValue("test") != -1 // WARN 2: expect array.containsValue("test")
-        +     array.containsValue("test") // WARN 2: expect array.containsValue("test")
+        @@ -6,0 +7 @@
+        +import androidx.core.util.containsValue
+        @@ -10 +11 @@
+        -    array.indexOfValue("test") != -1 // WARN 2: expect array.containsValue("test")
+        +    array.containsValue("test") // WARN 2: expect array.containsValue("test")
         Autofix for src/test/pkg/test.kt line 13: Replace with the containsValue extension function:
-        @@ -7 +7
-        + import androidx.core.util.containsValue
-        @@ -13 +14
-        -     longArray.indexOfValue(0L) >= 0 // WARN 3
-        +     longArray.containsValue(0L) // WARN 3
+        @@ -6,0 +7 @@
+        +import androidx.core.util.containsValue
+        @@ -13 +14 @@
+        -    longArray.indexOfValue(0L) >= 0 // WARN 3
+        +    longArray.containsValue(0L) // WARN 3
         Autofix for src/test/pkg/test.kt line 15: Replace with the isEmpty extension function:
-        @@ -7 +7
-        + import androidx.core.util.isEmpty
-        @@ -15 +16
-        -     val isEmpty = array.size() == 0 // WARN 4: expect array.isEmpty
-        +     val isEmpty = array.isEmpty() // WARN 4: expect array.isEmpty
+        @@ -6,0 +7 @@
+        +import androidx.core.util.isEmpty
+        @@ -15 +16 @@
+        -    val isEmpty = array.size() == 0 // WARN 4: expect array.isEmpty
+        +    val isEmpty = array.isEmpty() // WARN 4: expect array.isEmpty
         Autofix for src/test/pkg/test.kt line 16: Replace with the isNotEmpty extension function:
-        @@ -7 +7
-        + import androidx.core.util.isNotEmpty
-        @@ -16 +17
-        -     val isNotEmpty = array.size() > 0 // WARN 5: expect array.isNotEmpty
-        +     val isNotEmpty = array.isNotEmpty() // WARN 5: expect array.isNotEmpty
+        @@ -6,0 +7 @@
+        +import androidx.core.util.isNotEmpty
+        @@ -16 +17 @@
+        -    val isNotEmpty = array.size() > 0 // WARN 5: expect array.isNotEmpty
+        +    val isNotEmpty = array.isNotEmpty() // WARN 5: expect array.isNotEmpty
         Autofix for src/test/pkg/test.kt line 17: Replace with the isNotEmpty extension function:
-        @@ -7 +7
-        + import androidx.core.util.isNotEmpty
-        @@ -17 +18
-        -     val isNotEmpty = array.size() != 0 // WARN 6: expect array.isNotEmpty
-        +     val isNotEmpty = array.isNotEmpty() // WARN 6: expect array.isNotEmpty
+        @@ -6,0 +7 @@
+        +import androidx.core.util.isNotEmpty
+        @@ -17 +18 @@
+        -    val isNotEmpty = array.size() != 0 // WARN 6: expect array.isNotEmpty
+        +    val isNotEmpty = array.isNotEmpty() // WARN 6: expect array.isNotEmpty
         Autofix for src/test/pkg/test.kt line 18: Replace with the isEmpty extension function:
-        @@ -7 +7
-        + import androidx.core.util.isEmpty
-        @@ -18 +19
-        -     val isEmpty2 = longArray.size() == 0 // WARN 7: expect longArray.isEmpty
-        +     val isEmpty2 = longArray.isEmpty() // WARN 7: expect longArray.isEmpty
+        @@ -6,0 +7 @@
+        +import androidx.core.util.isEmpty
+        @@ -18 +19 @@
+        -    val isEmpty2 = longArray.size() == 0 // WARN 7: expect longArray.isEmpty
+        +    val isEmpty2 = longArray.isEmpty() // WARN 7: expect longArray.isEmpty
         Autofix for src/test/pkg/test.kt line 20: Replace with the size extension property:
-        @@ -7 +7
-        + import androidx.core.util.size
-        @@ -20 +21
-        -     val arraySize = array.size() // WARN 8: switch to property syntax
-        +     val arraySize = array.size // WARN 8: switch to property syntax
+        @@ -6,0 +7 @@
+        +import androidx.core.util.size
+        @@ -20 +21 @@
+        -    val arraySize = array.size() // WARN 8: switch to property syntax
+        +    val arraySize = array.size // WARN 8: switch to property syntax
         Autofix for src/test/pkg/test.kt line 21: Replace with the size extension property:
-        @@ -7 +7
-        + import androidx.core.util.size
-        @@ -21 +22
-        -     val arraySize = array.size() == 5 // WARN 9: switch to property syntax
-        +     val arraySize = array.size == 5 // WARN 9: switch to property syntax
+        @@ -6,0 +7 @@
+        +import androidx.core.util.size
+        @@ -21 +22 @@
+        -    val arraySize = array.size() == 5 // WARN 9: switch to property syntax
+        +    val arraySize = array.size == 5 // WARN 9: switch to property syntax
         Autofix for src/test/pkg/test2.kt line 6: Replace with the contains extension function:
-        @@ -4 +4
-        + import androidx.core.view.contains
-        @@ -6 +7
-        -     val contains = group.indexOfChild(child) != -1 // WARN 10
-        +     val contains = group.contains(child) // WARN 10
+        @@ -3,0 +4 @@
+        +import androidx.core.view.contains
+        @@ -6 +7 @@
+        -    val contains = group.indexOfChild(child) != -1 // WARN 10
+        +    val contains = group.contains(child) // WARN 10
         Autofix for src/test/pkg/test2.kt line 7: Replace with the contains extension function:
-        @@ -4 +4
-        + import androidx.core.view.contains
-        @@ -7 +8
-        -     val contains2 = group.indexOfChild(child) >= 0 // WARN 11
-        +     val contains2 = group.contains(child) // WARN 11
+        @@ -3,0 +4 @@
+        +import androidx.core.view.contains
+        @@ -7 +8 @@
+        -    val contains2 = group.indexOfChild(child) >= 0 // WARN 11
+        +    val contains2 = group.contains(child) // WARN 11
         Autofix for src/test/pkg/test2.kt line 8: Replace with the isEmpty extension function:
-        @@ -4 +4
-        + import androidx.core.view.isEmpty
-        @@ -8 +9
-        -     val count = group.getChildCount() == 0 // WARN 12
-        +     val count = group.isEmpty() // WARN 12
+        @@ -3,0 +4 @@
+        +import androidx.core.view.isEmpty
+        @@ -8 +9 @@
+        -    val count = group.getChildCount() == 0 // WARN 12
+        +    val count = group.isEmpty() // WARN 12
         Autofix for src/test/pkg/test2.kt line 9: Replace with the isEmpty extension function:
-        @@ -4 +4
-        + import androidx.core.view.isEmpty
-        @@ -9 +10
-        -     val empty = group.childCount == 0 // WARN 13
-        +     val empty = group.isEmpty() // WARN 13
+        @@ -3,0 +4 @@
+        +import androidx.core.view.isEmpty
+        @@ -9 +10 @@
+        -    val empty = group.childCount == 0 // WARN 13
+        +    val empty = group.isEmpty() // WARN 13
         Autofix for src/test/pkg/test2.kt line 10: Replace with the isNotEmpty extension function:
-        @@ -4 +4
-        + import androidx.core.view.isNotEmpty
-        @@ -10 +11
-        -     val notEmpty = group.childCount != 0 // WARN 14
-        +     val notEmpty = group.isNotEmpty() // WARN 14
+        @@ -3,0 +4 @@
+        +import androidx.core.view.isNotEmpty
+        @@ -10 +11 @@
+        -    val notEmpty = group.childCount != 0 // WARN 14
+        +    val notEmpty = group.isNotEmpty() // WARN 14
         """
       )
   }
@@ -2410,119 +2410,119 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 14: Replace with the size extension property:
-        @@ -10 +10
-        + import androidx.core.util.size
-        @@ -14 +15
-        -     longArray.size() // WARN 1
-        +     longArray.size // WARN 1
+        @@ -9,0 +10 @@
+        +import androidx.core.util.size
+        @@ -14 +15 @@
+        -    longArray.size() // WARN 1
+        +    longArray.size // WARN 1
         Autofix for src/test/pkg/test.kt line 15: Replace with the isEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.util.isEmpty
-        @@ -15 +16
-        -     longArray.size() == 0 // WARN 2
-        +     longArray.isEmpty() // WARN 2
+        @@ -9,0 +10 @@
+        +import androidx.core.util.isEmpty
+        @@ -15 +16 @@
+        -    longArray.size() == 0 // WARN 2
+        +    longArray.isEmpty() // WARN 2
         Autofix for src/test/pkg/test.kt line 16: Replace with the isNotEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.util.isNotEmpty
-        @@ -16 +17
-        -     longArray.size() != 0 // WARN 3
-        +     longArray.isNotEmpty() // WARN 3
+        @@ -9,0 +10 @@
+        +import androidx.core.util.isNotEmpty
+        @@ -16 +17 @@
+        -    longArray.size() != 0 // WARN 3
+        +    longArray.isNotEmpty() // WARN 3
         Autofix for src/test/pkg/test.kt line 17: Replace with the containsValue extension function:
-        @@ -10 +10
-        + import androidx.core.util.containsValue
-        @@ -17 +18
-        -     longArray.indexOfValue(0L) >= 0 // WARN 4
-        +     longArray.containsValue(0L) // WARN 4
+        @@ -9,0 +10 @@
+        +import androidx.core.util.containsValue
+        @@ -17 +18 @@
+        -    longArray.indexOfValue(0L) >= 0 // WARN 4
+        +    longArray.containsValue(0L) // WARN 4
         Autofix for src/test/pkg/test.kt line 23: Replace with the size extension property:
-        @@ -10 +10
-        + import androidx.core.util.size
-        @@ -23 +24
-        -     booleanArray.size() // WARN 5
-        +     booleanArray.size // WARN 5
+        @@ -9,0 +10 @@
+        +import androidx.core.util.size
+        @@ -23 +24 @@
+        -    booleanArray.size() // WARN 5
+        +    booleanArray.size // WARN 5
         Autofix for src/test/pkg/test.kt line 24: Replace with the isEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.util.isEmpty
-        @@ -24 +25
-        -     booleanArray.size() == 0 // WARN 6
-        +     booleanArray.isEmpty() // WARN 6
+        @@ -9,0 +10 @@
+        +import androidx.core.util.isEmpty
+        @@ -24 +25 @@
+        -    booleanArray.size() == 0 // WARN 6
+        +    booleanArray.isEmpty() // WARN 6
         Autofix for src/test/pkg/test.kt line 25: Replace with the isNotEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.util.isNotEmpty
-        @@ -25 +26
-        -     booleanArray.size() != 0 // WARN 7
-        +     booleanArray.isNotEmpty() // WARN 7
+        @@ -9,0 +10 @@
+        +import androidx.core.util.isNotEmpty
+        @@ -25 +26 @@
+        -    booleanArray.size() != 0 // WARN 7
+        +    booleanArray.isNotEmpty() // WARN 7
         Autofix for src/test/pkg/test.kt line 26: Replace with the containsValue extension function:
-        @@ -10 +10
-        + import androidx.core.util.containsValue
-        @@ -26 +27
-        -     booleanArray.indexOfValue(true) != -1 // WARN 8
-        +     booleanArray.containsValue(true) // WARN 8
+        @@ -9,0 +10 @@
+        +import androidx.core.util.containsValue
+        @@ -26 +27 @@
+        -    booleanArray.indexOfValue(true) != -1 // WARN 8
+        +    booleanArray.containsValue(true) // WARN 8
         Autofix for src/test/pkg/test.kt line 32: Replace with the size extension property:
-        @@ -10 +10
-        + import androidx.core.util.size
-        @@ -32 +33
-        -     intArray.size() // WARN 9
-        +     intArray.size // WARN 9
+        @@ -9,0 +10 @@
+        +import androidx.core.util.size
+        @@ -32 +33 @@
+        -    intArray.size() // WARN 9
+        +    intArray.size // WARN 9
         Autofix for src/test/pkg/test.kt line 33: Replace with the isEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.util.isEmpty
-        @@ -33 +34
-        -     intArray.size() == 0 // WARN 10
-        +     intArray.isEmpty() // WARN 10
+        @@ -9,0 +10 @@
+        +import androidx.core.util.isEmpty
+        @@ -33 +34 @@
+        -    intArray.size() == 0 // WARN 10
+        +    intArray.isEmpty() // WARN 10
         Autofix for src/test/pkg/test.kt line 34: Replace with the isNotEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.util.isNotEmpty
-        @@ -34 +35
-        -     intArray.size() != 0 // WARN 11
-        +     intArray.isNotEmpty() // WARN 11
+        @@ -9,0 +10 @@
+        +import androidx.core.util.isNotEmpty
+        @@ -34 +35 @@
+        -    intArray.size() != 0 // WARN 11
+        +    intArray.isNotEmpty() // WARN 11
         Autofix for src/test/pkg/test.kt line 35: Replace with the containsValue extension function:
-        @@ -10 +10
-        + import androidx.core.util.containsValue
-        @@ -35 +36
-        -     intArray.indexOfValue(42) >= 0 // WARN 12
-        +     intArray.containsValue(42) // WARN 12
+        @@ -9,0 +10 @@
+        +import androidx.core.util.containsValue
+        @@ -35 +36 @@
+        -    intArray.indexOfValue(42) >= 0 // WARN 12
+        +    intArray.containsValue(42) // WARN 12
         Autofix for src/test/pkg/test.kt line 39: Replace with the size extension property:
-        @@ -10 +10
-        + import androidx.core.view.size
-        @@ -39 +40
-        -     menu.size() // WARN 13
-        +     menu.size // WARN 13
+        @@ -9,0 +10 @@
+        +import androidx.core.view.size
+        @@ -39 +40 @@
+        -    menu.size() // WARN 13
+        +    menu.size // WARN 13
         Autofix for src/test/pkg/test.kt line 40: Replace with the isEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.view.isEmpty
-        @@ -40 +41
-        -     menu.size() == 0 // WARN 14
-        +     menu.isEmpty() // WARN 14
+        @@ -9,0 +10 @@
+        +import androidx.core.view.isEmpty
+        @@ -40 +41 @@
+        -    menu.size() == 0 // WARN 14
+        +    menu.isEmpty() // WARN 14
         Autofix for src/test/pkg/test.kt line 41: Replace with the isNotEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.view.isNotEmpty
-        @@ -41 +42
-        -     menu.size() != 0 // WARN 15
-        +     menu.isNotEmpty() // WARN 15
+        @@ -9,0 +10 @@
+        +import androidx.core.view.isNotEmpty
+        @@ -41 +42 @@
+        -    menu.size() != 0 // WARN 15
+        +    menu.isNotEmpty() // WARN 15
         Autofix for src/test/pkg/test.kt line 45: Replace with the size extension property:
-        @@ -10 +10
-        + import androidx.core.util.size
-        @@ -45 +46
-        -     longArray.size() // WARN 16
-        +     longArray.size // WARN 16
+        @@ -9,0 +10 @@
+        +import androidx.core.util.size
+        @@ -45 +46 @@
+        -    longArray.size() // WARN 16
+        +    longArray.size // WARN 16
         Autofix for src/test/pkg/test.kt line 46: Replace with the isEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.util.isEmpty
-        @@ -46 +47
-        -     longArray.size() == 0 // WARN 17
-        +     longArray.isEmpty() // WARN 17
+        @@ -9,0 +10 @@
+        +import androidx.core.util.isEmpty
+        @@ -46 +47 @@
+        -    longArray.size() == 0 // WARN 17
+        +    longArray.isEmpty() // WARN 17
         Autofix for src/test/pkg/test.kt line 47: Replace with the isNotEmpty extension function:
-        @@ -10 +10
-        + import androidx.core.util.isNotEmpty
-        @@ -47 +48
-        -     longArray.size() != 0 // WARN 18
-        +     longArray.isNotEmpty() // WARN 18
+        @@ -9,0 +10 @@
+        +import androidx.core.util.isNotEmpty
+        @@ -47 +48 @@
+        -    longArray.size() != 0 // WARN 18
+        +    longArray.isNotEmpty() // WARN 18
         Autofix for src/test/pkg/test.kt line 48: Replace with the containsValue extension function:
-        @@ -10 +10
-        + import androidx.core.util.containsValue
-        @@ -48 +49
-        -     longArray.indexOfValue("Test") >= 0 // WARN 19
-        +     longArray.containsValue("Test") // WARN 19
+        @@ -9,0 +10 @@
+        +import androidx.core.util.containsValue
+        @@ -48 +49 @@
+        -    longArray.indexOfValue("Test") >= 0 // WARN 19
+        +    longArray.containsValue("Test") // WARN 19
         """
       )
   }
@@ -2563,17 +2563,17 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 9: Replace with the layoutDirection extension property:
-        @@ -6 +6
-        + import androidx.core.text.layoutDirection
-        @@ -9 +10
-        -     if (TextUtils.getLayoutDirectionFromLocale(Locale.getDefault()) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
-        +     if (Locale.getDefault().layoutDirection == View.LAYOUT_DIRECTION_LTR) { // WARN 1
+        @@ -5,0 +6 @@
+        +import androidx.core.text.layoutDirection
+        @@ -9 +10 @@
+        -    if (TextUtils.getLayoutDirectionFromLocale(Locale.getDefault()) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
+        +    if (Locale.getDefault().layoutDirection == View.LAYOUT_DIRECTION_LTR) { // WARN 1
         Autofix for src/test/pkg/test.kt line 11: Replace with the layoutDirection extension property:
-        @@ -6 +6
-        + import androidx.core.text.layoutDirection
-        @@ -11 +12
-        -     val dir = getLayoutDirectionFromLocale(Locale.getDefault()) // WARN 2
-        +     val dir = Locale.getDefault().layoutDirection // WARN 2
+        @@ -5,0 +6 @@
+        +import androidx.core.text.layoutDirection
+        @@ -11 +12 @@
+        -    val dir = getLayoutDirectionFromLocale(Locale.getDefault()) // WARN 2
+        +    val dir = Locale.getDefault().layoutDirection // WARN 2
         """
       )
   }
@@ -2610,11 +2610,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test3.kt line 7: Replace with the size extension property:
-        @@ -5 +5
-        + import androidx.core.util.size
-        @@ -7 +8
-        -     for (index in 0 until values.size()) {
-        +     for (index in 0 until values.size) {
+        @@ -4,0 +5 @@
+        +import androidx.core.util.size
+        @@ -7 +8 @@
+        -    for (index in 0 until values.size()) {
+        +    for (index in 0 until values.size) {
         """
       )
   }
@@ -2650,11 +2650,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/BitmapTest.kt line 8: Replace with the createBitmap function:
-        @@ -4 +4
-        + import androidx.core.graphics.createBitmap
-        @@ -8 +9
-        -         this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
-        +         this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight)
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.createBitmap
+        @@ -8 +9 @@
+        -        this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
+        +        this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight)
         """
       )
   }
@@ -2691,11 +2691,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/BitmapTest.kt line 8: Replace with the createBitmap function:
-        @@ -4 +4
-        + import androidx.core.graphics.createBitmap
-        @@ -8 +9
-        -         this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
-        +         this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.createBitmap
+        @@ -8 +9 @@
+        -        this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
+        +        this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
         """
       )
 
@@ -2731,11 +2731,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/BitmapTest.kt line 8: Replace with the createBitmap function:
-        @@ -4 +4
-        + import androidx.core.graphics.createBitmap
-        @@ -8 +9
-        -         this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
-        +         this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight)
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.createBitmap
+        @@ -8 +9 @@
+        -        this.bitmapBuffer = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
+        +        this.bitmapBuffer = createBitmap(measuredWidth, measuredHeight)
         """
       )
   }
@@ -2789,23 +2789,23 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 5: Replace with the isVisible extension property:
-        @@ -3 +3
-        + import androidx.core.view.isVisible
-        @@ -5 +6
-        -     if (view.visibility == View.VISIBLE) { // WARN 1
-        +     if (view.isVisible) { // WARN 1
+        @@ -2,0 +3 @@
+        +import androidx.core.view.isVisible
+        @@ -5 +6 @@
+        -    if (view.visibility == View.VISIBLE) { // WARN 1
+        +    if (view.isVisible) { // WARN 1
         Autofix for src/test/pkg/test.kt line 7: Replace with the isInvisible extension property:
-        @@ -3 +3
-        + import androidx.core.view.isInvisible
-        @@ -7 +8
-        -     } else if (view.visibility == View.INVISIBLE) { // WARN 2
-        +     } else if (view.isInvisible) { // WARN 2
+        @@ -2,0 +3 @@
+        +import androidx.core.view.isInvisible
+        @@ -7 +8 @@
+        -    } else if (view.visibility == View.INVISIBLE) { // WARN 2
+        +    } else if (view.isInvisible) { // WARN 2
         Autofix for src/test/pkg/test.kt line 9: Replace with the isGone extension property:
-        @@ -3 +3
-        + import androidx.core.view.isGone
-        @@ -9 +10
-        -     } else if (view.visibility == View.GONE) { // WARN 3
-        +     } else if (view.isGone) { // WARN 3
+        @@ -2,0 +3 @@
+        +import androidx.core.view.isGone
+        @@ -9 +10 @@
+        -    } else if (view.visibility == View.GONE) { // WARN 3
+        +    } else if (view.isGone) { // WARN 3
         """
       )
   }
@@ -2839,11 +2839,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 7: Replace with the and extension function:
-        @@ -4 +4
-        + import androidx.core.util.and
-        @@ -7 +8
-        -     val anded = range1.intersect(range2) // WARN 1
-        +     val anded = range1 and range2 // WARN 1
+        @@ -3,0 +4 @@
+        +import androidx.core.util.and
+        @@ -7 +8 @@
+        -    val anded = range1.intersect(range2) // WARN 1
+        +    val anded = range1 and range2 // WARN 1
         """
       )
   }
@@ -2895,23 +2895,23 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 10: Replace with the get extension function:
-        @@ -5 +5
-        + import androidx.core.graphics.get
-        @@ -10 +11
-        -             val pixel = bitmap.getPixel(x, y) // WARN 1
-        +             val pixel = bitmap[x, y] // WARN 1
+        @@ -4,0 +5 @@
+        +import androidx.core.graphics.get
+        @@ -10 +11 @@
+        -            val pixel = bitmap.getPixel(x, y) // WARN 1
+        +            val pixel = bitmap[x, y] // WARN 1
         Autofix for src/test/pkg/test.kt line 11: Replace with the set extension function:
-        @@ -5 +5
-        + import androidx.core.graphics.set
-        @@ -11 +12
-        -             bitmap.setPixel(x - 1, y + 1, pixel) // WARN 2
-        +             bitmap[x - 1, y + 1] = pixel // WARN 2
+        @@ -4,0 +5 @@
+        +import androidx.core.graphics.set
+        @@ -11 +12 @@
+        -            bitmap.setPixel(x - 1, y + 1, pixel) // WARN 2
+        +            bitmap[x - 1, y + 1] = pixel // WARN 2
         Autofix for src/test/pkg/test.kt line 17: Replace with the get extension function:
-        @@ -5 +5
-        + import androidx.core.view.get
-        @@ -17 +18
-        -     val item = menu.getItem(0) // WARN 3
-        +     val item = menu[0] // WARN 3
+        @@ -4,0 +5 @@
+        +import androidx.core.view.get
+        @@ -17 +18 @@
+        -    val item = menu.getItem(0) // WARN 3
+        +    val item = menu[0] // WARN 3
         """
       )
   }
@@ -2965,41 +2965,41 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 6: Replace with the toColorInt extension function:
-        @@ -4 +4
-        + import androidx.core.graphics.toColorInt
-        @@ -6 +7
-        -     val color: Int = Color.parseColor("#000000") // WARN 1
-        +     val color: Int = "#000000".toColorInt() // WARN 1
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.toColorInt
+        @@ -6 +7 @@
+        -    val color: Int = Color.parseColor("#000000") // WARN 1
+        +    val color: Int = "#000000".toColorInt() // WARN 1
         Autofix for src/test/pkg/test.kt line 8: Replace with the red extension property:
-        @@ -4 +4
-        + import androidx.core.graphics.red
-        @@ -8 +9
-        -     Color.red(colorLong) // WARN 2
-        +     colorLong.red // WARN 2
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.red
+        @@ -8 +9 @@
+        -    Color.red(colorLong) // WARN 2
+        +    colorLong.red // WARN 2
         Autofix for src/test/pkg/test.kt line 9: Replace with the green extension property:
-        @@ -4 +4
-        + import androidx.core.graphics.green
-        @@ -9 +10
-        -     Color.green(colorLong) // WARN 3
-        +     colorLong.green // WARN 3
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.green
+        @@ -9 +10 @@
+        -    Color.green(colorLong) // WARN 3
+        +    colorLong.green // WARN 3
         Autofix for src/test/pkg/test.kt line 10: Replace with the blue extension property:
-        @@ -4 +4
-        + import androidx.core.graphics.blue
-        @@ -10 +11
-        -     Color.blue(colorLong) // WARN 4
-        +     colorLong.blue // WARN 4
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.blue
+        @@ -10 +11 @@
+        -    Color.blue(colorLong) // WARN 4
+        +    colorLong.blue // WARN 4
         Autofix for src/test/pkg/test.kt line 11: Replace with the alpha extension property:
-        @@ -4 +4
-        + import androidx.core.graphics.alpha
-        @@ -11 +12
-        -     Color.alpha(colorLong) // WARN 5
-        +     colorLong.alpha // WARN 5
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.alpha
+        @@ -11 +12 @@
+        -    Color.alpha(colorLong) // WARN 5
+        +    colorLong.alpha // WARN 5
         Autofix for src/test/pkg/test.kt line 12: Replace with the toColorInt extension function:
-        @@ -4 +4
-        + import androidx.core.graphics.toColorInt
-        @@ -12 +13
-        -     Color.toArgb(colorLong) // WARN 6
-        +     colorLong.toColorInt() // WARN 6
+        @@ -3,0 +4 @@
+        +import androidx.core.graphics.toColorInt
+        @@ -12 +13 @@
+        -    Color.toArgb(colorLong) // WARN 6
+        +    colorLong.toColorInt() // WARN 6
         """
       )
   }
@@ -3039,17 +3039,17 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 9: Replace with the toDrawable extension function:
-        @@ -7 +7
-        + import androidx.core.graphics.drawable.toDrawable
-        @@ -9 +10
-        -     val bitmapDrawable = BitmapDrawable(context.resources, bitmap) // WARN 1
-        +     val bitmapDrawable = bitmap.toDrawable(context.resources) // WARN 1
+        @@ -6,0 +7 @@
+        +import androidx.core.graphics.drawable.toDrawable
+        @@ -9 +10 @@
+        -    val bitmapDrawable = BitmapDrawable(context.resources, bitmap) // WARN 1
+        +    val bitmapDrawable = bitmap.toDrawable(context.resources) // WARN 1
         Autofix for src/test/pkg/test.kt line 10: Replace with the toDrawable extension function:
-        @@ -7 +7
-        + import androidx.core.graphics.drawable.toDrawable
-        @@ -10 +11
-        -     val colorDrawable = ColorDrawable(color) // WARN 2
-        +     val colorDrawable = color.toDrawable() // WARN 2
+        @@ -6,0 +7 @@
+        +import androidx.core.graphics.drawable.toDrawable
+        @@ -10 +11 @@
+        -    val colorDrawable = ColorDrawable(color) // WARN 2
+        +    val colorDrawable = color.toDrawable() // WARN 2
         """
       )
   }
@@ -3102,11 +3102,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 7: Replace with the findNavController extension function:
-        @@ -5 +5
-        + import androidx.navigation.findNavController
-        @@ -7 +8
-        -     Navigation.findNavController(activity, viewId)
-        +     activity.findNavController(viewId)
+        @@ -4,0 +5 @@
+        +import androidx.navigation.findNavController
+        @@ -7 +8 @@
+        -    Navigation.findNavController(activity, viewId)
+        +    activity.findNavController(viewId)
         """
       )
   }

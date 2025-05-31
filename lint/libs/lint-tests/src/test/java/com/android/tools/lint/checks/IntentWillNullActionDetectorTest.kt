@@ -55,13 +55,13 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/TestActivity.java line 10: Set action...:
-            @@ -10 +10
-            -         Intent intent = new Intent();
-            +         Intent intent = new Intent().setAction("[your.custom.action]|");
+            @@ -10 +10 @@
+            -        Intent intent = new Intent();
+            +        Intent intent = new Intent().setAction("[your.custom.action]|");
             Fix for src/test/pkg/TestActivity.java line 10: Set class...:
-            @@ -10 +10
-            -         Intent intent = new Intent();
-            +         Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
+            @@ -10 +10 @@
+            -        Intent intent = new Intent();
+            +        Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
         """
       )
   }
@@ -394,13 +394,13 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/TestActivity.java line 10: Set action...:
-            @@ -10 +10
-            -         Intent intent = new Intent();
-            +         Intent intent = new Intent().setAction("[your.custom.action]|");
+            @@ -10 +10 @@
+            -        Intent intent = new Intent();
+            +        Intent intent = new Intent().setAction("[your.custom.action]|");
             Fix for src/test/pkg/TestActivity.java line 10: Set class...:
-            @@ -10 +10
-            -         Intent intent = new Intent();
-            +         Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
+            @@ -10 +10 @@
+            -        Intent intent = new Intent();
+            +        Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
         """
       )
   }
@@ -439,13 +439,13 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/TestActivity.kt line 9: Set action...:
-            @@ -9 +9
-            -         val intent = Intent()
-            +         val intent = Intent().setAction("[your.custom.action]|")
+            @@ -9 +9 @@
+            -        val intent = Intent()
+            +        val intent = Intent().setAction("[your.custom.action]|")
             Fix for src/test/pkg/TestActivity.kt line 9: Set class...:
-            @@ -9 +9
-            -         val intent = Intent()
-            +         val intent = Intent().setClassName("[app.package.name]|", "your.classname")
+            @@ -9 +9 @@
+            -        val intent = Intent()
+            +        val intent = Intent().setClassName("[app.package.name]|", "your.classname")
         """
       )
   }
@@ -485,13 +485,13 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/TestActivity.java line 10: Set action...:
-            @@ -10 +10
-            -         Intent intent = new Intent();
-            +         Intent intent = new Intent().setAction("[your.custom.action]|");
+            @@ -10 +10 @@
+            -        Intent intent = new Intent();
+            +        Intent intent = new Intent().setAction("[your.custom.action]|");
             Fix for src/test/pkg/TestActivity.java line 10: Set class...:
-            @@ -10 +10
-            -         Intent intent = new Intent();
-            +         Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
+            @@ -10 +10 @@
+            -        Intent intent = new Intent();
+            +        Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
         """
       )
   }
@@ -776,13 +776,13 @@ class IntentWillNullActionDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/TestActivity.java line 10: Set action...:
-            @@ -10 +10
-            -         Intent intent = new Intent();
-            +         Intent intent = new Intent().setAction("[your.custom.action]|");
+            @@ -10 +10 @@
+            -        Intent intent = new Intent();
+            +        Intent intent = new Intent().setAction("[your.custom.action]|");
             Fix for src/test/pkg/TestActivity.java line 10: Set class...:
-            @@ -10 +10
-            -         Intent intent = new Intent();
-            +         Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
+            @@ -10 +10 @@
+            -        Intent intent = new Intent();
+            +        Intent intent = new Intent().setClassName("[app.package.name]|", "your.classname");
         """
       )
   }

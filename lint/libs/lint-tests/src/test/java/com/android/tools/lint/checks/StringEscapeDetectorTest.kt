@@ -84,21 +84,22 @@ class StringEscapeDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                     Fix for res/values/strings.xml line 3: Escape Apostrophe:
-                    @@ -3 +3
-                    - <string name="some_string">'ERROR'</string>
-                    + <string name="some_string">\'ERROR'</string>
+                    @@ -3 +3 @@
+                    -<string name="some_string">'ERROR'</string>
+                    +<string name="some_string">\'ERROR'</string>
                     Fix for res/values/strings.xml line 5: Escape Apostrophe:
-                    @@ -5 +5
-                    - <string name="some_string3">What's New</string>
-                    + <string name="some_string3">What\'s New</string>
+                    @@ -5 +5 @@
+                    -<string name="some_string3">What's New</string>
+                    +<string name="some_string3">What\'s New</string>
                     Fix for res/values/strings.xml line 19: Escape Apostrophe:
-                    @@ -19 +19
-                    -   <item>It's incorrect</item>
-                    +   <item>It\'s incorrect</item>
+                    @@ -19 +19 @@
+                    -  <item>It's incorrect</item>
+                    +  <item>It\'s incorrect</item>
                     Fix for res/values/strings.xml line 23: Escape Apostrophe:
-                    @@ -23 +23
-                    -     <item quantity="few">%d piose'nki.</item>
-                    +     <item quantity="few">%d piose\'nki.</item>"""
+                    @@ -23 +23 @@
+                    -    <item quantity="few">%d piose'nki.</item>
+                    +    <item quantity="few">%d piose\'nki.</item>
+          """
       )
   }
 }

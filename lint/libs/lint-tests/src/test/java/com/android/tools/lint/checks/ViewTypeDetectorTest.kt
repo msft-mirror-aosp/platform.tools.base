@@ -139,9 +139,9 @@ class ViewTypeDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for src/test/pkg/WrongCastActivity.java line 13: Cast to Button:
-                @@ -13 +13
-                -         ToggleButton toggleButton = (ToggleButton) findViewById(R.id.button);
-                +         ToggleButton toggleButton = (Button) findViewById(R.id.button);
+                @@ -13 +13 @@
+                -        ToggleButton toggleButton = (ToggleButton) findViewById(R.id.button);
+                +        ToggleButton toggleButton = (Button) findViewById(R.id.button);
                 """
       )
   }
@@ -332,11 +332,11 @@ class ViewTypeDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for src/test/pkg/WrongCastActivity.java line 12: Cast to Button:
-                @@ -5 +5
-                + import android.widget.Button;
-                @@ -12 +13
-                -         ToggleButton toggleButton = (ToggleButton) findViewById(R.id.button);
-                +         ToggleButton toggleButton = (Button) findViewById(R.id.button);
+                @@ -4,0 +5 @@
+                +import android.widget.Button;
+                @@ -12 +13 @@
+                -        ToggleButton toggleButton = (ToggleButton) findViewById(R.id.button);
+                +        ToggleButton toggleButton = (Button) findViewById(R.id.button);
                 """
       )
   }

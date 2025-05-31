@@ -731,10 +731,10 @@ class TranslationDetectorTest : AbstractCheckTest() {
             """
     val fixes =
       """
-            Fix for res/values/strings.xml line 1: Set name:
-            @@ -4 +4
-            -     <string>Ignore Me</string>
-            +     <string name="[TODO]|">Ignore Me</string>
+            Fix for res/values/strings.xml line 2: Set name:
+            @@ -4 +4 @@
+            -    <string>Ignore Me</string>
+            +    <string name="[TODO]|">Ignore Me</string>
             """
     lint()
       .files(
@@ -781,9 +781,9 @@ class TranslationDetectorTest : AbstractCheckTest() {
             """
     val fixes =
       """
-            Fix for res/values-nb/nontranslatable.xml line 1: Remove translation:
-            @@ -2 +2
-            -     <string name="sample">Ignore Me</string>
+            Fix for res/values-nb/nontranslatable.xml line 2: Remove translation:
+            @@ -2 +1,0 @@
+            -    <string name="sample">Ignore Me</string>
             """
     lint()
       .files(
@@ -1496,13 +1496,13 @@ class TranslationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/values-land-v21/dimen.xml line 3: Remove resource override:
-            @@ -3 +3
-            -     <dimen name="extra_dimen2">1pt</dimen> <!-- error -->
-            +      <!-- error -->
+            @@ -3 +3 @@
+            -    <dimen name="extra_dimen2">1pt</dimen> <!-- error -->
+            +     <!-- error -->
             Fix for res/values-land/dimen.xml line 4: Remove resource override:
-            @@ -4 +4
-            -     <dimen name="extra_dimen1">1pt</dimen> <!-- error -->
-            +      <!-- error -->
+            @@ -4 +4 @@
+            -    <dimen name="extra_dimen1">1pt</dimen> <!-- error -->
+            +     <!-- error -->
             """
       )
   }

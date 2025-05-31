@@ -189,13 +189,13 @@ class PropertyFileDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for gradle.properties line 1: Update lint to 7.1.0-alpha03:
-            @@ -1 +1
-            - android.experimental.lint.version=7.0.0-alpha08
-            + android.experimental.lint.version=7.1.0-alpha03
+            @@ -1 +1 @@
+            -android.experimental.lint.version=7.0.0-alpha08
+            +android.experimental.lint.version=7.1.0-alpha03
             Fix for gradle.properties line 2: Update lint to 7.1.0-alpha03:
-            @@ -2 +2
-            - android.experimental.lint.version = 7.0.0-alpha09
-            + android.experimental.lint.version = 7.1.0-alpha03
+            @@ -2 +2 @@
+            -android.experimental.lint.version = 7.0.0-alpha09
+            +android.experimental.lint.version = 7.1.0-alpha03
             """
       )
   }

@@ -61,21 +61,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for src/test/pkg/PendingIntentTest.java line 7: Add FLAG_IMMUTABLE (preferred):
-                @@ -7 +7
-                -         PendingIntent.getActivity(null, 0, null, 0);
-                +         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_IMMUTABLE);
+                @@ -7 +7 @@
+                -        PendingIntent.getActivity(null, 0, null, 0);
+                +        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_IMMUTABLE);
                 Fix for src/test/pkg/PendingIntentTest.java line 7: Add FLAG_MUTABLE:
-                @@ -7 +7
-                -         PendingIntent.getActivity(null, 0, null, 0);
-                +         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_MUTABLE);
+                @@ -7 +7 @@
+                -        PendingIntent.getActivity(null, 0, null, 0);
+                +        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_MUTABLE);
                 Fix for src/test/pkg/PendingIntentTest.java line 8: Add FLAG_IMMUTABLE (preferred):
-                @@ -8 +8
-                -         PendingIntent.getActivities(null, 0, null, 0);
-                +         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_IMMUTABLE);
+                @@ -8 +8 @@
+                -        PendingIntent.getActivities(null, 0, null, 0);
+                +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_IMMUTABLE);
                 Fix for src/test/pkg/PendingIntentTest.java line 8: Add FLAG_MUTABLE:
-                @@ -8 +8
-                -         PendingIntent.getActivities(null, 0, null, 0);
-                +         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_MUTABLE);
+                @@ -8 +8 @@
+                -        PendingIntent.getActivities(null, 0, null, 0);
+                +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_MUTABLE);
                 """
       )
   }
@@ -118,21 +118,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for src/test/pkg/PendingIntentTest.java line 7: Add FLAG_IMMUTABLE (preferred):
-                @@ -7 +7
-                -         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT);
-                +         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                @@ -7 +7 @@
+                -        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT);
+                +        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                 Fix for src/test/pkg/PendingIntentTest.java line 7: Add FLAG_MUTABLE:
-                @@ -7 +7
-                -         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT);
-                +         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
+                @@ -7 +7 @@
+                -        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT);
+                +        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
                 Fix for src/test/pkg/PendingIntentTest.java line 8: Add FLAG_IMMUTABLE (preferred):
-                @@ -8 +8
-                -         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE);
-                +         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+                @@ -8 +8 @@
+                -        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE);
+                +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
                 Fix for src/test/pkg/PendingIntentTest.java line 8: Add FLAG_MUTABLE:
-                @@ -8 +8
-                -         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE);
-                +         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_MUTABLE);
+                @@ -8 +8 @@
+                -        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE);
+                +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_MUTABLE);
                 """
       )
   }
@@ -175,21 +175,21 @@ class PendingIntentMutableFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for src/test/pkg/PendingIntentTest.kt line 7: Add FLAG_IMMUTABLE (preferred):
-                @@ -7 +7
-                -         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT)
-                +         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                @@ -7 +7 @@
+                -        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT)
+                +        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                 Fix for src/test/pkg/PendingIntentTest.kt line 7: Add FLAG_MUTABLE:
-                @@ -7 +7
-                -         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT)
-                +         PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
+                @@ -7 +7 @@
+                -        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT)
+                +        PendingIntent.getActivity(null, 0, null, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE)
                 Fix for src/test/pkg/PendingIntentTest.kt line 8: Add FLAG_IMMUTABLE (preferred):
-                @@ -8 +8
-                -         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE)
-                +         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
+                @@ -8 +8 @@
+                -        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE)
+                +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)
                 Fix for src/test/pkg/PendingIntentTest.kt line 8: Add FLAG_MUTABLE:
-                @@ -8 +8
-                -         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE)
-                +         PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_MUTABLE)
+                @@ -8 +8 @@
+                -        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE)
+                +        PendingIntent.getActivities(null, 0, null, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_MUTABLE)
                 """
       )
   }

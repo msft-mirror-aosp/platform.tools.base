@@ -72,8 +72,8 @@ class WrongGradleMethodDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle.kts line 15: Import com.google.firebase.appdistribution.gradle.firebaseAppDistribution:
-        @@ -1 +1
-        + import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
+        @@ -0,0 +1 @@
+        +import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
         """
       )
   }

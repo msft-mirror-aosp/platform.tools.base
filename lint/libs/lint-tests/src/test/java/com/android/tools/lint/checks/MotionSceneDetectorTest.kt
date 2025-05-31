@@ -52,11 +52,11 @@ class MotionSceneDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for res/xml/missing_custom_attribute_name.xml line 7: Set attributeName:
-                @@ -9 +9
-                -             <CustomAttribute app:customPixelDimension="2sp" />
-                +             <CustomAttribute
-                +                 app:attributeName="[TODO]|"
-                +                 app:customPixelDimension="2sp" />
+                @@ -9 +9,3 @@
+                -            <CustomAttribute app:customPixelDimension="2sp" />
+                +            <CustomAttribute
+                +                app:attributeName="[TODO]|"
+                +                app:customPixelDimension="2sp" />
             """
       )
   }
@@ -98,10 +98,10 @@ class MotionSceneDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for res/xml/duplicate_custom_attribute_name.xml line 10: Delete this custom attribute:
-                @@ -10 +10
-                -              <CustomAttribute
-                -                 app:attributeName="textSize"
-                -                 app:customPixelDimension="4sp"/>
+                @@ -10,3 +9,0 @@
+                -             <CustomAttribute
+                -                app:attributeName="textSize"
+                -                app:customPixelDimension="4sp"/>
             """
       )
   }
@@ -136,8 +136,8 @@ class MotionSceneDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for res/xml/multiple_onclick_in_transition.xml line 6: Delete additional OnClick:
-                @@ -6 +6
-                -         <OnClick motion:clickAction="transitionToEnd"  />
+                @@ -6 +5,0 @@
+                -        <OnClick motion:clickAction="transitionToEnd"  />
             """
       )
   }

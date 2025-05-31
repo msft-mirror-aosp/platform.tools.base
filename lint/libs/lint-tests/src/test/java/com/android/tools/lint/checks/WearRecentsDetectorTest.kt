@@ -51,18 +51,18 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
               Autofix for AndroidManifest.xml line 8: Set `taskAffinity`:
-              @@ -14 +14
-              -         <activity android:name=".MainActivity" />
-              +         <activity
-              +             android:name=".MainActivity"
-              +             android:taskAffinity="|" />
+              @@ -14 +14,3 @@
+              -        <activity android:name=".MainActivity" />
+              +        <activity
+              +            android:name=".MainActivity"
+              +            android:taskAffinity="|" />
               Autofix for AndroidManifest.xml line 8: Exclude from recents:
-              @@ -14 +14
-              -         <activity android:name=".MainActivity" />
-              +         <activity
-              +             android:name=".MainActivity"
-              +             android:excludeFromRecents="true"
-              +             android:noHistory="true" />
+              @@ -14 +14,4 @@
+              -        <activity android:name=".MainActivity" />
+              +        <activity
+              +            android:name=".MainActivity"
+              +            android:excludeFromRecents="true"
+              +            android:noHistory="true" />
         """
       )
   }
@@ -122,18 +122,18 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
               Autofix for AndroidManifest.xml line 7: Set `taskAffinity`:
-              @@ -12 +12
-              -         <activity android:name=".MainActivity" />
-              +         <activity
-              +             android:name=".MainActivity"
-              +             android:taskAffinity="|" />
+              @@ -12 +12,3 @@
+              -        <activity android:name=".MainActivity" />
+              +        <activity
+              +            android:name=".MainActivity"
+              +            android:taskAffinity="|" />
               Autofix for AndroidManifest.xml line 7: Exclude from recents:
-              @@ -12 +12
-              -         <activity android:name=".MainActivity" />
-              +         <activity
-              +             android:name=".MainActivity"
-              +             android:excludeFromRecents="true"
-              +             android:noHistory="true" />
+              @@ -12 +12,4 @@
+              -        <activity android:name=".MainActivity" />
+              +        <activity
+              +            android:name=".MainActivity"
+              +            android:excludeFromRecents="true"
+              +            android:noHistory="true" />
         """
       )
   }
@@ -189,10 +189,10 @@ class WearRecentsDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for AndroidManifest.xml line 8: Set noHistory:
-          @@ -16 +16
-          -             android:excludeFromRecents="true" />
-          +             android:excludeFromRecents="true"
-          +             android:noHistory="true" />
+          @@ -16 +16,2 @@
+          -            android:excludeFromRecents="true" />
+          +            android:excludeFromRecents="true"
+          +            android:noHistory="true" />
       """
       )
   }

@@ -711,11 +711,10 @@ class WakelockDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for src/test/pkg/WakelockTest.java line 10: Set timeout to 10 minutes:
-        @@ -11 +11
-        -         wakeLock.acquire(); // ERROR
-        +         wakeLock.acquire(10*60*1000L /*10 minutes*/); // ERROR
-
+        Fix for src/test/pkg/WakelockTest.java line 11: Set timeout to 10 minutes:
+        @@ -11 +11 @@
+        -        wakeLock.acquire(); // ERROR
+        +        wakeLock.acquire(10*60*1000L /*10 minutes*/); // ERROR
         """
       )
   }

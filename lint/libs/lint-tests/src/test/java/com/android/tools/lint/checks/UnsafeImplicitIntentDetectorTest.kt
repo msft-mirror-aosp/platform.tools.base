@@ -71,13 +71,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestActivity.java line 10: Set class name:
-        @@ -10 +10
-        -         Intent intent = new Intent("some.fake.action.LAUNCH");
-        +         Intent intent = new Intent("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+        @@ -10 +10 @@
+        -        Intent intent = new Intent("some.fake.action.LAUNCH");
+        +        Intent intent = new Intent("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
         Fix for src/test/pkg/TestActivity.java line 10: Set package name:
-        @@ -10 +10
-        -         Intent intent = new Intent("some.fake.action.LAUNCH");
-        +         Intent intent = new Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+        @@ -10 +10 @@
+        -        Intent intent = new Intent("some.fake.action.LAUNCH");
+        +        Intent intent = new Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
       )
   }
@@ -174,13 +174,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/TestActivity.java line 11: Set class name:
-            @@ -11 +11
-            -         intent.setAction("some.fake.action.LAUNCH");
-            +         intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+            @@ -11 +11 @@
+            -        intent.setAction("some.fake.action.LAUNCH");
+            +        intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
             Fix for src/test/pkg/TestActivity.java line 11: Set package name:
-            @@ -11 +11
-            -         intent.setAction("some.fake.action.LAUNCH");
-            +         intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+            @@ -11 +11 @@
+            -        intent.setAction("some.fake.action.LAUNCH");
+            +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
       )
   }
@@ -626,13 +626,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestActivity.java line 11: Set class name:
-        @@ -11 +11
-        -         intent.setAction("some.fake.action.LAUNCH");
-        +         intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+        @@ -11 +11 @@
+        -        intent.setAction("some.fake.action.LAUNCH");
+        +        intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
         Fix for src/test/pkg/TestActivity.java line 11: Set package name:
-        @@ -11 +11
-        -         intent.setAction("some.fake.action.LAUNCH");
-        +         intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+        @@ -11 +11 @@
+        -        intent.setAction("some.fake.action.LAUNCH");
+        +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
       )
   }
@@ -701,29 +701,29 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for src/test/pkg/TestActivity.java line 10: Set class name:
-          @@ -10 +10
-          -         Intent intent = new Intent("some.fake.action.A");
-          +         Intent intent = new Intent("some.fake.action.A").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+          @@ -10 +10 @@
+          -        Intent intent = new Intent("some.fake.action.A");
+          +        Intent intent = new Intent("some.fake.action.A").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
           Fix for src/test/pkg/TestActivity.java line 10: Set package name:
-          @@ -10 +10
-          -         Intent intent = new Intent("some.fake.action.A");
-          +         Intent intent = new Intent("some.fake.action.A").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+          @@ -10 +10 @@
+          -        Intent intent = new Intent("some.fake.action.A");
+          +        Intent intent = new Intent("some.fake.action.A").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
           Fix for src/test/pkg/TestActivity.java line 12: Set class name:
-          @@ -12 +12
-          -           intent.setAction("some.fake.action.B");
-          +           intent.setAction("some.fake.action.B").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+          @@ -12 +12 @@
+          -          intent.setAction("some.fake.action.B");
+          +          intent.setAction("some.fake.action.B").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
           Fix for src/test/pkg/TestActivity.java line 12: Set package name:
-          @@ -12 +12
-          -           intent.setAction("some.fake.action.B");
-          +           intent.setAction("some.fake.action.B").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+          @@ -12 +12 @@
+          -          intent.setAction("some.fake.action.B");
+          +          intent.setAction("some.fake.action.B").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
           Fix for src/test/pkg/TestActivity.java line 14: Set class name:
-          @@ -14 +14
-          -           intent.setAction("some.fake.action.C");
-          +           intent.setAction("some.fake.action.C").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+          @@ -14 +14 @@
+          -          intent.setAction("some.fake.action.C");
+          +          intent.setAction("some.fake.action.C").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
           Fix for src/test/pkg/TestActivity.java line 14: Set package name:
-          @@ -14 +14
-          -           intent.setAction("some.fake.action.C");
-          +           intent.setAction("some.fake.action.C").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+          @@ -14 +14 @@
+          -          intent.setAction("some.fake.action.C");
+          +          intent.setAction("some.fake.action.C").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
           """
       )
   }
@@ -831,13 +831,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestActivity.java line 10: Set class name:
-        @@ -10 +10
-        -         Intent intent = new Intent("some.fake.action.LAUNCH");
-        +         Intent intent = new Intent("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+        @@ -10 +10 @@
+        -        Intent intent = new Intent("some.fake.action.LAUNCH");
+        +        Intent intent = new Intent("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
         Fix for src/test/pkg/TestActivity.java line 10: Set package name:
-        @@ -10 +10
-        -         Intent intent = new Intent("some.fake.action.LAUNCH");
-        +         Intent intent = new Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+        @@ -10 +10 @@
+        -        Intent intent = new Intent("some.fake.action.LAUNCH");
+        +        Intent intent = new Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
       )
   }
@@ -894,13 +894,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/TestActivity.java line 11: Set class name:
-            @@ -11 +11
-            -         intent.setAction("some.fake.action.LAUNCH");
-            +         intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+            @@ -11 +11 @@
+            -        intent.setAction("some.fake.action.LAUNCH");
+            +        intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
             Fix for src/test/pkg/TestActivity.java line 11: Set package name:
-            @@ -11 +11
-            -         intent.setAction("some.fake.action.LAUNCH");
-            +         intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+            @@ -11 +11 @@
+            -        intent.setAction("some.fake.action.LAUNCH");
+            +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
       )
   }
@@ -1353,13 +1353,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestActivity.java line 11: Set class name:
-        @@ -11 +11
-        -         intent.setAction("some.fake.action.LAUNCH");
-        +         intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+        @@ -11 +11 @@
+        -        intent.setAction("some.fake.action.LAUNCH");
+        +        intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
         Fix for src/test/pkg/TestActivity.java line 11: Set package name:
-        @@ -11 +11
-        -         intent.setAction("some.fake.action.LAUNCH");
-        +         intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+        @@ -11 +11 @@
+        -        intent.setAction("some.fake.action.LAUNCH");
+        +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
         """
       )
   }
@@ -1429,29 +1429,29 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for src/test/pkg/TestActivity.java line 10: Set class name:
-          @@ -10 +10
-          -         Intent intent = new Intent("some.fake.action.A");
-          +         Intent intent = new Intent("some.fake.action.A").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+          @@ -10 +10 @@
+          -        Intent intent = new Intent("some.fake.action.A");
+          +        Intent intent = new Intent("some.fake.action.A").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
           Fix for src/test/pkg/TestActivity.java line 10: Set package name:
-          @@ -10 +10
-          -         Intent intent = new Intent("some.fake.action.A");
-          +         Intent intent = new Intent("some.fake.action.A").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+          @@ -10 +10 @@
+          -        Intent intent = new Intent("some.fake.action.A");
+          +        Intent intent = new Intent("some.fake.action.A").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
           Fix for src/test/pkg/TestActivity.java line 12: Set class name:
-          @@ -12 +12
-          -           intent.setAction("some.fake.action.B");
-          +           intent.setAction("some.fake.action.B").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+          @@ -12 +12 @@
+          -          intent.setAction("some.fake.action.B");
+          +          intent.setAction("some.fake.action.B").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
           Fix for src/test/pkg/TestActivity.java line 12: Set package name:
-          @@ -12 +12
-          -           intent.setAction("some.fake.action.B");
-          +           intent.setAction("some.fake.action.B").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+          @@ -12 +12 @@
+          -          intent.setAction("some.fake.action.B");
+          +          intent.setAction("some.fake.action.B").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
           Fix for src/test/pkg/TestActivity.java line 14: Set class name:
-          @@ -14 +14
-          -           intent.setAction("some.fake.action.C");
-          +           intent.setAction("some.fake.action.C").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
+          @@ -14 +14 @@
+          -          intent.setAction("some.fake.action.C");
+          +          intent.setAction("some.fake.action.C").setClassName([/* TODO: provide the application ID. For example: */ getPackageName()]|, "test.pkg.TestActivity");
           Fix for src/test/pkg/TestActivity.java line 14: Set package name:
-          @@ -14 +14
-          -           intent.setAction("some.fake.action.C");
-          +           intent.setAction("some.fake.action.C").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
+          @@ -14 +14 @@
+          -          intent.setAction("some.fake.action.C");
+          +          intent.setAction("some.fake.action.C").setPackage([/* TODO: provide the application ID. For example: */ getPackageName()]|);
           """
       )
   }
@@ -1556,13 +1556,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestActivity.kt line 10: Set class name:
-        @@ -10 +10
-        -         intent.setAction("some.fake.action.LAUNCH")
-        +         intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.TestActivity")
+        @@ -10 +10 @@
+        -        intent.setAction("some.fake.action.LAUNCH")
+        +        intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.TestActivity")
         Fix for src/test/pkg/TestActivity.kt line 10: Set package name:
-        @@ -10 +10
-        -         intent.setAction("some.fake.action.LAUNCH")
-        +         intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
+        @@ -10 +10 @@
+        -        intent.setAction("some.fake.action.LAUNCH")
+        +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
         """
       )
   }
@@ -1618,13 +1618,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestActivity.kt line 10: Set class name:
-        @@ -10 +10
-        -         intent.setAction("some.fake.action.LAUNCH")
-        +         intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.TestActivity")
+        @@ -10 +10 @@
+        -        intent.setAction("some.fake.action.LAUNCH")
+        +        intent.setAction("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.TestActivity")
         Fix for src/test/pkg/TestActivity.kt line 10: Set package name:
-        @@ -10 +10
-        -         intent.setAction("some.fake.action.LAUNCH")
-        +         intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
+        @@ -10 +10 @@
+        -        intent.setAction("some.fake.action.LAUNCH")
+        +        intent.setAction("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
         """
       )
   }
@@ -1678,13 +1678,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestActivity.kt line 9: Set class name:
-        @@ -9 +9
-        -         val intent = Intent("some.fake.action.LAUNCH")
-        +         val intent = Intent("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.TestActivity")
+        @@ -9 +9 @@
+        -        val intent = Intent("some.fake.action.LAUNCH")
+        +        val intent = Intent("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.TestActivity")
         Fix for src/test/pkg/TestActivity.kt line 9: Set package name:
-        @@ -9 +9
-        -         val intent = Intent("some.fake.action.LAUNCH")
-        +         val intent = Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
+        @@ -9 +9 @@
+        -        val intent = Intent("some.fake.action.LAUNCH")
+        +        val intent = Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
         """
       )
   }
@@ -1739,13 +1739,13 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestActivity.kt line 9: Set class name:
-        @@ -9 +9
-        -         val intent = Intent("some.fake.action.LAUNCH")
-        +         val intent = Intent("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.TestActivity")
+        @@ -9 +9 @@
+        -        val intent = Intent("some.fake.action.LAUNCH")
+        +        val intent = Intent("some.fake.action.LAUNCH").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.TestActivity")
         Fix for src/test/pkg/TestActivity.kt line 9: Set package name:
-        @@ -9 +9
-        -         val intent = Intent("some.fake.action.LAUNCH")
-        +         val intent = Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
+        @@ -9 +9 @@
+        -        val intent = Intent("some.fake.action.LAUNCH")
+        +        val intent = Intent("some.fake.action.LAUNCH").setPackage([/* TODO: provide the application ID. For example: */ packageName]|)
         """
       )
   }
@@ -1836,21 +1836,21 @@ class UnsafeImplicitIntentDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/app/TestActivityApp.kt line 10: Set class name:
-            @@ -10 +10
-            -         sendBroadcast(Intent().setAction("some.fake.action.D"))
-            +         sendBroadcast(Intent().setAction("some.fake.action.D").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.MyReceiver"))
+            @@ -10 +10 @@
+            -        sendBroadcast(Intent().setAction("some.fake.action.D"))
+            +        sendBroadcast(Intent().setAction("some.fake.action.D").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.MyReceiver"))
             Fix for src/test/pkg/app/TestActivityApp.kt line 10: Set package name:
-            @@ -10 +10
-            -         sendBroadcast(Intent().setAction("some.fake.action.D"))
-            +         sendBroadcast(Intent().setAction("some.fake.action.D").setPackage([/* TODO: provide the application ID. For example: */ packageName]|))
+            @@ -10 +10 @@
+            -        sendBroadcast(Intent().setAction("some.fake.action.D"))
+            +        sendBroadcast(Intent().setAction("some.fake.action.D").setPackage([/* TODO: provide the application ID. For example: */ packageName]|))
             Fix for lib/src/test/pkg/lib/TestActivityLib.kt line 10: Set class name:
-            @@ -10 +10
-            -         sendBroadcast(Intent().setAction("some.fake.action.B"))
-            +         sendBroadcast(Intent().setAction("some.fake.action.B").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.MyReceiver"))
+            @@ -10 +10 @@
+            -        sendBroadcast(Intent().setAction("some.fake.action.B"))
+            +        sendBroadcast(Intent().setAction("some.fake.action.B").setClassName([/* TODO: provide the application ID. For example: */ packageName]|, "test.pkg.MyReceiver"))
             Fix for lib/src/test/pkg/lib/TestActivityLib.kt line 10: Set package name:
-            @@ -10 +10
-            -         sendBroadcast(Intent().setAction("some.fake.action.B"))
-            +         sendBroadcast(Intent().setAction("some.fake.action.B").setPackage([/* TODO: provide the application ID. For example: */ packageName]|))
+            @@ -10 +10 @@
+            -        sendBroadcast(Intent().setAction("some.fake.action.B"))
+            +        sendBroadcast(Intent().setAction("some.fake.action.B").setPackage([/* TODO: provide the application ID. For example: */ packageName]|))
             """
       )
   }

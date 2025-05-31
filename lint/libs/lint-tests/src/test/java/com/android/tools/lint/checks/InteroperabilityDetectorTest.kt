@@ -284,69 +284,69 @@ class InteroperabilityDetectorTest : AbstractCheckTest() {
         // used here
         """
             Fix for src/test/pkg/Test.java line 10: Annotate @NonNull:
-            @@ -10 +10
-            -     public Object error1(Integer error2, int[] error3) { return null; }
-            +     @NonNull public Object error1(Integer error2, int[] error3) { return null; }
+            @@ -10 +10 @@
+            -    public Object error1(Integer error2, int[] error3) { return null; }
+            +    @NonNull public Object error1(Integer error2, int[] error3) { return null; }
             Fix for src/test/pkg/Test.java line 10: Annotate @Nullable:
-            @@ -10 +10
-            -     public Object error1(Integer error2, int[] error3) { return null; }
-            +     @Nullable public Object error1(Integer error2, int[] error3) { return null; }
+            @@ -10 +10 @@
+            -    public Object error1(Integer error2, int[] error3) { return null; }
+            +    @Nullable public Object error1(Integer error2, int[] error3) { return null; }
             Fix for src/test/pkg/Test.java line 10: Annotate @NonNull:
-            @@ -10 +10
-            -     public Object error1(Integer error2, int[] error3) { return null; }
-            +     public Object error1(@NonNull Integer error2, int[] error3) { return null; }
+            @@ -10 +10 @@
+            -    public Object error1(Integer error2, int[] error3) { return null; }
+            +    public Object error1(@NonNull Integer error2, int[] error3) { return null; }
             Fix for src/test/pkg/Test.java line 10: Annotate @Nullable:
-            @@ -10 +10
-            -     public Object error1(Integer error2, int[] error3) { return null; }
-            +     public Object error1(@Nullable Integer error2, int[] error3) { return null; }
+            @@ -10 +10 @@
+            -    public Object error1(Integer error2, int[] error3) { return null; }
+            +    public Object error1(@Nullable Integer error2, int[] error3) { return null; }
             Fix for src/test/pkg/Test.java line 10: Annotate @NonNull:
-            @@ -10 +10
-            -     public Object error1(Integer error2, int[] error3) { return null; }
-            +     public Object error1(Integer error2, @NonNull int[] error3) { return null; }
+            @@ -10 +10 @@
+            -    public Object error1(Integer error2, int[] error3) { return null; }
+            +    public Object error1(Integer error2, @NonNull int[] error3) { return null; }
             Fix for src/test/pkg/Test.java line 10: Annotate @Nullable:
-            @@ -10 +10
-            -     public Object error1(Integer error2, int[] error3) { return null; }
-            +     public Object error1(Integer error2, @Nullable int[] error3) { return null; }
+            @@ -10 +10 @@
+            -    public Object error1(Integer error2, int[] error3) { return null; }
+            +    public Object error1(Integer error2, @Nullable int[] error3) { return null; }
             Fix for src/test/pkg/Test.java line 14: Annotate @NonNull:
-            @@ -14 +14
-            -     public Float error4;
-            +     @NonNull public Float error4;
+            @@ -14 +14 @@
+            -    public Float error4;
+            +    @NonNull public Float error4;
             Fix for src/test/pkg/Test.java line 14: Annotate @Nullable:
-            @@ -14 +14
-            -     public Float error4;
-            +     @Nullable public Float error4;
+            @@ -14 +14 @@
+            -    public Float error4;
+            +    @Nullable public Float error4;
             Fix for src/test/pkg/Test.java line 16: Annotate @NonNull:
-            @@ -16 +16
-            -     public Float error5;
-            +     @NonNull public Float error5;
+            @@ -16 +16 @@
+            -    public Float error5;
+            +    @NonNull public Float error5;
             Fix for src/test/pkg/Test.java line 16: Annotate @Nullable:
-            @@ -16 +16
-            -     public Float error5;
-            +     @Nullable public Float error5;
+            @@ -16 +16 @@
+            -    public Float error5;
+            +    @Nullable public Float error5;
             Fix for src/test/pkg/Test.java line 18: Annotate @NonNull:
-            @@ -18 +18
-            -     public Object error6() { return null; }
-            +     @NonNull public Object error6() { return null; }
+            @@ -18 +18 @@
+            -    public Object error6() { return null; }
+            +    @NonNull public Object error6() { return null; }
             Fix for src/test/pkg/Test.java line 18: Annotate @Nullable:
-            @@ -18 +18
-            -     public Object error6() { return null; }
-            +     @Nullable public Object error6() { return null; }
+            @@ -18 +18 @@
+            -    public Object error6() { return null; }
+            +    @Nullable public Object error6() { return null; }
             Fix for src/test/pkg/Test.java line 19: Annotate @NonNull:
-            @@ -19 +19
-            -     protected Float error7;
-            +     @NonNull protected Float error7;
+            @@ -19 +19 @@
+            -    protected Float error7;
+            +    @NonNull protected Float error7;
             Fix for src/test/pkg/Test.java line 19: Annotate @Nullable:
-            @@ -19 +19
-            -     protected Float error7;
-            +     @Nullable protected Float error7;
+            @@ -19 +19 @@
+            -    protected Float error7;
+            +    @Nullable protected Float error7;
             Fix for src/test/pkg/Test.java line 34: Annotate @NonNull:
-            @@ -33 +33
-            -     @Deprecated
-            +     @NonNull @Deprecated
+            @@ -33 +33 @@
+            -    @Deprecated
+            +    @NonNull @Deprecated
             Fix for src/test/pkg/Test.java line 34: Annotate @Nullable:
-            @@ -33 +33
-            -     @Deprecated
-            +     @Nullable @Deprecated
+            @@ -33 +33 @@
+            -    @Deprecated
+            +    @Nullable @Deprecated
             """
       )
   }
@@ -611,61 +611,61 @@ class InteroperabilityDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for src/test/pkg/ExtendsPlatformClass.java line 5: Annotate @NonNull:
-          @@ -3 +3
-          + import androidx.annotation.NonNull;
-          @@ -4 +5
-          -     @Override
-          +     @NonNull @Override
+          @@ -2,0 +3 @@
+          +import androidx.annotation.NonNull;
+          @@ -4 +5 @@
+          -    @Override
+          +    @NonNull @Override
           Fix for src/test/pkg/ExtendsPlatformClass.java line 5: Annotate @Nullable:
-          @@ -3 +3
-          + import androidx.annotation.Nullable;
-          @@ -4 +5
-          -     @Override
-          +     @Nullable @Override
+          @@ -2,0 +3 @@
+          +import androidx.annotation.Nullable;
+          @@ -4 +5 @@
+          -    @Override
+          +    @Nullable @Override
           Fix for src/test/pkg/ExtendsPlatformClass.java line 9: Annotate @NonNull:
-          @@ -3 +3
-          + import androidx.annotation.NonNull;
-          @@ -9 +10
-          -     public void declaresParameterNullness(String str) {  // ERROR
-          +     public void declaresParameterNullness(@NonNull String str) {  // ERROR
+          @@ -2,0 +3 @@
+          +import androidx.annotation.NonNull;
+          @@ -9 +10 @@
+          -    public void declaresParameterNullness(String str) {  // ERROR
+          +    public void declaresParameterNullness(@NonNull String str) {  // ERROR
           Fix for src/test/pkg/ExtendsPlatformClass.java line 9: Annotate @Nullable:
-          @@ -3 +3
-          + import androidx.annotation.Nullable;
-          @@ -9 +10
-          -     public void declaresParameterNullness(String str) {  // ERROR
-          +     public void declaresParameterNullness(@Nullable String str) {  // ERROR
+          @@ -2,0 +3 @@
+          +import androidx.annotation.Nullable;
+          @@ -9 +10 @@
+          -    public void declaresParameterNullness(String str) {  // ERROR
+          +    public void declaresParameterNullness(@Nullable String str) {  // ERROR
           Fix for src/test/pkg/Foo.java line 10: Annotate @NonNull:
-          @@ -10 +10
-          -     public String errorString() { return ""; }
-          +     @androidx.annotation.NonNull public String errorString() { return ""; }
+          @@ -10 +10 @@
+          -    public String errorString() { return ""; }
+          +    @androidx.annotation.NonNull public String errorString() { return ""; }
           Fix for src/test/pkg/Foo.java line 10: Annotate @Nullable:
-          @@ -10 +10
-          -     public String errorString() { return ""; }
-          +     @androidx.annotation.Nullable public String errorString() { return ""; }
+          @@ -10 +10 @@
+          -    public String errorString() { return ""; }
+          +    @androidx.annotation.Nullable public String errorString() { return ""; }
           Fix for src/test/pkg/Foo.java line 11: Annotate @NonNull:
-          @@ -11 +11
-          -     public java.util.List<@NonNull String> errorList() { return null; }
-          +     @androidx.annotation.NonNull public java.util.List<@NonNull String> errorList() { return null; }
+          @@ -11 +11 @@
+          -    public java.util.List<@NonNull String> errorList() { return null; }
+          +    @androidx.annotation.NonNull public java.util.List<@NonNull String> errorList() { return null; }
           Fix for src/test/pkg/Foo.java line 11: Annotate @Nullable:
-          @@ -11 +11
-          -     public java.util.List<@NonNull String> errorList() { return null; }
-          +     @androidx.annotation.Nullable public java.util.List<@NonNull String> errorList() { return null; }
+          @@ -11 +11 @@
+          -    public java.util.List<@NonNull String> errorList() { return null; }
+          +    @androidx.annotation.Nullable public java.util.List<@NonNull String> errorList() { return null; }
           Fix for src/test/pkg/Foo.java line 12: Annotate @NonNull:
-          @@ -12 +12
-          -     public int[] errorArray() { return null; }
-          +     @androidx.annotation.NonNull public int[] errorArray() { return null; }
+          @@ -12 +12 @@
+          -    public int[] errorArray() { return null; }
+          +    @androidx.annotation.NonNull public int[] errorArray() { return null; }
           Fix for src/test/pkg/Foo.java line 12: Annotate @Nullable:
-          @@ -12 +12
-          -     public int[] errorArray() { return null; }
-          +     @androidx.annotation.Nullable public int[] errorArray() { return null; }
+          @@ -12 +12 @@
+          -    public int[] errorArray() { return null; }
+          +    @androidx.annotation.Nullable public int[] errorArray() { return null; }
           Fix for src/test/pkg/Foo.java line 13: Annotate @NonNull:
-          @@ -13 +13
-          -     public String[] @Nullable [] error2dArray() { return null; }
-          +     @androidx.annotation.NonNull public String[] @Nullable [] error2dArray() { return null; }
+          @@ -13 +13 @@
+          -    public String[] @Nullable [] error2dArray() { return null; }
+          +    @androidx.annotation.NonNull public String[] @Nullable [] error2dArray() { return null; }
           Fix for src/test/pkg/Foo.java line 13: Annotate @Nullable:
-          @@ -13 +13
-          -     public String[] @Nullable [] error2dArray() { return null; }
-          +     @androidx.annotation.Nullable public String[] @Nullable [] error2dArray() { return null; }
+          @@ -13 +13 @@
+          -    public String[] @Nullable [] error2dArray() { return null; }
+          +    @androidx.annotation.Nullable public String[] @Nullable [] error2dArray() { return null; }
         """
       )
   }

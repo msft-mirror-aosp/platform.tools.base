@@ -126,77 +126,77 @@ class TypographyDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/values/typography.xml line 17: Replace with –:
-            @@ -17 +17
-            -     <string name="ndash">For ages 3-5</string>
-            +     <string name="ndash">For ages 3–5</string>
+            @@ -17 +17 @@
+            -    <string name="ndash">For ages 3-5</string>
+            +    <string name="ndash">For ages 3–5</string>
             Fix for res/values/typography.xml line 18: Replace with –:
-            @@ -18 +18
-            -     <string name="ndash2">Copyright 2007 - 2011</string>
-            +     <string name="ndash2">Copyright 2007 – 2011</string>
+            @@ -18 +18 @@
+            -    <string name="ndash2">Copyright 2007 - 2011</string>
+            +    <string name="ndash2">Copyright 2007 – 2011</string>
             Fix for res/values/typography.xml line 20: Replace with —:
-            @@ -20 +20
-            -     <string name="mdash">Not found -- please try again</string>
-            +     <string name="mdash">Not found — please try again</string>
+            @@ -20 +20 @@
+            -    <string name="mdash">Not found -- please try again</string>
+            +    <string name="mdash">Not found — please try again</string>
             Fix for res/values/typography.xml line 24: Replace with –:
-            @@ -24 +24
-            -         <item>Ages 3-5</item>
-            +         <item>Ages 3–5</item>
+            @@ -24 +24 @@
+            -        <item>Ages 3-5</item>
+            +        <item>Ages 3–5</item>
             Fix for res/values/typography.xml line 15: Replace with …:
-            @@ -15 +15
-            -     <string name="ellipsis">40 times...</string>
-            +     <string name="ellipsis">40 times…</string>
+            @@ -15 +15 @@
+            -    <string name="ellipsis">40 times...</string>
+            +    <string name="ellipsis">40 times…</string>
             Fix for res/values/typography.xml line 12: Replace with ½:
-            @@ -12 +12
-            -     <string name="fraction1">5 1/2 times</string>
-            +     <string name="fraction1">5 ½ times</string>
+            @@ -12 +12 @@
+            -    <string name="fraction1">5 1/2 times</string>
+            +    <string name="fraction1">5 ½ times</string>
             Fix for res/values/typography.xml line 13: Replace with ¼:
-            @@ -13 +13
-            -     <string name="fraction4">1/4 times</string>
-            +     <string name="fraction4">¼ times</string>
+            @@ -13 +13 @@
+            -    <string name="fraction4">1/4 times</string>
+            +    <string name="fraction4">¼ times</string>
             Fix for res/values/typography.xml line 25: Replace with ½:
-            @@ -25 +25
-            -         <item>Age 5 1/2</item>
-            +         <item>Age 5 ½</item>
+            @@ -25 +25 @@
+            -        <item>Age 5 1/2</item>
+            +        <item>Age 5 ½</item>
             Fix for res/values/typography.xml line 3: Replace with ‘Sample’:
-            @@ -3 +3
-            -     <string name="home_title">Home 'Sample'</string>
-            +     <string name="home_title">Home ‘Sample’</string>
+            @@ -3 +3 @@
+            -    <string name="home_title">Home 'Sample'</string>
+            +    <string name="home_title">Home ‘Sample’</string>
             Fix for res/values/typography.xml line 5: Replace with “All”:
-            @@ -5 +5
-            -     <string name="show_all_apps2">Show "All"</string>
-            +     <string name="show_all_apps2">Show “All”</string>
+            @@ -5 +5 @@
+            -    <string name="show_all_apps2">Show "All"</string>
+            +    <string name="show_all_apps2">Show “All”</string>
             Fix for res/values/typography.xml line 6: Replace with “All\”:
-            @@ -6 +6
-            -     <string name="escaped">Skip \"All\"</string>
-            +     <string name="escaped">Skip \“All\”</string>
+            @@ -6 +6 @@
+            -    <string name="escaped">Skip \"All\"</string>
+            +    <string name="escaped">Skip \“All\”</string>
             Fix for res/values/typography.xml line 7: Replace with ’:
-            @@ -7 +7
-            -     <string name="single">Android's</string>
-            +     <string name="single">Android’s</string>
+            @@ -7 +7 @@
+            -    <string name="single">Android's</string>
+            +    <string name="single">Android’s</string>
             Fix for res/values/typography.xml line 9: Replace with ’:
-            @@ -9 +9
-            -     <string name="badquotes1">`First'</string>
-            +     <string name="badquotes1">`First’</string>
+            @@ -9 +9 @@
+            -    <string name="badquotes1">`First'</string>
+            +    <string name="badquotes1">`First’</string>
             Fix for res/values/typography.xml line 10: Replace with “second”:
-            @@ -10 +10
-            -     <string name="badquotes2">``second''</string>
-            +     <string name="badquotes2">“second”</string>
+            @@ -10 +10 @@
+            -    <string name="badquotes2">``second''</string>
+            +    <string name="badquotes2">“second”</string>
             Fix for res/values/typography.xml line 11: Replace with ‘Escape’:
-            @@ -11 +11
-            -     <string name="notbadquotes">Type Option-` then 'Escape'</string>
-            +     <string name="notbadquotes">Type Option-` then ‘Escape’</string>
+            @@ -11 +11 @@
+            -    <string name="notbadquotes">Type Option-` then 'Escape'</string>
+            +    <string name="notbadquotes">Type Option-` then ‘Escape’</string>
             Fix for res/values/typography.xml line 22: Replace with ’:
-            @@ -22 +22
-            -     <string name="notdirectional">A's and B's</string>
-            +     <string name="notdirectional">A’s and B's</string>
+            @@ -22 +22 @@
+            -    <string name="notdirectional">A's and B's</string>
+            +    <string name="notdirectional">A’s and B's</string>
             Fix for res/values/typography.xml line 29: Replace with ’:
-            @@ -29 +29
-            -     <string>something somthing d\'avoir something something l\'écran.</string>
-            +     <string>something somthing d\’avoir something something l\'écran.</string>
+            @@ -29 +29 @@
+            -    <string>something somthing d\'avoir something something l\'écran.</string>
+            +    <string>something somthing d\’avoir something something l\'écran.</string>
             Fix for res/values/typography.xml line 8: Replace with ©:
-            @@ -8 +8
-            -     <string name="copyright">(c) 2011</string>
-            +     <string name="copyright">© 2011</string>
+            @@ -8 +8 @@
+            -    <string name="copyright">(c) 2011</string>
+            +    <string name="copyright">© 2011</string>
         """
       )
   }
@@ -276,17 +276,17 @@ class TypographyDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/values/plurals_typography.xml line 5: Replace with –:
-            @@ -5 +5
-            -         <item quantity="one">For ages 3-5</item>
-            +         <item quantity="one">For ages 3–5</item>
+            @@ -5 +5 @@
+            -        <item quantity="one">For ages 3-5</item>
+            +        <item quantity="one">For ages 3–5</item>
             Fix for res/values/plurals_typography.xml line 6: Replace with ¼:
-            @@ -6 +6
-            -         <item quantity="few">1/4 times</item>
-            +         <item quantity="few">¼ times</item>
+            @@ -6 +6 @@
+            -        <item quantity="few">1/4 times</item>
+            +        <item quantity="few">¼ times</item>
             Fix for res/values/plurals_typography.xml line 14: Replace with “second”:
-            @@ -14 +14
-            -         <item>``second''</item>
-            +         <item>“second”</item>
+            @@ -14 +14 @@
+            -        <item>``second''</item>
+            +        <item>“second”</item>
         """
       )
   }
@@ -372,9 +372,9 @@ class TypographyDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/values/strings.xml line 8: Replace with ’:
-            @@ -8 +8
-            -       To open this panel again later, select "What's New in Android Studio"
-            +       To open this panel again later, select "What’s New in Android Studio"
+            @@ -8 +8 @@
+            -      To open this panel again later, select "What's New in Android Studio"
+            +      To open this panel again later, select "What’s New in Android Studio"
             """
       )
   }
@@ -404,9 +404,9 @@ class TypographyDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/values/strings.xml line 2: Replace with ¾:
-            @@ -2 +2
-            -     <string name="test">The fraction is 3 / 4 !</string>
-            +     <string name="test">The fraction is ¾ !</string>
+            @@ -2 +2 @@
+            -    <string name="test">The fraction is 3 / 4 !</string>
+            +    <string name="test">The fraction is ¾ !</string>
             """
       )
   }
@@ -543,29 +543,29 @@ class TypographyDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for res/values/strings.xml line 4: Replace with ’:
-        @@ -4 +4
-        -     <string name="single_control">This\'s found.</string>
-        +     <string name="single_control">This\’s found.</string>
+        @@ -4 +4 @@
+        -    <string name="single_control">This\'s found.</string>
+        +    <string name="single_control">This\’s found.</string>
         Fix for res/values/strings.xml line 6: Replace with ’:
-        @@ -6 +6
-        -     <string name="single_line_2">This\'s not found, because it\'s in a pair.</string>
-        +     <string name="single_line_2">This\’s not found, because it\'s in a pair.</string>
+        @@ -6 +6 @@
+        -    <string name="single_line_2">This\'s not found, because it\'s in a pair.</string>
+        +    <string name="single_line_2">This\’s not found, because it\'s in a pair.</string>
         Fix for res/values/strings.xml line 8: Replace with ’:
-        @@ -8 +8
-        -     <string name="single_line_3">This\'s not found, because it\'s more than just'one.</string>
-        +     <string name="single_line_3">This\’s not found, because it\'s more than just'one.</string>
+        @@ -8 +8 @@
+        -    <string name="single_line_3">This\'s not found, because it\'s more than just'one.</string>
+        +    <string name="single_line_3">This\’s not found, because it\'s more than just'one.</string>
         Fix for res/values/strings.xml line 11: Replace with ’:
-        @@ -11 +11
-        -         Even then the problem\'s are separate
-        +         Even then the problem\’s are separate
+        @@ -11 +11 @@
+        -        Even then the problem\'s are separate
+        +        Even then the problem\’s are separate
         Fix for res/values/strings.xml line 16: Replace with ’:
-        @@ -16 +16
-        -         Even then the problem\'s are separate
-        +         Even then the problem\’s are separate
+        @@ -16 +16 @@
+        -        Even then the problem\'s are separate
+        +        Even then the problem\’s are separate
         Fix for res/values/strings.xml line 24: Replace with ’:
-        @@ -24 +24
-        -         Problem\'s before 'quotes'
-        +         Problem\’s before 'quotes'
+        @@ -24 +24 @@
+        -        Problem\'s before 'quotes'
+        +        Problem\’s before 'quotes'
         """
       )
   }

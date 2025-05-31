@@ -59,9 +59,9 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for src/main/AndroidManifest.xml line 6: Set value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR":
-                @@ -7 +7
-                -         android:value="androidx.wear.watchface.editor.action.SOME_OTHER_EDITOR" />
-                +         android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
+                @@ -7 +7 @@
+                -        android:value="androidx.wear.watchface.editor.action.SOME_OTHER_EDITOR" />
+                +        android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
                 """
       )
   }
@@ -156,11 +156,11 @@ class WatchFaceForAndroidXDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for src/main/AndroidManifest.xml line 21: Set value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR":
-                @@ -23 +23
-                -         <meta-data android:name="com.google.android.wearable.watchface.wearableConfigurationAction" />
-                +         <meta-data
-                +             android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
-                +             android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
+                @@ -23 +23,3 @@
+                -        <meta-data android:name="com.google.android.wearable.watchface.wearableConfigurationAction" />
+                +        <meta-data
+                +            android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
+                +            android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
                 """
       )
   }

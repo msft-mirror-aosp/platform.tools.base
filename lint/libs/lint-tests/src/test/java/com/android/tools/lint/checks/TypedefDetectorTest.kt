@@ -340,41 +340,41 @@ class TypedefDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/X.java line 27: Change to X.LENGTH_INDEFINITE:
-            @@ -27 +27
-            -         setDuration(UNRELATED); /// OK within range
-            +         setDuration(X.LENGTH_INDEFINITE); /// OK within range
+            @@ -27 +27 @@
+            -        setDuration(UNRELATED); /// OK within range
+            +        setDuration(X.LENGTH_INDEFINITE); /// OK within range
             Fix for src/test/pkg/X.java line 27: Change to X.LENGTH_SHORT:
-            @@ -27 +27
-            -         setDuration(UNRELATED); /// OK within range
-            +         setDuration(X.LENGTH_SHORT); /// OK within range
+            @@ -27 +27 @@
+            -        setDuration(UNRELATED); /// OK within range
+            +        setDuration(X.LENGTH_SHORT); /// OK within range
             Fix for src/test/pkg/X.java line 27: Change to X.LENGTH_LONG:
-            @@ -27 +27
-            -         setDuration(UNRELATED); /// OK within range
-            +         setDuration(X.LENGTH_LONG); /// OK within range
+            @@ -27 +27 @@
+            -        setDuration(UNRELATED); /// OK within range
+            +        setDuration(X.LENGTH_LONG); /// OK within range
             Fix for src/test/pkg/X.java line 28: Change to X.LENGTH_INDEFINITE:
-            @@ -28 +28
-            -         setDuration(-5); // ERROR (not right int def or value
-            +         setDuration(X.LENGTH_INDEFINITE); // ERROR (not right int def or value
+            @@ -28 +28 @@
+            -        setDuration(-5); // ERROR (not right int def or value
+            +        setDuration(X.LENGTH_INDEFINITE); // ERROR (not right int def or value
             Fix for src/test/pkg/X.java line 28: Change to X.LENGTH_SHORT:
-            @@ -28 +28
-            -         setDuration(-5); // ERROR (not right int def or value
-            +         setDuration(X.LENGTH_SHORT); // ERROR (not right int def or value
+            @@ -28 +28 @@
+            -        setDuration(-5); // ERROR (not right int def or value
+            +        setDuration(X.LENGTH_SHORT); // ERROR (not right int def or value
             Fix for src/test/pkg/X.java line 28: Change to X.LENGTH_LONG:
-            @@ -28 +28
-            -         setDuration(-5); // ERROR (not right int def or value
-            +         setDuration(X.LENGTH_LONG); // ERROR (not right int def or value
+            @@ -28 +28 @@
+            -        setDuration(-5); // ERROR (not right int def or value
+            +        setDuration(X.LENGTH_LONG); // ERROR (not right int def or value
             Fix for src/test/pkg/X.java line 29: Change to X.LENGTH_INDEFINITE:
-            @@ -29 +29
-            -         setDuration(8); // ERROR (not matching number range)
-            +         setDuration(X.LENGTH_INDEFINITE); // ERROR (not matching number range)
+            @@ -29 +29 @@
+            -        setDuration(8); // ERROR (not matching number range)
+            +        setDuration(X.LENGTH_INDEFINITE); // ERROR (not matching number range)
             Fix for src/test/pkg/X.java line 29: Change to X.LENGTH_SHORT:
-            @@ -29 +29
-            -         setDuration(8); // ERROR (not matching number range)
-            +         setDuration(X.LENGTH_SHORT); // ERROR (not matching number range)
+            @@ -29 +29 @@
+            -        setDuration(8); // ERROR (not matching number range)
+            +        setDuration(X.LENGTH_SHORT); // ERROR (not matching number range)
             Fix for src/test/pkg/X.java line 29: Change to X.LENGTH_LONG:
-            @@ -29 +29
-            -         setDuration(8); // ERROR (not matching number range)
-            +         setDuration(X.LENGTH_LONG); // ERROR (not matching number range)
+            @@ -29 +29 @@
+            -        setDuration(8); // ERROR (not matching number range)
+            +        setDuration(X.LENGTH_LONG); // ERROR (not matching number range)
             """
       )
   }
@@ -457,9 +457,9 @@ class TypedefDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/zpkg/SomeClassTest.java line 10: Change to SomeClass.MY_CONSTANT:
-            @@ -10 +10
-            -         SomeClass.doSomething("error");
-            +         SomeClass.doSomething(SomeClass.MY_CONSTANT);
+            @@ -10 +10 @@
+            -        SomeClass.doSomething("error");
+            +        SomeClass.doSomething(SomeClass.MY_CONSTANT);
             """
       )
   }
@@ -1231,25 +1231,25 @@ class TypedefDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/IntDefTest.kt line 6: Change to TestType.LOL:
-        @@ -6 +6
-        -         wantInt(100) // ERROR
-        +         wantInt(TestType.LOL) // ERROR
+        @@ -6 +6 @@
+        -        wantInt(100) // ERROR
+        +        wantInt(TestType.LOL) // ERROR
         Fix for src/test/pkg/IntDefTest.kt line 7: Change to TestType.LOL:
-        @@ -7 +7
-        -         wantInt(WrongType.NO) // ERROR
-        +         wantInt(TestType.LOL) // ERROR
+        @@ -7 +7 @@
+        -        wantInt(WrongType.NO) // ERROR
+        +        wantInt(TestType.LOL) // ERROR
         Fix for src/test/pkg/IntDefTest.kt line 8: Change to TestType.LOL:
-        @@ -8 +8
-        -         wantInt(giveRandomInt()) // ERROR
-        +         wantInt(TestType.LOL) // ERROR
+        @@ -8 +8 @@
+        -        wantInt(giveRandomInt()) // ERROR
+        +        wantInt(TestType.LOL) // ERROR
         Fix for src/test/pkg/IntDefTest.kt line 9: Change to TestType.LOL:
-        @@ -9 +9
-        -         wantInt(giveWrongInt()) //ERROR
-        +         wantInt(TestType.LOL) //ERROR
+        @@ -9 +9 @@
+        -        wantInt(giveWrongInt()) //ERROR
+        +        wantInt(TestType.LOL) //ERROR
         Fix for src/test/pkg/IntDefTest.kt line 10: Change to TestType.LOL:
-        @@ -10 +10
-        -         wantInt(giveWrongIntAnnotated()) //ERROR
-        +         wantInt(TestType.LOL) //ERROR
+        @@ -10 +10 @@
+        -        wantInt(giveWrongIntAnnotated()) //ERROR
+        +        wantInt(TestType.LOL) //ERROR
         """
       )
   }
@@ -1730,21 +1730,21 @@ class TypedefDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/myapplication/IntDefTest.java line 20: Change to IntDefTest.LINE:
-            @@ -20 +20
-            -         shapeType = 99;
-            +         shapeType = IntDefTest.LINE;
+            @@ -20 +20 @@
+            -        shapeType = 99;
+            +        shapeType = IntDefTest.LINE;
             Fix for src/test/pkg/myapplication/IntDefTest.java line 20: Change to IntDefTest.CORNER:
-            @@ -20 +20
-            -         shapeType = 99;
-            +         shapeType = IntDefTest.CORNER;
+            @@ -20 +20 @@
+            -        shapeType = 99;
+            +        shapeType = IntDefTest.CORNER;
             Fix for src/test/pkg/myapplication/IntDefTest.java line 21: Change to IntDefTest.LINE:
-            @@ -21 +21
-            -         myClassObj.shapeType = 99;
-            +         myClassObj.shapeType = IntDefTest.LINE;
+            @@ -21 +21 @@
+            -        myClassObj.shapeType = 99;
+            +        myClassObj.shapeType = IntDefTest.LINE;
             Fix for src/test/pkg/myapplication/IntDefTest.java line 21: Change to IntDefTest.CORNER:
-            @@ -21 +21
-            -         myClassObj.shapeType = 99;
-            +         myClassObj.shapeType = IntDefTest.CORNER;
+            @@ -21 +21 @@
+            -        myClassObj.shapeType = 99;
+            +        myClassObj.shapeType = IntDefTest.CORNER;
             """
       )
   }
@@ -1898,13 +1898,13 @@ class TypedefDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/com/example/android/linttest/MainActivity.java line 15: Change to FragmentNames.HOME:
-        @@ -15 +15
-        -         toastFragmentNameAndText(getSomeTextFromThisClass(), FragmentNames.HOME); // ERROR
-        +         toastFragmentNameAndText(FragmentNames.HOME, FragmentNames.HOME); // ERROR
+        @@ -15 +15 @@
+        -        toastFragmentNameAndText(getSomeTextFromThisClass(), FragmentNames.HOME); // ERROR
+        +        toastFragmentNameAndText(FragmentNames.HOME, FragmentNames.HOME); // ERROR
         Fix for src/com/example/android/linttest/MainActivity.java line 16: Change to FragmentNames.HOME:
-        @@ -16 +16
-        -         toastFragmentNameAndText(FragmentUtils.getSomeTextFromOtherClass(), FragmentNames.HOME); // ERROR
-        +         toastFragmentNameAndText(FragmentNames.HOME, FragmentNames.HOME); // ERROR
+        @@ -16 +16 @@
+        -        toastFragmentNameAndText(FragmentUtils.getSomeTextFromOtherClass(), FragmentNames.HOME); // ERROR
+        +        toastFragmentNameAndText(FragmentNames.HOME, FragmentNames.HOME); // ERROR
         """
       )
   }
@@ -1955,45 +1955,45 @@ class TypedefDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/ExactAlarmTest.java line 7: Change to AlarmManager.RTC_WAKEUP:
-            @@ -7 +7
-            -         alarmManager.setExact(Integer.MAX_VALUE, 0L, operation);
-            +         alarmManager.setExact(AlarmManager.RTC_WAKEUP, 0L, operation);
+            @@ -7 +7 @@
+            -        alarmManager.setExact(Integer.MAX_VALUE, 0L, operation);
+            +        alarmManager.setExact(AlarmManager.RTC_WAKEUP, 0L, operation);
             Fix for src/test/pkg/ExactAlarmTest.java line 7: Change to AlarmManager.RTC:
-            @@ -7 +7
-            -         alarmManager.setExact(Integer.MAX_VALUE, 0L, operation);
-            +         alarmManager.setExact(AlarmManager.RTC, 0L, operation);
+            @@ -7 +7 @@
+            -        alarmManager.setExact(Integer.MAX_VALUE, 0L, operation);
+            +        alarmManager.setExact(AlarmManager.RTC, 0L, operation);
             Fix for src/test/pkg/ExactAlarmTest.java line 7: Change to AlarmManager.ELAPSED_REALTIME_WAKEUP:
-            @@ -7 +7
-            -         alarmManager.setExact(Integer.MAX_VALUE, 0L, operation);
-            +         alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0L, operation);
+            @@ -7 +7 @@
+            -        alarmManager.setExact(Integer.MAX_VALUE, 0L, operation);
+            +        alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0L, operation);
             Fix for src/test/pkg/ExactAlarmTest.java line 7: Change to AlarmManager.ELAPSED_REALTIME:
-            @@ -7 +7
-            -         alarmManager.setExact(Integer.MAX_VALUE, 0L, operation);
-            +         alarmManager.setExact(AlarmManager.ELAPSED_REALTIME, 0L, operation);
+            @@ -7 +7 @@
+            -        alarmManager.setExact(Integer.MAX_VALUE, 0L, operation);
+            +        alarmManager.setExact(AlarmManager.ELAPSED_REALTIME, 0L, operation);
             Fix for src/test/pkg/test.kt line 6: Change to AlarmManager.RTC (1):
-            @@ -3 +3
-            + import android.app.AlarmManager
-            @@ -6 +7
-            -     alarmManager.setExact(1, 0L, operation)
-            +     alarmManager.setExact(AlarmManager.RTC, 0L, operation)
+            @@ -2,0 +3 @@
+            +import android.app.AlarmManager
+            @@ -6 +7 @@
+            -    alarmManager.setExact(1, 0L, operation)
+            +    alarmManager.setExact(AlarmManager.RTC, 0L, operation)
             Fix for src/test/pkg/test.kt line 6: Change to AlarmManager.RTC_WAKEUP:
-            @@ -3 +3
-            + import android.app.AlarmManager
-            @@ -6 +7
-            -     alarmManager.setExact(1, 0L, operation)
-            +     alarmManager.setExact(AlarmManager.RTC_WAKEUP, 0L, operation)
+            @@ -2,0 +3 @@
+            +import android.app.AlarmManager
+            @@ -6 +7 @@
+            -    alarmManager.setExact(1, 0L, operation)
+            +    alarmManager.setExact(AlarmManager.RTC_WAKEUP, 0L, operation)
             Fix for src/test/pkg/test.kt line 6: Change to AlarmManager.ELAPSED_REALTIME_WAKEUP:
-            @@ -3 +3
-            + import android.app.AlarmManager
-            @@ -6 +7
-            -     alarmManager.setExact(1, 0L, operation)
-            +     alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0L, operation)
+            @@ -2,0 +3 @@
+            +import android.app.AlarmManager
+            @@ -6 +7 @@
+            -    alarmManager.setExact(1, 0L, operation)
+            +    alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, 0L, operation)
             Fix for src/test/pkg/test.kt line 6: Change to AlarmManager.ELAPSED_REALTIME:
-            @@ -3 +3
-            + import android.app.AlarmManager
-            @@ -6 +7
-            -     alarmManager.setExact(1, 0L, operation)
-            +     alarmManager.setExact(AlarmManager.ELAPSED_REALTIME, 0L, operation)
+            @@ -2,0 +3 @@
+            +import android.app.AlarmManager
+            @@ -6 +7 @@
+            -    alarmManager.setExact(1, 0L, operation)
+            +    alarmManager.setExact(AlarmManager.ELAPSED_REALTIME, 0L, operation)
             """
       )
   }
@@ -2092,13 +2092,13 @@ class TypedefDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/androidx/camera/view/CameraController.java line 14: Change to AspectRatio.RATIO_4_3:
-        @@ -14 +14
-        -                         builder.setTargetAspectRatio(outputSize.getAspectRatio()); // ERROR
-        +                         builder.setTargetAspectRatio(AspectRatio.RATIO_4_3); // ERROR
+        @@ -14 +14 @@
+        -                        builder.setTargetAspectRatio(outputSize.getAspectRatio()); // ERROR
+        +                        builder.setTargetAspectRatio(AspectRatio.RATIO_4_3); // ERROR
         Fix for src/androidx/camera/view/CameraController.java line 14: Change to AspectRatio.RATIO_16_9:
-        @@ -14 +14
-        -                         builder.setTargetAspectRatio(outputSize.getAspectRatio()); // ERROR
-        +                         builder.setTargetAspectRatio(AspectRatio.RATIO_16_9); // ERROR
+        @@ -14 +14 @@
+        -                        builder.setTargetAspectRatio(outputSize.getAspectRatio()); // ERROR
+        +                        builder.setTargetAspectRatio(AspectRatio.RATIO_16_9); // ERROR
         """
       )
   }
@@ -2441,13 +2441,13 @@ class TypedefDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/Playground.java line 21: Change to FirstIntDef.CONST_0:
-        @@ -21 +21
-        -                 second, // ERROR 1
-        +                 Playground.FirstIntDef.CONST_0, // ERROR 1
+        @@ -21 +21 @@
+        -                second, // ERROR 1
+        +                Playground.FirstIntDef.CONST_0, // ERROR 1
         Fix for src/test/pkg/Playground.java line 22: Change to SecondIntDef.ANOTHER_0:
-        @@ -22 +22
-        -                 first   // ERROR 2
-        +                 Playground.SecondIntDef.ANOTHER_0   // ERROR 2
+        @@ -22 +22 @@
+        -                first   // ERROR 2
+        +                Playground.SecondIntDef.ANOTHER_0   // ERROR 2
         """
       )
   }

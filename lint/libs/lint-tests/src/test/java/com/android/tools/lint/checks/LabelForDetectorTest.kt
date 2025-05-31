@@ -243,47 +243,44 @@ class LabelForDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for res/layout/labelfororhint_no_text_no_contentdescription.xml line 9: Set text:
-                @@ -12 +12
-                          android:layout_height="wrap_content"
-                          android:labelFor="@+id/editText1"
-                +         android:text="[TODO]|"
-                          android:textAppearance="?android:attr/textAppearanceMedium" />
-
+                @@ -10,4 +10,5 @@
+                         android:layout_height="wrap_content"
+                         android:labelFor="@+id/editText1"
+                +        android:text="[TODO]|"
+                         android:textAppearance="?android:attr/textAppearanceMedium" />
                 Fix for res/layout/labelfororhint_no_text_no_contentdescription.xml line 9: Set contentDescription:
-                @@ -11 +11
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                +         android:contentDescription="[TODO]|"
-                          android:labelFor="@+id/editText1"
-                          android:textAppearance="?android:attr/textAppearanceMedium" />
+                @@ -9,4 +9,5 @@
+                         android:layout_width="wrap_content"
+                         android:layout_height="wrap_content"
+                +        android:contentDescription="[TODO]|"
+                         android:labelFor="@+id/editText1"
+                         android:textAppearance="?android:attr/textAppearanceMedium" />
                 Fix for res/layout/labelfororhint_no_text_no_contentdescription.xml line 25: Set text:
-                @@ -29 +29
-                          android:layout_height="wrap_content"
-                          android:labelFor="@+id/autoCompleteTextView1"
-                +         android:text="[TODO]|"
-                          android:textAppearance="?android:attr/textAppearanceMedium" />
-
+                @@ -27,4 +27,5 @@
+                         android:layout_height="wrap_content"
+                         android:labelFor="@+id/autoCompleteTextView1"
+                +        android:text="[TODO]|"
+                         android:textAppearance="?android:attr/textAppearanceMedium" />
                 Fix for res/layout/labelfororhint_no_text_no_contentdescription.xml line 25: Set contentDescription:
-                @@ -28 +28
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                +         android:contentDescription="[TODO]|"
-                          android:labelFor="@+id/autoCompleteTextView1"
-                          android:textAppearance="?android:attr/textAppearanceMedium" />
+                @@ -26,4 +26,5 @@
+                         android:layout_width="wrap_content"
+                         android:layout_height="wrap_content"
+                +        android:contentDescription="[TODO]|"
+                         android:labelFor="@+id/autoCompleteTextView1"
+                         android:textAppearance="?android:attr/textAppearanceMedium" />
                 Fix for res/layout/labelfororhint_no_text_no_contentdescription.xml line 39: Set text:
-                @@ -43 +43
-                          android:layout_height="wrap_content"
-                          android:labelFor="@+id/multiAutoCompleteTextView1"
-                +         android:text="[TODO]|"
-                          android:textAppearance="?android:attr/textAppearanceMedium" />
-
+                @@ -41,4 +41,5 @@
+                         android:layout_height="wrap_content"
+                         android:labelFor="@+id/multiAutoCompleteTextView1"
+                +        android:text="[TODO]|"
+                         android:textAppearance="?android:attr/textAppearanceMedium" />
                 Fix for res/layout/labelfororhint_no_text_no_contentdescription.xml line 39: Set contentDescription:
-                @@ -42 +42
-                          android:layout_width="wrap_content"
-                          android:layout_height="wrap_content"
-                +         android:contentDescription="[TODO]|"
-                          android:labelFor="@+id/multiAutoCompleteTextView1"
-                          android:textAppearance="?android:attr/textAppearanceMedium" />
+                @@ -40,4 +40,5 @@
+                         android:layout_width="wrap_content"
+                         android:layout_height="wrap_content"
+                +        android:contentDescription="[TODO]|"
+                         android:labelFor="@+id/multiAutoCompleteTextView1"
+                         android:textAppearance="?android:attr/textAppearanceMedium" />
                 """
       )
   }

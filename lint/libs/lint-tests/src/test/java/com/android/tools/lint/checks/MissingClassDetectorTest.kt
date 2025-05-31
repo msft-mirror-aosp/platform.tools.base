@@ -888,9 +888,9 @@ class MissingClassDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for AndroidManifest.xml line 5: Replace with .Foo＄Bar:
-                @@ -5 +5
-                -             android:name=".Foo.Bar"
-                +             android:name=".Foo＄Bar"
+                @@ -5 +5 @@
+                -            android:name=".Foo.Bar"
+                +            android:name=".Foo＄Bar"
                 """
       )
   }
@@ -1047,9 +1047,9 @@ class MissingClassDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for res/xml/prefs_headers.xml line 7: Replace with test.pkg.FragmentTest＄Fragment1:
-                @@ -7 +7
-                - <header android:fragment="test.pkg.FragmentTest.Fragment1" />
-                + <header android:fragment="test.pkg.FragmentTest＄Fragment1" />
+                @@ -7 +7 @@
+                -<header android:fragment="test.pkg.FragmentTest.Fragment1" />
+                +<header android:fragment="test.pkg.FragmentTest＄Fragment1" />
                 """
       )
   }
