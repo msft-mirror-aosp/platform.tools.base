@@ -549,6 +549,33 @@ class LocalEmulatorProvisionerPluginTest {
     }
   }
 
+  @Test
+  fun updateInsignificantProperties() {
+    // Add a key, remove a key, change a key, don't update a significant key
+    val initialProperties =
+      mapOf(
+        "significant key" to "123",
+        ConfigKey.FORCE_COLD_BOOT_MODE to "yes",
+        ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "no",
+      )
+    val updatedProperties =
+      mapOf(
+        "significant key" to "456",
+        ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "yes",
+        ConfigKey.CHOSEN_SNAPSHOT_FILE to "snap",
+      )
+
+    val avdInfo = avdManager.makeAvdInfo(1).copy(properties = initialProperties)
+    val newAvdInfo =
+      avdInfo.updateInsignificantProperties(avdInfo.copy(properties = updatedProperties))
+
+    assertThat(newAvdInfo.properties).containsEntry("significant key", "123")
+    assertThat(newAvdInfo.properties).doesNotContainKey(ConfigKey.FORCE_COLD_BOOT_MODE)
+    assertThat(newAvdInfo.properties)
+      .containsEntry(ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE, "yes")
+    assertThat(newAvdInfo.properties).containsEntry(ConfigKey.CHOSEN_SNAPSHOT_FILE, "snap")
+  }
+
   private fun checkProperties(properties: LocalEmulatorProperties) {
     assertThat(properties.manufacturer).isEqualTo(MANUFACTURER)
     assertThat(properties.avdConfigProperties[ConfigKey.DEVICE_MANUFACTURER])

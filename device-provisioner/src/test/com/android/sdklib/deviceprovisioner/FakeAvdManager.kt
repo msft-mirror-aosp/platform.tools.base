@@ -25,7 +25,6 @@ import com.android.adblib.serialNumber
 import com.android.adblib.testing.FakeAdbSession
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion
-import com.android.sdklib.ISystemImage
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.ConfigKey
@@ -167,15 +166,6 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
       "ro.kernel.qemu" to "1",
     )
 }
-
-fun AvdInfo.copy(
-  iniFile: Path = this.iniFile,
-  folderPath: Path = this.dataFolderPath,
-  systemImage: ISystemImage? = this.systemImage,
-  properties: Map<String, String> = this.properties,
-  userSettings: Map<String, String?>? = this.userSettings,
-  status: AvdInfo.AvdStatus = this.status,
-): AvdInfo = AvdInfo(iniFile, folderPath, systemImage, properties, userSettings, status)
 
 const val LAUNCH_EXCEPTION_MESSAGE = "launch_exception_message"
 

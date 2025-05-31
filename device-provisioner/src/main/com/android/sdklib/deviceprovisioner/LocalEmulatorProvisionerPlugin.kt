@@ -28,6 +28,7 @@ import com.android.adblib.tools.openEmulatorConsole
 import com.android.adblib.utils.createChildScope
 import com.android.annotations.concurrency.GuardedBy
 import com.android.sdklib.AndroidVersion
+import com.android.sdklib.ISystemImage
 import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.deviceprovisioner.DeviceState.Connected
@@ -39,6 +40,7 @@ import com.android.sdklib.internal.avd.AvdInfo.AvdStatus
 import com.android.sdklib.internal.avd.BootMode
 import com.android.sdklib.internal.avd.BootSnapshot
 import com.android.sdklib.internal.avd.ColdBoot
+import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.internal.avd.HardwareProperties
 import com.android.sdklib.internal.avd.QuickBoot
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
@@ -363,11 +365,16 @@ internal constructor(
           logger.debug { "${logName()} Processing: $message" }
           when (message) {
             is AvdInfoUpdate -> {
+              // First, apply any updates immediately that don't need a restart to take effect or
+              // shouldn't trigger the AvdChangedError.
               if (!activeAvdInfo.isSameMetadata(message.avdInfo)) {
                 activeAvdInfo = activeAvdInfo.copyMetadata(message.avdInfo)
                 properties = properties.toBuilder().apply { setAvdInfo(activeAvdInfo) }.build()
               }
+              activeAvdInfo = activeAvdInfo.updateInsignificantProperties(message.avdInfo)
+
               if (connectedDevice == null) {
+                // Device is not running; immediately update if there's an actual change.
                 if (activeAvdInfo != message.avdInfo) {
                   activeAvdInfo = message.avdInfo
                   properties = context.disconnectedDeviceProperties(activeAvdInfo)
@@ -992,6 +999,38 @@ private data class AvdDeviceError(val status: AvdStatus, override val message: S
 internal object AvdChangedError : DeviceError {
   override val severity = DeviceError.Severity.INFO
   override val message = "Changes will apply on restart"
+}
+
+internal fun AvdInfo.copy(
+  iniFile: Path = this.iniFile,
+  folderPath: Path = this.dataFolderPath,
+  systemImage: ISystemImage? = this.systemImage,
+  properties: Map<String, String> = this.properties,
+  userSettings: Map<String, String?>? = this.userSettings,
+  status: AvdInfo.AvdStatus = this.status,
+): AvdInfo = AvdInfo(iniFile, folderPath, systemImage, properties, userSettings, status)
+
+/**
+ * We ignore these keys when deciding if the AVD properties have changed in a way that merits
+ * showing the AvdChangedError.
+ */
+private val insignificantKeys =
+  setOf(
+    ConfigKey.CHOSEN_SNAPSHOT_FILE,
+    ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE,
+    ConfigKey.FORCE_COLD_BOOT_MODE,
+    ConfigKey.FORCE_FAST_BOOT_MODE,
+  )
+
+internal fun AvdInfo.updateInsignificantProperties(newInfo: AvdInfo): AvdInfo {
+  if (insignificantKeys.any { properties[it] != newInfo.properties[it] }) {
+    return copy(
+      properties =
+        (properties - insignificantKeys) +
+          newInfo.properties.filterKeys(insignificantKeys::contains)
+    )
+  }
+  return this
 }
 
 private fun AvdInfo.toDeviceType(): DeviceType {
