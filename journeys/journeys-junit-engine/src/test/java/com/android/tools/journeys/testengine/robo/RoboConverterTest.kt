@@ -16,10 +16,10 @@
 
 package com.android.tools.journeys.testengine.robo
 
-import org.junit.Test
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Test
 import java.io.ByteArrayInputStream
 
 class RoboConverterTest {
@@ -32,9 +32,10 @@ class RoboConverterTest {
                     <action>Type test</action>
                     <action>Assert that field is empty</action>
                     <action>Click Next</action>
+                    <action>     Verify that field is empty</action>
                 </actions>
             </journey>
-        """.trimIndent()
+        """
         val inputStream = ByteArrayInputStream(xml.toByteArray())
 
         val expectedJson = """
@@ -53,8 +54,11 @@ class RoboConverterTest {
               },
               "maxNumberOfRuns": 1,
               "actions": [{
-              "eventType": "PROMPT",
-              "prompt": "Type test"
+              "eventType": "AI_AGENT",
+              "aiAgentInstructions": {
+                "goal": "Type test",
+                "hint": "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
+              }
             },{
               "eventType": "ASSERTION",
               "contextDescriptor": {
@@ -62,8 +66,17 @@ class RoboConverterTest {
                 "prompt": "Assert that field is empty"
               }
             },{
-              "eventType": "PROMPT",
-              "prompt": "Click Next"
+              "eventType": "AI_AGENT",
+              "aiAgentInstructions": {
+                "goal": "Click Next",
+                "hint": "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
+              }
+            },{
+              "eventType": "ASSERTION",
+              "contextDescriptor": {
+                "condition": "prompt",
+                "prompt": "Verify that field is empty"
+              }
             },  ]
             }]
         """.trimIndent()
@@ -78,7 +91,32 @@ class RoboConverterTest {
         val exception = assertThrows(IllegalStateException::class.java) {
             RoboConverter.convert(inputStream)
         }
-        assertEquals("There should be one and only one <actions> element", exception.message)
+        assertEquals(
+            "There should be one and only one <actions> element, found 0.",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `convert throws error if multiple actions element are present`() {
+        val xml = """
+            <journey>
+                <actions>
+                    <action>Type test</action>
+                </actions>
+                <actions>
+                    <action>Type next</action>
+                </actions>
+            </journey>
+        """
+        val inputStream = ByteArrayInputStream(xml.toByteArray())
+        val exception = assertThrows(IllegalStateException::class.java) {
+            RoboConverter.convert(inputStream)
+        }
+        assertEquals(
+            "There should be one and only one <actions> element, found 2.",
+            exception.message
+        )
     }
 
     @Test
@@ -121,21 +159,25 @@ class RoboConverterTest {
 
     @Test
     fun `correctly identifies assertion keywords`() {
-        val xmlAction =
-            """<journey><actions><action>perform click</action></actions></journey>""".trimIndent()
+        val xmlAction = "<journey><actions><action>perform click</action></actions></journey>"
         val xmlAssertionVerify =
-            """<journey><actions><action>Verify this</action></actions></journey>""".trimIndent()
+            "<journey><actions><action>Verify this</action></actions></journey>"
         val xmlAssertionAssert =
-            """<journey><actions><action>assert That</action></actions></journey>""".trimIndent()
+            "<journey><actions><action>assert That</action></actions></journey>"
+        val xmlAssertionAssertWithExtraSpaces =
+            "<journey><actions><action>     Assert That</action></actions></journey>"
 
         val actionJson = RoboConverter.convert(ByteArrayInputStream(xmlAction.toByteArray()))
         val assertionVerifyJson =
             RoboConverter.convert(ByteArrayInputStream(xmlAssertionVerify.toByteArray()))
         val assertionAssertJson =
             RoboConverter.convert(ByteArrayInputStream(xmlAssertionAssert.toByteArray()))
+        val assertionAssertWithSpaceJson =
+            RoboConverter.convert(ByteArrayInputStream(xmlAssertionAssertWithExtraSpaces.toByteArray()))
 
-        assertTrue(actionJson.contains("\"eventType\": \"PROMPT\""))
+        assertTrue(actionJson.contains("\"eventType\": \"AI_AGENT\""))
         assertTrue(assertionVerifyJson.contains("\"eventType\": \"ASSERTION\""))
         assertTrue(assertionAssertJson.contains("\"eventType\": \"ASSERTION\""))
+        assertTrue(assertionAssertWithSpaceJson.contains("\"eventType\": \"ASSERTION\""))
     }
 }

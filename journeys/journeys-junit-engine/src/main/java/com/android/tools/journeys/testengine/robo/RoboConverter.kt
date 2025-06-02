@@ -49,9 +49,12 @@ object RoboConverter {
      */
     fun getRoboElements(journey: InputStream): List<Element> {
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(journey)
-        val actionsElement = document.getElementsByTagName("actions").item(0) as? Element
-            ?: throw IllegalStateException("There should be one and only one <actions> element")
+        val actionsElements = document.getElementsByTagName("actions")
 
+        if (actionsElements.length != 1) {
+            throw IllegalStateException("There should be one and only one <actions> element, found ${actionsElements.length}.")
+        }
+        val actionsElement = actionsElements.item(0) as Element
         return actionsElement.childNodes.toList().mapNotNull { it as? Element }
     }
 
@@ -161,8 +164,11 @@ object RoboConverter {
     private val actionEntry =
         """
           {
-            "eventType": "PROMPT",
-            "prompt": "%CONTENT%"
+            "eventType": "AI_AGENT",
+            "aiAgentInstructions": {
+              "goal": "%CONTENT%",
+              "hint": "$SINGLE_ACTION_HINT"
+            }
           },
     """.trimIndent()
 
@@ -178,4 +184,8 @@ object RoboConverter {
     """.trimIndent()
 
     private val assertionKeywords = listOf("verify", "assert", "check that")
+
+    /** Hint for AI agent to stabilize single actions. */
+    private const val SINGLE_ACTION_HINT =
+        "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
 }
