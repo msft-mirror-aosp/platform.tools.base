@@ -118,6 +118,7 @@ class FakeGCE:
         change_id=f'changeid{index}',
         change_number=str(index),
         project=project,
+        project_path=project,
         patchset=index,
         file_infos=[],
         owner=f'{owner}@google.com',
