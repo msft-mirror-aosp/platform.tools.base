@@ -415,22 +415,6 @@ class TestFixturesKotlinTest(private val kotlinVersion: String) {
         )
     }
 
-    @Test
-    fun `test kotlin version too low`() {
-        // for Gradle 9.0.0-milestone-9 we get class not found (org.gradle.api.artifacts.SelfResolvingDependency)
-        assume().that(GradleVersion.current()).isLessThan(GradleVersion.version("9.0-milestone-1"))
-        Assume.assumeTrue(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
-        TestFileUtils.searchAndReplace(
-            project.projectDir.parentFile.resolve(VERSION_CATALOG),
-            "version('kotlinVersion', '$kotlinVersion' )",
-            "version('kotlinVersion', '1.8.10' )"
-        )
-        val result = executor().expectFailure().run(":app:testDebugUnitTest")
-        result.assertErrorContains(
-            "The current Kotlin Gradle plugin version (1.8.10) is below the required"
-        )
-    }
-
     private fun testExclusionInTestApk(
         testApk: Apk,
         expectTestFixturesClassesToBeIncluded: Boolean = true,

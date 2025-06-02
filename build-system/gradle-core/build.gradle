@@ -175,6 +175,14 @@ dependencies {
     implementation libs.jetifier_core
     implementation libs.jetifier_processor
     implementation libs.javapoet
+    implementation libs.kotlin_gradle_plugin
+    constraints {
+        // AGP doesn't directly depend on KSP, but if KSP is used, it needs to match the KGP version
+        //noinspection ForeignDelegate
+        implementation(libs.ksp_gradle_plugin) {
+            because("KSP version needs to match KGP version")
+        }
+    }
     implementation libs.protobuf
     implementation libs.protobuf_util
     implementation libs.gson
@@ -186,7 +194,6 @@ dependencies {
     implementation libs.tink
     implementation libs.unified_test_platform
 
-    compileOnly libs.kotlin_gradle_plugin
     compileOnly libs.kotlin_gradle_plugin_idea
     compileOnly libs.jacoco_core
     compileOnly libs.jacoco_report

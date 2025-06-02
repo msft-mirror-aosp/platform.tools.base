@@ -567,6 +567,7 @@ com.android.tools.build:gradle
     com.android.tools.build.jetifier:jetifier-core (runtime)
     com.android.tools.build.jetifier:jetifier-processor (runtime)
     com.squareup:javapoet (runtime)
+    org.jetbrains.kotlin:kotlin-gradle-plugin (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.google.protobuf:protobuf-java-util (runtime)
     com.google.code.gson:gson (runtime)

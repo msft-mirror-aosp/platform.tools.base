@@ -89,6 +89,9 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
 
     @Test
     fun appAndTestsBuildSuccessfully() {
+        // KGP 2.0+ requires Compose compiler Gradle plugin when Compose is used
+        Assume.assumeTrue(useComposeCompilerGradlePlugin)
+
         val tasks = listOf("clean", "assembleDebug", "assembleDebugAndroidTest")
         project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .run(tasks)
@@ -99,6 +102,9 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
 
     @Test
     fun testLiveLiterals() {
+        // KGP 2.0+ requires Compose compiler Gradle plugin when Compose is used
+        Assume.assumeTrue(useComposeCompilerGradlePlugin)
+
         // Run compilation with live literals on
         TestFileUtils.appendToFile(
             project.getSubproject("app").buildFile,
@@ -124,6 +130,9 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
 
     @Test
     fun testScreenshotTestAndTestFixturesCompilation() {
+        // KGP 2.0+ requires Compose compiler Gradle plugin when Compose is used
+        Assume.assumeTrue(useComposeCompilerGradlePlugin)
+
         project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .run(":app:compileDebugTestFixturesKotlin")
