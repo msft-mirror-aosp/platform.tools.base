@@ -40,6 +40,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.Scanner
 import kotlin.io.path.isRegularFile
 
 /** Integration tests for the privacy sandbox SDK for consumption */
@@ -88,7 +89,8 @@ class PrivacySandboxSdkConsumptionTest {
         }
 
         // Check building the SDK itself
-        build.configuredExecutor().run(":example-app:buildPrivacySandboxSdkApksForDebug")
+        val run = build.configuredExecutor().run(":example-app:buildPrivacySandboxSdkApksForDebug")
+        run.assertErrorDoesNotContain("WARN:")
         val ideModelFile = build
             .androidApplication(":example-app")
             .resolve(InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL)
