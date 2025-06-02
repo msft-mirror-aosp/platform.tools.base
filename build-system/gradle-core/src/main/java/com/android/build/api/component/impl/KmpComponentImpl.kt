@@ -470,53 +470,47 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
         )
 
         sources.res?.addStaticSources(
-            services.provider {
-                // only add androidMain source set resources instead of for all source sets
-                // in the compilation (e.g. commonMain and any intermediate source set)
-                androidKotlinCompilation.defaultSourceSet.let { sourceSet ->
-                    DirectoryEntries(
-                        sourceSet.name,
-                        sourceSet.resources.srcDirs.map { srcDir ->
-                            FileBasedDirectoryEntryImpl(
-                                name = sourceSet.name,
-                                // Android resources are located under androidMain/res
-                                directory = File(srcDir.parentFile, SourceType.RES.folder)
-                            )
-                        }.toMutableList()
-                    )
-                }
+            // only add androidMain source set resources instead of for all source sets
+            // in the compilation (e.g. commonMain and any intermediate source set)
+            androidKotlinCompilation.defaultSourceSet.let { sourceSet ->
+                DirectoryEntries(
+                    sourceSet.name,
+                    sourceSet.resources.srcDirs.map { srcDir ->
+                        FileBasedDirectoryEntryImpl(
+                            name = sourceSet.name,
+                            // Android resources are located under androidMain/res
+                            directory = File(srcDir.parentFile, SourceType.RES.folder)
+                        )
+                    }.toMutableList()
+                )
             }
         )
 
         sources.assets?.addStaticSources(
-            services.provider {
-                androidKotlinCompilation.defaultSourceSet.let { sourceSet ->
-                    DirectoryEntries(
-                        sourceSet.name,
-                        sourceSet.resources.srcDirs.map { srcDir ->
-                            FileBasedDirectoryEntryImpl(
-                                name = sourceSet.name,
-                                directory = File(srcDir.parentFile, SourceType.ASSETS.folder)
-                            )
-                        }.toMutableList()
-                    )
-                }
+            androidKotlinCompilation.defaultSourceSet.let { sourceSet ->
+                DirectoryEntries(
+                    sourceSet.name,
+                    sourceSet.resources.srcDirs.map { srcDir ->
+                        FileBasedDirectoryEntryImpl(
+                            name = sourceSet.name,
+                            directory = File(srcDir.parentFile, SourceType.ASSETS.folder)
+                        )
+                    }.toMutableList()
+                )
             }
         )
 
         sources.jniLibs.addStaticSources(
-            services.provider {
-                androidKotlinCompilation.defaultSourceSet.let { sourceSet ->
-                    DirectoryEntries(
-                        sourceSet.name,
-                        sourceSet.resources.srcDirs.map { srcDir ->
-                            FileBasedDirectoryEntryImpl(
-                                name = sourceSet.name,
-                                directory = File(srcDir.parentFile, SourceType.JNI_LIBS.folder)
-                            )
-                        }.toMutableList()
-                    )
-                }
+            androidKotlinCompilation.defaultSourceSet.let { sourceSet ->
+                DirectoryEntries(
+                    sourceSet.name,
+                    sourceSet.resources.srcDirs.map { srcDir ->
+                        FileBasedDirectoryEntryImpl(
+                            name = sourceSet.name,
+                            directory = File(srcDir.parentFile, SourceType.JNI_LIBS.folder)
+                        )
+                    }.toMutableList()
+                )
             }
         )
     }
