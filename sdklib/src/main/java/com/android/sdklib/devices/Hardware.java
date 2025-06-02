@@ -319,129 +319,49 @@ public class Hardware {
             return false;
         }
         Hardware hw = (Hardware) o;
-        return mScreen.equals(hw.getScreen())
-                && mNetworking.equals(hw.getNetworking())
-                && mSensors.equals(hw.getSensors())
+        return Objects.equal(mScreen, hw.getScreen())
+                && Objects.equal(mNetworking, hw.getNetworking())
+                && Objects.equal(mSensors, hw.getSensors())
                 && mMic == hw.hasMic()
                 && mSdCard == hw.hasSdCard()
-                && mCameras.equals(hw.getCameras())
-                && mKeyboard == hw.getKeyboard()
-                && mNav == hw.getNav()
-                && mRam.equals(hw.getRam())
-                && mButtons == hw.getButtonType()
-                && mInternalStorage.equals(hw.getInternalStorage())
-                && mRemovableStorage.equals(hw.getRemovableStorage())
-                && mCpu.equals(hw.getCpu())
-                && mGpu.equals(hw.getGpu())
-                && mAbis.equals(hw.getSupportedAbis())
-                && mTranslatedAbis.equals(hw.getTranslatedAbis())
-                && mUiModes.equals(hw.getSupportedUiModes())
-                && mPluggedIn == hw.getChargeType()
+                && Objects.equal(mCameras, hw.getCameras())
+                && Objects.equal(mKeyboard, hw.getKeyboard())
+                && Objects.equal(mNav, hw.getNav())
+                && Objects.equal(mRam, hw.getRam())
+                && Objects.equal(mButtons, hw.getButtonType())
+                && Objects.equal(mInternalStorage, hw.getInternalStorage())
+                && Objects.equal(mRemovableStorage, hw.getRemovableStorage())
+                && Objects.equal(mCpu, hw.getCpu())
+                && Objects.equal(mGpu, hw.getGpu())
+                && Objects.equal(mAbis, hw.getSupportedAbis())
+                && Objects.equal(mTranslatedAbis, hw.getTranslatedAbis())
+                && Objects.equal(mUiModes, hw.getSupportedUiModes())
+                && Objects.equal(mPluggedIn, hw.getChargeType())
                 && Objects.equal(mSkinFile, hw.getSkinFile());
     }
 
     @Override
     public int hashCode() {
-        int hash = 17;
-        hash = 31 * hash + mScreen.hashCode();
-
-        // Since sets have no defined order, we need to hash them in such a way that order doesn't
-        // matter.
-        int temp = 0;
-        for (Network n : mNetworking) {
-            temp |= 1 << n.ordinal();
-        }
-        hash = 31 * hash + temp;
-
-        temp = 0;
-        for (Sensor s : mSensors) {
-            temp |= 1 << s.ordinal();
-        }
-
-        hash = 31 * hash + temp;
-        hash = 31 * hash + (mMic ? 1 : 0);
-        hash = 31 * hash + (mSdCard ? 1 : 0);
-        hash = 31 * hash + mCameras.hashCode();
-
-        if (mKeyboard != null) {
-            hash = 31 * hash + mKeyboard.ordinal();
-        } else {
-            hash = 31 * hash;
-        }
-
-        if (mNav != null) {
-            hash = 31 * hash + mNav.ordinal();
-        } else {
-            hash = 31 * hash;
-        }
-
-        if (mRam != null) {
-            hash = 31 * hash + mRam.hashCode();
-        } else {
-            hash = 31 * hash;
-        }
-
-        if (mButtons != null) {
-            hash = 31 * hash + mButtons.ordinal();
-        } else {
-            hash = 31 * hash;
-        }
-
-        if (mInternalStorage != null) {
-            hash = 31 * hash + mInternalStorage.hashCode();
-        } else {
-            hash = 31 * hash;
-        }
-
-        if (mRemovableStorage != null) {
-            hash = 31 * hash + mRemovableStorage.hashCode();
-        } else {
-            hash = 31 * hash;
-        }
-
-        if (mSkinFile != null) {
-            hash = 31 * hash + mSkinFile.hashCode();
-        }
-
-        if (mCpu != null) {
-            for (Character c : mCpu.toCharArray()) {
-                hash = 31 * hash + c;
-            }
-        }
-
-        if (mGpu != null) {
-            for (Character c : mGpu.toCharArray()) {
-                hash = 31 * hash + c;
-            }
-        }
-
-        temp = 0;
-        if (mAbis != null) {
-            for (Abi a : mAbis) {
-                temp |= 1 << a.ordinal();
-            }
-        }
-        hash = 31 * hash + temp;
-
-        temp = 0;
-        if (mTranslatedAbis != null) {
-            for (Abi a : mTranslatedAbis) {
-                temp |= 1 << a.ordinal();
-            }
-        }
-        hash = 31 * hash + temp;
-
-        temp = 0;
-        if (mUiModes != null) {
-            for (UiMode ui : mUiModes) {
-                temp |= 1 << ui.ordinal();
-            }
-        }
-        hash = 31 * hash + temp;
-        if (mPluggedIn != null) {
-            hash = 31 * hash + mPluggedIn.ordinal();
-        }
-        return hash;
+        return Objects.hashCode(
+                mScreen,
+                mNetworking,
+                mSensors,
+                mMic,
+                mSdCard,
+                mCameras,
+                mKeyboard,
+                mNav,
+                mRam,
+                mButtons,
+                mInternalStorage,
+                mRemovableStorage,
+                mCpu,
+                mGpu,
+                mAbis,
+                mTranslatedAbis,
+                mUiModes,
+                mPluggedIn,
+                mSkinFile);
     }
 
     @Override

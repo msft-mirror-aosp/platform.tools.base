@@ -21,6 +21,7 @@ import com.android.annotations.NonNull;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class Software {
@@ -28,7 +29,8 @@ public class Software {
     private int mMaxSdkLevel = Integer.MAX_VALUE;
     private boolean mPlayStoreEnabled = false;
     private boolean mLiveWallpaperSupport;
-    private Set<BluetoothProfile> mBluetoothProfiles = EnumSet.noneOf(BluetoothProfile.class);
+
+    private final Set<BluetoothProfile> mBluetoothProfiles = EnumSet.noneOf(BluetoothProfile.class);
     private String mGlVersion;
     private Set<String> mGlExtensions = new LinkedHashSet<String>();
     private boolean mStatusBar;
@@ -129,35 +131,26 @@ public class Software {
         }
 
         Software sw = (Software) o;
-        return mMinSdkLevel == sw.getMinSdkLevel()
-                && mMaxSdkLevel == sw.getMaxSdkLevel()
-                && mLiveWallpaperSupport == sw.hasLiveWallpaperSupport()
-                && mBluetoothProfiles.equals(sw.getBluetoothProfiles())
-                && mGlVersion.equals(sw.getGlVersion())
-                && mGlExtensions.equals(sw.getGlExtensions())
-                && mStatusBar == sw.hasStatusBar();
+        return Objects.equals(mMinSdkLevel, sw.mMinSdkLevel)
+                && Objects.equals(mMaxSdkLevel, sw.mMaxSdkLevel)
+                && Objects.equals(mLiveWallpaperSupport, sw.mLiveWallpaperSupport)
+                && Objects.equals(mBluetoothProfiles, sw.mBluetoothProfiles)
+                && Objects.equals(mGlVersion, sw.mGlVersion)
+                && Objects.equals(mGlExtensions, sw.mGlExtensions)
+                && Objects.equals(mStatusBar, sw.mStatusBar);
     }
 
     @Override
     /** A stable hash across JVM instances */
     public int hashCode() {
-        int hash = 17;
-        hash = 31 * hash + mMinSdkLevel;
-        hash = 31 * hash + mMaxSdkLevel;
-        hash = 31 * hash + (mLiveWallpaperSupport ? 1 : 0);
-        for (BluetoothProfile bp : mBluetoothProfiles) {
-            hash = 31 * hash + bp.ordinal();
-        }
-        if (mGlVersion != null) {
-            hash = 31 * hash + mGlVersion.hashCode();
-        }
-        for (String glExtension : mGlExtensions) {
-            if (glExtension != null) {
-                hash = 31 * hash + glExtension.hashCode();
-            }
-        }
-        hash = 31 * hash + (mStatusBar ? 1 : 0);
-        return hash;
+        return Objects.hash(
+                mMinSdkLevel,
+                mMaxSdkLevel,
+                mLiveWallpaperSupport,
+                mBluetoothProfiles,
+                mGlVersion,
+                mGlExtensions,
+                mStatusBar);
     }
 
     @Override

@@ -21,6 +21,8 @@ import com.android.resources.KeyboardState;
 import com.android.resources.NavigationState;
 import com.android.resources.ScreenOrientation;
 
+import java.util.Objects;
+
 public class State {
     private boolean mDefaultState;
     private String mName;
@@ -116,29 +118,24 @@ public class State {
         }
         State s = (State) o;
         return mDefaultState == s.isDefaultState()
-                && mName.equals(s.getName())
-                && mDescription.equals(s.getDescription())
-                && mOrientation.equals(s.getOrientation())
-                && mKeyState.equals(s.getKeyState())
-                && mNavState.equals(s.getNavState())
-                && mHardwareOverride.equals(s.getHardware());
+                && Objects.equals(mName, s.getName())
+                && Objects.equals(mDescription, s.getDescription())
+                && Objects.equals(mOrientation, s.getOrientation())
+                && Objects.equals(mKeyState, s.getKeyState())
+                && Objects.equals(mNavState, s.getNavState())
+                && Objects.equals(mHardwareOverride, s.getHardware());
     }
 
     @Override
     public int hashCode() {
-        int hash = 17;
-        hash = 31 * hash + (mDefaultState ? 1 : 0);
-        if (mName != null) {
-            hash = 31 * hash + mName.hashCode();
-        }
-        if (mDescription != null) {
-            hash = 31 * hash + mDescription.hashCode();
-        }
-        hash = 31 * hash + mOrientation.ordinal();
-        hash = 31 * hash + mKeyState.ordinal();
-        hash = 31 * hash + mNavState.ordinal();
-        hash = 31 * hash + mHardwareOverride.hashCode();
-        return hash;
+        return Objects.hash(
+                mDefaultState,
+                mName,
+                mDescription,
+                mOrientation,
+                mKeyState,
+                mNavState,
+                mHardwareOverride);
     }
 
     @Override
