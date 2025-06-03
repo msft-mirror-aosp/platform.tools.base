@@ -39,6 +39,44 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
     return task
   }
 
+  fun testUnsignedLiteral() {
+    lint()
+      .files(
+        kotlin(
+            """
+          package test.pkg
+          import androidx.annotation.AnyThread
+          import androidx.annotation.UiThread
+
+          @UiThread fun f(): UInt = 42
+
+          @UiThread fun g() = 45UL
+
+          @AnyThread fun h() {
+              f()
+              g()
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/test/pkg/test.kt:10: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+              f()
+              ~~~
+          src/test/pkg/test.kt:11: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+              g()
+              ~~~
+          2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testInferredAny_376518592() {
     lint()
       .files(
