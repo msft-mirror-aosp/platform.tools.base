@@ -34,6 +34,7 @@ import com.android.repository.testframework.FakePackage.FakeRemotePackage
 import com.android.repository.testframework.FakeProgressRunner
 import com.android.repository.testframework.FakeRepositorySourceProvider
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -203,6 +204,57 @@ class RepoManagerImplTest {
     assertTrue(localCallback2Run.get())
     assertTrue(remoteCallback1Run.get())
     assertTrue(remoteCallback2Run.get())
+  }
+
+  @Test
+  fun testLocalLoadNotBlockedOnRemote() {
+    val localFactory = TestLoaderFactory<RepoPackage>()
+    val remoteLatch = CountDownLatch(1)
+    val remoteCompleted = CountDownLatch(1)
+    val remoteFactory =
+      TestLoaderFactory(
+        object : FakeLoader<RemotePackage>() {
+          override fun run(): Map<String, RemotePackage> {
+            remoteLatch.await()
+            return emptyMap()
+          }
+        }
+      )
+    val repoRoot = createInMemoryFileSystemAndFolder("repo")
+    val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
+    val runner = FakeProgressRunner()
+    val localDidRun = AtomicBoolean(false)
+    val remoteDidRun = AtomicBoolean(false)
+
+    mgr.load(
+      cacheExpirationMs = 0,
+      onSuccess =
+        object : RunningCallback(remoteDidRun) {
+          override fun loaded(packages: RepositoryPackages) {
+            super.loaded(packages)
+            remoteCompleted.countDown()
+          }
+        },
+      runner = runner,
+      downloader = FakeDownloader(repoRoot.root.resolve("tmp")),
+    )
+
+    // This should complete without waiting for the remote load to complete.
+    mgr.loadSynchronously(
+      cacheExpirationMs = 0,
+      onLocalComplete = RunningCallback(localDidRun),
+      runner = runner,
+      downloader = null,
+    )
+
+    assertTrue(localDidRun.get())
+    assertFalse(remoteDidRun.get())
+
+    remoteLatch.countDown()
+    remoteCompleted.await()
+
+    assertTrue(remoteDidRun.get())
   }
 
   // test timeout makes/doesn't make load happen
