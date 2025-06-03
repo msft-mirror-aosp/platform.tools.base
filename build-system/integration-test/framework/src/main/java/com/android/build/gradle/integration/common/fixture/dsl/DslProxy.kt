@@ -19,12 +19,24 @@ package com.android.build.gradle.integration.common.fixture.dsl
 import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.CompileSdkReleaseSpec
+import com.android.build.api.dsl.CompileSdkSpec
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
 import com.android.build.api.dsl.ExecutionProfile
 import com.android.build.api.dsl.LibraryProductFlavor
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.MaxSdkVersion
+import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
+import com.android.build.api.dsl.TargetSdkSpec
+import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.api.dsl.TestProductFlavor
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.CustomObjectInstance
+import com.android.build.gradle.integration.common.fixture.project.builder.StringHandler
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.JavaVersion
 import org.gradle.api.NamedDomainObjectContainer
@@ -106,6 +118,12 @@ class DslProxy private constructor(
                 return null
             }
 
+            // check if it's a call to a *SdkSpec.release/preview method
+            // this should be done before the nested block because one version has a
+            // nested block
+            val result = checkSdkSpecCall(method, args)
+            if (result.validResult) return result.value
+
             // or an action block to configure a nested object?
             if (checkNestedBlock(method, args)) {
                 return null
@@ -166,6 +184,16 @@ class DslProxy private constructor(
                 }
             }
 
+            // these four SdkVersion interfaces are very basic to handle since
+            // they are just nullable objects, so we can handle then in the BuildWriter
+            CompileSdkVersion::class.java,
+            TargetSdkVersion::class.java,
+            MinSdkVersion::class.java,
+            MaxSdkVersion::class.java -> {
+                // TODO: verify they are assigned to the right thing too.
+                dslRecorder.set(propName, value)
+            }
+
             else -> throw IllegalArgumentException("Does not support type ${param.type} for method ${method.name} -- Add support as needed")
         }
 
@@ -175,15 +203,151 @@ class DslProxy private constructor(
     data class MethodReturn(
         val validResult: Boolean,
         val value: Any?
-    )
+    ) {
+        constructor(value: Any?): this(true, value)
+    }
 
-    private val notAGetter = MethodReturn(false, null)
+    private val notAMatch = MethodReturn(false, null)
+
+    /**
+     * Intercepts calls to the DSL for compile/min/max/target Sdk as the pattern
+     * is to call a method that returns an item to pass to a setter.
+     *
+     * This is unusual in our DSL and requires custom handling.
+     *
+     * This intercepts:
+     * - [CompileSdkSpec.release]
+     * - [CompileSdkSpec.preview]
+     * - [TargetSdkSpec.release]
+     * - [TargetSdkSpec.preview]
+     * - [MinSdkSpec.release]
+     * - [MaxSdkSpec.release]
+     */
+    private fun checkSdkSpecCall(method: Method, args: Array<out Any?>?): MethodReturn {
+        if (args == null) return notAMatch
+
+        // If the method call is a call to a *SdkSpec object that returns a *SdkVersion object,
+        // the main goal is to return such object, in a way that allows us to recreate the DSL
+        // calls.
+        // However since the main difference between release and preview is already in the
+        // value of the *SdkVersion, we don't really need to record whether it was created
+        // by release or preview, we can just put the values in the object.
+
+        // we have to handle [CompileSdkSpec.release] with a lambda in a special way (to record
+        // the content of the lambda.)
+        return when (method.declaringClass) {
+            CompileSdkSpec::class.java -> {
+                when (method.name) {
+                    "release" -> {
+                        when (method.parameterCount) {
+                            1 -> {
+                                MethodReturn(CompileSdkVersionImpl(apiLevel = args.first() as Int))
+                            }
+                            2 -> {
+                                val lambda = method.parameters[1]
+
+                                if (lambda.type != Function1::class.java) {
+                                    throw RuntimeException("Unexpected lambda for 2nd arg for ${method.name} -- Add support as needed")
+                                }
+
+                                // we are going to take a shortcut here. We don't want to record
+                                // the lambda calls because it's not attached to a DSL object
+                                // (it's just constructing the CompileSdkVersion object).
+                                // So we're just going to run the lambda, and then later,
+                                // when we write it, we'll reconstruct the calls (since they
+                                // are simple setters
+                                val spec = CompileSdkReleaseSpecImpl()
+
+                                @Suppress("UNCHECKED_CAST")
+                                (args[1] as Function1<CompileSdkReleaseSpec, *>).invoke(spec)
+
+                                MethodReturn(
+                                    CompileSdkVersionImpl(
+                                        apiLevel = args[0] as Int,
+                                        minorApiLevel = spec.minorApiLevel,
+                                        sdkExtension = spec.sdkExtension,
+                                    )
+                                )
+                            }
+                            else -> {
+                                throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+                            }
+                        }
+                    }
+                    "preview" -> {
+                        if (method.parameterCount != 1) {
+                            throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+                        }
+
+                        MethodReturn(CompileSdkVersionImpl(codeName = args.first() as String))
+                    }
+                    "addon" -> {
+                        if (method.parameterCount != 3) {
+                            throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+                        }
+
+                        MethodReturn(
+                            CompileSdkVersionImpl(
+                                vendorName = args.first() as String,
+                                addonName = args[1] as String,
+                                apiLevel = args[2] as Int
+                            )
+                        )
+                    }
+                    else -> throw RuntimeException("Unexpected method call ${method.name} -- Add support as needed")
+                }
+            }
+            TargetSdkSpec::class.java -> {
+                if (method.parameterCount != 1) {
+                    throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+                }
+
+                when (method.name) {
+                    "release" -> {
+                        MethodReturn(TargetSdkVersionImpl(apiLevel = args.first() as Int))
+                    }
+                    "preview" -> {
+                        MethodReturn(TargetSdkVersionImpl(codeName = args.first() as String))
+                    }
+                    else -> throw RuntimeException("Unexpected method call ${method.name} -- Add support as needed")
+                }
+            }
+            MinSdkSpec::class.java -> {
+                if (method.parameterCount != 1) {
+                    throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+                }
+
+                when (method.name) {
+                    "release" -> {
+                        MethodReturn(MinSdkVersionImpl(apiLevel = args.first() as Int))
+                    }
+                    "preview" -> {
+                        MethodReturn(MinSdkVersionImpl(codeName = args.first() as String))
+                    }
+                    else -> throw RuntimeException("Unexpected method call ${method.name} -- Add support as needed")
+                }
+            }
+            MaxSdkSpec::class.java -> {
+                if (method.parameterCount != 1) {
+                    throw RuntimeException("Unexpected arg count for ${method.name} -- Add support as needed")
+                }
+
+                when (method.name) {
+                    "release" -> {
+                        MethodReturn(MaxSdkVersionImpl(apiLevel = args.first() as Int))
+                    }
+                    else -> throw RuntimeException("Unexpected method call ${method.name} -- Add support as needed")
+                }
+            }
+            else -> notAMatch
+        }
+    }
 
     private fun checkGetter(method: Method): MethodReturn {
-        if (method.parameters.isNotEmpty()) return notAGetter
+        if (method.parameters.isNotEmpty()) return notAMatch
 
         val regex = Regex("^get([A-Za-z0-9]+)$")
-        val matcher = regex.matchEntire(method.name) ?: return notAGetter
+        val matcher = regex.matchEntire(method.name) ?: return notAMatch
         val propName =
             matcher.groups[1]?.value?.replaceFirstChar { c -> c.lowercaseChar() }
                 ?: throw Error("Expected prop name but null")
@@ -536,4 +700,94 @@ class DslProxy private constructor(
 internal class MethodReturnedFile(
     val methodName: String,
     val parameter: String,
-): File(parameter)
+): File(parameter), CustomObjectInstance {
+    override fun toString(handler: StringHandler): String =
+        "${methodName}(${handler.quoteString(parameter)})"
+}
+
+/**
+ * Simple impl of [CompileSdkReleaseSpec] to run the action provided to
+ * [CompileSdkSpec.release].
+ */
+private class CompileSdkReleaseSpecImpl : CompileSdkReleaseSpec {
+    override var minorApiLevel: Int? = null
+    override var sdkExtension: Int? = null
+}
+
+/**
+ * Implementation of [CompileSdkVersion] so that we have an object that
+ * is returned by the call to [CompileSdkSpec.release] and other similar methods
+ */
+private data class CompileSdkVersionImpl(
+    override val apiLevel: Int? = null,
+    override val minorApiLevel: Int? = null,
+    override val sdkExtension: Int? = null,
+    override val codeName: String? = null,
+    override val addonName: String? = null,
+    override val vendorName: String? = null,
+): CompileSdkVersion, CustomObjectInstance {
+    override fun toString(handler: StringHandler): String = if (vendorName != null) {
+        """addon(${handler.quoteString(vendorName)}, "$addonName", $apiLevel)"""
+    } else if (apiLevel != null) {
+        if (minorApiLevel != null || sdkExtension != null) {
+            buildString {
+                append("release($apiLevel) {\n")
+                val internalIndent = handler.getIndentStringFragment(1)
+                minorApiLevel?.let { append("${internalIndent}minorApiLevel = $it\n") }
+                sdkExtension?.let { append("${internalIndent}sdkExtension = $it\n") }
+                append("${handler.getIndentStringFragment()}}")
+            }
+        } else {
+            """release($apiLevel)"""
+        }
+    } else if (codeName != null) {
+        """preview(${handler.quoteString(codeName)})"""
+    } else {
+        throw RuntimeException("Unexpected value, cannot write CompileSdkVersion: ${toString()}")
+    }
+}
+
+/**
+ * Implementation of [TargetSdkVersion] so that we have an object that
+ * is returned by the call to [TargetSdkSpec.release] and other similar methods
+ */
+private data class TargetSdkVersionImpl(
+    override val apiLevel: Int? = null,
+    override val codeName: String? = null
+) : TargetSdkVersion, CustomObjectInstance {
+    override fun toString(handler: StringHandler): String = if (apiLevel != null) {
+        """release($apiLevel)"""
+    } else if (codeName != null) {
+        """preview(${handler.quoteString(codeName)})"""
+    } else {
+        throw RuntimeException("Unexpected value, cannot write TargetSdkVersion: ${toString()}")
+    }
+}
+
+/**
+ * Implementation of [MinSdkVersion] so that we have an object that
+ * is returned by the call to [MinSdkSpec.release] and other similar methods
+ */
+private data class MinSdkVersionImpl(
+    override val apiLevel: Int? = null,
+    override val codeName: String? = null
+): MinSdkVersion, CustomObjectInstance {
+    override fun toString(handler: StringHandler): String = if (apiLevel != null) {
+        """release($apiLevel)"""
+    } else if (codeName != null) {
+        """preview(${handler.quoteString(codeName)})"""
+    } else {
+        throw RuntimeException("Unexpected value, cannot write MinSdkVersion: ${toString()}")
+    }
+}
+
+/**
+ * Implementation of [MaxSdkVersion] so that we have an object that
+ * is returned by the call to [MaxSdkSpec.release] and other similar methods
+ */
+private data class MaxSdkVersionImpl(
+    override val apiLevel: Int
+) : MaxSdkVersion, CustomObjectInstance {
+    override fun toString(handler: StringHandler): String =
+        """release($apiLevel)"""
+}

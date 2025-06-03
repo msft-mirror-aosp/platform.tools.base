@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.Version
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -171,7 +170,9 @@ class GradleBuildDefinitionTest {
 
                 android {
                   namespace = 'pkg.name.app'
-                  compileSdk = $DEFAULT_COMPILE_SDK_VERSION
+                  compileSdk {
+                    version = release(${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION})
+                  }
                 }
 
 
@@ -223,7 +224,9 @@ class GradleBuildDefinitionTest {
 
                 android {
                   namespace = "pkg.name.app"
-                  compileSdk = $DEFAULT_COMPILE_SDK_VERSION
+                  compileSdk {
+                    version = release(${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION})
+                  }
                 }
 
 
