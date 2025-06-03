@@ -19,19 +19,32 @@ package com.android.build.gradle.internal.r8
 import com.android.Version
 import com.android.builder.dexing.R8Version
 import com.android.ide.common.repository.AgpVersion
+import com.android.ide.common.repository.AgpVersion.PreviewKind.ALPHA
+import com.android.ide.common.repository.AgpVersion.PreviewKind.BETA
+import com.android.ide.common.repository.AgpVersion.PreviewKind.RC
+import com.android.ide.common.repository.AgpVersion.PreviewKind.NONE
+import com.android.ide.common.repository.AgpVersion.PreviewKind.DEV
 import org.junit.Test
+import kotlin.test.fail
 
-/** Tests that AGP RC or stable versions do not ship with R8 dev versions (b/367319573). */
+/** Tests that AGP with version beta02 or above does not use R8 dev versions (b/367319573). */
 class R8ReleaseVersionTest {
 
     @Test
-    fun `test that AGP RC or stable versions do not ship with R8 dev versions`() {
+    fun `test that AGP beta02 or above does not use R8 dev versions`() {
         val agpVersion = AgpVersion.parse(Version.ANDROID_GRADLE_PLUGIN_VERSION)
-        if (agpVersion.previewKind in setOf(AgpVersion.PreviewKind.NONE, AgpVersion.PreviewKind.RC)) {
-            val r8Version = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
-            if (r8Version.endsWith("-dev")) {
-                error("AGP RC or stable versions must not ship with R8 dev versions. Current AGP version: $agpVersion; current R8 version: $r8Version")
-            }
+        val r8Version = R8Version.VERSION_AGP_WAS_SHIPPED_WITH
+        if (agpVersion.isBeta02OrAbove() && r8Version.endsWith("-dev")) {
+            fail("AGP beta02 or above must not use R8 dev versions (b/367319573). Current AGP version: $agpVersion; current R8 version: $r8Version.")
+        }
+    }
+
+    /** Returns `true` if the AGP version is beta02 or above. */
+    private fun AgpVersion.isBeta02OrAbove(): Boolean {
+        return when (previewKind) {
+            ALPHA, DEV -> false
+            BETA -> preview!! >= 2
+            RC, NONE -> true
         }
     }
 }
