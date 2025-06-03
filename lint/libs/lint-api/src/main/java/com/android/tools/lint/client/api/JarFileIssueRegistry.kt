@@ -626,7 +626,7 @@ private constructor(
                     } else {
                       line.trim()
                     }
-                  if (className.isNotEmpty() && registryClassToJarFile[className] == null) {
+                  if (className.isNotEmpty()) {
                     registryClassToJarFile.getOrPut(className) { TreeMap() }[revision] = jarFile
                   }
                 }
