@@ -215,7 +215,7 @@ abstract class RepoManager {
    * package metadata files. If there have been any changes, or if the cache is older than the
    * default timeout, the local packages will be reloaded.
    *
-   * @return `true` if the load was successful, `false` otherwise}.
+   * @return `true` if the load was successful, `false` otherwise.
    */
   abstract fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean
 
@@ -280,7 +280,7 @@ abstract class RepoManager {
     override fun runAsyncWithProgress(r: ProgressRunnable) = throw UnsupportedOperationException()
 
     override fun runSyncWithProgress(r: ProgressRunnable) {
-      runBlocking { r.run(progress, this@DirectProgressRunner) }
+      runBlocking { r.run(progress) }
     }
   }
 

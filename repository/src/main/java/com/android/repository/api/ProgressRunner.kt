@@ -28,6 +28,6 @@ interface ProgressRunner {
 
   /** Interface for tasks that can show their progress using a [ProgressIndicator]. */
   fun interface ProgressRunnable {
-    suspend fun run(indicator: ProgressIndicator, runner: ProgressRunner)
+    suspend fun run(indicator: ProgressIndicator)
   }
 }

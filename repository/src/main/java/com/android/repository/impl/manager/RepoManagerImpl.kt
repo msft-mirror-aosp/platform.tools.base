@@ -292,7 +292,7 @@ internal constructor(
       }
     } else if (sync) {
       // Wait for the task to complete if we're running synchronously.
-      runner.runSyncWithProgress { _, _ -> isComplete.await() }
+      runner.runSyncWithProgress { _ -> isComplete.await() }
     }
   }
 
@@ -375,7 +375,7 @@ internal constructor(
      * @param indicator [ProgressIndicator] for logging and showing actual progress
      * @param runner [ProgressRunner] for running asynchronous tasks and callbacks.
      */
-    override suspend fun run(indicator: ProgressIndicator, runner: ProgressRunner) {
+    override suspend fun run(indicator: ProgressIndicator) {
       var success = false
       var localSuccess = false
       val wasIndeterminate = indicator.isIndeterminate()
