@@ -1003,7 +1003,7 @@ def split_srcs(src_dirs, res_dirs, exclude):
 
 def iml_alias(name, default, overrides = {}, **kwargs):
     actual = {"@intellij//:" + k: v for (k, v) in overrides.items()}
-    actual["//conditions:default"] = default
+    actual["@intellij//:studio-sdk"] = default
     native.alias(
         name = name,
         actual = select(actual),
