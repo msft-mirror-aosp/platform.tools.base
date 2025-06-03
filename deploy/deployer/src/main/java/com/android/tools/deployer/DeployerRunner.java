@@ -311,7 +311,7 @@ public class DeployerRunner {
                         @Override
                         public void deviceConnected(@NonNull IDevice device) {
                             final String serial = device.getSerialNumber();
-                            logger.info("Found device with serial: " + serial);
+                            logger.info("Found device with serial: %s", serial);
                             if (deviceSerials.isEmpty() || deviceSerials.contains(serial)) {
                                 devices.put(serial, device);
                                 latch.countDown();
