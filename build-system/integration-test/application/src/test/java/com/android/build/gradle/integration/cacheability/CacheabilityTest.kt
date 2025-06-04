@@ -99,6 +99,7 @@ class CacheabilityTest {
             ":app:package${DEBUG_RELEASE}Bundle",
             ":app:package${DEBUG_RELEASE}UnitTestForUnitTest",
             ":app:process${DEBUG_RELEASE}JavaRes",
+            ":app:process${DEBUG_RELEASE}UnitTestManifest",
             ":app:sdkReleaseDependencyData",
             ":app:validateSigningDebug",
             ":app:write${DEBUG_RELEASE}AppMetadata",

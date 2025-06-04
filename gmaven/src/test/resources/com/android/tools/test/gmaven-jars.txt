@@ -392,6 +392,7 @@ com/android/tools/build/builder
   com/android/builder/errors/
   com/android/builder/files/
   com/android/builder/internal/
+  com/android/builder/internal/AndroidManifest.UnitTestNoInstrumentationTemplate
   com/android/builder/internal/AndroidManifest.UnitTestTemplate
   com/android/builder/internal/AndroidManifest.template
   com/android/builder/internal/aapt/

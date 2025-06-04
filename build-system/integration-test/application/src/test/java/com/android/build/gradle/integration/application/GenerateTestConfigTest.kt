@@ -91,16 +91,23 @@ class GenerateTestConfigTest {
 
     // Regression test for b/127986458
     @Test
-    fun testAndroidManifestFromUnitTestIsMerged() {
+    fun testAndroidManifestFromUnitTestIsMergedForAppModule() {
         rule.build {
             androidApplication {
                 addTestManifests()
             }
+        }
+        verifyMergedManifest(DEFAULT_APP_PATH)
+    }
+
+    // Regression test for b/127986458
+    @Test
+    fun testAndroidManifestFromUnitTestIsMergedForLibraryModule() {
+        rule.build {
             androidLibrary {
                 addTestManifests()
             }
         }
-        verifyMergedManifest(DEFAULT_APP_PATH)
         verifyMergedManifest(DEFAULT_LIB_PATH)
     }
 
@@ -113,11 +120,8 @@ class GenerateTestConfigTest {
             "unit_test_config_directory/debugUnitTest/generateDebugUnitTestConfig/out/$TEST_CONFIG_FILE"
         )
 
-        val mergedAndroidManifestRelativePath = if (project is AndroidLibraryProject) {
+        val mergedAndroidManifestRelativePath =
             "packaged_manifests/debugUnitTest/processDebugUnitTestManifest/AndroidManifest.xml"
-        } else {
-            "packaged_manifests/debug/processDebugManifestForPackage/AndroidManifest.xml"
-        }
 
         val mergedAssetsRelativePath = if (project is AndroidLibraryProject) {
             "assets/debugUnitTest/mergeDebugUnitTestAssets"
@@ -149,6 +153,7 @@ class GenerateTestConfigTest {
         )
 
         val expectedManifestContent = if (project is AndroidLibraryProject) {
+            //language=xml
             """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -181,6 +186,7 @@ class GenerateTestConfigTest {
             </manifest>
             """.trimIndent()
         } else {
+            //language=xml
             """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -194,6 +200,12 @@ class GenerateTestConfigTest {
                 <application
                     android:debuggable="true"
                     android:extractNativeLibs="true" >
+                    <meta-data
+                        android:name="meta_data_from_unit_test_manifest"
+                        android:value="value" />
+                    <meta-data
+                        android:name="meta_data_from_unit_test_debug_manifest"
+                        android:value="value" />
                     <meta-data
                         android:name="meta_data_from_debug_manifest"
                         android:value="value" />

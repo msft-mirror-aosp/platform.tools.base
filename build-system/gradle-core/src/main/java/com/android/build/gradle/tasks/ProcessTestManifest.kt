@@ -16,13 +16,15 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.BuiltArtifacts
 import com.android.build.api.variant.impl.BuiltArtifactImpl
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.getApiString
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.component.DeviceTestCreationConfig
+import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
@@ -123,7 +125,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             targetSdkVersion.orNull,
             compileSdk.orNull,
             testedApplicationId.get(),
-            instrumentationRunner.get(),
+            instrumentationRunner.orNull,
             handleProfiling.orNull,
             functionalTest.orNull,
             testLabel.orNull?.let { it.ifEmpty { null } },
@@ -182,7 +184,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
         targetSdkVersion: String?,
         compileSdk: Int?,
         testedApplicationId: String,
-        instrumentationRunner: String,
+        instrumentationRunner: String?,
         handleProfiling: Boolean?,
         functionalTest: Boolean?,
         testLabel: String?,
@@ -238,7 +240,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                     minSdkVersion,
                     targetSdkVersionOrNull,
                     testedApplicationId,
-                    instrumentationRunner,
+                    requireNotNull(instrumentationRunner),
                     handleProfiling,
                     functionalTest!!,
                     generatedTestManifest
@@ -285,14 +287,18 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                     .addAllowedNonUniqueNamespace(namespace)
                     .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
                     .setOverride(ManifestSystemProperty.UsesSdk.MIN_SDK_VERSION, minSdkVersion)
-                    .setOverride(ManifestSystemProperty.Instrumentation.TARGET_PACKAGE, testedApplicationId)
+                    .apply {
+                        if (instrumentationRunner != null) {
+                            setOverride(ManifestSystemProperty.Instrumentation.TARGET_PACKAGE, testedApplicationId)
+                        }
+                    }
                     .setNamespace(namespace)
                     .withFeatures(
                         ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
                         ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST
                     )
 
-                instrumentationRunner.let {
+                instrumentationRunner?.let {
                     intermediateInvoker.setPlaceHolderValue(
                         PlaceholderHandler.INSTRUMENTATION_RUNNER,
                         it)
@@ -509,9 +515,37 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
         ) {
             super.configure(task)
             val project = task.project
-            task.testManifestFile.set(creationConfig.sources.manifestFile)
-            task.testManifestFile.disallowChanges()
-            task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.sources.manifestOverlayFiles)
+
+            if (creationConfig is HostTestCreationConfig &&
+                creationConfig.mainVariant.componentType.isApk) {
+                // Configuring ProcessTestManifest task for unit tests.
+                creationConfig
+                    .mainVariant
+                    .artifacts
+                    .setTaskInputToFinalProduct(
+                        SingleArtifact.MERGED_MANIFEST,
+                        task.testManifestFile
+                    )
+                task.manifestOverlayFilePaths.add(creationConfig.sources.manifestFile)
+                task.manifestOverlayFilePaths.addAll(creationConfig.sources.manifestOverlayFiles)
+                task.manifestOverlayFilePaths.disallowChanges()
+
+                task.testApplicationId.setDisallowChanges(creationConfig.mainVariant.applicationId)
+                task.testedApplicationId.setDisallowChanges(creationConfig.mainVariant.applicationId)
+                task.namespace.setDisallowChanges(creationConfig.mainVariant.namespace)
+            } else {
+                // Configuring ProcessTestManifest task for device tests and host tests for libraries.
+                task.testManifestFile.set(creationConfig.sources.manifestFile)
+                task.testManifestFile.disallowChanges()
+                task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.sources.manifestOverlayFiles)
+
+                task.testApplicationId.setDisallowChanges(creationConfig.applicationId)
+                task.testedApplicationId.setDisallowChanges(creationConfig.testedApplicationId)
+                task.namespace.setDisallowChanges(creationConfig.namespace)
+
+                task.instrumentationRunner.setDisallowChanges(creationConfig.instrumentationRunner)
+            }
+
             task.componentType.setDisallowChanges(creationConfig.componentType.toString())
             task.tmpDir.setDisallowChanges(
                 creationConfig.paths.intermediatesDir(
@@ -523,11 +557,6 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             task.minSdkVersion.setDisallowChanges(creationConfig.minSdk.getApiString())
             task.targetSdkVersion.setDisallowChanges(creationConfig.targetSdkVersion.getApiString())
 
-            task.testApplicationId.setDisallowChanges(creationConfig.applicationId)
-            task.testedApplicationId.setDisallowChanges(creationConfig.testedApplicationId)
-            task.namespace.setDisallowChanges(creationConfig.namespace)
-
-            task.instrumentationRunner.setDisallowChanges(creationConfig.instrumentationRunner)
             if (creationConfig is InstrumentedTestCreationConfig) {
                 task.handleProfiling.set(creationConfig.handleProfiling)
                 task.functionalTest.set(creationConfig.functionalTest)
@@ -620,7 +649,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             targetSdkVersion: String?,
             outManifestLocation: File,
             testedApplicationId: String,
-            instrumentedRunner: String,
+            instrumentedRunner: String?,
         ) {
             val generator =
                 UnitTestManifestGenerator(
