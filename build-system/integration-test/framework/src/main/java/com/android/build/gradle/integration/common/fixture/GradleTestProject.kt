@@ -30,7 +30,6 @@ import com.android.build.gradle.integration.common.fixture.project.GeneratesAarD
 import com.android.build.gradle.integration.common.fixture.project.GeneratesApk
 import com.android.build.gradle.integration.common.fixture.project.GeneratesApkDelegate
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.truth.forEachLine
@@ -40,6 +39,7 @@ import com.android.build.gradle.integration.common.utils.getBundleLocation
 import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.plugins.VersionCheckPlugin
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.model.v2.ide.SyncIssue

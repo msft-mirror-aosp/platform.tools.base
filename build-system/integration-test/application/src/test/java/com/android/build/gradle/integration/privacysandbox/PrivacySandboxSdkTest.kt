@@ -394,6 +394,9 @@ class PrivacySandboxSdkTest {
                             android:authorities="com.example.privacysandboxsdk.androidx-startup"
                             android:exported="false" >
                             <meta-data
+                                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+                                android:value="androidx.startup" />
+                            <meta-data
                                 android:name="androidx.profileinstaller.ProfileInstallerInitializer"
                                 android:value="androidx.startup" />
                         </provider>

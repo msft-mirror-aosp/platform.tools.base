@@ -235,6 +235,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.7",
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.0-alpha02",  # Needed for kmp consumption test
+    "androidx.lifecycle:lifecycle-runtime-desktop:2.8.7",  # Needed for Privacy Sandbox connected test
     "androidx.lifecycle:lifecycle-runtime-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1",
     "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2",
@@ -251,6 +252,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7",  # XR template
+    "androidx.lifecycle:lifecycle-viewmodel-desktop:2.8.7",  # Needed for Privacy Sandbox connected tests
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1",  # Needed for AndroidTestRunConfigurationTest#testCanRunLibTestsInDebugBuildWithNoAndroidManifest
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1",
@@ -293,27 +295,22 @@ DATA = [
     "androidx.preference:preference:1.0.0",
     "androidx.preference:preference:1.2.0",
     "androidx.preference:preference:1.2.1",
-    "androidx.privacysandbox.activity:activity-client:1.0.0-alpha01",
-    "androidx.privacysandbox.activity:activity-core:1.0.0-alpha01",
-    "androidx.privacysandbox.activity:activity-provider:1.0.0-alpha01",
+    "androidx.privacysandbox.activity:activity-client:1.0.0-alpha02",
+    "androidx.privacysandbox.activity:activity-core:1.0.0-alpha02",
+    "androidx.privacysandbox.activity:activity-provider:1.0.0-alpha02",
     "androidx.privacysandbox.library:androidx.privacysandbox.library.gradle.plugin:pom:1.0.0-alpha02",
-    "androidx.privacysandbox.plugins:plugins-privacysandbox-library:1.0.0-alpha01",
     "androidx.privacysandbox.plugins:plugins-privacysandbox-library:1.0.0-alpha02",
-    "androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha13",
-    "androidx.privacysandbox.sdkruntime:sdkruntime-core:1.0.0-alpha13",
-    "androidx.privacysandbox.sdkruntime:sdkruntime-provider:1.0.0-alpha13",
-    "androidx.privacysandbox.tools:tools:1.0.0-alpha06",
-    "androidx.privacysandbox.tools:tools:1.0.0-alpha10",
-    "androidx.privacysandbox.tools:tools-apicompiler:1.0.0-alpha10",
-    "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha06",
-    "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha10",
-    "androidx.privacysandbox.tools:tools-apipackager:1.0.0-alpha06",
-    "androidx.privacysandbox.tools:tools-apipackager:1.0.0-alpha10",
-    "androidx.privacysandbox.tools:tools-core:1.0.0-alpha06",
-    "androidx.privacysandbox.tools:tools-core:1.0.0-alpha10",
-    "androidx.privacysandbox.ui:ui-client:1.0.0-alpha10",
-    "androidx.privacysandbox.ui:ui-core:1.0.0-alpha10",
-    "androidx.privacysandbox.ui:ui-provider:1.0.0-alpha10",
+    "androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha17",
+    "androidx.privacysandbox.sdkruntime:sdkruntime-core:1.0.0-alpha17",
+    "androidx.privacysandbox.sdkruntime:sdkruntime-provider:1.0.0-alpha17",
+    "androidx.privacysandbox.tools:tools:1.0.0-alpha13",
+    "androidx.privacysandbox.tools:tools-apicompiler:1.0.0-alpha13",
+    "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha13",
+    "androidx.privacysandbox.tools:tools-apipackager:1.0.0-alpha13",
+    "androidx.privacysandbox.tools:tools-core:1.0.0-alpha13",
+    "androidx.privacysandbox.ui:ui-client:1.0.0-alpha16",
+    "androidx.privacysandbox.ui:ui-core:1.0.0-alpha16",
+    "androidx.privacysandbox.ui:ui-provider:1.0.0-alpha16",
     "androidx.profileinstaller:profileinstaller:1.3.1",
     "androidx.recyclerview:recyclerview:1.2.1",
     "androidx.recyclerview:recyclerview:1.3.0",
@@ -855,6 +852,7 @@ DATA = [
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
     "com.squareup:kotlinpoet:2.0.0",
+    "com.squareup:kotlinpoet:2.1.0",
     "com.squareup.okio:okio:3.4.0",
     "com.squareup.okio:okio-fakefilesystem:3.9.1",
     "com.squareup.wire:com.squareup.wire.gradle.plugin:pom:5.3.1",
@@ -1145,6 +1143,7 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0",  # used in //tools/base/build-system/integration-test/connected
+    "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1",  # used in //tools/base/build-system/integration-test/application
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.6",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1",

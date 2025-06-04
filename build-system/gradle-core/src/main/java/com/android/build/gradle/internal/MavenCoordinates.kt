@@ -16,6 +16,10 @@
 
 package com.android.build.gradle.internal
 
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxActivityVersion
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxSdkUiVersion
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxVersion
+
 /**
  * Enums representing Maven coordinates that have usages
  */
@@ -23,32 +27,32 @@ enum class MavenCoordinates (val group: String, val artifact: String,  val defau
     ANDROIDX_PRIVACYSANDBOX_ACTIVITY_ACTIVITY_CORE(
         "androidx.privacysandbox.activity",
         "activity-core",
-        "1.0.0-alpha01"
+        androidxPrivacySandboxActivityVersion
     ),
     ANDROIDX_PRIVACYSANDBOX_ACTIVITY_ACTIVITY_PROVIDER(
         "androidx.privacysandbox.activity",
         "activity-provider",
-        "1.0.0-alpha01"
+        androidxPrivacySandboxActivityVersion
     ),
     ANDROIDX_PRIVACYSANDBOX_ACTIVITY_ACTIVITY_CLIENT(
         "androidx.privacysandbox.activity",
         "activity-client",
-        "1.0.0-alpha01"
+        androidxPrivacySandboxActivityVersion
     ),
     ANDROIDX_PRIVACYSANDBOX_TOOLS_TOOLS_APIGENERATOR(
         "androidx.privacysandbox.tools",
         "tools-apigenerator",
-        "1.0.0-alpha10"
+        androidxPrivacySandboxVersion
     ),
     ANDROIDX_PRIVACYSANDBOX_TOOLS_TOOLS_APIPACKAGER(
         "androidx.privacysandbox.tools",
         "tools-apipackager",
-        "1.0.0-alpha10"
+        androidxPrivacySandboxVersion
     ),
     ANDROIDX_PRIVACYSANDBOX_UI_UI_CORE(
         "androidx.privacysandbox.ui",
         "ui-core",
-        "1.0.0-alpha10"
+        androidxPrivacySandboxSdkUiVersion
     ),
     ANDROIDX_CORE_CORE_KTX(
         "androidx.core",
@@ -58,7 +62,7 @@ enum class MavenCoordinates (val group: String, val artifact: String,  val defau
     ANDROIDX_PRIVACYSANDBOX_UI_UI_CLIENT(
         "androidx.privacysandbox.ui",
         "ui-client",
-        "1.0.0-alpha10"
+        androidxPrivacySandboxSdkUiVersion
     ),
     ORG_JETBRAINS_KOTLIN_KOTLIN_COMPILER_EMBEDDABLE(
         "org.jetbrains.kotlin",

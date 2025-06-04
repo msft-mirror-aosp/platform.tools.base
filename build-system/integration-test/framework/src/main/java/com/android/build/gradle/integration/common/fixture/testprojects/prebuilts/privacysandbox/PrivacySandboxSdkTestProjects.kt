@@ -27,6 +27,10 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxActivityVersion
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxSdkRuntimeVersion
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxSdkUiVersion
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxVersion
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.MavenRepoGenerator
@@ -523,8 +527,6 @@ fun GradleBuildDefinition.configurePrivacySandboxTestProject() {
         add(BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT, true)
         add(BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES, false)
         add(BooleanOption.USE_NON_FINAL_RES_IDS, false)
-        add(StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR_GENERATED_RUNTIME_DEPENDENCIES,
-            "androidx.privacysandbox.tools:tools-apigenerator:$androidxPrivacySandboxVersion,org.jetbrains.kotlin:kotlin-stdlib:$KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS,org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.0,androidx.privacysandbox.activity:activity-core:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.activity:activity-client:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.activity:activity-provider:$androidxPrivacySandboxActivityVersion,androidx.privacysandbox.ui:ui-core:$androidxPrivacySandboxVersion,androidx.privacysandbox.ui:ui-client:$androidxPrivacySandboxVersion")
     }
 }
 
@@ -573,8 +575,8 @@ fun GradleBuildDefinition.buildExampleSdkConsumerApp(
             implementation("androidx.appcompat:appcompat:$ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION")
             implementation("com.google.android.material:material:$COM_GOOGLE_ANDROID_MATERIAL_MATERIAL_VERSION")
             implementation("androidx.privacysandbox.sdkruntime:sdkruntime-client:$androidxPrivacySandboxSdkRuntimeVersion")
-            implementation("androidx.privacysandbox.ui:ui-core:$androidxPrivacySandboxVersion")
-            implementation("androidx.privacysandbox.ui:ui-client:$androidxPrivacySandboxVersion")
+            implementation("androidx.privacysandbox.ui:ui-core:$androidxPrivacySandboxSdkUiVersion")
+            implementation("androidx.privacysandbox.ui:ui-client:$androidxPrivacySandboxSdkUiVersion")
             implementation("androidx.privacysandbox.activity:activity-core:$androidxPrivacySandboxActivityVersion")
             implementation("androidx.privacysandbox.activity:activity-client:$androidxPrivacySandboxVersion")
             androidTestImplementation("androidx.appcompat:appcompat:$ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION")
@@ -599,7 +601,7 @@ fun GradleBuildDefinition.buildExampleSdkConsumerApp(
                     import android.widget.LinearLayout
                     import android.widget.TextView
                     import androidx.appcompat.app.AppCompatActivity
-                    import androidx.privacysandbox.activity.client.createSdkActivityLauncher
+                    import androidx.privacysandbox.activity.client.createManagedSdkActivityLauncher
                     import androidx.privacysandbox.ui.client.view.SandboxedSdkView
                     import androidx.privacysandbox.ui.core.SandboxedUiAdapter
                     import com.example.api.SdkBannerRequest
@@ -638,7 +640,7 @@ fun GradleBuildDefinition.buildExampleSdkConsumerApp(
                                 return null
                             }
 
-                            val launcher = baseActivity.createSdkActivityLauncher(allowSdkActivityLaunch)
+                            val launcher = baseActivity.createManagedSdkActivityLauncher { allowSdkActivityLaunch() }
                             val request = SdkBannerRequest(message, launcher)
                             return SdkClient.loadSdkIfNeeded(context)?.getBanner(request)
                         }
@@ -1092,9 +1094,9 @@ fun GradleBuildDefinition.buildExampleSdkSandboxSdk(
             implementation("androidx.privacysandbox.activity:activity-core:$androidxPrivacySandboxActivityVersion")
             implementation("androidx.privacysandbox.activity:activity-provider:$androidxPrivacySandboxVersion")
 
-            implementation("androidx.privacysandbox.ui:ui-core:$androidxPrivacySandboxVersion")
-            implementation("androidx.privacysandbox.ui:ui-provider:$androidxPrivacySandboxVersion")
-            implementation("androidx.privacysandbox.ui:ui-client:$androidxPrivacySandboxVersion")
+            implementation("androidx.privacysandbox.ui:ui-core:$androidxPrivacySandboxSdkUiVersion")
+            implementation("androidx.privacysandbox.ui:ui-provider:$androidxPrivacySandboxSdkUiVersion")
+            implementation("androidx.privacysandbox.ui:ui-client:$androidxPrivacySandboxSdkUiVersion")
 
             implementation("androidx.privacysandbox.sdkruntime:sdkruntime-core:$androidxPrivacySandboxSdkRuntimeVersion")
             implementation("androidx.privacysandbox.sdkruntime:sdkruntime-client:$androidxPrivacySandboxSdkRuntimeVersion")
@@ -1192,6 +1194,7 @@ fun GradleBuildDefinition.buildExampleSdkSandboxSdk(
                 import androidx.privacysandbox.sdkruntime.core.activity.SdkSandboxActivityHandlerCompat
                 import androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat
                 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+                import androidx.privacysandbox.ui.core.SessionData
                 import androidx.privacysandbox.ui.provider.AbstractSandboxedUiAdapter
                 import com.example.R
                 import com.example.api.SdkBannerRequest
@@ -1226,16 +1229,16 @@ fun GradleBuildDefinition.buildExampleSdkSandboxSdk(
                      * @param initialHeight The initial height of the ad view.
                      * @param isZOrderOnTop Whether the ad view should be on top of other content.
                      * @param clientExecutor The executor to use for client callbacks.
-                     * @param client A UI adapter for the client of this single session.
+                     * @param client SessionClient of this single session.
                      */
                     override fun openSession(
                         context: Context,
-                        windowInputToken: IBinder,
+                        sessionData: SessionData,
                         initialWidth: Int,
                         initialHeight: Int,
                         isZOrderOnTop: Boolean,
                         clientExecutor: Executor,
-                        client: SandboxedUiAdapter.SessionClient
+                        client: SandboxedUiAdapter.SessionClient,
                     ) {
                         val session = SdkUiSession(clientExecutor, sdkContext, request)
                         clientExecutor.execute {
@@ -1338,7 +1341,7 @@ fun GradleBuildDefinition.buildExampleSdkSandboxSdk(
 
                     override suspend fun getBanner(
                         request: SdkBannerRequest
-                    ): SdkSandboxedUiAdapter {
+                    ): SdkSandboxedUiAdapterImpl {
                             val bannerAdAdapter = SdkSandboxedUiAdapterImpl(context, request)
                             bannerAdAdapter.addObserverFactory(SessionObserverFactoryImpl())
                             return bannerAdAdapter
