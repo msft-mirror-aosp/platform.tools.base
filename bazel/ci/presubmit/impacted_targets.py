@@ -100,17 +100,15 @@ def get_impacted_targets_info(
       raise ImpactedTargetsNotFoundError(
           f'Selective presubmit is disabled for project {change.project}'
       )
-  with tempfile.TemporaryDirectory() as temp_dir:
-    modified_files = pathlib.Path(temp_dir) / 'modified-files.txt'
-    write_modified_files(gerrit_info, modified_files)
-    impacted_targets_info = ImpactedTargetsInfo(
-        all_targets=_find_impacted_targets(build_env, modified_files),
-        baseline_targets=_query_baseline_targets(
-            build_env,
-            base_targets,
-            test_flag_filters,
-        ),
-    )
+
+  impacted_targets_info = ImpactedTargetsInfo(
+      all_targets=_find_impacted_targets(build_env),
+      baseline_targets=_query_baseline_targets(
+          build_env,
+          base_targets,
+          test_flag_filters,
+      ),
+  )
 
   direct_impacted_targets_path = (
       pathlib.Path(build_env.dist_dir) / 'direct-impacted-targets.txt'
@@ -122,43 +120,17 @@ def get_impacted_targets_info(
   return impacted_targets_info
 
 
-def write_modified_files(gerrit_info: gerrit.GerritInfo, modified_files_path: pathlib.Path) -> None:
-  """Writes the modified files to the given path."""
-  modified_files = 0
-  with open(modified_files_path, 'w') as f:
-    for change in gerrit_info.changes:
-      for file in change.file_infos:
-        if file.status != 'modified':
-          continue
-        modified_files += 1
-        if not change.project_path:
-          logging.warning('Change %s has no project path', change)
-          continue
-        prefix = change.project_path
-        filepath = f'/{prefix}/{file.path}\n'
-        f.write(filepath)
-  logging.info('Wrote modified-files with %d changes', modified_files)
-
-
 def generate_and_upload_hash_file(build_env: bazel.BuildEnv) -> None:
   """Generates and uploads the hash file for the current build to GCS."""
   object_name = _FILE_NAME.format(
       bid=build_env.build_number,
       target=build_env.build_target_name,
   )
-  with tempfile.TemporaryDirectory() as temp_dir:
-    # Write empty file for bazel-diff. This is needed when using
-    # '--modified-filepaths' in bazel-diff, since it changes the hash file
-    # generation logic.
-    modified_files = pathlib.Path(temp_dir) / 'no-modified-files.txt'
-    modified_files.write_text('\n', encoding='utf-8')
-    try:
-      hash_file_path = _generate_hash_file(
-          build_env, modified_files_path=modified_files
-      )
-    except subprocess.TimeoutExpired as e:
-      logging.warning('generate-hashes timed out after %f seconds.', e.timeout)
-      return
+  try:
+    hash_file_path = _generate_hash_file(build_env)
+  except subprocess.TimeoutExpired as e:
+    logging.warning('generate-hashes timed out after %f seconds.', e.timeout)
+    return
   gce.upload_to_gcs(hash_file_path, _BUCKET, object_name)
   logging.info('Uploaded hash file to GCS with object name: %s', object_name)
 
@@ -166,7 +138,6 @@ def generate_and_upload_hash_file(build_env: bazel.BuildEnv) -> None:
 def _generate_hash_file(
     build_env: bazel.BuildEnv,
     deps_output_path: pathlib.Path | None = None,
-    modified_files_path: pathlib.Path | None = None,
 ) -> str:
   """Generates the hash file for the current build."""
   hash_file_path = os.path.join(build_env.dist_dir, 'bazel-diff-hashes.json')
@@ -175,14 +146,12 @@ def _generate_hash_file(
       _LOCAL_REPOSITORIES,
       hash_file_path,
       deps_output_path=deps_output_path,
-      modified_files_path=modified_files_path,
   )
   return hash_file_path
 
 
 def _find_impacted_targets(
     build_env: bazel.BuildEnv,
-    modified_files_path: pathlib.Path,
 ) -> List[ImpactedTarget]:
   """Finds the targets impacted by the current change.
 
@@ -199,7 +168,7 @@ def _find_impacted_targets(
     temp_path = pathlib.Path(temp_dir)
     dep_edges = temp_path / 'dep-edges.json'
     try:
-      current_hashes = _generate_hash_file(build_env, dep_edges, modified_files_path)
+      current_hashes = _generate_hash_file(build_env, dep_edges)
     except subprocess.TimeoutExpired as e:
       raise ImpactedTargetsNotFoundError(
           f'generate-hashes timed out after {e.timeout} seconds'

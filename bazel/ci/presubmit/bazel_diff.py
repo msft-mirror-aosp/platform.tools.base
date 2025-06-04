@@ -13,7 +13,6 @@ def generate_hash_file(
     external_repos: Sequence[str],
     output_path: pathlib.Path,
     deps_output_path: pathlib.Path | None = None,
-    modified_files_path: pathlib.Path | None = None,
 ):
   """Generates the hash file for the current build."""
   start = time.time()
@@ -31,8 +30,6 @@ def generate_hash_file(
   ]
   if deps_output_path:
     args.extend(['--depEdgesFile', deps_output_path])
-  if modified_files_path:
-    args.extend(['--modified-filepaths', str(modified_files_path)])
   args.append(str(output_path))
   build_env.bazel_run(
       *args,

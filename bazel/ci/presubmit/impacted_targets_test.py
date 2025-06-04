@@ -29,7 +29,6 @@ class ImpactedTargetsTest(absltest.TestCase):
         external_repos: Iterable[str],
         path: str,
         deps_output_path: pathlib.Path | None = None,
-        modified_files_path: pathlib.Path | None = None,
     ) -> None:
       del build_env, external_repos
       pathlib.Path(path).write_text(contents)
@@ -166,7 +165,6 @@ class ImpactedTargetsTest(absltest.TestCase):
         impacted_targets._LOCAL_REPOSITORIES,
         mock.ANY,
         deps_output_path=None,
-        modified_files_path=mock.ANY,
     )
 
 

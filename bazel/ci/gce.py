@@ -23,9 +23,6 @@ class GerritChange:
   change_id: str
   change_number: str
   project: str
-  # project_path is provided by buildbot in the CHANGE_INFO file, it is the
-  # path of the project relative to the workspace root.
-  project_path: str
   patchset: str
   file_infos: List[FileInfo]
   owner: str
@@ -143,7 +140,6 @@ def get_gerrit_changes(bid: str) -> List[GerritChange]:
         change_id=change['changeId'],
         change_number=change['changeNumber'],
         project=change['project'],
-        project_path=change.get('projectPath', ''),
         patchset=change['revisions'][0]['patchSet'],
         file_infos=file_infos,
         owner=owner,

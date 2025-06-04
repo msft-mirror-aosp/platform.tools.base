@@ -7,7 +7,6 @@ package(default_visibility = ["//tools/base/bazel/ci:__subpackages__"])
 py_library(
     name = "bazel_diff",
     srcs = ["bazel_diff.py"],
-    deps = ["//tools/base/bazel/ci:gce"],
 )
 
 py_library(
