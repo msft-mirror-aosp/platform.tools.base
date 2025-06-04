@@ -1081,6 +1081,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-script-runtime:1.9.20",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.9.24",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.2.0-RC2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.1.10",
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.20-dev-4982",

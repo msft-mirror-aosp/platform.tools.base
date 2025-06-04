@@ -79207,6 +79207,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-serialization-compiler-plugin_2.1.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.1.10/kotlin-serialization-compiler-plugin-2.1.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.1.10",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.2.50",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.2.50/kotlin-stdlib-common-1.2.50.pom",
     repo_root_path = "repository",

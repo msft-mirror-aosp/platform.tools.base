@@ -61,6 +61,18 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     # Dependency jars may be compiled with a new kotlinc IR backend.
     args.add("-Xallow-unstable-dependencies")
 
+    # Use the Kotlin serialization compiler plugin.
+    #
+    # Note: The plugin has a non-suppressible check for version compatibiliy with the serialization
+    # library present on the classpath. This library is bundled with the platform, but its version
+    # metadata has been stripped out by the platform build.
+    #
+    # For this to work correctly in both iml and Bazel BUILD files, we need to declare an explicit
+    # dependency on the kotlinx-serialization library *before* studio-sdk.
+    if ctx.attr.kotlin_use_serialization:
+        tools.append(ctx.file._kotlin_serialization_plugin)
+        args.add(ctx.file._kotlin_serialization_plugin, format = "-Xplugin=%s")
+
     # Use the Compiler Compose plugin
     tools.append(ctx.file._compose_plugin)
     if ctx.attr.kotlin_use_compose:
@@ -199,6 +211,7 @@ def kotlin_library(
         testonly = False,
         stdlib = "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         kotlin_use_compose = False,
+        kotlin_use_serialization = False,
         coverage_baseline_enabled = True,
         **kwargs):
     """Compiles a library jar from Java and Kotlin sources
@@ -221,6 +234,7 @@ def kotlin_library(
         compress_resources: Whether to compress resources.
         testonly: See impl.
         kotlin_use_compose:  See impl.
+        kotlin_use_serialization: See impl.
         stdlib: See impl.
         coverage_baseline_enabled: whether to generate the coverage baseline
         **kwargs: arguments to pass through to _kotlin_library
@@ -248,6 +262,7 @@ def kotlin_library(
         exports = exports,
         compress_resources = compress_resources,
         kotlin_use_compose = kotlin_use_compose,
+        kotlin_use_serialization = kotlin_use_serialization,
         javacopts = javacopts,
         kotlinc_opts = kotlinc_opts,
         testonly = testonly,
@@ -424,6 +439,7 @@ _kotlin_library = rule(
         "javacopts": attr.string_list(),
         "kotlinc_opts": attr.string_list(),
         "kotlin_use_compose": attr.bool(),
+        "kotlin_use_serialization": attr.bool(),
         "compress_resources": attr.bool(),
         "plugins": attr.label_list(
             providers = [JavaPluginInfo],
@@ -446,6 +462,11 @@ _kotlin_library = rule(
         ),
         "_compose_plugin": attr.label(
             default = Label("//prebuilts/tools/common/m2:kotlin-compose-compiler-plugin"),
+            cfg = "exec",
+            allow_single_file = [".jar"],
+        ),
+        "_kotlin_serialization_plugin": attr.label(
+            default = Label("//prebuilts/tools/common/m2:kotlin-serialization-compiler-plugin"),
             cfg = "exec",
             allow_single_file = [".jar"],
         ),
