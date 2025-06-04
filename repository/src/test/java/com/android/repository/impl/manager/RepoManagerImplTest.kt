@@ -31,17 +31,21 @@ import com.android.repository.testframework.FakeDownloader
 import com.android.repository.testframework.FakeLoader
 import com.android.repository.testframework.FakePackage.FakeLocalPackage
 import com.android.repository.testframework.FakePackage.FakeRemotePackage
+import com.android.repository.testframework.FakeProgressIndicator
 import com.android.repository.testframework.FakeProgressRunner
 import com.android.repository.testframework.FakeRepositorySourceProvider
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
+import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.mock
+import kotlin.time.Duration
 
 /** Tests for [RepoManagerImpl]. */
 class RepoManagerImplTest {
@@ -97,7 +101,7 @@ class RepoManagerImplTest {
     } catch (e: Exception) {
       // expected
     }
-    assertEquals(4, counter.get())
+    assertThat(counter.get()).isEqualTo(4)
   }
 
   // test error causes error callbacks to be called
@@ -255,6 +259,65 @@ class RepoManagerImplTest {
     remoteCompleted.await()
 
     assertTrue(remoteDidRun.get())
+  }
+
+  @Test
+  fun testLoadLocalPackages() {
+    val repoRoot = createInMemoryFileSystemAndFolder("repo")
+    val pkg1 = FakeLocalPackage("package;path1", repoRoot.resolve("pkg1"))
+    val pkg2 = FakeLocalPackage("package;path2", repoRoot.resolve("pkg2"))
+    val localLoader =
+      FakeLoader<LocalPackage>(mapOf<String, LocalPackage>(pkg1.path to pkg1, pkg2.path to pkg2))
+
+    val localFactory = TestLoaderFactory(localLoader)
+    // For this test, we don't need a functional remote loader
+    val remoteFactory = TestLoaderFactory<RemotePackage>()
+
+    val repoManager = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    repoManager.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
+
+    val loadedPackages = runBlocking {
+      repoManager.loadLocalPackages(indicator = FakeProgressIndicator(), cacheExpiration = Duration.ZERO)
+    }
+    assertThat(loadedPackages).containsExactly(pkg1, pkg2)
+
+    // Verify that the manager's internal state is also updated
+    val managerInternalPackages = repoManager.packages.localPackages
+    assertThat(managerInternalPackages).hasSize(2)
+    assertThat(managerInternalPackages).containsEntry(pkg1.path, pkg1)
+    assertThat(managerInternalPackages).containsEntry(pkg2.path, pkg2)
+  }
+
+  @Test
+  fun testLoadRemotePackages() {
+    val repoRoot = createInMemoryFileSystemAndFolder("repo")
+    val pkg1 = FakeRemotePackage("package;path1")
+    val pkg2 = FakeRemotePackage("package;path2")
+    val remoteLoader =
+      FakeLoader<RemotePackage>(mapOf<String, RemotePackage>(pkg1.path to pkg1, pkg2.path to pkg2))
+
+    // For this test, we don't need a functional local loader
+    val localFactory = TestLoaderFactory<LocalPackage>()
+    val remoteFactory = TestLoaderFactory(remoteLoader)
+
+    val repoManager = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    repoManager.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
+
+    val loadedPackages = runBlocking {
+      repoManager.loadRemotePackages(
+          indicator = FakeProgressIndicator(),
+          cacheExpiration = Duration.ZERO,
+          downloader = FakeDownloader(repoRoot.root.resolve("tmp")),
+          settings = null,
+      )
+    }
+    assertThat(loadedPackages).containsExactly(pkg1, pkg2)
+
+    // Verify that the manager's internal state is also updated
+    val managerInternalPackages = repoManager.packages.remotePackages
+    assertThat(managerInternalPackages).hasSize(2)
+    assertThat(managerInternalPackages).containsEntry(pkg1.path, pkg1)
+    assertThat(managerInternalPackages).containsEntry(pkg2.path, pkg2)
   }
 
   // test timeout makes/doesn't make load happen

@@ -18,9 +18,11 @@ package com.android.repository.testframework
 import com.android.repository.api.Downloader
 import com.android.repository.api.FallbackLocalRepoLoader
 import com.android.repository.api.FallbackRemoteRepoLoader
+import com.android.repository.api.LocalPackage
 import com.android.repository.api.PackageOperation
 import com.android.repository.api.ProgressIndicator
 import com.android.repository.api.ProgressRunner
+import com.android.repository.api.RemotePackage
 import com.android.repository.api.RepoManager
 import com.android.repository.api.RepoPackage
 import com.android.repository.api.RepositorySource
@@ -29,6 +31,7 @@ import com.android.repository.api.SchemaModule
 import com.android.repository.api.SettingsController
 import com.android.repository.impl.meta.RepositoryPackages
 import java.nio.file.Path
+import kotlin.time.Duration
 import org.w3c.dom.ls.LSResourceResolver
 
 /** A fake [RepoManager], for use in unit tests. */
@@ -84,6 +87,18 @@ class FakeRepoManager(override val localPath: Path?, override val packages: Repo
     onLocalComplete?.loaded(this.packages)
     onSuccess?.loaded(this.packages)
   }
+
+  override suspend fun loadLocalPackages(
+    indicator: ProgressIndicator,
+    cacheExpiration: Duration,
+  ): List<LocalPackage> = emptyList()
+
+  override suspend fun loadRemotePackages(
+    indicator: ProgressIndicator,
+    cacheExpiration: Duration,
+    downloader: Downloader,
+    settings: SettingsController?,
+  ): List<RemotePackage> = emptyList()
 
   override fun markInvalid() {}
 
