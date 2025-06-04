@@ -21,7 +21,6 @@ val defaultExcludes: Set<String> = setOf(
     "/META-INF/LICENSE",
     "/META-INF/LICENSE.txt",
     "/META-INF/MANIFEST.MF",
-    "/META-INF/**/MANIFEST.MF",
     "/META-INF/NOTICE",
     "/META-INF/NOTICE.txt",
     "/META-INF/*.DSA",

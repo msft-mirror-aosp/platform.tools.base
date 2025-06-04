@@ -63,10 +63,9 @@ import javax.inject.Inject
  * <p>All paths to be matched are provided as absolute paths from the root of the apk archive. So,
  * for example, {@code classes.dex} is matched as {@code /classes.dex}. This allows defining
  * patterns such as <code>&#042;&#042;/foo</code> to match the file {@code foo} in any directory,
- * including the root. Patterns like <code>/bar/&#042;&#042;/foo</code> will be handled by the
- * JDK's PathMatcher implementation. Please refer to the JDK documentation for rules.
- * Any pattern that does not start with a forward slash (or wildcard) is automatically prepended with
- * a forward slash. So, {@code file} and {@code /file} are effectively the same pattern.
+ * including the root. Any pattern that does not start with a forward slash (or wildcard) is
+ * automatically prepended with a forward slash. So, {@code file} and {@code /file} are effectively
+ * the same pattern.
  *
  * <p>The default values are:
  *
@@ -83,7 +82,6 @@ import javax.inject.Inject
  *         <li>{@code /LICENSE.txt}
  *         <li>{@code /NOTICE}
  *         <li>{@code /NOTICE.txt}
- *         <li><code>/META-INF/&#042;&#042;/MANIFEST.MF</code>
  *         <li><code>/META-INF/&#042;.DSA</code> (all DSA signature files)
  *         <li><code>/META-INF/&#042;.EC</code> (all EC signature files)
  *         <li><code>/META-INF/&#042;.SF</code> (all signature files)
