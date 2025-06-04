@@ -72,9 +72,9 @@ public class LegacyRemoteTest extends TestCase {
 
         mgr.loadSynchronously(
                 0,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 settings);
@@ -89,9 +89,9 @@ public class LegacyRemoteTest extends TestCase {
         mgr.markInvalid();
         mgr.loadSynchronously(
                 0,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 settings);

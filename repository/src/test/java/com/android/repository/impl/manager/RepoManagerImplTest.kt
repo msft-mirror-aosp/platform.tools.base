@@ -60,9 +60,9 @@ class RepoManagerImplTest {
     val runner = FakeProgressRunner()
     mgr.loadSynchronously(
       cacheExpirationMs = 0,
-      onLocalComplete = listOf(localCallback),
-      onSuccess = listOf(remoteCallback),
-      onError = listOf(errorCallback),
+      onLocalComplete = localCallback,
+      onSuccess = remoteCallback,
+      onError = errorCallback,
       runner = runner,
       downloader = FakeDownloader(repoRoot.getRoot().resolve("tmp")),
     )
@@ -87,9 +87,9 @@ class RepoManagerImplTest {
     try {
       mgr.loadSynchronously(
         cacheExpirationMs = 0,
-        onLocalComplete = listOf(localCallback),
-        onSuccess = listOf(remoteCallback),
-        onError = listOf(errorCallback),
+        onLocalComplete = localCallback,
+        onSuccess = remoteCallback,
+        onError = errorCallback,
         runner = runner,
         downloader = FakeDownloader(repoRoot.getRoot().resolve("tmp")),
       )
@@ -116,9 +116,9 @@ class RepoManagerImplTest {
     try {
       mgr.loadSynchronously(
         cacheExpirationMs = 0,
-        onLocalComplete = listOf(localCallback),
-        onSuccess = listOf(remoteCallback),
-        onError = listOf(errorCallback),
+        onLocalComplete = localCallback,
+        onSuccess = remoteCallback,
+        onError = errorCallback,
         runner = runner,
         downloader = FakeDownloader(repoRoot.root.resolve("tmp")),
       )
@@ -180,17 +180,17 @@ class RepoManagerImplTest {
     val runner = FakeProgressRunner()
     mgr.load(
       cacheExpirationMs = 0,
-      onLocalComplete = listOf(localCallback1),
-      onSuccess = listOf(remoteCallback1),
-      onError = listOf(errorCallback),
+      onLocalComplete = localCallback1,
+      onSuccess = remoteCallback1,
+      onError = errorCallback,
       runner = runner,
       downloader = FakeDownloader(repoRoot.root.resolve("tmp")),
     )
     mgr.load(
       cacheExpirationMs = 0,
-      onLocalComplete = listOf(localCallback2),
-      onSuccess = listOf(remoteCallback2),
-      onError = listOf(errorCallback),
+      onLocalComplete = localCallback2,
+      onSuccess = remoteCallback2,
+      onError = errorCallback,
       runner = runner,
       downloader = FakeDownloader(repoRoot.root.resolve("tmp")),
     )

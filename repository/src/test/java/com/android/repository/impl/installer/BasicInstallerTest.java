@@ -86,9 +86,9 @@ public class BasicInstallerTest extends TestCase {
         // Load the local packages.
         mgr.loadSynchronously(
                 0,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 new FakeDownloader(repoRoot.getRoot().resolve("tmp")),
                 new FakeSettingsController(false));
@@ -183,9 +183,9 @@ public class BasicInstallerTest extends TestCase {
         // Load
         mgr.loadSynchronously(
                 RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 new FakeSettingsController(false));
@@ -217,9 +217,9 @@ public class BasicInstallerTest extends TestCase {
         // Reload the packages.
         mgr.loadSynchronously(
                 0,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 new FakeSettingsController(false));
@@ -282,9 +282,9 @@ public class BasicInstallerTest extends TestCase {
         // Load
         mgr.loadSynchronously(
                 RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 new FakeSettingsController(false));
@@ -317,9 +317,9 @@ public class BasicInstallerTest extends TestCase {
         // Reload the packages.
         mgr.loadSynchronously(
                 0,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 new FakeSettingsController(false));
@@ -403,9 +403,9 @@ public class BasicInstallerTest extends TestCase {
         // Load
         mgr.loadSynchronously(
                 RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 new FakeSettingsController(false));
@@ -431,9 +431,9 @@ public class BasicInstallerTest extends TestCase {
         // Reload the repo
         mgr.loadSynchronously(
                 0,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 new FakeSettingsController(false));
@@ -535,9 +535,9 @@ public class BasicInstallerTest extends TestCase {
         // Load
         mgr.loadSynchronously(
                 RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 new FakeSettingsController(false));
@@ -598,9 +598,9 @@ public class BasicInstallerTest extends TestCase {
         // Reload the packages.
         mgr.loadSynchronously(
                 0,
-                ImmutableList.of(),
-                ImmutableList.of(),
-                ImmutableList.of(),
+                null,
+                null,
+                null,
                 runner,
                 downloader,
                 new FakeSettingsController(false));

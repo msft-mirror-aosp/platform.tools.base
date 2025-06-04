@@ -183,9 +183,9 @@ internal constructor(
 
   override fun loadSynchronously(
     cacheExpirationMs: Long,
-    onLocalComplete: List<RepoLoadedListener>?,
-    onSuccess: List<RepoLoadedListener>?,
-    onError: List<Runnable>?,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
     runner: ProgressRunner,
     downloader: Downloader?,
     settings: SettingsController?,
@@ -195,9 +195,9 @@ internal constructor(
 
   override fun load(
     cacheExpirationMs: Long,
-    onLocalComplete: List<RepoLoadedListener>?,
-    onSuccess: List<RepoLoadedListener>?,
-    onError: List<Runnable>?,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
     runner: ProgressRunner,
     downloader: Downloader?,
     settings: SettingsController?,
@@ -220,12 +220,12 @@ internal constructor(
    * @param cacheExpirationMs How long must have passed since the last load for us to reload.
    *   Specify `0` to reload immediately.
    * @param onLocalComplete When loading, the local repo load happens first, and should be
-   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener]s are run. Will be
+   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener] is run. Will be
    *   called with a [RepositoryPackages] that contains only the local packages.
-   * @param onSuccess Callbacks that are run when the entire load (local and remote) has completed
+   * @param onSuccess Callback that is run when the entire load (local and remote) has completed
    *   successfully. Called with an [RepositoryPackages] containing both the local and remote
    *   packages.
-   * @param onError Callbacks that are run when there's an error at some point during the load.
+   * @param onError Callback that is run when there's an error at some point during the load.
    * @param runner The [ProgressRunner] to use for any tasks started during the load, including
    *   running the callbacks.
    * @param downloader The [Downloader] to use for downloading remote files, including any remote
@@ -241,18 +241,14 @@ internal constructor(
   //       are cached here.
   private fun load(
     cacheExpirationMs: Long,
-    onLocalComplete: List<RepoLoadedListener>?,
-    onSuccess: List<RepoLoadedListener>?,
-    onError: List<Runnable>?,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
     runner: ProgressRunner,
     downloader: Downloader?,
     settings: SettingsController?,
     sync: Boolean,
   ) {
-    val onLocalComplete = onLocalComplete ?: emptyList()
-    val onSuccess = onSuccess ?: emptyList()
-    val onError = onError ?: emptyList()
-
     // So we can block until complete in the synchronous case.
     val isComplete = CompletableDeferred<Unit>()
 
@@ -275,9 +271,8 @@ internal constructor(
         if (sync) {
           // If we're running synchronously, signal completion after the run completes.
           task.addCallbacks(
-            onLocalComplete = emptyList(),
-            onSuccess = listOf(RepoLoadedListener { isComplete.complete(Unit) }),
-            onError = listOf(Runnable { isComplete.complete(Unit) }),
+            onSuccess = RepoLoadedListener { isComplete.complete(Unit) },
+            onError = Runnable { isComplete.complete(Unit) },
           )
         }
       }
@@ -356,17 +351,13 @@ internal constructor(
      * Add callbacks to this task (if e.g. [.load] is called again while a task is already running).
      */
     fun addCallbacks(
-      onLocalComplete: List<RepoLoadedListener>,
-      onSuccess: List<RepoLoadedListener>,
-      onError: List<Runnable>,
+      onLocalComplete: RepoLoadedListener? = null,
+      onSuccess: RepoLoadedListener? = null,
+      onError: Runnable? = null,
     ) {
-      for (local in onLocalComplete) {
-        onLocalCompletes.add(local)
-      }
-      for (success in onSuccess) {
-        onSuccesses.add(success)
-      }
-      onErrors.addAll(onError)
+      onLocalComplete?.let { onLocalCompletes.add(it) }
+      onSuccess?.let { onSuccesses.add(it) }
+      onError?.let { onErrors.add(it) }
     }
 
     /**
