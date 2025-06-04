@@ -20,7 +20,6 @@ import com.android.backup.BackupProgressListener.Step
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
-import com.android.backup.ErrorCode.BACKUP_NOT_ALLOWED
 import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
 import com.android.backup.ErrorCode.DEVICE_DISCONNECTED
@@ -97,11 +96,6 @@ abstract class AbstractAdbServices(
         throw BackupException(
           APP_STOPPED,
           "Application '$applicationId' is in a stopped state. Please launch the app and try again.",
-        )
-      out.isBackupNotAllowed() ->
-        throw BackupException(
-          BACKUP_NOT_ALLOWED,
-          "Backup not allowed. Please ensure manifest value 'android:allowBackup' is set to true.",
         )
       !initOk ->
         throw BackupException(TRANSPORT_INIT_FAILED, "Failed to backup '$applicationId`: $out")
@@ -370,7 +364,5 @@ private fun MatchResult.getGroup(name: String) =
 private fun String.isBackupSuccess(applicationId: String) =
   contains("Package $applicationId with result: Success") &&
     contains("Backup finished with result: Success")
-
-private fun String.isBackupNotAllowed() = contains(" with result: Backup is not allowed")
 
 private fun String.isAppStopped() = contains("PACKAGE_STOPPED")

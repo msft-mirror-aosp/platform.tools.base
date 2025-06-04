@@ -27,7 +27,6 @@ import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
-import com.android.backup.ErrorCode.BACKUP_NOT_ALLOWED
 import com.android.backup.ErrorCode.BACKUP_NOT_ENABLED
 import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
@@ -517,31 +516,6 @@ class BackupServiceImplTest {
     val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
 
     assertThat(result).isEqualTo(BACKUP_FAILED.asBackupResult("Failed to backup 'com.app`: Error"))
-  }
-
-  @Test
-  fun backup_backupNotAllowed(): Unit = runBlocking {
-    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
-    val backupService =
-      BackupServiceImpl(
-        FakeAdbServicesFactory("com.app") {
-          it.addCommandOverride(
-            Output(
-              "bmgr backupnow @pm@ com.app --non-incremental --monitor",
-              "Package com.app with result: Backup is not allowed",
-            )
-          )
-        }
-      )
-
-    val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
-
-    assertThat(result)
-      .isEqualTo(
-        BACKUP_NOT_ALLOWED.asBackupResult(
-          "Backup not allowed. Please ensure manifest value 'android:allowBackup' is set to true."
-        )
-      )
   }
 
   @Test
