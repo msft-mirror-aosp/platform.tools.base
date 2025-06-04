@@ -13,176 +13,97 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.repository.testframework;
+package com.android.repository.testframework
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.repository.api.Downloader;
-import com.android.repository.api.FallbackLocalRepoLoader;
-import com.android.repository.api.FallbackRemoteRepoLoader;
-import com.android.repository.api.PackageOperation;
-import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.ProgressRunner;
-import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
-import com.android.repository.api.RepositorySource;
-import com.android.repository.api.RepositorySourceProvider;
-import com.android.repository.api.SchemaModule;
-import com.android.repository.api.SettingsController;
-import com.android.repository.impl.meta.RepositoryPackages;
-import com.google.common.collect.Lists;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.List;
-import org.w3c.dom.ls.LSResourceResolver;
+import com.android.repository.api.Downloader
+import com.android.repository.api.FallbackLocalRepoLoader
+import com.android.repository.api.FallbackRemoteRepoLoader
+import com.android.repository.api.PackageOperation
+import com.android.repository.api.ProgressIndicator
+import com.android.repository.api.ProgressRunner
+import com.android.repository.api.RepoManager
+import com.android.repository.api.RepoPackage
+import com.android.repository.api.RepositorySource
+import com.android.repository.api.RepositorySourceProvider
+import com.android.repository.api.SchemaModule
+import com.android.repository.api.SettingsController
+import com.android.repository.impl.meta.RepositoryPackages
+import java.nio.file.Path
+import org.w3c.dom.ls.LSResourceResolver
 
-/**
- * A fake {@link RepoManager}, for use in unit tests.
- */
-public class FakeRepoManager extends RepoManager {
-    private final RepositoryPackages mPackages;
-    private Path mLocalPath;
-    private final List<SchemaModule<?>> mModules =
-            Lists.newArrayList(RepoManager.getCommonModule(), RepoManager.getGenericModule());
+/** A fake [RepoManager], for use in unit tests. */
+class FakeRepoManager(override val localPath: Path?, override val packages: RepositoryPackages) :
+  RepoManager() {
+  constructor(packages: RepositoryPackages) : this(null, packages)
 
-    public FakeRepoManager(@Nullable Path localPath, @NonNull RepositoryPackages packages) {
-        mLocalPath = localPath;
-        mPackages = packages;
-    }
+  private val _schemaModules = mutableListOf(commonModule, genericModule)
+  override val schemaModules: List<SchemaModule<*>>
+    get() = _schemaModules
 
-    public FakeRepoManager(@NonNull RepositoryPackages packages) {
-        mPackages = packages;
-    }
+  override fun registerSchemaModule(module: SchemaModule<*>) {
+    _schemaModules.add(module)
+  }
 
-    @Override
-    public void registerSchemaModule(@NonNull SchemaModule<?> module) {
-        mModules.add(module);
-    }
+  override fun setFallbackLocalRepoLoader(local: FallbackLocalRepoLoader?) {}
 
-    @NonNull
-    @Override
-    public List<SchemaModule<?>> getSchemaModules() {
-        return mModules;
-    }
+  override fun registerSourceProvider(provider: RepositorySourceProvider) {}
 
-    @Nullable
-    @Override
-    public Path getLocalPath() {
-        return mLocalPath;
-    }
+  override val sourceProviders: List<RepositorySourceProvider>
+    get() = emptyList()
 
-    @Override
-    public void setFallbackLocalRepoLoader(@Nullable FallbackLocalRepoLoader local) {
-    }
+  override fun getSources(
+    downloader: Downloader?,
+    progress: ProgressIndicator,
+    forceRefresh: Boolean,
+  ): List<RepositorySource> = emptyList()
 
-    @Override
-    public void registerSourceProvider(@NonNull RepositorySourceProvider provider) {
-    }
+  override fun setFallbackRemoteRepoLoader(remote: FallbackRemoteRepoLoader?) {}
 
-    @NonNull
-    @Override
-    public List<RepositorySourceProvider> getSourceProviders() {
-        return Collections.emptyList();
-    }
+  override fun load(
+    cacheExpirationMs: Long,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
+    runner: ProgressRunner,
+    downloader: Downloader?,
+    settings: SettingsController?,
+  ) {
+    onLocalComplete?.loaded(this.packages)
+    onSuccess?.loaded(this.packages)
+  }
 
-    @NonNull
-    @Override
-    public List<RepositorySource> getSources(
-            @Nullable Downloader downloader,
-            @NonNull ProgressIndicator progress,
-            boolean forceRefresh) {
-        return Collections.emptyList();
-    }
+  override fun loadSynchronously(
+    cacheExpirationMs: Long,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
+    runner: ProgressRunner,
+    downloader: Downloader?,
+    settings: SettingsController?,
+  ) {
+    onLocalComplete?.loaded(this.packages)
+    onSuccess?.loaded(this.packages)
+  }
 
-    @Override
-    public void setFallbackRemoteRepoLoader(@Nullable FallbackRemoteRepoLoader remote) {
-    }
+  override fun markInvalid() {}
 
-    @Override
-    public void load(
-            long cacheExpirationMs,
-            @Nullable RepoLoadedListener onLocalComplete,
-            @Nullable RepoLoadedListener onSuccess,
-            @Nullable Runnable onError,
-            @NonNull ProgressRunner runner,
-            @Nullable Downloader downloader,
-            @Nullable SettingsController settings) {
-        if (onLocalComplete != null) {
-            onLocalComplete.loaded(mPackages);
-        }
-        if (onSuccess != null) {
-            onSuccess.loaded(mPackages);
-        }
-    }
-    @Override
-    public void loadSynchronously(long cacheExpirationMs,
-            @Nullable RepoLoadedListener onLocalComplete,
-            @Nullable RepoLoadedListener onSuccess,
-            @Nullable Runnable onError,
-            @NonNull ProgressRunner runner,
-            @Nullable Downloader downloader,
-            @Nullable SettingsController settings) {
-        if (onLocalComplete != null) {
-            onLocalComplete.loaded(mPackages);
-        }
-        if (onSuccess != null) {
-            onSuccess.loaded(mPackages);
-        }
-    }
+  override fun markLocalCacheInvalid() {}
 
-    @Override
-    public void markInvalid() {
-    }
+  override fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean = false
 
-    @Override
-    public void markLocalCacheInvalid() {
-    }
+  override fun getResourceResolver(progress: ProgressIndicator): LSResourceResolver? = null
 
-    @Override
-    public boolean reloadLocalIfNeeded(@NonNull ProgressIndicator progress) {
-        return false;
-    }
+  override fun addLocalChangeListener(listener: RepoLoadedListener) {}
 
-    @NonNull
-    @Override
-    public RepositoryPackages getPackages() {
-        return mPackages;
-    }
+  override fun removeLocalChangeListener(listener: RepoLoadedListener) {}
 
-    @Nullable
-    @Override
-    public LSResourceResolver getResourceResolver(@NonNull ProgressIndicator progress) {
-        return null;
-    }
+  override fun addRemoteChangeListener(listener: RepoLoadedListener) {}
 
-    @Override
-    public void addLocalChangeListener(@NonNull RepoLoadedListener listener) {
-    }
+  override fun removeRemoteChangeListener(listener: RepoLoadedListener) {}
 
-    @Override
-    public void removeLocalChangeListener(@NonNull RepoLoadedListener listener) {
-    }
+  override fun installBeginning(repoPackage: RepoPackage, installer: PackageOperation) {}
 
-    @Override
-    public void addRemoteChangeListener(@NonNull RepoLoadedListener listener) {
-    }
+  override fun installEnded(repoPackage: RepoPackage) {}
 
-    @Override
-    public void removeRemoteChangeListener(@NonNull RepoLoadedListener listener) {
-    }
-
-    @Override
-    public void installBeginning(@NonNull RepoPackage repoPackage,
-            @NonNull PackageOperation installer) {
-    }
-
-    @Override
-    public void installEnded(@NonNull RepoPackage repoPackage) {
-    }
-
-    @Nullable
-    @Override
-    public PackageOperation getInProgressInstallOperation(@NonNull RepoPackage remotePackage) {
-        return null;
-    }
+  override fun getInProgressInstallOperation(remotePackage: RepoPackage): PackageOperation? = null
 }
