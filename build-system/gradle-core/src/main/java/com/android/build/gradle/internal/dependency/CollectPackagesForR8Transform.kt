@@ -24,7 +24,7 @@ import com.android.SdkConstants.FN_CLASSES_JAR
 import com.android.SdkConstants.FN_PACKAGE_LIST
 import com.android.SdkConstants.FN_PROGUARD_TXT
 import com.android.SdkConstants.LIBS_FOLDER
-import com.android.build.gradle.internal.dependency.ExtractProGuardRulesTransform.Companion.getEntriesWithProguardRules
+import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter
 import com.android.ide.common.xml.AndroidManifestParser
 import com.android.utils.PathUtils
 import org.gradle.api.artifacts.transform.InputArtifact
@@ -70,7 +70,7 @@ abstract class CollectPackagesForR8Transform : TransformAction<GenericTransformP
         }
         val allJars = mutableListOf(classesJar)
         if (!explodedAarDirectory.resolve(FN_PROGUARD_TXT).isFile &&
-            !containsConsumerProguardRules(classesJar, extractLegacyProguardRules = false)) {
+            !containsConsumerProguardRules(classesJar, isClassesJarInAar = true)) {
             return
         }
 
@@ -99,7 +99,7 @@ abstract class CollectPackagesForR8Transform : TransformAction<GenericTransformP
 
     private fun transformJar(jarFile: File, transformOutputs: TransformOutputs) {
         val packageNames = mutableSetOf<String>()
-        if (!containsConsumerProguardRules(jarFile, extractLegacyProguardRules = true)) {
+        if (!containsConsumerProguardRules(jarFile)) {
             return
         }
         packageNames.addAll(getPackageNamesFromJar(jarFile))
@@ -108,14 +108,11 @@ abstract class CollectPackagesForR8Transform : TransformAction<GenericTransformP
         }
     }
 
-    private fun containsConsumerProguardRules(classesJar: File, extractLegacyProguardRules: Boolean): Boolean {
-        ZipFile(classesJar, StandardCharsets.UTF_8).use { jarFile ->
-            val entries = getEntriesWithProguardRules(jarFile, extractLegacyProguardRules)
-            if (entries.hasNext()) {
-                return true
-            }
+    private fun containsConsumerProguardRules(jarFile: File, isClassesJarInAar: Boolean = false): Boolean {
+        val targetedShrinkRules = TargetedShrinkRulesReadWriter.readFromJar(jarFile, isClassesJarInAar)
+        return targetedShrinkRules.run {
+            r8Rules.isNotEmpty() || proguardRules.isNotEmpty() || legacyProguardRules.isNotEmpty()
         }
-        return false
     }
 
     private fun getPackageNamesFromJar(jar: File): Collection<String> {
