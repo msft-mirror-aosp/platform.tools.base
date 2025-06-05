@@ -313,8 +313,6 @@ class AdbServerControllerImplTest {
             )
         }
         controller.start()
-        exceptionRule.expect(IOException::class.java)
-        exceptionRule.expectMessage("`AdbServerController` is in a stopping/stopped")
 
         // Act: start stopping. While the controller is stopping, it can no longer create channels.
         processRunner.delayByMs = 100
@@ -326,6 +324,8 @@ class AdbServerControllerImplTest {
         delay(50)
         // It hasn't been successfully stopped yet, but `createChannel` already throws exceptions
         assertTrue(controller.isStarted)
+        exceptionRule.expect(IOException::class.java)
+        exceptionRule.expectMessage("`AdbServerController` is in a stopping/stopped")
         registerCloseable(controller.channelProvider.createChannel())
         fail("Should not reach")
     }
@@ -652,7 +652,7 @@ class AdbServerControllerImplTest {
     }
 
     @Test
-    fun testRestartIsNoop_whenStopIsInProgress(): Unit = runBlockingWithTimeout {
+    fun testRestartThrowsIOException_whenStopIsInProgress(): Unit = runBlockingWithTimeout {
         // Prepare
         processRunner.delayByMs = 50
         val controller =
@@ -672,19 +672,22 @@ class AdbServerControllerImplTest {
         controller.start()
         processRunner.reset()
 
-        // Act
-        val stopJob = launch { controller.stop() }
-        val restartJob = launch {
-            // delay a little to make sure stop job is in progress when we trigger restart
-            delay(10)
-            controller.restart()
-        }
-        stopJob.join()
-        restartJob.join()
+        supervisorScope {
+            // Act
+            val stopJob = launch { controller.stop() }
+            val restartResult = async {
+                // delay a little to make sure stop job is in progress when we trigger restart
+                delay(10)
+                // Assert stop operation is still in progress
+                assertTrue(stopJob.isActive)
+                controller.restart()
+            }
 
-        // Assert
-        assertFalse(controller.isStarted)
-        assertContentEquals(listOf(STOP_COMMAND), processRunner.allCommands)
+            exceptionRule.expect(IOException::class.java)
+            exceptionRule.expectMessage(
+                "cannot be restarted when it's in a stopping/stopped state")
+            restartResult.await()
+        }
     }
 
     @Test
@@ -789,7 +792,7 @@ class AdbServerControllerImplTest {
     }
 
     @Test
-    fun testRestartIsNoop_whenInInitialOrStoppedState(): Unit = runBlockingWithTimeout {
+    fun testRestartThrowsIOException_whenInInitialState(): Unit = runBlockingWithTimeout {
         // Prepare
         val controller =
             registerCloseable(
@@ -806,24 +809,40 @@ class AdbServerControllerImplTest {
             )
         }
 
-        // Act: restart from the initial state
+        // Act/Assert: restart from the initial state should throw an exception
+        exceptionRule.expect(IOException::class.java)
+        exceptionRule.expectMessage("cannot be restarted when it's in a stopped state")
         controller.restart()
+    }
 
-        // Assert
-        assertFalse(controller.isStarted)
-        assertTrue(processRunner.allCommands.isEmpty())
+    @Test
+    fun testRestartThrowsIOException_whenInStoppedState(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val controller =
+            registerCloseable(
+                AdbServerControllerImpl(
+                    host,
+                    configFlow
+                )
+            )
+        configFlow.update {
+            it.copy(
+                adbPath = ADB_FILE_PATH,
+                serverPort = PORT,
+                isUnitTest = false
+            )
+        }
 
-        // Prepare: transition to a stopped state
+        // Prepare: Put controller into a stopped state
         controller.start()
         controller.stop()
         processRunner.reset()
 
-        // Act: restart from the stopped state
+        // Act/Assert: restart from the stopped state should throw an exception
+        exceptionRule.expect(IOException::class.java)
+        exceptionRule.expectMessage(
+                "cannot be restarted when it's in a stopping/stopped state")
         controller.restart()
-
-        // Assert
-        assertFalse(controller.isStarted)
-        assertTrue(processRunner.allCommands.isEmpty())
     }
 
     @Test

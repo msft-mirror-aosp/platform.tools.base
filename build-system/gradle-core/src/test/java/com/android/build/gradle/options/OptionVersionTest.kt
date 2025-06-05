@@ -35,7 +35,7 @@ class OptionVersionTest {
         }
 
         /**
-         * Deprecated [Option]s that have invalid target removal versions.
+         * [Option]s that have invalid associated versions.
          *
          * @ RELEASE TEAM: If you update this list when upgrading AGP, be sure to file a new bug
          * assigned to the AGP team and blocking beta release.
@@ -44,7 +44,7 @@ class OptionVersionTest {
          *   - Tracking bug for AGP 8.2: b/277803353
          *   - Tracking bug for AGP 8.0: b/243560711
          */
-        private val INVALID_DEPRECATED_OPTIONS: List<Option<*>> = listOf(
+        private val INVALID_OPTIONS: List<Option<*>> = listOf(
         )
 
     }
@@ -59,12 +59,12 @@ class OptionVersionTest {
 
         checkViolatingProjectOptions(
                 violatingOptions = violatingOptions,
-                ignoreList = INVALID_DEPRECATED_OPTIONS,
+                ignoreList = INVALID_OPTIONS,
                 requirement = "Deprecated options must have target removal versions in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
                 suggestion = "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
                         "We don't have to fix this issue immediately, but we should fix it before the beta release.\n" +
                         "To do that:\n" +
-                        "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_DEPRECATED_OPTIONS`.\n" +
+                        "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_OPTIONS`.\n" +
                         "  - Please file a bug for the AGP team and mark it as blocking the beta release (example bug: b/277803353)."
         )
     }
@@ -83,11 +83,29 @@ class OptionVersionTest {
         )
     }
 
+    @Test
+    fun `check BooleanOptions have FutureStage in the future`() {
+        val violatingOptions = BooleanOption.entries.filter {
+            it.futureStage != null && it.futureStage.version.agpVersion <= AGP_STABLE_VERSION
+        }
+
+        checkViolatingProjectOptions(
+            violatingOptions = violatingOptions,
+            ignoreList = INVALID_OPTIONS,
+            requirement = "`BooleanOption`s must have FutureStage in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
+            suggestion = "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
+                    "We don't have to fix this issue immediately, but we should fix it before the beta release.\n" +
+                    "To do that:\n" +
+                    "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_OPTIONS`.\n" +
+                    "  - Please file a bug for the AGP team and mark it as blocking the beta release (example bug: b/277803353)."
+        )
+    }
+
     private fun getAllOptions(): List<Option<Any>> =
-            (BooleanOption.entries as List<Option<Boolean>>) +
-                    OptionalBooleanOption.entries +
-                    StringOption.entries +
-                    IntegerOption.entries
+        BooleanOption.entries +
+                OptionalBooleanOption.entries +
+                StringOption.entries +
+                IntegerOption.entries
 }
 
 internal fun checkViolatingProjectOptions(

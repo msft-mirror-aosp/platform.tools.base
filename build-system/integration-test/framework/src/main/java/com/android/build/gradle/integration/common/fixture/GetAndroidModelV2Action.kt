@@ -21,6 +21,7 @@ import com.android.builder.model.v2.models.AndroidDsl
 import com.android.builder.model.v2.models.AndroidProject
 import com.android.builder.model.v2.models.BasicAndroidProject
 import com.android.builder.model.v2.models.ModelBuilderParameter
+import com.android.builder.model.v2.models.ProjectGraph
 import com.android.builder.model.v2.models.ProjectSyncIssues
 import com.android.builder.model.v2.models.VariantDependencies
 import com.android.builder.model.v2.models.Versions
@@ -116,6 +117,17 @@ class GetAndroidModelV2Action(
                 val androidProject = buildController.findModel(project, AndroidProject::class.java)
                 val androidDsl = buildController.findModel(project, AndroidDsl::class.java)
 
+                val projectGraph = if (variantName != null) {
+                    buildController.findModel(
+                        project,
+                        ProjectGraph::class.java,
+                        ModelBuilderParameter::class.java
+                    ) {
+                        it.variantName = variantName
+                        parameterMutator(it)
+                    }
+                } else null
+
                 val variantDependencies = if (variantName != null) {
                     buildController.findModel(
                         project,
@@ -151,6 +163,7 @@ class GetAndroidModelV2Action(
                         androidProject,
                         androidDsl,
                         variantDependencies,
+                        projectGraph,
                         nativeModule,
                         issues
                     )
@@ -164,6 +177,7 @@ class GetAndroidModelV2Action(
                         androidProject = null,
                         androidDsl = null,
                         variantDependencies = null,
+                        projectGraph = null,
                         nativeModule = null,
                         issues = null
                     )

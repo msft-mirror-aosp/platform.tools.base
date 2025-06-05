@@ -70,6 +70,7 @@ class PackagingOptionsTest {
                 "/META-INF/LICENSE",
                 "/META-INF/LICENSE.txt",
                 "/META-INF/MANIFEST.MF",
+                "/META-INF/**/MANIFEST.MF",
                 "/META-INF/NOTICE",
                 "/META-INF/NOTICE.txt",
                 "/META-INF/com.android.tools/**",

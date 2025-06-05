@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
+import com.android.build.gradle.integration.common.fixture.project.Substitution
+import com.android.build.gradle.integration.common.fixture.project.SubstitutionImpl
 import org.gradle.api.JavaVersion
 import org.gradle.internal.extensions.stdlib.capitalized
 import java.io.File
@@ -49,6 +51,9 @@ interface BuildWriter: BooleanNameHandler {
 
     /** Adds a dependency */
     fun dependency(scope: String, value:Any, capability: String? = null)
+
+    /** Adds a dependency substitution */
+    fun dependencySubstitution(substitute: Substitution, using: Substitution)
 
     fun writeCollectionAddAll(name: String, items: Collection<*>)
     fun writeCollectionAdd(name:String, value: Any?)
@@ -390,6 +395,12 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         put('\n')
         return this
     }
+
+    protected fun coordinates(coordinate: Substitution) = when (coordinate) {
+        is SubstitutionImpl.Module -> rawMethod("module", coordinate.moduleCoordinates)
+        is SubstitutionImpl.Project -> getDependencyNotationForProject(coordinate.projectDependency)
+    }
+
 }
 
 internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
@@ -440,6 +451,12 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
         get() = "build.gradle.kts"
     override val settingsFileName: String
         get() = "settings.gradle.kts"
+
+    override fun dependencySubstitution(substitute: Substitution, using: Substitution) {
+        val substitute = rawMethod("substitute", coordinates(substitute)).value
+        val using = rawMethod("using", coordinates(using)).value
+        indent().put("$substitute.$using").endLine()
+    }
 }
 
 internal class DeclarativeBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
@@ -486,6 +503,9 @@ internal class DeclarativeBuildWriter(indentLevel: Int = 0): BaseBuildWriter(ind
         get() = "build.gradle.dcl"
     override val settingsFileName: String
         get() = "settings.gradle.dcl"
+
+    override fun dependencySubstitution(substitute: Substitution, using: Substitution) =
+        error("Not supported yet")
 }
 
 internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
@@ -542,4 +562,9 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
     override val settingsFileName: String
         get() = "settings.gradle"
 
+    override fun dependencySubstitution(substitute: Substitution, using: Substitution) {
+        val substitute = rawMethod("substitute", coordinates(substitute)).value
+        val using = rawMethod("using", coordinates(using)).value
+        indent().put("$substitute $using").endLine()
+    }
 }

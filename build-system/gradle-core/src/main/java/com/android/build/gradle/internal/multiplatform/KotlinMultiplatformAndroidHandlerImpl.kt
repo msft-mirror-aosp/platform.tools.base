@@ -87,12 +87,12 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
         )
 
         project.pluginManager.withPlugin(KOTLIN_MPP_PLUGIN_ID) {
-            getKotlinPluginVersionFromPlugin(
+            val kotlinPluginVersion = getKotlinPluginVersionFromPlugin(
                 project.plugins.findPlugin(KOTLIN_MPP_PLUGIN_ID)!!
-            )?.let {
-                val kotlinPluginVersion = Version.parse(it)
+            )?.let { (Version.parse(it)) }
 
-                if (kotlinPluginVersion < MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION) {
+            kotlinPluginVersion?.let { version ->
+                if (version < MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION) {
                     throw RuntimeException("The version of the applied kotlin multiplatform plugin " +
                             "`$it` is less than the minimum supported version by the " +
                             "android plugin. Upgrade your kotlin version to at least " +
@@ -129,11 +129,7 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
                 }
             }
 
-            (kotlinExtension as ExtensionAware).extensions.add(
-                KotlinMultiplatformAndroidLibraryTarget::class.java,
-                KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
-                androidTarget
-            )
+            registerAndroidTargetExtension(androidTarget, kotlinPluginVersion)
 
             val mainCompilation = createCompilation(
                 compilationName = KmpAndroidCompilationType.MAIN.defaultCompilationName,
@@ -159,6 +155,27 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
         }
 
         return androidExtension
+    }
+
+    private fun registerAndroidTargetExtension(
+        androidTarget: KotlinMultiplatformAndroidLibraryTarget,
+        kotlinPluginVersion: Version?
+    ) {
+        // Register the deprecated extension (for backward compatibility during the deprecation period)
+        (kotlinExtension as ExtensionAware).extensions.add(
+            KotlinMultiplatformAndroidLibraryTarget::class.java,
+            KotlinMultiplatformAndroidPlugin.DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
+            androidTarget
+        )
+
+        // TODO (b/421100391): after we start compiling AGP against KGP >= 2.2.0-Beta2, we clean up this runtime check
+        if (kotlinPluginVersion != null && kotlinPluginVersion >= MINIMUM_KGP_VERSION_FOR_ANDROID_NAMESPACE) {
+            (kotlinExtension as ExtensionAware).extensions.add(
+                KotlinMultiplatformAndroidLibraryTarget::class.java,
+                KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
+                androidTarget
+            )
+        }
     }
 
     override fun getAndroidTarget() = androidTarget
@@ -247,5 +264,6 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
 
     companion object {
         private val MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION = Version.parse("2.0.0")
+        private val MINIMUM_KGP_VERSION_FOR_ANDROID_NAMESPACE = Version.parse("2.2.0-Beta2")
     }
 }

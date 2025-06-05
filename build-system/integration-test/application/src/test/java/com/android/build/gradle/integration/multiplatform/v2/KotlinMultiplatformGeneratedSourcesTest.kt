@@ -34,7 +34,7 @@ class KotlinMultiplatformGeneratedSourcesTest {
     @get:Rule
     val rule = GradleRule.from {
         androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
-            androidLibrary {
+            android {
                 namespace = "com.mylibrary.foo"
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
             }

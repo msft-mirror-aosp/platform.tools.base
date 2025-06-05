@@ -28,6 +28,7 @@ import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus
 import com.android.sdklib.internal.avd.AvdManager
+import com.android.sdklib.internal.avd.BootSnapshot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
 import com.android.sdklib.repository.AndroidSdkHandler
@@ -43,6 +44,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.io.path.name
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -221,7 +223,7 @@ class LocalEmulatorProvisionerPluginTest {
   }
 
   @Test
-  fun bootSnapshot(): Unit = runBlockingWithTimeout {
+  fun bootSnapshotExplicitly(): Unit = runBlockingWithTimeout {
     val avdInfo = avdManager.makeAvdInfo(1)
     avdManager.createAvd(avdInfo)
 
@@ -233,6 +235,27 @@ class LocalEmulatorProvisionerPluginTest {
     val handle = provisioner.devices.value[0]
     val snapshots = runBlockingWithTimeout { handle.bootSnapshotAction!!.snapshots() }
     handle.bootSnapshotAction?.activate(snapshot = snapshots[0])
+
+    val connectedDevice = checkNotNull(handle.state.connectedDevice)
+    handle.awaitReady()
+    assertThat(connectedDevice.deviceProperties().allReadonly()["ro.test.snapshot"])
+      .isEqualTo(snapshotPath.toString())
+  }
+
+  @Test
+  fun bootDefaultSnapshotFromSettings(): Unit = runBlockingWithTimeout {
+    var avdInfo = avdManager.makeAvdInfo(1)
+    val snapshotPath = avdInfo.dataFolderPath.resolve("snapshots").resolve("snap1")
+    createNormalSnapshot(snapshotPath)
+    avdInfo =
+      avdInfo.copy(properties = avdInfo.properties + BootSnapshot(snapshotPath.name).properties())
+
+    avdManager.createAvd(avdInfo)
+
+    yieldUntil { provisioner.devices.value.size == 1 }
+
+    val handle = provisioner.devices.value[0]
+    handle.activationAction?.activate()
 
     val connectedDevice = checkNotNull(handle.state.connectedDevice)
     handle.awaitReady()
@@ -524,6 +547,33 @@ class LocalEmulatorProvisionerPluginTest {
       val handle = provisioner.devices.value[0]
       checkNotNull(handle.extension<TestExtension>())
     }
+  }
+
+  @Test
+  fun updateInsignificantProperties() {
+    // Add a key, remove a key, change a key, don't update a significant key
+    val initialProperties =
+      mapOf(
+        "significant key" to "123",
+        ConfigKey.FORCE_COLD_BOOT_MODE to "yes",
+        ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "no",
+      )
+    val updatedProperties =
+      mapOf(
+        "significant key" to "456",
+        ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "yes",
+        ConfigKey.CHOSEN_SNAPSHOT_FILE to "snap",
+      )
+
+    val avdInfo = avdManager.makeAvdInfo(1).copy(properties = initialProperties)
+    val newAvdInfo =
+      avdInfo.updateInsignificantProperties(avdInfo.copy(properties = updatedProperties))
+
+    assertThat(newAvdInfo.properties).containsEntry("significant key", "123")
+    assertThat(newAvdInfo.properties).doesNotContainKey(ConfigKey.FORCE_COLD_BOOT_MODE)
+    assertThat(newAvdInfo.properties)
+      .containsEntry(ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE, "yes")
+    assertThat(newAvdInfo.properties).containsEntry(ConfigKey.CHOSEN_SNAPSHOT_FILE, "snap")
   }
 
   private fun checkProperties(properties: LocalEmulatorProperties) {

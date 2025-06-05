@@ -28,6 +28,9 @@ import com.android.build.gradle.internal.core.dsl.AndroidTestComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.DynamicFeatureVariantDslInfo
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
+import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
+import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
@@ -41,7 +44,7 @@ open class DynamicFeatureVariantBuilderImpl @Inject constructor(
     dslInfo,
     componentIdentity,
     variantBuilderServices
-), DynamicFeatureVariantBuilder {
+), DynamicFeatureVariantBuilder, HasTestSuitesBuilder {
 
     override var androidTestEnabled: Boolean
         get() = androidTest.enable
@@ -100,6 +103,13 @@ open class DynamicFeatureVariantBuilderImpl @Inject constructor(
     override val hostTests: Map<String, HostTestBuilder> =
         HostTestBuilderImpl.create(
             dslInfo.dslDefinedHostTests,
+            dslInfo.experimentalProperties,
+        )
+
+    override val suites: Map<String, TestSuiteBuilder> =
+        TestSuiteBuilderImpl.create(
+            dslInfo.dslDefinedTestSuites,
+            variantBuilderServices,
             dslInfo.experimentalProperties,
         )
 }

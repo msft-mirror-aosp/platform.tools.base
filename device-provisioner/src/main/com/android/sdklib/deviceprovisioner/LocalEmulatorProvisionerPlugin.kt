@@ -28,6 +28,7 @@ import com.android.adblib.tools.openEmulatorConsole
 import com.android.adblib.utils.createChildScope
 import com.android.annotations.concurrency.GuardedBy
 import com.android.sdklib.AndroidVersion
+import com.android.sdklib.ISystemImage
 import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.deviceprovisioner.DeviceState.Connected
@@ -36,7 +37,12 @@ import com.android.sdklib.deviceprovisioner.LocalEmulatorProvisionerPlugin.Compa
 import com.android.sdklib.devices.Abi
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus
+import com.android.sdklib.internal.avd.BootMode
+import com.android.sdklib.internal.avd.BootSnapshot
+import com.android.sdklib.internal.avd.ColdBoot
+import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.internal.avd.HardwareProperties
+import com.android.sdklib.internal.avd.QuickBoot
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
 import com.google.wireless.android.sdk.stats.DeviceInfo
 import com.intellij.icons.AllIcons
@@ -45,6 +51,7 @@ import java.io.IOException
 import java.nio.file.Path
 import java.time.Duration
 import javax.swing.Icon
+import kotlin.io.path.name
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.collections.immutable.ImmutableMap
@@ -145,10 +152,13 @@ internal constructor(
     /** Prompts the user to edit the given AVD. Returns true if the AVD was changed. */
     suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean
 
+    /** Quick boots the AVD from its default snapshot. */
     suspend fun startAvd(avdInfo: AvdInfo)
 
+    /** Boots the AVD without using a snapshot. */
     suspend fun coldBootAvd(avdInfo: AvdInfo)
 
+    /** Boots the AVD from the specified snapshot. */
     suspend fun bootAvdFromSnapshot(avdInfo: AvdInfo, snapshot: LocalEmulatorSnapshot)
 
     suspend fun stopAvd(avdInfo: AvdInfo)
@@ -286,7 +296,7 @@ internal constructor(
           .asStateFlow()
 
       override suspend fun create(parent: Component?) {
-        if (avdManager.createAvd(parent) != null) {
+        if (avdManager.createAvd(parent)) {
           refreshDevices()
         }
       }
@@ -355,11 +365,16 @@ internal constructor(
           logger.debug { "${logName()} Processing: $message" }
           when (message) {
             is AvdInfoUpdate -> {
+              // First, apply any updates immediately that don't need a restart to take effect or
+              // shouldn't trigger the AvdChangedError.
               if (!activeAvdInfo.isSameMetadata(message.avdInfo)) {
                 activeAvdInfo = activeAvdInfo.copyMetadata(message.avdInfo)
                 properties = properties.toBuilder().apply { setAvdInfo(activeAvdInfo) }.build()
               }
+              activeAvdInfo = activeAvdInfo.updateInsignificantProperties(message.avdInfo)
+
               if (connectedDevice == null) {
+                // Device is not running; immediately update if there's an actual change.
                 if (activeAvdInfo != message.avdInfo) {
                   activeAvdInfo = message.avdInfo
                   properties = context.disconnectedDeviceProperties(activeAvdInfo)
@@ -614,7 +629,21 @@ internal constructor(
       override val presentation = defaultPresentation.fromContext().enabledIfActivatable()
 
       override suspend fun activate() {
-        activate { avdManager.startAvd(avdInfo) }
+        activate {
+          // Consult the config to see what the default boot method is.
+          when (val bootMode = BootMode.fromProperties(avdInfo.properties)) {
+            is BootSnapshot -> {
+              val snapshot =
+                bootSnapshotAction.snapshots().find { it.path.name == bootMode.snapshot }
+              when (snapshot) {
+                null -> avdManager.startAvd(avdInfo)
+                else -> avdManager.bootAvdFromSnapshot(avdInfo, snapshot)
+              }
+            }
+            ColdBoot -> avdManager.coldBootAvd(avdInfo)
+            QuickBoot -> avdManager.startAvd(avdInfo)
+          }
+        }
       }
     }
 
@@ -627,20 +656,22 @@ internal constructor(
       }
     }
 
-  override val bootSnapshotAction =
-    object : BootSnapshotAction {
-      override val presentation = defaultPresentation.fromContext().enabledIfActivatable()
+  override val bootSnapshotAction = LocalEmulatorBootSnapshotAction()
 
-      override suspend fun snapshots(): List<Snapshot> =
-        withContext(context.diskIoDispatcher) {
-          LocalEmulatorSnapshotReader(logger)
-            .readSnapshots(avdInfo.dataFolderPath.resolve("snapshots"))
-        }
+  inner class LocalEmulatorBootSnapshotAction : BootSnapshotAction {
 
-      override suspend fun activate(snapshot: Snapshot) {
-        activate { avdManager.bootAvdFromSnapshot(avdInfo, snapshot as LocalEmulatorSnapshot) }
+    override val presentation = defaultPresentation.fromContext().enabledIfActivatable()
+
+    override suspend fun snapshots(): List<LocalEmulatorSnapshot> =
+      withContext(context.diskIoDispatcher) {
+        LocalEmulatorSnapshotReader(logger)
+          .readSnapshots(avdInfo.dataFolderPath.resolve("snapshots"))
       }
+
+    override suspend fun activate(snapshot: Snapshot) {
+      activate { avdManager.bootAvdFromSnapshot(avdInfo, snapshot as LocalEmulatorSnapshot) }
     }
+  }
 
   private suspend fun activate(action: suspend () -> Unit) {
     val request =
@@ -968,6 +999,38 @@ private data class AvdDeviceError(val status: AvdStatus, override val message: S
 internal object AvdChangedError : DeviceError {
   override val severity = DeviceError.Severity.INFO
   override val message = "Changes will apply on restart"
+}
+
+internal fun AvdInfo.copy(
+  iniFile: Path = this.iniFile,
+  folderPath: Path = this.dataFolderPath,
+  systemImage: ISystemImage? = this.systemImage,
+  properties: Map<String, String> = this.properties,
+  userSettings: Map<String, String?>? = this.userSettings,
+  status: AvdInfo.AvdStatus = this.status,
+): AvdInfo = AvdInfo(iniFile, folderPath, systemImage, properties, userSettings, status)
+
+/**
+ * We ignore these keys when deciding if the AVD properties have changed in a way that merits
+ * showing the AvdChangedError.
+ */
+private val insignificantKeys =
+  setOf(
+    ConfigKey.CHOSEN_SNAPSHOT_FILE,
+    ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE,
+    ConfigKey.FORCE_COLD_BOOT_MODE,
+    ConfigKey.FORCE_FAST_BOOT_MODE,
+  )
+
+internal fun AvdInfo.updateInsignificantProperties(newInfo: AvdInfo): AvdInfo {
+  if (insignificantKeys.any { properties[it] != newInfo.properties[it] }) {
+    return copy(
+      properties =
+        (properties - insignificantKeys) +
+          newInfo.properties.filterKeys(insignificantKeys::contains)
+    )
+  }
+  return this
 }
 
 private fun AvdInfo.toDeviceType(): DeviceType {

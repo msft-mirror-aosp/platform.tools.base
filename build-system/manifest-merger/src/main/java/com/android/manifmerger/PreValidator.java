@@ -397,7 +397,10 @@ public class PreValidator {
                     }
                     break;
                 default:
-                    throw new IllegalStateException("Unhandled AttributeOperationType " +
+                    mergingReport.addMessage(
+                            xmlElement,
+                            ERROR,
+                            "Unhandled AttributeOperationType " +
                             attributeOperationTypeEntry.getValue());
             }
         }

@@ -61,6 +61,7 @@ val DUMPSYS_PACKAGE_OUT =
     Packages:
       Package [com.app] (f513cb9):
         ...
+        pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]
         User 0: ...
           ...
           runtime permissions:
@@ -207,28 +208,77 @@ class AbstractAdbServicesTest {
   }
 
   @Test
-  fun isInstalled_installed() = runBlocking {
+  fun getAppInfo_installed() = runBlocking {
     val adbServices = FakeAdbServices("serial", 10)
-    adbServices.addCommandOverride(Output("pm list packages com.app", "package:com.app"))
 
-    assertThat(adbServices.isInstalled("com.app")).isTrue()
+    assertThat(adbServices.getAppInfo("com.app", withPermissions = false))
+      .isEqualTo(AppInfo(debuggable = true, backupEnabled = true, grantedPermissions = emptyList()))
   }
 
   @Test
-  fun isInstalled_testApkInstalled() = runBlocking {
-    val adbServices = FakeAdbServices("serial", 10)
-    adbServices.addCommandOverride(
-      Output("pm list packages com.app", "package:com.app.test\npackage:com.app\n")
-    )
+  fun getAppInfo_notDebuggable() = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10)
+        .addCommandOverride(
+          Output(
+            DUMPSYS_PACKAGE,
+            "pkgFlags=[ HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ALLOW_BACKUP ]",
+          )
+        )
 
-    assertThat(adbServices.isInstalled("com.app")).isTrue()
+    assertThat(adbServices.getAppInfo("com.app", withPermissions = false))
+      .isEqualTo(
+        AppInfo(debuggable = false, backupEnabled = true, grantedPermissions = emptyList())
+      )
   }
 
   @Test
-  fun isInstalled_not_installed() = runBlocking {
-    val adbServices = FakeAdbServices("serial", 10)
+  fun getAppInfo_backupDisabled() = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10)
+        .addCommandOverride(
+          Output(
+            DUMPSYS_PACKAGE,
+            "pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA TEST_ONLY ]",
+          )
+        )
 
-    assertThat(adbServices.isInstalled("com.app")).isFalse()
+    assertThat(adbServices.getAppInfo("com.app", withPermissions = false))
+      .isEqualTo(
+        AppInfo(debuggable = true, backupEnabled = false, grantedPermissions = emptyList())
+      )
+  }
+
+  @Test
+  fun getAppInfo_not_installed() = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10).addCommandOverride(Output(DUMPSYS_PACKAGE, "not installed"))
+
+    assertThat(adbServices.getAppInfo("com.app", withPermissions = true)).isNull()
+  }
+
+  @Test
+  fun getAppInfo_grantedPermissions_user0(): Unit = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10)
+        .addCommandOverride(Output(GET_CURRENT_USER, "0"))
+        .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
+
+    val permissions = adbServices.getAppInfo("com.app", withPermissions = true)?.grantedPermissions
+
+    assertThat(permissions).containsExactly("permission2")
+  }
+
+  @Test
+  fun getAppInfo_grantedPermissions_user10(): Unit = runBlocking {
+    val adbServices =
+      FakeAdbServices("serial", 10)
+        .addCommandOverride(Output(GET_CURRENT_USER, "10"))
+        .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
+
+    val permissions = adbServices.getAppInfo("com.app", withPermissions = true)?.grantedPermissions
+
+    assertThat(permissions).containsExactly("permission1", "permission3")
   }
 
   @Test
@@ -246,29 +296,5 @@ class AbstractAdbServicesTest {
     )
 
     assertThat(adbServices.isPlayStoreInstalled()).isFalse()
-  }
-
-  @Test
-  fun getGrantedPermissions_user0(): Unit = runBlocking {
-    val adbServices =
-      FakeAdbServices("serial", 10)
-        .addCommandOverride(Output(GET_CURRENT_USER, "0"))
-        .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
-
-    val permissions = adbServices.getGrantedPermissions("com.app")
-
-    assertThat(permissions).containsExactly("permission2")
-  }
-
-  @Test
-  fun getGrantedPermissions_user10(): Unit = runBlocking {
-    val adbServices =
-      FakeAdbServices("serial", 10)
-        .addCommandOverride(Output(GET_CURRENT_USER, "10"))
-        .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
-
-    val permissions = adbServices.getGrantedPermissions("com.app")
-
-    assertThat(permissions).containsExactly("permission1", "permission3")
   }
 }

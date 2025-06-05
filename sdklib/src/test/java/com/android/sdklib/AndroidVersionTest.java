@@ -201,14 +201,14 @@ public class AndroidVersionTest {
         assertEquals("33", new AndroidVersion(33, 0).getApiStringWithExtension());
         assertEquals("36.0", new AndroidVersion(36, 0, null, 17, true).getApiStringWithExtension());
         assertEquals(
-                "36.0-Baklava",
-                new AndroidVersion(36, 0, "Baklava", 17, true).getApiStringWithExtension());
+                "Baklava",
+                new AndroidVersion(35, 0, "Baklava", 17, true).getApiStringWithExtension());
         assertEquals(
                 "36.0-ext41",
                 new AndroidVersion(36, 0, null, 41, false).getApiStringWithExtension());
         assertEquals(
-                "36.0-Baklava",
-                new AndroidVersion(36, 0, "Baklava", 41, false).getApiStringWithExtension());
+                "Baklava.1",
+                new AndroidVersion(36, 0, "Baklava.1", 41, false).getApiStringWithExtension());
         assertEquals("Tiramisu", new AndroidVersion(32, "Tiramisu").getApiStringWithExtension());
         assertEquals(
                 "VanillaIceCream",
@@ -222,13 +222,13 @@ public class AndroidVersionTest {
         assertEquals(
                 "36.0", new AndroidVersion(36, 0, null, 17, true).getApiStringWithoutExtension());
         assertEquals(
-                "36.0-Baklava",
-                new AndroidVersion(36, 0, "Baklava", 17, true).getApiStringWithoutExtension());
+                "Baklava",
+                new AndroidVersion(35, 0, "Baklava", 17, true).getApiStringWithoutExtension());
         assertEquals(
                 "36.0", new AndroidVersion(36, 0, null, 41, false).getApiStringWithoutExtension());
         assertEquals(
-                "36.0-Baklava",
-                new AndroidVersion(36, 0, "Baklava", 41, false).getApiStringWithoutExtension());
+                "Baklava.1",
+                new AndroidVersion(36, 0, "Baklava.1", 41, false).getApiStringWithoutExtension());
         assertEquals("Tiramisu", new AndroidVersion(32, "Tiramisu").getApiStringWithoutExtension());
         assertEquals(
                 "VanillaIceCream",
@@ -285,15 +285,6 @@ public class AndroidVersionTest {
     }
 
     @Test
-    public void fromString_codenameWithVersion() {
-        AndroidVersion v = AndroidVersion.fromString("36.1-DEV");
-        assertEquals(new AndroidApiLevel(36, 1), v.getAndroidApiLevel());
-        assertEquals("DEV", v.getCodename());
-        assertEquals("36.1-DEV", v.getApiStringWithExtension());
-        assertTrue(v.isPreview());
-    }
-
-    @Test
     public void platformHashString_base() {
         assertEquals("android-35", new AndroidVersion(35, 0).getPlatformHashString());
         assertEquals("android-36", new AndroidVersion(36, 0).getPlatformHashString());
@@ -307,13 +298,13 @@ public class AndroidVersionTest {
                 "android-Baklava",
                 new AndroidVersion(35, 0, "Baklava", null, true).getPlatformHashString());
         assertEquals(
-                "android-36-Baklava",
-                new AndroidVersion(36, 0, "Baklava", null, true).getPlatformHashString());
+                "android-Baklava.1",
+                new AndroidVersion(36, 0, "Baklava.1", null, true).getPlatformHashString());
         assertEquals(
-                "android-36.1-Baklava",
-                new AndroidVersion(36, 1, "Baklava", null, true).getPlatformHashString());
+                "android-Baklava.2",
+                new AndroidVersion(36, 1, "Baklava.2", null, true).getPlatformHashString());
         assertEquals(
-                "android-37.0-DEV",
+                "android-DEV",
                 new AndroidVersion(37, 0, "DEV", null, true).getPlatformHashString());
     }
 
@@ -338,14 +329,11 @@ public class AndroidVersionTest {
         assertEquals(
                 "android-DEV", new AndroidVersion(35, 0, "DEV", 99, false).getPlatformHashString());
         assertEquals(
-                "android-36-ext99-DEV",
-                new AndroidVersion(36, 0, "DEV", 99, false).getPlatformHashString());
+                "android-DEV", new AndroidVersion(36, 0, "DEV", 99, false).getPlatformHashString());
         assertEquals(
-                "android-36.1-ext99-DEV",
-                new AndroidVersion(36, 1, "DEV", 99, false).getPlatformHashString());
+                "android-DEV", new AndroidVersion(36, 1, "DEV", 99, false).getPlatformHashString());
         assertEquals(
-                "android-37.0-ext99-DEV",
-                new AndroidVersion(37, 0, "DEV", 99, false).getPlatformHashString());
+                "android-DEV", new AndroidVersion(37, 0, "DEV", 99, false).getPlatformHashString());
     }
 
     @Test

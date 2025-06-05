@@ -53,7 +53,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
                 kotlin {
-                    androidLibrary {
+                    android {
                         withJava()
                         compilerOptions {
                             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -72,7 +72,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
                 kotlin {
-                    androidLibrary {
+                    android {
                         afterEvaluate {
                             compilations {
                                 val main by getting {
@@ -98,7 +98,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
             project.getSubproject("kmpSecondLib").ktsBuildFile,
             """
                 kotlin {
-                    androidLibrary {
+                    android {
                         withDeviceTest {}
                     }
                 }

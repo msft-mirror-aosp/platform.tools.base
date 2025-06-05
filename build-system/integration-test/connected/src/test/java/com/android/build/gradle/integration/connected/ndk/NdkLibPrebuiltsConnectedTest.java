@@ -29,7 +29,6 @@ public class NdkLibPrebuiltsConnectedTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("ndkLibPrebuilts")
-                    .addGradleProperties("android.useDeprecatedNdk=true")
                     .create();
 
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();

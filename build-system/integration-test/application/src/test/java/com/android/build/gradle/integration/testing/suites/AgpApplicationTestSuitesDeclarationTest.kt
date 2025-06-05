@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Appli
 import com.android.build.gradle.internal.testsuites.HasTestSuites
 import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
 import com.android.build.gradle.internal.testsuites.TestSuite
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.gradle.api.Project
 import org.junit.Rule
@@ -41,6 +42,9 @@ class AgpApplicationTestSuitesDeclarationTest
                 buildscript {
                     classpath("com.google.truth:truth:0.44")
                 }
+            }
+            gradleProperties {
+                add(BooleanOption.TEST_SUITE_SUPPORT, true)
             }
             androidApplication {
                 pluginCallbacks += MyAppCallback::class.java

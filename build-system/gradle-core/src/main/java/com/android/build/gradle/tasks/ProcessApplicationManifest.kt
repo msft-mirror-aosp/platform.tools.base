@@ -199,6 +199,7 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
             },
             reportFile.get().asFile,
             LoggerWrapper.getLogger(ProcessApplicationManifest::class.java),
+            checkIfInstantModule = isDynamicFeature(),
             compileSdk = compileSdk.orNull
         )
         outputMergeBlameContents(mergingReport, mergeBlameFile.get().asFile)
@@ -315,6 +316,8 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
     @get:Input
     @get:Optional
     abstract val versionName: Property<String>
+
+    private fun isDynamicFeature(): Boolean = featureName.isPresent
 
     class CreationAction(
         creationConfig: ApkCreationConfig

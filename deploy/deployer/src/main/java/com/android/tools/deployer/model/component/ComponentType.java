@@ -19,5 +19,6 @@ public enum ComponentType {
     ACTIVITY,
     WATCH_FACE,
     TILE,
-    COMPLICATION // https://developer.android.com/training/wearables/watch-faces/complications
+    COMPLICATION, // https://developer.android.com/training/wearables/watch-faces/complications
+    DECLARATIVE_WATCH_FACE // https://developer.android.com/training/wearables/wff
 }

@@ -40,7 +40,7 @@ class KotlinMultiplatformResourcesTest {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
-                kotlin.androidLibrary {
+                kotlin.android {
                     androidResources {
                         enable = true
                     }

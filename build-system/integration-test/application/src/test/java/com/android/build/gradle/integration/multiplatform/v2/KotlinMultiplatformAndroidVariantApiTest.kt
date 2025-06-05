@@ -78,7 +78,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             // language=kotlin
             """
-                kotlin.androidLibrary {
+                kotlin.android {
                     androidResources {
                         enable = true
                     }
@@ -219,7 +219,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             // language=kotlin
             """
-                kotlin.androidLibrary {
+                kotlin.android {
                     androidResources {
                         enable = true
                     }

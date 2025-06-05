@@ -24,6 +24,7 @@ import com.android.tools.lint.checks.ManifestDetector
 import com.android.tools.lint.checks.SdCardDetector
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.client.api.JarFileIssueRegistryTest.Companion.lintApiStubs
+import com.android.tools.lint.client.api.LintClient.Companion.clientName
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
@@ -41,6 +42,8 @@ import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.XmlScanner
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.util.Locale
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UFile
@@ -115,6 +118,68 @@ class LintDriverCrashTest : AbstractCheckTest() {
         assertThat(it).contains("1 error")
       })
     LintDriver.clearCrashCount()
+  }
+
+  fun testLintDriverErrorInError() {
+    // Regression test for 34248502
+    val sb = StringBuilder()
+    try {
+      lint()
+        .files(
+          xml("res/layout/foo.xml", "<LinearLayout/>"),
+          java(
+            """
+                    package test.pkg;
+                    @SuppressWarnings("ALL") class Foo {
+                    }
+                    """
+          ),
+        )
+        .allowSystemErrors(true)
+        .allowExceptions(true)
+        .issues(CrashingDetector.CRASHING_ISSUE)
+        // stack traces will differ between the test modes
+        .testModes(TestMode.DEFAULT)
+        .clientFactory {
+          object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
+            override fun log(
+              severity: Severity,
+              exception: Throwable?,
+              format: String?,
+              vararg args: Any,
+            ) {
+              sb.append("Severity = ${severity.toName()}\n")
+              sb.append("Message = ${String.format(format ?: "", *args)}\n")
+              sb.append("Stack:\n").append(exception?.stackTraceToString()).append("\n")
+            }
+
+            override fun log(exception: Throwable?, format: String?, vararg args: Any) {
+              log(Severity.WARNING, null, format, *args)
+            }
+          }
+        }
+        .run()
+    } finally {
+      clientName = LintClient.CLIENT_UNIT_TESTS
+      LintDriver.clearCrashCount()
+    }
+
+    val log = sb.toString()
+    // This detector isn't in the built-in package, so reporting as warning rather than error:
+    assertThat(log).contains("Severity = warning")
+    assertThat(log)
+      .contains(
+        "at com.android.tools.lint.client.api.LintDriverCrashTest\$CrashingDetector\$createUastHandler$1.visitFile(LintDriverCrashTest.kt"
+      )
+    assertThat(log).contains("java.lang.ArithmeticException")
+  }
+
+  private fun Throwable.stackTraceToString(): String {
+    val sw = StringWriter()
+    val pw = PrintWriter(sw)
+    printStackTrace(pw)
+    pw.flush()
+    return sw.toString()
   }
 
   fun testDisableLintDriverError() {

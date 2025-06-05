@@ -20,7 +20,6 @@ import com.android.backup.BackupProgressListener.Step
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
-import com.android.backup.ErrorCode.BACKUP_NOT_ALLOWED
 import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
 import com.android.backup.ErrorCode.DEVICE_DISCONNECTED
@@ -97,11 +96,6 @@ abstract class AbstractAdbServices(
         throw BackupException(
           APP_STOPPED,
           "Application '$applicationId' is in a stopped state. Please launch the app and try again.",
-        )
-      out.isBackupNotAllowed() ->
-        throw BackupException(
-          BACKUP_NOT_ALLOWED,
-          "Backup not allowed. Please ensure manifest value 'android:allowBackup' is set to true.",
         )
       !initOk ->
         throw BackupException(TRANSPORT_INIT_FAILED, "Failed to backup '$applicationId`: $out")
@@ -211,39 +205,32 @@ abstract class AbstractAdbServices(
     }
   }
 
-  override suspend fun isInstalled(applicationId: String): Boolean {
-    try {
-      val lines = executeCommand("pm list packages $applicationId").stdout.lines()
-      return lines.contains("package:$applicationId")
-    } catch (e: BackupException) {
-      // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
-      // problem.
-      if (e.errorCode != DEVICE_DISCONNECTED) {
-        logger.warn(e.message, e)
-      }
-      return false
-    }
-  }
+  override suspend fun getAppInfo(applicationId: String, withPermissions: Boolean): AppInfo? {
+    val lines = executeCommand("dumpsys package $applicationId").stdout.lines()
+    val flags =
+      lines
+        .find { it.trim().startsWith("pkgFlags=") }
+        ?.substringAfter('[')
+        ?.substringBefore(']')
+        ?.trim()
+        ?.split(' ') ?: return null
+    val allowBackup = flags.contains("ALLOW_BACKUP")
+    val debuggable = flags.contains("DEBUGGABLE")
 
-  override suspend fun isBackupEnabled(applicationId: String): Boolean {
-    try {
-      val lines = executeCommand("dumpsys package $applicationId").stdout.lines()
-      val flags =
-        (lines
-          .find { it.trim().startsWith("pkgFlags=") }
-          ?.substringAfter('[')
-          ?.substringBefore(']')
-          ?.trim()
-          ?.split(' ') ?: emptyList())
-      return flags.contains("ALLOW_BACKUP")
-    } catch (e: BackupException) {
-      // `pm list packages` can fail if the emulator is not ready yet but might also indicate a
-      // problem.
-      if (e.errorCode != DEVICE_DISCONNECTED) {
-        logger.warn(e.message, e)
+    val grantedPermissions = buildList {
+      if (withPermissions) {
+        val user = executeCommand("am get-current-user").stdout.trim()
+        lines
+          .dropWhile { !it.startsWith("  Package [$applicationId] ") }
+          .dropWhile { !it.startsWith("    User $user: ") }
+          .dropWhile { it != "      runtime permissions:" }
+          .drop(1)
+          .takeWhile { it.startsWith("        ") }
+          .filter { it.contains("granted=true") && !it.contains("ONE_TIME") }
+          .forEach { add(it.trim().substringBefore(':')) }
       }
-      return false
     }
+    return AppInfo(debuggable, allowBackup, grantedPermissions)
   }
 
   override suspend fun isPlayStoreInstalled(): Boolean {
@@ -266,25 +253,6 @@ abstract class AbstractAdbServices(
       executeCommand("pm grant $applicationId $permission")
     } catch (e: BackupException) {
       logger.warn("Failed to restore permission $permission on $applicationId", e)
-    }
-  }
-
-  override suspend fun getGrantedPermissions(applicationId: String): List<String> {
-    return try {
-      val user = executeCommand("am get-current-user").stdout.trim()
-      executeCommand("dumpsys package $applicationId")
-        .stdout
-        .lineSequence()
-        .dropWhile { !it.startsWith("  Package [$applicationId] ") }
-        .dropWhile { !it.startsWith("    User $user: ") }
-        .dropWhile { it != "      runtime permissions:" }
-        .drop(1)
-        .takeWhile { it.startsWith("        ") }
-        .filter { it.contains("granted=true") && !it.contains("ONE_TIME") }
-        .mapTo(mutableListOf()) { it.trim().substringBefore(':') }
-    } catch (e: BackupException) {
-      logger.warn("Failed to get granted permissions for $applicationId", e)
-      emptyList()
     }
   }
 
@@ -396,7 +364,5 @@ private fun MatchResult.getGroup(name: String) =
 private fun String.isBackupSuccess(applicationId: String) =
   contains("Package $applicationId with result: Success") &&
     contains("Backup finished with result: Success")
-
-private fun String.isBackupNotAllowed() = contains(" with result: Backup is not allowed")
 
 private fun String.isAppStopped() = contains("PACKAGE_STOPPED")

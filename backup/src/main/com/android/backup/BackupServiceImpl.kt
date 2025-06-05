@@ -28,6 +28,7 @@ import com.android.backup.BackupService.Companion.PROPERTY_BACKUP_TYPE
 import com.android.backup.BackupService.Companion.TOKEN_FILE
 import com.android.backup.BackupService.Companion.getMetaData
 import com.android.backup.BackupService.Companion.getRestoreToken
+import com.android.backup.ErrorCode.APP_NOT_DEBUGGABLE
 import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.BACKUP_NOT_ENABLED
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
@@ -64,8 +65,15 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     return try {
       with(adbServices) {
         val tempFile = Files.createTempFile("", ".backup")
-        if (!isInstalled(applicationId)) {
+        val appInfo = getAppInfo(applicationId, withPermissions = true)
+        if (appInfo == null) {
           throw BackupException(APP_NOT_INSTALLED, "Application '$applicationId' is not installed")
+        }
+        if (!appInfo.debuggable) {
+          throw BackupException(
+            APP_NOT_DEBUGGABLE,
+            "Application '$applicationId' is not debuggable",
+          )
         }
         // Backup is always handled by the D2D transport
         withSetup(TRANSPORT_DTD) {
@@ -74,7 +82,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
           try {
             reportProgress("Running backup")
             backupNow(applicationId, type, initOk)
-            val permissions = getGrantedPermissions(applicationId)
+            val permissions = appInfo.grantedPermissions
             reportProgress("Fetching backup")
             pullBackup(adbServices, BackupMetadata(applicationId, type), permissions, tempFile)
           } finally {
@@ -84,7 +92,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
         reportProgress("Done")
         val result =
           when {
-            isBackupEnabled(applicationId) -> Success
+            appInfo.backupEnabled -> Success
             tempFile.hasAuthData() -> WithoutAppData
             else ->
               BackupException(
@@ -119,10 +127,17 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
           ZipFile(backupFile.pathString).use { zip ->
             val metadata = zip.getMetaData()
             val applicationId = metadata.applicationId
-            if (!isInstalled(applicationId)) {
+            val appInfo = getAppInfo(applicationId, withPermissions = false)
+            if (appInfo == null) {
               throw BackupException(
                 APP_NOT_INSTALLED,
                 "Application '$applicationId' is not installed on the device",
+              )
+            }
+            if (!appInfo.debuggable) {
+              throw BackupException(
+                APP_NOT_DEBUGGABLE,
+                "Application '$applicationId' is not debuggable",
               )
             }
 
@@ -173,11 +188,12 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
   }
 
   override suspend fun isInstalled(serialNumber: String, applicationId: String): Boolean {
-    return factory.createAdbServices(serialNumber, null, 1).isInstalled(applicationId)
+    return factory.createAdbServices(serialNumber, null, 1).getAppInfo(applicationId) != null
   }
 
   override suspend fun isBackupEnabled(serialNumber: String, applicationId: String): Boolean {
-    return factory.createAdbServices(serialNumber, null, 1).isBackupEnabled(applicationId)
+    val adbServices = factory.createAdbServices(serialNumber, null, 1)
+    return adbServices.getAppInfo(applicationId)?.backupEnabled == true
   }
 
   override suspend fun isPlayStoreInstalled(serialNumber: String): Boolean {

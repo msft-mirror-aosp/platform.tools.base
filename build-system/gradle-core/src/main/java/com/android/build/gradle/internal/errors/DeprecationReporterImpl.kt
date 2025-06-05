@@ -253,14 +253,7 @@ class DeprecationReporterImpl(
                 }
             }
             is Option.Status.Removed -> {
-                // Many tests still use BooleanOption.ENABLE_DEPRECATED_NDK even though the feature
-                // has been removed, so we always produce a warning for that option to avoid
-                // breaking tests. TODO: Remove those tests and remove the special treatment for
-                // ENABLE_DEPRECATED_NDK.
-                // Also, report "android.enableR8=true" as warning, otherwise as error.
-                if (defaultValue == value
-                    || option == BooleanOption.ENABLE_DEPRECATED_NDK
-                    || (value == true && option == OptionalBooleanOption.ENABLE_R8)) {
+                if (defaultValue == value) {
                     issueReporter.reportWarning(
                         Type.UNSUPPORTED_PROJECT_OPTION_USE,
                         "The option '${option.propertyName}' is deprecated."

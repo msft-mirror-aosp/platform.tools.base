@@ -481,6 +481,31 @@ gradle_build(
     visibility = ["//visibility:public"],
 )
 
+gradle_build(
+    name = "android_gradle_plugin_9",
+    build_file = "//tools:agp_gradle_build_root_build_file",
+    data = ["//prebuilts/studio/jdk/jdk11:jdk_runtime_files"] + ANDROID_GRADLE_PLUGIN_SOURCE_FILES,
+    gradle_properties = select({
+        "//tools/base/bazel:release": {
+            "hybrid-build-embedded-in-bazel": "true",
+            "release": "true",
+            "nextMajor": "true",
+        },
+        "//conditions:default": {
+            "hybrid-build-embedded-in-bazel": "true",
+            "nextMajor": "true",
+        },
+    }),
+    output_file = "android_gradle_plugin_9.zip",
+    output_file_source = "dist/repo.zip",
+    repos = [
+        "//tools/base:agp_dependencies",
+        "//tools/base:agp_artifacts",
+    ],
+    tasks = [":zipPlugin"],
+    visibility = ["//visibility:public"],
+)
+
 DECLARATIVE_ANDROID_GRADLE_PLUGIN_SOURCE_FILES = ANDROID_GRADLE_PLUGIN_SOURCE_FILES + [
     "//tools/base/build-system/gradle-dcl-ecosystem:agp_gradle_build_files",
 ]

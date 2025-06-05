@@ -41,12 +41,12 @@ interface KotlinMultiplatformDefinition: GradleProjectDefinition {
      * the Android DSL object. This is only available if the [PluginType.ANDROID_KMP_LIBRARY] is
      * applied
      */
-    val androidLibrary: KotlinMultiplatformAndroidLibraryTarget
+    val android: KotlinMultiplatformAndroidLibraryTarget
     /**
      * configures the Android DSL object. This is only available if the
      * [PluginType.ANDROID_KMP_LIBRARY] is applied
      */
-    fun androidLibrary(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit)
+    fun android(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit)
 
     val kotlin: KotlinMultiplatformExtension
     fun kotlin(action: KotlinMultiplatformExtension.() -> Unit)
@@ -71,17 +71,17 @@ internal class KotlinMultiplatformDefinitionImpl(
         action(files)
     }
 
-    override val androidLibrary: KotlinMultiplatformAndroidLibraryTarget =
+    override val android: KotlinMultiplatformAndroidLibraryTarget =
         DslProxy.createProxy(
             KotlinMultiplatformAndroidLibraryTarget::class.java,
             dslRecorder,
         )
 
-    override fun androidLibrary(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit) {
+    override fun android(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit) {
         if (!hasPlugin(PluginType.ANDROID_KMP_LIBRARY))
             throw RuntimeException("ANDROID_KMP_PLUGIN not applied")
 
-        action(androidLibrary)
+        action(android)
     }
 
     private val kotlinDslRecorder = DefaultDslRecorder()
@@ -100,7 +100,7 @@ internal class KotlinMultiplatformDefinitionImpl(
         writer.apply {
             block("kotlin") {
                 if (hasPlugin(PluginType.ANDROID_KMP_LIBRARY)) {
-                    block("androidLibrary") {
+                    block("android") {
                         dslRecorder.writeContent(this)
                     }
                 }

@@ -269,27 +269,126 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         "z/H5keVHZfRvyw1K+QXLP+ikH8l/nOn/kKsd+98m3BRGR/9XlRgBsCNWcdY/" +
         "Tv8HrPpUgIQPAAA="
 
+    // Add "Lint-Revision: 3" to the jar manifest created with
+    // CustomRuleTest.LINT_JAR_SERVICE_REGISTRY_BASE64_GZIP.
+    val lintJarRevision3 =
+      "" +
+        "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" +
+        "GPd2/wEQZrQ94RIAAA=="
+
     val targetDir = TestUtils.createTempDirDeletedOnExit().toFile()
     val file1 = base64gzip("lint1.jar", CustomRuleTest.LINT_JAR_BASE64_GZIP).createFile(targetDir)
     val file2 = base64gzip("lint2.jar", lintJarRevision1).createFile(targetDir)
     val file3 = base64gzip("lint3.jar", lintJarRevision2).createFile(targetDir)
+    val file4 = base64gzip("lint4.jar", lintJarRevision3).createFile(targetDir)
     assertTrue(file1.path, file1.exists())
     assertTrue(file2.path, file2.exists())
     assertTrue(file3.path, file3.exists())
+    assertTrue(file4.path, file4.exists())
 
     val loggedWarnings = StringWriter()
     val client = createClient(loggedWarnings)
 
-    JarFileIssueRegistry.get(client, listOf(file1, file2)).let { registries ->
+    JarFileIssueRegistry.get(client, listOf(file1, file2, file3, file4)).let { registries ->
       assertThat(registries.size).isEqualTo(1)
-      // Prioritize lint jars with revision number.
-      assertThat(registries.first().jarFile).isEqualTo(file2)
+      // Prioritize lint jars with revision 3.
+      assertThat(registries.first().jarFile).isEqualTo(file4)
     }
 
-    JarFileIssueRegistry.get(client, listOf(file2, file3)).let { registries ->
+    JarFileIssueRegistry.get(client, listOf(file4, file3, file2, file1)).let { registries ->
       assertThat(registries.size).isEqualTo(1)
-      // Prioritize lint jars with higher revision number.
+      // Prioritize lint jars with revision 3.
+      assertThat(registries.first().jarFile).isEqualTo(file4)
+    }
+
+    JarFileIssueRegistry.get(client, listOf(file1, file2, file3)).let { registries ->
+      assertThat(registries.size).isEqualTo(1)
+      // Prioritize lint jars with revision 2.
       assertThat(registries.first().jarFile).isEqualTo(file3)
+    }
+
+    JarFileIssueRegistry.get(client, listOf(file1, file2)).let { registries ->
+      assertThat(registries.size).isEqualTo(1)
+      // Prioritize lint jars that have revision numbers.
+      assertThat(registries.first().jarFile).isEqualTo(file2)
     }
   }
 

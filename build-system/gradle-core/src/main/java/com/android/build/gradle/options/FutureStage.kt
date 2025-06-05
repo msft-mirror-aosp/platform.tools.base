@@ -17,6 +17,15 @@
 package com.android.build.gradle.options
 
 /**
- * Represents the proposed state of an [Option] in a future AGP version.
+ * Represents the proposed state of a [BooleanOption] in a future AGP version.
+ *
+ * This helps to communicate timelines to users and also prevent features from staying in an
+ * intermediate stage for too long, which would increase maintenance cost to AGP and users.
+ *
+ * Note: Depending on the current stage, the [FutureStage] may or may not need to be exact. For
+ * example, for [FeatureStage.Experimental] or [FeatureStage.Supported], the [FutureStage] can be an
+ * estimation used for internal testing and not a promise to the users (unlike
+ * [FeatureStage.SoftlyEnforced] or [FeatureStage.Deprecated] where the [FutureStage] should be
+ * honored).
  */
 data class FutureStage(val defaultValue: Boolean, val stage: Stage, val version: Version)

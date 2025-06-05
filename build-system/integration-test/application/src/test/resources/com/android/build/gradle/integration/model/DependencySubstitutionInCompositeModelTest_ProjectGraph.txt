@@ -1,0 +1,20 @@
+> ProjectGraph:
+   > variant:
+      > debug:
+         > projectInfo:
+            - buildId        = ":includedBuild"
+            - projectPath    = ":lib"
+            - isTestFixtures = false
+            - buildType      = "debug"
+            - productFlavors = []
+            - attributes:
+               * "com.android.build.api.attributes.AgpVersionAttr -> {AGP_Version}"
+               * "com.android.build.gradle.internal.attributes.VariantAttr -> debug"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.usage -> java-runtime"
+            - capabilities:
+               * "com.example.included:lib:1.0"
+         < projectInfo
+      < debug
+   < variant
+< ProjectGraph

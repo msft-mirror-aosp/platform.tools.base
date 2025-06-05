@@ -69,6 +69,7 @@ fun mergeManifests(
     reportFile: File?,
     logger: ILogger,
     checkIfPackageInMainManifest: Boolean = true,
+    checkIfInstantModule: Boolean = false,
     compileSdk: Int? = null
 ): MergingReport {
 
@@ -96,6 +97,10 @@ fun mergeManifests(
 
         if (isAppMerge) {
             manifestMergerInvoker.withFeatures(ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
+        }
+
+        if(checkIfInstantModule){
+            manifestMergerInvoker.withFeatures(ManifestMerger2.Invoker.Feature.CHECK_INSTANT_FLAG)
         }
 
         if (outAaptSafeManifestLocation != null) {

@@ -3,8 +3,8 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:d="http://schemas.android.com/sdk/devices/7">
     <d:device>
-        <d:name>XR Device</d:name>
-        <d:id>xr_device</d:id>
+        <d:name>XR Headset</d:name>
+        <d:id>xr_headset_device</d:id>
         <d:manufacturer>Google</d:manufacturer>
         <d:playstore-enabled>true</d:playstore-enabled>
         <d:hardware>

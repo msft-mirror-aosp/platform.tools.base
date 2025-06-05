@@ -36,7 +36,7 @@ open class Stage(
 
     /**
      * Status of the [Option] which represents an API or feature. It is related but not the same as
-     * the [Stage] of the API of feature.
+     * the [Stage] of the API or feature.
      */
     val status: Option.Status
 )
@@ -67,7 +67,7 @@ sealed class ApiStage(status: Option.Status) : Stage(status) {
      *
      * @param removalTarget a target when the API and the corresponding [Option] will be removed
      */
-    class Deprecated(removalTarget: DeprecationReporter.DeprecationTarget) :
+    class Deprecated(val removalTarget: DeprecationReporter.DeprecationTarget) :
         ApiStage(Option.Status.Deprecated(removalTarget))
 
     /**
@@ -102,10 +102,6 @@ sealed class FeatureStage(status: Option.Status) : Stage(status) {
      *
      * Eventually, the feature will likely be enforced (see stage [SoftlyEnforced] and [Enforced]).
      * In some cases, it may be removed (see stage [Deprecated] and [Removed]).
-     *
-     * DISCOURAGED USAGE: The use of this stage is actually discouraged as it doesn't specify a
-     * clear timeline and features may stay in this stage for too long, thus increasing maintenance
-     * cost to AGP and users. Consider using [SoftlyEnforced] or [Deprecated] instead.
      */
     object Supported : FeatureStage(Option.Status.STABLE)
 

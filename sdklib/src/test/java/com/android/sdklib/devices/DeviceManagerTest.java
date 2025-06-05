@@ -194,7 +194,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro XL",
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
-                        "XR Device");
+                        "XR Headset");
 
         assertThat(dm.getDevice("Nexus One", "Google").getDisplayName()).isEqualTo("Nexus One");
 
@@ -284,7 +284,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro XL",
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
-                        "XR Device");
+                        "XR Headset");
     }
 
     @Test
@@ -422,7 +422,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro XL",
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
-                        "XR Device");
+                        "XR Headset");
 
         assertThat(listDisplayNames(dm2.getDevices(DeviceManager.ALL_DEVICES)))
                 .containsExactly(
@@ -511,7 +511,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro XL",
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
-                        "XR Device");
+                        "XR Headset");
     }
 
     @Test
@@ -643,7 +643,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro XL",
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
-                        "XR Device");
+                        "XR Headset");
 
         assertThat(listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)))
                 .containsExactly(
@@ -732,7 +732,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro XL",
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
-                        "XR Device");
+                        "XR Headset");
     }
 
     @Test
@@ -1120,6 +1120,6 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device desktop_small\n"
                             + "Warning: Unsupported device desktop_medium\n"
                             + "Warning: Unsupported device desktop_large\n"
-                            + "Warning: Unsupported device xr_device\n");
+                            + "Warning: Unsupported device xr_headset_device\n");
     }
 }

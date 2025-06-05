@@ -87,6 +87,59 @@ class ProcessApplicationManifestTest {
     }
 
     @Test
+    fun testAppManifestDefaultsToCompileSdkValueIfTargetSdkIsUnset() {
+        project.getSubproject(":app").buildFile.appendText("""
+            android {
+                compileSdk = 36
+            }
+        """.trimIndent())
+        val result = project.executor()
+            .run(":app:processDebugManifest")
+        assertTrue { result.failedTasks.isEmpty()}
+        val manifestFile =
+            project.getSubproject(":app")
+                .file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
+
+        val result2 = project.executor()
+            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
+            .run("clean", ":app:processDebugManifest")
+        assertTrue { result2.failedTasks.isEmpty()}
+        val manifestFile2 = project.getSubproject(":app")
+            .file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+        assertThat(manifestFile2).exists()
+        assertThat(manifestFile2).contains("android:targetSdkVersion=\"36\"")
+    }
+
+    @Test
+    fun testAppManifestDefaultsToCompileSdkPreviewValueIfTargetSdkIsUnset() {
+        project.getSubproject(":app").buildFile.appendText("""
+            android {
+                compileSdkPreview = "Baklava"
+            }
+        """.trimIndent())
+        val result = project.executor()
+            .run(":app:processDebugManifest")
+        assertTrue { result.failedTasks.isEmpty()}
+        val manifestFile =
+            project.getSubproject(":app")
+                .file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
+
+        val result2 = project.executor()
+            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
+            .run("clean", ":app:processDebugManifest")
+        assertTrue { result2.failedTasks.isEmpty()}
+        val manifestFile2 = project.getSubproject(":app")
+            .file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+        assertThat(manifestFile2).exists()
+        assertThat(manifestFile2).contains("android:targetSdkVersion=\"Baklava\"")
+    }
+
+
+    @Test
     fun testLibraryManifestContainsTargetSdkVersionFromOptions() {
         project.getSubproject(":lib").buildFile.appendText("""
             android {

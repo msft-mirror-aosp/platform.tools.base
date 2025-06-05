@@ -100,6 +100,7 @@ def find_test_targets(
     failure_retry_info = failure_retry.get_failure_retry_info(
         build_env,
         gerrit_info,
+        runs_per_test_info,
     )
     return SelectivePresubmitResult(
         strategy=SelectivePresubmitStrategy.RETRY_FAILED,

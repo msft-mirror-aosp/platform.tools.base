@@ -85,6 +85,7 @@ fi
   ${auth_options} \
   --define agent_coverage=true \
   --remote_download_regex=".*.coverage.baseline.srcs" \
+  --flaky_test_attempts=10 \
   "${extra_test_flags[@]}" \
   -- \
   @cov//:all.suite \

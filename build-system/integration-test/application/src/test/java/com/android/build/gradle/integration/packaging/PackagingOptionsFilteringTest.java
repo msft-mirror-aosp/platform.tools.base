@@ -212,6 +212,29 @@ public class PackagingOptionsFilteringTest {
     }
 
     /**
+     * MANIFEST.MF files in nested folders are ignored.
+     *
+     * @throws Exception test failed
+     */
+    @Test
+    public void byDefaultManifestMFFilesInJavaResourcesAreIgnored() throws Exception {
+        byte[] c0 = new byte[] {0, 1, 2, 3};
+
+        addJavaRes(app, "main", c0, "META-INF", "LICENSE");
+        addJavaRes(app, "main", c0, "META-INF", "LICENSE.txt");
+        addJavaRes(app, "main", c0, "META-INF", "OSGI-INF", "MANIFEST.MF");
+        addJavaRes(app, "main", c0, "META-INF", "versions", "9", "OSGI-INF", "MANIFEST.MF");
+
+        app.execute("assembleDebug");
+
+        ApkSubject apk = TruthHelper.assertThat(app.getApk(DEBUG));
+        apk.doesNotContainJavaResource("META-INF/LICENSE");
+        apk.doesNotContainJavaResource("META-INF/LICENSE.txt");
+        apk.doesNotContainJavaResource("META-INF/OSGI-INF/MANIFEST.MF");
+        apk.doesNotContainJavaResource("META-INF/versions/9/OSGI-INF/MANIFEST.MF");
+    }
+
+    /**
      * Folders that are named {@code SCCS} are ignored.
      *
      * @throws Exception test failed

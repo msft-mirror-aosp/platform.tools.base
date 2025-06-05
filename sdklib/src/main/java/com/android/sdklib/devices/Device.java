@@ -519,44 +519,35 @@ public final class Device {
         }
         Device d = (Device) o;
         return mName.equals(d.getDisplayName())
-                && mId.equals(d.getId())
-                && mManufacturer.equals(d.getManufacturer())
-                && mSoftware.equals(d.getAllSoftware())
-                && mState.equals(d.getAllStates())
-                && mMeta.equals(d.getMeta())
-                && mDefaultState.equals(d.getDefaultState())
+                && Objects.equals(mId, d.getId())
+                && Objects.equals(mManufacturer, d.getManufacturer())
+                && Objects.equals(mSoftware, d.getAllSoftware())
+                && Objects.equals(mState, d.getAllStates())
+                && Objects.equals(mMeta, d.getMeta())
+                && Objects.equals(mDefaultState, d.getDefaultState())
                 && mIsDeprecated == d.mIsDeprecated
                 && mHasPlayStore == d.mHasPlayStore
                 && Objects.equals(mTagId, d.mTagId)
-                && mBootProps.equals(d.mBootProps);
+                && Objects.equals(mBootProps, d.mBootProps);
     }
 
-    /**
-     * For *internal* usage only. Must not be serialized to disk.
-     */
+
     @Override
     public int hashCode() {
-        int hash = 17;
-        hash = 31 * hash + mName.hashCode();
-        hash = 31 * hash + mId.hashCode();
-        hash = 31 * hash + mManufacturer.hashCode();
-        hash = 31 * hash + mSoftware.hashCode();
-        hash = 31 * hash + mState.hashCode();
-        hash = 31 * hash + mMeta.hashCode();
-        hash = 31 * hash + mDefaultState.hashCode();
-        hash = 31 * hash + Boolean.hashCode(mIsDeprecated);
-        hash = 31 * hash + Boolean.hashCode(mHasPlayStore);
-
-        // tag-id and boot-props are optional and should not change a device's hashcode
-        // which did not have them before.
-        if (mTagId != null) {
-            hash = 31 * hash + mTagId.hashCode();
-        }
-        if (!mBootProps.isEmpty()) {
-            hash = 31 * hash + mBootProps.hashCode();
-        }
-        return hash;
+        return Objects.hash(
+                mName,
+                mId,
+                mManufacturer,
+                mSoftware,
+                mState,
+                mMeta,
+                mDefaultState,
+                mIsDeprecated,
+                mHasPlayStore,
+                mTagId,
+                mBootProps);
     }
+
 
     /** toString value suitable for debugging only. */
     @Override

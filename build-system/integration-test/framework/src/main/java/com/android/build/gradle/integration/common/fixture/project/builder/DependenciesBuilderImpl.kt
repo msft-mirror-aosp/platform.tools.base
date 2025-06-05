@@ -64,51 +64,6 @@ internal class DependenciesBuilderImpl(
             .map { it.dependency }
             .filterIsInstance<MavenRepoGenerator.Library>()
 
-    fun writeBuildFile(sb: StringBuilder, projectDir: File) {
-        sb.append("\ndependencies {\n")
-        for ((scope, dependency, capability) in getDependenciesData()) {
-            if (capability != null) throw RuntimeException("Capability is not support in fixtures other than GradleRule")
-            when (dependency) {
-                is String -> sb.append("$scope '$dependency'\n")
-                is ExternalDependencyBuilder -> {
-                    if (dependency.testFixtures) {
-                        sb.append("$scope testFixtures('${dependency.coordinate}')\n")
-                    } else {
-                        sb.append("$scope '${dependency.coordinate}'\n")
-                    }
-                }
-
-                is ProjectDependencyBuilder -> {
-                    val projectStr = dependency.configuration?.let { configName ->
-                        "project(path: '${dependency.path}', configuration: '$configName')"
-                    } ?: "project('${dependency.path}')"
-
-                    val dependencyStr = if (dependency.testFixtures) {
-                        "testFixtures($projectStr)"
-                    } else {
-                        projectStr
-                    }
-
-                    sb.append("$scope $dependencyStr\n")
-                }
-
-                is MavenRepoGenerator.Library -> sb.append("$scope '${dependency.mavenCoordinate}'\n")
-                is LocalJarDependency -> {
-                    val path = createLocalJar(dependency, projectDir.toPath())
-                    sb.append("$scope files('$path')\n")
-                }
-
-                is LocalFiles -> {
-                    sb.append("$scope files('${dependency.path}')\n")
-                }
-
-                else -> throw RuntimeException("unsupported dependency type: ${dependency.javaClass}")
-            }
-        }
-
-        sb.append("}\n")
-    }
-
     fun write(buildWriter: BuildWriter, projectLocation: Path) {
         if (isEmpty() && constraints.isEmpty()) return
 
@@ -232,7 +187,7 @@ internal data class LocalJarDependencyImpl(
 
 private data class LocalFilesImpl(override val path: Path): LocalFiles
 
-private data class ProjectDependencyBuilderImpl(
+internal data class ProjectDependencyBuilderImpl(
     override val path: String,
     override val testFixtures: Boolean,
     override val configuration: String? = null

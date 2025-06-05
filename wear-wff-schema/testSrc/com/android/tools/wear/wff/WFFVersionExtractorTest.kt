@@ -18,6 +18,7 @@ package com.android.tools.wear.wff
 import com.android.tools.wear.wff.WFFVersion.WFFVersion1
 import com.android.tools.wear.wff.WFFVersion.WFFVersion2
 import com.android.tools.wear.wff.WFFVersion.WFFVersion3
+import com.android.tools.wear.wff.WFFVersion.WFFVersion4
 import com.android.utils.XmlUtils
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -31,6 +32,7 @@ class WFFVersionExtractorTest {
     assertEquals(WFFVersion1, extractor.extractFromManifest(manifestWithWFFVersion("1")))
     assertEquals(WFFVersion2, extractor.extractFromManifest(manifestWithWFFVersion("2")))
     assertEquals(WFFVersion3, extractor.extractFromManifest(manifestWithWFFVersion("3")))
+    assertEquals(WFFVersion4, extractor.extractFromManifest(manifestWithWFFVersion("4")))
   }
 
   @Test

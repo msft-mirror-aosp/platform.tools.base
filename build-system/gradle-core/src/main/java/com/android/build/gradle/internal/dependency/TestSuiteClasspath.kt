@@ -77,14 +77,14 @@ class TestSuiteClasspath(
     }
 
     fun getArtifactCollectionForToolingModel(
-        configType: AndroidArtifacts.ConsumedConfigType,
+        configType: ConsumedConfigType,
         artifactType: AndroidArtifacts.ArtifactType,
         configurationFactory: (Configuration) -> Configuration = { it }
     ): ArtifactCollection {
         val configuration = configurationFactory(
             when (configType) {
-                AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath
-                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath
+                ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath
+                ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath
                 else -> throw RuntimeException("Test suite do not support $configType")
             }
         )

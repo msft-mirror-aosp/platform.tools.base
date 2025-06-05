@@ -40,6 +40,7 @@ import com.android.build.gradle.internal.res.GenerateEmptyResourceFilesTask
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
+import com.android.build.gradle.internal.tasks.LibraryJniLibsTask.ProjectOnlyCreationAction
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskConfigAction
 import com.android.build.gradle.internal.tasks.factory.TaskProviderCallback
@@ -111,8 +112,11 @@ class KmpTaskManager(
         variant: KmpCreationConfig
     ) {
         createAnchorTasks(project, variant)
-
         maybeCreateJavacTask(variant)
+        createMergeJniLibFoldersTasks(variant)
+        taskFactory.register(
+            ProjectOnlyCreationAction(variant, InternalArtifactType.LIBRARY_AND_LOCAL_JARS_JNI)
+        )
 
         if (variant.buildFeatures.androidResources) {
             createPackageResourcesTask(

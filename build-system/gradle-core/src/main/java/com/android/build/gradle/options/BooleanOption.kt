@@ -535,6 +535,31 @@ enum class BooleanOption(
         )
     ),
 
+    /*
+     * As of AGP 9.0, if an app's targetSdk is not set, it will default to the compileSdk value.
+     */
+    DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET(
+        "android.sdk.defaultTargetSdkToCompileSdkIfUnset",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_9_0),
+            Version.VERSION_9_0
+        )
+    ),
+
+    TEST_SUITE_SUPPORT(
+        "android.experimental.testSuiteSupport",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_9_0),
+            Version.VERSION_9_0
+        )
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */
@@ -1109,6 +1134,25 @@ enum class BooleanOption(
                 stage = FeatureStage.Removed(removedVersion = stage.removalTarget.removalTarget),
                 version = stage.removalTarget.removalTarget
             )
+        }
+        is ApiStage.Deprecated -> {
+            check(futureStage == null) {
+                "Do not set ${FutureStage::class.simpleName} for property '$propertyName' manually" +
+                        " because it has stage ${ApiStage.Deprecated::class.simpleName}" +
+                        " which already contains the necessary information to infer its ${FutureStage::class.simpleName}."
+            }
+            FutureStage(
+                defaultValue = false,
+                stage = ApiStage.Removed(removedVersion = stage.removalTarget.removalTarget),
+                version = stage.removalTarget.removalTarget
+            )
+        }
+        is FeatureStage.Enforced, is FeatureStage.Removed, is ApiStage.Removed -> {
+            check(futureStage == null) {
+                "Do not set ${FutureStage::class.simpleName} for property '$propertyName'" +
+                        " because it has stage ${stage.javaClass.simpleName}."
+            }
+            null
         }
         else -> futureStage
     }

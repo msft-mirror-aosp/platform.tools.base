@@ -16,6 +16,7 @@
 #include "activity_manager.h"
 
 #include <sys/stat.h>
+
 #include <iostream>
 #include <sstream>
 #include <thread>
@@ -143,7 +144,26 @@ TraceStopStatus::Status ActivityManager::StopProfiling(
 bool ActivityManager::TriggerHeapDump(int pid, const std::string &file_path,
                                       std::string *error_string) const {
   std::stringstream ss;
+  // We attempt to use the -b option for Android 10+ (Q) devices. Although this
+  // functionality was officially introduced in Android 15, mainline updates
+  // might backport it to older versions. If the command fails, we'll
+  // fall back to the standard dumpheap command without the -b option.
+  if (DeviceInfo::feature_level() >= DeviceInfo::Q) {
+    ss << "dumpheap -b png " << pid << " " << file_path;
+
+    bool succeeded = bash_->Run(ss.str(), error_string);
+
+    if (succeeded) {
+      return true;
+    }
+
+    // Clean up for the fallback approach
+    *error_string = "";
+    ss.str("");
+  }
+
   ss << "dumpheap " << pid << " " << file_path;
+
   return bash_->Run(ss.str(), error_string);
 }
 

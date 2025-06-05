@@ -589,7 +589,7 @@ java_proto_library(
 # Copy runfiles library so that iml_to_build can find the package.
 copy_file(
     name = "runfiles_java_lib",
-    src = "@rules_java//java/runfiles:runfiles",
+    src = "@rules_java//java/runfiles",
     out = "librunfiles.jar",
     allow_symlink = True,
     visibility = ["//visibility:public"],
@@ -597,4 +597,11 @@ copy_file(
 
 kt_java_toolchain_bundle(
     name = "default_java_toolchain_bundle",
+)
+
+java_binary(
+    name = "jar_filter",
+    srcs = ["src/com/android/tools/binaries/JarFilter.java"],
+    main_class = "com.android.tools.binaries.JarFilter",
+    visibility = ["//visibility:public"],
 )

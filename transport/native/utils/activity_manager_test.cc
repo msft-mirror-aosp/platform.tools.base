@@ -17,6 +17,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "utils/device_info.h"
+#include "utils/device_info_helper.h"
 
 using std::string;
 using testing::DoAll;
@@ -33,6 +35,8 @@ const char* const kAmExecutable = "/aaaaa/system/bin/am";
 const char* const kProfileStart = "profile start";
 const char* const kTestPackageName = "TestPackageName";
 const char* const kMockOutputString = "MockOutputString";
+const int kTestPid = 12345;
+const char* const kTestFilePath = "/data/local/tmp/test_heapdump.hprof";
 }  // namespace
 
 namespace profiler {
@@ -125,6 +129,109 @@ TEST(ActivityManagerTest, InstrumentSystemServerStart) {
   EXPECT_THAT(cmd, HasSubstr(" system "));
   EXPECT_THAT(cmd, Not(HasSubstr(" system_process ")));
   EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, TriggerHeapDump_Success_WithOptionB_ApiQPlus) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::Q);
+  string error_string;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &error_string))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  bool result = manager.TriggerHeapDump(kTestPid, kTestFilePath, &error_string);
+
+  EXPECT_TRUE(result);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr("dumpheap -b png"));
+  EXPECT_THAT(cmd, HasSubstr(std::to_string(kTestPid)));
+  EXPECT_THAT(cmd, HasSubstr(kTestFilePath));
+  EXPECT_TRUE(error_string.empty());
+}
+
+TEST(ActivityManagerTest, TriggerHeapDump_Fallback_WhenOptionBFails_ApiQPlus) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::Q);
+  string error_string;
+  string cmd_option_b;
+  string cmd_fallback;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+
+  testing::InSequence s;
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &error_string))
+      .WillOnce(DoAll(SaveArg<0>(&cmd_option_b),
+                      SetArgPointee<1>("Error with -b"), Return(false)));
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &error_string))
+      .WillOnce(DoAll(SaveArg<0>(&cmd_fallback), Return(true)));
+
+  TestActivityManager manager{std::move(bash)};
+
+  bool result = manager.TriggerHeapDump(kTestPid, kTestFilePath, &error_string);
+
+  EXPECT_TRUE(result);
+  EXPECT_THAT(cmd_option_b, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd_option_b, HasSubstr("dumpheap -b png"));
+  EXPECT_THAT(cmd_option_b, HasSubstr(std::to_string(kTestPid)));
+  EXPECT_THAT(cmd_option_b, HasSubstr(kTestFilePath));
+
+  EXPECT_THAT(cmd_fallback, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd_fallback, HasSubstr("dumpheap"));
+  EXPECT_THAT(cmd_fallback, Not(HasSubstr("-b png")));
+  EXPECT_THAT(cmd_fallback, HasSubstr(std::to_string(kTestPid)));
+  EXPECT_THAT(cmd_fallback, HasSubstr(kTestFilePath));
+  // error_string should be cleared by the fallback logic
+  EXPECT_TRUE(error_string.empty());
+}
+
+TEST(ActivityManagerTest, TriggerHeapDump_Success_WithoutOptionB_ApiPreQ) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::P);  // API Level < Q
+  string error_string;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &error_string))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  bool result = manager.TriggerHeapDump(kTestPid, kTestFilePath, &error_string);
+
+  EXPECT_TRUE(result);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr("dumpheap"));
+  EXPECT_THAT(cmd, Not(HasSubstr("-b png")));
+  EXPECT_THAT(cmd, HasSubstr(std::to_string(kTestPid)));
+  EXPECT_THAT(cmd, HasSubstr(kTestFilePath));
+  EXPECT_TRUE(error_string.empty());
+}
+
+TEST(ActivityManagerTest, TriggerHeapDump_Failure_ApiPreQ) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::P);  // API Level < Q
+  string error_string;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &error_string))
+      .WillOnce(DoAll(SaveArg<0>(&cmd),
+                      SetArgPointee<1>("Generic dumpheap error"),
+                      Return(false)));
+  TestActivityManager manager{std::move(bash)};
+
+  bool result = manager.TriggerHeapDump(kTestPid, kTestFilePath, &error_string);
+
+  EXPECT_FALSE(result);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr("dumpheap"));
+  EXPECT_THAT(cmd, Not(HasSubstr("-b png")));
+  EXPECT_THAT(cmd, HasSubstr(std::to_string(kTestPid)));
+  EXPECT_THAT(cmd, HasSubstr(kTestFilePath));
+  EXPECT_EQ(error_string, "Generic dumpheap error");
 }
 
 }  // namespace profiler

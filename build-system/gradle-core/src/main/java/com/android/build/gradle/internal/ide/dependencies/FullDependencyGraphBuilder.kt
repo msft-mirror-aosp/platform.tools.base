@@ -130,7 +130,7 @@ class FullDependencyGraphBuilder(
         val unvisitedArtifacts = artifacts.filter { it.componentIdentifier is OpaqueComponentArtifactIdentifier }
 
         for (artifact in unvisitedArtifacts) {
-            val library = libraryService.getLibrary(artifact, AdditionalArtifacts(null, listOf()))
+            val library = libraryService.getLibrary(artifact, AdditionalArtifacts.EMPTY)
             items.add(GraphItemImpl(library.key, null))
         }
 

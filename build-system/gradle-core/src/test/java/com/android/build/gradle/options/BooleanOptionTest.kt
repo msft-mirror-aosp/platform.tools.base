@@ -51,29 +51,109 @@ class BooleanOptionTest {
     }
 
     @Test
-    fun `check features are not in SUPPORTED stage`() {
-        // The use of FeatureStage.Supported is not recommended as it doesn't specify a clear
-        // timeline and the feature may stay in this stage for too long, thus increasing maintenance
-        // cost to AGP and users.
-        // In some cases, FeatureStage.Supported may be suitable (e.g., if we don't want to show a
-        // warning when users set a different value than the default). If so, we can add the feature
-        // to the following ignore list.
+    fun `check experimental features have a FutureStage`() {
+        // Experimental features should have an (estimated) FutureStage -- see FutureStage's kdoc.
+        // If you can't estimate a FutureStage, add it to the following ignore list.
+        val ignoreList = listOf(
+            BooleanOption.BUILD_FEATURE_MLMODELBINDING,
+            BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG,
+            BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT,
+            BooleanOption.ENABLE_PROFILE_JSON,
+            BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION,
+            BooleanOption.VERSION_CHECK_OVERRIDE_PROPERTY,
+            BooleanOption.OVERRIDE_PATH_CHECK_PROPERTY,
+            BooleanOption.DISABLE_RESOURCE_VALIDATION,
+            BooleanOption.CONSUME_DEPENDENCIES_AS_SHARED_LIBRARIES,
+            BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES,
+            BooleanOption.DISABLE_EARLY_MANIFEST_PARSING,
+            BooleanOption.ENABLE_RESOURCE_NAMESPACING_DEFAULT,
+            BooleanOption.CONDITIONAL_KEEP_RULES,
+            BooleanOption.KEEP_SERVICES_BETWEEN_BUILDS,
+            BooleanOption.ENABLE_PARTIAL_R_INCREMENTAL_BUILDS,
+            BooleanOption.ENABLE_LOCAL_TESTING,
+            BooleanOption.DISABLE_MINSDKLIBRARY_CHECK,
+            BooleanOption.ENABLE_INSTRUMENTATION_TEST_DESUGARING,
+            BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP,
+            BooleanOption.UNINSTALL_INCOMPATIBLE_APKS,
+            BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING,
+            BooleanOption.GRADLE_MANAGED_DEVICE_ALLOW_OLD_API_LEVEL_DEVICES,
+            BooleanOption.GRADLE_MANAGED_DEVICE_INCLUDE_MANAGED_DEVICES_IN_REPORTING,
+            BooleanOption.ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT,
+            BooleanOption.ENABLE_EXTRACT_ANNOTATIONS,
+            BooleanOption.CONVERT_NON_NAMESPACED_DEPENDENCIES,
+            BooleanOption.BUILD_ONLY_TARGET_ABI,
+            BooleanOption.ENABLE_PARALLEL_NATIVE_JSON_GEN,
+            BooleanOption.ENABLE_SIDE_BY_SIDE_CMAKE,
+            BooleanOption.ENABLE_NATIVE_COMPILER_SETTINGS_CACHE,
+            BooleanOption.ENABLE_CMAKE_BUILD_COHABITATION,
+            BooleanOption.ENABLE_PROGUARD_RULES_EXTRACTION,
+            BooleanOption.USE_DEPENDENCY_CONSTRAINTS,
+            BooleanOption.ENABLE_DUPLICATE_CLASSES_CHECK,
+            BooleanOption.MINIMAL_KEEP_RULES,
+            BooleanOption.EXCLUDE_RES_SOURCES_FOR_RELEASE_BUNDLES,
+            BooleanOption.ENABLE_BUILD_CONFIG_AS_BYTECODE,
+            BooleanOption.RUN_LINT_IN_PROCESS,
+            BooleanOption.ENABLE_TEST_FIXTURES,
+            BooleanOption.USE_NEW_DSL_INTERFACES,
+            BooleanOption.USE_DECLARATIVE_INTERFACES,
+            BooleanOption.FORCE_DETERMINISTIC_APK,
+            BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE,
+            BooleanOption.MISSING_LINT_BASELINE_IS_EMPTY_BASELINE,
+            BooleanOption.LEGACY_TRANSFORM_TASK_FORCE_NON_INCREMENTAL,
+            BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT,
+            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT,
+            BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES,
+            BooleanOption.VERIFY_AAR_CLASSES,
+            BooleanOption.DISABLE_COMPILE_SDK_CHECKS,
+            BooleanOption.SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS,
+            BooleanOption.FUSED_LIBRARY_SUPPORT,
+            BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE,
+            BooleanOption.LINT_BASELINE_OMIT_LINE_NUMBERS,
+            BooleanOption.ENABLE_NEW_TEST_DSL,
+            BooleanOption.ENABLE_SCREENSHOT_TEST,
+            BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT,
+            BooleanOption.SUPPRESS_MANIFEST_PACKAGE_WARNING,
+            BooleanOption.DISABLE_INLINE_SCOPES_NUMBERS,
+            BooleanOption.R8_OPTIMIZED_SHRINKING,
+            BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API,
+            BooleanOption.DUMP_ARTIFACTS_LOCATIONS,
+            BooleanOption.GRADUAL_R8_SHRINKING,
+            BooleanOption.ENABLE_PROBLEMS_API,
+        )
+
+        checkViolatingProjectOptions(
+            violatingOptions = BooleanOption.entries.filter {
+                (it.stage is FeatureStage.Experimental || it.stage is ApiStage.Experimental)
+                        && it.futureStage == null
+            },
+            ignoreList = ignoreList,
+            requirement = "Experimental features should have an (estimated) FutureStage."
+        )
+    }
+
+    @Test
+    fun `check supported features have a FutureStage`() {
+        // Supported features should have an (estimated) FutureStage -- see FutureStage's kdoc.
+        //   - If you don't intend to ever move it to the next stage, consider changing the current
+        //   stage from FeatureStage.Supported to ApiStage.Stable.
+        //   - If you intend to move it to the next stage at some point but can't estimate a
+        //   FutureStage, add it to the following ignore list.
         val ignoreList = listOf(
             BooleanOption.ENABLE_SDK_DOWNLOAD,
-            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES,
             BooleanOption.FORCE_JACOCO_OUT_OF_PROCESS,
             BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES,
             BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS,
             BooleanOption.ENABLE_LEGACY_API,
             BooleanOption.FULL_R8,
             BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES,
-            BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE,
         )
 
         checkViolatingProjectOptions(
-            violatingOptions = BooleanOption.entries.filter { it.stage is FeatureStage.Supported },
+            violatingOptions = BooleanOption.entries.filter {
+                it.stage is FeatureStage.Supported && it.futureStage == null
+            },
             ignoreList = ignoreList,
-            requirement = "Features should not be in `FeatureStage.Supported` stage."
+            requirement = "Supported features should have an (estimated) FutureStage."
         )
     }
 

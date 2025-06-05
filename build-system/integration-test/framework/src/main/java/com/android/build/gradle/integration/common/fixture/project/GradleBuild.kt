@@ -45,6 +45,11 @@ interface GradleBuild {
     fun genericProject(path: String): GenericProject
 
     /**
+     * Returns a project from the path.
+     */
+    fun subProject(path: String): GradleProject<*>
+
+    /**
      * Queries for an application project via its gradle path.
      * The project must exist and be an Android Application project
      */
@@ -144,11 +149,6 @@ interface GradleBuild {
  * implementations ([GradleBuildImpl] and [ReversibleGradleBuild]
  */
 internal abstract class BaseGradleBuildImpl : GradleBuild {
-
-    /**
-     * Returns a project from the path.
-     */
-    abstract fun subProject(path: String): GradleProject<*>
 
     /**
      * a more complete list of projects to validate project types. This is separate

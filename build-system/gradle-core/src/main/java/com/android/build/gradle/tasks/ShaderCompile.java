@@ -16,9 +16,11 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.android.build.gradle.internal.cxx.configure.GradleLocalPropertiesKt.gradleLocalProperties;
 import static com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_SHADERS;
 import static com.android.build.gradle.internal.utils.HasConfigurableValuesKt.setDisallowChanges;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NdkHandlerInput;
@@ -43,6 +45,7 @@ import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.provider.ListProperty;
@@ -51,9 +54,11 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.IgnoreEmptyDirectories;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
@@ -70,6 +75,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 import javax.inject.Inject;
 
@@ -88,6 +94,11 @@ public abstract class ShaderCompile extends NonIncrementalTask {
 
     @Input
     public abstract Property<Revision> getBuildToolInfoRevisionProvider();
+
+    @InputDirectory
+    @PathSensitive(PathSensitivity.ABSOLUTE)
+    @Optional
+    public abstract DirectoryProperty getShaderCompilerDirectory();
 
     @Internal
     public abstract Property<SdkComponentsBuildService> getSdkBuildService();
@@ -143,6 +154,7 @@ public abstract class ShaderCompile extends NonIncrementalTask {
                 .walk();
 
         if (!processingRequests.isEmpty()) {
+            Directory shaderCompilerDirectory = getShaderCompilerDirectory().getOrNull();
             File glslcLocation =
                     ShaderProcessor.getGlslcLocation(
                             getSdkBuildService()
@@ -150,7 +162,10 @@ public abstract class ShaderCompile extends NonIncrementalTask {
                                     .versionedNdkHandler(getNdkHandlerInput())
                                     .getNdkPlatform()
                                     .getOrThrow()
-                                    .getNdkDirectory());
+                                    .getNdkDirectory(),
+                            shaderCompilerDirectory != null
+                                    ? shaderCompilerDirectory.getAsFile()
+                                    : null);
 
             HashMap<Integer, List<ProcessingRequest>> buckets = new HashMap<>();
             int ord = 0;
@@ -295,6 +310,23 @@ public abstract class ShaderCompile extends NonIncrementalTask {
             setDisallowChanges(
                     task.getBuildToolInfoRevisionProvider(),
                     creationConfig.getGlobal().getBuildToolsRevision());
+
+            Properties properties =
+                    gradleLocalProperties(
+                            task.getProject().getRootDir(), task.getProject().getProviders());
+            String shadeCompilerPath =
+                    properties.getProperty(SdkConstants.SHADE_COMPILER_DIR_PROPERTY);
+            if (shadeCompilerPath != null) {
+                DirectoryProperty directoryProperty =
+                        task.getProject().getObjects().directoryProperty();
+                directoryProperty.set(new File(shadeCompilerPath));
+
+                setDisallowChanges(task.getShaderCompilerDirectory(), directoryProperty);
+                task.getOutputs()
+                        .doNotCacheIf("User wants to use custom shader compiler", (t) -> false);
+            } else {
+                task.getShaderCompilerDirectory().disallowChanges();
+            }
 
             creationConfig
                     .getArtifacts()

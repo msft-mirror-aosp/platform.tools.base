@@ -24,12 +24,15 @@ import com.android.build.gradle.internal.services.BaseServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
 import com.android.build.gradle.internal.testsuites.TestSuiteDependencies
 import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
+import com.android.build.gradle.options.BooleanOption
+import com.android.builder.errors.IssueReporter
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
-internal open class TestSuiteBuilderImpl @Inject internal constructor(
+internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
     objects: ObjectFactory,
     private val _name: String,
     override var enable: Boolean,
@@ -40,6 +43,8 @@ internal open class TestSuiteBuilderImpl @Inject internal constructor(
 
     companion object {
 
+        val flagChecked = AtomicBoolean(false)
+
         /**
          * Create the list of test suites for this component, the list is driven by
          * the passed [dslDefinedTestSuiteDefinitions] which is the list of
@@ -49,8 +54,26 @@ internal open class TestSuiteBuilderImpl @Inject internal constructor(
             dslDefinedTestSuiteDefinitions: List<AgpTestSuiteImpl>,
             variantBuilderServices: VariantBuilderServices,
             experimentalProperties: Map<String, Any>,
-        ): Map<String, TestSuiteBuilder> =
-            dslDefinedTestSuiteDefinitions.associate { agpTestSuite ->
+        ): Map<String, TestSuiteBuilder> {
+
+            if (dslDefinedTestSuiteDefinitions.isEmpty()) return mapOf()
+
+            if (!flagChecked.getAndSet(true)) {
+                val unstableNotice =
+                    "*Important* Test suite support is experimental and subject to change\n"
+                if (variantBuilderServices.projectOptions[BooleanOption.TEST_SUITE_SUPPORT]) {
+                    variantBuilderServices.issueReporter.reportWarning(IssueReporter.Type.GENERIC, unstableNotice)
+                } else {
+                    variantBuilderServices.issueReporter.reportError(
+                        IssueReporter.Type.GENERIC,
+                        unstableNotice +
+                                "If you want to use test suites support, acknowledge the warning by " +
+                                "setting `${BooleanOption.TEST_SUITE_SUPPORT.propertyName}=true` to gradle.properties"
+                    )
+                }
+            }
+
+            return dslDefinedTestSuiteDefinitions.associate { agpTestSuite ->
                 val junitTestEngine = agpTestSuite.getJunitEngineIfUsed()
                     ?: throw RuntimeException("Test suites must use junit engines for now")
                 agpTestSuite.name to
@@ -64,6 +87,7 @@ internal open class TestSuiteBuilderImpl @Inject internal constructor(
                             variantBuilderServices
                         )
             }
+        }
     }
 
     override val junitEngineSpec: JUnitEngineSpec =

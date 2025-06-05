@@ -55,10 +55,10 @@ class KotlinMultiplatformAndroidVitalsTest {
     fun creatingTwoUnitTestCompilationsShouldFail() {
         val build = rule.build {
             androidKotlinMultiplatformLibrary(":kmpModule") {
-                androidLibrary {
+                android {
                     withHostTest {}
                 }
-                androidLibrary {
+                android {
                     withHostTest {}
                 }
             }
@@ -74,7 +74,7 @@ class KotlinMultiplatformAndroidVitalsTest {
     fun creatingArbitraryCompilationShouldFail() {
         val build = rule.build {
             androidKotlinMultiplatformLibrary(":kmpModule") {
-                androidLibrary {
+                android {
                     compilations.create("randomCompilationName") { }
                 }
             }

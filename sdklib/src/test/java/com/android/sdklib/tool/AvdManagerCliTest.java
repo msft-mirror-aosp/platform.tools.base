@@ -480,7 +480,7 @@ public class AvdManagerCliTest {
                         "P wearos_rect\n",
                         "P wearos_small_round\n",
                         "P wearos_square\n",
-                        "P xr_device\n",
+                        "P xr_headset_device\n",
                         "P 2.7in QVGA\n",
                         "P 2.7in QVGA slider\n",
                         "P 3.2in HVGA slider (ADP1)\n",

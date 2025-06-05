@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_SPLIT;
+import static com.android.manifmerger.ManifestModel.NodeTypes.MODULE;
 import static com.android.manifmerger.ManifestModel.NodeTypes.USES_SDK;
 import static com.android.manifmerger.MergingReport.MergedManifestKind.AAPT_SAFE;
 import static com.android.manifmerger.PlaceholderHandler.APPLICATION_ID;
@@ -243,6 +244,33 @@ public class ManifestMerger2 {
                 mLogger.error(null, message);
                 throw new RuntimeException(message);
             }
+        }
+
+        Optional<XmlElement> module =
+                loadedMainManifestInfo.getXmlDocument().getRootNode().getFirstNodeByType(MODULE);
+        final String instantFlag =
+                module.flatMap(
+                                element ->
+                                        element.getAttribute(
+                                                XmlNode.fromNSName(
+                                                        "http://schemas.android.com/apk/distribution",
+                                                        "dist",
+                                                        "instant")))
+                        .map(XmlAttribute::getValue)
+                        .orElse(null);
+
+        if (mOptionalFeatures.contains(Invoker.Feature.CHECK_INSTANT_FLAG)
+                && "true".equals(instantFlag)) {
+            String message =
+                    String.format(
+                            "Module with AndroidManifest.xml (%1$s) is declared as Instant App. \n"
+                                + "Instant Apps support will be removed by Google Play in December"
+                                + " 2025. \n"
+                                + "Publishing and all Google Play Instant APIs will no longer work."
+                                + " Tooling support will be removed in Android Studio Otter Feature"
+                                + " Drop.\n",
+                            loadedMainManifestInfo.getLocation().getAbsolutePath());
+            mLogger.warning(message);
         }
 
         mProcessCancellationChecker.check();
@@ -1847,6 +1875,8 @@ public class ManifestMerger2 {
              * and is equal to the component's namespace.
              */
             SUPPRESS_MANIFEST_PACKAGE_WARNING,
+
+            CHECK_INSTANT_FLAG,
         }
 
         /**

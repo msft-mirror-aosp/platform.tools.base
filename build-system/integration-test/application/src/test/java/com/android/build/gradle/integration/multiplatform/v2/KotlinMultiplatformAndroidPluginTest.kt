@@ -60,7 +60,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
-                kotlin.androidLibrary {
+                kotlin.android {
                     localDependencySelection {
                       selectBuildTypeFrom.set(listOf("debug"))
                     }
@@ -249,7 +249,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
-                kotlin.androidLibrary {
+                kotlin.android {
                     packaging.resources.excludes.addAll(listOf(
                         "**/*.java",
                         "junit/**",

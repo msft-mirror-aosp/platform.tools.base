@@ -19,7 +19,7 @@ package com.android.build.api.variant.impl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidCompilationBuilderImpl
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
-import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME
+import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME
 import com.android.utils.appendCapitalized
 import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Project
@@ -47,8 +47,8 @@ internal class KotlinMultiplatformAndroidCompilationFactory(
                 "Kotlin multiplatform android plugin doesn't support creating arbitrary " +
                         "compilations. Only three types of compilations are supported:\n" +
                         "  * main compilation (named \"${KmpAndroidCompilationType.MAIN.defaultCompilationName}\"),\n" +
-                        "  * host test compilation (use `kotlin.$ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME.withHostTest {}` to enable),\n" +
-                        "  * device test compilation (use `kotlin.$ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME.withDeviceTest {}` to enable)."
+                        "  * host test compilation (use `kotlin.$DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME.withHostTest {}` to enable),\n" +
+                        "  * device test compilation (use `kotlin.$DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME.withDeviceTest {}` to enable)."
             )
         }
 

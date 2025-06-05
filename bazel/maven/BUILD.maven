@@ -66535,6 +66535,247 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-ext-autolink_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-ext-autolink/0.64.8/flexmark-ext-autolink-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-ext-autolink/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util_0.64.8",
+        "com.vladsch.flexmark.flexmark_0.64.8",
+        "org.nibor.autolink.autolink_0.6.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-ext-gfm-strikethrough_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-ext-gfm-strikethrough/0.64.8/flexmark-ext-gfm-strikethrough-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-ext-gfm-strikethrough/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util_0.64.8",
+        "com.vladsch.flexmark.flexmark_0.64.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-ext-tables_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-ext-tables/0.64.8/flexmark-ext-tables-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-ext-tables/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util_0.64.8",
+        "com.vladsch.flexmark.flexmark_0.64.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-ast_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-ast/0.64.8/flexmark-util-ast-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-ast/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-collection_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-data_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-sequence_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-visitor_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-builder_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-builder/0.64.8/flexmark-util-builder-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-builder/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-data_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-collection_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-collection/0.64.8/flexmark-util-collection-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-collection/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-data_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-data/0.64.8/flexmark-util-data-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-data/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-dependency_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-dependency/0.64.8/flexmark-util-dependency-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-dependency/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-collection_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-data_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-format_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-format/0.64.8/flexmark-util-format-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-format/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-ast_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-collection_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-data_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-html_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-sequence_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-html_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-html/0.64.8/flexmark-util-html-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-html/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-sequence_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-misc/0.64.8/flexmark-util-misc-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-misc/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-options_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-options/0.64.8/flexmark-util-options-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-options/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-sequence_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-sequence_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-sequence/0.64.8/flexmark-util-sequence-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-sequence/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-collection_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-data_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util-visitor_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util-visitor/0.64.8/flexmark-util-visitor-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util-visitor/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-util_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-util/0.64.8/flexmark-util-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-util/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-ast_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-builder_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-collection_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-data_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-dependency_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-format_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-html_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-options_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-sequence_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-visitor_0.64.8",
+        "org.jetbrains.annotations_24.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark/0.64.8/flexmark-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark/0.64.8",
+    parent = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    deps = [
+        "com.vladsch.flexmark.flexmark-util-ast_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-builder_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-collection_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-data_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-dependency_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-format_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-html_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-misc_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-sequence_0.64.8",
+        "com.vladsch.flexmark.flexmark-util-visitor_0.64.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "commons-codec.commons-codec_1.10",
     pom = "repository/commons-codec/commons-codec/1.10/commons-codec-1.10.pom",
     repo_root_path = "repository",
@@ -70901,6 +71142,53 @@ maven_artifact(
     pom = "repository/org/eclipse/jdt/core/compiler/ecj/4.6.1/ecj-4.6.1.pom",
     repo_root_path = "repository",
     repo_path = "org/eclipse/jdt/core/compiler/ecj/4.6.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.debug_0.21.1",
+    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.debug/0.21.1/org.eclipse.lsp4j.debug-0.21.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.debug/0.21.1",
+    deps = [
+        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc.debug_0.21.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc.debug_0.21.1",
+    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc.debug/0.21.1/org.eclipse.lsp4j.jsonrpc.debug-0.21.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc.debug/0.21.1",
+    deps = [
+        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.21.1",
+        "com.google.code.gson.gson_2.10.1",
+        "com.google.code.gson.gson_2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.21.1",
+    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.21.1/org.eclipse.lsp4j.jsonrpc-0.21.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j.jsonrpc/0.21.1",
+    deps = [
+        "com.google.code.gson.gson_2.10.1",
+        "com.google.code.gson.gson_2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.lsp4j.org.eclipse.lsp4j_0.21.1",
+    pom = "repository/org/eclipse/lsp4j/org.eclipse.lsp4j/0.21.1/org.eclipse.lsp4j-0.21.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/eclipse/lsp4j/org.eclipse.lsp4j/0.21.1",
+    deps = [
+        "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.21.1",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -83380,6 +83668,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.nibor.autolink.autolink_0.6.0",
+    pom = "repository/org/nibor/autolink/autolink/0.6.0/autolink-0.6.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/nibor/autolink/autolink/0.6.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.objenesis.objenesis_2.6",
     pom = "repository/org/objenesis/objenesis/2.6/objenesis-2.6.pom",
     repo_root_path = "repository",
@@ -86415,6 +86711,13 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/sun/xml/fastinfoset/fastinfoset-project/1.2.16",
     parent = "org.eclipse.ee4j.project_1.0.5",
+)
+
+maven_artifact(
+    name = "com.vladsch.flexmark.flexmark-java_0.64.8",
+    pom = "repository/com/vladsch/flexmark/flexmark-java/0.64.8/flexmark-java-0.64.8.pom",
+    repo_root_path = "repository",
+    repo_path = "com/vladsch/flexmark/flexmark-java/0.64.8",
 )
 
 maven_artifact(

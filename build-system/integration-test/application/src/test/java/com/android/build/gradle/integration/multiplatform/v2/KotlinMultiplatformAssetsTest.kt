@@ -63,7 +63,7 @@ class KotlinMultiplatformAssetsTest {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
-                kotlin.androidLibrary {
+                kotlin.android {
                     androidResources {
                         enable = false
                     }
@@ -106,7 +106,7 @@ class KotlinMultiplatformAssetsTest {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
             """
-                kotlin.androidLibrary {
+                kotlin.android {
                     androidResources {
                         enable = false
                     }
