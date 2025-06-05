@@ -569,6 +569,7 @@ java_binary(
     name = "bazel-diff",
     main_class = "com.bazel_diff.Main",
     runtime_deps = ["@bazel_diff//jar"],
+    visibility = ["//tools/base/bazel/ci:__pkg__"],
 )
 
 java_proto_library(
