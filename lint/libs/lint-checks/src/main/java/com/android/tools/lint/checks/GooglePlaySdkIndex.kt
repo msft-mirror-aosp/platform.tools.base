@@ -614,27 +614,25 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   }
 
   /** Generate a message for a library that has blocking policy issues */
-  fun generateBlockingPolicyMessages(
+  fun generateBlockingPolicyMessage(
     groupId: String,
     artifactId: String,
     versionString: String,
-  ): List<String> {
+  ): String {
     val recommendedVersions = getPolicyRecommendedVersions(groupId, artifactId, versionString)
-    return getPolicyLabels(getLabels(groupId, artifactId, versionString)).map { label ->
-      "**[Prevents app release in Google Play Console]** $groupId:$artifactId version $versionString has $label issues that will block publishing of your app to Play Console$recommendedVersions"
-    }
+    val policyLabels = getPolicyLabels(getLabels(groupId, artifactId, versionString))
+    val labels = policyLabels.sorted().joinToString(", ")
+    return "**[Prevents app release in Google Play Console]** $groupId:$artifactId version $versionString has $labels issues that" +
+      " will block publishing of your app to Play Console$recommendedVersions"
   }
 
   /** Generate a message for a library that has policy issues */
-  fun generatePolicyMessages(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): List<String> {
+  fun generatePolicyMessage(groupId: String, artifactId: String, versionString: String): String {
     val recommendedVersions = getPolicyRecommendedVersions(groupId, artifactId, versionString)
-    return getPolicyLabels(getLabels(groupId, artifactId, versionString)).map { label ->
-      "$groupId:$artifactId version $versionString has $label issues that will block publishing of your app to Play Console in the future$recommendedVersions"
-    }
+    val policyLabels = getPolicyLabels(getLabels(groupId, artifactId, versionString))
+    val labels = policyLabels.sorted().joinToString(", ")
+    return "$groupId:$artifactId version $versionString has $labels issues that will block publishing of your app to Play Console" +
+      " in the future$recommendedVersions"
   }
 
   /** Generate a message for a library that has blocking critical issues */
@@ -786,7 +784,8 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
 
   @VisibleForTesting fun getLastReadSource() = lastReadSourceType
 
-  private fun getPolicyLabels(labels: LibraryVersionLabels?): List<String> {
+  @VisibleForTesting
+  fun getPolicyLabels(labels: LibraryVersionLabels?): List<String> {
     val defaultLabel = "policy"
     val policyViolations = extractPolicyViolations(labels)
     val result = mutableListOf<String>()

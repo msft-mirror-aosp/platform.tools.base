@@ -1452,23 +1452,21 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             buildFile,
             sdkIndex,
           )
-        val messages =
+        val message =
           if (isBlocking) {
-            sdkIndex.generateBlockingPolicyMessages(groupId, artifactId, versionString)
+            sdkIndex.generateBlockingPolicyMessage(groupId, artifactId, versionString)
           } else {
-            sdkIndex.generatePolicyMessages(groupId, artifactId, versionString)
+            sdkIndex.generatePolicyMessage(groupId, artifactId, versionString)
           }
-        for (message in messages) {
-          reported =
-            report(
-              context,
-              cookie,
-              PLAY_SDK_INDEX_NON_COMPLIANT,
-              message,
-              fix,
-              overrideSeverity = severity,
-            ) || reported
-        }
+        reported =
+          report(
+            context,
+            cookie,
+            PLAY_SDK_INDEX_NON_COMPLIANT,
+            message,
+            fix,
+            overrideSeverity = severity,
+          ) || reported
       }
       if (
         isBlocking &&

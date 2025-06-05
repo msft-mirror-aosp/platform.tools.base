@@ -5401,12 +5401,6 @@ class GradleDetectorTest : AbstractCheckTest() {
         +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), blocking
         Show URL for build.gradle line 22: View details in Google Play SDK Index:
         http://another.example.url/
-        Fix for build.gradle line 22: Change to 8.0.0:
-        @@ -22 +22 @@
-        -    compile 'com.example.ads.third.party:example:7.1.8' // Policy (multiple types), blocking
-        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), blocking
-        Show URL for build.gradle line 22: View details in Google Play SDK Index:
-        http://another.example.url/
         Fix for build.gradle line 6: Change to 1.2.18:
         @@ -6 +6 @@
         -    compile 'log4j:log4j:1.2.14' // Non compliant
@@ -5454,24 +5448,6 @@ class GradleDetectorTest : AbstractCheckTest() {
         -    compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
         +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), non-blocking
         Show URL for build.gradle line 21: View details in Google Play SDK Index:
-        http://another.example.url/
-        Fix for build.gradle line 21: Change to 8.0.0:
-        @@ -21 +21 @@
-        -    compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), non-blocking
-        Show URL for build.gradle line 21: View details in Google Play SDK Index:
-        http://another.example.url/
-        Fix for build.gradle line 21: Change to 8.0.0:
-        @@ -21 +21 @@
-        -    compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), non-blocking
-        Show URL for build.gradle line 21: View details in Google Play SDK Index:
-        http://another.example.url/
-        Fix for build.gradle line 23: Change to 8.0.0:
-        @@ -23 +23 @@
-        -    compile 'com.example.ads.third.party:example:7.1.9' // Policy (multiple types), no severity
-        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), no severity
-        Show URL for build.gradle line 23: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 23: Change to 8.0.0:
         @@ -23 +23 @@
@@ -5742,10 +5718,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           build.gradle:18: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.4 has Permissions policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.4' // Policy (Permissions), blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:22: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has Malware policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.8' // Policy (multiple types), blocking
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:22: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has User Data policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
+          build.gradle:22: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has Malware policy, User Data policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.8' // Policy (multiple types), blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           build.gradle:6: Warning: log4j:log4j version 1.2.14 has policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
@@ -5769,19 +5742,10 @@ class GradleDetectorTest : AbstractCheckTest() {
           build.gradle:20: Warning: com.example.ads.third.party:example version 7.1.6 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.6' // Policy (Malware), non-blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:21: Warning: com.example.ads.third.party:example version 7.1.7 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+          build.gradle:21: Warning: com.example.ads.third.party:example version 7.1.7 has Malware policy, Permissions policy, User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:21: Warning: com.example.ads.third.party:example version 7.1.7 has Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:21: Warning: com.example.ads.third.party:example version 7.1.7 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:23: Warning: com.example.ads.third.party:example version 7.1.9 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.9' // Policy (multiple types), no severity
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:23: Warning: com.example.ads.third.party:example version 7.1.9 has Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+          build.gradle:23: Warning: com.example.ads.third.party:example version 7.1.9 has Malware policy, Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.9' // Policy (multiple types), no severity
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           build.gradle:25: Error: com.example.ads.third.party:example version 7.1.11 contains an unsafe implementation of the onReceivedSslError handler. [PlaySdkIndexVulnerability]
@@ -5864,7 +5828,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             - 1.1.0 or higher [OutdatedLibrary]
               compile 'com.example.issues:latest-is-preview:1.0.0' // Outdated non-blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          9 errors, 38 warnings
+          8 errors, 35 warnings
         """
       )
       .expectFixDiffs(expectedFixes)
@@ -5964,10 +5928,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           ../gradle/libs.versions.toml:14: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.4 has Permissions policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
                           exPolicyPermBlock = "7.1.4"     # Policy (Permissions), blocking
                                               ~~~~~~~
-          ../gradle/libs.versions.toml:18: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has Malware policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
-                          exPolicyMultiBlock = "7.1.8"    # Policy (multiple types), blocking
-                                               ~~~~~~~
-          ../gradle/libs.versions.toml:18: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has User Data policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
+          ../gradle/libs.versions.toml:18: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has Malware policy, User Data policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
                           exPolicyMultiBlock = "7.1.8"    # Policy (multiple types), blocking
                                                ~~~~~~~
           ../gradle/libs.versions.toml:9: Warning: com.example.ads.third.party:example version 7.2.0 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
@@ -5988,19 +5949,10 @@ class GradleDetectorTest : AbstractCheckTest() {
           ../gradle/libs.versions.toml:16: Warning: com.example.ads.third.party:example version 7.1.6 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
                           exPolicyMalware = "7.1.6"       # Policy (Malware), non-blocking
                                             ~~~~~~~
-          ../gradle/libs.versions.toml:17: Warning: com.example.ads.third.party:example version 7.1.7 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+          ../gradle/libs.versions.toml:17: Warning: com.example.ads.third.party:example version 7.1.7 has Malware policy, Permissions policy, User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
                           exPolicyMultiNon = "7.1.7"      # Policy (multiple types), non-blocking
                                              ~~~~~~~
-          ../gradle/libs.versions.toml:17: Warning: com.example.ads.third.party:example version 7.1.7 has Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-                          exPolicyMultiNon = "7.1.7"      # Policy (multiple types), non-blocking
-                                             ~~~~~~~
-          ../gradle/libs.versions.toml:17: Warning: com.example.ads.third.party:example version 7.1.7 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-                          exPolicyMultiNon = "7.1.7"      # Policy (multiple types), non-blocking
-                                             ~~~~~~~
-          ../gradle/libs.versions.toml:19: Warning: com.example.ads.third.party:example version 7.1.9 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-                          exPolicyMulti = "7.1.9"         # Policy (multiple types), no severity
-                                          ~~~~~~~
-          ../gradle/libs.versions.toml:19: Warning: com.example.ads.third.party:example version 7.1.9 has Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+          ../gradle/libs.versions.toml:19: Warning: com.example.ads.third.party:example version 7.1.9 has Malware policy, Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
                           exPolicyMulti = "7.1.9"         # Policy (multiple types), no severity
                                           ~~~~~~~
           ../gradle/libs.versions.toml:21: Error: com.example.ads.third.party:example version 7.1.11 contains an unsafe implementation of the onReceivedSslError handler. [PlaySdkIndexVulnerability]
@@ -6080,7 +6032,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             - 1.1.0 or higher [OutdatedLibrary]
                           exOutPreview = "1.0.0"          # Outdated NON_BLOCKING
                                          ~~~~~~~
-          9 errors, 34 warnings
+          8 errors, 31 warnings
         """
       )
   }
