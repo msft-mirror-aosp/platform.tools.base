@@ -20,6 +20,7 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "//tools/base/adblib:studio.android.sdktools.adblib",
+        "//tools/base/backup/bmgr-parser:studio.android.sdktools.backup.bmgr.parser",
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/base/environment-services:studio.intellij.android.environment-services",
     ],
@@ -76,6 +77,7 @@ maven_library(
     ],
     deps = [
         "//tools/base/adblib",
+        "//tools/base/backup/bmgr-parser",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",

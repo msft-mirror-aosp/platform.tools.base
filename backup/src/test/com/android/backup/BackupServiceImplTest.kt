@@ -25,14 +25,14 @@ import com.android.backup.BackupType.DEVICE_TO_DEVICE
 import com.android.backup.ErrorCode.APP_NOT_DEBUGGABLE
 import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.APP_STOPPED
-import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
 import com.android.backup.ErrorCode.BACKUP_NOT_ENABLED
 import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
+import com.android.backup.ErrorCode.BMGR_ERROR_BACKUP
+import com.android.backup.ErrorCode.BMGR_ERROR_RESTORE
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
 import com.android.backup.ErrorCode.GMSCORE_NOT_FOUND
 import com.android.backup.ErrorCode.INVALID_BACKUP_FILE
-import com.android.backup.ErrorCode.RESTORE_FAILED
 import com.android.backup.ErrorCode.TRANSPORT_INIT_FAILED
 import com.android.backup.ErrorCode.TRANSPORT_NOT_SELECTED
 import com.android.backup.testing.BackupFileHelper
@@ -85,7 +85,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
-        "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -137,7 +137,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 1",
-        "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -189,7 +189,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 2",
-        "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -303,7 +303,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
-        "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
       )
@@ -352,7 +352,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "bmgr init com.google.android.gms/.backup.migrate.service.D2dTransport",
         "settings put secure backup_testing_flows_type 0",
-        "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+        "bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
       )
@@ -469,15 +469,36 @@ class BackupServiceImplTest {
             )
           )
           it.addCommandOverride(
-            Output("bmgr backupnow @pm@ com.app --non-incremental --monitor", "error")
+            Output(
+              "bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose",
+              """
+                Running non-incremental backup for 2 requested packages.
+                Package @pm@ with result: Success
+                => Event{AGENT / FULL_BACKUP_CANCEL : package = com.example.empty(v1)}
+                Package com.example.empty with result: ERROR1
+                Backup finished with result: ERROR2
+              """
+                .trimIndent(),
+            )
           )
         }
       )
 
-    val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
+    val error = backupService.backup("serial", "com.app", CLOUD, backupFile, null) as Error
 
-    assertThat(result)
-      .isEqualTo(TRANSPORT_INIT_FAILED.asBackupResult("Failed to backup 'com.app`: error"))
+    assertThat(error.errorCode).isEqualTo(TRANSPORT_INIT_FAILED)
+    assertThat(error.throwable.message)
+      .isEqualTo(
+        """
+      Failed to backup 'com.app`:
+      Running non-incremental backup for 2 requested packages.
+      Package @pm@ with result: Success
+      => Event{AGENT / FULL_BACKUP_CANCEL : package = com.example.empty(v1)}
+      Package com.example.empty with result: ERROR1
+      Backup finished with result: ERROR2
+    """
+          .trimIndent()
+      )
   }
 
   @Test
@@ -508,14 +529,49 @@ class BackupServiceImplTest {
       BackupServiceImpl(
         FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(
-            Output("bmgr backupnow @pm@ com.app --non-incremental --monitor", "Error")
+            Output(
+              "bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose",
+              """
+                Running non-incremental backup for 2 requested packages.
+                Package @pm@ with result: Success
+                => Event{AGENT / FULL_BACKUP_CANCEL : package = com.example.empty(v1)}
+                Package com.example.empty with result: ERROR1
+                Backup finished with result: ERROR2
+              """
+                .trimIndent(),
+            )
           )
         }
       )
 
-    val result = backupService.backup("serial", "com.app", DEVICE_TO_DEVICE, backupFile, null)
+    val error = backupService.backup("serial", "com.app", CLOUD, backupFile, null) as Error
 
-    assertThat(result).isEqualTo(BACKUP_FAILED.asBackupResult("Failed to backup 'com.app`: Error"))
+    assertThat(error.errorCode).isEqualTo(BMGR_ERROR_BACKUP)
+    val backupException = error.throwable as BackupException
+    assertThat(backupException.message)
+      .isEqualTo(
+        """
+        Failed to backup 'com.app`:
+        Backup was cancelled by either the user or backup service lifecycle.
+        Backup failed for package: com.example.empty
+        Backup operation failed.
+      """
+          .trimIndent()
+      )
+    val bmgrException = backupException.cause as BmgrException
+    assertThat(bmgrException.message)
+      .isEqualTo(
+        """
+        Command 'bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose' failed with the following output:
+        Running non-incremental backup for 2 requested packages.
+        Package @pm@ with result: Success
+        => Event{AGENT / FULL_BACKUP_CANCEL : package = com.example.empty(v1)}
+        Package com.example.empty with result: ERROR1
+        Backup finished with result: ERROR2
+      """
+          .trimIndent()
+      )
+    assertThat(bmgrException.errorCodes).isEqualTo("FULL_BACKUP_CANCEL ERROR1 ERROR2")
   }
 
   @Test
@@ -526,7 +582,7 @@ class BackupServiceImplTest {
         FakeAdbServicesFactory("com.app") {
           it.addCommandOverride(
             Output(
-              "bmgr backupnow @pm@ com.app --non-incremental --monitor",
+              "bmgr backupnow @pm@ com.app --non-incremental --monitor-verbose",
               "=> Event{BACKUP_MANAGER_POLICY / PACKAGE_STOPPED : package = com.app(v1)}",
             )
           )
@@ -578,7 +634,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "pm clear com.app",
         "settings put secure backup_testing_flows_type 1",
-        "bmgr restore 9bc1546914997f6c com.app",
+        "bmgr restore 9bc1546914997f6c com.app --monitor-verbose",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -612,7 +668,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "pm clear com.app",
         "settings put secure backup_testing_flows_type 0",
-        "bmgr restore 9bc1546914997f6c com.app",
+        "bmgr restore 9bc1546914997f6c com.app --monitor-verbose",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -651,7 +707,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "pm clear com.app",
         "settings put secure backup_testing_flows_type 0",
-        "bmgr restore 9bc1546914997f6c com.app",
+        "bmgr restore 9bc1546914997f6c com.app --monitor-verbose",
         "pm grant com.app permission1",
         "pm grant com.app permission2",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
@@ -686,7 +742,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "pm clear com.app",
         "settings put secure backup_testing_flows_type 1",
-        "bmgr restore 9bc1546914997f6c com.app",
+        "bmgr restore 9bc1546914997f6c com.app --monitor-verbose",
         "bmgr transport com.google.android.gms/.backup.BackupTransportService",
         "settings put secure backup_enable_testing_flows 0",
       )
@@ -719,7 +775,7 @@ class BackupServiceImplTest {
         "bmgr list transports",
         "pm clear com.app",
         "settings put secure backup_testing_flows_type 1",
-        "bmgr restore 9bc1546914997f6c com.app",
+        "bmgr restore 9bc1546914997f6c com.app --monitor-verbose",
         "bmgr transport com.android.localtransport/.LocalTransport",
         "settings put secure backup_enable_testing_flows 0",
         "bmgr enable false",
@@ -930,13 +986,43 @@ class BackupServiceImplTest {
     val backupService =
       BackupServiceImpl(
         FakeAdbServicesFactory("com.app") {
-          it.addCommandOverride(Output("bmgr restore 9bc1546914997f6c com.app", "Error"))
+          it.addCommandOverride(
+            Output(
+              "bmgr restore 9bc1546914997f6c com.app --monitor-verbose",
+              """
+                => Event{BACKUP_MANAGER_POLICY / SIGNATURE_MISMATCH : package = com.app(v1)}
+                restoreFinished: -1
+              """
+                .trimIndent(),
+            )
+          )
         }
       )
 
-    val result = backupService.restore("serial", backupFile, null)
+    val error = backupService.restore("serial", backupFile, null) as Error
 
-    assertThat(result).isEqualTo(RESTORE_FAILED.asBackupResult("Error restoring app: Error"))
+    assertThat(error.errorCode).isEqualTo(BMGR_ERROR_RESTORE)
+    val backupException = error.throwable as BackupException
+    assertThat(backupException.message)
+      .isEqualTo(
+        """
+      Failed to restore 'com.app`:
+      Signature of the app for which restore is called doesn't match the signature of the app corresponding to the backup.
+      Restore operation failed
+    """
+          .trimIndent()
+      )
+    val bmgrException = backupException.cause as BmgrException
+    assertThat(bmgrException.message)
+      .isEqualTo(
+        """
+      Command 'bmgr restore 9bc1546914997f6c com.app --monitor-verbose' failed with the following output:
+      => Event{BACKUP_MANAGER_POLICY / SIGNATURE_MISMATCH : package = com.app(v1)}
+      restoreFinished: -1
+    """
+          .trimIndent()
+      )
+    assertThat(bmgrException.errorCodes).isEqualTo("SIGNATURE_MISMATCH -1")
   }
 
   @Test

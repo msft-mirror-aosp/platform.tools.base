@@ -21,6 +21,8 @@ import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
 import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
 import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
+import com.android.backup.ErrorCode.BMGR_ERROR_BACKUP
+import com.android.backup.ErrorCode.BMGR_ERROR_RESTORE
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
 import com.android.backup.ErrorCode.DEVICE_DISCONNECTED
 import com.android.backup.ErrorCode.GMSCORE_IS_TOO_OLD
@@ -30,6 +32,8 @@ import com.android.backup.ErrorCode.RESTORE_FAILED
 import com.android.backup.ErrorCode.TRANSPORT_INIT_FAILED
 import com.android.backup.ErrorCode.TRANSPORT_NOT_SELECTED
 import com.android.backup.ErrorCode.UNEXPECTED_ERROR
+import com.android.commands.bmgr.outputparser.BmgrError
+import com.android.commands.bmgr.outputparser.BmgrOutputParser
 import com.android.tools.environment.Logger
 import com.android.utils.text.dropPrefix
 import kotlin.text.RegexOption.IGNORE_CASE
@@ -82,24 +86,24 @@ abstract class AbstractAdbServices(
 
   override suspend fun backupNow(applicationId: String, type: BackupType, initOk: Boolean) {
     setBackupType(type)
-    val out =
-      executeCommand(
-          "bmgr backupnow @pm@ $applicationId --non-incremental --monitor",
-          BACKUP_FAILED,
-        )
-        .stdout
-    // TODO(b/348406593): Naive parsing of the output. Replace this when Backup team provides a
-    //  proper parser library
+    val command = "bmgr backupnow @pm@ $applicationId --non-incremental --monitor-verbose"
+    val out = executeCommand(command, BACKUP_FAILED).stdout
+    val errors = BmgrOutputParser.parseBmgrErrors(out)
     when {
-      out.isBackupSuccess(applicationId) -> return
-      out.isAppStopped() ->
+      errors.isEmpty() -> return
+      errors.isAppStopped() ->
         throw BackupException(
           APP_STOPPED,
           "Application '$applicationId' is in a stopped state. Please launch the app and try again.",
         )
       !initOk ->
-        throw BackupException(TRANSPORT_INIT_FAILED, "Failed to backup '$applicationId`: $out")
-      else -> throw BackupException(BACKUP_FAILED, "Failed to backup '$applicationId`: $out")
+        throw BackupException(TRANSPORT_INIT_FAILED, "Failed to backup '$applicationId`:\n$out")
+      else ->
+        throw BackupException(
+          BMGR_ERROR_BACKUP,
+          "Failed to backup '$applicationId`:\n${errors.joinToString("\n") { it.message }}",
+          BmgrException(command, out, errors),
+        )
     }
   }
 
@@ -118,10 +122,19 @@ abstract class AbstractAdbServices(
     initOk: Boolean,
   ) {
     setBackupType(type)
-    val out = executeCommand("bmgr restore $token $applicationId", RESTORE_FAILED)
-    if (out.stdout.indexOf("restoreFinished: 0\n") < 0) {
-      val errorCode = if (initOk) RESTORE_FAILED else TRANSPORT_INIT_FAILED
-      throw BackupException(errorCode, "Error restoring app: ${out.stdout}")
+    val command = "bmgr restore $token $applicationId --monitor-verbose"
+    val out = executeCommand(command, RESTORE_FAILED).stdout
+    val errors = BmgrOutputParser.parseBmgrErrors(out)
+    when {
+      errors.isEmpty() -> return
+      !initOk ->
+        throw BackupException(TRANSPORT_INIT_FAILED, "Failed to restore '$applicationId`:\n $out")
+      else ->
+        throw BackupException(
+          BMGR_ERROR_RESTORE,
+          "Failed to restore '$applicationId`:\n${errors.joinToString("\n") { it.message }}",
+          BmgrException(command, out, errors),
+        )
     }
   }
 
@@ -361,8 +374,4 @@ abstract class AbstractAdbServices(
 private fun MatchResult.getGroup(name: String) =
   groups[name]?.value ?: throw BackupException(UNEXPECTED_ERROR, "Group $name not found")
 
-private fun String.isBackupSuccess(applicationId: String) =
-  contains("Package $applicationId with result: Success") &&
-    contains("Backup finished with result: Success")
-
-private fun String.isAppStopped() = contains("PACKAGE_STOPPED")
+private fun List<BmgrError>.isAppStopped() = any { it.errorCode == "PACKAGE_STOPPED" }
