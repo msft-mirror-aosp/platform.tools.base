@@ -47,6 +47,7 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
+import org.jetbrains.kotlin.gradle.testing.internal.KotlinTestsRegistry
 import java.io.File
 import javax.inject.Inject
 
@@ -63,7 +64,8 @@ open class KmpHostTestImpl @Inject constructor(
     global: GlobalTaskCreationConfig,
     androidKotlinCompilation: KotlinMultiplatformAndroidCompilation,
     override val mainVariant: KmpVariantImpl,
-    manifestFile: File
+    manifestFile: File,
+    val testRegistry: KotlinTestsRegistry
 ): KmpComponentImpl<KmpUnitTestDslInfoImpl>(
     dslInfo,
     internalServices,
@@ -147,9 +149,10 @@ open class KmpHostTestImpl @Inject constructor(
     }
 
     @Synchronized
-    override fun runTestTaskConfigurationActions(testTaskProvider: TaskProvider<out Test>) {
+    override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>) {
+        registerTaskWithKotlinRegistry(testTask)
         testTaskConfigurationActions.forEach {
-            testTaskProvider.configure { testTask -> it(testTask) }
+            testTask.configure { testTask -> it(testTask) }
         }
     }
 
@@ -159,4 +162,7 @@ open class KmpHostTestImpl @Inject constructor(
     override val hostTestName: String
         get() = HostTestBuilder.UNIT_TEST_TYPE
 
+    private fun registerTaskWithKotlinRegistry(testTask: TaskProvider<out Test>) {
+        testRegistry.registerTestTask(testTask)
+    }
 }
