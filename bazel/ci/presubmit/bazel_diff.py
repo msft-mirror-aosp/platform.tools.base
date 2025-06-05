@@ -20,7 +20,6 @@ def generate_hash_file(
   args = [
       '//tools/base/bazel:bazel-diff',
       '--',
-      '--verbose',
       'generate-hashes',
       '--bazelPath',
       build_env.bazel_path,
