@@ -70,14 +70,7 @@ class SourcesDirectoryModelTest : ModelComparator() {
                         project.tasks.register(
                             "create${variant.name}Asset",
                             AssetCreatorTask::class.java
-                        ) {
-                            it.outputDirectory.set(
-                                File(
-                                    project.layout.buildDirectory.asFile.get(),
-                                    "assets"
-                                )
-                            )
-                        }
+                        )
 
                     variant.sources.assets?.addGeneratedSourceDirectory(assetCreationTask) {
                         it.outputDirectory
@@ -87,14 +80,7 @@ class SourcesDirectoryModelTest : ModelComparator() {
                     val javaCreationTask = project.tasks.register(
                         "create${variant.name}JavaGenerator",
                         JavaCreatorTask::class.java
-                    ) {
-                        it.outputDirectory.set(
-                            File(
-                                project.layout.buildDirectory.asFile.get(),
-                                "java_stubs"
-                            )
-                        )
-                    }
+                    )
 
                     variant.sources.java?.addGeneratedSourceDirectory(javaCreationTask) {
                         it.outputDirectory

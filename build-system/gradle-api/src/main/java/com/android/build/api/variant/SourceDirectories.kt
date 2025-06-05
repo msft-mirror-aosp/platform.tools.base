@@ -43,7 +43,9 @@ interface SourceDirectories: Named {
      * Task of type [TASK].
      * @param wiredWith the method reference returning the [TASK] task's output to use as a source
      * directory. The generated source directory location is automatically determined by the
-     * Android Gradle Plugin
+     * Android Gradle Plugin and will be set using the [DirectoryProperty.convention] method.
+     * Therefore, if you need to set the directory to a different location, use
+     * [DirectoryProperty.set].
      */
     fun <TASK: Task> addGeneratedSourceDirectory(
         taskProvider: TaskProvider<TASK>,
