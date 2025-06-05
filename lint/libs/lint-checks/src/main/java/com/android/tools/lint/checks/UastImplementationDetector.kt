@@ -79,6 +79,7 @@ class UastImplementationDetector : Detector(), SourceCodeScanner {
       when (fqName) {
         "org.jetbrains.uast.java.JavaUDeclarationsExpression", // no plugin API to create this
         "org.jetbrains.uast.java.JavaUastLanguagePlugin", // plugin
+        "org.jetbrains.uast.kotlin.BaseKotlinInternalUastUtilsKt", // utils for both K1/K2 UAST
         "org.jetbrains.uast.kotlin.BaseKotlinUastResolveProviderService", // service
         "org.jetbrains.uast.kotlin.KotlinBinaryExpressionWithTypeKinds", // See below
         "org.jetbrains.uast.kotlin.KotlinBinaryOperators", // no API to retrieve lang-specific op

@@ -71,6 +71,7 @@ class KotlincFE10Detector : Detector(), SourceCodeScanner {
         "org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget" -> true
         "org.jetbrains.kotlin.descriptors.Modality" -> true
         "org.jetbrains.kotlin.descriptors.Visibility" -> true
+        "org.jetbrains.kotlin.resolve.references.ReferenceAccess" -> true
         // :compiler:frontend.common
         "org.jetbrains.kotlin.resolve.ImportPath" -> true
         // :compiler:backend.common.jvm
