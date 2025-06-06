@@ -19,6 +19,7 @@ import com.android.SdkConstants.ANDROIDX_APPCOMPAT_LIB_ARTIFACT
 import com.android.SdkConstants.ANDROIDX_LEANBACK_ARTIFACT
 import com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT
 import com.android.SdkConstants.LEANBACK_V17_ARTIFACT
+import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion
 import com.android.support.AndroidxNameUtils
@@ -431,12 +432,18 @@ open class LintModelModuleProject(
   }
 
   override fun getBuildSdk(): Int {
-    if (buildSdk == -1) {
+    getBuildSdkLevel() // side effect: sets buildSdk
+    return buildSdk
+  }
+
+  override fun getBuildSdkLevel(): AndroidApiLevel? {
+    if (buildSdkLevel == null) {
       val compileTarget = model.compileTarget
       val version = AndroidTargetHash.getPlatformVersion(compileTarget)
       buildSdk = version?.featureLevel ?: super.getBuildSdk()
+      buildSdkLevel = version?.androidApiLevel
     }
-    return buildSdk
+    return buildSdkLevel
   }
 
   override fun getBuildTargetHash(): String? {

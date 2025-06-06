@@ -297,7 +297,7 @@ class ProjectInitializerTest {
             <cache dir='$cacheDir'/>
             <classpath jar="test.jar" />
             <baseline file='$baseline' />
-            <module name="$appProjectPath:App" android="true" library="false" compile-sdk-version='18'>
+            <module name="$appProjectPath:App" android="true" library="false" compile-sdk-version='18.1'>
               <manifest file="AndroidManifest.xml" />
               <resource file="res/values/strings.xml" />
               <src file="test/Test.java" test="true" />
@@ -322,6 +322,7 @@ class ProjectInitializerTest {
           assertThat(project).isNotNull()
           project!!
           assertThat(project.name).isEqualTo("$appProjectPath:App")
+          assertThat(project.buildSdkLevel.toString()).isEqualTo("18.1")
           assertThat(project.buildSdk).isEqualTo(18)
           assertionsChecked++
 
