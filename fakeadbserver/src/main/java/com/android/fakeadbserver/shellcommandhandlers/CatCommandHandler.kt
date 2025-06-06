@@ -90,7 +90,7 @@ class CatCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandl
         val matchResult = procIdRegex.find(args) ?: return false
         val pid = matchResult.groups[1]!!.value.toInt()
         if (device.getClient(pid) != null) {
-            throw NotImplementedError("cmdline for ClientState is not implemented in FakeAdb")
+            throw NotImplementedError("client with a pid $pid not found")
         }
 
         val profileableClient = device.getProfileableProcess(pid)
