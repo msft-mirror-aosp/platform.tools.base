@@ -30,6 +30,7 @@ import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
 import com.android.tools.lint.checks.fx.utils.leastFixPoint
 import com.android.tools.lint.checks.fx.utils.unionedWith
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
@@ -65,7 +66,15 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>) :
 
   final override fun visitClass(context: JavaContext, declaration: UClass) {
     isSummariesCacheValid = false
-    programBuilder.addClass(context, declaration)
+    try {
+      programBuilder.addClass(context, declaration)
+    } catch (e: Throwable) {
+      if (LintClient.isUnitTest) {
+        throw e
+      } else {
+        context.log(e, "Error while indexing class ${declaration.qualifiedName}")
+      }
+    }
   }
 
   final override fun getApplicableUastTypes() = listOf(UDeclaration::class.java)
