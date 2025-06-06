@@ -47,7 +47,6 @@ internal open class HostTestComponentDslInfoImpl(
     buildTypeObj,
     productFlavorList,
     services,
-    buildDirectory,
     extension
 ), HostTestComponentDslInfo {
 

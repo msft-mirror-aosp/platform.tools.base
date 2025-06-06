@@ -17,14 +17,14 @@
 package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.model.v2.AndroidModel
-import com.android.builder.model.v2.ide.JUnitEngineInfo
-import com.android.builder.model.v2.ide.SourceProvider
+import com.android.builder.model.v2.ide.TestSuiteTarget
 import com.android.builder.model.v2.models.BasicTestSuite
 import com.android.builder.model.v2.models.TestSuiteSource
+import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 import java.io.Serializable
 
 class BasicTestSuiteImpl(
     override val name: String,
-    override val sources: Collection<TestSuiteSource>
-): BasicTestSuite, AndroidModel, Serializable {
-}
+    override val sources: Collection<TestSuiteSource>,
+    override val targetsByVariant: Collection<TestSuiteVariantTarget>,
+): BasicTestSuite, AndroidModel, Serializable

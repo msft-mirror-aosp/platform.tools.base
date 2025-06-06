@@ -51,6 +51,10 @@ class AgpApplicationTestSuitesDeclarationTest
                 android {
                     testOptions.suites.create("first", AgpTestSuite::class.java) {
                         it.useJunitEngine.inputs += AgpTestSuiteInputParameters.MERGED_MANIFEST
+                        it.targetVariants.add("debug")
+                        it.targets.apply {
+                            create("t1") { }
+                        }
                     }
                 }
                 dependencies {
@@ -113,15 +117,7 @@ class MyAppCallback: ApplicationComponentCallback {
 
         androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
             val testSuites = variant as HasTestSuites
-            val firstTestSuite = testSuites.suites["first"]
-                ?: throw RuntimeException(
-                    "Cannot find first test suite in test suites : " +
-                            testSuites.suites.keys.joinToString(", ")
-                )
-            Truth.assertThat(firstTestSuite).isInstanceOf(TestSuite::class.java)
-            Truth.assertThat(firstTestSuite.junitEngineSpec.inputs).containsExactly(
-                AgpTestSuiteInputParameters.MERGED_MANIFEST,
-            )
+            Truth.assertThat(testSuites.suites).isEmpty()
         }
     }
 }

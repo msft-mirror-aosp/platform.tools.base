@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.core.dsl.impl
 
+import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.BuildType
@@ -27,6 +28,7 @@ import com.android.build.api.variant.HostTestBuilder
 import com.android.build.gradle.api.JavaCompileOptions
 import com.android.build.gradle.internal.core.MergedFlavor
 import com.android.build.gradle.internal.core.MergedJavaCompileOptions
+import com.android.build.gradle.internal.core.dsl.AgpTestSuiteDslInfo
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
@@ -34,13 +36,12 @@ import com.android.build.gradle.internal.core.dsl.features.PrivacySandboxDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.features.AndroidResourcesDslInfoImpl
 import com.android.build.gradle.internal.core.dsl.impl.features.PrivacySandboxDslInfoImpl
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
+import com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl
 import com.android.build.gradle.internal.dsl.DefaultConfig
-import com.android.build.gradle.internal.scope.ProjectDslInfo
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.AbstractProductFlavor
 import com.android.builder.core.ComponentType
 import com.google.common.collect.ImmutableMap
-import org.gradle.api.file.DirectoryProperty
 
 internal abstract class ComponentDslInfoImpl internal constructor(
     final override val componentIdentity: ComponentIdentity,
@@ -52,7 +53,6 @@ internal abstract class ComponentDslInfoImpl internal constructor(
     val buildTypeObj: BuildType,
     final override val productFlavorList: List<ProductFlavor>,
     protected val services: VariantServices,
-    private val buildDirectory: DirectoryProperty,
     protected val extension: CommonExtension<*, *, *, *, *, *>
 ): ComponentDslInfo, MultiVariantComponentDslInfo {
 
@@ -89,9 +89,6 @@ internal abstract class ComponentDslInfoImpl internal constructor(
             { javaCompileOptions as JavaCompileOptions }
         )
     }
-
-    final override val projectDslInfo: ProjectDslInfo
-        get() = ProjectDslInfo(extension.testOptions.suites.filterIsInstance<AgpTestSuiteImpl>().toList())
 
     // merged flavor delegates
 
@@ -155,8 +152,22 @@ internal abstract class ComponentDslInfoImpl internal constructor(
             ),
         )
 
-    override val dslDefinedTestSuites: List<AgpTestSuiteImpl>
-        get() = projectDslInfo.suitesApplyingToComponent(componentIdentity)
+    /**
+     * A test suite is potentially targeting multiple variants. We must create an instance of
+     * [AgpTestSuiteDslInfo] for each test suite that applies to the current [componentIdentity].
+     *
+     * In other words, we duplicate the test suites for each variants that it applies to.
+     */
+    override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo>
+        get() =
+            extension.testOptions.suites
+                .filterIsInstance<AgpTestSuiteImpl>()
+                .filter {
+                    it.targetVariants.contains(componentIdentity.name)
+                }.map {
+                    AgpTestSuiteDslInfo(it,
+                        it.targets.filterIsInstance<AgpTestSuiteTargetImpl>())
+                }
 
     override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest>
         get() = listOf(

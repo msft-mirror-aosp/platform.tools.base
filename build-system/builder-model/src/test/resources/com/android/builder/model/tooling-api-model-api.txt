@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-baec2c60c979caef52fef1be82df5aaabe32859e45132fab1b4c627d5d730060
+d16aa9c9312c376a1bb0cb7783de536d7fdbe6b3a3f5ed4548ff1541bfc4fc24
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -799,9 +799,16 @@ com.android.builder.model.v2.ide.TestSuite.getJunitEngineInfo: com.android.build
 com.android.builder.model.v2.ide.TestSuite.getName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuiteArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestSuiteArtifact.getTestInfo: com.android.builder.model.v2.ide.TestSuiteTestInfo ()
+com.android.builder.model.v2.ide.TestSuiteTarget
+com.android.builder.model.v2.ide.TestSuiteTarget.getName: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteTarget.getTargetedDevices: java.util.Collection<java.lang.String> ()
+com.android.builder.model.v2.ide.TestSuiteTarget.getTestTaskName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuiteTestInfo
 com.android.builder.model.v2.ide.TestSuiteTestInfo.getJunitInfo: com.android.builder.model.v2.ide.JUnitEngineInfo ()
-com.android.builder.model.v2.ide.TestSuiteTestInfo.getTestTaskName: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteTestInfo.getTargets: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.TestSuiteTarget> ()
+com.android.builder.model.v2.ide.TestSuiteVariantTarget implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.TestSuiteVariantTarget.getTargetedVariant: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuiteVariantTarget.getTargets: java.util.Collection<com.android.builder.model.v2.ide.TestSuiteTarget> ()
 com.android.builder.model.v2.ide.TestedTargetVariant implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestedTargetVariant.getTargetProjectPath: java.lang.String ()
 com.android.builder.model.v2.ide.TestedTargetVariant.getTargetVariant: java.lang.String ()
@@ -875,9 +882,10 @@ com.android.builder.model.v2.models.BasicAndroidProject.getProductFlavorSourceSe
 com.android.builder.model.v2.models.BasicAndroidProject.getProjectType: com.android.builder.model.v2.ide.ProjectType ()
 com.android.builder.model.v2.models.BasicAndroidProject.getTestSuites: java.util.Collection<com.android.builder.model.v2.models.BasicTestSuite> ()
 com.android.builder.model.v2.models.BasicAndroidProject.getVariants: java.util.Collection<com.android.builder.model.v2.ide.BasicVariant> ()
-com.android.builder.model.v2.models.BasicTestSuite
+com.android.builder.model.v2.models.BasicTestSuite implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.models.BasicTestSuite.getName: java.lang.String ()
 com.android.builder.model.v2.models.BasicTestSuite.getSources: java.util.Collection<com.android.builder.model.v2.models.TestSuiteSource> ()
+com.android.builder.model.v2.models.BasicTestSuite.getTargetsByVariant: java.util.Collection<com.android.builder.model.v2.ide.TestSuiteVariantTarget> ()
 com.android.builder.model.v2.models.ModelBuilderParameter
 com.android.builder.model.v2.models.ModelBuilderParameter.getAdditionalArtifactsInModel: boolean ()
 com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildAndroidTestRuntimeClasspath: boolean ()

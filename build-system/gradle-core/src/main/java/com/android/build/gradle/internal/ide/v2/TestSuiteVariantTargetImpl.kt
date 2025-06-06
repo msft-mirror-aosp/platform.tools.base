@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.builder.model.v2.ide
+package com.android.build.gradle.internal.ide.v2
 
-import com.android.builder.model.v2.AndroidModel
+import com.android.builder.model.v2.ide.TestSuiteTarget
+import com.android.builder.model.v2.ide.TestSuiteVariantTarget
+import java.io.Serializable
 
-/**
- * Artifact for a test suite in a variant.
- */
-interface TestSuiteArtifact: AbstractArtifact, AndroidModel {
-
-    /**
-     * The test info for this test suite.
-     */
-    val testInfo: TestSuiteTestInfo
-}
+class TestSuiteVariantTargetImpl(
+    override val targetedVariant: String,
+    override val targets: Collection<TestSuiteTarget>
+): TestSuiteVariantTarget, Serializable

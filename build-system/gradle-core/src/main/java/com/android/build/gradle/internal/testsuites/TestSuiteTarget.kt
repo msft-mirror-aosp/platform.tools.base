@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.builder.model.v2.ide
+package com.android.build.gradle.internal.testsuites
 
-import com.android.builder.model.v2.AndroidModel
+import org.gradle.api.Incubating
+import org.gradle.api.Named
 
-/**
- * Artifact for a test suite in a variant.
- */
-interface TestSuiteArtifact: AbstractArtifact, AndroidModel {
+@Incubating
+interface TestSuiteTarget: Named {
 
-    /**
-     * The test info for this test suite.
-     */
-    val testInfo: TestSuiteTestInfo
+    @get: Incubating
+    val enabled: Boolean
+
+    @get: Incubating
+    val targetedDevices: Collection<String>
 }

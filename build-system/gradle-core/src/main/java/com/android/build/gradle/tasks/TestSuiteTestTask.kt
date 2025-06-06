@@ -23,6 +23,7 @@ import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.BuildToolsExecutableInput
 import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.DeviceProviderFactory
@@ -173,11 +174,12 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
         value.get().asFile.absolutePath
 
     class CreationAction(
-        val creationConfig: TestSuiteCreationConfig
+        val creationConfig: TestSuiteCreationConfig,
+        val testSuiteTarget: TestSuiteTargetCreationConfig
     ): GlobalTaskCreationAction<TestSuiteTestTask>() {
 
         override val name: String
-            get() = creationConfig.testTaskName
+            get() = testSuiteTarget.testTaskName
 
         override val type: Class<TestSuiteTestTask> = TestSuiteTestTask::class.java
 

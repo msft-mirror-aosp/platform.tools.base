@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.model.v2.ide.JUnitEngineInfo
+import com.android.builder.model.v2.ide.TestSuiteTarget
 import com.android.builder.model.v2.ide.TestSuiteTestInfo
 import java.io.Serializable
 
@@ -24,8 +25,8 @@ import java.io.Serializable
  * Implementation of [TestSuiteTestInfo] for serialization via the Tooling API.
  */
 data class TestSuiteTestInfoImpl(
-    override val testTaskName: String,
-    override val junitInfo: JUnitEngineInfo
+    override val junitInfo: JUnitEngineInfo,
+    override val targets: Map<String, TestSuiteTarget>
 ): TestSuiteTestInfo, Serializable {
 
     companion object {

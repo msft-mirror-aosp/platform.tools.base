@@ -17,7 +17,10 @@
 package com.android.build.api.variant.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.component.impl.computeTaskName
+import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
@@ -40,11 +43,12 @@ class TestSuiteImpl internal constructor(
     val variantServices: VariantServices,
     override val services: TaskCreationServices,
     override val artifacts: ArtifactsImpl,
-    override val testTaskName: String,
 ) : TestSuite, TestSuiteCreationConfig {
 
     private val _name = testSuiteBuilder.name
-
+    //
+    // Public APIs
+    //
     override fun getName() = _name
 
     override val junitEngineSpec: JUnitEngineSpec =
@@ -53,10 +57,26 @@ class TestSuiteImpl internal constructor(
                 { variantServices.mapPropertyOf(String::class.java, String::class.java, mapOf()) }
             )
 
-    override fun configureTestTask(action: (Test) -> Unit) {
+    override val targets: Map<String, TestSuiteTargetCreationConfig> =
+        testSuiteBuilder.targets.mapValues { entry ->
+            TestSuiteTargetImpl(
+                entry.value,
+                computeTaskName(
+                    testedVariant.name,
+                    "test${_name.capitalizeFirstChar()}${entry.value.uniqueName().capitalizeFirstChar()}",
+                    "TestSuite"
+                )
+            )
+        }
+
+    @Synchronized
+    override fun configureTestTasks(action: Test.(context: AgpTestSuite.TestTaskContext) -> Unit) {
         throw RuntimeException("Not yet implemented")
     }
 
+    //
+    // Internal APIs
+    //
     override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>) {
         throw RuntimeException("Not yet implemented")
     }

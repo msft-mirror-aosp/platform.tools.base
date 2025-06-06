@@ -50,7 +50,6 @@ internal class TestFixturesDslInfoImpl(
     buildTypeObj,
     productFlavorList,
     services,
-    buildDirectory,
     extension
 ), TestFixturesComponentDslInfo {
     override val testFixturesAndroidResourcesEnabled: Boolean

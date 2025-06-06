@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.builder.model.v2.ide
+package com.android.build.gradle.internal.component
 
-import com.android.builder.model.v2.AndroidModel
+import com.android.build.gradle.internal.testsuites.TestSuiteTarget
 
-/**
- * Artifact for a test suite in a variant.
- */
-interface TestSuiteArtifact: AbstractArtifact, AndroidModel {
+interface TestSuiteTargetCreationConfig: TestSuiteTarget {
 
     /**
-     * The test info for this test suite.
+     * Test task name, within the current project scope.
      */
-    val testInfo: TestSuiteTestInfo
+    val testTaskName: String
 }

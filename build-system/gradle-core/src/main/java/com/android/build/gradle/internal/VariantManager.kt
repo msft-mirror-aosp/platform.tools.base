@@ -15,13 +15,11 @@
  */
 package com.android.build.gradle.internal
 
-import android.databinding.tool.ext.toCamelCase
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.component.impl.DeviceTestImpl
 import com.android.build.api.component.impl.TestFixturesImpl
 import com.android.build.api.variant.impl.TestSuiteImpl
-import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
@@ -51,6 +49,7 @@ import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
@@ -181,6 +180,9 @@ class VariantManager<
     val testComponents: MutableList<TestComponentCreationConfig> =
             Lists.newArrayList()
 
+    /**
+     * Returns a list of all the test suite defined for this project.
+     */
     val testSuites: MutableList<TestSuiteCreationConfig> = mutableListOf()
 
     /**
@@ -967,9 +969,7 @@ class VariantManager<
                     }
 
                     // Create the TestSuite instance, its sources and various classpath configurations
-                    val componentName = "${testSuiteBuilder.name}${variantInfo.variant.name
-                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-                    }"
+                    val componentName = "${testSuiteBuilder.name}${variantInfo.variant.name.capitalizeFirstChar()}"
 
                     testSuiteBuilder as TestSuiteBuilderImpl
                     val testSuiteSources = testSuiteBuilder.getSources().map {
@@ -990,7 +990,6 @@ class VariantManager<
                             )
                     }
 
-
                     val testSuite = TestSuiteImpl(
                         testSuiteBuilder,
                         testSuiteSources,
@@ -999,7 +998,6 @@ class VariantManager<
                         variantServices,
                         taskCreationServices,
                         ArtifactsImpl(project, componentName),
-                        computeTaskName(variantBuilder.name, "test${testSuiteBuilder.name.toCamelCase()}","TestSuite" )
                     )
 
                     variant.addTestSuite(

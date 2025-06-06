@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-package com.android.builder.model.v2.ide
+package com.android.build.gradle.internal.dsl
 
-import com.android.builder.model.v2.AndroidModel
+import com.android.build.api.dsl.AgpTestSuiteTarget
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.testing.Test
 
-/**
- * Artifact for a test suite in a variant.
- */
-interface TestSuiteArtifact: AbstractArtifact, AndroidModel {
+open class AgpTestSuiteTargetImpl(
+    val testSuite: AgpTestSuiteImpl,
+    private val _name: String
+): AgpTestSuiteTarget {
 
-    /**
-     * The test info for this test suite.
-     */
-    val testInfo: TestSuiteTestInfo
+    override val targetDevices: MutableList<String> = mutableListOf()
+
+    @Suppress("UnstableApiUsage")
+    override fun getBinaryResultsDirectory(): Provider<Directory> {
+        throw RuntimeException("Not implemented")
+    }
+
+    override fun getName(): String = _name
 }

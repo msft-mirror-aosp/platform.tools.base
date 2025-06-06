@@ -19,12 +19,10 @@ package com.android.builder.model.v2.ide
 import com.android.builder.model.v2.AndroidModel
 
 /**
- * Artifact for a test suite in a variant.
+ * Defines a variant specific set of targets for a test suite.
  */
-interface TestSuiteArtifact: AbstractArtifact, AndroidModel {
+interface TestSuiteVariantTarget: AndroidModel {
+    val targetedVariant: String
 
-    /**
-     * The test info for this test suite.
-     */
-    val testInfo: TestSuiteTestInfo
+    val targets: Collection<TestSuiteTarget>
 }

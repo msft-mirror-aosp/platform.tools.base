@@ -17,39 +17,21 @@
 package com.android.build.gradle.integration.testing.suites
 
 import com.android.build.api.dsl.AgpTestSuite
-import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
 import com.android.build.gradle.options.BooleanOption
+import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
 import com.android.builder.model.v2.models.BasicTestSuite
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
+import kotlin.collections.forEach
 
 class TestSuitesVariantsMatchingTest {
     @get:Rule
     val rule = GradleRule.configure()
-        .withMavenRepository {
-            jar("com.google.truth:truth:0.44")
-            jar("org.junit.platform:junit-platform-engine:1.10.1")
-            jar("org.junit.platform:junit-platform-launcher:1.10.1")
-            jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
-            jar("com.test:toy-junit-engine:1.0")
-                .addClasses(
-                    ToyJunitEngineForTesting::class.java,
-                    ToyTestDescriptor::class.java,
-                    TestEngineInputProperties::class.java,
-                    TestEngineInputProperties.Companion::class.java,
-                    TestEngineInputProperty::class.java,
-                    TestEngineInputProperty.Companion::class.java
-                )
-                .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine",
-                    ToyJunitEngineForTesting::class.java.name)
-
-        }.from {
+        .from {
             gradleProperties {
                 add(BooleanOption.TEST_SUITE_SUPPORT, true)
             }
@@ -66,21 +48,37 @@ class TestSuitesVariantsMatchingTest {
                     }
                     testOptions.suites.create("first", AgpTestSuite::class.java) {
                         it.useJunitEngine.apply {
-                            inputs.add(
-                                AgpTestSuiteInputParameters.MERGED_MANIFEST
-                            )
                             includeEngines.add(
                                 "[engine:toy-junit-engine-for-tests]"
                             )
-                            enginesDependencies.add("org.junit.platform:junit-platform-launcher")
-                            enginesDependencies.add("com.test:toy-junit-engine:1.0")
-                            enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
                         }
-                        it.targetVariants += "redDebug"
-                        it.hostJar {
-                            dependencies.apply {
-                                implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.10")
-                                implementation.add("com.google.code.gson:gson:2.11.0")
+                        it.hostJar { }
+                        it.targetVariants.add("redDebug")
+                        it.targetVariants.add("blueDebug")
+                        it.targets.apply {
+                            create("t1") { }
+                        }
+                        it.targets.apply {
+                            create("t2") { }
+                        }
+                    }
+                    testOptions.suites.create("second", AgpTestSuite::class.java) {
+                        it.useJunitEngine.apply {
+                            includeEngines.add(
+                                "[engine:toy-junit-engine-for-tests]"
+                            )
+                        }
+                        it.hostJar { }
+                        it.targetVariants.add("redDebug")
+                        it.targetVariants.add("blueDebug")
+                        it.targetVariants.add("redStaging")
+                        it.targets.apply {
+                            create("c1") { }
+                            create("c2") { testSuiteTarget ->
+                                testSuiteTarget.targetDevices.add("device1")
+                            }
+                            create("c3") { testSuiteTarget ->
+                                testSuiteTarget.targetDevices.add("device2")
                             }
                         }
                     }
@@ -100,8 +98,23 @@ class TestSuitesVariantsMatchingTest {
 
         // verify the test suite model
         val testSuites = models.basicAndroidProject?.testSuites
-        Truth.assertThat(testSuites).hasSize(1)
-        val firstTestSuite: BasicTestSuite = testSuites!!.single()
+        Truth.assertThat(testSuites).hasSize(2)
+        val firstTestSuite = findTestSuite(testSuites!!, "first")
+        firstTestSuite.targetsByVariant
+            .map { variantTarget ->
+                Truth.assertThat(variantTarget.targets.map { it.name })
+                    .containsExactly("t1", "t2")
+                Truth.assertThat(variantTarget.targetedVariant)
+                    .isAnyOf("redDebug", "blueDebug")
+            }
+        Truth.assertThat(firstTestSuite
+            .targetsByVariant.map { variantTarget -> variantTarget.targets.map { it.testTaskName }}.flatten()
+        ).containsExactly(
+            "testFirstT1RedDebugTestSuite",
+            "testFirstT1BlueDebugTestSuite",
+            "testFirstT2RedDebugTestSuite",
+            "testFirstT2BlueDebugTestSuite"
+        )
         val firstTestSuiteFolders = firstTestSuite.sources.single()
         Truth.assertThat(firstTestSuiteFolders.type).isEqualTo(
             BaseTestSuiteSourceIdentity.SourceType.HOST_JAR
@@ -110,13 +123,78 @@ class TestSuitesVariantsMatchingTest {
             project.subProject(":app").resolve("src/first").toFile()
         )
 
-        // verify the variant specific model
-        val variantTestSuites = models.basicAndroidProject?.variants?.first { variant ->
-            variant.name == "redDebug"
-        }?.testSuiteArtifacts
+        val secondTestSuite = findTestSuite(testSuites, "second")
+        secondTestSuite.targetsByVariant.map { variantTarget ->
+            Truth.assertThat(variantTarget.targets.map { it.name })
+                .containsExactly("c1", "c2", "c3")
+            Truth.assertThat(variantTarget.targetedVariant)
+                .isAnyOf("redDebug", "blueDebug", "redStaging")
+        }
+        Truth.assertThat(secondTestSuite
+            .targetsByVariant.map { variantTarget -> variantTarget.targets.map { it.testTaskName } }.flatten()
+        )
+            .containsExactly(
+                "testSecondC1BlueDebugTestSuite",
+                "testSecondC1RedDebugTestSuite",
+                "testSecondC1RedStagingTestSuite",
+                "testSecondC2Device1BlueDebugTestSuite",
+                "testSecondC2Device1RedDebugTestSuite",
+                "testSecondC2Device1RedStagingTestSuite",
+                "testSecondC3Device2BlueDebugTestSuite",
+                "testSecondC3Device2RedDebugTestSuite",
+                "testSecondC3Device2RedStagingTestSuite",
+            )
 
-        Truth.assertThat(variantTestSuites).hasSize(1)
-        val variantTestSuite = variantTestSuites!!.values.single()
-        Truth.assertThat(variantTestSuite.testSuiteName).isEqualTo("first")
+        Truth.assertThat(models.basicAndroidProject?.variants).hasSize(6)
+
+        models.basicAndroidProject?.variants?.forEach { variant ->
+            when (variant.name) {
+                "redDebug" -> {
+                    val testSuites = variant.testSuiteArtifacts
+                    Truth.assertThat(testSuites).hasSize(2)
+                    Truth.assertThat(testSuites.map { it.value.testSuiteName})
+                        .containsExactly("first", "second")
+                    val firstTestSuite = findTestSuite(testSuites.values, "first")
+                    Truth.assertThat(firstTestSuite.testSuiteName).isEqualTo("first")
+
+                    Truth.assertThat(testSuites["first"]).isEqualTo(firstTestSuite)
+                }
+                "blueDebug" -> {
+                    val testSuites = variant.testSuiteArtifacts
+                    Truth.assertThat(testSuites).hasSize(2)
+                    Truth.assertThat(testSuites.map { it.value.testSuiteName})
+                        .containsExactly("first", "second")
+
+
+                    val firstTestSuite = findTestSuite(testSuites.values, "first")
+                    Truth.assertThat(firstTestSuite.testSuiteName).isEqualTo("first")
+
+                    Truth.assertThat(testSuites["first"]).isEqualTo(firstTestSuite)
+                }
+
+                "redStaging" -> {
+                    val testSuites = variant.testSuiteArtifacts
+                    Truth.assertThat(testSuites).hasSize(1)
+                    Truth.assertThat(testSuites.map { it.value.testSuiteName})
+                        .containsExactly("second")
+
+
+                    val secondTestSuite = findTestSuite(testSuites.values, "second")
+                    Truth.assertThat(secondTestSuite.testSuiteName).isEqualTo("second")
+
+                    Truth.assertThat(testSuites["second"]).isEqualTo(secondTestSuite)
+                }
+                else -> {
+                    Truth.assertThat(variant.testSuiteArtifacts).isEmpty()
+                }
+            }
+        }
     }
+
+    private fun findTestSuite(testSuites: Collection<BasicTestSuite>, name: String)=
+        testSuites.first { it.name == name }
+
+    private fun findTestSuite(testSuites: Collection<BasicTestSuiteArtifact>, name: String) =
+        testSuites.first { it.testSuiteName == name }
+
 }

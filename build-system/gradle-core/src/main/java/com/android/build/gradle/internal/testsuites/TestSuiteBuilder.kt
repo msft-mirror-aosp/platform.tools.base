@@ -37,4 +37,11 @@ interface TestSuiteBuilder: Named {
      * Configure the [JUnitEngineSpec] for this test suite in this variant.
      */
     val junitEngineSpec: JUnitEngineSpec
+
+    /**
+     * Configure the list of [TestSuiteTargetBuilder] for this test suite in this variant.
+     *
+     * The [Map] keys are the test suite names.
+     */
+    val targets: Map<String, TestSuiteTargetBuilder>
 }

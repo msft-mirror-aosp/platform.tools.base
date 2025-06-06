@@ -187,8 +187,8 @@ interface TestOptions {
      * Available test suites in this project.
      *
      * Test suites provide a way to define groups of tests that can be executed together.  Each
-     * [AgpTestSuite] returned by this method will run against the variants identified by either the
-     * [AgpTestSuite.targetVariants] or [AgpTestSuite.targetProductFlavors] methods.
+     * [AgpTestSuite] returned by this method will run against the variants identified by the
+     * associated [AgpTestSuite.getTargets] targets.
      *
      * This differs from [unitTests], which uses dedicated source set folders for variant-specific
      * tests.  With [AgpTestSuite], you can create multiple suites to achieve variant-specific testing,
@@ -201,29 +201,15 @@ interface TestOptions {
      * android {
      *     testOptions {
      *         suites {
-     *             create("commonSuite") {
-     *                 targetProductFlavors += listOf(
-     *                     // Runs on both blue and red flavors
-     *                     Pair("device", "blue"),
-     *                     Pair("device", "red")
-     *                 )
-     *             }
-     *             create("redSuite") {
-     *                 targetProductFlavors += listOf(
-     *                     // Runs on red flavor only
-     *                     Pair("device", "red")
-     *                 )
-     *             }
-     *             create("blueSuite") {
-     *                 targetProductFlavors += listOf(
-     *                     // Runs on blue flavor only
-     *                     Pair("device", "blue"),
-     *                 )
-     *             }
+     *             create("commonSuite") { ... }
+     *             create("redSuite") { ... }
+     *             create("blueSuite") { ... }
      *         }
      *     }
      * }
      * ```
+     * see [AgpTestSuite] for details  on how to target each test suite to tested variants using the
+     * [AgpTestSuite.targetVariants] API.
      *
      * Note: The built-in test suites "unitTests" and "androidTests" are not accessible through this
      * API. Attempting to create test suites with these reserved names will result in a configuration-time

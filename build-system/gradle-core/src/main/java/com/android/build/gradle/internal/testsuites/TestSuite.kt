@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.testsuites
 
-import com.android.build.api.variant.HasHostTestsBuilder
+import com.android.build.api.dsl.AgpTestSuite.TestTaskContext
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 import org.gradle.api.tasks.testing.Test
@@ -24,31 +24,48 @@ import org.gradle.api.tasks.testing.Test
 interface TestSuite: Named {
 
     /**
-     * Runs some action to configure the Variant's unit test [Test] task.
+    /**
+     * Configure the test tasks for this test target.
      *
-     * The action will only run if the task is configured. In particular the
-     * [HasHostTestsBuilder.hostTests[HasHostTestsBuilder.UNIT_TEST_TYPE]?.enable] must be set to
-     * true (it is true by default).
+     * There can be one to many instances of [Test] tasks for a particular test suite target. For
+     * instance, if the test suite targets more than one device, AGP may decide to create one [Test]
+     * instance per device.
      *
+     * The configuration block can use the [action]'s context parameter to disambiguate between each
+     * [Test] task instance.
+     *
+     * Do not make assumption about how AGP decides to allocate [Test] task instances per device, as
+     * each AGP version can potentially change it in future release, always use the context object to
+     * determine what the [Test] task applies to.
+     *
+     * @param action a block to configure the [Test] tasks associated with this test suite target.
+    */
      * Example :
      * ```(kotlin)
      *  androidComponents {
      *      onVariants { variant ->
-     *          variant.hostTests[HostTestsBuilder.UNIT_TEST_TYPE]?.configureTestTask { testTask ->
-     *              testTask.beforeTest { descriptor ->
-     *                  println("Running test: " + descriptor)
-     *              }
+     *          variant.testSuites.forEach { testSuite ->
+     *              testSuite.configureTestTask { testTask ->
+     *                  testTask.beforeTest { descriptor ->
+     *                      println("Running test: " + descriptor)
+     *                  }
+ *                  }
      *          }
      *      }
      *  }
      * ```
      * @param action to configure the [Test] task.
      */
-    fun configureTestTask(action: (Test)-> Unit)
+    fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
 
     /**
      * Returns the [JUnitEngineSpec] for this test suite.
      */
     @get:Incubating
     val junitEngineSpec: JUnitEngineSpec
+
+    /**
+     * Returns the list of [TestSuiteTarget] for this test suite in this variant.
+     */
+    val targets: Map<String, TestSuiteTarget>
 }

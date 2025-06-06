@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.builder.model.v2.ide
 
-import com.android.builder.model.v2.AndroidModel
-
-/**
- * Artifact for a test suite in a variant.
- */
-interface TestSuiteArtifact: AbstractArtifact, AndroidModel {
+interface TestSuiteTarget {
+    val name: String
 
     /**
-     * The test info for this test suite.
+     * Returns the name of the task used to run the test suite
+     *
+     * @return name of the task used to run the tests.
      */
-    val testInfo: TestSuiteTestInfo
+    val testTaskName: String
+
+    /**
+     * List of targeted device.
+     */
+    val targetedDevices: Collection<String>
 }

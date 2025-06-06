@@ -142,6 +142,8 @@ class TestEngineWiringTest(
                                 implementation.add("com.google.code.gson:gson:2.11.0")
                             }
                         }
+                        it.targetVariants.add("debug")
+                        it.targets.create("t1") { }
                     }
                 }
                 this.dependencies {
@@ -155,8 +157,8 @@ class TestEngineWiringTest(
         val result = rule.build
             .executor
             .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-            .run("testFirstDebugTestSuite")
-        Truth.assertThat(result.didWorkTasks).contains("$modulePath:testFirstDebugTestSuite")
+            .run("testFirstT1DebugTestSuite")
+        Truth.assertThat(result.didWorkTasks).contains("$modulePath:testFirstT1DebugTestSuite")
         result.assertFailureMessage().contains("Deprecated Gradle features were used in this build")
     }
 
@@ -199,7 +201,10 @@ class TestEngineWiringTest(
         Truth.assertThat(testSuites).isNotNull()
         val firstTestSuite = testSuites?.get("first")
         Truth.assertThat(firstTestSuite).isNotNull()
-        Truth.assertThat(firstTestSuite!!.testInfo.testTaskName).isEqualTo("testFirstDebugTestSuite")
+        val targets = firstTestSuite!!.testInfo.targets
+        Truth.assertThat(targets.size).isEqualTo(1)
+        Truth.assertThat(targets.values.single().name).isEqualTo("t1")
+        Truth.assertThat(targets.values.single().testTaskName).isEqualTo("testFirstT1DebugTestSuite")
         Truth.assertThat(firstTestSuite.testInfo.junitInfo.includedEngines.single()).isEqualTo("[engine:toy-junit-engine-for-tests]")
     }
 

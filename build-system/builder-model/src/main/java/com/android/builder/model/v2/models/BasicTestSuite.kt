@@ -16,10 +16,13 @@
 
 package com.android.builder.model.v2.models
 
+import com.android.builder.model.v2.AndroidModel
+import com.android.builder.model.v2.ide.TestSuiteVariantTarget
+
 /**
  * Information about a test suite attached to the project.
  */
-interface BasicTestSuite {
+interface BasicTestSuite: AndroidModel {
 
     val name: String
 
@@ -27,4 +30,9 @@ interface BasicTestSuite {
      * source folder(s) for this test suite.
      */
     val sources: Collection<TestSuiteSource>
+
+    /**
+     * Variant specific target(s) for this test suite.
+     */
+    val targetsByVariant: Collection<TestSuiteVariantTarget>
 }

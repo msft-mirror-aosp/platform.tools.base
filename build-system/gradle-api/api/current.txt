@@ -292,6 +292,11 @@ package com.android.build.api.dsl {
   @Deprecated public interface AdbOptions extends com.android.build.api.dsl.Installation {
   }
 
+  @org.gradle.api.Incubating public interface AgpTestSuiteTarget extends org.gradle.testing.base.TestSuiteTarget org.gradle.api.Named {
+    method @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetDevices();
+    property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetDevices;
+  }
+
   @org.gradle.api.Incubating public interface AiPackExtension {
     method @org.gradle.api.Incubating public void dynamicDelivery(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicDelivery,kotlin.Unit> action);
     method @org.gradle.api.Incubating public com.android.build.api.dsl.DynamicDelivery getDynamicDelivery();

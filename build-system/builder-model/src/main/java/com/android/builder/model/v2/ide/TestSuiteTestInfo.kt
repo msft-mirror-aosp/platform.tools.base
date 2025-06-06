@@ -17,7 +17,7 @@
 package com.android.builder.model.v2.ide
 
 /**
- * Information for test suites.
+ * Information for a test suite in a variant.
  *
  * This includes JUnit engines configuration, etc.
  *
@@ -25,17 +25,16 @@ package com.android.builder.model.v2.ide
  */
 // TODO : maybe consider subclassing TestInfo
 interface TestSuiteTestInfo {
-
-    /**
-     * Returns the name of the task used to run the test suite
-     *
-     * @return name of the task used to run the tests.
-     */
-    val testTaskName: String
-
     /**
      * Information for the junit engines configured for running the
      * test suite.
      */
     val junitInfo: JUnitEngineInfo
+
+    /**
+     * Information for the test suite's targets.
+     *
+     * @return map of [TestSuiteTarget] indexed by their [TestSuiteTarget.name]
+     */
+    val targets: Map<String, TestSuiteTarget>
 }

@@ -31,7 +31,12 @@ class TestSuiteTaskManager(
         get() = setOf()
 
     fun createTasks(creationConfig: TestSuiteCreationConfig) {
-        taskFactory.register(TestSuiteTestTask.CreationAction(creationConfig))
+        creationConfig.targets
+            .filter { it.value.enabled }
+            .forEach { mapEntry ->
+                taskFactory.register(
+                    TestSuiteTestTask.CreationAction(creationConfig, mapEntry.value)
+                )
+            }
     }
-
 }

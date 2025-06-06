@@ -56,7 +56,7 @@ interface TestSuiteCreationConfig: TestSuite {
     val artifacts: ArtifactsImpl
 
     /**
-     * Test task name, within the current project scope.
+     * Target of this test suite.
      */
-    val testTaskName: String
+    override val targets: Map<String, TestSuiteTargetCreationConfig>
 }

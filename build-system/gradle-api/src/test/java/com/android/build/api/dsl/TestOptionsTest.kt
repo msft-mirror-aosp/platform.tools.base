@@ -49,16 +49,16 @@ class TestOptionsTest {
 
     open class AgpTestSuiteImplForTest(private val name: String) : AgpTestSuite {
         override fun getName(): String = name
+        override val targetVariants: MutableList<String>
+            get() = throw RuntimeException("Unexpected call")
 
-        override fun getTargets(): ExtensiblePolymorphicDomainObjectContainer<out TestSuiteTarget> {
+        override fun getTargets(): ExtensiblePolymorphicDomainObjectContainer<AgpTestSuiteTarget> {
             throw RuntimeException("Unexpected call to `getTargets()`")
         }
 
         private val jUnitEngineSpec = JunitEngineSpecForTest()
 
         override val useJunitEngine: JUnitEngineSpec = jUnitEngineSpec
-        override val targetProductFlavors: MutableList<Pair<String, String>> = mutableListOf<Pair<String, String>>()
-        override val targetVariants: MutableList<String> = mutableListOf<String>()
         override fun useJunitEngine(action: JUnitEngineSpec.() -> Unit) {
             throw RuntimeException("Unexpected call")
         }
@@ -69,6 +69,9 @@ class TestOptionsTest {
             throw RuntimeException("Unexpected call")
         }
         override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
+            throw RuntimeException("Unexpected call")
+        }
+        override fun configureTestTasks(action: org.gradle.api.tasks.testing.Test.(AgpTestSuite.TestTaskContext) -> Unit) {
             throw RuntimeException("Unexpected call")
         }
     }

@@ -677,9 +677,15 @@ https://issuetracker.google.com/387328291
   * com.android.build.api.variant.Component.getResolvableConfiguration: org.gradle.api.artifacts.Configuration (java.lang.String)
 https://issuetracker.google.com/392162853
   * com.android.build.api.dsl.AgpTestSuite implements org.gradle.testing.base.TestSuite
+  * com.android.build.api.dsl.AgpTestSuite$TestTaskContext
+  * com.android.build.api.dsl.AgpTestSuite$TestTaskContext.getSuiteName: java.lang.String ()
+  * com.android.build.api.dsl.AgpTestSuite$TestTaskContext.getTargetName: java.lang.String ()
+  * com.android.build.api.dsl.AgpTestSuite$TestTaskContext.getTargetedDevices: java.util.Collection<java.lang.String> ()
+  * com.android.build.api.dsl.AgpTestSuite$TestTaskContext.getTargetedVariant: java.lang.String ()
   * com.android.build.api.dsl.AgpTestSuite.assets: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteAssetsSpec, kotlin.Unit>)
-  * com.android.build.api.dsl.AgpTestSuite.getTargetProductFlavors: java.util.List<kotlin.Pair<java.lang.String, java.lang.String>> ()
+  * com.android.build.api.dsl.AgpTestSuite.configureTestTasks: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test, ? super com.android.build.api.dsl.AgpTestSuite$TestTaskContext, kotlin.Unit>)
   * com.android.build.api.dsl.AgpTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
+  * com.android.build.api.dsl.AgpTestSuite.getTargets: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuiteTarget> ()
   * com.android.build.api.dsl.AgpTestSuite.getUseJunitEngine: com.android.build.api.dsl.JUnitEngineSpec ()
   * com.android.build.api.dsl.AgpTestSuite.hostJar: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteHostJarSpec, kotlin.Unit>)
   * com.android.build.api.dsl.AgpTestSuite.testApk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec, kotlin.Unit>)
@@ -688,6 +694,8 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.dsl.AgpTestSuiteDependencies.getCompileOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.AgpTestSuiteDependencies.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.AgpTestSuiteDependencies.getRuntimeOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.AgpTestSuiteTarget implements org.gradle.testing.base.TestSuiteTarget, org.gradle.api.Named
+  * com.android.build.api.dsl.AgpTestSuiteTarget.getTargetDevices: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.DefaultInputsForAgpTestSuites.initialize: void (com.android.build.api.dsl.JUnitEngineSpec)
   * com.android.build.api.dsl.JUnitEngineSpec
   * com.android.build.api.dsl.JUnitEngineSpec.addInputProperty: void (java.lang.String, java.lang.String)
