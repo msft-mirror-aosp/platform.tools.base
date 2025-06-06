@@ -189,7 +189,9 @@ public class TestUtils {
             // it. If we're using Bazel, we should still look to see if there's a larger outermost
             // workspace since we might be within a nested workspace.
             while (currDir != null) {
-                if (Files.exists(currDir.resolve("WORKSPACE"))) {
+                Path workspacePath = currDir.resolve("WORKSPACE");
+                // Ensure that the workspacePath being looked at is NOT a directory.
+                if (Files.isRegularFile(workspacePath)) {
                     workspaceRoot = currDir;
                 }
                 currDir = currDir.getParent();
