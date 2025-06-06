@@ -199,7 +199,8 @@ abstract class GenerateTestConfig @Inject constructor(objectFactory: ObjectFacto
 
     companion object {
 
-        private const val TEST_CONFIG_FILE = "com/android/tools/test_config.properties"
+        @VisibleForTesting
+        const val TEST_CONFIG_FILE = "com/android/tools/test_config.properties"
         private const val ANDROID_RESOURCE_APK = "android_resource_apk"
         private const val ANDROID_MERGED_ASSETS = "android_merged_assets"
         private const val ANDROID_MERGED_MANIFEST = "android_merged_manifest"
