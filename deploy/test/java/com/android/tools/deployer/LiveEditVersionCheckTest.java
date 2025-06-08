@@ -17,12 +17,14 @@ package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.idea.protobuf.ByteString;
-import java.io.IOException;
-import java.util.Collection;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.IOException;
+import java.util.Collection;
 
 @RunWith(Parameterized.class)
 public class LiveEditVersionCheckTest extends LiveEditTestBase {
@@ -37,7 +39,7 @@ public class LiveEditVersionCheckTest extends LiveEditTestBase {
 
     @Test
     public void testVersionChecksPass() throws IOException {
-        android.loadDex(DEX_LOCATION);
+        android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);
         android.launchActivity(ACTIVITY_CLASS);
 
         Deploy.LiveEditClass clazz =
@@ -62,7 +64,7 @@ public class LiveEditVersionCheckTest extends LiveEditTestBase {
 
     @Test
     public void testVersionChecksFail() throws IOException {
-        android.loadDex(DEX_LOCATION);
+        android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);
         android.launchActivity(ACTIVITY_CLASS);
 
         // Make it look like Compose Runtime is the lowest version possible.

@@ -27,7 +27,7 @@ public class InterpreterLogger {
 
     public static void enter(@NonNull String location) {
         tab.set(INC + tab.get());
-        v("Enter: " + location);
+        v("Enter: " + location + " on thread " + Thread.currentThread().getName());
     }
 
     public static void exit(@NonNull String location) {

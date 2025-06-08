@@ -20,14 +20,15 @@ public class ProxyMissingMethodException extends RuntimeException {
     private final String methodName;
     private final String methodDesc;
 
-    public ProxyMissingMethodException(LiveEditClass clazz, String methodName, String methodDesc) {
+    public ProxyMissingMethodException(
+            Interpretable bytecode, String methodName, String methodDesc) {
         super(
                 "No such method '"
                         + methodName
                         + "' found in class '"
-                        + clazz.getClassInternalName()
+                        + bytecode.getInternalName()
                         + "'");
-        this.className = clazz.getClassInternalName();
+        this.className = bytecode.getInternalName();
         this.methodName = methodName;
         this.methodDesc = methodDesc;
     }

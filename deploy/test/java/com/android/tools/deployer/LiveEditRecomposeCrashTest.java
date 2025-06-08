@@ -40,7 +40,7 @@ public class LiveEditRecomposeCrashTest extends LiveEditTestBase {
 
     @Test
     public void testVersionChecksPass() throws IOException {
-        android.loadDex(DEX_LOCATION);
+        android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);
         android.launchActivity(ACTIVITY_CLASS);
         Deploy.LiveEditClass clazz =
                 Deploy.LiveEditClass.newBuilder()

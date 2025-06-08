@@ -19,14 +19,14 @@ public class ProxyMissingFieldException extends RuntimeException {
     private final String className;
     private final String fieldName;
 
-    public ProxyMissingFieldException(LiveEditClass clazz, String fieldName) {
+    public ProxyMissingFieldException(Interpretable bytecode, String fieldName) {
         super(
                 "No such field '"
                         + fieldName
                         + "' found in class '"
-                        + clazz.getClassInternalName()
+                        + bytecode.getInternalName()
                         + "'");
-        this.className = clazz.getClassInternalName();
+        this.className = bytecode.getInternalName();
         this.fieldName = fieldName;
     }
 
