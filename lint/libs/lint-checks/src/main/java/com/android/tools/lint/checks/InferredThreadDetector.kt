@@ -71,25 +71,22 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(ThreadConstraint
     @JvmField
     val THREAD =
       Issue.create(
-          id = "ThreadConstraint",
-          briefDescription = "Wrong Thread (with inference)",
-          explanation =
-            """
+        id = "ThreadConstraint",
+        briefDescription = "Wrong Thread (with inference)",
+        explanation =
+          """
                 Ensures that a method which expects to be called on a specific thread, is \
                 actually called from that thread. For example, calls on methods in widgets \
-                should always be made on the UI thread. This new issue consolidates `WrongThread` \
-                and `WrongThreadInterprocedural`, accompanied by a check aiming to be more reliable \
-                and scalable.
+                should always be made on the UI thread.
                 """,
-          moreInfo =
-            "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
-          category = Category.CORRECTNESS,
-          priority = 6,
-          severity = Severity.ERROR,
-          enabledByDefault = true,
-          androidSpecific = true,
-          implementation = Impl,
-        )
-        .setAliases(listOf(ThreadDetector.THREAD.id, WrongThreadInterproceduralDetector.ISSUE.id))
+        moreInfo =
+          "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        enabledByDefault = false,
+        androidSpecific = true,
+        implementation = Impl,
+      )
   }
 }
