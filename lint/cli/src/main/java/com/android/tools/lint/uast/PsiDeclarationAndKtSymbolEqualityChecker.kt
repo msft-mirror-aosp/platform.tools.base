@@ -94,8 +94,9 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
       psiParameters = psiParameters.dropLast(1)
     }
     if (isCompose) {
-      // Drop the last two parameters added by Compose compiler plugin
-      psiParameters = psiParameters.dropLast(2)
+      // Drop the synthetic parameters added by Compose compiler plugin
+      // $Composer, $changed[n], $default[n]
+      psiParameters = psiParameters.takeWhile { it.type.canonicalText != COMPOSER_TYPE }
     }
     if (psiParameters.size != valueParameterCount) return false
     if (isExtension) {
@@ -177,4 +178,5 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
     }
 
   private val COMPOSABLE_CLASSID = ClassId.fromString("androidx/compose/runtime/Composable")
+  private val COMPOSER_TYPE = "androidx.compose.runtime.Composer"
 }
