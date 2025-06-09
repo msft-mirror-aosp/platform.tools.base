@@ -72134,6 +72134,28 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.gradle.toolchains.foojay-resolver-convention.org.gradle.toolchains.foojay-resolver-convention.gradle.plugin_0.8.0",
+    pom = "repository/org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/0.8.0/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin-0.8.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/0.8.0",
+    deps = [
+        "org.gradle.toolchains.foojay-resolver_0.8.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.gradle.toolchains.foojay-resolver_0.8.0",
+    pom = "repository/org/gradle/toolchains/foojay-resolver/0.8.0/foojay-resolver-0.8.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/toolchains/foojay-resolver/0.8.0",
+    deps = [
+        "com.google.code.gson.gson_2.10.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.gradle.gradle-core_4.2.1",
     pom = "repository/org/gradle/gradle-core/4.2.1/gradle-core-4.2.1.pom",
     repo_root_path = "repository",
