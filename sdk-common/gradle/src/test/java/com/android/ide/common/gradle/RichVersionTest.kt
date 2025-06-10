@@ -196,7 +196,7 @@ class RichVersionTest {
     }
 
     @Test
-    fun testRequire() {
+    fun testRequireVersion() {
         val version = RichVersion.require(Version.parse("12.34"))
         assertThat(version.strictly).isNull()
         assertThat(version.require).isEqualTo(VersionRange.parse("12.34"))
@@ -207,7 +207,18 @@ class RichVersionTest {
     }
 
     @Test
-    fun testStrictly() {
+    fun testRequireVersionRange() {
+        val version = RichVersion.require(VersionRange.parse("[12.34,56.78)"))
+        assertThat(version.strictly).isNull()
+        assertThat(version.require).isEqualTo(VersionRange.parse("[12.34,56.78)"))
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("[12.34,56.78)")
+        assertThat(version.toString()).isEqualTo("[12.34,56.78)")
+    }
+
+    @Test
+    fun testStrictlyVersion() {
         val version = RichVersion.strictly(Version.parse("12.34"))
         assertThat(version.strictly).isEqualTo(VersionRange.parse("12.34"))
         assertThat(version.require).isNull()
@@ -215,6 +226,17 @@ class RichVersionTest {
         assertThat(version.exclude).isEmpty()
         assertThat(version.toIdentifier()).isEqualTo("12.34!!")
         assertThat(version.toString()).isEqualTo("12.34!!")
+    }
+
+    @Test
+    fun testStrictlyVersionRange() {
+        val version = RichVersion.strictly(VersionRange.parse("[12.34,56.78)"))
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("[12.34,56.78)"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("[12.34,56.78)!!")
+        assertThat(version.toString()).isEqualTo("[12.34,56.78)!!")
     }
 
     @Test

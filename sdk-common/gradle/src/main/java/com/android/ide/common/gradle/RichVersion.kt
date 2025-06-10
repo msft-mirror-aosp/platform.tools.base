@@ -157,8 +157,16 @@ data class RichVersion(
             RichVersion(Declaration(Kind.REQUIRE, VersionRange(Range.singleton(version))))
 
         @JvmStatic
+        fun require(versionRange: VersionRange): RichVersion =
+            RichVersion(Declaration(Kind.REQUIRE, versionRange))
+
+        @JvmStatic
         fun strictly(version: Version): RichVersion =
             RichVersion(Declaration(Kind.STRICTLY, VersionRange(Range.singleton(version))))
+
+        @JvmStatic
+        fun strictly(versionRange: VersionRange): RichVersion =
+            RichVersion(Declaration(Kind.STRICTLY, versionRange))
     }
 
     enum class Kind {
