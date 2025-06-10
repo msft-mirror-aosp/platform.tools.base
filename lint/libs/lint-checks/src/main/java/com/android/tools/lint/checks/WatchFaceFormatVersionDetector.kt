@@ -87,7 +87,7 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
       context.report(
         INVALID_VERSION_ISSUE,
         context.getLocation(wffVersionValueAttribute),
-        "The Watch Face Format is invalid",
+        "The Watch Face Format version is invalid",
       )
       return
     }

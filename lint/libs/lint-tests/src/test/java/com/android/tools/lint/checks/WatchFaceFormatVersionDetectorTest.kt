@@ -91,7 +91,7 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          AndroidManifest.xml:9: Error: The Watch Face Format is invalid [WatchFaceFormatInvalidVersion]
+          AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
                   <property android:name="com.google.wear.watchface.format.version" android:value="invalid" />
                                                                                     ~~~~~~~~~~~~~~~~~~~~~~~
           1 error
@@ -147,7 +147,7 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          src/main/AndroidManifest.xml:9: Error: The Watch Face Format is invalid [WatchFaceFormatInvalidVersion]
+          src/main/AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
                   <property android:name="com.google.wear.watchface.format.version" android:value="＄{wff_version}" />
                                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           1 error
