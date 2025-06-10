@@ -4,8 +4,8 @@ load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
 load("//tools/base/journeys:release_version.bzl", "JOURNEYS_TEST_PLUGIN_VERSION_RELEASE")
 load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_PLUGIN_GRADLE_PROPERTIES")
 
-# A file group that contains gradle build file and source files to build journeys gradle
-# plugin using Gradle inside Bazel's sandbox.
+# A file group that contains gradle build file and source files to build journeys test
+# engine using Gradle inside Bazel's sandbox.
 filegroup(
     name = "gradle_project_files",
     # buildifier: disable=globs
@@ -15,7 +15,7 @@ filegroup(
     ]) + [
         "build.gradle",
     ],
-    visibility = ["//visibility:private"],
+    visibility = ["//tools/base/journeys/journeys-junit-engine-test-support:__subpackages__"],
 )
 
 filegroup(
@@ -53,6 +53,7 @@ maven_repository(
     ],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",
+        "//tools/base/journeys/journeys-junit-engine-test-support:__subpackages__",
     ],
 )
 

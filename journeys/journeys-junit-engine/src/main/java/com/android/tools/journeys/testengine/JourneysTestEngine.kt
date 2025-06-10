@@ -22,6 +22,7 @@ import com.android.tools.journeys.testengine.output.CrawlProcessingState
 import com.android.tools.journeys.testengine.output.ProgressReporter
 import com.android.tools.journeys.testengine.resolver.JourneysFileSelectorResolver
 import com.android.tools.journeys.testengine.robo.Adb
+import com.android.tools.journeys.testengine.robo.ChannelProviderFactory
 import com.android.tools.journeys.testengine.robo.Proxy
 import com.android.tools.journeys.testengine.robo.RoboConfigConstants
 import com.google.cloud.test.appcrawler.proto.Artifact
@@ -34,22 +35,28 @@ import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import org.junit.platform.engine.support.discovery.EngineDiscoveryRequestResolver
 import java.nio.file.StandardOpenOption
+import java.util.ServiceLoader
 import kotlin.io.path.Path
 import kotlin.io.path.outputStream
 
 // TODO(saxenaankita): Update the engine to HierarchicalTestEngine, support multiple devices and improve error handling.
 class JourneysTestEngine : TestEngine {
 
-    private val proxy = Proxy(
-        Adb(
-            JourneysTestEngineInput.ProxyInput.adbPath.absolutePath,
-            JourneysTestEngineInput.testDeviceId
-        ),
-        JourneysTestEngineInput.ProxyInput.crawlerApkPath.absolutePath,
-        JourneysTestEngineInput.ProxyInput.applicationId,
-        JourneysTestEngineInput.ProxyInput.appApkPath.absolutePath,
-        JourneysTestEngineInput.ProxyInput.accessTokenPath
-    )
+    private val proxy: Proxy by lazy {
+        val factory = ServiceLoader.load(ChannelProviderFactory::class.java).firstOrNull()
+            ?: error("No ChannelProviderFactory implementation found on the classpath.")
+        Proxy(
+            adb = Adb(
+                JourneysTestEngineInput.ProxyInput.adbPath.absolutePath,
+                JourneysTestEngineInput.testDeviceId
+            ),
+            JourneysTestEngineInput.ProxyInput.crawlerApkPath.absolutePath,
+            JourneysTestEngineInput.ProxyInput.applicationId,
+            JourneysTestEngineInput.ProxyInput.appApkPath.absolutePath,
+            JourneysTestEngineInput.ProxyInput.accessTokenPath,
+            channelProvider = factory.createChannelProvider()
+        )
+    }
 
     override fun getId(): String = "journeys-test-engine"
 

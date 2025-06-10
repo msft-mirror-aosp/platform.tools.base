@@ -18,6 +18,7 @@ merged_zip(
     srcs = [
         ":journeys_maven_repo.zip",
         ":maven_dependencies.zip",
+        "//tools/base/journeys/journeys-junit-engine-test-support:journeys-junit-engine-test-support.zip",
     ],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",

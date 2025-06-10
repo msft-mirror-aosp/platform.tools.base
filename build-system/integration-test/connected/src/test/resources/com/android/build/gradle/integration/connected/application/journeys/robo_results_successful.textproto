@@ -1,0 +1,566 @@
+  actions: {
+    action_seq: 0
+    screen_state_id: 0
+    start_time: {
+      seconds: 1750247037
+      nanos  : 165000000
+    }
+    end_time: {
+      seconds: 1750247047
+      nanos  : 344000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      launch_action: {
+        app_package_name: "com.google.samples.apps.nowinandroid.demo.debug"
+        starting_intent: {
+          type  : MAIN_ACTIVITY
+        }
+      }
+    }
+    result_details: {
+      launch_result: {
+        result_detail: {
+        }
+      }
+    }
+    display_state_id   : 0
+  }
+  actions: {
+    action_seq: 1
+    screen_state_id    : 1
+    start_time: {
+      seconds: 1750247052
+      nanos  : 405000000
+    }
+    end_time: {
+      seconds: 1750247058
+      nanos  : 848000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input tap 75 217"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      action_index : -1
+      contextual_robo_script_triggered    : true
+      model_details: {
+      }
+    }
+    robo_script_details: {
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Tap on the search icon and enter 'Compose'\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"true\",\"nextGoal\":\"Tap on the 'Compose' topic\"}}"
+      model_details: {
+        id: 1
+        description : "Tap on the search icon"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The current goal is to tap on the search icon and enter 'Compose'. The search icon is available on the screen. So, I will tap on it."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-01.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-01.json"
+          value: ""
+        }
+      }
+    }
+    display_state_id   : 1
+  }
+  actions: {
+    action_seq: 2
+    screen_state_id    : 2
+    start_time: {
+      seconds: 1750247060
+      nanos  : 570000000
+    }
+    end_time: {
+      seconds: 1750247062
+      nanos  : 975000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input tap 603 247"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Tap on the search icon and enter 'Compose'\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Tap on the 'Compose' topic\"},\"maxNumberOfRuns\":10}"
+      model_details: {
+        id: 2
+        description : "Enter 'Compose' into the search field"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The current goal is to tap on the search icon and enter 'Compose'. The search icon has already been tapped in the previous step. Now I need to enter 'Compose' into the search field."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-02.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-02.json"
+          value: ""
+        }
+      }
+    }
+    display_state_id   : 2
+  }
+  actions: {
+    action_seq: 3
+    screen_state_id    : 3
+    start_time: {
+      seconds: 1750247065
+      nanos  : 104000000
+    }
+    end_time: {
+      seconds: 1750247066
+      nanos  : 439000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input text Compose"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Tap on the search icon and enter 'Compose'\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Tap on the 'Compose' topic\"},\"maxNumberOfRuns\":10}"
+      model_details: {
+        id: 2
+      }
+    }
+    display_state_id   : 3
+  }
+  actions: {
+    action_seq: 4
+    screen_state_id    : 4
+    start_time: {
+      seconds: 1750247072
+      nanos  : 407000000
+    }
+    end_time: {
+      seconds: 1750247073
+      nanos  : 616000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input keyevent ENTER"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Tap on the search icon and enter 'Compose'\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Tap on the 'Compose' topic\"},\"maxNumberOfRuns\":10}"
+      model_details: {
+        id: 2
+      }
+    }
+    display_state_id   : 4
+  }
+  actions: {
+    action_seq: 5
+    screen_state_id    : 5
+    start_time: {
+      seconds: 1750247076
+      nanos  : 824000000
+    }
+    end_time: {
+      seconds: 1750247080
+      nanos  : 860000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input tap 540 919"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Tap on the search icon and enter 'Compose'\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Tap on the 'Compose' topic\"},\"maxNumberOfRuns\":10}"
+      model_details: {
+        id: 3
+        description : "Goal Complete"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The previous steps involved tapping on the search icon and entering 'Compose' into the search field. So the goal is complete."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-03.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-03.json"
+          value: ""
+        }
+      }
+    }
+    robo_script_details: {
+      action_index : 1
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Tap on the 'Compose' topic\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"true\",\"nextGoal\":\"Save the first post\"}}"
+      model_details: {
+        id: 4
+        description : "Tap on the 'Compose' topic"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The current goal is to tap on the 'Compose' topic. The element with the text 'Compose' is tappable and is the correct element to tap."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-04.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-04.json"
+          value: ""
+        }
+      }
+    }
+    display_state_id   : 5
+  }
+  actions: {
+    action_seq: 6
+    screen_state_id    : 6
+    start_time: {
+      seconds: 1750247084
+      nanos  : 116000000
+    }
+    end_time: {
+      seconds: 1750247088
+      nanos  : 57000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input tap 913 1922"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      action_index : 1
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Tap on the 'Compose' topic\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Save the first post\"},\"maxNumberOfRuns\":10}"
+      model_details: {
+        id: 5
+        description : "Goal Complete"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The previous action was to tap on the 'Compose' topic, which fulfills the current goal."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-05.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-05.json"
+          value: ""
+        }
+      }
+    }
+    robo_script_details: {
+      action_index : 2
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Save the first post\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"true\",\"nextGoal\":\"Go to saved posts\"}}"
+      model_details: {
+        id: 6
+        description : "Save the first post by tapping on the bookmark icon."
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The current goal is to save the first post. The bookmark icon is available on the first post, so I will tap it."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-06.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-06.json"
+          value: ""
+        }
+      }
+    }
+    display_state_id   : 6
+  }
+  actions: {
+    action_seq: 7
+    screen_state_id    : 7
+    start_time: {
+      seconds: 1750247090
+      nanos  : 48000000
+    }
+    end_time: {
+      seconds: 1750247094
+      nanos  : 951000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input tap 540 2232"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      action_index : 2
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Save the first post\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Go to saved posts\"},\"maxNumberOfRuns\":10}"
+      model_details: {
+        id: 7
+        description : "Goal Complete"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The current goal is to save the first post, and the bookmark icon is checked, indicating that the first post is saved."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-07.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-07.json"
+          value: ""
+        }
+      }
+    }
+    robo_script_details: {
+      action_index : 3
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Go to saved posts\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"true\",\"nextGoal\":\"Confirm that there is a single saved post that belongs to the 'Compose' topic\"}}"
+      model_details: {
+        id: 8
+        description : "Tap on the 'Saved' tab to go to saved posts."
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The current goal is to go to saved posts. The 'Saved' tab is the most relevant action to achieve this goal."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-08.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-08.json"
+          value: ""
+        }
+      }
+    }
+    display_state_id   : 7
+  }
+  actions: {
+    action_seq: 8
+    screen_state_id    : 8
+    start_time: {
+      seconds: 1750247096
+      nanos  : 665000000
+    }
+    end_time: {
+      seconds: 1750247096
+      nanos  : 665000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      terminate_crawl_action: {
+      }
+    }
+    robo_script_details: {
+      action_index : 3
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Go to saved posts\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Confirm that there is a single saved post that belongs to the 'Compose' topic\"},\"maxNumberOfRuns\":10}"
+      model_details: {
+        id: 9
+        description : "Goal Complete"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The previous action of tapping the 'Saved' tab successfully navigated the user to the saved posts screen, thus completing the goal."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-09.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-09.json"
+          value: ""
+        }
+      }
+    }
+    robo_script_details: {
+      action_index : 4
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Confirm that there is a single saved post that belongs to the 'Compose' topic\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"true\"}}"
+      model_details: {
+        id: 10
+        description : "Goal Complete"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The screen shows a single saved post, and the tags at the bottom include 'Compose', so the goal is complete."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-10.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-10.json"
+          value: ""
+        }
+      }
+      termination_cause      : END_OF_SCRIPT
+    }
+    display_state_id   : 8
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 0
+    start_time: {
+      seconds: 1750247034
+      nanos  : 747000000
+    }
+    end_time: {
+      seconds: 1750247037
+      nanos  : 165000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 1
+    start_time: {
+      seconds: 1750247052
+      nanos  : 40000000
+    }
+    end_time: {
+      seconds: 1750247052
+      nanos  : 405000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 2
+    start_time: {
+      seconds: 1750247060
+      nanos  : 342000000
+    }
+    end_time: {
+      seconds: 1750247060
+      nanos  : 570000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 3
+    start_time: {
+      seconds: 1750247064
+      nanos  : 784000000
+    }
+    end_time: {
+      seconds: 1750247065
+      nanos  : 104000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 4
+    start_time: {
+      seconds: 1750247072
+      nanos  : 100000000
+    }
+    end_time: {
+      seconds: 1750247072
+      nanos  : 407000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 5
+    start_time: {
+      seconds: 1750247076
+      nanos  : 495000000
+    }
+    end_time: {
+      seconds: 1750247076
+      nanos  : 824000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 6
+    start_time: {
+      seconds: 1750247083
+      nanos  : 870000000
+    }
+    end_time: {
+      seconds: 1750247084
+      nanos  : 116000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 7
+    start_time: {
+      seconds: 1750247089
+      nanos  : 822000000
+    }
+    end_time: {
+      seconds: 1750247090
+      nanos  : 48000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 8
+    start_time: {
+      seconds: 1750247096
+      nanos  : 409000000
+    }
+    end_time: {
+      seconds: 1750247096
+      nanos  : 665000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  crawl_identifier  : "success-robo-result-id"
+  app_package_id    : "com.google.samples.apps.nowinandroid.demo.debug"
+  crawl_result      : COMPLETED
+  enabled_modes     : [ EVO ]
+  num_actions       : 9
+  num_screen_states : 9
+  num_display_states: 9

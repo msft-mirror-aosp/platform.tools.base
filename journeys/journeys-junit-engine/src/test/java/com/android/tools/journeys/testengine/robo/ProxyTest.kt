@@ -45,6 +45,7 @@ class ProxyTest {
     private lateinit var mockProcess: Process
     private lateinit var validJourneyPath: Path
     private lateinit var proxy: Proxy
+    private val channelProvider = ProductionChannelProviderFactory().createChannelProvider()
 
     @Before
     fun setUp() {
@@ -55,7 +56,8 @@ class ProxyTest {
             crawlerAppApkPath = "crawler.apk",
             applicationId = "com.example.app",
             appApkPath = "app.apk",
-            accessTokenPath = "token.txt"
+            accessTokenPath = "token.txt",
+            channelProvider = channelProvider
         )
         validJourneyPath = tempFolder.newFile("valid_journey.xml").toPath()
         validJourneyPath.toFile()
@@ -334,7 +336,8 @@ class ProxyTest {
             crawlerAppApkPath = "crawler.apk",
             applicationId = "com.example.app",
             appApkPath = "app.apk",
-            accessTokenPath = tempDir.absolutePath
+            accessTokenPath = tempDir.absolutePath,
+            channelProvider = channelProvider
         )
 
         assertThrows(JourneyExecutionException::class.java) {
@@ -367,7 +370,8 @@ class ProxyTest {
             crawlerAppApkPath = "crawler.apk",
             applicationId = "com.example.app",
             appApkPath = "app.apk",
-            accessTokenPath = fakeTokenFile.absolutePath
+            accessTokenPath = fakeTokenFile.absolutePath,
+            channelProvider = channelProvider
         )
 
         mockStatic(ImpersonatedCredentials::class.java).use { mockedImpersonatedCredentials ->

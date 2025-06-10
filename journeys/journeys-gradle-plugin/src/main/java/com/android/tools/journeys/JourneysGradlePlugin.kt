@@ -151,7 +151,7 @@ class JourneysGradlePlugin : Plugin<Project> {
                     generateJourneysClass(classesDir.get().asFile)
 
                     task.testClassesDirs = buildDir.files(classesDir)
-                    task.classpath =
+                    task.classpath +=
                         task.project.configurations.getByName(journeysEngineConfigName) + task.testClassesDirs
                 }
                 validateAllTask.configure { it.dependsOn(journeysValidationTask) }

@@ -1,0 +1,244 @@
+  actions: {
+    action_seq: 0
+    screen_state_id: 0
+    start_time: {
+      seconds: 1750247037
+      nanos  : 165000000
+    }
+    end_time: {
+      seconds: 1750247047
+      nanos  : 344000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      launch_action: {
+        app_package_name: "com.example.app"
+        starting_intent: {
+          type  : MAIN_ACTIVITY
+        }
+      }
+    }
+    result_details: {
+      launch_result: {
+        result_detail: {
+        }
+      }
+    }
+    display_state_id   : 0
+  }
+  actions: {
+    action_seq: 1
+    screen_state_id    : 1
+    start_time: {
+      seconds: 1750247052
+      nanos  : 405000000
+    }
+    end_time: {
+      seconds: 1750247058
+      nanos  : 848000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input tap 75 217"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      action_index : -1
+      contextual_robo_script_triggered    : true
+      model_details: {
+      }
+    }
+    robo_script_details: {
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Action 1\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"true\",\"nextGoal\":\"Action 2\"}}"
+      model_details: {
+        id: 1
+        description : "Perform action 1"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "Performing action 1"
+        }
+        artifacts: {
+          key  : "annotated-screenshot-01.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-01.json"
+          value: ""
+        }
+      }
+    }
+    display_state_id   : 1
+  }
+  actions: {
+    action_seq: 2
+    screen_state_id    : 2
+    start_time: {
+      seconds: 1750247076
+      nanos  : 824000000
+    }
+    end_time: {
+      seconds: 1750247080
+      nanos  : 860000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      adb_command_action: {
+        command: "input tap 540 919"
+      }
+    }
+    result_details: {
+      adb_command_result: {
+      }
+    }
+    robo_script_details: {
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Action 1\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Action 2\"},\"maxNumberOfRuns\":10}"
+      model_details: {
+        id: 2
+        description : "Goal Complete"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The goal for action 1 is complete."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-02.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-02.json"
+          value: ""
+        }
+      }
+    }
+    robo_script_details: {
+      action_index : 1
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Action 2\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"true\",}}"
+      model_details: {
+        id: 3
+        description : "Perform action 2"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "Performing action 2"
+        }
+        artifacts: {
+          key  : "annotated-screenshot-03.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-03.json"
+          value: ""
+        }
+      }
+    }
+    display_state_id   : 2
+  }
+  actions: {
+    action_seq: 3
+    screen_state_id    : 3
+    start_time: {
+      seconds: 1750247096
+      nanos  : 665000000
+    }
+    end_time: {
+      seconds: 1750247096
+      nanos  : 665000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+      terminate_crawl_action: {
+      }
+    }
+    robo_script_details: {
+      action_index : 1
+      robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Action 2\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"true\"}}"
+      model_details: {
+        id: 4
+        description : "Goal Complete"
+        interactions: {
+          model   : "prt_poc"
+          request : "gemini_pick_action_request"
+          response: "The goal for action 2 is complete."
+        }
+        artifacts: {
+          key  : "annotated-screenshot-04.png"
+          value: ""
+        }
+        artifacts: {
+          key  : "debug-info-04.json"
+          value: ""
+        }
+      }
+      termination_cause      : END_OF_SCRIPT
+    }
+    display_state_id   : 3
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 0
+    start_time: {
+      seconds: 1750247034
+      nanos  : 747000000
+    }
+    end_time: {
+      seconds: 1750247037
+      nanos  : 165000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 1
+    start_time: {
+      seconds: 1750247052
+      nanos  : 40000000
+    }
+    end_time: {
+      seconds: 1750247052
+      nanos  : 405000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 2
+    start_time: {
+      seconds: 1750247060
+      nanos  : 342000000
+    }
+    end_time: {
+      seconds: 1750247060
+      nanos  : 570000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 3
+    start_time: {
+      seconds: 1750247060
+      nanos  : 342000000
+    }
+    end_time: {
+      seconds: 1750247060
+      nanos  : 570000000
+    }
+    width   : 1080
+    height  : 2400
+  }
+  crawl_identifier  : "default-robo-result-id"
+  app_package_id    : "com.example.app"
+  crawl_result      : COMPLETED
+  enabled_modes     : [ EVO ]
+  num_actions       : 4
+  num_screen_states : 4
+  num_display_states: 4

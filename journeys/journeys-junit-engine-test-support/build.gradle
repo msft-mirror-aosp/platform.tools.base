@@ -1,0 +1,41 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    id 'com.android.tools.java-library'
+    id 'com.android.tools.kotlin'
+    id 'com.android.tools.publish'
+}
+
+group = 'com.android.tools.journeys'
+
+apply from: '../release_version.gradle'
+
+project.ext.pomName = 'Mock service for running journeys integration test'
+project.ext.pomDesc = 'Provides fake service for running Journeys integration test'
+
+dependencies {
+    compileOnly project(':base:journeys:journeys-junit-engine')
+    implementation "com.google.android.appcrawler:appcrawler-platform:$project.ext.appcrawlerVersion"
+    implementation 'io.grpc:grpc-inprocess:1.69.1'
+}
+
+tasks.register('zipRepo', Zip) {
+    it.from(project(':base').localRepo)
+    it.destinationDirectory = project(':base').androidHostDist
+    it.archiveFileName = "repo.zip"
+    it.dependsOn('publish')
+}
