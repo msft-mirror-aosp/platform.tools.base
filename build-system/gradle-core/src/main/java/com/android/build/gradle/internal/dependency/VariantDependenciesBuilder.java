@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dependency;
 
 import static com.android.build.gradle.internal.dependency.KotlinPlatformAttributeKt.configureKotlinPlatformAttribute;
+import static com.android.build.gradle.internal.dependency.SourceTypeAttributeKt.configureSourceTypeAttribute;
 import static com.android.build.gradle.internal.dependency.VariantDependencies.CONFIG_NAME_TESTED_APKS;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType.AAB_PUBLICATION;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType.API_ELEMENTS;
@@ -349,6 +350,8 @@ public class VariantDependenciesBuilder {
         if (shouldConfigureKotlinPlatformAttribute(projectOptions, componentType)) {
             configureKotlinPlatformAttribute(List.of(compileClasspath, runtimeClasspath), project);
         }
+
+        configureSourceTypeAttribute(project);
 
         boolean isLibraryConstraintApplied =
                 maybeAddDependencyConstraints(componentType, compileClasspath, runtimeClasspath);
