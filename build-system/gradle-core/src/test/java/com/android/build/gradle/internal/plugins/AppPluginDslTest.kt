@@ -13,383 +13,391 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.internal.plugins
 
-package com.android.build.gradle.internal.plugins;
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.internal.fixture.TestConstants
+import com.android.build.gradle.internal.fixture.TestProjects
+import com.android.build.gradle.internal.fixture.VariantChecker
+import com.android.build.gradle.internal.fixture.VariantCheckers
+import com.android.build.gradle.internal.utils.importOfflineMavenRepo
+import com.android.build.gradle.tasks.MergeResources
+import com.google.common.truth.Truth
+import groovy.util.Eval
+import org.gradle.api.Project
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import java.util.*
 
-import static com.android.build.gradle.internal.utils.OfflineMavenRepoUtilKt.importOfflineMavenRepo;
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
+/** Tests for the public DSL of the App plugin ("com.android.application")  */
+class AppPluginDslTest {
 
-import com.android.build.gradle.AppExtension;
-import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.dsl.PostProcessingBlock;
-import com.android.build.gradle.internal.fixture.TestConstants;
-import com.android.build.gradle.internal.fixture.TestProjects;
-import com.android.build.gradle.internal.fixture.VariantChecker;
-import com.android.build.gradle.internal.fixture.VariantCheckers;
-import com.android.build.gradle.tasks.MergeResources;
-import groovy.util.Eval;
-import java.util.Arrays;
-import org.gradle.api.Project;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+    @get:Rule
+    val projectDirectory: TemporaryFolder = TemporaryFolder()
 
-/** Tests for the public DSL of the App plugin ("com.android.application") */
-public class AppPluginDslTest {
-    public static final String PROGUARD_DEBUG = "minifyDebugWithProguard";
-    public static final String R8_DEBUG = "minifyDebugWithR8";
-    public static final String R8_RELEASE = "minifyReleaseWithR8";
-    public static final String R8_DEBUG_ANDROID_TEST = "minifyDebugAndroidTestWithR8";
-
-    private static final String DEFAULT_DEBUG;
-    private static final String DEFAULT_DEBUG_ANDROID_TEST;
-    private static final String DEFAULT_RELEASE;
-
-    static {
-        DEFAULT_DEBUG = R8_DEBUG;
-        DEFAULT_DEBUG_ANDROID_TEST = R8_DEBUG_ANDROID_TEST;
-        DEFAULT_RELEASE = R8_RELEASE;
-        importOfflineMavenRepo();
-    }
-
-    @Rule public final TemporaryFolder projectDirectory = new TemporaryFolder();
-
-    protected AppPlugin plugin;
-    protected AppExtension android;
-    protected Project project;
-    protected VariantChecker checker;
-    private TestProjects.Plugin pluginType = TestProjects.Plugin.APP;
+    private lateinit var plugin: AppPlugin
+    private lateinit var android: AppExtension
+    private lateinit var project: Project
+    private lateinit var checker: VariantChecker
+    private val pluginType = TestProjects.Plugin.APP
 
     @Before
-    public void setUp() throws Exception {
+    fun setUp() {
         project =
-                TestProjects.builder(projectDirectory.newFolder("project").toPath())
-                        .withPlugin(pluginType)
-                        .build();
+            TestProjects.builder(projectDirectory.newFolder("project").toPath())
+                .withPlugin(pluginType)
+                .build()
 
-        initFieldsFromProject();
+        initFieldsFromProject()
     }
 
-    private void initFieldsFromProject() {
-        android = (AppExtension) project.getExtensions().getByType(pluginType.getExtensionClass());
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION);
-        android.setBuildToolsVersion(TestConstants.BUILD_TOOL_VERSION);
-        android.setNamespace("com.example.namespace");
-        plugin = (AppPlugin) project.getPlugins().getPlugin(pluginType.getPluginClass());
-        checker = VariantCheckers.createAppChecker(android);
+    private fun initFieldsFromProject() {
+        android = project.extensions.getByType(pluginType.extensionClass) as AppExtension
+        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
+        android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
+        android.namespace = "com.example.namespace"
+        plugin = project.plugins.getPlugin(pluginType.pluginClass) as AppPlugin
+        checker = VariantCheckers.createAppChecker(android)
     }
 
     @Test
-    public void testGeneratedDensities() throws Exception {
+    fun testGeneratedDensities() {
         Eval.me(
-                "project",
-                project,
-                "\n"
-                        + "project.android {\n"
-                        + "    flavorDimensions 'foo'\n"
-                        + "    productFlavors {\n"
-                        + "        f1 {\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        f2  {\n"
-                        + "            vectorDrawables {\n"
-                        + "                generatedDensities 'ldpi'\n"
-                        + "                generatedDensities += ['mdpi']\n"
-                        + "            }\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        f3 {\n"
-                        + "            vectorDrawables {\n"
-                        + "                generatedDensities = defaultConfig.generatedDensities - ['ldpi', 'mdpi']\n"
-                        + "            }\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        f4.vectorDrawables.generatedDensities = []\n"
-                        + "\n"
-                        + "        oldSyntax {\n"
-                        + "            generatedDensities = ['ldpi']\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
-        plugin.createAndroidTasks(project);
+            "project",
+            project,
+            ("""
+project.android {
+    flavorDimensions 'foo'
+    productFlavors {
+        f1 {
+        }
+
+        f2  {
+            vectorDrawables {
+                generatedDensities 'ldpi'
+                generatedDensities += ['mdpi']
+            }
+        }
+
+        f3 {
+            vectorDrawables {
+                generatedDensities = defaultConfig.generatedDensities - ['ldpi', 'mdpi']
+            }
+        }
+
+        f4.vectorDrawables.generatedDensities = []
+
+        oldSyntax {
+            generatedDensities = ['ldpi']
+        }
+    }
+}
+""")
+        )
+        plugin.createAndroidTasks(project)
 
         checkGeneratedDensities(
-                "mergeF1DebugResources", "ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi");
-        checkGeneratedDensities("mergeF2DebugResources", "ldpi", "mdpi");
-        checkGeneratedDensities("mergeF3DebugResources", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi");
-        checkGeneratedDensities("mergeF4DebugResources");
-        checkGeneratedDensities("mergeOldSyntaxDebugResources", "ldpi");
+            "mergeF1DebugResources", "ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"
+        )
+        checkGeneratedDensities("mergeF2DebugResources", "ldpi", "mdpi")
+        checkGeneratedDensities("mergeF3DebugResources", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi")
+        checkGeneratedDensities("mergeF4DebugResources")
+        checkGeneratedDensities("mergeOldSyntaxDebugResources", "ldpi")
     }
 
     @Test
-    public void testUseSupportLibrary_default() throws Exception {
-        plugin.createAndroidTasks(project);
+    fun testUseSupportLibrary_default() {
+        plugin.createAndroidTasks(project)
 
-        assertThat(getTask("mergeDebugResources", MergeResources.class)
-                        .isVectorSupportLibraryUsed())
-                .isFalse();
+        Truth.assertThat(
+            getTask("mergeDebugResources", MergeResources::class.java)
+                .isVectorSupportLibraryUsed
+        ).isFalse()
     }
 
     @Test
-    public void testUseSupportLibrary_flavors() throws Exception {
-
+    fun testUseSupportLibrary_flavors() {
         Eval.me(
-                "project",
-                project,
-                "\n"
-                        + "project.android {\n"
-                        + "\n"
-                        + "    flavorDimensions 'foo'\n"
-                        + "    productFlavors {\n"
-                        + "        f1 {\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        f2  {\n"
-                        + "            vectorDrawables {\n"
-                        + "                useSupportLibrary = true\n"
-                        + "            }\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        f3 {\n"
-                        + "            vectorDrawables {\n"
-                        + "                useSupportLibrary = false\n"
-                        + "            }\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
-        plugin.createAndroidTasks(project);
+            "project",
+            project,
+            ("""
+project.android {
 
-        assertThat(
-                        getTask("mergeF1DebugResources", MergeResources.class)
-                                .isVectorSupportLibraryUsed())
-                .isFalse();
-        assertThat(
-                        getTask("mergeF2DebugResources", MergeResources.class)
-                                .isVectorSupportLibraryUsed())
-                .isTrue();
-        assertThat(
-                        getTask("mergeF3DebugResources", MergeResources.class)
-                                .isVectorSupportLibraryUsed())
-                .isFalse();
+    flavorDimensions 'foo'
+    productFlavors {
+        f1 {
+        }
+
+        f2  {
+            vectorDrawables {
+                useSupportLibrary = true
+            }
+        }
+
+        f3 {
+            vectorDrawables {
+                useSupportLibrary = false
+            }
+        }
+    }
+}
+""")
+        )
+        plugin.createAndroidTasks(project)
+
+        Truth.assertThat(
+            getTask("mergeF1DebugResources", MergeResources::class.java)
+                .isVectorSupportLibraryUsed
+        ).isFalse()
+        Truth.assertThat(
+            getTask("mergeF2DebugResources", MergeResources::class.java)
+                .isVectorSupportLibraryUsed
+        ).isTrue()
+        Truth.assertThat(
+            getTask("mergeF3DebugResources", MergeResources::class.java)
+                .isVectorSupportLibraryUsed
+        ).isFalse()
     }
 
     @Test
-    public void testPostprocessingBlock_default() throws Exception {
-        BuildType release = android.getBuildTypes().getByName("release");
-        release.getPostprocessing().setRemoveUnusedCode(true);
+    fun testPostprocessingBlock_default() {
+        val release = android.buildTypes.getByName("release")
+        release.postprocessing.isRemoveUnusedCode = true
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).contains(DEFAULT_RELEASE);
+        Truth.assertThat(project.tasks.names).contains(DEFAULT_RELEASE)
     }
 
     @Test
-    public void testPostprocessingBlock_justObfuscate() throws Exception {
-        BuildType release = android.getBuildTypes().getByName("release");
-        release.getPostprocessing().setObfuscate(true);
+    fun testPostprocessingBlock_justObfuscate() {
+        val release = android.buildTypes.getByName("release")
+        release.postprocessing.isObfuscate = true
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).contains(DEFAULT_RELEASE);
+        Truth.assertThat(project.tasks.names).contains(DEFAULT_RELEASE)
     }
 
     @Test
-    public void testPostprocessingBlock_r8_noFeatures() throws Exception {
-        BuildType release = android.getBuildTypes().getByName("release");
-        release.getPostprocessing().setCodeShrinker("r8");
-        release.getPostprocessing().setRemoveUnusedCode(false);
+    fun testPostprocessingBlock_r8_noFeatures() {
+        val release = android.buildTypes.getByName("release")
+        release.postprocessing.codeShrinker = "r8"
+        release.postprocessing.isRemoveUnusedCode = false
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).doesNotContain(R8_RELEASE);
+        Truth.assertThat(project.tasks.names).doesNotContain(R8_RELEASE)
     }
 
     @Test
-    public void testPostprocessingBlock_r8() throws Exception {
-        BuildType release = android.getBuildTypes().getByName("release");
-        release.getPostprocessing().setCodeShrinker("r8");
-        release.getPostprocessing().setRemoveUnusedCode(true);
+    fun testPostprocessingBlock_r8() {
+        val release = android.buildTypes.getByName("release")
+        release.postprocessing.codeShrinker = "r8"
+        release.postprocessing.isRemoveUnusedCode = true
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).contains(R8_RELEASE);
+        Truth.assertThat(project.tasks.names).contains(R8_RELEASE)
     }
 
     @Test
-    public void testPostprocessingBlock_noCodeShrinking_oldDsl() throws Exception {
-        BuildType release = android.getBuildTypes().getByName("release");
-        release.setShrinkResources(true);
+    fun testPostprocessingBlock_noCodeShrinking_oldDsl() {
+        val release = android.buildTypes.getByName("release")
+        release.isShrinkResources = true
 
         try {
-            plugin.createAndroidTasks(project);
-        } catch (Exception e) {
-            assertThat(e.getMessage()).contains("requires unused code shrinking");
+            plugin.createAndroidTasks(project)
+        } catch (e: Exception) {
+            Truth.assertThat(e.message).contains("requires unused code shrinking")
         }
     }
 
     @Test
-    public void testPostprocessingBlock_initWith() throws Exception {
-        BuildType debug = android.getBuildTypes().getByName("debug");
-        BuildType release = android.getBuildTypes().getByName("release");
+    fun testPostprocessingBlock_initWith() {
+        val debug = android.buildTypes.getByName("debug")
+        val release = android.buildTypes.getByName("release")
 
-        debug.setMinifyEnabled(true);
-        release.getPostprocessing().setRemoveUnusedCode(true);
+        debug.isMinifyEnabled = true
+        release.postprocessing.isRemoveUnusedCode = true
 
-        BuildType debugCopy = android.getBuildTypes().create("debugCopy");
-        debugCopy.initWith(debug);
+        val debugCopy = android.buildTypes.create("debugCopy")
+        debugCopy.initWith(debug)
 
-        BuildType releaseCopy = android.getBuildTypes().create("releaseCopy");
-        releaseCopy.initWith(release);
+        val releaseCopy = android.buildTypes.create("releaseCopy")
+        releaseCopy.initWith(release)
     }
 
     @Test
-    public void testShrinkerChoice_oldDsl_r8Flag() throws Exception {
+    fun testShrinkerChoice_oldDsl_r8Flag() {
         project =
-                TestProjects.builder(projectDirectory.newFolder("oldDsl").toPath())
-                        .withPlugin(pluginType)
-                        .build();
-        initFieldsFromProject();
+            TestProjects.builder(projectDirectory.newFolder("oldDsl").toPath())
+                .withPlugin(pluginType)
+                .build()
+        initFieldsFromProject()
 
-        BuildType debug = android.getBuildTypes().getByName("debug");
-        debug.setMinifyEnabled(true);
+        val debug = android.buildTypes.getByName("debug")
+        debug.isMinifyEnabled = true
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).doesNotContain(PROGUARD_DEBUG);
-        assertThat(project.getTasks().getNames()).contains(R8_DEBUG);
+        Truth.assertThat(project.tasks.names).doesNotContain(PROGUARD_DEBUG)
+        Truth.assertThat(project.tasks.names).contains(R8_DEBUG)
     }
 
     @Test
-    public void testShrinkerChoice_oldDsl_r8FlagWithoutMinification() throws Exception {
+    fun testShrinkerChoice_oldDsl_r8FlagWithoutMinification() {
         project =
-                TestProjects.builder(projectDirectory.newFolder("oldDsl").toPath())
-                        .withPlugin(pluginType)
-                        .build();
-        initFieldsFromProject();
+            TestProjects.builder(projectDirectory.newFolder("oldDsl").toPath())
+                .withPlugin(pluginType)
+                .build()
+        initFieldsFromProject()
 
-        BuildType debug = android.getBuildTypes().getByName("debug");
-        debug.setMinifyEnabled(false);
+        val debug = android.buildTypes.getByName("debug")
+        debug.isMinifyEnabled = false
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).doesNotContain(PROGUARD_DEBUG);
-        assertThat(project.getTasks().getNames()).doesNotContain(R8_DEBUG);
+        Truth.assertThat(project.tasks.names).doesNotContain(PROGUARD_DEBUG)
+        Truth.assertThat(project.tasks.names).doesNotContain(R8_DEBUG)
     }
 
     @Test
-    public void testShrinkerChoice_newDsl_noInstantRun() throws Exception {
-        android.getBuildTypes().getByName("debug").getPostprocessing().setRemoveUnusedCode(true);
+    fun testShrinkerChoice_newDsl_noInstantRun() {
+        android.buildTypes.getByName("debug").postprocessing.isRemoveUnusedCode = true
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).contains(DEFAULT_DEBUG);
+        Truth.assertThat(project.tasks.names).contains(DEFAULT_DEBUG)
     }
 
     @Test
-    public void testApkShrinker_oldDsl() throws Exception {
+    fun testApkShrinker_oldDsl() {
         project =
-                TestProjects.builder(projectDirectory.newFolder("oldDsl_builtInShrinker").toPath())
-                        .withPlugin(pluginType)
-                        .build();
-        initFieldsFromProject();
-        BuildType debug = android.getBuildTypes().getByName("debug");
-        debug.setMinifyEnabled(true);
+            TestProjects.builder(projectDirectory.newFolder("oldDsl_builtInShrinker").toPath())
+                .withPlugin(pluginType)
+                .build()
+        initFieldsFromProject()
+        val debug = android.buildTypes.getByName("debug")
+        debug.isMinifyEnabled = true
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).contains(R8_DEBUG);
-        assertThat(project.getTasks().getNames()).contains(R8_DEBUG_ANDROID_TEST);
+        Truth.assertThat(project.tasks.names).contains(R8_DEBUG)
+        Truth.assertThat(project.tasks.names).contains(R8_DEBUG_ANDROID_TEST)
     }
 
     @Test
-    public void testApkShrinker_newDsl_noObfuscation() {
-        PostProcessingBlock postprocessing =
-                android.getBuildTypes().getByName("debug").getPostprocessing();
-        postprocessing.setRemoveUnusedCode(true);
+    fun testApkShrinker_newDsl_noObfuscation() {
+        val postprocessing =
+            android.buildTypes.getByName("debug").postprocessing
+        postprocessing.isRemoveUnusedCode = true
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).contains(DEFAULT_DEBUG);
-        assertThat(project.getTasks().getNames()).doesNotContain(DEFAULT_DEBUG_ANDROID_TEST);
+        Truth.assertThat(project.tasks.names).contains(DEFAULT_DEBUG)
+        Truth.assertThat(project.tasks.names).doesNotContain(DEFAULT_DEBUG_ANDROID_TEST)
     }
 
     @Test
-    public void testApkShrinker_newDsl_obfuscation() throws Exception {
-        PostProcessingBlock postprocessing =
-                android.getBuildTypes().getByName("debug").getPostprocessing();
-        postprocessing.setRemoveUnusedCode(true);
-        postprocessing.setObfuscate(true);
+    fun testApkShrinker_newDsl_obfuscation() {
+        val postprocessing =
+            android.buildTypes.getByName("debug").postprocessing
+        postprocessing.isRemoveUnusedCode = true
+        postprocessing.isObfuscate = true
 
-        plugin.createAndroidTasks(project);
+        plugin.createAndroidTasks(project)
 
-        assertThat(project.getTasks().getNames()).contains(DEFAULT_DEBUG);
-        assertThat(project.getTasks().getNames()).contains(DEFAULT_DEBUG_ANDROID_TEST);
+        Truth.assertThat(project.tasks.names).contains(DEFAULT_DEBUG)
+        Truth.assertThat(project.tasks.names).contains(DEFAULT_DEBUG_ANDROID_TEST)
     }
 
     @Test
-    public void testMinSdkVersionParsing() {
-        android.getDefaultConfig().setMinSdkVersion("P");
-        assertThat(android.getDefaultConfig().getMinSdkVersion().getApiLevel())
-                .named("android.defaultConfig.minSdkVersion.apiLevel")
-                .isEqualTo(27);
-        assertThat(android.getDefaultConfig().getMinSdkVersion().getApiString())
-                .named("android.defaultConfig.minSdkVersion.apiLevel")
-                .isEqualTo("P");
+    fun testMinSdkVersionParsing() {
+        android.defaultConfig.setMinSdkVersion("P")
+        Truth.assertThat(android.defaultConfig.minSdkVersion?.apiLevel)
+            .named("android.defaultConfig.minSdkVersion.apiLevel")
+            .isEqualTo(27)
+        Truth.assertThat(android.defaultConfig.minSdkVersion?.apiString)
+            .named("android.defaultConfig.minSdkVersion.apiLevel")
+            .isEqualTo("P")
     }
 
     @Test
-    public void testEmulatorSnapshots() throws Exception {
+    fun testEmulatorSnapshots() {
         Eval.me(
-                "project",
-                project,
-                "\n"
-                        + "project.android {\n"
-                        + "    testOptions {\n"
-                        + "        emulatorSnapshots {\n"
-                        + "          enableForTestFailures true\n"
-                        + "          retainAll()\n"
-                        + "          maxSnapshotsForTestFailures 2\n"
-                        + "          compressSnapshots true\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
-        plugin.createAndroidTasks(project);
+            "project",
+            project,
+            ("""
+project.android {
+    testOptions {
+        emulatorSnapshots {
+          enableForTestFailures true
+          retainAll()
+          maxSnapshotsForTestFailures 2
+          compressSnapshots true
+        }
+    }
+}
+""")
+        )
+        plugin.createAndroidTasks(project)
     }
 
     @Test
-    public void testResourceConfigurations() {
-        Eval.me("project",
-                project,
-                "project.android {\n"
-                        + "    flavorDimensions += ['fruit']\n"
-                        + "    defaultConfig {\n"
-                        + "        resourceConfigurations += ['en']\n"
-                        + "    }\n"
-                        + "    productFlavors {\n"
-                        + "        orange {\n"
-                        + "            resourceConfigurations += ['de']\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
-        plugin.createAndroidTasks(project);
+    fun testResourceConfigurations() {
+        Eval.me(
+            "project",
+            project,
+            ("""project.android {
+    flavorDimensions += ['fruit']
+    defaultConfig {
+        resourceConfigurations += ['en']
+    }
+    productFlavors {
+        orange {
+            resourceConfigurations += ['de']
+        }
+    }
+}
+""")
+        )
+        plugin.createAndroidTasks(project)
 
-        assertThat(android.getDefaultConfig().getResourceConfigurations()).containsExactly("en");
+        Truth.assertThat(android.defaultConfig.resourceConfigurations).containsExactly("en")
 
-        assertThat(android.getProductFlavors().getByName("orange").getResourceConfigurations()).containsExactly("de");
+        Truth.assertThat(android.productFlavors.getByName("orange").resourceConfigurations)
+            .containsExactly("de")
     }
 
-    private void checkGeneratedDensities(String taskName, String... densities) {
-        MergeResources mergeResources = getTask(taskName, MergeResources.class);
-        assertThat(mergeResources.getGeneratedDensities())
-                .containsExactlyElementsIn(Arrays.asList(densities));
+    private fun checkGeneratedDensities(taskName: String, vararg densities: String) {
+        val mergeResources = getTask(
+            taskName,
+            MergeResources::class.java
+        )
+        Truth.assertThat(mergeResources.generatedDensities)
+            .containsExactlyElementsIn(Arrays.asList(*densities))
     }
 
-    protected <T> T getTask(String name, @SuppressWarnings("unused") Class<T> klass) {
-        //noinspection unchecked
-        return (T) project.getTasks().getByName(name);
+    protected fun <T> getTask(name: String, @Suppress("unused") klass: Class<T>?): T {
+        return project.tasks.getByName(name) as T
     }
 
 
+    companion object {
+        const val PROGUARD_DEBUG: String = "minifyDebugWithProguard"
+        const val R8_DEBUG: String = "minifyDebugWithR8"
+        const val R8_RELEASE: String = "minifyReleaseWithR8"
+        const val R8_DEBUG_ANDROID_TEST: String = "minifyDebugAndroidTestWithR8"
+
+        private const val DEFAULT_DEBUG = R8_DEBUG
+        private const val DEFAULT_DEBUG_ANDROID_TEST = R8_DEBUG_ANDROID_TEST
+        private const val DEFAULT_RELEASE = R8_RELEASE
+
+        init {
+            importOfflineMavenRepo()
+        }
+    }
 }

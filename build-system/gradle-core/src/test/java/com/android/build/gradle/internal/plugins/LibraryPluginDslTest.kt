@@ -13,151 +13,153 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.internal.plugins
 
-package com.android.build.gradle.internal.plugins;
+import com.android.build.api.dsl.LibraryBuildFeatures
+import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.internal.dsl.SigningConfig
+import com.android.build.gradle.internal.fixture.TestConstants
+import com.android.build.gradle.internal.fixture.TestProjects
+import com.android.build.gradle.internal.fixture.VariantChecker
+import com.android.build.gradle.internal.fixture.VariantCheckers
+import com.android.build.gradle.internal.utils.importOfflineMavenRepo
+import com.android.builder.errors.EvalIssueException
+import com.google.common.truth.Truth
+import org.gradle.api.Project
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
-import static com.android.build.gradle.internal.utils.OfflineMavenRepoUtilKt.importOfflineMavenRepo;
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+/** Tests for the public DSL of the Lib plugin ('com.android.library')  */
+class LibraryPluginDslTest {
+    @get:Rule
+    var projectDirectory: TemporaryFolder = TemporaryFolder()
 
-import com.android.build.api.dsl.ApkSigningConfig;
-import com.android.build.gradle.LibraryExtension;
-import com.android.build.gradle.api.TestVariant;
-import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.fixture.BaseTestedVariant;
-import com.android.build.gradle.internal.fixture.TestConstants;
-import com.android.build.gradle.internal.fixture.TestProjects;
-import com.android.build.gradle.internal.fixture.VariantChecker;
-import com.android.build.gradle.internal.fixture.VariantCheckers;
-import com.android.builder.errors.EvalIssueException;
-import java.util.Set;
-import org.gradle.api.Project;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-/** Tests for the public DSL of the Lib plugin ('com.android.library') */
-public class LibraryPluginDslTest {
-    @Rule public TemporaryFolder projectDirectory = new TemporaryFolder();
-    private LibraryPlugin plugin;
-    private LibraryExtension android;
-    private VariantChecker checker;
-    private Project project;
-
-    static {
-        importOfflineMavenRepo();
-    }
+    private lateinit var plugin: LibraryPlugin
+    private lateinit var android: LibraryExtension
+    private lateinit var checker: VariantChecker
+    private lateinit var project: Project
 
     @Before
-    public void setUp() throws Exception {
+    fun setUp() {
         project = TestProjects.builder(projectDirectory.newFolder("project").toPath())
-                        .withPlugin(TestProjects.Plugin.LIBRARY)
-                        .build();
-        android = project.getExtensions().getByType(LibraryExtension.class);
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION);
-        android.setBuildToolsVersion(TestConstants.BUILD_TOOL_VERSION);
-        android.setNamespace("com.example.namespace");
-        android.buildFeatures(
-                buildFeatures -> {
-                    buildFeatures.setAidl(true);
-                });
-        plugin = project.getPlugins().getPlugin(LibraryPlugin.class);
-        checker = VariantCheckers.createLibraryChecker(android);
+            .withPlugin(TestProjects.Plugin.LIBRARY)
+            .build()
+        android = project.extensions.getByType(LibraryExtension::class.java)
+        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
+        android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
+        android.namespace = "com.example.namespace"
+        android.buildFeatures { buildFeatures: LibraryBuildFeatures ->
+            buildFeatures.aidl = true
+        }
+        plugin = project.plugins.getPlugin(LibraryPlugin::class.java)
+        checker = VariantCheckers.createLibraryChecker(android)
     }
 
     @Test
-    public void testBasic() {
-        plugin.createAndroidTasks(project);
+    fun testBasic() {
+        plugin.createAndroidTasks(project)
 
-        Set<BaseTestedVariant> variants = checker.getVariants();
-        assertThat(variants).hasSize(2);
+        val variants = checker.variants
+        Truth.assertThat(variants).hasSize(2)
 
-        Set<TestVariant> testVariants = android.getTestVariants();
-        assertThat(testVariants).hasSize(1);
+        val testVariants: Set<TestVariant?> = android.testVariants
+        Truth.assertThat(testVariants).hasSize(1)
 
-        checker.checkTestedVariant("debug", "debugAndroidTest", variants, testVariants);
-        checker.checkNonTestedVariant("release", variants);
+        checker.checkTestedVariant(
+            "debug", "debugAndroidTest", variants, testVariants)
+        checker.checkNonTestedVariant("release", variants)
     }
 
     @Test
-    public void testNewBuildType() {
-        android.getBuildTypes().create("custom");
-        plugin.createAndroidTasks(project);
+    fun testNewBuildType() {
+        android.buildTypes.create("custom")
+        plugin.createAndroidTasks(project)
 
-        Set<BaseTestedVariant> variants = checker.getVariants();
-        assertThat(variants).hasSize(3);
+        val variants = checker.variants
+        Truth.assertThat(variants).hasSize(3)
 
-        Set<TestVariant> testVariants = android.getTestVariants();
-        assertThat(testVariants).hasSize(1);
+        val testVariants: Set<TestVariant?> = android.testVariants
+        Truth.assertThat(testVariants).hasSize(1)
 
-        checker.checkTestedVariant("debug", "debugAndroidTest", variants, testVariants);
-        checker.checkNonTestedVariant("release", variants);
-        checker.checkNonTestedVariant("custom", variants);
+        checker.checkTestedVariant(
+            "debug", "debugAndroidTest", variants, testVariants)
+        checker.checkNonTestedVariant("release", variants)
+        checker.checkNonTestedVariant("custom", variants)
     }
 
     @Test
-    public void testNewBuildType_testBuildType() {
-        android.getBuildTypes().create("custom");
-        android.setTestBuildType("custom");
-        plugin.createAndroidTasks(project);
+    fun testNewBuildType_testBuildType() {
+        android.buildTypes.create("custom")
+        android.testBuildType = "custom"
+        plugin.createAndroidTasks(project)
 
-        Set<BaseTestedVariant> variants = checker.getVariants();
-        assertThat(variants).hasSize(3);
+        val variants = checker.variants
+        Truth.assertThat(variants).hasSize(3)
 
-        Set<TestVariant> testVariants = android.getTestVariants();
-        assertThat(testVariants).hasSize(1);
+        val testVariants: Set<TestVariant?> = android.testVariants
+        Truth.assertThat(testVariants).hasSize(1)
 
-        checker.checkTestedVariant("custom", "customAndroidTest", variants, testVariants);
-        checker.checkNonTestedVariant("release", variants);
-        checker.checkNonTestedVariant("debug", variants);
+        checker.checkTestedVariant(
+            "custom", "customAndroidTest", variants, testVariants)
+        checker.checkNonTestedVariant("release", variants)
+        checker.checkNonTestedVariant("debug", variants)
     }
 
     /**
      * test that debug build type maps to the SigningConfig object as the signingConfig container
      */
     @Test
-    public void testDebugSigningConfig() throws Exception {
-        android.getSigningConfigs().getByName("debug", debug -> debug.storePassword("foo"));
+    fun testDebugSigningConfig() {
+        android.signingConfigs.getByName("debug") { debug: SigningConfig ->
+            debug.storePassword("foo")
+        }
 
-        ApkSigningConfig signingConfig =
-                android.getBuildTypes().getByName("debug").getSigningConfig();
+        val signingConfig =
+            android.buildTypes.getByName("debug").signingConfig
 
-        assertNotNull(signingConfig);
-        assertEquals(android.getSigningConfigs().getByName("debug"), signingConfig);
-        assertEquals("foo", signingConfig.getStorePassword());
+        Assert.assertNotNull(signingConfig)
+        Assert.assertEquals(android.signingConfigs.getByName("debug"), signingConfig)
+        Assert.assertEquals("foo", signingConfig?.storePassword)
     }
 
     @Test
-    public void testResourceShrinkerWithPostProcessing() throws Exception {
-        BuildType debug = android.getBuildTypes().getByName("debug");
+    fun testResourceShrinkerWithPostProcessing() {
+        val debug = android.buildTypes.getByName("debug")
         try {
-            debug.getPostprocessing().setRemoveUnusedResources(true);
-            fail("Expected resource shrinker error");
-        } catch (EvalIssueException e) {
-            assertThat(e)
-                    .hasMessageThat()
-                    .isEqualTo("Resource shrinker cannot be used for libraries.");
+            debug.postprocessing.isRemoveUnusedResources = true
+            Assert.fail("Expected resource shrinker error")
+        } catch (e: EvalIssueException) {
+            Truth.assertThat(e)
+                .hasMessageThat()
+                .isEqualTo("Resource shrinker cannot be used for libraries.")
         }
 
-        debug.getPostprocessing().setRemoveUnusedResources(false);
-        plugin.createAndroidTasks(project);
+        debug.postprocessing.isRemoveUnusedResources = false
+        plugin.createAndroidTasks(project)
     }
 
     @Test
-    public void testResourceShrinker() throws Exception {
-        BuildType debug = android.getBuildTypes().getByName("debug");
+    fun testResourceShrinker() {
+        val debug = android.buildTypes.getByName("debug")
         try {
-            debug.setShrinkResources(true);
-            fail("Expected resource shrinker error");
-        } catch (EvalIssueException e) {
-            assertThat(e)
-                    .hasMessageThat()
-                    .isEqualTo("Resource shrinker cannot be used for libraries.");
+            debug.isShrinkResources = true
+            Assert.fail("Expected resource shrinker error")
+        } catch (e: EvalIssueException) {
+            Truth.assertThat(e)
+                .hasMessageThat()
+                .isEqualTo("Resource shrinker cannot be used for libraries.")
         }
-        debug.setShrinkResources(false);
-        plugin.createAndroidTasks(project);
+        debug.isShrinkResources = false
+        plugin.createAndroidTasks(project)
+    }
+
+    companion object {
+        init {
+            importOfflineMavenRepo()
+        }
     }
 }
