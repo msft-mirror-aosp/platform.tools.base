@@ -71,4 +71,9 @@ interface KotlinMultiplatformAndroidHostTest {
      * coverage data from other test types such as connected tests.
      */
     var enableCoverage: Boolean
+
+    /**
+     * Configures all aspects regarding target sdk for host tests, see [TargetSdkSpec] for available options.
+     */
+    fun targetSdk(action: TargetSdkSpec.() -> Unit)
 }

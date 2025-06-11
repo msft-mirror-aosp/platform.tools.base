@@ -32,6 +32,8 @@ import com.android.build.api.dsl.MaxSdkSpec
 import com.android.build.api.dsl.MaxSdkVersion
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
+import com.android.build.api.dsl.TargetSdkSpec
+import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -341,7 +343,7 @@ private class DslScriptGenerator(
                 )
             }
             JavaVersion::class.java -> { listOf(JavaVersion::class.java.name + ".VERSION_11") }
-            MinSdkVersion::class.java, MaxSdkVersion::class.java -> {
+            MinSdkVersion::class.java, MaxSdkVersion::class.java, TargetSdkVersion::class.java -> {
                 listOf("null") } // implementation class not visible for testing
             else -> throw RuntimeException(valueType.name)
         }
@@ -380,6 +382,7 @@ private class DslScriptGenerator(
             "minSdk" to MinSdkSpec::class.java,
             "maxSdk" to MaxSdkSpec::class.java,
             "compileSdk" to CompileSdkSpec::class.java,
+            "targetSdk" to TargetSdkSpec::class.java,
         )
 
         private val endPoints = listOf(
@@ -481,6 +484,8 @@ private class DslScriptGenerator(
             "public abstract com.android.build.api.dsl.MinSdkVersion com.android.build.api.dsl.MinSdkSpec.preview(java.lang.String)",
             "public abstract com.android.build.api.dsl.MinSdkVersion com.android.build.api.dsl.MinSdkSpec.release(int)",
             "public abstract com.android.build.api.dsl.MaxSdkVersion com.android.build.api.dsl.MaxSdkSpec.release(int)",
+            "public abstract com.android.build.api.dsl.TargetSdkVersion com.android.build.api.dsl.TargetSdkSpec.release(int)",
+            "public abstract com.android.build.api.dsl.TargetSdkVersion com.android.build.api.dsl.TargetSdkSpec.preview(java.lang.String)",
             "public abstract void com.android.build.api.dsl.ApplicationBaseFlavor.targetSdk(kotlin.jvm.functions.Function1)",
             "public abstract void com.android.build.api.dsl.CommonExtension.compileSdk(kotlin.jvm.functions.Function1)",
         )

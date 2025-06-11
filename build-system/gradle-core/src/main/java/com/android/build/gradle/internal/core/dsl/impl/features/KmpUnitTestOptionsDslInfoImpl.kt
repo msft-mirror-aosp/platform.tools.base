@@ -38,6 +38,6 @@ internal class KmpUnitTestOptionsDslInfoImpl(
         get() = testOnJvmConfig.isReturnDefaultValues
 
     override val targetSdkVersion: AndroidVersion?
-        get() = extension.run { createTargetSdkVersion(compileSdk, compileSdkPreview) }
+        get() = testOnJvmConfig.run { createTargetSdkVersion(_targetSdk?.apiLevel, _targetSdk?.codeName) }
     override fun applyConfiguration(task: Test) { }
 }

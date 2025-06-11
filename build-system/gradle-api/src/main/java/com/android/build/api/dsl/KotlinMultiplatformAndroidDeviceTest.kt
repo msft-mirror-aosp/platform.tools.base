@@ -19,6 +19,12 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 
 interface KotlinMultiplatformAndroidDeviceTest {
+
+    /**
+     * Configures all aspects regarding target sdk for device tests, see [TargetSdkSpec] for available options.
+     */
+    fun targetSdk(action: TargetSdkSpec.() -> Unit)
+
     /**
      * The test application id.
      */

@@ -20,7 +20,10 @@ import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.Installation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.MultiDexConfig
+import com.android.build.api.dsl.TargetSdkSpec
+import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.utils.updateIfChanged
 import com.android.builder.core.BuilderConstants
 import com.android.builder.model.TestOptions
 import com.android.utils.HelpfulEnumConverter
@@ -43,6 +46,32 @@ abstract class KotlinMultiplatformAndroidDeviceTestImpl @Inject constructor(
 
     override var animationsDisabled: Boolean = false
     override var enableCoverage: Boolean = false
+
+    abstract var _targetSdk: TargetSdkVersion?
+
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        createTargetSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(_targetSdk, it.version ) {
+                _targetSdk = it
+            }
+        }
+    }
+
+    open fun targetSdk(action: Action<TargetSdkSpec>) {
+        createTargetSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(_targetSdk, it.version ) {
+                _targetSdk = it
+            }
+        }
+    }
+
+    private fun createTargetSdkSpec(): TargetSdkSpecImpl {
+        return dslServices.newDecoratedInstance(TargetSdkSpecImpl::class.java, dslServices).also {
+            it.version = _targetSdk
+        }
+    }
 
     override var execution: String
         get() = Verify.verifyNotNull(

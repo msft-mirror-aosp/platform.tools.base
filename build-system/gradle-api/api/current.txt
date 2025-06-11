@@ -1346,6 +1346,7 @@ package com.android.build.api.dsl {
     method public void setHandleProfiling(Boolean?);
     method public void setInstrumentationRunner(String?);
     method public void signing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApkSigningConfig,kotlin.Unit> action);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     property public abstract boolean animationsDisabled;
     property public abstract String? applicationId;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
@@ -1371,6 +1372,7 @@ package com.android.build.api.dsl {
     method public void setEnableCoverage(boolean);
     method public void setIncludeAndroidResources(boolean);
     method public void setReturnDefaultValues(boolean);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     property public abstract boolean enableCoverage;
     property public abstract boolean isIncludeAndroidResources;
     property public abstract boolean isReturnDefaultValues;

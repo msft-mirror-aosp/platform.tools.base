@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
@@ -125,6 +126,29 @@ class KotlinMultiplatformAndroidPluginBasicTest {
         ScannerSubject.assertThat(result.stderr).doesNotContain(
             "Manifest file does not exist"
         )
+    }
+
+    @Test
+    fun androidDeviceTestManifestTargetSdk() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpSecondLib").ktsBuildFile,
+            """
+                kotlin {
+                    android {
+                        withDeviceTestBuilder {
+                            sourceSetTreeName = "test"
+                        }.configure {
+                            targetSdk { version = release(31) }
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+        project.executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
+
+        project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+            manifest().contains("android:targetSdkVersion=31")
+        }
     }
 
     @Test
