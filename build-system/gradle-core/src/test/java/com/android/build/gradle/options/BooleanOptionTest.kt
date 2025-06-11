@@ -114,7 +114,7 @@ class BooleanOptionTest {
             BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT,
             BooleanOption.SUPPRESS_MANIFEST_PACKAGE_WARNING,
             BooleanOption.DISABLE_INLINE_SCOPES_NUMBERS,
-            BooleanOption.R8_OPTIMIZED_SHRINKING,
+            BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING,
             BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API,
             BooleanOption.DUMP_ARTIFACTS_LOCATIONS,
             BooleanOption.GRADUAL_R8_SHRINKING,

@@ -72,14 +72,14 @@ class ResourceShrinkerTest(
     var project = builder().fromTestProject("shrink")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
         .addGradleProperty(BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING, r8IntegratedResourceShrinking)
-        .addGradleProperty(BooleanOption.R8_OPTIMIZED_SHRINKING, r8OptimizedShrinking)
+        .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
         .create()
 
     @get:Rule
     var projectWithDynamicFeatureModules = builder().fromTestProject("shrinkDynamicFeatureModules")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
         .addGradleProperty(BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING, r8IntegratedResourceShrinking)
-        .addGradleProperty(BooleanOption.R8_OPTIMIZED_SHRINKING, r8OptimizedShrinking)
+        .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
         .create()
 
     private val testAapt2 = TestUtils.getAapt2().toFile().absoluteFile

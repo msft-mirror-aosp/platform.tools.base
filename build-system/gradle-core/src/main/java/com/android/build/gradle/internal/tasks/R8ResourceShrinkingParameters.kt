@@ -155,12 +155,12 @@ fun ApplicationCreationConfig.runResourceShrinkingWithR8(): Boolean {
 /**
  * Returns true if R8 will run optimized shrinking for both code and resources. That is:
  *   - [runResourceShrinkingWithR8] == true, and
- *   - [BooleanOption.R8_OPTIMIZED_SHRINKING] == true, and
+ *   - [BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING] == true, and
  *   - the feature additionally requires that [BooleanOption.USE_NON_FINAL_RES_IDS] == true
  */
 fun ApplicationCreationConfig.runOptimizedShrinkingWithR8(): Boolean {
     return runResourceShrinkingWithR8()
-            && services.projectOptions[BooleanOption.R8_OPTIMIZED_SHRINKING]
+            && services.projectOptions[BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING]
             && services.projectOptions[BooleanOption.USE_NON_FINAL_RES_IDS]
 }
 
