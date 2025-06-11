@@ -20,12 +20,12 @@ import com.android.fakeadbserver.DeviceState.HostConnectionType
 import com.android.fakeadbserver.devicecommandhandlers.AbbCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.AbbExecCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
-import com.android.fakeadbserver.devicecommandhandlers.FakeSyncCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.InteractiveShellHandler
 import com.android.fakeadbserver.devicecommandhandlers.InteractiveShellV2Handler
 import com.android.fakeadbserver.devicecommandhandlers.JdwpCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.ReverseForwardCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.RootCommandHandler
+import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.TrackAppCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.TrackJdwpCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.UnRootCommandHandler
@@ -562,7 +562,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
 
             addDeviceHandler(TrackJdwpCommandHandler())
             addDeviceHandler(TrackAppCommandHandler())
-            addDeviceHandler(FakeSyncCommandHandler())
+            addDeviceHandler(SyncCommandHandler())
             addDeviceHandler(ReverseForwardCommandHandler())
             addDeviceHandler(PingCommandHandler(ShellProtocolType.EXEC))
             addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL_V2))
