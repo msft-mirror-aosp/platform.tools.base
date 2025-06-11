@@ -179,6 +179,8 @@ class FakeAdbRule : ExternalResource() {
     fakeAdbServer.start()
 
     if (initAdbBridgeDuringSetup) {
+      AndroidDebugBridge.disconnectBridge()
+      AndroidDebugBridge.terminate()
       AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.port)
       val options = AdbInitOptions.builder()
           .setClientSupportEnabled(clientSupportEnabled)

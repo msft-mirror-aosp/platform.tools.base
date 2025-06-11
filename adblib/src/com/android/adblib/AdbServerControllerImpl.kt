@@ -90,6 +90,10 @@ internal class AdbServerControllerImpl(
         transitionCurrentState(State::stop)
     }
 
+    override suspend fun waitIsStarted() {
+        currentState.params.isStartedFlow.first { it }
+    }
+
     override val lastKnownRemoteAddress: InetSocketAddress?
         get() = lastKnownRemoteAddressStateFlow.value
 

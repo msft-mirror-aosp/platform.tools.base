@@ -50,6 +50,9 @@ interface AdbServerController : AutoCloseable {
     /** Stop if started, no-op otherwise */
     suspend fun stop()
 
+    /** Wait until the controller is started */
+    suspend fun waitIsStarted()
+
     /**
      * Returns the remote address of a channel created by `channelProvider`.
      * This value is reset to `null` when controller's [stop] method is called.

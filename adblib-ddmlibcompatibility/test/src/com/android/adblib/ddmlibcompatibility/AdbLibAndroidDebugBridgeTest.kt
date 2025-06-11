@@ -405,6 +405,10 @@ class AdbLibAndroidDebugBridgeTest {
             isStarted = false
         }
 
+        override suspend fun waitIsStarted() {
+            throw UnsupportedOperationException("Not yet implemented")
+        }
+
         override fun close() {
             throw UnsupportedOperationException("Not yet implemented")
         }
