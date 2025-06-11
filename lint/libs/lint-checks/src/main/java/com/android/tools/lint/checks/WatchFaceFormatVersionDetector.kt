@@ -31,7 +31,6 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.isManifestPlaceHolderExpression
 import com.android.tools.lint.detector.api.resolvePlaceHolders
-import com.android.tools.wear.wff.WFFVersion
 import com.android.utils.XmlUtils
 import com.android.xml.AndroidManifest.ATTRIBUTE_NAME
 import com.android.xml.AndroidManifest.NODE_APPLICATION
@@ -82,8 +81,8 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
       } else {
         wffVersionValueAttribute.value
       }
-    val availableWffVersions = WFFVersion.entries.map { it.version }
-    if (wffVersion !in availableWffVersions) {
+
+    if (wffVersion.toIntOrNull() == null) {
       context.report(
         INVALID_VERSION_ISSUE,
         context.getLocation(wffVersionValueAttribute),
@@ -141,9 +140,7 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
         briefDescription = "The Watch Face Format version is invalid",
         explanation =
           """
-               The Watch Face Format version must be a literal or a placeholder and cannot reference a resource.
-
-               The available Watch Face Format versions are: ${WFFVersion.entries.map { it.version }}
+               The Watch Face Format version must be an integer literal or a placeholder and cannot reference a resource.
             """,
         category = Category.CORRECTNESS,
         priority = 7,
