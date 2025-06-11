@@ -74,7 +74,7 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         fakeDevice.startClient(pid, 0, "a.b.c", false)
         val process = connectedDevice.jdwpProcessManager.getProcess(pid)
         CoroutineTestUtils.yieldUntil {
@@ -234,7 +234,7 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
     internal suspend fun FakeAdbServerProvider.addDevice(deviceApi: Int = 30): ConnectedDevice {
         val fakeAdb = this
         val fakeDevice = addFakeDevice(fakeAdb, deviceApi)
-        return waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        return session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
     }
 
     internal suspend fun ConnectedDevice.createFakeAdbProcess(

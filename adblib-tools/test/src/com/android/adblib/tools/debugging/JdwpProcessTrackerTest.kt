@@ -70,7 +70,7 @@ class JdwpProcessTrackerTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
 
@@ -189,7 +189,7 @@ class JdwpProcessTrackerTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
         fakeDevice.startClient(pid10, 100, "a.b.c", false)
@@ -237,7 +237,7 @@ class JdwpProcessTrackerTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
 
@@ -277,7 +277,7 @@ class JdwpProcessTrackerTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
 
         // Act
@@ -309,7 +309,7 @@ class JdwpProcessTrackerTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
 
         // Act
@@ -342,7 +342,7 @@ class JdwpProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             fakeDevice.startClient(pid10, 100, "a.b.c", false)
             val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
@@ -394,7 +394,7 @@ class JdwpProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             fakeDevice.startClient(pid10, 100, "a.b.c", false)
             val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
@@ -446,7 +446,7 @@ class JdwpProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             fakeDevice.startClient(pid10, 100, "a.b.c", false)
             val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
@@ -498,7 +498,7 @@ class JdwpProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             fakeDevice.startClient(pid10, 100, "a.b.c", false)
             val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
@@ -551,7 +551,7 @@ class JdwpProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             fakeDevice.startClient(pid10, 100, "a.b.c", false)
             val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
@@ -602,7 +602,7 @@ class JdwpProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             fakeDevice.startClient(pid10, 100, "a.b.c", false)
             val jdwpTracker = JdwpProcessTracker.create(connectedDevice)

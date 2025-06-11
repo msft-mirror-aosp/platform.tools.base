@@ -335,7 +335,7 @@ class ScreenRecordTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(deviceServices.session, fakeDevice.deviceId)
+            deviceServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         return Pair(fakeDevice, connectedDevice)
     }
 }

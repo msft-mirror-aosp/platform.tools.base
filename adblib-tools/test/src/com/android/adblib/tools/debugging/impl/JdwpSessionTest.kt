@@ -22,10 +22,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.waitNonNull
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpSession
-import com.android.adblib.tools.debugging.utils.AdbRewindableInputChannel
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
-import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
-import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkView
 import com.android.adblib.tools.debugging.packets.ddms.DdmsPacketConstants
@@ -33,8 +30,11 @@ import com.android.adblib.tools.debugging.packets.ddms.EphemeralDdmsChunk
 import com.android.adblib.tools.debugging.packets.ddms.ddmsChunks
 import com.android.adblib.tools.debugging.packets.ddms.isDdmsCommand
 import com.android.adblib.tools.debugging.packets.ddms.writeToChannel
+import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
+import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.packets.isThreadSafeAndImmutable
 import com.android.adblib.tools.debugging.packets.withPayload
+import com.android.adblib.tools.debugging.utils.AdbRewindableInputChannel
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.adblib.utils.ResizableBuffer
@@ -55,7 +55,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun nextPacketIdIsThreadSafe() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+      val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
         // Act
         val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
@@ -81,7 +81,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun nextPacketIdThrowsIfNotSupported() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, null))
 
         // Act
@@ -96,7 +96,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun sendAndReceivePacketWorks() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
         // Act
         val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
@@ -116,7 +116,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun receiveSmallPacketDoesNotMakePreviousPacketPayloadInvalid() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         // Override the "large" packet threshold to be large, so that all packets
         // are considered "small"
         setHostPropertyValue(
@@ -147,7 +147,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun receiveLargePacketMakesPreviousPacketPayloadInvalid() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         // Override the "large" packet threshold to be very small, so that all packets
         // are considered "large"
         setHostPropertyValue(
@@ -179,7 +179,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun receiveSmallPacketIsThreadSafeAndImmutable() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         // Override the "large" packet threshold to be large, so that all packets
         // are considered "small"
         setHostPropertyValue(
@@ -204,7 +204,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun receiveLargePacketIsNotThreadSafeAndImmutable() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         // Override the "large" packet threshold to be very small, so that all packets
         // are considered "large"
         setHostPropertyValue(
@@ -229,7 +229,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun receivePacketThrowsEofOnClientTerminate() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
         // Act
         val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
@@ -253,7 +253,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun receivePacketThrowsEofConsistentlyOnClientTerminate() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
         // Act
         val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
@@ -274,7 +274,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun sendPacketThrowExceptionAfterShutdown() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
         val packet = createHeloDdmsPacket(jdwpSession)
         jdwpSession.sendPacket(packet)
@@ -292,7 +292,7 @@ class JdwpSessionTest : AdbLibToolsTestBase() {
     fun receivePacketThrowExceptionAfterShutdown() = runBlockingWithTimeout {
         val fakeDevice = addFakeDevice(fakeAdb, 30)
         fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
         val packet = createHeloDdmsPacket(jdwpSession)
         jdwpSession.sendPacket(packet)

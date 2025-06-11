@@ -43,8 +43,6 @@ import org.junit.Test
 import java.time.Duration
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.collections.first
-import kotlin.collections.isNotEmpty
 
 class AppProcessTrackerTest {
 
@@ -71,7 +69,7 @@ class AppProcessTrackerTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
 
@@ -194,7 +192,7 @@ class AppProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             val pid11 = 11
 
@@ -236,7 +234,7 @@ class AppProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
 
             // Act
@@ -270,7 +268,7 @@ class AppProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
 
             // Act/Assert
@@ -348,7 +346,7 @@ class AppProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             val appProcessTracker = AppProcessTracker.create(connectedDevice)
@@ -388,7 +386,7 @@ class AppProcessTrackerTest {
                 )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
             fakeDevice.startClient(pid10, 0, "a.b.c", false)
             val appProcessTracker = AppProcessTracker.create(connectedDevice)

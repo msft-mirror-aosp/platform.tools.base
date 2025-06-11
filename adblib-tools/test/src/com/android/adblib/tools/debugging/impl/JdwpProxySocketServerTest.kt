@@ -50,7 +50,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         fakeDevice.startClient(10, 0, "a.b.c", false)
 
         // Act
@@ -177,7 +177,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid = 12
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
@@ -210,7 +210,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid = 12
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 

@@ -64,7 +64,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         )
         val serverConnection = createServerConnection(session)
         val deviceState = addFakeDevice(fakeAdb, api = 32)
-        val device = waitForOnlineConnectedDevice(session, deviceState.deviceId)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
 
         // Act
         val processList = serverConnection.withConnectionForDevice(device) {
@@ -85,7 +85,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         )
         val serverConnection = createServerConnection(session)
         val deviceState = addFakeDevice(fakeAdb, api = 32)
-        val device = waitForOnlineConnectedDevice(session, deviceState.deviceId)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
 
         // Act
         val started = CompletableDeferred<Unit>()
@@ -115,7 +115,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         )
         val serverConnection = createServerConnection(session)
         val deviceState = addFakeDevice(fakeAdb, api = 32)
-        val device = waitForOnlineConnectedDevice(session, deviceState.deviceId)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
 
         // Act
         val processListSnapshots = CopyOnWriteArrayList<List<JdwpProcessProperties>>()
@@ -169,7 +169,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         )
         val serverConnection = createServerConnection(session)
         val deviceState = addFakeDevice(fakeAdb, api = 32)
-        val device = waitForOnlineConnectedDevice(session, deviceState.deviceId)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
 
         // Act
         val processListSnapshots = CopyOnWriteArrayList<List<JdwpProcessProperties>>()
@@ -209,7 +209,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         )
         val serverConnection = createServerConnection(session)
         val deviceState = addFakeDevice(fakeAdb, api = 32)
-        val device = waitForOnlineConnectedDevice(session, deviceState.deviceId)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
 
         // Act
         exceptionRule.expect(Exception::class.java)
@@ -235,7 +235,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         )
         val serverConnection = createServerConnection(session)
         val deviceState = addFakeDevice(fakeAdb, api = 32)
-        val device = waitForOnlineConnectedDevice(session, deviceState.deviceId)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
 
         // Act
         exceptionRule.expect(CancellationException::class.java)
@@ -269,7 +269,7 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         val deviceState = addFakeDevice(fakeAdb, api = 32)
         val devices = sessions.map { session ->
             async {
-                waitForOnlineConnectedDevice(session, deviceState.deviceId)
+                session.waitForOnlineConnectedDevice(deviceState.deviceId)
             }
         }.awaitAll()
 
