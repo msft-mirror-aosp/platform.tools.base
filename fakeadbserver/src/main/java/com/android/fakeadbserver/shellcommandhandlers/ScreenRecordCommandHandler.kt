@@ -51,7 +51,7 @@ class ScreenRecordCommandHandler(shellProtocolType: ShellProtocolType) : SimpleS
             return
         }
         val parameters = shellCommandArgs.split(" ")
-        val outputPath = parameters[0]
+        val outputPath = parameters.last()
 
         createDeviceFile(device, outputPath, UNFINISHED_RECORDING_CONTENTS)
 
