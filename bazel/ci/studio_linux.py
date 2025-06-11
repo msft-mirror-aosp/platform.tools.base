@@ -60,6 +60,7 @@ _ARTIFACTS = [
     ('tools/adt/idea/studio/android-studio.mac_arm.zip', 'artifacts'),
     ('tools/adt/idea/studio/android-studio_build_manifest.textproto', 'artifacts'),
     ('tools/adt/idea/studio/android-studio_update_message.html', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio-metadata.json', 'artifacts'),
     ('tools/adt/idea/studio/updater_deploy.jar', 'artifacts/android-studio-updater.jar'),
     ('tools/adt/idea/native/installer/android-studio-bundle-data.zip', 'artifacts'),
     ('tools/vendor/google/adrt/android-studio-cros-skeleton.zip', 'artifacts'),
