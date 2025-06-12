@@ -50,6 +50,18 @@ class WellKnownMavenArtifactIdTest {
     }
 
     @Test
+    fun testFindGuavaArtifacts() {
+        assertThat(WellKnownMavenArtifactId.find("com.google.guava", "guava"))
+            .isEqualTo((WellKnownMavenArtifactId.GUAVA_GUAVA))
+    }
+
+    @Test
+    fun testDoesNotFindNonexistentGuavaArtifact() {
+        assertThat(WellKnownMavenArtifactId.find("com.google.guava", "guava-nonexistent"))
+            .isNull()
+    }
+
+    @Test
     fun testFindGMavenArtifacts() {
         assertThat(WellKnownMavenArtifactId.find("com.android.support", "animated-vector-drawable"))
             .isEqualTo(GoogleMavenArtifactId.SUPPORT_ANIMATED_VECTOR_DRAWABLE)
