@@ -17,7 +17,6 @@
 package com.android.builder.model.v2.models
 
 import com.android.builder.model.v2.ide.SourceProvider
-import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity.*
 import java.io.File
 import java.io.Serializable
 

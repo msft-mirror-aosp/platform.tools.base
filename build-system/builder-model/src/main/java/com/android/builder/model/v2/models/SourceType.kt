@@ -14,20 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.ide.v2
+package com.android.builder.model.v2.models
 
-import com.android.builder.model.v2.ide.ArtifactDependencies
-import com.android.builder.model.v2.models.SourceType
-import com.android.builder.model.v2.models.TestSuiteSourceDependencies
-import java.io.Serializable
-
-data class TestSuiteSourceDependenciesImpl(
-    override val name: String,
-    override val type: SourceType,
-    override val artifactDependencies: ArtifactDependencies
-): TestSuiteSourceDependencies, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
-}
+/**
+ * Types of source associated to the test suite with its own set of dependencies
+ *
+ * TODO: Consider moving to variant API once we make it public
+ */
+enum class SourceType { ASSETS, HOST_JAR, TEST_APK }

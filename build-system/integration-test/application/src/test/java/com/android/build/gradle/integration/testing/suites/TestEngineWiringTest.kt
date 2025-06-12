@@ -30,9 +30,9 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.BasicVariant
 import com.android.builder.model.v2.ide.Library
 import com.android.builder.model.v2.ide.SyncIssue
-import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
 import com.android.builder.model.v2.models.BasicAndroidProject
 import com.android.builder.model.v2.models.BasicTestSuite
+import com.android.builder.model.v2.models.SourceType
 import com.google.common.truth.Truth
 import junit.framework.AssertionFailedError
 import org.junit.Rule
@@ -177,7 +177,7 @@ class TestEngineWiringTest(
         Truth.assertThat(firstTestSuite.name).isEqualTo("first")
         val firstTestSuiteSources = firstTestSuite.sources.single()
         Truth.assertThat(firstTestSuiteSources.type).isEqualTo(
-            BaseTestSuiteSourceIdentity.SourceType.HOST_JAR
+            SourceType.HOST_JAR
         )
         Truth.assertThat(firstTestSuiteSources.folders).containsExactly(
             project.subProject(modulePath).resolve("src/first").toFile()

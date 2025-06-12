@@ -21,8 +21,8 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.BasicTestSuiteArtifact
 import com.android.builder.model.v2.ide.SyncIssue
-import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
 import com.android.builder.model.v2.models.BasicTestSuite
+import com.android.builder.model.v2.models.SourceType
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -117,7 +117,7 @@ class TestSuitesVariantsMatchingTest {
         )
         val firstTestSuiteFolders = firstTestSuite.sources.single()
         Truth.assertThat(firstTestSuiteFolders.type).isEqualTo(
-            BaseTestSuiteSourceIdentity.SourceType.HOST_JAR
+            SourceType.HOST_JAR
         )
         Truth.assertThat(firstTestSuiteFolders.folders).containsExactly(
             project.subProject(":app").resolve("src/first").toFile()
