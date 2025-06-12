@@ -45,6 +45,7 @@ import com.android.tools.lint.checks.fx.result.isExtension
 import com.android.tools.lint.checks.fx.result.isFinal
 import com.android.tools.lint.checks.fx.result.isStatic
 import com.android.tools.lint.checks.fx.result.renderAbbrev
+import com.android.tools.lint.checks.fx.result.widen
 import com.android.tools.lint.checks.fx.utils.DependentMonotone
 import com.android.tools.lint.checks.fx.utils.EffectfulComputation
 import com.android.tools.lint.checks.fx.utils.Lattice
@@ -1110,9 +1111,9 @@ internal open class Analysis<FX : Any>(
       is Type.Sym.Invoke ->
         invokeVirtual(
             rec,
-            instType(rec, type.receiver),
+            typeLattice.widen(instType(rec, type.receiver)),
             type.method,
-            type.args.map { instType(rec, it) },
+            type.args.map { typeLattice.widen(instType(rec, it)) },
           )
           .value
       is Type.Union -> type.cases.joinedOver(typeLattice) { instType(rec, it) }
@@ -1126,8 +1127,8 @@ internal open class Analysis<FX : Any>(
   private fun Env<FX>.instEffect(rec: (Point<FX>) -> Ans<FX>, fx: Type.Sym<FX>): Instantiation<FX> =
     when (fx) {
       is Type.Sym.Invoke -> {
-        val receiver = instType(rec, fx.receiver)
-        val args = fx.args.map { instType(rec, it) }
+        val receiver = typeLattice.widen(instType(rec, fx.receiver))
+        val args = fx.args.map { typeLattice.widen(instType(rec, it)) }
         invokeVirtual(rec, receiver, fx.method, args).effect
       }
       is Type.Sym.Rec -> fxInstantiationLattice.bottom // TODO confirm OK??

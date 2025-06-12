@@ -80,6 +80,21 @@ class TypeLatticeTest :
       x["h"]["f"]["g"]["f"]["g"] to fix { listOf(x["h"], it["f"]["g"]) },
     )
   }
+
+  @Test
+  fun `summary of growing symbolic invocations works`() {
+    Truth.assertThat(widen(x["f", Type.Int]["g"]["f", Type.String]))
+      .isEqualTo(fix { listOf(x["f", Type.Int], it["g"]["f", Type.String]) })
+
+    Truth.assertThat(
+        widen(
+          (fix { listOf(x["f", Type.Int], it["g"]["f", Type.String]) })["g"]["f", Type.Int]["g"]
+        )
+      )
+      .isEqualTo(
+        fix { listOf(x["f", Type.Int], it["g"], it["f", Type.String], it["f", Type.Int]["g"]) }
+      )
+  }
 }
 
 class EffectLatticeTest :

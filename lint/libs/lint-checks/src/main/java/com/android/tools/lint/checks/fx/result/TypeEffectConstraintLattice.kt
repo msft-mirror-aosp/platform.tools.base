@@ -18,6 +18,7 @@ package com.android.tools.lint.checks.fx.result
 import com.android.tools.lint.checks.fx.result.Type.Sym.Fix.Companion.hasFreeRec
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
+import com.android.tools.lint.checks.fx.utils.flatMapToPersistentSet
 import com.android.tools.lint.checks.fx.utils.map
 import com.android.tools.lint.checks.fx.utils.partitionIsInstanceOf
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
@@ -349,3 +350,28 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
     }
   }
 }
+
+fun <FX> Lattice<Type<FX>>.widen(t: Type<FX>): Type<FX> =
+  when (t) {
+    is Type.Sym.Invoke -> {
+      val m = t.method
+      /**
+       * Along a symbolic invocation chain with repeated method, guess the base case(s), then defer
+       * to [Lattice.widen] to find an over-approximating inductive description of this invocation.
+       */
+      fun bases(t: Type<FX>): PersistentSet<Type<FX>> =
+        when (t) {
+          is Type.Sym.Invoke ->
+            when (t.method) {
+              m -> persistentSetOf(t)
+              else -> bases(t.receiver) + t.args.flatMapToPersistentSet(::bases)
+            }
+          is Type.Union -> t.cases.flatMapToPersistentSet(::bases)
+          else -> persistentSetOf()
+        }
+      val bases = bases(t.receiver) + t.args.flatMapToPersistentSet(::bases)
+      widen(Type.Union(bases), t)
+    }
+    is Type.Union -> t.cases.joinedOver(::widen)
+    else -> t
+  }
