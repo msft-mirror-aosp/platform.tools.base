@@ -204,6 +204,34 @@ class GradualR8Test {
     }
 
     @Test
+    fun `test gradual r8 no optimization for application classes`() {
+        val build = rule.build
+        val app = build.androidApplication()
+        app.files.add(
+            "src/main/java/com/example/app/ClassInAndroidApp.kt",
+            //language=kotlin
+            """
+                        package com.example.app
+                        class ClassInAndroidApp {
+                            fun method1() {}
+                            fun method2() {}
+                        }
+                    """.trimIndent()
+        )
+
+        build.executor.with(BooleanOption.GRADUAL_R8_SHRINKING, true).run(":app:assembleRelease")
+
+        verifyPackagesTxt(app)
+
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().containsAtLeast(
+                ExternalAndroidLib2Class::class.java.filePath(),
+                "com/example/app/ClassInAndroidApp"
+            )
+        }
+    }
+
+    @Test
     fun `test gradual r8 and custom properties`() {
         val build = rule.build {
             androidApplication {
