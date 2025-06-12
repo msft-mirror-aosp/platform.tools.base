@@ -299,33 +299,33 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 5: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -5 +5
-                -   <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
-                +   <uses-permission android:name="android.permission.BIND_NFC_SERVICE" />
+                @@ -5 +5 @@
+                -  <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
+                +  <uses-permission android:name="android.permission.BIND_NFC_SERVICE" />
                 Fix for AndroidManifest.xml line 6: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -6 +6
-                -   <application android:name="App" android:permission="android.permission.BIND_NCF_SERVICE">
-                +   <application android:name="App" android:permission="android.permission.BIND_NFC_SERVICE">
+                @@ -6 +6 @@
+                -  <application android:name="App" android:permission="android.permission.BIND_NCF_SERVICE">
+                +  <application android:name="App" android:permission="android.permission.BIND_NFC_SERVICE">
                 Fix for AndroidManifest.xml line 9: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -9 +9
-                -     <activity android:permission="android.permission.BIND_NCF_SERVICE" />
-                +     <activity android:permission="android.permission.BIND_NFC_SERVICE" />
+                @@ -9 +9 @@
+                -    <activity android:permission="android.permission.BIND_NCF_SERVICE" />
+                +    <activity android:permission="android.permission.BIND_NFC_SERVICE" />
                 Fix for AndroidManifest.xml line 10: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -10 +10
-                -     <activity-alias android:permission="android.permission.BIND_NCF_SERVICE" />
-                +     <activity-alias android:permission="android.permission.BIND_NFC_SERVICE" />
+                @@ -10 +10 @@
+                -    <activity-alias android:permission="android.permission.BIND_NCF_SERVICE" />
+                +    <activity-alias android:permission="android.permission.BIND_NFC_SERVICE" />
                 Fix for AndroidManifest.xml line 11: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -11 +11
-                -     <receiver android:permission="android.permission.BIND_NCF_SERVICE" />
-                +     <receiver android:permission="android.permission.BIND_NFC_SERVICE" />
+                @@ -11 +11 @@
+                -    <receiver android:permission="android.permission.BIND_NCF_SERVICE" />
+                +    <receiver android:permission="android.permission.BIND_NFC_SERVICE" />
                 Fix for AndroidManifest.xml line 12: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -12 +12
-                -     <service android:permission="android.permission.BIND_NCF_SERVICE" />
-                +     <service android:permission="android.permission.BIND_NFC_SERVICE" />
+                @@ -12 +12 @@
+                -    <service android:permission="android.permission.BIND_NCF_SERVICE" />
+                +    <service android:permission="android.permission.BIND_NFC_SERVICE" />
                 Fix for AndroidManifest.xml line 13: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -13 +13
-                -     <provider android:permission="android.permission.BIND_NCF_SERVICE" />
-                +     <provider android:permission="android.permission.BIND_NFC_SERVICE" />
+                @@ -13 +13 @@
+                -    <provider android:permission="android.permission.BIND_NCF_SERVICE" />
+                +    <provider android:permission="android.permission.BIND_NFC_SERVICE" />
                 """
       )
   }
@@ -361,10 +361,10 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-                Fix for AndroidManifest.xml line 5: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -6 +6
-                -     <service android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
-                +     <service android:permission="android.permission.BIND_NFC_SERVICE" />
+                Fix for AndroidManifest.xml line 6: Replace with android.permission.BIND_NFC_SERVICE:
+                @@ -6 +6 @@
+                -    <service android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
+                +    <service android:permission="android.permission.BIND_NFC_SERVICE" />
                 """
       )
   }
@@ -534,14 +534,14 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-                Fix for AndroidManifest.xml line 8: Replace with my.custom.permission.FOOBAR:
-                @@ -9 +9
-                -     <service android:permission="my.custom.permission.FOOBOB" />
-                +     <service android:permission="my.custom.permission.FOOBAR" />
-                Fix for AndroidManifest.xml line 10: Replace with my.custom.permission.BAZQUXX:
-                @@ -11 +11
-                -     <activity android:permission="my.custom.permission.BAZQXX" />
-                +     <activity android:permission="my.custom.permission.BAZQUXX" />
+                Fix for AndroidManifest.xml line 9: Replace with my.custom.permission.FOOBAR:
+                @@ -9 +9 @@
+                -    <service android:permission="my.custom.permission.FOOBOB" />
+                +    <service android:permission="my.custom.permission.FOOBAR" />
+                Fix for AndroidManifest.xml line 11: Replace with my.custom.permission.BAZQUXX:
+                @@ -11 +11 @@
+                -    <activity android:permission="my.custom.permission.BAZQXX" />
+                +    <activity android:permission="my.custom.permission.BAZQUXX" />
                 """
       )
   }
@@ -633,9 +633,9 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 6: Replace with my.custom.permission.FOOBAR:
-                @@ -6 +6
-                -     <uses-permission android:name="my.custom.permission.FOOBOB" />
-                +     <uses-permission android:name="my.custom.permission.FOOBAR" />
+                @@ -6 +6 @@
+                -    <uses-permission android:name="my.custom.permission.FOOBOB" />
+                +    <uses-permission android:name="my.custom.permission.FOOBAR" />
                 """
       )
   }

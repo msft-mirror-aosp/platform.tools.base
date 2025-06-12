@@ -169,72 +169,94 @@ class LintJarApiMigrationTest {
       file,
       "testAnalyze",
       """
-      @@ -15 +15
-      -  GETSTATIC org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion;
-      +  GETSTATIC org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion;
-      @@ -22 +22
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider;
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider;
-      @@ -37 +37
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KtAnalysisSession;
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KaSession;
-      @@ -45 +45
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.beforeEnteringAnalysisContext ()V
-      - L12
-      -  LINENUMBER 15 L12
-      -  ALOAD 4
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
-      @@ -52 +46
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.beforeEnteringAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
-      +  ALOAD 0
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.beforeEnteringAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
-      @@ -68 +63
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KtType;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
-      @@ -70 +65
-      -  IFNULL L16
-      +  IFNULL L15
-      @@ -73 +68
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getCanBeNull (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Z
-      -  GOTO L17
-      - L16
-      - FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I org/jetbrains/kotlin/analysis/api/KtAnalysisSession I] [org/jetbrains/kotlin/analysis/api/types/KtType]
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getCanBeNull (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Z (itf)
-      +  GOTO L16
-      + L15
-      + FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/KaSession I] [org/jetbrains/kotlin/analysis/api/types/KaType]
-      @@ -85 +80
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
-      @@ -87 +81
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
-      - L18
-      -  LINENUMBER 20 L18
-      -  ALOAD 4
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
-      +  ALOAD 0
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
-      + L17
-      +  LINENUMBER 20 L17
-      @@ -102 +93
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
-      @@ -104 +94
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
-      - L19
-      -  LINENUMBER 20 L19
-      -  ALOAD 4
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
-      +  ALOAD 0
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
-      + L18
-      +  LINENUMBER 20 L18
+      @@ -15 +15 @@
+      - GETSTATIC org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion;
+      + GETSTATIC org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion;
+      @@ -22 +22 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider;
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider;
+      @@ -37 +37 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KtAnalysisSession;
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KaSession;
+      @@ -44,5 +43,0 @@
+      - ALOAD 4
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.beforeEnteringAnalysisContext ()V
+      -L12
+      - LINENUMBER 15 L12
+      @@ -50 +44,0 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
+      @@ -52,2 +46,2 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.beforeEnteringAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+      + ALOAD 0
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.beforeEnteringAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
+      @@ -57,2 +52,2 @@
+      -L13
+      - LINENUMBER 17 L13
+      +L12
+      + LINENUMBER 17 L12
+      @@ -61 +56 @@
+      -L14
+      +L13
+      @@ -64,2 +59,2 @@
+      -L15
+      - LINENUMBER 8 L15
+      +L14
+      + LINENUMBER 8 L14
+      @@ -68 +63 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KtType;
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      @@ -70 +65 @@
+      - IFNULL L16
+      + IFNULL L15
+      @@ -73,4 +68,4 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getCanBeNull (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Z
+      - GOTO L17
+      -L16
+      -FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I org/jetbrains/kotlin/analysis/api/KtAnalysisSession I] [org/jetbrains/kotlin/analysis/api/types/KtType]
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getCanBeNull (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Z (itf)
+      + GOTO L16
+      +L15
+      +FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/KaSession I] [org/jetbrains/kotlin/analysis/api/types/KaType]
+      @@ -79 +74 @@
+      -L17
+      +L16
+      @@ -85 +79,0 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
+      @@ -87,7 +81,4 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+      -L18
+      - LINENUMBER 20 L18
+      - ALOAD 4
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
+      + ALOAD 0
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
+      +L17
+      + LINENUMBER 20 L17
+      @@ -98 +89 @@
+      -FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I] [java/lang/Throwable]
+      +FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I] [java/lang/Throwable]
+      @@ -102 +92,0 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
+      @@ -104,7 +94,4 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+      -L19
+      - LINENUMBER 20 L19
+      - ALOAD 4
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
+      + ALOAD 0
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
+      +L18
+      + LINENUMBER 20 L18
+      ...
       """,
       true,
+      maxLines = 84,
       checkSource =
         kotlin(
           """
@@ -345,11 +367,11 @@ class LintJarApiMigrationTest {
       "returnsString",
       """
       ...
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveToCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveToCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
       ...
       """,
-      skipFirst = 22,
+      skipFirst = 36,
       maxLines = 2,
       showDiff = true,
       checkSource =
@@ -512,25 +534,25 @@ class LintJarApiMigrationTest {
       file,
       "getImplicitReceiverPsi",
       """
-      @@ -11 +11
-      -   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/calls/KtImplicitReceiverValue.getSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KtSymbol;
-      +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue.getSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbol; (itf)
-      @@ -16 +16
-      -   INSTANCEOF org/jetbrains/kotlin/analysis/api/symbols/KtReceiverParameterSymbol
-      +   INSTANCEOF org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol
-      @@ -19 +19
-      -   CHECKCAST org/jetbrains/kotlin/analysis/api/symbols/KtReceiverParameterSymbol
-      -   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KtReceiverParameterSymbol.getOwningCallableSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KtCallableSymbol;
-      -   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KtCallableSymbol.getPsi ()Lcom/intellij/psi/PsiElement;
-      +   CHECKCAST org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol
-      +   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol.getOwningCallableSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol;
-      +   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol.getPsi ()Lcom/intellij/psi/PsiElement;
-      @@ -27 +27
-      -   INSTANCEOF org/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol
-      +   INSTANCEOF org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol
-      @@ -30 +30
-      -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/symbols/KtSymbol.getPsi ()Lcom/intellij/psi/PsiElement; (itf)
-      +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/symbols/KaSymbol.getPsi ()Lcom/intellij/psi/PsiElement; (itf)
+      @@ -11 +11 @@
+      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/calls/KtImplicitReceiverValue.getSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KtSymbol;
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/resolution/KaImplicitReceiverValue.getSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KaSymbol; (itf)
+      @@ -16 +16 @@
+      -  INSTANCEOF org/jetbrains/kotlin/analysis/api/symbols/KtReceiverParameterSymbol
+      +  INSTANCEOF org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol
+      @@ -19,3 +19,3 @@
+      -  CHECKCAST org/jetbrains/kotlin/analysis/api/symbols/KtReceiverParameterSymbol
+      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KtReceiverParameterSymbol.getOwningCallableSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KtCallableSymbol;
+      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KtCallableSymbol.getPsi ()Lcom/intellij/psi/PsiElement;
+      +  CHECKCAST org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol
+      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaReceiverParameterSymbol.getOwningCallableSymbol ()Lorg/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol;
+      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaCallableSymbol.getPsi ()Lcom/intellij/psi/PsiElement;
+      @@ -27 +27 @@
+      -  INSTANCEOF org/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol
+      +  INSTANCEOF org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol
+      @@ -30 +30 @@
+      -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/symbols/KtSymbol.getPsi ()Lcom/intellij/psi/PsiElement; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/symbols/KaSymbol.getPsi ()Lcom/intellij/psi/PsiElement; (itf)
       """,
       showDiff = true,
       checkSource =
@@ -633,17 +655,17 @@ class LintJarApiMigrationTest {
       "isNothingType",
       """
       ...
-      +  IFNULL L15
-      @@ -85 +80
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.isNothing (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Z
-      -  GOTO L17
-      - L16
-      - FRAME FULL [org/jetbrains/kotlin/psi/KtCallExpression I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I org/jetbrains/kotlin/analysis/api/KtAnalysisSession I] [java/lang/Object]
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.isNothingType (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Z (itf)
-      +  GOTO L16
+      + IFNULL L15
+      @@ -85,4 +80,4 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.isNothing (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Z
+      - GOTO L17
+      -L16
+      -FRAME FULL [org/jetbrains/kotlin/psi/KtCallExpression I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I org/jetbrains/kotlin/analysis/api/KtAnalysisSession I] [java/lang/Object]
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.isNothingType (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Z (itf)
+      + GOTO L16
       ...
       """,
-      skipFirst = 45,
+      skipFirst = 59,
       maxLines = 8,
       showDiff = true,
       checkSource =
@@ -742,28 +764,28 @@ class LintJarApiMigrationTest {
       file,
       "getExpressionTypes",
       """
-        ...
-        @@ -69 +64
-        -   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KtType;
-        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
-        @@ -74 +69
-        -   IFNULL L17
-        +   IFNULL L16
-        @@ -76 +71
-        -   CHECKCAST org/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn
-        @@ -79 +73
-        -   ICONST_1
-        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.allSupertypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)Lkotlin/sequences/Sequence; (itf)
-        +   INVOKESTATIC kotlin/sequences/SequencesKt.toList (Lkotlin/sequences/Sequence;)Ljava/util/List;
-        +   GOTO L17
-        +  L16
-        +  FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/types/KaType] []
-        @@ -81 +79
-        -   INVOKESTATIC org/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn.getAllSuperTypes＄default (Lorg/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn;Lorg/jetbrains/kotlin/analysis/api/types/KtType;ZILjava/lang/Object;)Ljava/util/List; (itf)
-        -   GOTO L18
-        ...
+      ...
+      @@ -69 +64 @@
+      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KtType;
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      @@ -74 +69 @@
+      -  IFNULL L17
+      +  IFNULL L16
+      @@ -76 +70,0 @@
+      -  CHECKCAST org/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn
+      @@ -79 +73,5 @@
+      -  ICONST_1
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.allSupertypes (Lorg/jetbrains/kotlin/analysis/api/types/KaType;Z)Lkotlin/sequences/Sequence; (itf)
+      +  INVOKESTATIC kotlin/sequences/SequencesKt.toList (Lkotlin/sequences/Sequence;)Ljava/util/List;
+      +  GOTO L17
+      + L16
+      + FRAME FULL [org/jetbrains/kotlin/psi/KtExpression I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/types/KaType] []
+      @@ -81,2 +78,0 @@
+      -  INVOKESTATIC org/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn.getAllSuperTypes＄default (Lorg/jetbrains/kotlin/analysis/api/components/KtTypeProviderMixIn;Lorg/jetbrains/kotlin/analysis/api/types/KtType;ZILjava/lang/Object;)Ljava/util/List; (itf)
+      -  GOTO L18
+      ...
       """,
-      skipFirst = 21,
+      skipFirst = 22,
       maxLines = 18,
       showDiff = true,
       checkSource =
@@ -874,12 +896,12 @@ class LintJarApiMigrationTest {
       file,
       "twoTypes",
       """
-        @@ -82 +82
-        -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
-        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
-        @@ -101 +101
-        -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
-        +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      @@ -82 +82 @@
+      -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpressionType (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      @@ -101 +101 @@
+      -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
       """,
       maxLines = 17,
       showDiff = true,
@@ -987,15 +1009,15 @@ class LintJarApiMigrationTest {
       file,
       "getSuggestedReplacementName",
       """
-      @@ -80 +80
-      -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
-      +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
-      @@ -120 +120
-      -   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
-      +   INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
-      @@ -123 +123
-      -   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassIdIfNonLocal ()Lorg/jetbrains/kotlin/name/ClassId;
-      +   INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassId ()Lorg/jetbrains/kotlin/name/ClassId;
+      @@ -80 +80 @@
+      -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getKtType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getType (Lorg/jetbrains/kotlin/psi/KtTypeReference;)Lorg/jetbrains/kotlin/analysis/api/types/KaType; (itf)
+      @@ -120 +120 @@
+      -  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      @@ -123 +123 @@
+      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassIdIfNonLocal ()Lorg/jetbrains/kotlin/name/ClassId;
+      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassId ()Lorg/jetbrains/kotlin/name/ClassId;
       """,
       showDiff = true,
       checkSource =
@@ -1102,12 +1124,12 @@ class LintJarApiMigrationTest {
       file,
       "isSubtypeOf",
       """
-@@ -85 +85
--  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
-+  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
-@@ -107 +107
--  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbolByClassId (Lorg/jetbrains/kotlin/name/ClassId;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
-+  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.findClass (Lorg/jetbrains/kotlin/name/ClassId;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      @@ -85 +85 @@
+      - INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      @@ -107 +107 @@
+      - INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbolByClassId (Lorg/jetbrains/kotlin/name/ClassId;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.findClass (Lorg/jetbrains/kotlin/name/ClassId;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
       """,
       showDiff = true,
       checkSource =
@@ -1214,13 +1236,13 @@ class LintJarApiMigrationTest {
       file,
       "isAnnotated",
       """
-@@ -85 +85
--  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
-+  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
-@@ -97 +97
--  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getAnnotationsList ()Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;
--  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList.getAnnotationInfos ()Ljava/util/List; (itf)
-+  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getAnnotations ()Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;
+      @@ -85 +85 @@
+      - INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassOrObjectSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getClassSymbol (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      @@ -97,2 +97 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getAnnotationsList ()Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;
+      - INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList.getAnnotationInfos ()Ljava/util/List; (itf)
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getAnnotations ()Lorg/jetbrains/kotlin/analysis/api/annotations/KaAnnotationList;
       """,
       showDiff = true,
       checkSource =
@@ -1416,9 +1438,9 @@ class LintJarApiMigrationTest {
       file,
       "isClassReference\$default",
       """
-      @@ -40 +40
-      -  INVOKESTATIC androidx/navigation/lint/common/LintUtilKt.isClassReference (Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;
-      +  INVOKESTATIC com/android/tools/lint/detector/api/UastLintUtilsKt.isClassReference (Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;
+      @@ -40 +40 @@
+      - INVOKESTATIC androidx/navigation/lint/common/LintUtilKt.isClassReference (Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;
+      + INVOKESTATIC com/android/tools/lint/detector/api/UastLintUtilsKt.isClassReference (Lorg/jetbrains/uast/UExpression;ZZZ)Lkotlin/Pair;
       """,
       showDiff = true,
       checkSource =
@@ -1614,130 +1636,207 @@ class LintJarApiMigrationTest {
       file,
       "getSuggestedReplacementName",
       """
-      @@ -44 +44
-      -  GETSTATIC org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion;
-      +  GETSTATIC org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion;
-      @@ -50 +50
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider;
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider;
-      @@ -64 +64
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KtAnalysisSession;
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KaSession;
-      @@ -72 +72
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.beforeEnteringAnalysisContext ()V
-      - L20
-      -  LINENUMBER 212 L20
-      -  ALOAD 6
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
-      @@ -79 +73
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.beforeEnteringAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
-      +  ALOAD 2
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.beforeEnteringAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
-      @@ -95 +90
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveToCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
-      @@ -97 +92
-      -  IFNULL L24
-      -  INVOKESTATIC org/jetbrains/kotlin/analysis/api/calls/KtCallKt.singleFunctionCallOrNull (Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;)Lorg/jetbrains/kotlin/analysis/api/calls/KtFunctionCall;
-      +  IFNULL L23
-      +  INVOKESTATIC org/jetbrains/kotlin/analysis/api/resolution/KaCallInfoKt.singleFunctionCallOrNull (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall;
-      @@ -110 +105
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
-      @@ -112 +106
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
-      - L26
-      -  LINENUMBER 217 L26
-      -  ALOAD 6
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
-      +  ALOAD 2
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
-      + L25
-      +  LINENUMBER 217 L25
-      @@ -127 +118
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/calls/KtFunctionCall.getTypeArgumentsMapping ()Ljava/util/Map;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall.getTypeArgumentsMapping ()Ljava/util/Map; (itf)
-      @@ -135 +126
-      -  IFNULL L29
-      +  IFNULL L28
-      @@ -137 +128
-      -  CHECKCAST org/jetbrains/kotlin/analysis/api/types/KtType
-      +  CHECKCAST org/jetbrains/kotlin/analysis/api/types/KaType
-      @@ -149 +140
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
-      @@ -151 +141
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
-      - L31
-      -  LINENUMBER 217 L31
-      -  ALOAD 6
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
-      +  ALOAD 2
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
-      + L30
-      +  LINENUMBER 217 L30
-      @@ -171 +158
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.isMarkedNullable (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Z
-      -  IFEQ L34
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.isMarkedNullable (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Z (itf)
-      +  IFEQ L33
-      @@ -174 +161
-      -  GOTO L35
-      - L34
-      -  LINENUMBER 152 L34
-      - FRAME APPEND [org/jetbrains/kotlin/analysis/api/types/KtType]
-      +  GOTO L34
-      + L33
-      +  LINENUMBER 152 L33
-      + FRAME APPEND [org/jetbrains/kotlin/analysis/api/types/KaType]
-      @@ -180 +167
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol;
-      +  INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
-      @@ -182 +169
-      -  IFNULL L36
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol.getClassIdIfNonLocal ()Lorg/jetbrains/kotlin/name/ClassId;
-      +  IFNULL L35
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassId ()Lorg/jetbrains/kotlin/name/ClassId;
-      @@ -185 +172
-      -  IFNULL L36
-      +  IFNULL L35
-      @@ -187 +174
-      -  GOTO L37
-      - L36
-      +  GOTO L36
-      + L35
-      @@ -210 +197
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
-      @@ -212 +198
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
-      - L40
-      -  LINENUMBER 217 L40
-      -  ALOAD 6
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
-      +  ALOAD 2
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
-      + L39
-      +  LINENUMBER 217 L39
-      @@ -227 +210
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
-      @@ -229 +211
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
-      - L41
-      -  LINENUMBER 217 L41
-      -  ALOAD 6
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
-      -  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
-      +  ALOAD 2
-      +  INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
-      + L40
-      +  LINENUMBER 217 L40
+      @@ -44 +44 @@
+      - GETSTATIC org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion;
+      + GETSTATIC org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.Companion : Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion;
+      @@ -50 +50 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider;
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider＄Companion.getInstance (Lcom/intellij/openapi/project/Project;)Lorg/jetbrains/kotlin/analysis/api/session/KaSessionProvider;
+      @@ -64 +64 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KtAnalysisSession;
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.getAnalysisSession (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/KaSession;
+      @@ -71,5 +70,0 @@
+      - ALOAD 6
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.beforeEnteringAnalysisContext ()V
+      -L20
+      - LINENUMBER 212 L20
+      @@ -77 +71,0 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
+      @@ -79,2 +73,2 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.beforeEnteringAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+      + ALOAD 2
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.beforeEnteringAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
+      @@ -84,2 +79,2 @@
+      -L21
+      - LINENUMBER 214 L21
+      +L20
+      + LINENUMBER 214 L20
+      @@ -88 +83 @@
+      -L22
+      +L21
+      @@ -91,2 +86,2 @@
+      -L23
+      - LINENUMBER 145 L23
+      +L22
+      + LINENUMBER 145 L22
+      @@ -95 +90 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.resolveCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.resolveToCall (Lorg/jetbrains/kotlin/psi/KtElement;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo; (itf)
+      @@ -97,2 +92,2 @@
+      - IFNULL L24
+      - INVOKESTATIC org/jetbrains/kotlin/analysis/api/calls/KtCallKt.singleFunctionCallOrNull (Lorg/jetbrains/kotlin/analysis/api/calls/KtCallInfo;)Lorg/jetbrains/kotlin/analysis/api/calls/KtFunctionCall;
+      + IFNULL L23
+      + INVOKESTATIC org/jetbrains/kotlin/analysis/api/resolution/KaCallInfoKt.singleFunctionCallOrNull (Lorg/jetbrains/kotlin/analysis/api/resolution/KaCallInfo;)Lorg/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall;
+      @@ -101,2 +96,2 @@
+      -L24
+      -FRAME FULL [androidx/compose/runtime/lint/AutoboxingStateCreationDetector org/jetbrains/uast/UCallExpression org/jetbrains/kotlin/psi/KtElement I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I org/jetbrains/kotlin/analysis/api/KtAnalysisSession I] [java/lang/Object]
+      +L23
+      +FRAME FULL [androidx/compose/runtime/lint/AutoboxingStateCreationDetector org/jetbrains/uast/UCallExpression org/jetbrains/kotlin/psi/KtElement I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/KaSession I] [java/lang/Object]
+      @@ -105 +100 @@
+      -L25
+      +L24
+      @@ -110 +104,0 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
+      @@ -112,7 +106,4 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+      -L26
+      - LINENUMBER 217 L26
+      - ALOAD 6
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
+      + ALOAD 2
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
+      +L25
+      + LINENUMBER 217 L25
+      @@ -122 +113 @@
+      -FRAME SAME1 org/jetbrains/kotlin/analysis/api/calls/KtFunctionCall
+      +FRAME SAME1 org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall
+      @@ -124,2 +115,2 @@
+      -L27
+      - LINENUMBER 147 L27
+      +L26
+      + LINENUMBER 147 L26
+      @@ -127 +118 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/calls/KtFunctionCall.getTypeArgumentsMapping ()Ljava/util/Map;
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall.getTypeArgumentsMapping ()Ljava/util/Map; (itf)
+      @@ -130,2 +121,2 @@
+      -L28
+      - LINENUMBER 147 L28
+      +L27
+      + LINENUMBER 147 L27
+      @@ -135 +126 @@
+      - IFNULL L29
+      + IFNULL L28
+      @@ -137 +128 @@
+      - CHECKCAST org/jetbrains/kotlin/analysis/api/types/KtType
+      + CHECKCAST org/jetbrains/kotlin/analysis/api/types/KaType
+      @@ -140,2 +131,2 @@
+      -L29
+      -FRAME FULL [androidx/compose/runtime/lint/AutoboxingStateCreationDetector org/jetbrains/uast/UCallExpression org/jetbrains/kotlin/psi/KtElement I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I org/jetbrains/kotlin/analysis/api/KtAnalysisSession I org/jetbrains/kotlin/analysis/api/calls/KtFunctionCall] [java/lang/Object]
+      +L28
+      +FRAME FULL [androidx/compose/runtime/lint/AutoboxingStateCreationDetector org/jetbrains/uast/UCallExpression org/jetbrains/kotlin/psi/KtElement I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/KaSession I org/jetbrains/kotlin/analysis/api/resolution/KaFunctionCall] [java/lang/Object]
+      @@ -144 +135 @@
+      -L30
+      +L29
+      @@ -149 +139,0 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
+      @@ -151,7 +141,4 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+      -L31
+      - LINENUMBER 217 L31
+      - ALOAD 6
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
+      + ALOAD 2
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
+      +L30
+      + LINENUMBER 217 L30
+      @@ -162 +149 @@
+      -FRAME SAME1 org/jetbrains/kotlin/analysis/api/types/KtType
+      +FRAME SAME1 org/jetbrains/kotlin/analysis/api/types/KaType
+      @@ -164,2 +151,2 @@
+      -L32
+      - LINENUMBER 148 L32
+      +L31
+      + LINENUMBER 148 L31
+      @@ -167,2 +154,2 @@
+      -L33
+      - LINENUMBER 149 L33
+      +L32
+      + LINENUMBER 149 L32
+      @@ -171,2 +158,2 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.isMarkedNullable (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Z
+      - IFEQ L34
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.isMarkedNullable (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Z (itf)
+      + IFEQ L33
+      @@ -174,4 +161,4 @@
+      - GOTO L35
+      -L34
+      - LINENUMBER 152 L34
+      -FRAME APPEND [org/jetbrains/kotlin/analysis/api/types/KtType]
+      + GOTO L34
+      +L33
+      + LINENUMBER 152 L33
+      +FRAME APPEND [org/jetbrains/kotlin/analysis/api/types/KaType]
+      @@ -180 +167 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getExpandedClassSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KtType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol;
+      + INVOKEINTERFACE org/jetbrains/kotlin/analysis/api/KaSession.getExpandedSymbol (Lorg/jetbrains/kotlin/analysis/api/types/KaType;)Lorg/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol; (itf)
+      @@ -182,2 +169,2 @@
+      - IFNULL L36
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KtClassOrObjectSymbol.getClassIdIfNonLocal ()Lorg/jetbrains/kotlin/name/ClassId;
+      + IFNULL L35
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/symbols/KaClassSymbol.getClassId ()Lorg/jetbrains/kotlin/name/ClassId;
+      @@ -185 +172 @@
+      - IFNULL L36
+      + IFNULL L35
+      @@ -187,2 +174,2 @@
+      - GOTO L37
+      -L36
+      + GOTO L36
+      +L35
+      @@ -192 +179 @@
+      -L37
+      +L36
+      @@ -195,2 +182,2 @@
+      -L38
+      - LINENUMBER 153 L38
+      +L37
+      + LINENUMBER 153 L37
+      @@ -201 +188 @@
+      -L39
+      +L38
+      @@ -203,2 +190,2 @@
+      -L35
+      - LINENUMBER 148 L35
+      +L34
+      + LINENUMBER 148 L34
+      @@ -210 +196,0 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
+      @@ -212,7 +198,4 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+      -L40
+      - LINENUMBER 217 L40
+      - ALOAD 6
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
+      + ALOAD 2
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
+      +L39
+      + LINENUMBER 217 L39
+      @@ -223 +206 @@
+      -FRAME FULL [androidx/compose/runtime/lint/AutoboxingStateCreationDetector org/jetbrains/uast/UCallExpression org/jetbrains/kotlin/psi/KtElement I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider I org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider org/jetbrains/kotlin/analysis/api/KtAnalysisSession I] [java/lang/Throwable]
+      +FRAME FULL [androidx/compose/runtime/lint/AutoboxingStateCreationDetector org/jetbrains/uast/UCallExpression org/jetbrains/kotlin/psi/KtElement I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider I org/jetbrains/kotlin/analysis/api/session/KaSessionProvider org/jetbrains/kotlin/analysis/api/KaSession I] [java/lang/Throwable]
+      @@ -227 +209,0 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getTokenFactory ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory;
+      @@ -229,7 +211,4 @@
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/KtAnalysisSession.getToken ()Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeTokenFactory.afterLeavingAnalysisContext (Lorg/jetbrains/kotlin/analysis/api/lifetime/KtLifetimeToken;)V
+      -L41
+      - LINENUMBER 217 L41
+      - ALOAD 6
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KtAnalysisSessionProvider.getNoWriteActionInAnalyseCallChecker ()Lorg/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker;
+      - INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/lifetime/impl/NoWriteActionInAnalyseCallChecker.afterLeavingAnalysisContext ()V
+      + ALOAD 2
+      + INVOKEVIRTUAL org/jetbrains/kotlin/analysis/api/session/KaSessionProvider.afterLeavingAnalysis (Lorg/jetbrains/kotlin/analysis/api/KaSession;Lorg/jetbrains/kotlin/psi/KtElement;)V
+      +L40
+      + LINENUMBER 217 L40
+      @@ -238,38 +217,38 @@
+      ...
       """,
       true,
     )
@@ -1799,7 +1898,8 @@ class LintJarApiMigrationTest {
       } else {
         error("Unsupported test file type")
       }
-    val before = prettyPrint(bytes, methodName).trimIndent()
+    var before = prettyPrint(bytes, methodName).trimIndent()
+
     val client =
       object : TestLintClient() {
         override fun log(
@@ -1813,7 +1913,7 @@ class LintJarApiMigrationTest {
           error("Didn't expect output: $format")
       }
     val newBytes = LintJarApiMigration(client).migrateClass(bytes)
-    val after = prettyPrint(newBytes, methodName).trimIndent()
+    var after = prettyPrint(newBytes, methodName).trimIndent()
 
     // Make sure we don't have any old references left
     if (after.contains("org/jetbrains/kotlin/analysis/api/session/KtAnalysisSession")) {
@@ -1825,7 +1925,6 @@ class LintJarApiMigrationTest {
       if (showDiff) {
         val diff = getDiff(before, after)
         // Drop irrelevant diffs: contains only label, line number and frame diffs
-        val sb = StringBuilder()
         var offset = 0
         val chunks = mutableListOf<String>()
         while (true) {

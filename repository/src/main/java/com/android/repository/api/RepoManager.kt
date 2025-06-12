@@ -107,12 +107,12 @@ abstract class RepoManager {
    * @param cacheExpirationMs How long must have passed since the last load for us to reload.
    *   Specify `0` to reload immediately.
    * @param onLocalComplete When loading, the local repo load happens first, and should be
-   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener]s are run. Will be
+   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener] is run. Will be
    *   called with a [RepositoryPackages] that contains only the local packages.
-   * @param onSuccess Callbacks that are run when the entire load (local and remote) has completed
+   * @param onSuccess Callback that is run when the entire load (local and remote) has completed
    *   successfully. Called with an [RepositoryPackages] containing both the local and remote
    *   packages.
-   * @param onError Callbacks that are run when there's an error at some point during the load.
+   * @param onError Callback that is run when there's an error at some point during the load.
    * @param runner The [ProgressRunner] to use for any tasks started during the load, including
    *   running the callbacks.
    * @param downloader The [Downloader] to use for downloading remote files, including any remote
@@ -124,9 +124,9 @@ abstract class RepoManager {
    */
   abstract fun load(
     cacheExpirationMs: Long,
-    onLocalComplete: List<RepoLoadedListener>? = null,
-    onSuccess: List<RepoLoadedListener>? = null,
-    onError: List<Runnable>? = null,
+    onLocalComplete: RepoLoadedListener? = null,
+    onSuccess: RepoLoadedListener? = null,
+    onError: Runnable? = null,
     runner: ProgressRunner,
     downloader: Downloader? = null,
     settings: SettingsController? = null,
@@ -141,12 +141,12 @@ abstract class RepoManager {
    * @param cacheExpirationMs How long must have passed since the last load for us to reload.
    *   Specify `0` to reload immediately.
    * @param onLocalComplete When loading, the local repo load happens first, and should be
-   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener]s are run. Will be
+   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener] is run. Will be
    *   called with a [RepositoryPackages] that contains only the local packages.
-   * @param onSuccess Callbacks that are run when the entire load (local and remote) has completed
+   * @param onSuccess Callback that is run when the entire load (local and remote) has completed
    *   successfully. Called with an [RepositoryPackages] containing both the local and remote
    *   packages.
-   * @param onError Callbacks that are run when there's an error at some point during the load.
+   * @param onError Callback that is run when there's an error at some point during the load.
    * @param runner The [ProgressRunner] to use for any tasks started during the load, including
    *   running the callbacks.
    * @param downloader The [Downloader] to use for downloading remote files, including any remote
@@ -157,9 +157,9 @@ abstract class RepoManager {
   @Slow
   abstract fun loadSynchronously(
     cacheExpirationMs: Long,
-    onLocalComplete: List<RepoLoadedListener>? = null,
-    onSuccess: List<RepoLoadedListener>? = null,
-    onError: List<Runnable>? = null,
+    onLocalComplete: RepoLoadedListener? = null,
+    onSuccess: RepoLoadedListener? = null,
+    onError: Runnable? = null,
     runner: ProgressRunner,
     downloader: Downloader? = null,
     settings: SettingsController? = null,
@@ -188,7 +188,7 @@ abstract class RepoManager {
     val result = AtomicBoolean(true)
     loadSynchronously(
       cacheExpirationMs = cacheExpirationMs,
-      onError = listOf(Runnable { result.set(false) }),
+      onError = { result.set(false) },
       runner = DirectProgressRunner(progress),
       downloader = downloader,
       settings = settings,
@@ -215,7 +215,7 @@ abstract class RepoManager {
    * package metadata files. If there have been any changes, or if the cache is older than the
    * default timeout, the local packages will be reloaded.
    *
-   * @return `true` if the load was successful, `false` otherwise}.
+   * @return `true` if the load was successful, `false` otherwise.
    */
   abstract fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean
 
@@ -280,7 +280,7 @@ abstract class RepoManager {
     override fun runAsyncWithProgress(r: ProgressRunnable) = throw UnsupportedOperationException()
 
     override fun runSyncWithProgress(r: ProgressRunnable) {
-      runBlocking { r.run(progress, this@DirectProgressRunner) }
+      runBlocking { r.run(progress) }
     }
   }
 

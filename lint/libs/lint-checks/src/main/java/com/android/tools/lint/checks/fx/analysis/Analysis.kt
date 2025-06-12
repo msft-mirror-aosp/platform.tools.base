@@ -58,6 +58,7 @@ import com.android.tools.lint.checks.fx.utils.mapM
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
 import com.android.tools.lint.checks.fx.utils.pure
 import com.android.tools.lint.checks.fx.utils.unionedWith
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.android.tools.lint.detector.api.asCall
 import com.android.tools.lint.detector.api.nameFromSource
@@ -269,13 +270,28 @@ internal open class Analysis<FX : Any>(
             with(checkingMode(status.upperBound)) {
               when (val body = status.body) {
                 null -> pure(method.returnTypeAnnotation)
-                else -> eval(body)
+                else -> checkingLattice.catchError { eval(body) }
               }
             }
-          is MethodBody.Status.ForInference -> inferenceMode(status.base).eval(status.body)
+          is MethodBody.Status.ForInference ->
+            inferenceLattice.catchError { inferenceMode(status.base).eval(status.body) }
         }
       }
-      is Point.Instantiation -> apply(rec, point.method, point.args)
+      is Point.Instantiation ->
+        instantiationLattice.catchError { apply(rec, point.method, point.args) }
+    }
+
+  /** Run action with errors suppressed in production, to avoid bringing down all of Lint */
+  private fun <T> Lattice<T>.catchError(run: () -> T): T =
+    try {
+      run()
+    } catch (e: Throwable) {
+      if (LintClient.isUnitTest) {
+        throw e
+      } else {
+        log("${e.javaClass.simpleName}: ${e.message}")
+        unsure
+      }
     }
 
   /**

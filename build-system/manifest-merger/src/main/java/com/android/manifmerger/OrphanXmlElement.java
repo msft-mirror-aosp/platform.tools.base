@@ -20,14 +20,14 @@ import static com.android.manifmerger.FeatureFlag.ATTRIBUTE_NAME;
 import static com.android.manifmerger.FeatureFlag.NAMESPACE_URI;
 import static com.android.manifmerger.ManifestModel.NodeTypes;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.XmlUtils;
 
 import com.google.common.base.Preconditions;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -39,13 +39,13 @@ import java.util.Optional;
  */
 public class OrphanXmlElement extends XmlNode {
 
-    @NonNull
+    @NotNull
     private final Element mXml;
 
-    @NonNull
+    @NotNull
     private final NodeTypes mType;
 
-    public OrphanXmlElement(@NonNull Element xml, @NonNull DocumentModel<NodeTypes> model) {
+    public OrphanXmlElement(@NotNull Element xml, @NotNull DocumentModel<NodeTypes> model) {
         mXml = Preconditions.checkNotNull(xml);
         String elementName = mXml.getNodeName();
         // if there's a namespace prefix, just strip it. The DocumentModel does not look at
@@ -61,18 +61,18 @@ public class OrphanXmlElement extends XmlNode {
         return this.mType == type;
     }
 
-    @NonNull
+    @NotNull
     @Override
     public Element getXml() {
         return mXml;
     }
 
-    @NonNull
+    @NotNull
     public String getNamespaceURI() {
         return mXml.getNamespaceURI();
     }
 
-    @NonNull
+    @NotNull
     public String getTagName() {
         return mXml.getTagName();
     }
@@ -95,14 +95,14 @@ public class OrphanXmlElement extends XmlNode {
         return element.getTagName() + ":" + attributeName + ":" + attr.getValue();
     }
 
-    @NonNull
-    public String lookupNamespacePrefix(@NonNull String nsUri, boolean create) {
+    @NotNull
+    public String lookupNamespacePrefix(@NotNull String nsUri, boolean create) {
         return XmlUtils.lookupNamespacePrefix(getXml(), nsUri, create);
     }
 
-    @NonNull
+    @NotNull
     public String lookupNamespacePrefix(
-            @NonNull String nsUri, @NonNull String defaultPrefix, boolean create) {
+            @NotNull String nsUri, @NotNull String defaultPrefix, boolean create) {
         return XmlUtils.lookupNamespacePrefix(getXml(), nsUri, defaultPrefix, create);
     }
 
@@ -130,7 +130,7 @@ public class OrphanXmlElement extends XmlNode {
         return featureFlag() != null;
     }
 
-    @NonNull
+    @NotNull
     @Override
     public NodeKey getId() {
         String featureFlagSuffix =
@@ -144,7 +144,7 @@ public class OrphanXmlElement extends XmlNode {
         return new NodeKey(idPrefix + featureFlagSuffix);
     }
 
-    @NonNull
+    @NotNull
     @Override
     public NodeName getName() {
         return XmlNode.unwrapName(mXml);
@@ -153,7 +153,7 @@ public class OrphanXmlElement extends XmlNode {
     /**
      * Returns this xml element {@link NodeTypes}
      */
-    @NonNull
+    @NotNull
     public NodeTypes getType() {
         return mType;
     }
@@ -167,14 +167,14 @@ public class OrphanXmlElement extends XmlNode {
         return mType.getNodeKeyResolver().getKey(mXml);
     }
 
-    @NonNull
+    @NotNull
     @Override
     public SourcePosition getPosition() {
         return SourcePosition.UNKNOWN;
     }
 
     @Override
-    @NonNull
+    @NotNull
     public SourceFile getSourceFile() {
         return SourceFile.UNKNOWN;
     }

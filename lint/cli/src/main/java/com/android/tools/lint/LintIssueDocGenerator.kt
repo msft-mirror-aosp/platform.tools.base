@@ -41,6 +41,7 @@ import com.android.tools.lint.LintCliFlags.ERRNO_ERRORS
 import com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS
 import com.android.tools.lint.LintCliFlags.ERRNO_USAGE
 import com.android.tools.lint.checks.BuiltinIssueRegistry
+import com.android.tools.lint.checks.optional.AospIssueRegistry
 import com.android.tools.lint.client.api.GradleVisitor
 import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.client.api.IssueRegistry.Companion.AOSP_VENDOR
@@ -3021,10 +3022,13 @@ class LintIssueDocGenerator(
     private fun getRegistries(
       registryMap: Map<IssueRegistry, String?>,
       includeBuiltins: Boolean,
+      includeAospIssueRegistry: Boolean,
     ): Map<IssueRegistry, String?> {
       return if (includeBuiltins) {
         val builtIns = mapOf<IssueRegistry, String?>(BuiltinIssueRegistry() to null)
-        builtIns + registryMap
+        builtIns +
+          registryMap +
+          if (includeAospIssueRegistry) mapOf(AospIssueRegistry() to null) else emptyMap()
       } else {
         registryMap
       }
@@ -3112,6 +3116,7 @@ class LintIssueDocGenerator(
       var searchGmaven = false
       var searchMavenCentral = false
       var includeUnpublished = false
+      var includeAospIssueRegistry = false
       var verbose = false
       var examples: File? = null
 
@@ -3228,6 +3233,7 @@ class LintIssueDocGenerator(
             }
             outputPath = path
           }
+          "--include-aosp-issues" -> includeAospIssueRegistry = true
           else -> {
             println("Unknown flag $arg")
             printUsage(fromLint)
@@ -3294,7 +3300,7 @@ class LintIssueDocGenerator(
           jarMap + gmavenMap + mavenCentralMap + localMap
         }
 
-      val registryMap = getRegistries(registries, includeBuiltins)
+      val registryMap = getRegistries(registries, includeBuiltins, includeAospIssueRegistry)
 
       val sinceMap = findSinceMap(verbose, client, registryMap, searchGmaven, includeBuiltins)
 

@@ -70,16 +70,6 @@ class ExtractProGuardRulesTransformTest {
     }
 
     @Test
-    fun testSingleRuleFile_startingWithSlash() {
-        val jarFile = createZip("/META-INF/proguard/foo.txt" to "bar")
-        val transformOutputs = FakeTransformOutputs(tmp)
-        createTransform(jarFile).transform(transformOutputs)
-
-        assertThat(getProducedFileNames(transformOutputs.outputDirectory)).containsExactly("lib${slash}META-INF${slash}proguard${slash}foo.txt")
-        assertThat(transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}foo.txt")).hasContents("bar")
-    }
-
-    @Test
     fun testMultipleRuleFiles() {
         val jarFile = createZip(
             "META-INF/proguard/bar.txt" to "hello",

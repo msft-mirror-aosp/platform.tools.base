@@ -68,11 +68,11 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/java/test/pkg/UnitTestKotlin.kt line 5: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=29):
-        @@ -3 +3
-        + import androidx.test.filters.SdkSuppress
-        @@ -5 +6
-        - @RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
-        + @SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -2,0 +3 @@
+        +import androidx.test.filters.SdkSuppress
+        @@ -5 +6 @@
+        -@RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
+        +@SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
         """
       )
   }
@@ -176,25 +176,25 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/java/test/pkg/UnitTestJava.java line 8: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=29):
-        @@ -7 +7
-        + import androidx.test.filters.SdkSuppress;
-        @@ -8 +9
-        - @RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
-        + @SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -4,0 +5 @@
+        +import androidx.test.filters.SdkSuppress;
+        @@ -8 +9 @@
+        -@RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
+        +@SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
         Fix for src/test/java/test/pkg/UnitTestJava.java line 11: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=31):
-        @@ -6 +6
-        + import androidx.test.filters.SdkSuppress;
-        @@ -11 +12
-        -     @androidx.annotation.RequiresApi(api=31) // ERROR: don't use in tests, use @SdkSuppress instead
-        +     @SdkSuppress(minSdkVersion=31) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -4,0 +5 @@
+        +import androidx.test.filters.SdkSuppress;
+        @@ -11 +12 @@
+        -    @androidx.annotation.RequiresApi(api=31) // ERROR: don't use in tests, use @SdkSuppress instead
+        +    @SdkSuppress(minSdkVersion=31) // ERROR: don't use in tests, use @SdkSuppress instead
         Fix for src/test/java/test/pkg/UnitTestKotlin.kt line 6: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=29):
-        @@ -6 +6
-        - @RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
-        + @SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -6 +6 @@
+        -@RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
+        +@SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
         Fix for src/test/java/test/pkg/UnitTestKotlin.kt line 10: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=31):
-        @@ -10 +10
-        -     @RequiresApi(api = 31) // ERROR: don't use in tests, use @SdkSuppress instead
-        +     @SdkSuppress(minSdkVersion=31) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -10 +10 @@
+        -    @RequiresApi(api = 31) // ERROR: don't use in tests, use @SdkSuppress instead
+        +    @SdkSuppress(minSdkVersion=31) // ERROR: don't use in tests, use @SdkSuppress instead
         """
       )
       // Test compatibility handling for diffs; before a bug was fixed in the test differ,
@@ -203,21 +203,25 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/java/test/pkg/UnitTestJava.java line 8: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=29):
-        @@ -8 +8
-        - @RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
-        + @androidx.test.filters.SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -4,0 +5 @@
+        +import androidx.test.filters.SdkSuppress;
+        @@ -8 +9 @@
+        -@RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
+        +@SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
         Fix for src/test/java/test/pkg/UnitTestJava.java line 11: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=31):
-        @@ -11 +11
-        -     @androidx.annotation.RequiresApi(api=31) // ERROR: don't use in tests, use @SdkSuppress instead
-        +     @androidx.test.filters.SdkSuppress(minSdkVersion=31) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -4,0 +5 @@
+        +import androidx.test.filters.SdkSuppress;
+        @@ -11 +12 @@
+        -    @androidx.annotation.RequiresApi(api=31) // ERROR: don't use in tests, use @SdkSuppress instead
+        +    @SdkSuppress(minSdkVersion=31) // ERROR: don't use in tests, use @SdkSuppress instead
         Fix for src/test/java/test/pkg/UnitTestKotlin.kt line 6: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=29):
-        @@ -6 +6
-        - @RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
-        + @SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -6 +6 @@
+        -@RequiresApi(29) // ERROR: don't use in tests, use @SdkSuppress instead
+        +@SdkSuppress(minSdkVersion=29) // ERROR: don't use in tests, use @SdkSuppress instead
         Fix for src/test/java/test/pkg/UnitTestKotlin.kt line 10: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=31):
-        @@ -10 +10
-        -     @RequiresApi(api = 31) // ERROR: don't use in tests, use @SdkSuppress instead
-        +     @SdkSuppress(minSdkVersion=31) // ERROR: don't use in tests, use @SdkSuppress instead
+        @@ -10 +10 @@
+        -    @RequiresApi(api = 31) // ERROR: don't use in tests, use @SdkSuppress instead
+        +    @SdkSuppress(minSdkVersion=31) // ERROR: don't use in tests, use @SdkSuppress instead
         """
       )
   }
@@ -321,17 +325,17 @@ class SdkSuppressDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/java/test/pkg/UnitTestKotlin.kt line 6: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=29):
-        @@ -1 +1
-        + import androidx.test.filters.SdkSuppress
-        @@ -6 +7
-        - @RequiresApi(29) // ERROR 1: don't use in tests, use @SdkSuppress instead
-        + @SdkSuppress(minSdkVersion=29) // ERROR 1: don't use in tests, use @SdkSuppress instead
+        @@ -0,0 +1 @@
+        +import androidx.test.filters.SdkSuppress
+        @@ -6 +7 @@
+        -@RequiresApi(29) // ERROR 1: don't use in tests, use @SdkSuppress instead
+        +@SdkSuppress(minSdkVersion=29) // ERROR 1: don't use in tests, use @SdkSuppress instead
         Fix for src/test/java/test/pkg/UnitTestKotlin.kt line 8: Replace with @androidx.test.filters.SdkSuppress(minSdkVersion=30):
-        @@ -1 +1
-        + import androidx.test.filters.SdkSuppress
-        @@ -8 +9
-        -   @RequiresApi(30) // ERROR 2: don't use in tests, use @SdkSuppress instead
-        +   @SdkSuppress(minSdkVersion=30) // ERROR 2: don't use in tests, use @SdkSuppress instead
+        @@ -0,0 +1 @@
+        +import androidx.test.filters.SdkSuppress
+        @@ -8 +9 @@
+        -  @RequiresApi(30) // ERROR 2: don't use in tests, use @SdkSuppress instead
+        +  @SdkSuppress(minSdkVersion=30) // ERROR 2: don't use in tests, use @SdkSuppress instead
         """
       )
   }

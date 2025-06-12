@@ -331,6 +331,17 @@ class AndroidTestApkInstallerPlugin(
                 }
             }
         }
+
+        if (deviceApiLevel >= 35) {
+            val packageName = pluginConfig.instrumentationTargetPackageId
+            deviceController.execute(
+                listOf("shell", "am", "set-debug-app", packageName)
+            ).let { result ->
+                if(result.statusCode != 0) {
+                    logger.info("Failed to execute set-debug-app command on $packageName")
+                }
+            }
+        }
     }
 
     override fun beforeEach(
@@ -363,6 +374,14 @@ class AndroidTestApkInstallerPlugin(
                         }
                     }
                 }
+            }
+        }
+
+        deviceController.execute(
+            listOf("shell", "am", "clear-debug-app")
+        ).let { result ->
+            if(result.statusCode != 0) {
+                logger.info("Failed to execute clear-debug-app command")
             }
         }
     }

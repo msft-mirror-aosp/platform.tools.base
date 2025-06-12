@@ -3,9 +3,11 @@
 import dataclasses
 import enum
 import json
+import logging
 import os
 import pathlib
 import shutil
+import subprocess
 from typing import Iterable, List, Sequence, Tuple
 import uuid
 
@@ -169,10 +171,7 @@ def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path) -> None:
   failed_tests_path = dist_path / 'failed_tests.txt'
 
   args = [
-      '//tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector',
-      '--config=ci',
-      '--config=remote-exec',
-      '--',
+      os.environ['LOGS_COLLECTOR_BINARY'],
       '-bes',
       str(bes_path),
       '-error_log',
@@ -185,8 +184,8 @@ def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path) -> None:
   if build_type == BuildType.POSTSUBMIT:
     args.append('-perfzip')
     args.append(perfgate_data_path)
-
-  build_env.bazel_run(*args)
+  logging.info('Running command: %s', args)
+  subprocess.run(args, check=True)
 
 
 def copy_artifacts(

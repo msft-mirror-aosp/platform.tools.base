@@ -185,9 +185,9 @@ class AssertDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/AssertTest.kt line 18: Surround with desiredAssertionStatus() check:
-            @@ -18 +18
-            -         assert(expensive()) // WARN
-            +         if (javaClass.desiredAssertionStatus()) { assert(expensive()) } // WARN
+            @@ -18 +18 @@
+            -        assert(expensive()) // WARN
+            +        if (javaClass.desiredAssertionStatus()) { assert(expensive()) } // WARN
             """
       )
   }

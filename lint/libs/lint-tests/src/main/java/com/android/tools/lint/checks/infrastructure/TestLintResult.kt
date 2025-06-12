@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks.infrastructure
 
 import com.android.SdkConstants.DOT_XML
+import com.android.ide.common.util.Diffs
 import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.LintStats
 import com.android.tools.lint.Reporter
@@ -997,13 +998,18 @@ internal constructor(
     private val MATCH_OLD_ERROR_MESSAGE = Regex("$OLD_ERROR_MESSAGE[^>]")
 
     /** Returns a test-suitable diff of the two strings. */
+    @Deprecated(
+      "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
+      ReplaceWith("diff(before, after)", "com.android.ide.common.util.Diffs.diff"),
+    )
     fun getDiff(
       before: String,
       after: String,
       diffCompatMode: Boolean = false,
       diffCompatMode2: Boolean = false,
+      diffCompatMode3: Boolean = false,
     ): String {
-      return getDiff(before, after, 0, diffCompatMode, diffCompatMode2)
+      return getDiff(before, after, 0, diffCompatMode, diffCompatMode2, diffCompatMode3)
     }
 
     /**
@@ -1014,20 +1020,29 @@ internal constructor(
      * where there is a shared line between them. You can get the old behaviors by setting the
      * [diffCompatMode] and [diffCompatMode2] properties to true.
      */
+    @Deprecated(
+      "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
+      ReplaceWith("diff(before, after, windowSize)", "com.android.ide.common.util.Diffs.diff"),
+    )
     fun getDiff(
       before: String,
       after: String,
       windowSize: Int,
       diffCompatMode: Boolean = false,
       diffCompatMode2: Boolean = false,
+      diffCompatMode3: Boolean = false,
     ): String {
-      return getDiff(
-        if (before.isEmpty()) emptyArray() else before.split("\n").toTypedArray(),
-        if (after.isEmpty()) emptyArray() else after.split("\n").toTypedArray(),
-        windowSize,
-        diffCompatMode,
-        diffCompatMode2,
-      )
+      if (diffCompatMode || diffCompatMode2 || diffCompatMode3) {
+        return getDiff(
+          if (before.isEmpty()) emptyArray() else before.split("\n").toTypedArray(),
+          if (after.isEmpty()) emptyArray() else after.split("\n").toTypedArray(),
+          windowSize,
+          diffCompatMode,
+          diffCompatMode2,
+        )
+      } else {
+        return Diffs.diff(before, after, windowSize)
+      }
     }
 
     /**
@@ -1038,6 +1053,10 @@ internal constructor(
      * where there is a shared line between them. You can get the old behaviors by setting the
      * [diffCompatMode] and [diffCompatMode2] properties to true.
      */
+    @Deprecated(
+      "This method is specifically for lint backwards compatibility; to just get diffs, use Diffs.diff",
+      ReplaceWith("diff(before, after, windowSize)", "com.android.ide.common.util.Diffs.diff"),
+    )
     fun getDiff(
       before: Array<String>,
       after: Array<String>,

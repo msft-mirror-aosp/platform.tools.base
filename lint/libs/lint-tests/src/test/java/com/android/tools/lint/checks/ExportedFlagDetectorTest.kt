@@ -58,17 +58,17 @@ class ExportedFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 7: Set exported="true":
-            @@ -10 +10
-            -         <receiver android:name="com.google.android.c2dm.C2DMBroadcastReceiver" >
-            +         <receiver
-            +             android:name="com.google.android.c2dm.C2DMBroadcastReceiver"
-            +             android:exported="true" >
+            @@ -10 +10,3 @@
+            -        <receiver android:name="com.google.android.c2dm.C2DMBroadcastReceiver" >
+            +        <receiver
+            +            android:name="com.google.android.c2dm.C2DMBroadcastReceiver"
+            +            android:exported="true" >
             Fix for AndroidManifest.xml line 7: Set exported="false":
-            @@ -10 +10
-            -         <receiver android:name="com.google.android.c2dm.C2DMBroadcastReceiver" >
-            +         <receiver
-            +             android:name="com.google.android.c2dm.C2DMBroadcastReceiver"
-            +             android:exported="false" >
+            @@ -10 +10,3 @@
+            -        <receiver android:name="com.google.android.c2dm.C2DMBroadcastReceiver" >
+            +        <receiver
+            +            android:name="com.google.android.c2dm.C2DMBroadcastReceiver"
+            +            android:exported="false" >
             """
       )
   }
@@ -109,17 +109,17 @@ class ExportedFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 7: Set exported="true":
-            @@ -10 +10
-            -         <activity android:name="com.example.MainActivity" >
-            +         <activity
-            +             android:name="com.example.MainActivity"
-            +             android:exported="true" >
+            @@ -10 +10,3 @@
+            -        <activity android:name="com.example.MainActivity" >
+            +        <activity
+            +            android:name="com.example.MainActivity"
+            +            android:exported="true" >
             Fix for AndroidManifest.xml line 7: Set exported="false":
-            @@ -10 +10
-            -         <activity android:name="com.example.MainActivity" >
-            +         <activity
-            +             android:name="com.example.MainActivity"
-            +             android:exported="false" >
+            @@ -10 +10,3 @@
+            -        <activity android:name="com.example.MainActivity" >
+            +        <activity
+            +            android:name="com.example.MainActivity"
+            +            android:exported="false" >
             """
       )
   }
@@ -161,17 +161,17 @@ class ExportedFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 8: Set exported="true":
-            @@ -10 +10
-            -         <activity android:name="com.example.MainActivity" >
-            +         <activity
-            +             android:name="com.example.MainActivity"
-            +             android:exported="true" >
+            @@ -10 +10,3 @@
+            -        <activity android:name="com.example.MainActivity" >
+            +        <activity
+            +            android:name="com.example.MainActivity"
+            +            android:exported="true" >
             Fix for AndroidManifest.xml line 8: Set exported="false":
-            @@ -10 +10
-            -         <activity android:name="com.example.MainActivity" >
-            +         <activity
-            +             android:name="com.example.MainActivity"
-            +             android:exported="false" >
+            @@ -10 +10,3 @@
+            -        <activity android:name="com.example.MainActivity" >
+            +        <activity
+            +            android:name="com.example.MainActivity"
+            +            android:exported="false" >
             """
       )
   }
@@ -239,17 +239,17 @@ class ExportedFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 8: Set exported="true":
-            @@ -10 +10
-            -         <activity android:name="MyActivity" >
-            +         <activity
-            +             android:name="MyActivity"
-            +             android:exported="true" >
+            @@ -10 +10,3 @@
+            -        <activity android:name="MyActivity" >
+            +        <activity
+            +            android:name="MyActivity"
+            +            android:exported="true" >
             Fix for AndroidManifest.xml line 8: Set exported="false":
-            @@ -10 +10
-            -         <activity android:name="MyActivity" >
-            +         <activity
-            +             android:name="MyActivity"
-            +             android:exported="false" >
+            @@ -10 +10,3 @@
+            -        <activity android:name="MyActivity" >
+            +        <activity
+            +            android:name="MyActivity"
+            +            android:exported="false" >
             """
       )
   }
@@ -342,11 +342,11 @@ class ExportedFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 8: Set exported="true":
-                @@ -8 +8
-                -         <activity android:name="MyActivity" >
-                +         <activity
-                +             android:name="MyActivity"
-                +             android:exported="true" >
+                @@ -8 +8,3 @@
+                -        <activity android:name="MyActivity" >
+                +        <activity
+                +            android:name="MyActivity"
+                +            android:exported="true" >
             """
       )
   }
@@ -387,9 +387,9 @@ class ExportedFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 10: Set exported="true":
-            @@ -10 +10
-            -             android:exported="false" >
-            +             android:exported="true" >
+            @@ -10 +10 @@
+            -            android:exported="false" >
+            +            android:exported="true" >
         """
       )
   }

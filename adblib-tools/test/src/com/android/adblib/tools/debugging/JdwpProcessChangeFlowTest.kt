@@ -32,7 +32,6 @@ import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
@@ -100,7 +99,7 @@ class JdwpProcessChangeFlowTest {
             )
             fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
             val connectedDevice =
-                waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val pid10 = 10
 
             // Act / Assert
@@ -295,7 +294,7 @@ class JdwpProcessChangeFlowTest {
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         return Pair(
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId), fakeDevice
+          hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId), fakeDevice
         )
     }
 }

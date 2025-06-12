@@ -40,17 +40,24 @@ import com.android.ddmlib.clientmanager.DeviceClientManagerListener
 import com.android.ddmlib.testing.FakeAdbRule
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.readLengthPrefixedString
 import com.android.sdklib.AndroidApiLevel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.job
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
 import java.nio.ByteBuffer
+import kotlin.math.abs
 import kotlin.math.max
 
 class AdbLibDeviceClientManagerTest {
@@ -138,6 +145,66 @@ class AdbLibDeviceClientManagerTest {
                 Assert.assertSame(fakeAdb.bridge, lastEvent.bridge)
             } ?: Assert.fail("No PROCESS_LIST_UPDATED event")
         Unit
+    }
+
+    @Test
+    fun testCoroutinesAreCancelledAfterDeviceDisconnects() = runBlockingWithTimeout {
+        // Prepare
+        val session = fakeAdb.createAdbSession(closeables)
+        val clientManager = AdbLibClientManager(session)
+        val listener = TestDeviceClientManagerListener()
+        val clientManagerCount = 20
+        val (device, deviceState) = fakeAdb.connectTestDevice()
+        deviceState.startClient(10, 0, "foo.bar", false)
+        deviceState.startClient(12, 0, "foo.bar.baz", false)
+
+        // Act
+        val jobsBefore = session.scope.collectJobs()
+
+        // Create and start `clientManagerCount` device client managers concurrently
+        coroutineScope {
+            (1..clientManagerCount).map {
+                async {
+                    val deviceClientManager =
+                        clientManager.createDeviceClientManager(
+                            fakeAdb.bridge,
+                            device,
+                            listener
+                        )
+                    yieldUntil { deviceClientManager.clients.size == 2 }
+                }
+            }.awaitAll()
+        }
+
+        // Disconnecting the device should lead to all device client manager instances to stop
+        // all their coroutines and release their resources (we add a little delay, because this
+        // is asynchronous)
+        fakeAdb.disconnectTestDevice(device.serialNumber)
+        delay(100)
+
+        val jobsAfter = session.scope.collectJobs()
+
+        // Assert
+        // There are typically 1 or 2 coroutines more in `jobsAfter` because
+        // some coroutines are lazily created. In order for this test to be somewhat reliable,
+        // we merely check that the number of leftover coroutines is less than a pre-defined
+        // constant, i.e. O(1), as opposed to proportional to the number of device client
+        // manager instances created, i.e. O(n).
+        val maxJobCountDelta = 5
+        assert(maxJobCountDelta < clientManagerCount)
+        val message = "Given that $clientManagerCount \"${DeviceClientManager::class.simpleName}\" " +
+                "instances were created and the device has been disconnected, the number " +
+                "of active coroutines in the session scope has not decreased enough.\n\n" +
+                "There were $clientManagerCount \"${DeviceClientManager::class.simpleName}\" " +
+                "instances created.\n" +
+                "There were ${jobsBefore.size} coroutines before creating these instances.\n" +
+                "There were ${jobsAfter.size} coroutines left after disconnecting the device.\n" +
+                "There should be fewer than ${jobsBefore.size + maxJobCountDelta} " +
+                "coroutines left after disconnecting the device.\n"
+        Assert.assertTrue(
+            message,
+            abs(jobsAfter.size - jobsBefore.size) <= maxJobCountDelta
+        )
     }
 
     @Test
@@ -767,6 +834,22 @@ class AdbLibDeviceClientManagerTest {
     private fun assertThrows(block: () -> Unit) {
         runCatching(block).onSuccess {
             Assert.fail("Block should throw an exception")
+        }
+    }
+
+    /**
+     * Returns the [List] of [jobs][Job] from the job hierarchy of this [CoroutineScope]
+     */
+    private fun CoroutineScope.collectJobs(): List<Job> {
+        return mutableListOf<Job>().also {
+            collectJobs(this.coroutineContext.job, it)
+        }
+    }
+
+    private fun collectJobs(job: Job, jobs: MutableList<Job>) {
+        jobs.add(job)
+        job.children.forEach {
+            collectJobs(it, jobs)
         }
     }
 

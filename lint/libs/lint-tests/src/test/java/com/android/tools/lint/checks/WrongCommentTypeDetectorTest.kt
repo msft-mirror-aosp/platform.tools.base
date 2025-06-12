@@ -66,13 +66,13 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/ParentClass.kt line 2: Replace with /**:
-        @@ -1 +1
-        - /* Block comment
-        + /** Block comment
+        @@ -1 +1 @@
+        -/* Block comment
+        +/** Block comment
         Autofix for src/Test.java line 2: Replace with /**:
-        @@ -2 +2
-        -     /* @since 1.5 */ String text;
-        +     /** @since 1.5 */ String text;
+        @@ -2 +2 @@
+        -    /* @since 1.5 */ String text;
+        +    /** @since 1.5 */ String text;
         """
       )
   }
@@ -111,13 +111,13 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/ParentClass.kt line 1: Replace with /**:
-        @@ -1 +1
-        - /* This is a [link](http://wwww.google.com) */
-        + /** This is a [link](http://wwww.google.com) */
+        @@ -1 +1 @@
+        -/* This is a [link](http://wwww.google.com) */
+        +/** This is a [link](http://wwww.google.com) */
         Autofix for src/Test.java line 1: Replace with /**:
-        @@ -1 +1
-        - /* This is a {@link ParentClass} */
-        + /** This is a {@link ParentClass} */
+        @@ -1 +1 @@
+        -/* This is a {@link ParentClass} */
+        +/** This is a {@link ParentClass} */
         """
       )
   }
@@ -151,9 +151,9 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test.kt line 4: Replace with /**:
-        @@ -1 +1
-        -  /*
-        +  /**
+        @@ -1 +1 @@
+        - /*
+        + /**
         """
       )
   }

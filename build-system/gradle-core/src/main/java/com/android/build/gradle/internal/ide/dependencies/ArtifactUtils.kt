@@ -547,9 +547,12 @@ fun ResolvedVariantResult.toKey(): VariantKey = VariantKey(
  *
  * [AgpVersionAttr] is only present for variants  from Android projects.
  */
-fun ResolvedVariantResult.isAndroidProjectDependency() =
-    attributes.getAttribute(
-        attributes.keySet().firstOrNull { it.name == AgpVersionAttr.ATTRIBUTE.name }) != null
+fun ResolvedVariantResult.isAndroidProjectDependency(): Boolean  {
+    val variantAttribute =
+        attributes.keySet().firstOrNull { it.name == AgpVersionAttr.ATTRIBUTE.name } ?: return false
+    return attributes.getAttribute(variantAttribute) != null
+}
+
 
 private fun ResolvedArtifactResult.isAndroidProjectDependency() = variant.isAndroidProjectDependency()
 

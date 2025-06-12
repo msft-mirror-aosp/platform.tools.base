@@ -18,8 +18,6 @@ package com.android.manifmerger;
 
 import static com.android.manifmerger.XmlNode.NodeKey;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
@@ -29,6 +27,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Records all the actions taken by the merging tool.
@@ -89,7 +89,7 @@ public class ActionRecorder {
      * adding/removing elements.
      */
     @GuardedBy("this")
-    @NonNull
+    @NotNull
     private final Map<NodeKey, Actions.DecisionTreeRecord> mRecords =
             new LinkedHashMap<NodeKey, Actions.DecisionTreeRecord>();
 
@@ -106,7 +106,7 @@ public class ActionRecorder {
      * @param exhaustiveSearch whether to check an already recorded XmlElement's descendants
      */
     synchronized void recordAddedNodeAction(
-            @NonNull XmlElement xmlElement, boolean exhaustiveSearch) {
+            @NotNull XmlElement xmlElement, boolean exhaustiveSearch) {
         boolean nodeRecorded = !getDecisionTreeRecord(xmlElement).getNodeRecords().isEmpty();
         if (!nodeRecorded) {
             recordNodeAction(xmlElement, Actions.ActionType.ADDED);
@@ -134,7 +134,7 @@ public class ActionRecorder {
      * @param xmlElement the implied element that was added to the resulting xml.
      * @param reason optional contextual information whey the implied element was added.
      */
-    synchronized void recordImpliedNodeAction(@NonNull XmlElement xmlElement, @Nullable String reason) {
+    synchronized void recordImpliedNodeAction(@NotNull XmlElement xmlElement, @Nullable String reason) {
         Actions.DecisionTreeRecord nodeDecisionTree = getDecisionTreeRecord(xmlElement);
         Actions.NodeRecord record = new Actions.NodeRecord(Actions.ActionType.IMPLIED,
                 new SourceFilePosition(
@@ -154,8 +154,8 @@ public class ActionRecorder {
      * @param actionType the action's type
      */
     synchronized void recordNodeAction(
-            @NonNull XmlElement xmlElement,
-            @NonNull Actions.ActionType actionType) {
+            @NotNull XmlElement xmlElement,
+            @NotNull Actions.ActionType actionType) {
         recordNodeAction(xmlElement, actionType, xmlElement);
     }
 
@@ -168,9 +168,9 @@ public class ActionRecorder {
      *                      indicates what is the element being rejected or replaced.
      */
     synchronized void recordNodeAction(
-            @NonNull XmlElement mergedElement,
-            @NonNull Actions.ActionType actionType,
-            @NonNull XmlElement targetElement) {
+            @NotNull XmlElement mergedElement,
+            @NotNull Actions.ActionType actionType,
+            @NotNull XmlElement targetElement) {
 
         Actions.NodeRecord record = new Actions.NodeRecord(actionType,
                 new SourceFilePosition(
@@ -189,16 +189,16 @@ public class ActionRecorder {
      * @param nodeRecord the record of the action.
      */
     synchronized void recordNodeAction(
-            @NonNull XmlElement mergedElement,
-            @NonNull Actions.NodeRecord nodeRecord) {
+            @NotNull XmlElement mergedElement,
+            @NotNull Actions.NodeRecord nodeRecord) {
         Actions.DecisionTreeRecord nodeDecisionTree = getDecisionTreeRecord(mergedElement);
         nodeDecisionTree.addNodeRecord(nodeRecord);
         updateRecordsIfNodeKeyChanged(mergedElement);
     }
 
-    @NonNull
+    @NotNull
     private synchronized Actions.DecisionTreeRecord getDecisionTreeRecord(
-            @NonNull XmlElement xmlElement) {
+            @NotNull XmlElement xmlElement) {
         return mRecords.computeIfAbsent(
                 xmlElement.getOriginalId(), k -> new Actions.DecisionTreeRecord());
     }
@@ -212,8 +212,8 @@ public class ActionRecorder {
      *     decision.
      */
     synchronized void recordAttributeAction(
-            @NonNull XmlAttribute attribute,
-            @NonNull Actions.ActionType actionType,
+            @NotNull XmlAttribute attribute,
+            @NotNull Actions.ActionType actionType,
             @Nullable AttributeOperationType attributeOperationType) {
 
         recordAttributeAction(
@@ -230,9 +230,9 @@ public class ActionRecorder {
      *                               decision.
      */
     synchronized void recordAttributeAction(
-            @NonNull XmlAttribute attribute,
-            @NonNull SourcePosition attributePosition,
-            @NonNull Actions.ActionType actionType,
+            @NotNull XmlAttribute attribute,
+            @NotNull SourcePosition attributePosition,
+            @NotNull Actions.ActionType actionType,
             @Nullable AttributeOperationType attributeOperationType) {
 
         XmlElement originElement = attribute.getOwnerElement();
@@ -255,8 +255,8 @@ public class ActionRecorder {
      * @param attributeRecord the record of the action.
      */
     synchronized void recordAttributeAction(
-            @NonNull XmlAttribute attribute,
-            @NonNull Actions.AttributeRecord attributeRecord) {
+            @NotNull XmlAttribute attribute,
+            @NotNull Actions.AttributeRecord attributeRecord) {
 
         List<Actions.AttributeRecord> attributeRecords = getAttributeRecords(attribute);
         attributeRecords.add(attributeRecord);
@@ -270,8 +270,8 @@ public class ActionRecorder {
      * @param implicitAttributeOwner the element owning the implicit default value.
      */
     synchronized void recordImplicitRejection(
-            @NonNull XmlAttribute attribute,
-            @NonNull XmlElement implicitAttributeOwner) {
+            @NotNull XmlAttribute attribute,
+            @NotNull XmlElement implicitAttributeOwner) {
 
         List<Actions.AttributeRecord> attributeRecords = getAttributeRecords(attribute);
         Actions.AttributeRecord attributeRecord = new Actions.AttributeRecord(
@@ -293,7 +293,7 @@ public class ActionRecorder {
      * @param xmlElement the xmlElement whose calculated node key may have changed from its original
      *     node key.
      */
-    private synchronized void updateRecordsIfNodeKeyChanged(@NonNull XmlElement xmlElement) {
+    private synchronized void updateRecordsIfNodeKeyChanged(@NotNull XmlElement xmlElement) {
         NodeKey originalNodeKey = xmlElement.getOriginalId();
         // by now the original NodeKey should have been added for this element.
         Preconditions.checkState(
@@ -307,7 +307,7 @@ public class ActionRecorder {
      */
     @Nullable
     synchronized Actions.AttributeRecord getAttributeCreationRecord(
-            @NonNull XmlAttribute attribute) {
+            @NotNull XmlAttribute attribute) {
         for (Actions.AttributeRecord attributeRecord : getAttributeRecords(attribute)) {
             if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
                 return attributeRecord;
@@ -316,8 +316,8 @@ public class ActionRecorder {
         return null;
     }
 
-    @NonNull
-    private synchronized List<Actions.AttributeRecord> getAttributeRecords(@NonNull XmlAttribute attribute) {
+    @NotNull
+    private synchronized List<Actions.AttributeRecord> getAttributeRecords(@NotNull XmlAttribute attribute) {
         XmlElement originElement = attribute.getOwnerElement();
         NodeKey storageKey = originElement.getOriginalId();
         @Nullable Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
@@ -329,7 +329,7 @@ public class ActionRecorder {
         return attributeRecords;
     }
 
-    @NonNull
+    @NotNull
     synchronized Actions build() {
         return new Actions(ImmutableMap.copyOf(mRecords));
     }

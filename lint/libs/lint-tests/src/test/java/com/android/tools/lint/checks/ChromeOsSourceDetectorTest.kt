@@ -97,9 +97,9 @@ class ChromeOsSourceDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for src/test/pkg/MainActivity.java line 15: Set the orientation to SCREEN_ORIENTATION_UNSPECIFIED:
-                @@ -15 +15
-                -         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                +         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                @@ -15 +15 @@
+                -        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                +        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 """
       )
   }
@@ -135,9 +135,9 @@ class ChromeOsSourceDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/ActivityRule.kt line 11: Set the orientation to SCREEN_ORIENTATION_UNSPECIFIED:
-            @@ -11 +11
-            -                     activityRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            +                     activityRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            @@ -11 +11 @@
+            -                    activityRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            +                    activityRule.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             """
       )
   }

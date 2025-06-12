@@ -38,7 +38,7 @@ abstract class FilterShrinkerRulesTransform :
     TransformAction<FilterShrinkerRulesTransform.Parameters> {
     interface Parameters : GenericTransformParameters {
         @get:Input
-        val shrinker: Property<ShrinkerVersion>
+        val shrinkerVersion: Property<ShrinkerVersion>
     }
 
     @get:InputArtifact
@@ -46,19 +46,19 @@ abstract class FilterShrinkerRulesTransform :
     abstract val inputArtifact: Provider<FileSystemLocation>
 
     override fun transform(transformOutputs: TransformOutputs) {
-        //TODO(b/162813654) record transform execution span
         val input = inputArtifact.get().asFile
         if (input.isFile) {
             // if input is a regular file, it is simply always accepted, no need to filter
+            // it is typically proguard.txt coming from an AAR (or ASAR for privacy sandbox SDK)
             transformOutputs.file(input.absolutePath)
         } else if (input.isDirectory) {
             // this will handle inputs that look like this:
             // input/
             // ├── lib0/
-            // |   ├── proguard.txt (optional, coming from AAR)
+            // |   ├── proguard.txt (optional, legacy Proguard rules coming from an Android library subproject)
             // │   └── META-INF/
-            // |       ├── proguard/ (optional, coming from JAR)
-            // │       └── com.android.tools/ (optional, coming from JAR)
+            // |       ├── proguard/ (optional, legacy Proguard rules coming from a JAR)
+            // │       └── com.android.tools/ (optional, targeted shrink rules coming from a JAR or classes.jar of an AAR)
             // │           ├── r8[...][...]
             // │           └── proguard[...][...]
             // ├── lib1/
@@ -66,7 +66,7 @@ abstract class FilterShrinkerRulesTransform :
             // ...
 
             // loop through top-level directories and join the results into a list
-            input.listFiles { file -> file.isDirectory }.flatMap { libDir ->
+            input.listFiles { it.isDirectory }.flatMap { libDir ->
                 // if there is a com.android.tools directory, it takes precedence over legacy rules
                 val toolsDir = FileUtils.join(libDir, "META-INF", COM_ANDROID_TOOLS_FOLDER)
                 if (toolsDir.isDirectory) {
@@ -74,7 +74,7 @@ abstract class FilterShrinkerRulesTransform :
                     return@flatMap toolsDir.listFiles { file ->
                         file.isDirectory && configDirMatchesVersion(
                             file.name,
-                            parameters.shrinker.get()
+                            parameters.shrinkerVersion.get()
                         )
                     }.flatMap { shrinkerConfigDir ->
                         // ...then gather all regular files under the matching directories

@@ -24,7 +24,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.android.annotations.NonNull;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.testutils.MockLog;
 import com.android.utils.ILogger;
@@ -33,6 +32,7 @@ import java.io.IOException;
 import java.util.Optional;
 import javax.xml.parsers.ParserConfigurationException;
 import junit.framework.TestCase;
+import org.jetbrains.annotations.NotNull;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.xml.sax.SAXException;
@@ -53,7 +53,7 @@ public class PlaceholderHandlerTest extends TestCase {
 
     KeyBasedValueResolver<String> nullResolver = new KeyBasedValueResolver<String>() {
         @Override
-        public String getValue(@NonNull String key) {
+        public String getValue(@NotNull String key) {
             // not provided a placeholder value should generate an error.
             return null;
         }

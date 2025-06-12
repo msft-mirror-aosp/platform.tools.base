@@ -191,7 +191,7 @@ class JdwpProcessProfilerTest : AdbLibToolsTestBase() {
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         fakeDevice.startClient(10, 0, "a.b.c", false)
         val process = connectedDevice.jdwpProcessManager.getProcess(10)
         // Note: We don't currently need to collect process properties for the profiler API to

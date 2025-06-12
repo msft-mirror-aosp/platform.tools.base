@@ -52,8 +52,6 @@ import org.junit.Rule
 import org.junit.Test
 import java.net.InetSocketAddress
 import java.time.Duration
-import kotlin.collections.first
-import kotlin.use
 
 class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
 
@@ -143,7 +141,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             val fakeDevice = fakeAdbServer.addSampleDevice(apiLevel = 30)
             val clientState1 = fakeDevice.addSampleJdwpProcess(pid1)
             session1.installTestProcessInventoryServer()
-            val connectedDevice1 = waitForOnlineConnectedDevice(session1, fakeDevice.deviceId)
+            val connectedDevice1 = session1.waitForOnlineConnectedDevice(fakeDevice.deviceId)
             val defProps1Pid1 = fetchProcessPropertiesAsync(connectedDevice1, pid1)
             val pid2 = 20
             val clientState2 = fakeDevice.addSampleJdwpProcess(pid2)
@@ -153,8 +151,8 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             session1.closeAndJoin()
             session2.installTestProcessInventoryServer()
             session3.installTestProcessInventoryServer()
-            val connectedDevice2 = waitForOnlineConnectedDevice(session2, fakeDevice.deviceId)
-            val connectedDevice3 = waitForOnlineConnectedDevice(session3, fakeDevice.deviceId)
+            val connectedDevice2 = session2.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+            val connectedDevice3 = session3.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
             val defProps2Pid1 = fetchProcessPropertiesAsync(connectedDevice2, pid1)
             val defProps2Pid2 = fetchProcessPropertiesAsync(connectedDevice2, pid2)
@@ -233,7 +231,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
             val pid = 20
             val fakeDevice = fakeAdbServer.addSampleDevice(apiLevel = 36)
             val clientState = fakeDevice.addSampleJdwpProcess(pid)
-            val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+            val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
             // Act
             val props = fetchProcessPropertiesAsync(connectedDevice, pid).await()
@@ -260,7 +258,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
         val clientState = fakeDevice.addSampleJdwpProcess(pid)
 
         val connectedDevices = sessions.map {
-            waitForOnlineConnectedDevice(it, fakeDevice.deviceId)
+            it.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         }
 
         // Act

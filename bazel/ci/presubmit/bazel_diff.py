@@ -1,11 +1,22 @@
 """Module for running bazel-diff."""
 
 import logging
+import os
 import pathlib
+import subprocess
 import time
 from typing import Sequence
 
 from tools.base.bazel.ci import bazel
+
+
+def _run(cmd: Sequence[str], timeout: int = 300):
+  logging.info('Running command: %s', cmd)
+  return subprocess.run(
+      cmd,
+      check=True,
+      timeout=timeout,
+  )
 
 
 def generate_hash_file(
@@ -13,13 +24,12 @@ def generate_hash_file(
     external_repos: Sequence[str],
     output_path: pathlib.Path,
     deps_output_path: pathlib.Path | None = None,
+    modified_files_path: pathlib.Path | None = None,
 ):
   """Generates the hash file for the current build."""
   start = time.time()
   args = [
-      '//tools/base/bazel:bazel-diff',
-      '--',
-      '--verbose',
+      os.environ['BAZEL_DIFF_BINARY'],
       'generate-hashes',
       '--bazelPath',
       build_env.bazel_path,
@@ -30,11 +40,10 @@ def generate_hash_file(
   ]
   if deps_output_path:
     args.extend(['--depEdgesFile', deps_output_path])
+  if modified_files_path:
+    args.extend(['--modified-filepaths', str(modified_files_path)])
   args.append(str(output_path))
-  build_env.bazel_run(
-      *args,
-      timeout=300,
-  )
+  _run(args)
   end = time.time()
   logging.info('generate-hashes took %d seconds', end - start)
 
@@ -48,9 +57,8 @@ def get_impacted_targets(
 ) -> None:
   """Generates the list of impacted targets given base and current hash file paths."""
   start = time.time()
-  build_env.bazel_run(
-      '//tools/base/bazel:bazel-diff',
-      '--',
+  _run([
+      os.environ['BAZEL_DIFF_BINARY'],
       '--verbose',
       'get-impacted-targets',
       '--startingHashes',
@@ -61,7 +69,6 @@ def get_impacted_targets(
       str(dep_edges_path),
       '--output',
       str(output_path),
-      timeout=300,
-  )
+  ])
   end = time.time()
   logging.info('get-impacted-targets took %d seconds', end - start)

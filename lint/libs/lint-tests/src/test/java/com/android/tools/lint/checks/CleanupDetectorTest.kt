@@ -1476,10 +1476,10 @@ class CleanupDetectorTest : AbstractCheckTest() {
       .expect(expected)
       .expectFixDiffs(
         """
-                Fix for src/test/pkg/SharedPrefsTest8.java line 10: Replace commit() with apply():
-                @@ -11 +11
-                -         editor.commit();
-                +         editor.apply();
+                Fix for src/test/pkg/SharedPrefsTest8.java line 11: Replace commit() with apply():
+                @@ -11 +11 @@
+                -        editor.commit();
+                +        editor.apply();
                 """
       )
   }

@@ -109,11 +109,8 @@ open class AdbLibToolsTestBase {
     }
 }
 
-internal suspend fun waitForOnlineConnectedDevice(
-    session: AdbSession,
-    serialNumber: String
-): ConnectedDevice {
-    return session.connectedDevicesTracker.connectedDevices
+suspend fun AdbSession.waitForOnlineConnectedDevice(serialNumber: String): ConnectedDevice {
+    return connectedDevicesTracker.connectedDevices
         .mapNotNull { connectedDevices ->
             connectedDevices.firstOrNull { device ->
                 device.isOnline && device.serialNumber == serialNumber

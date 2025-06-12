@@ -60,13 +60,14 @@ class TileProviderDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                     Fix for AndroidManifest.xml line 8: Add BIND_TILE_PROVIDER permission:
-                    @@ -12 +12
+                    @@ -11,3 +11,5 @@
 
-                    -     <service android:name=".MyTileProvider" >
-                    +     <service
-                    +         android:name=".MyTileProvider"
-                    +         android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER" >
-                              <intent-filter>"""
+                    -    <service android:name=".MyTileProvider" >
+                    +    <service
+                    +        android:name=".MyTileProvider"
+                    +        android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER" >
+                             <intent-filter>
+         """
       )
   }
 
@@ -112,11 +113,12 @@ class TileProviderDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                     Fix for AndroidManifest.xml line 8: Change permission to BIND_TILE_PROVIDER:
-                    @@ -14 +14
-                              android:name=".MyTileProvider"
-                    -         android:permission="not.the.right.PERMISSION" >
-                    +         android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER" >
-                              <intent-filter>"""
+                    @@ -13,3 +13,3 @@
+                             android:name=".MyTileProvider"
+                    -        android:permission="not.the.right.PERMISSION" >
+                    +        android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER" >
+                             <intent-filter>
+        """
       )
   }
 

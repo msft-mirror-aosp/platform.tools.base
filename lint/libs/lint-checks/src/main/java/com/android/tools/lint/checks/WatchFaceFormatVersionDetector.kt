@@ -29,6 +29,8 @@ import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
+import com.android.tools.lint.detector.api.isManifestPlaceHolderExpression
+import com.android.tools.lint.detector.api.resolvePlaceHolders
 import com.android.tools.wear.wff.WFFVersion
 import com.android.utils.XmlUtils
 import com.android.xml.AndroidManifest.ATTRIBUTE_NAME
@@ -72,14 +74,20 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
     }
 
     // It's currently not possible to use a resource reference (e.g. `@string/version`) in the
-    // manifest to specify the WFF version. It has to be a literal string otherwise the watch face
-    // will not deploy on the device.
+    // manifest to specify the WFF version. It has to be a literal string or a placeholder,
+    // otherwise the watch face will not deploy on the device.
+    val wffVersion =
+      if (isManifestPlaceHolderExpression(wffVersionValueAttribute.value)) {
+        resolvePlaceHolders(context.project, wffVersionValueAttribute.value) ?: return
+      } else {
+        wffVersionValueAttribute.value
+      }
     val availableWffVersions = WFFVersion.entries.map { it.version }
-    if (wffVersionValueAttribute.value !in availableWffVersions) {
+    if (wffVersion !in availableWffVersions) {
       context.report(
         INVALID_VERSION_ISSUE,
         context.getLocation(wffVersionValueAttribute),
-        "The Watch Face Format is invalid",
+        "The Watch Face Format version is invalid",
       )
       return
     }
@@ -133,7 +141,7 @@ class WatchFaceFormatVersionDetector : WearDetector(), XmlScanner {
         briefDescription = "The Watch Face Format version is invalid",
         explanation =
           """
-               The Watch Face Format version must be a literal and cannot reference a resource.
+               The Watch Face Format version must be a literal or a placeholder and cannot reference a resource.
 
                The available Watch Face Format versions are: ${WFFVersion.entries.map { it.version }}
             """,

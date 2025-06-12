@@ -117,7 +117,14 @@ py_library(
 py_binary(
     name = "ci",
     srcs = ["ci.py"],
-    data = glob(["data/*"]),
+    data = glob(["data/*"]) + [
+        "//tools/base/bazel:bazel-diff",
+        "//tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector",
+    ],
+    env = {
+        "BAZEL_DIFF_BINARY": "$(location //tools/base/bazel:bazel-diff)",
+        "LOGS_COLLECTOR_BINARY": "$(location //tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector)",
+    },
     deps = [":ci_lib"],
 )
 

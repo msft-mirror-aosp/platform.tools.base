@@ -1159,11 +1159,9 @@ class GooglePlaySdkIndexTest {
 
   @Test
   fun `No violation type policy issue message`() {
-    assertThat(index.generatePolicyMessages("logj4", "logj4", "1.2.14"))
+    assertThat(index.generatePolicyMessage("logj4", "logj4", "1.2.14"))
       .isEqualTo(
-        listOf(
-          "logj4:logj4 version 1.2.14 has policy issues that will block publishing of your app to Play Console in the future"
-        )
+        "logj4:logj4 version 1.2.14 has policy issues that will block publishing of your app to Play Console in the future"
       )
   }
 
@@ -1352,12 +1350,10 @@ class GooglePlaySdkIndexTest {
   @Test
   fun `Policy with recommended versions first party`() {
     val expectedMessages =
-      listOf(
-        "android.arch.core:common version 1.1.1 has Permissions policy issues that will block publishing of your app to Play Console in the future.\n" +
-          "The library author recommends using versions:\n" +
-          "  - 1.1.3 or higher\n"
-      )
-    assertThat(index.generatePolicyMessages("android.arch.core", "common", "1.1.1"))
+      "android.arch.core:common version 1.1.1 has Permissions policy issues that will block publishing of your app to Play Console in the future.\n" +
+        "The library author recommends using versions:\n" +
+        "  - 1.1.3 or higher\n"
+    assertThat(index.generatePolicyMessage("android.arch.core", "common", "1.1.1"))
       .isEqualTo(expectedMessages)
   }
 
@@ -1660,7 +1656,7 @@ class GooglePlaySdkIndexTest {
         val artifact = library.libraryId.mavenId.artifactId
         for (version in library.versionsList) {
           if (index.isLibraryNonCompliant(group, artifact, version.versionString, null)) {
-            result += index.generatePolicyMessages(group, artifact, version.versionString).size
+            result += index.getPolicyLabels(version.versionLabels).size
           }
         }
       }
@@ -1738,19 +1734,19 @@ class GooglePlaySdkIndexTest {
     policyTypes: List<String>,
     recommendedVersions: String = "",
   ) {
+    val labels = policyTypes.sorted().joinToString(", ")
     val expectedBlockingMessages =
-      policyTypes.map { policyType ->
-        "**[Prevents app release in Google Play Console]** com.example.ads.third.party:example version $version has $policyType issues that will block publishing of your app to Play Console$recommendedVersions"
-      }
+      "**[Prevents app release in Google Play Console]** com.example.ads.third.party:example version $version has $labels issues that" +
+        " will block publishing of your app to Play Console$recommendedVersions"
     assertThat(
-        index.generateBlockingPolicyMessages("com.example.ads.third.party", "example", version)
+        index.generateBlockingPolicyMessage("com.example.ads.third.party", "example", version)
       )
       .isEqualTo(expectedBlockingMessages)
+
     val expectedNonBlockingMessages =
-      policyTypes.map { policyType ->
-        "com.example.ads.third.party:example version $version has $policyType issues that will block publishing of your app to Play Console in the future$recommendedVersions"
-      }
-    assertThat(index.generatePolicyMessages("com.example.ads.third.party", "example", version))
+      "com.example.ads.third.party:example version $version has $labels issues that will block publishing of your app to Play Console in" +
+        " the future$recommendedVersions"
+    assertThat(index.generatePolicyMessage("com.example.ads.third.party", "example", version))
       .isEqualTo(expectedNonBlockingMessages)
   }
 

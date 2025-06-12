@@ -239,13 +239,13 @@ class DiscouragedDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/com/pkg/Main.kt line 16: Replace with scheduleWithFixedDelay:
-        @@ -16 +16
-        -     executor.scheduleAtFixedRate({}, 10, 30, TimeUnit.SECONDS)
-        +     executor.scheduleWithFixedDelay({}, 10, 30, TimeUnit.SECONDS)
+        @@ -16 +16 @@
+        -    executor.scheduleAtFixedRate({}, 10, 30, TimeUnit.SECONDS)
+        +    executor.scheduleWithFixedDelay({}, 10, 30, TimeUnit.SECONDS)
         Fix for src/com/pkg/Main.kt line 17: Replace with schedule:
-        @@ -17 +17
-        -     timer.scheduleAtFixedRate(bar(), 10, 30)
-        +     timer.schedule(bar(), 10, 30)
+        @@ -17 +17 @@
+        -    timer.scheduleAtFixedRate(bar(), 10, 30)
+        +    timer.schedule(bar(), 10, 30)
         """
       )
   }

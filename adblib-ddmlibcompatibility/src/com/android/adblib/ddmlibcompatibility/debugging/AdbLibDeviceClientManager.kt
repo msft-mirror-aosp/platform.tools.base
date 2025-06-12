@@ -15,18 +15,20 @@
  */
 package com.android.adblib.ddmlibcompatibility.debugging
 
-import com.android.adblib.AdbLogger
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceSelector
 import com.android.adblib.adbLogger
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityProperties.DEVICE_TRACKER_WAIT_TIMEOUT
+import com.android.adblib.ddmlibcompatibility.DdmlibEventQueue
 import com.android.adblib.ddmlibcompatibility.debugging.ProcessTrackerHost.ClientUpdateKind
 import com.android.adblib.property
 import com.android.adblib.scope
-import com.android.adblib.serialNumber
 import com.android.adblib.tools.debugging.isTrackAppSupported
+import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.waitForDevice
+import com.android.adblib.waitUntilOnline
 import com.android.adblib.withPrefix
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.Client
@@ -36,12 +38,7 @@ import com.android.ddmlib.clientmanager.DeviceClientManager
 import com.android.ddmlib.clientmanager.DeviceClientManagerListener
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -58,7 +55,7 @@ internal class AdbLibDeviceClientManager(
 
     private val logger = adbLogger(clientManager.session).withPrefix("device '$deviceSelector': ")
 
-    internal val session: AdbSession
+    private val session: AdbSession
         get() = clientManager.session
 
     private val clientList = AtomicReference<List<Client>>(emptyList())
@@ -85,10 +82,6 @@ internal class AdbLibDeviceClientManager(
 
     fun startDeviceTracking() {
         session.scope.launch {
-            ddmlibEventQueue.runDispatcher()
-        }
-
-        session.scope.launch {
             // Wait for the device to show in the list of tracked devices
             val connectedDevice = withTimeoutOrNull(session.property(DEVICE_TRACKER_WAIT_TIMEOUT).toMillis()) {
                 waitForConnectedDevice(iDevice.serialNumber)
@@ -98,26 +91,29 @@ internal class AdbLibDeviceClientManager(
                 throw CancellationException(msg)
             }
 
-            waitForDeviceOnline(connectedDevice)
+            // Track processes in the device scope to ensure prompt cancellation when
+            // the device is disconnected
+            connectedDevice.scope.launch {
+                runCatching {
+                    launch {
+                        ddmlibEventQueue.runDispatcher()
+                    }
 
-            // Track processes running on the device
-            startProcessTracking(connectedDevice)
+                    connectedDevice.waitUntilOnline()
+
+                    // Track processes running on the device
+                    startProcessTracking(connectedDevice)
+                }.onFailure { throwable ->
+                    logger.logIOCompletionErrors(throwable)
+                }
+            }
         }
     }
 
     private suspend fun waitForConnectedDevice(serialNumber: String): ConnectedDevice {
         logger.debug { "Waiting for device '$serialNumber' to show up in device tracker" }
-        return session.connectedDevicesTracker.connectedDevices
-            .mapNotNull { connectedDevices ->
-                connectedDevices.firstOrNull { device -> device.serialNumber == serialNumber }
-            }.first().also {
-                logger.debug { "Found device '$serialNumber' ($it) in device tracker" }
-            }
-    }
-
-    private suspend fun waitForDeviceOnline(connectedDevice: ConnectedDevice) {
-        connectedDevice.deviceInfoFlow.first { deviceInfo ->
-            deviceInfo.deviceState == com.android.adblib.DeviceState.ONLINE
+        return session.connectedDevicesTracker.waitForDevice(serialNumber).also {
+            logger.debug { "Found device '$serialNumber' ($it) in device tracker" }
         }
     }
 
@@ -157,45 +153,6 @@ internal class AdbLibDeviceClientManager(
         return processed
     }
 
-    class DdmlibEventQueue(logger: AdbLogger, name: String) {
-
-        private val logger = logger.withPrefix("DDMLIB EventQueue '$name': ")
-
-        /**
-         * We limit to [QUEUE_CAPACITY] events in case a ddmlib handler is slowing down
-         * event dispatching. When the limit is reached, [posting][post] events is throttled.
-         */
-        private val queue = Channel<Event>(QUEUE_CAPACITY)
-
-        suspend fun post(scope: CoroutineScope, name: String, handler: () -> Unit) {
-            queue.send(Event(scope, name, handler))
-        }
-
-        suspend fun runDispatcher() {
-            queue.receiveAsFlow().collect { event ->
-                event.scope.launch {
-                    kotlin.runCatching {
-                        logger.verbose { "Invoking ddmlib listener '${event.name}'" }
-                        event.handler()
-                        logger.verbose { "Invoking ddmlib listener '${event.name}' - done" }
-                    }.onFailure { throwable ->
-                        logger.warn(
-                            throwable,
-                            "Invoking ddmlib listener '${event.name}' threw an exception: $throwable"
-                        )
-                    }
-                }.join()
-            }
-        }
-
-        private class Event(val scope: CoroutineScope, val name: String, val handler: () -> Unit)
-
-        companion object {
-
-            const val QUEUE_CAPACITY = 1_000
-        }
-    }
-
     inner class ProcessTrackerHostImpl(override val device: ConnectedDevice) : ProcessTrackerHost {
 
         override val iDevice: IDevice
@@ -232,3 +189,4 @@ internal class AdbLibDeviceClientManager(
         }
     }
 }
+

@@ -17,6 +17,7 @@ def _intellij_impl(mctx):
                 url = platform.url,
                 sha256 = platform.sha256,
                 top_level_dir = platform.top_level_dir,
+                export_plugins = platform.export_plugins,
             ))
     setup_platforms(platforms)
     return mctx.extension_metadata(
@@ -36,6 +37,7 @@ _remote_platform = tag_class(attrs = {
     "url": attr.string(mandatory = True),
     "sha256": attr.string(mandatory = True),
     "top_level_dir": attr.string(mandatory = True),
+    "export_plugins": attr.bool(mandatory = False, default = False),
 })
 
 intellij = module_extension(

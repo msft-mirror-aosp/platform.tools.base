@@ -24,14 +24,14 @@ import static com.android.manifmerger.MergingReport.Record.Severity.WARNING;
 import static com.android.manifmerger.XmlNode.NodeKey;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.xml.AndroidManifest;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
 
 import java.util.HashMap;
@@ -80,10 +80,10 @@ public class PreValidator {
      *     manifest.
      * @return one the {@link MergingReport.Result} value.
      */
-    @NonNull
+    @NotNull
     public static MergingReport.Result validate(
-            @NonNull MergingReport.Builder mergingReport,
-            @NonNull XmlDocument xmlDocument,
+            @NotNull MergingReport.Builder mergingReport,
+            @NotNull XmlDocument xmlDocument,
             boolean validateExtractNativeLibsFromSources,
             boolean validateExtractNativeLibsFromDependencies) {
 
@@ -98,9 +98,9 @@ public class PreValidator {
         return validate(mergingReport, xmlDocument.getRootNode());
     }
 
-    @NonNull
-    private static MergingReport.Result validate(@NonNull MergingReport.Builder mergingReport,
-            @NonNull XmlElement xmlElement) {
+    @NotNull
+    private static MergingReport.Result validate(@NotNull MergingReport.Builder mergingReport,
+            @NotNull XmlElement xmlElement) {
 
         validateAttributeInstructions(mergingReport, xmlElement);
 
@@ -148,8 +148,8 @@ public class PreValidator {
      * Validate an xml declaration with 'tools:node="removeAll" annotation. There should not
      * be any other attribute declaration on this element.
      */
-    private static void validateRemoveAllOperation(@NonNull MergingReport.Builder mergingReport,
-            @NonNull XmlElement element) {
+    private static void validateRemoveAllOperation(@NotNull MergingReport.Builder mergingReport,
+            @NotNull XmlElement element) {
 
         if (element.getAttributeCount() > 1) {
             var extraAttributeNames =
@@ -169,8 +169,8 @@ public class PreValidator {
         }
     }
 
-    private static void checkSelectorPresence(@NonNull MergingReport.Builder mergingReport,
-            @NonNull XmlElement element) {
+    private static void checkSelectorPresence(@NotNull MergingReport.Builder mergingReport,
+            @NotNull XmlElement element) {
 
         Attr selectorAttribute =
                 element.getAttributeNodeNS(SdkConstants.TOOLS_URI, Selector.SELECTOR_LOCAL_NAME);
@@ -185,8 +185,8 @@ public class PreValidator {
     }
 
     private static void validatePackageAttribute(
-            @NonNull MergingReport.Builder mergingReport,
-            @NonNull XmlElement manifest,
+            @NotNull MergingReport.Builder mergingReport,
+            @NotNull XmlElement manifest,
             XmlDocument.Type fileType) {
         Attr attributeNode = manifest.getAttributeNode(AndroidManifest.ATTRIBUTE_PACKAGE);
         // it's ok for other manifest types to have no package name, but it's an error for
@@ -205,7 +205,7 @@ public class PreValidator {
 
     /** Warn if android:extractNativeLibs is set in a MAIN or OVERLAY manifest. */
     private static void validateExtractNativeLibsFromSources(
-            @NonNull MergingReport.Builder mergingReport, @NonNull XmlDocument xmlDocument) {
+            @NotNull MergingReport.Builder mergingReport, @NotNull XmlDocument xmlDocument) {
         // Ignore manifests coming from dependencies.
         if (xmlDocument.getFileType() == XmlDocument.Type.LIBRARY) {
             return;
@@ -232,7 +232,7 @@ public class PreValidator {
 
     /** Warn if android:extractNativeLibs is set to true in LIBRARY manifest. */
     private static void validateExtractNativeLibsFromDependencies(
-            @NonNull MergingReport.Builder mergingReport, @NonNull XmlDocument xmlDocument) {
+            @NotNull MergingReport.Builder mergingReport, @NotNull XmlDocument xmlDocument) {
         // Ignore MAIN and OVERLAY manifests.
         if (xmlDocument.getFileType() != XmlDocument.Type.LIBRARY) {
             return;
@@ -287,7 +287,7 @@ public class PreValidator {
                 XmlNode.fromNSName(ANDROID_URI, "android", SdkConstants.ATTR_EXTRACT_NATIVE_LIBS));
     }
 
-    private static boolean isSubManifest(@NonNull XmlElement manifest) {
+    private static boolean isSubManifest(@NotNull XmlElement manifest) {
         String description = manifest.getSourceFile().getDescription();
         if (description == null) {
             return false;
@@ -305,8 +305,8 @@ public class PreValidator {
      * @return true if the element has a valid key or false it does not need one or it is invalid.
      */
     private static boolean checkKeyPresence(
-            @NonNull MergingReport.Builder mergingReport,
-            @NonNull XmlElement xmlElement) {
+            @NotNull MergingReport.Builder mergingReport,
+            @NotNull XmlElement xmlElement) {
         NodeKeyResolver nodeKeyResolver = xmlElement.getType().getNodeKeyResolver();
         ImmutableList<String> keyAttributesNames = nodeKeyResolver.getKeyAttributesNames();
         if (keyAttributesNames.isEmpty()) {
@@ -338,7 +338,7 @@ public class PreValidator {
      * @param xmlElement xml element to check its attributes.
      */
     private static void validateAndroidAttributes(
-            @NonNull MergingReport.Builder mergingReport, @NonNull XmlElement xmlElement) {
+            @NotNull MergingReport.Builder mergingReport, @NotNull XmlElement xmlElement) {
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
             AttributeModel model = xmlAttribute.getModel();
             if (model != null && model.getOnReadValidator() != null) {
@@ -355,7 +355,7 @@ public class PreValidator {
      * @param xmlElement xml element to check its attributes.
      */
     private static void validateAttributeInstructions(
-            @NonNull MergingReport.Builder mergingReport, @NonNull XmlElement xmlElement) {
+            @NotNull MergingReport.Builder mergingReport, @NotNull XmlElement xmlElement) {
 
         for (Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperationTypeEntry :
                 xmlElement.getAttributeOperations()) {

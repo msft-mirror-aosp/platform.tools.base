@@ -50,9 +50,9 @@ class ArrayInitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 5: Remove initialization:
-        @@ -5 +5
-        -     val startPoints = remember { IntArray(4) { 0 } }
-        +     val startPoints = remember { IntArray(4) }
+        @@ -5 +5 @@
+        -    val startPoints = remember { IntArray(4) { 0 } }
+        +    val startPoints = remember { IntArray(4) }
         """
       )
   }
@@ -125,25 +125,25 @@ class ArrayInitDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/test.kt line 7: Remove initialization:
-        @@ -7 +7
-        -     ByteArray(size) { 0 }  // WARN 1
-        +     ByteArray(size)  // WARN 1
+        @@ -7 +7 @@
+        -    ByteArray(size) { 0 }  // WARN 1
+        +    ByteArray(size)  // WARN 1
         Autofix for src/test/pkg/test.kt line 8: Remove initialization:
-        @@ -8 +8
-        -     kotlin.ByteArray(size) { 0 }  // WARN 2
-        +     kotlin.ByteArray(size)  // WARN 2
+        @@ -8 +8 @@
+        -    kotlin.ByteArray(size) { 0 }  // WARN 2
+        +    kotlin.ByteArray(size)  // WARN 2
         Autofix for src/test/pkg/test.kt line 9: Remove initialization:
-        @@ -9 +9
-        -     IntArray(size) { 0 }  // WARN 3
-        +     IntArray(size)  // WARN 3
+        @@ -9 +9 @@
+        -    IntArray(size) { 0 }  // WARN 3
+        +    IntArray(size)  // WARN 3
         Autofix for src/test/pkg/test.kt line 13: Remove initialization:
-        @@ -13 +13
-        -     val testActions = IntArray(3) { 0 } // WARN 4
-        +     val testActions = IntArray(3) // WARN 4
+        @@ -13 +13 @@
+        -    val testActions = IntArray(3) { 0 } // WARN 4
+        +    val testActions = IntArray(3) // WARN 4
         Autofix for src/test/pkg/test.kt line 17: Remove initialization:
-        @@ -17 +17
-        -     val scaleX = FloatArray(5) { 0f } // WARN 5
-        +     val scaleX = FloatArray(5) // WARN 5
+        @@ -17 +17 @@
+        -    val scaleX = FloatArray(5) { 0f } // WARN 5
+        +    val scaleX = FloatArray(5) // WARN 5
         """
       )
   }

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.android.annotations.NonNull;
 import com.android.testutils.MockLog;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
@@ -29,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
+import org.jetbrains.annotations.NotNull;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -63,7 +63,7 @@ public class MergerTest extends TestCase {
     private class MergerWithMock extends Merger {
 
         @Override
-        protected ManifestMerger2.Invoker createInvoker(@NonNull File mainManifestFile, @NonNull ILogger logger) {
+        protected ManifestMerger2.Invoker createInvoker(@NotNull File mainManifestFile, @NotNull ILogger logger) {
             try {
                 when(mMergingReport.getResult()).thenReturn(MergingReport.Result.ERROR);
                 when(mMergingReport.getLoggingRecords()).thenReturn(
@@ -76,7 +76,7 @@ public class MergerTest extends TestCase {
         }
 
         @Override
-        protected File checkPath(@NonNull String path) throws FileNotFoundException {
+        protected File checkPath(@NotNull String path) throws FileNotFoundException {
             return new File(path); // always exists...
         }
     }
@@ -85,7 +85,7 @@ public class MergerTest extends TestCase {
         final String[] args = { "--main", "src/main/AndroidManifest.xml" };
         new MergerWithMock() {
             @Override
-            protected ManifestMerger2.Invoker createInvoker(@NonNull File mainManifestFile, @NonNull ILogger logger) {
+            protected ManifestMerger2.Invoker createInvoker(@NotNull File mainManifestFile, @NotNull ILogger logger) {
                 assertEquals(args[1], mainManifestFile.getPath().replace(File.separatorChar, '/'));
                 return super.createInvoker(mainManifestFile, logger);
             }
@@ -96,7 +96,7 @@ public class MergerTest extends TestCase {
         final String[] args = { "--main", "src/main/AndroidManifest.xml" };
         new MergerWithMock() {
             @Override
-            protected ILogger createLogger(@NonNull StdLogger.Level level) {
+            protected ILogger createLogger(@NotNull StdLogger.Level level) {
                 assertEquals(StdLogger.Level.INFO, level);
                 return super.createLogger(level);
             }
@@ -108,7 +108,7 @@ public class MergerTest extends TestCase {
                                 "--log", "VERBOSE" };
         new MergerWithMock() {
             @Override
-            protected ILogger createLogger(@NonNull StdLogger.Level level) {
+            protected ILogger createLogger(@NotNull StdLogger.Level level) {
                 assertEquals(StdLogger.Level.VERBOSE, level);
                 return super.createLogger(level);
             }
@@ -186,7 +186,7 @@ public class MergerTest extends TestCase {
         final MockLog iLogger = new MockLog();
         Merger merger = new MergerWithMock() {
             @Override
-            protected ILogger createLogger(@NonNull StdLogger.Level level) {
+            protected ILogger createLogger(@NotNull StdLogger.Level level) {
                 return iLogger;
             }
         };
@@ -204,7 +204,7 @@ public class MergerTest extends TestCase {
         final MockLog iLogger = new MockLog();
         Merger merger = new MergerWithMock() {
             @Override
-            protected ILogger createLogger(@NonNull StdLogger.Level level) {
+            protected ILogger createLogger(@NotNull StdLogger.Level level) {
                 return iLogger;
             }
         };
@@ -232,7 +232,7 @@ public class MergerTest extends TestCase {
         final MockLog iLogger = new MockLog();
         Merger merger = new MergerWithMock() {
             @Override
-            protected ILogger createLogger(@NonNull StdLogger.Level level) {
+            protected ILogger createLogger(@NotNull StdLogger.Level level) {
                 return iLogger;
             }
         };
@@ -276,7 +276,7 @@ public class MergerTest extends TestCase {
                 new MergerWithMock() {
                     @Override
                     protected ManifestMerger2.Invoker createInvoker(
-                            @NonNull File mainManifestFile, @NonNull ILogger logger) {
+                            @NotNull File mainManifestFile, @NotNull ILogger logger) {
                         try {
                             XmlDocument xmlDocument = Mockito.mock(XmlDocument.class);
                             when(mMergingReport.getResult())
@@ -363,7 +363,7 @@ public class MergerTest extends TestCase {
                 new MergerWithMock() {
                     @Override
                     protected ManifestMerger2.Invoker createInvoker(
-                            @NonNull File mainManifestFile, @NonNull ILogger logger) {
+                            @NotNull File mainManifestFile, @NotNull ILogger logger) {
                         try {
                             XmlDocument xmlDocument = Mockito.mock(XmlDocument.class);
                             when(mMergingReport.getResult())

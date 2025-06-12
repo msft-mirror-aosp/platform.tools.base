@@ -158,6 +158,10 @@ open class HostTestTaskManager(
             // Add data binding tasks if enabled
             createDataBindingTasksIfNecessary(hostTestCreationConfig)
         } else if (testedVariant.componentType.isApk) {
+            if (globalConfig.unitTestOptions.isIncludeAndroidResources) {
+                // Add a task to process the manifest.
+                createProcessTestManifestTask(hostTestCreationConfig)
+            }
             // The IDs will have been inlined for an non-namespaced application
             // so just re-export the artifacts here.
             hostTestCreationConfig

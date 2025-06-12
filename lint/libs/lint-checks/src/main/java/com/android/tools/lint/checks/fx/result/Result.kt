@@ -228,6 +228,10 @@ sealed interface Type<out FX> {
         is Float -> Float
         is Double -> Double
         is String -> String
+        is UByte -> UByte
+        is UShort -> UShort
+        is UInt -> UInt
+        is ULong -> ULong
         else -> throw IllegalStateException("Unexpected value literal: $value")
       }
 
@@ -243,6 +247,10 @@ sealed interface Type<out FX> {
     val String = Application<Nothing>(ClassId.of<String>())
     val Unit = Application<Nothing>(ClassId.of<Unit>())
     val EmptyArray = Application<Nothing>(ClassId.Array, listOf(None))
+    val UByte = Application<Nothing>(ClassId.of<UByte>())
+    val UShort = Application<Nothing>(ClassId.of<UShort>())
+    val UInt = Application<Nothing>(ClassId.of<UInt>())
+    val ULong = Application<Nothing>(ClassId.of<ULong>())
   }
 }
 

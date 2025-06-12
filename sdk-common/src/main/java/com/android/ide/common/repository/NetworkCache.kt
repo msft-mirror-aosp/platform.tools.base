@@ -18,6 +18,7 @@ package com.android.ide.common.repository
 import com.android.SdkConstants
 import com.android.annotations.concurrency.Slow
 import com.android.io.CancellableFileIo
+import com.google.common.annotations.VisibleForTesting
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.net.URLEncoder
@@ -27,7 +28,6 @@ import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -113,9 +113,14 @@ abstract class NetworkCache(
         }
     }
 
-    private fun getRelativePath(relative: String, treatAsDirectory: Boolean = false) =
-        buildString(relative.length + 8) {
-            append(relative.split('/').joinToString("/") { encode(it) })
+    @VisibleForTesting
+    fun getRelativePath(relative: String, treatAsDirectory: Boolean = false): String {
+        val utf8EncodedPath = relative.split('/').joinToString("/") { encode(it) }
+        // UTF-8 encoding uses percent-encoded characters. We replace all the occurrences of percent
+        // characters with a character used commonly in file/folder names, which is a hyphen.
+        val sanitizedString = utf8EncodedPath.replace('%', '-')
+        return buildString(sanitizedString.length + 8) {
+            append(sanitizedString)
             if (treatAsDirectory && isNotEmpty() && !endsWith('/')) {
                 // If treat as directory is true, the cache location is the same as if
                 // the relative path had ended in a forward-slash.
@@ -127,6 +132,7 @@ abstract class NetworkCache(
                 append("(index)")
             }
         }
+    }
 
     /** Reads the given data relative to the base URL.
      *  Method is safe to execute in parallel.

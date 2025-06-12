@@ -195,25 +195,25 @@ class SamDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/test.kt line 21: Explicitly create MyInterface instance:
-        @@ -18 +18
-        -     val lambda = { println("hello") }
-        +     val lambda = MyInterface { println("hello") }
+        @@ -18 +18 @@
+        -    val lambda = { println("hello") }
+        +    val lambda = MyInterface { println("hello") }
         Fix for src/test/pkg/test.kt line 22: Explicitly create MyInterface instance:
-        @@ -18 +18
-        -     val lambda = { println("hello") }
-        +     val lambda = MyInterface { println("hello") }
+        @@ -18 +18 @@
+        -    val lambda = { println("hello") }
+        +    val lambda = MyInterface { println("hello") }
         Fix for src/test/pkg/test.kt line 23: Explicitly create MyInterface instance:
-        @@ -18 +18
-        -     val lambda = { println("hello") }
-        +     val lambda = MyInterface { println("hello") }
+        @@ -18 +18 @@
+        -    val lambda = { println("hello") }
+        +    val lambda = MyInterface { println("hello") }
         Fix for src/test/pkg/test.kt line 31: Explicitly create MyInterface instance:
-        @@ -29 +29
-        -     lambda2 = { println("hello") }
-        +     lambda2 = MyInterface { println("hello") }
+        @@ -29 +29 @@
+        -    lambda2 = { println("hello") }
+        +    lambda2 = MyInterface { println("hello") }
         Fix for src/test/pkg/test.kt line 35: Explicitly create MyInterface instance:
-        @@ -33 +33
-        -     val lambda3: () -> Unit = { println("hello") }
-        +     val lambda3: () -> Unit = MyInterface { println("hello") }
+        @@ -33 +33 @@
+        -    val lambda3: () -> Unit = { println("hello") }
+        +    val lambda3: () -> Unit = MyInterface { println("hello") }
         """
       )
   }
@@ -601,18 +601,18 @@ class SamDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/MyOwnHandler.kt line 43: Explicitly create Predicate<Boolean> instance:
-        @@ -39 +39
-        -     val lambda: (Boolean)->Boolean = {
-        +     val lambda = Predicate<Boolean> {
+        @@ -39 +39 @@
+        -    val lambda: (Boolean)->Boolean = {
+        +    val lambda = Predicate<Boolean> {
         Fix for src/test/pkg/MyOwnHandler.kt line 50: Explicitly create Predicate<Boolean> instance:
-        @@ -48 +48
-        -     val lambda: (Boolean)->Boolean
-        -       = { !it }
-        +     val lambda = Predicate<Boolean> { !it }
+        @@ -48,2 +48 @@
+        -    val lambda: (Boolean)->Boolean
+        -      = { !it }
+        +    val lambda = Predicate<Boolean> { !it }
         Fix for src/test/pkg/MyOwnHandler.kt line 56: Explicitly create Runnable instance:
-        @@ -55 +55
-        -     val runner = {}
-        +     val runner = Runnable {}
+        @@ -55 +55 @@
+        -    val runner = {}
+        +    val runner = Runnable {}
         """
       )
   }

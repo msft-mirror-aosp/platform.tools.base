@@ -542,17 +542,17 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter);
-        +         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter);
+        +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_EXPORTED:
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter);
-        +         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter);
+        +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
         """
       )
   }
@@ -589,17 +589,17 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter, 0);
-        +         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter, 0);
+        +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_EXPORTED:
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter, 0);
-        +         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter, 0);
+        +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
         """
       )
   }
@@ -665,53 +665,53 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS);
-        +         ContextCompat.registerReceiver(context, receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS | ContextCompat.RECEIVER_NOT_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS);
+        +        ContextCompat.registerReceiver(context, receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS | ContextCompat.RECEIVER_NOT_EXPORTED);
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_EXPORTED:
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS);
-        +         ContextCompat.registerReceiver(context, receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS | ContextCompat.RECEIVER_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS);
+        +        ContextCompat.registerReceiver(context, receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS | ContextCompat.RECEIVER_EXPORTED);
         Fix for src/test/pkg/TestClass1.java line 11: Add RECEIVER_NOT_EXPORTED (preferred):
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -11 +12
-        -         context.registerReceiver(receiver, filter, flags);
-        +         ContextCompat.registerReceiver(context, receiver, filter, flags | ContextCompat.RECEIVER_NOT_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -11 +12 @@
+        -        context.registerReceiver(receiver, filter, flags);
+        +        ContextCompat.registerReceiver(context, receiver, filter, flags | ContextCompat.RECEIVER_NOT_EXPORTED);
         Fix for src/test/pkg/TestClass1.java line 11: Add RECEIVER_EXPORTED:
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -11 +12
-        -         context.registerReceiver(receiver, filter, flags);
-        +         ContextCompat.registerReceiver(context, receiver, filter, flags | ContextCompat.RECEIVER_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -11 +12 @@
+        -        context.registerReceiver(receiver, filter, flags);
+        +        ContextCompat.registerReceiver(context, receiver, filter, flags | ContextCompat.RECEIVER_EXPORTED);
         Fix for src/test/pkg/TestClass2.kt line 9: Add RECEIVER_NOT_EXPORTED (preferred):
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS)
-        +         ContextCompat.registerReceiver(context, receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS or ContextCompat.RECEIVER_NOT_EXPORTED)
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS)
+        +        ContextCompat.registerReceiver(context, receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS or ContextCompat.RECEIVER_NOT_EXPORTED)
         Fix for src/test/pkg/TestClass2.kt line 9: Add RECEIVER_EXPORTED:
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS)
-        +         ContextCompat.registerReceiver(context, receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS or ContextCompat.RECEIVER_EXPORTED)
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS)
+        +        ContextCompat.registerReceiver(context, receiver, filter, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS or ContextCompat.RECEIVER_EXPORTED)
         Fix for src/test/pkg/TestClass2.kt line 11: Add RECEIVER_NOT_EXPORTED (preferred):
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat
-        @@ -11 +12
-        -         context.registerReceiver(receiver, filter, flags)
-        +         ContextCompat.registerReceiver(context, receiver, filter, flags or ContextCompat.RECEIVER_NOT_EXPORTED)
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat
+        @@ -11 +12 @@
+        -        context.registerReceiver(receiver, filter, flags)
+        +        ContextCompat.registerReceiver(context, receiver, filter, flags or ContextCompat.RECEIVER_NOT_EXPORTED)
         Fix for src/test/pkg/TestClass2.kt line 11: Add RECEIVER_EXPORTED:
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat
-        @@ -11 +12
-        -         context.registerReceiver(receiver, filter, flags)
-        +         ContextCompat.registerReceiver(context, receiver, filter, flags or ContextCompat.RECEIVER_EXPORTED)
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat
+        @@ -11 +12 @@
+        -        context.registerReceiver(receiver, filter, flags)
+        +        ContextCompat.registerReceiver(context, receiver, filter, flags or ContextCompat.RECEIVER_EXPORTED)
         """
       )
   }
@@ -773,17 +773,17 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter);
-        +         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter);
+        +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
         Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_EXPORTED:
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat;
-        @@ -9 +10
-        -         context.registerReceiver(receiver, filter);
-        +         ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat;
+        @@ -9 +10 @@
+        -        context.registerReceiver(receiver, filter);
+        +        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED);
         """
       )
   }
@@ -878,25 +878,25 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/TestClass1.kt line 8: Add RECEIVER_NOT_EXPORTED (preferred):
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat
-        @@ -8 +9
-        -         context.registerReceiver(receiver,
-        -                 IntentFilter(Intent.ACTION_BATTERY_CHANGED).apply {
-        +         ContextCompat.registerReceiver(context, receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED).apply {
-        @@ -11 +11
-        -                 })
-        +                 }, ContextCompat.RECEIVER_NOT_EXPORTED)
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat
+        @@ -8,2 +9 @@
+        -        context.registerReceiver(receiver,
+        -                IntentFilter(Intent.ACTION_BATTERY_CHANGED).apply {
+        +        ContextCompat.registerReceiver(context, receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED).apply {
+        @@ -11 +11 @@
+        -                })
+        +                }, ContextCompat.RECEIVER_NOT_EXPORTED)
         Fix for src/test/pkg/TestClass1.kt line 8: Add RECEIVER_EXPORTED:
-        @@ -6 +6
-        + import androidx.core.content.ContextCompat
-        @@ -8 +9
-        -         context.registerReceiver(receiver,
-        -                 IntentFilter(Intent.ACTION_BATTERY_CHANGED).apply {
-        +         ContextCompat.registerReceiver(context, receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED).apply {
-        @@ -11 +11
-        -                 })
-        +                 }, ContextCompat.RECEIVER_EXPORTED)
+        @@ -5,0 +6 @@
+        +import androidx.core.content.ContextCompat
+        @@ -8,2 +9 @@
+        -        context.registerReceiver(receiver,
+        -                IntentFilter(Intent.ACTION_BATTERY_CHANGED).apply {
+        +        ContextCompat.registerReceiver(context, receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED).apply {
+        @@ -11 +11 @@
+        -                })
+        +                }, ContextCompat.RECEIVER_EXPORTED)
         """
       )
   }
@@ -1141,29 +1141,29 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_NOT_EXPORTED (preferred):
-          @@ -7 +7
-          + import androidx.core.content.ContextCompat;
-          @@ -9 +10
-          -         context.registerReceiver(receiver, filter, "", scheduler);
-          +         ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_NOT_EXPORTED);
+          @@ -6,0 +7 @@
+          +import androidx.core.content.ContextCompat;
+          @@ -9 +10 @@
+          -        context.registerReceiver(receiver, filter, "", scheduler);
+          +        ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_NOT_EXPORTED);
           Fix for src/test/pkg/TestClass1.java line 9: Add RECEIVER_EXPORTED:
-          @@ -7 +7
-          + import androidx.core.content.ContextCompat;
-          @@ -9 +10
-          -         context.registerReceiver(receiver, filter, "", scheduler);
-          +         ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_EXPORTED);
+          @@ -6,0 +7 @@
+          +import androidx.core.content.ContextCompat;
+          @@ -9 +10 @@
+          -        context.registerReceiver(receiver, filter, "", scheduler);
+          +        ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_EXPORTED);
           Fix for src/test/pkg/kt/TestClass1.kt line 9: Add RECEIVER_NOT_EXPORTED (preferred):
-          @@ -7 +7
-          + import androidx.core.content.ContextCompat
-          @@ -9 +10
-          -         context.registerReceiver(receiver, filter, "", scheduler)
-          +         ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_NOT_EXPORTED)
+          @@ -6,0 +7 @@
+          +import androidx.core.content.ContextCompat
+          @@ -9 +10 @@
+          -        context.registerReceiver(receiver, filter, "", scheduler)
+          +        ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_NOT_EXPORTED)
           Fix for src/test/pkg/kt/TestClass1.kt line 9: Add RECEIVER_EXPORTED:
-          @@ -7 +7
-          + import androidx.core.content.ContextCompat
-          @@ -9 +10
-          -         context.registerReceiver(receiver, filter, "", scheduler)
-          +         ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_EXPORTED)
+          @@ -6,0 +7 @@
+          +import androidx.core.content.ContextCompat
+          @@ -9 +10 @@
+          -        context.registerReceiver(receiver, filter, "", scheduler)
+          +        ContextCompat.registerReceiver(context, receiver, filter, "", scheduler, ContextCompat.RECEIVER_EXPORTED)
         """
       )
   }

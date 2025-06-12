@@ -40,7 +40,7 @@ import com.android.SdkConstants.FN_RESOURCE_STATIC_LIBRARY
 import com.android.SdkConstants.FN_RESOURCE_TEXT
 import com.android.SdkConstants.LIBS_FOLDER
 import com.android.build.gradle.internal.caching.DisabledCachingReason
-import com.android.build.gradle.internal.dependency.ExtractProGuardRulesTransform.Companion.performTransform
+import com.android.build.gradle.internal.dependency.ExtractProGuardRulesTransform.Companion.writeTargetedShrinkRules
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.AAR_METADATA
@@ -72,6 +72,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.SHARED_JNI
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PATH_SHARED_LIBRARY_RESOURCES_APK
+import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter
 import com.android.build.gradle.internal.tasks.AarMetadataTask
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -149,7 +150,12 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
             AIDL -> outputIfExists(FD_AIDL)
             RENDERSCRIPT -> outputIfExists(FD_RENDERSCRIPT)
             UNFILTERED_PROGUARD_RULES -> {
-                if (!performTransform(extractedAarDir.resolve("$FD_JARS/$FN_CLASSES_JAR"), transformOutputs, false)) {
+                val targetedShrinkRules = TargetedShrinkRulesReadWriter.readFromJar(
+                    extractedAarDir.resolve("$FD_JARS/$FN_CLASSES_JAR"), isClassesJarInAar = true
+                )
+                if (targetedShrinkRules.r8Rules.isNotEmpty() || targetedShrinkRules.proguardRules.isNotEmpty()) {
+                    writeTargetedShrinkRules(targetedShrinkRules, transformOutputs, isClassesJarInAar = true)
+                } else {
                     outputIfExists(FN_PROGUARD_TXT)
                 }
             }

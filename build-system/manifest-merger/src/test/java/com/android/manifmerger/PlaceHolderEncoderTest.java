@@ -18,11 +18,11 @@ package com.android.manifmerger;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.android.annotations.NonNull;
 import com.android.utils.PositionXmlParser;
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Test;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -99,7 +99,7 @@ public class PlaceHolderEncoderTest {
         assertThat(authorities.getNodeValue()).isEqualTo(expectedValue);
     }
 
-    private static void visit(@NonNull Element element) {
+    private static void visit(@NotNull Element element) {
         PlaceholderEncoder.encode(element);
         for (Node childNode = element.getFirstChild();
                 childNode != null;

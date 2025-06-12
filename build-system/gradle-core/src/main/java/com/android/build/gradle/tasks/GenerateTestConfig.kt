@@ -19,7 +19,6 @@ package com.android.build.gradle.tasks
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.FilterConfiguration
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
-import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.dsl.TestOptions
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
@@ -162,14 +161,7 @@ abstract class GenerateTestConfig @Inject constructor(objectFactory: ObjectFacto
             resourceApk = creationConfig.artifacts.get(APK_FOR_LOCAL_TEST)
             mergedAssets = creationConfig.artifacts.get(SingleArtifact.ASSETS)
             targetConfiguration = creationConfig.paths.targetFilterConfigurations
-
-            mergedManifest = if (creationConfig.mainVariant.componentType.isApk) {
-                // for application
-                creationConfig.mainVariant.artifacts.get(PACKAGED_MANIFESTS)
-            } else {
-                creationConfig.artifacts.get(PACKAGED_MANIFESTS)
-            }
-
+            mergedManifest = creationConfig.artifacts.get(PACKAGED_MANIFESTS)
             packageNameOfFinalRClass = creationConfig.mainVariant.namespace
             buildDirectoryPath =
                     creationConfig.services.projectInfo.buildDirectory.get().asFile.toRelativeString(
@@ -193,13 +185,14 @@ abstract class GenerateTestConfig @Inject constructor(objectFactory: ObjectFacto
     class TestConfigProperties(
         val resourceApkFile: String,
         val mergedAssetsDir: String,
-        val mergedManifestDir: String,
+        val mergedManifestFile: String,
         val customPackage: String
     ) : Serializable
 
     companion object {
 
-        private const val TEST_CONFIG_FILE = "com/android/tools/test_config.properties"
+        @VisibleForTesting
+        const val TEST_CONFIG_FILE = "com/android/tools/test_config.properties"
         private const val ANDROID_RESOURCE_APK = "android_resource_apk"
         private const val ANDROID_MERGED_ASSETS = "android_merged_assets"
         private const val ANDROID_MERGED_MANIFEST = "android_merged_manifest"
@@ -213,7 +206,7 @@ abstract class GenerateTestConfig @Inject constructor(objectFactory: ObjectFacto
             val properties = Properties()
             properties.setProperty(ANDROID_RESOURCE_APK, config.resourceApkFile)
             properties.setProperty(ANDROID_MERGED_ASSETS, config.mergedAssetsDir)
-            properties.setProperty(ANDROID_MERGED_MANIFEST, config.mergedManifestDir)
+            properties.setProperty(ANDROID_MERGED_MANIFEST, config.mergedManifestFile)
             properties.setProperty(ANDROID_CUSTOM_PACKAGE, config.customPackage)
 
             // Write the properties to a String first so we can remove the line comment containing a

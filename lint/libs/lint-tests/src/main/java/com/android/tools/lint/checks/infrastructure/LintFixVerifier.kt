@@ -119,15 +119,19 @@ class LintFixVerifier(
    */
   fun checkFix(fix: String?, after: TestFile): LintFixVerifier {
     try {
-      checkFixes(fix, after, null, compatMode1 = false, compatMode2 = false)
+      checkFixes(fix, after, null, compatMode1 = false, compatMode2 = false, compatMode3 = false)
     } catch (throwable: Throwable) {
       try {
-        checkFixes(fix, after, null, compatMode1 = false, compatMode2 = true)
+        checkFixes(fix, after, null, compatMode1 = false, compatMode2 = false, compatMode3 = true)
       } catch (ignore: Throwable) {
         try {
-          checkFixes(fix, after, null, compatMode1 = true, compatMode2 = true)
+          checkFixes(fix, after, null, compatMode1 = false, compatMode2 = true, compatMode3 = true)
         } catch (ignore: Throwable) {
-          throw throwable // pass the original exception (with compatMode=false) output
+          try {
+            checkFixes(fix, after, null, compatMode1 = true, compatMode2 = true, compatMode3 = true)
+          } catch (_: Throwable) {
+            throw throwable // pass the original exception (with compatModes=false) output
+          }
         }
       }
     }
@@ -180,23 +184,46 @@ class LintFixVerifier(
       // Diff output format has changed; if we fail to verify, retry with
       // the older format (but if that doesn't fail, use the original
       // failure exceptions such that we present the new format.
-      expectFixDiffs(expected, compatMode1 = false, compatMode2 = false, transformer = transformer)
+      expectFixDiffs(
+        expected,
+        compatMode1 = false,
+        compatMode2 = false,
+        compatMode3 = false,
+        transformer = transformer,
+      )
     } catch (throwable: Throwable) {
       if (expected.isBlank()) {
         throw throwable
       }
       try {
-        expectFixDiffs(expected, compatMode1 = false, compatMode2 = true, transformer = transformer)
-      } catch (ignore: Throwable) {
+        expectFixDiffs(
+          expected,
+          compatMode1 = false,
+          compatMode2 = false,
+          compatMode3 = true,
+          transformer = transformer,
+        )
+      } catch (_: Throwable) {
         try {
           expectFixDiffs(
             expected,
-            compatMode1 = true,
+            compatMode1 = false,
             compatMode2 = true,
+            compatMode3 = true,
             transformer = transformer,
           )
-        } catch (ignore: Throwable) {
-          throw throwable
+        } catch (_: Throwable) {
+          try {
+            expectFixDiffs(
+              expected,
+              compatMode1 = true,
+              compatMode2 = true,
+              compatMode3 = true,
+              transformer = transformer,
+            )
+          } catch (_: Throwable) {
+            throw throwable
+          }
         }
       }
     }
@@ -208,7 +235,13 @@ class LintFixVerifier(
    * then verifies that the resulting modified files are syntactically valid.
    */
   fun verifyFixesValid(transformer: TestResultTransformer): LintFixVerifier {
-    expectFixDiffs(null, compatMode1 = false, compatMode2 = false, transformer = transformer)
+    expectFixDiffs(
+      null,
+      compatMode1 = false,
+      compatMode2 = false,
+      compatMode3 = false,
+      transformer = transformer,
+    )
     return this
   }
 
@@ -216,12 +249,13 @@ class LintFixVerifier(
     expected: String?,
     compatMode1: Boolean,
     compatMode2: Boolean,
+    compatMode3: Boolean,
     transformer: TestResultTransformer = TestResultTransformer { it },
   ): LintFixVerifier {
     val verifyOnly = verifyFixedFileSyntax && expected == null
     var expected = expected ?: ""
     val diff = StringBuilder(100)
-    checkFixes(null, null, diff, compatMode1, compatMode2)
+    checkFixes(null, null, diff, compatMode1, compatMode2, compatMode3)
     var actual =
       transformer.transform(diff.toString().replace("\r\n", "\n").trimIndent().replace('$', '＄'))
     val originalActual = actual
@@ -311,6 +345,7 @@ class LintFixVerifier(
     diffs: StringBuilder?,
     compatMode1: Boolean,
     compatMode2: Boolean,
+    compatMode3: Boolean,
   ) {
     assertTrue(expectedFile != null || diffs != null)
     val names: MutableList<String?> = Lists.newArrayList()
@@ -395,6 +430,7 @@ class LintFixVerifier(
             diffs,
             compatMode1,
             compatMode2,
+            compatMode3,
           )
         }
 
@@ -497,6 +533,7 @@ class LintFixVerifier(
     diffs: StringBuilder,
     compatMode1: Boolean,
     compatMode2: Boolean,
+    compatMode3: Boolean,
   ) {
     var first = true
 
@@ -520,7 +557,7 @@ class LintFixVerifier(
     for (file in sortedFiles) {
       val after = edited[file]!!
       val before = initial[file]!!
-      val diff = getDiff(before, after, diffWindow, compatMode1, compatMode2)
+      val diff = getDiff(before, after, diffWindow, compatMode1, compatMode2, compatMode3)
       if (diff.isNotEmpty()) {
         val targetPath = file.replace(File.separatorChar, '/')
         if (first) {

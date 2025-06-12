@@ -322,33 +322,33 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for gradle/libs.versions.toml line 8: Replace with 8.0.2:
-        @@ -8 +8
-        - gradlePlugins-agp = "8.0.0"
-        + gradlePlugins-agp = "8.0.2"
+        @@ -8 +8 @@
+        -gradlePlugins-agp = "8.0.0"
+        +gradlePlugins-agp = "8.0.2"
         Autofix for gradle/libs.versions.toml line 9: Replace with 8.1.0-rc01:
-        @@ -9 +9
-        - gradlePlugins-agp-alpha = "8.1.0-alpha01"
-        + gradlePlugins-agp-alpha = "8.1.0-rc01"
+        @@ -9 +9 @@
+        -gradlePlugins-agp-alpha = "8.1.0-alpha01"
+        +gradlePlugins-agp-alpha = "8.1.0-rc01"
         Fix for gradle/libs.versions.toml line 3: Change to 25.3.1:
-        @@ -3 +3
-        - appCompatVersion="13.0.0"
-        + appCompatVersion="25.3.1"
+        @@ -3 +3 @@
+        -appCompatVersion="13.0.0"
+        +appCompatVersion="25.3.1"
         Fix for gradle/libs.versions.toml line 4: Change to 1.3.0:
-        @@ -4 +4
-        - wearableVersion=" 1.2.0 "
-        + wearableVersion=" 1.3.0 "
+        @@ -4 +4 @@
+        -wearableVersion=" 1.2.0 "
+        +wearableVersion=" 1.3.0 "
         Fix for gradle/libs.versions.toml line 11: Change to 2.9.7:
-        @@ -11 +11
-        - gradlePlugins-crashlytics = "2.9.2"
-        + gradlePlugins-crashlytics = "2.9.7"
+        @@ -11 +11 @@
+        -gradlePlugins-crashlytics = "2.9.2"
+        +gradlePlugins-crashlytics = "2.9.7"
         Fix for gradle/libs.versions.toml line 2: Change to 30.1-android:
-        @@ -2 +2
-        - guavaVersion = "11.0.2"
-        + guavaVersion = "30.1-android"
+        @@ -2 +2 @@
+        -guavaVersion = "11.0.2"
+        +guavaVersion = "30.1-android"
         Fix for gradle/libs.versions.toml line 12: Change to 1.20.0:
-        @@ -12 +12
-        - gradlePlugins-dependency-analysis = "1.0.0"
-        + gradlePlugins-dependency-analysis = "1.20.0"
+        @@ -12 +12 @@
+        -gradlePlugins-dependency-analysis = "1.0.0"
+        +gradlePlugins-dependency-analysis = "1.20.0"
         """
       )
   }
@@ -423,13 +423,13 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for gradle/libs.versions.toml line 2: Change to 2.9.9:
-                @@ -2 +2
-                - jodaVersion = "2.1"
-                + jodaVersion = "2.9.9"
+                @@ -2 +2 @@
+                -jodaVersion = "2.1"
+                +jodaVersion = "2.9.9"
                 Fix for gradle/libs.versions.toml line 3: Change to 1.2.5:
-                @@ -3 +3
-                - dagger="1.2.0"
-                + dagger="1.2.5"
+                @@ -3 +3 @@
+                -dagger="1.2.0"
+                +dagger="1.2.5"
                 """
       )
   }
@@ -477,11 +477,11 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 3: Replace with existing version catalog reference `androidx-appCompat`:
-                @@ -3 +3
-                      implementation(libs.androidx.appCompat) // OK
-                -     implementation 'androidx.appcompat:appcompat:1.5.1'
-                +     implementation libs.androidx.appCompat
-                  }
+                @@ -2,3 +2,3 @@
+                     implementation(libs.androidx.appCompat) // OK
+                -    implementation 'androidx.appcompat:appcompat:1.5.1'
+                +    implementation libs.androidx.appCompat
+                 }
                 """
       )
   }
@@ -618,11 +618,11 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle.kts line 3: Replace with existing version catalog reference `androidx-appCompat`:
-                @@ -3 +3
-                      implementation(libs.androidx.appCompat) // OK
-                -     implementation("androidx.appcompat:appcompat:1.5.1")
-                +     implementation(libs.androidx.appCompat)
-                  }
+                @@ -2,3 +2,3 @@
+                     implementation(libs.androidx.appCompat) // OK
+                -    implementation("androidx.appcompat:appcompat:1.5.1")
+                +    implementation(libs.androidx.appCompat)
+                 }
                 """
       )
   }
@@ -669,20 +669,20 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 2: Replace with new library catalog declaration for androidx-fragment:
-                @@ -2 +2
-                  dependencies {
-                -     implementation 'androidx.fragment:fragment:1.5.1'
-                +     implementation libs.androidx.fragment
-                  }
+                @@ -1,3 +1,3 @@
+                 dependencies {
+                -    implementation 'androidx.fragment:fragment:1.5.1'
+                +    implementation libs.androidx.fragment
+                 }
                 gradle/libs.versions.toml:
-                @@ -4 +4
-                  androidxTest = "1.5.0"
-                + fragment = "1.5.1"
+                @@ -3,2 +3,3 @@
+                 androidxTest = "1.5.0"
+                +fragment = "1.5.1"
 
-                @@ -7 +8
-                  androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
-                + androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
-                  androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                @@ -6,2 +7,3 @@
+                 androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                +androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
+                 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
                 """
       )
   }
@@ -742,47 +742,47 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for build.gradle.kts line 3: Replace with new library catalog declaration for lintApi:
-        @@ -3 +3
-          dependencies {
-        -   implementation("com.android.tools.lint:lint-api:＄myVer")
-        +   implementation(libs.lintApi)
-            implementation("com.android.tools.lint:lint-checks:＄myVer")
+        @@ -2,3 +2,3 @@
+         dependencies {
+        -  implementation("com.android.tools.lint:lint-api:＄myVer")
+        +  implementation(libs.lintApi)
+           implementation("com.android.tools.lint:lint-checks:＄myVer")
         gradle/libs.versions.toml:
-        @@ -3 +3
-          kotlin = "1.7.20"
-        + myVer = "31.1.0-alpha04"
+        @@ -2,2 +2,3 @@
+         kotlin = "1.7.20"
+        +myVer = "31.1.0-alpha04"
 
-        @@ -8 +9
-          kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-        + lintApi = { module = "com.android.tools.lint:lint-api", version.ref = "myVer" }
+        @@ -7,2 +8,3 @@
+         kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+        +lintApi = { module = "com.android.tools.lint:lint-api", version.ref = "myVer" }
         Autofix for build.gradle.kts line 4: Replace with new library catalog declaration for lintChecks:
-        @@ -4 +4
-            implementation("com.android.tools.lint:lint-api:＄myVer")
-        -   implementation("com.android.tools.lint:lint-checks:＄myVer")
-        +   implementation(libs.lintChecks)
-            testImplementation("com.google.truth:truth:1.1.3")
+        @@ -3,3 +3,3 @@
+           implementation("com.android.tools.lint:lint-api:＄myVer")
+        -  implementation("com.android.tools.lint:lint-checks:＄myVer")
+        +  implementation(libs.lintChecks)
+           testImplementation("com.google.truth:truth:1.1.3")
         gradle/libs.versions.toml:
-        @@ -3 +3
-          kotlin = "1.7.20"
-        + myVer = "31.1.0-alpha04"
+        @@ -2,2 +2,3 @@
+         kotlin = "1.7.20"
+        +myVer = "31.1.0-alpha04"
 
-        @@ -8 +9
-          kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-        + lintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "myVer" }
+        @@ -7,2 +8,3 @@
+         kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+        +lintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "myVer" }
         Autofix for build.gradle.kts line 5: Replace with new library catalog declaration for truth:
-        @@ -5 +5
-            implementation("com.android.tools.lint:lint-checks:＄myVer")
-        -   testImplementation("com.google.truth:truth:1.1.3")
-        +   testImplementation(libs.truth)
-            testImplementation(libs.kotlinTest)
+        @@ -4,3 +4,3 @@
+           implementation("com.android.tools.lint:lint-checks:＄myVer")
+        -  testImplementation("com.google.truth:truth:1.1.3")
+        +  testImplementation(libs.truth)
+           testImplementation(libs.kotlinTest)
         gradle/libs.versions.toml:
-        @@ -3 +3
-          kotlin = "1.7.20"
-        + truth = "1.1.3"
+        @@ -2,2 +2,3 @@
+         kotlin = "1.7.20"
+        +truth = "1.1.3"
 
-        @@ -8 +9
-          kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-        + truth = { module = "com.google.truth:truth", version.ref = "truth" }
+        @@ -7,2 +8,3 @@
+         kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+        +truth = { module = "com.google.truth:truth", version.ref = "truth" }
         """
       )
   }
@@ -829,15 +829,17 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for build.gradle.kts line 3: Replace with new library catalog declaration for lintChecks:
-        @@ -3 +3
-          dependencies {
-        -   implementation("com.android.tools.lint:lint-checks:＄{lintVersion}")
-        +   implementation(libs.lintChecks)
-          }
+        @@ -2,3 +2,3 @@
+         dependencies {
+        -  implementation("com.android.tools.lint:lint-checks:＄{lintVersion}")
+        +  implementation(libs.lintChecks)
+         }
         gradle/libs.versions.toml:
-        @@ -7 +7
-          kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
-        + lintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintVersion" }
+        @@ -5,2 +5,3 @@
+         [libraries]
+        -kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        +kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        +lintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintVersion" }
         """
       )
   }
@@ -888,25 +890,29 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for build.gradle line 3: Replace with new library catalog declaration for lintChecks:
-        @@ -3 +3
-          dependencies {
-        -   implementation("com.android.tools.lint:lint-checks:＄lintVersion")
-        +   implementation(libs.lintChecks)
-            implementation("com.android.tools.lint:lint-api:＄{lintVersion}")
+        @@ -2,3 +2,3 @@
+         dependencies {
+        -  implementation("com.android.tools.lint:lint-checks:＄lintVersion")
+        +  implementation(libs.lintChecks)
+           implementation("com.android.tools.lint:lint-api:＄{lintVersion}")
         gradle/libs.versions.toml:
-        @@ -7 +7
-          kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
-        + lintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintVersion" }
+        @@ -5,2 +5,3 @@
+         [libraries]
+        -kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        +kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        +lintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintVersion" }
         Autofix for build.gradle line 4: Replace with new library catalog declaration for lintApi:
-        @@ -4 +4
-            implementation("com.android.tools.lint:lint-checks:＄lintVersion")
-        -   implementation("com.android.tools.lint:lint-api:＄{lintVersion}")
-        +   implementation(libs.lintApi)
-          }
+        @@ -3,3 +3,3 @@
+           implementation("com.android.tools.lint:lint-checks:＄lintVersion")
+        -  implementation("com.android.tools.lint:lint-api:＄{lintVersion}")
+        +  implementation(libs.lintApi)
+         }
         gradle/libs.versions.toml:
-        @@ -7 +7
-          kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
-        + lintApi = { module = "com.android.tools.lint:lint-api", version.ref = "lintVersion" }
+        @@ -5,2 +5,3 @@
+         [libraries]
+        -kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        +kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        +lintApi = { module = "com.android.tools.lint:lint-api", version.ref = "lintVersion" }
         """
       )
   }
@@ -954,36 +960,38 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle.kts line 3: Replace with new library catalog declaration, reusing version variable lintVersion (version=30.0.0):
-        @@ -3 +3
-          dependencies {
-        -   implementation("com.android.tools.lint:lint-checks:＄lintVersion")
-        +   implementation(libs.lintChecks)
-          }
+        @@ -2,3 +2,3 @@
+         dependencies {
+        -  implementation("com.android.tools.lint:lint-checks:＄lintVersion")
+        +  implementation(libs.lintChecks)
+         }
         gradle/libs.versions.toml:
-        @@ -7 +7
-          kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
-        + lintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintVersion" }
+        @@ -5,2 +5,3 @@
+         [libraries]
+        -kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        +kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        +lintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintVersion" }
         Fix for build.gradle.kts line 3: Change lintVersion to 31.1.0-alpha04:
         gradle/libs.versions.toml:
-        @@ -3 +3
-          kotlin = "1.7.20"
-        - lintVersion = "30.0.0"
-        + lintVersion = "31.1.0-alpha04"
+        @@ -2,3 +2,3 @@
+         kotlin = "1.7.20"
+        -lintVersion = "30.0.0"
+        +lintVersion = "31.1.0-alpha04"
         Autofix for build.gradle.kts line 3: Replace with new library catalog declaration for androidLintChecks:
-        @@ -3 +3
-          dependencies {
-        -   implementation("com.android.tools.lint:lint-checks:＄lintVersion")
-        +   implementation(libs.androidLintChecks)
-          }
+        @@ -2,3 +2,3 @@
+         dependencies {
+        -  implementation("com.android.tools.lint:lint-checks:＄lintVersion")
+        +  implementation(libs.androidLintChecks)
+         }
         gradle/libs.versions.toml:
-        @@ -3 +3
-          kotlin = "1.7.20"
-        + lintChecks = "31.1.0-alpha04"
-          lintVersion = "30.0.0"
-        @@ -6 +7
-          [libraries]
-        + androidLintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintChecks" }
-          kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        @@ -2,2 +2,3 @@
+         kotlin = "1.7.20"
+        +lintChecks = "31.1.0-alpha04"
+         lintVersion = "30.0.0"
+        @@ -5,2 +6,3 @@
+         [libraries]
+        +androidLintChecks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintChecks" }
+         kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
         """
       )
   }
@@ -1029,30 +1037,32 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for build.gradle.kts line 2: Replace with new library catalog declaration, reusing version variable lintVersion:
-        @@ -2 +2
-          dependencies {
-        -   implementation("com.android.tools.lint:lint-checks:31.1.0-alpha04")
-        +   implementation(libs.lint.checks)
-          }
+        @@ -1,3 +1,3 @@
+         dependencies {
+        -  implementation("com.android.tools.lint:lint-checks:31.1.0-alpha04")
+        +  implementation(libs.lint.checks)
+         }
         gradle/libs.versions.toml:
-        @@ -8 +8
-          lint-api = { module = "com.android.tools.lint:lint-api", version.ref = "lintVersion" }
-        + lint-checks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintVersion" }
+        @@ -6,2 +6,3 @@
+         kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        -lint-api = { module = "com.android.tools.lint:lint-api", version.ref = "lintVersion" }
+        +lint-api = { module = "com.android.tools.lint:lint-api", version.ref = "lintVersion" }
+        +lint-checks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintVersion" }
         Autofix for build.gradle.kts line 2: Replace with new library catalog declaration for android-lint-checks:
-        @@ -2 +2
-          dependencies {
-        -   implementation("com.android.tools.lint:lint-checks:31.1.0-alpha04")
-        +   implementation(libs.android.lint.checks)
-          }
+        @@ -1,3 +1,3 @@
+         dependencies {
+        -  implementation("com.android.tools.lint:lint-checks:31.1.0-alpha04")
+        +  implementation(libs.android.lint.checks)
+         }
         gradle/libs.versions.toml:
-        @@ -3 +3
-          kotlin = "1.7.20"
-        + lintChecks = "31.1.0-alpha04"
-          lintVersion = "31.1.0-alpha04"
-        @@ -6 +7
-          [libraries]
-        + android-lint-checks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintChecks" }
-          kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+        @@ -2,2 +2,3 @@
+         kotlin = "1.7.20"
+        +lintChecks = "31.1.0-alpha04"
+         lintVersion = "31.1.0-alpha04"
+        @@ -5,2 +6,3 @@
+         [libraries]
+        +android-lint-checks = { module = "com.android.tools.lint:lint-checks", version.ref = "lintChecks" }
+         kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
         """
       )
   }
@@ -1106,21 +1116,21 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle.kts line 2: Replace with new library catalog declaration for androidx-fragment:
-                @@ -2 +2
-                  dependencies {
-                -     implementation("androidx.fragment:fragment:1.5.1")
-                +     implementation(libs.androidx.fragment)
-                  }
+                @@ -1,3 +1,3 @@
+                 dependencies {
+                -    implementation("androidx.fragment:fragment:1.5.1")
+                +    implementation(libs.androidx.fragment)
+                 }
                 gradle/libs.versions.toml:
-                @@ -4 +4
-                  androidxTestVersion="1.5.0"
-                + fragmentVersion="1.5.1"
+                @@ -3,2 +3,3 @@
+                 androidxTestVersion="1.5.0"
+                +fragmentVersion="1.5.1"
 
-                @@ -7 +8
-                  androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompatVersion" }
-                + androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragmentVersion" }
-                  androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestVersion" }
-                  """
+                @@ -6,2 +7,3 @@
+                 androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompatVersion" }
+                +androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragmentVersion" }
+                 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestVersion" }
+                """
       )
   }
 
@@ -1169,20 +1179,20 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 2: Replace with new library catalog declaration for androidx-fragment:
-                @@ -2 +2
-                  dependencies {
-                -     implementation 'androidx.fragment:fragment:1.5.1'
-                +     implementation libs.androidx.fragment
-                  }
+                @@ -1,3 +1,3 @@
+                 dependencies {
+                -    implementation 'androidx.fragment:fragment:1.5.1'
+                +    implementation libs.androidx.fragment
+                 }
                 gradle/libs.versions.toml:
-                @@ -7 +7
-                  flamingo="5"
-                + fragment = "1.5.1"
-                  giraffe="6"
-                @@ -11 +12
-                  androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
-                + androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
-                  androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                @@ -6,2 +6,3 @@
+                 flamingo="5"
+                +fragment = "1.5.1"
+                 giraffe="6"
+                @@ -10,2 +11,3 @@
+                 androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                +androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
+                 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
                 """
       )
   }
@@ -1237,20 +1247,20 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 6: Replace with new library catalog declaration for androidx-fragment:
-                @@ -6 +6
-                  dependencies {
-                -     implementation "androidx.fragment:fragment:＄{fragmentVersion}"
-                +     implementation libs.androidx.fragment
-                  }
+                @@ -5,3 +5,3 @@
+                 dependencies {
+                -    implementation "androidx.fragment:fragment:＄{fragmentVersion}"
+                +    implementation libs.androidx.fragment
+                 }
                 gradle/libs.versions.toml:
-                @@ -7 +7
-                  flamingo="5"
-                + fragmentVersion = "1.5.1"
-                  giraffe="6"
-                @@ -11 +12
-                  androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
-                + androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragmentVersion" }
-                  androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                @@ -6,2 +6,3 @@
+                 flamingo="5"
+                +fragmentVersion = "1.5.1"
+                 giraffe="6"
+                @@ -10,2 +11,3 @@
+                 androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                +androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragmentVersion" }
+                 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
                 """
       )
   }
@@ -1293,18 +1303,18 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 3: Replace with new library catalog declaration for support-v4:
-                @@ -3 +3
-                  dependencies {
-                -     implementation group: 'com.android.support', name: 'support-v4', version: '19.0'
-                +     implementation libs.support.v4
-                  }
+                @@ -2,3 +2,3 @@
+                 dependencies {
+                -    implementation group: 'com.android.support', name: 'support-v4', version: '19.0'
+                +    implementation libs.support.v4
+                 }
                 gradle/libs.versions.toml:
-                @@ -2 +2
-                  [versions]
-                + supportV4 = "19.0"
-                  [libraries]
-                + support-v4 = { module = "com.android.support:support-v4", version.ref = "supportV4" }
-                  [bundles]
+                @@ -1,3 +1,5 @@
+                 [versions]
+                +supportV4 = "19.0"
+                 [libraries]
+                +support-v4 = { module = "com.android.support:support-v4", version.ref = "supportV4" }
+                 [bundles]
                 """
       )
   }
@@ -1349,18 +1359,18 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 2: Replace with new library catalog declaration for androidx-fragment:
-                @@ -2 +2
-                  dependencies {
-                -     implementation 'androidx.fragment:fragment:1.5.1'
-                +     implementation libs.androidx.fragment
-                  }
+                @@ -1,3 +1,3 @@
+                 dependencies {
+                -    implementation 'androidx.fragment:fragment:1.5.1'
+                +    implementation libs.androidx.fragment
+                 }
                 gradle/libs.versions.toml:
-                @@ -2 +2
-                  [versions]
-                + fragment = "1.5.1"
+                @@ -1,4 +1,6 @@
+                 [versions]
+                +fragment = "1.5.1"
 
-                  [libraries]
-                + androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
+                 [libraries]
+                +androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
                 """
       )
   }
@@ -1419,26 +1429,26 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 3: Replace with new library catalog declaration for androidx-appcompat-v152:
-                @@ -3 +3
-                      // higher version: fix should replace with version catalog *and* update version variable
-                -     implementation 'androidx.appcompat:appcompat:1.5.2'
-                +     implementation libs.androidx.appcompat.v152
-                  }
+                @@ -2,3 +2,3 @@
+                     // higher version: fix should replace with version catalog *and* update version variable
+                -    implementation 'androidx.appcompat:appcompat:1.5.2'
+                +    implementation libs.androidx.appcompat.v152
+                 }
                 gradle/libs.versions.toml:
-                @@ -5 +5
-                  androidxTest = "1.5.0"
-                + appcompatVersion = "1.5.2"
+                @@ -4,2 +4,3 @@
+                 androidxTest = "1.5.0"
+                +appcompatVersion = "1.5.2"
 
-                @@ -8 +9
-                  androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
-                + androidx-appcompat-v152 = { module = "androidx.appcompat:appcompat", version.ref = "appcompatVersion" }
-                  androidx-appCompat149 = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                @@ -7,2 +8,3 @@
+                 androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                +androidx-appcompat-v152 = { module = "androidx.appcompat:appcompat", version.ref = "appcompatVersion" }
+                 androidx-appCompat149 = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
                 Fix for build.gradle line 3: Replace with existing version catalog reference `androidx-appCompat` (version 1.5.1):
-                @@ -3 +3
-                      // higher version: fix should replace with version catalog *and* update version variable
-                -     implementation 'androidx.appcompat:appcompat:1.5.2'
-                +     implementation libs.androidx.appCompat
-                  }
+                @@ -2,3 +2,3 @@
+                     // higher version: fix should replace with version catalog *and* update version variable
+                -    implementation 'androidx.appcompat:appcompat:1.5.2'
+                +    implementation libs.androidx.appCompat
+                 }
                 """
       )
   }
@@ -1478,15 +1488,17 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 2: Replace with new library catalog declaration for androidx-appcompat:
-                @@ -2 +2
-                  dependencies {
-                -     implementation 'androidx.appcompat:appcompat:1.5.1'
-                +     implementation libs.androidx.appcompat
-                  }
+                @@ -1,3 +1,3 @@
+                 dependencies {
+                -    implementation 'androidx.appcompat:appcompat:1.5.1'
+                +    implementation libs.androidx.appcompat
+                 }
                 gradle/libs.versions.toml:
-                @@ -3 +3
-                  [libraries]
-                + androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.5.1" }
+                @@ -1,2 +1,3 @@
+                 # Only libraries here
+                -[libraries]
+                +[libraries]
+                +androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.5.1" }
                 """
       )
   }
@@ -1528,15 +1540,17 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 3: Replace with new library catalog declaration for material3:
-                @@ -3 +3
-                      implementation libs.compose.bom
-                -     implementation 'androidx.compose.material3:material3'
-                +     implementation libs.material3
-                  }
+                @@ -2,3 +2,3 @@
+                     implementation libs.compose.bom
+                -    implementation 'androidx.compose.material3:material3'
+                +    implementation libs.material3
+                 }
                 gradle/libs.versions.toml:
-                @@ -4 +4
-                  compose-bom = { module = 'androidx.compose:compose-bom', version = '2023.10.01' }
-                + material3 = { module = "androidx.compose.material3:material3" }
+                @@ -2,2 +2,3 @@
+                 [libraries]
+                -compose-bom = { module = 'androidx.compose:compose-bom', version = '2023.10.01' }
+                +compose-bom = { module = 'androidx.compose:compose-bom', version = '2023.10.01' }
+                +material3 = { module = "androidx.compose.material3:material3" }
                 """
       )
   }
@@ -1604,18 +1618,19 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 2: Replace with new library catalog declaration for androidx-appcompat:
-                @@ -2 +2
-                  dependencies {
-                -     implementation 'androidx.appcompat:appcompat:1.5.1'
-                +     implementation libs.androidx.appcompat
-                  }
+                @@ -1,3 +1,3 @@
+                 dependencies {
+                -    implementation 'androidx.appcompat:appcompat:1.5.1'
+                +    implementation libs.androidx.appcompat
+                 }
                 gradle/libs.versions.toml:
-                @@ -2 +2
-                  [versions]
-                + appcompat = "1.5.1"
+                @@ -1,3 +1,5 @@
+                 [versions]
+                +appcompat = "1.5.1"
 
-                  [libraries]
-                + androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+                -[libraries]
+                +[libraries]
+                +androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
                 """
       )
   }
@@ -1947,9 +1962,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle.kts line 9: Change to 2.1.4:
-        @@ -9 +9
-        -     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.3") // ERROR
-        +     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4") // ERROR
+        @@ -9 +9 @@
+        -    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.3") // ERROR
+        +    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4") // ERROR
         """
       )
 
@@ -1994,9 +2009,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for gradle/libs.versions.toml line 2: Change to 2.1.4:
-        @@ -2 +2
-        - androidDesugarJdkLibs = "1.1.2"
-        + androidDesugarJdkLibs = "2.1.4"
+        @@ -2 +2 @@
+        -androidDesugarJdkLibs = "1.1.2"
+        +androidDesugarJdkLibs = "2.1.4"
         """
       )
 
@@ -2130,13 +2145,13 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for build.gradle line 2: Replace with 8.0.2:
-        @@ -2 +2
-        -   id 'com.android.application' version '8.0.0'
-        +   id 'com.android.application' version '8.0.2'
+        @@ -2 +2 @@
+        -  id 'com.android.application' version '8.0.0'
+        +  id 'com.android.application' version '8.0.2'
         Fix for gradle/wrapper/gradle-wrapper.properties line 4: Update to 8.1.1:
-        @@ -4 +4
-        - distributionUrl=https\://services.gradle.org/distributions/gradle-7.2-bin.zip
-        + distributionUrl=https\://services.gradle.org/distributions/gradle-8.1.1-bin.zip
+        @@ -4 +4 @@
+        -distributionUrl=https\://services.gradle.org/distributions/gradle-7.2-bin.zip
+        +distributionUrl=https\://services.gradle.org/distributions/gradle-8.1.1-bin.zip
         """
       )
   }
@@ -2272,13 +2287,13 @@ class GradleDetectorTest : AbstractCheckTest() {
         // Make sure we put the safe fix first (patch-update only)
         """
         Autofix for build.gradle line 7: Replace with 4.3.2:
-        @@ -7 +7
-        -         classpath 'com.android.tools.build:gradle:4.3.0'
-        +         classpath 'com.android.tools.build:gradle:4.3.2'
+        @@ -7 +7 @@
+        -        classpath 'com.android.tools.build:gradle:4.3.0'
+        +        classpath 'com.android.tools.build:gradle:4.3.2'
         Fix for build.gradle line 7: Replace with 4.5.0:
-        @@ -7 +7
-        -         classpath 'com.android.tools.build:gradle:4.3.0'
-        +         classpath 'com.android.tools.build:gradle:4.5.0'
+        @@ -7 +7 @@
+        -        classpath 'com.android.tools.build:gradle:4.3.0'
+        +        classpath 'com.android.tools.build:gradle:4.5.0'
         """
       )
   }
@@ -2350,9 +2365,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle line 7: Change to 11.0.0:
-                @@ -7 +7
-                -     implementation("com.google.firebase:firebase-messaging:10.2.1!!") // expect 11.0.0
-                +     implementation("com.google.firebase:firebase-messaging:11.0.0") // expect 11.0.0
+                @@ -7 +7 @@
+                -    implementation("com.google.firebase:firebase-messaging:10.2.1!!") // expect 11.0.0
+                +    implementation("com.google.firebase:firebase-messaging:11.0.0") // expect 11.0.0
                 """
       )
   }
@@ -2879,9 +2894,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for build.gradle line 7: Replace with 4.3.2:
-        @@ -7 +7
-        -     classpath 'com.android.tools.build:gradle:4.3.0-alpha04'
-        +     classpath 'com.android.tools.build:gradle:4.3.2'
+        @@ -7 +7 @@
+        -    classpath 'com.android.tools.build:gradle:4.3.0-alpha04'
+        +    classpath 'com.android.tools.build:gradle:4.3.2'
         """
       )
   }
@@ -2919,9 +2934,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for gradle/libs.versions.toml line 2: Replace with 4.3.2:
-        @@ -2 +2
-        - gradle = "  com.android.tools.build:gradle:4.3.0-alpha04  "
-        + gradle = "  com.android.tools.build:gradle:4.3.2  "
+        @@ -2 +2 @@
+        -gradle = "  com.android.tools.build:gradle:4.3.0-alpha04  "
+        +gradle = "  com.android.tools.build:gradle:4.3.2  "
         """
       )
   }
@@ -3233,33 +3248,33 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for gradle/libs.versions.toml line 2: Change to 1.0.1:
-            @@ -2 +2
-            - multidexVersion = "1.0.0"
-            + multidexVersion = "1.0.1"
+            @@ -2 +2 @@
+            -multidexVersion = "1.0.0"
+            +multidexVersion = "1.0.1"
             Fix for gradle/libs.versions.toml line 3: Change to 17.0:
-            @@ -3 +3
-            - guavaVersion = { prefer = "11.0.2" }
-            + guavaVersion = { prefer = "17.0" }
+            @@ -3 +3 @@
+            -guavaVersion = { prefer = "11.0.2" }
+            +guavaVersion = { prefer = "17.0" }
             Fix for gradle/libs.versions.toml line 4: Change to 0.5:
-            @@ -4 +4
-            - testRunnerVersion = { strictly = "0.3" }
-            + testRunnerVersion = { strictly = "0.5" }
+            @@ -4 +4 @@
+            -testRunnerVersion = { strictly = "0.3" }
+            +testRunnerVersion = { strictly = "0.5" }
             Fix for gradle/libs.versions.toml line 8: Change to 25.3.1:
-            @@ -8 +8
-            - appcompat2 = "com.android.support:appcompat-v7:13.0.0"
-            + appcompat2 = "com.android.support:appcompat-v7:25.3.1"
+            @@ -8 +8 @@
+            -appcompat2 = "com.android.support:appcompat-v7:13.0.0"
+            +appcompat2 = "com.android.support:appcompat-v7:25.3.1"
             Fix for gradle/libs.versions.toml line 9: Change to 1.3.0:
-            @@ -9 +9
-            - wearable = { module = "com.google.android.support:wearable", version="1.2.0" }
-            + wearable = { module = "com.google.android.support:wearable", version="1.3.0" }
+            @@ -9 +9 @@
+            -wearable = { module = "com.google.android.support:wearable", version="1.2.0" }
+            +wearable = { module = "com.google.android.support:wearable", version="1.3.0" }
             Fix for gradle/libs.versions.toml line 11: Change to 0.5:
-            @@ -11 +11
-            - testRunner = { module= "com.android.support.test:runner", version= { prefer = "0.1" } }
-            + testRunner = { module= "com.android.support.test:runner", version= { prefer = "0.5" } }
+            @@ -11 +11 @@
+            -testRunner = { module= "com.android.support.test:runner", version= { prefer = "0.1" } }
+            +testRunner = { module= "com.android.support.test:runner", version= { prefer = "0.5" } }
             Fix for gradle/libs.versions.toml line 12: Change to 0.5:
-            @@ -12 +12
-            - testRunner2 = { module = "com.android.support.test:runner", version = { strictly ="0.3" } }
-            + testRunner2 = { module = "com.android.support.test:runner", version = { strictly ="0.5" } }
+            @@ -12 +12 @@
+            -testRunner2 = { module = "com.android.support.test:runner", version = { strictly ="0.3" } }
+            +testRunner2 = { module = "com.android.support.test:runner", version = { strictly ="0.5" } }
             """
       )
   }
@@ -3309,21 +3324,21 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle line 2: Change to 25.3.1:
-        @@ -2 +2
-        -     compile group: 'com.android.support', name: 'support-v4', version: '19.0' // ERROR 1
-        +     compile group: 'com.android.support', name: 'support-v4', version: '25.3.1' // ERROR 1
+        @@ -2 +2 @@
+        -    compile group: 'com.android.support', name: 'support-v4', version: '19.0' // ERROR 1
+        +    compile group: 'com.android.support', name: 'support-v4', version: '25.3.1' // ERROR 1
         Fix for build.gradle.kts line 2: Change to 28.1-android:
-        @@ -2 +2
-        -     implementation("com.google.guava", "guava", "19.0") // ERROR 2
-        +     implementation("com.google.guava", "guava", "28.1-android") // ERROR 2
+        @@ -2 +2 @@
+        -    implementation("com.google.guava", "guava", "19.0") // ERROR 2
+        +    implementation("com.google.guava", "guava", "28.1-android") // ERROR 2
         Fix for build.gradle.kts line 3: Change to 28.1-android:
-        @@ -3 +3
-        -     implementation(group = "com.google.guava", name = "guava", version = "19.0") // ERROR 3
-        +     implementation(group = "com.google.guava", name = "guava", version = "28.1-android") // ERROR 3
+        @@ -3 +3 @@
+        -    implementation(group = "com.google.guava", name = "guava", version = "19.0") // ERROR 3
+        +    implementation(group = "com.google.guava", name = "guava", version = "28.1-android") // ERROR 3
         Fix for build.gradle.kts line 4: Change to 28.1-android:
-        @@ -4 +4
-        -     implementation(version = "19.0", name = "guava", group = "com.google.guava") // ERROR 4
-        +     implementation(version = "28.1-android", name = "guava", group = "com.google.guava") // ERROR 4
+        @@ -4 +4 @@
+        -    implementation(version = "19.0", name = "guava", group = "com.google.guava") // ERROR 4
+        +    implementation(version = "28.1-android", name = "guava", group = "com.google.guava") // ERROR 4
         """
       )
   }
@@ -3606,9 +3621,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for build.gradle line 4: Replace with my/libs/http.jar:
-            @@ -4 +4
-            -     compile files('my\\libs\\http.jar')
-            +     compile files('my/libs/http.jar')
+            @@ -4 +4 @@
+            -    compile files('my\\libs\\http.jar')
+            +    compile files('my/libs/http.jar')
             """
       )
   }
@@ -3645,9 +3660,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for build.gradle.kts line 6: Replace with my/libs/http.jar:
-            @@ -6 +6
-            -     compile(files("my\\libs\\http.jar"))
-            +     compile(files("my/libs/http.jar"))
+            @@ -6 +6 @@
+            -    compile(files("my\\libs\\http.jar"))
+            +    compile(files("my/libs/http.jar"))
             """
       )
   }
@@ -3847,9 +3862,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for build.gradle line 7: Replace with compileSdkPreview:
-            @@ -7 +7
-            -     compileSdk 'android-S' // ERROR
-            +     compileSdkPreview 'android-S' // ERROR
+            @@ -7 +7 @@
+            -    compileSdk 'android-S' // ERROR
+            +    compileSdkPreview 'android-S' // ERROR
             """
       )
   }
@@ -5004,13 +5019,13 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for build.gradle line 3: Replace with com.android.application:
-                @@ -3 +3
-                -     id 'android' version '2.3.3'
-                +     id 'com.android.application' version '2.3.3'
+                @@ -3 +3 @@
+                -    id 'android' version '2.3.3'
+                +    id 'com.android.application' version '2.3.3'
                 Autofix for build.gradle line 4: Replace with com.android.application:
-                @@ -4 +4
-                -     id 'android' version '2.3.3' apply true
-                +     id 'com.android.application' version '2.3.3' apply true
+                @@ -4 +4 @@
+                -    id 'android' version '2.3.3' apply true
+                +    id 'com.android.application' version '2.3.3' apply true
                 """
       )
   }
@@ -5341,297 +5356,273 @@ class GradleDetectorTest : AbstractCheckTest() {
     val expectedFixes =
       """
         Fix for build.gradle line 3: Change to 1.2.18:
-        @@ -3 +3
-        -     compile 'log4j:log4j:1.2.17' // OK
-        +     compile 'log4j:log4j:1.2.18' // OK
+        @@ -3 +3 @@
+        -    compile 'log4j:log4j:1.2.17' // OK
+        +    compile 'log4j:log4j:1.2.18' // OK
         Fix for build.gradle line 4: Change to 1.2.18:
-        @@ -4 +4
-        -     compile 'log4j:log4j:1.2.16' // Critical NON_BLOCKING
-        +     compile 'log4j:log4j:1.2.18' // Critical NON_BLOCKING
+        @@ -4 +4 @@
+        -    compile 'log4j:log4j:1.2.16' // Critical NON_BLOCKING
+        +    compile 'log4j:log4j:1.2.18' // Critical NON_BLOCKING
         Fix for build.gradle line 9: Change to 1.2.18:
-        @@ -9 +9
-        -     compile 'log4j:log4j:1.2.11' // Ok (not in Index)
-        +     compile 'log4j:log4j:1.2.18' // Ok (not in Index)
+        @@ -9 +9 @@
+        -    compile 'log4j:log4j:1.2.11' // Ok (not in Index)
+        +    compile 'log4j:log4j:1.2.18' // Ok (not in Index)
         Fix for build.gradle line 11: Change to 8.0.0:
-        @@ -11 +11
-        -     compile 'com.example.ads.third.party:example:7.2.2' // OK
-        +     compile 'com.example.ads.third.party:example:8.0.0' // OK
+        @@ -11 +11 @@
+        -    compile 'com.example.ads.third.party:example:7.2.2' // OK
+        +    compile 'com.example.ads.third.party:example:8.0.0' // OK
         Fix for build.gradle line 12: Change to 8.0.0:
-        @@ -12 +12
-        -     compile 'com.example.ads.third.party:example:7.2.1' // OK
-        +     compile 'com.example.ads.third.party:example:8.0.0' // OK
+        @@ -12 +12 @@
+        -    compile 'com.example.ads.third.party:example:7.2.1' // OK
+        +    compile 'com.example.ads.third.party:example:8.0.0' // OK
         Show URL for build.gradle line 29: View details in Google Play SDK Index:
         http://sdk.google.com/
         Fix for build.gradle line 7: Change to 1.2.18:
-        @@ -7 +7
-        -     compile 'log4j:log4j:1.2.13' // Critical BLOCKING
-        +     compile 'log4j:log4j:1.2.18' // Critical BLOCKING
+        @@ -7 +7 @@
+        -    compile 'log4j:log4j:1.2.13' // Critical BLOCKING
+        +    compile 'log4j:log4j:1.2.18' // Critical BLOCKING
         Show URL for build.gradle line 7: View details in Google Play SDK Index:
         http://index.example.url/
         Fix for build.gradle line 15: Change to 8.0.0:
-        @@ -15 +15
-        -     compile 'com.example.ads.third.party:example:7.1.1' // Policy (Device and Network Abuse), blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (Device and Network Abuse), blocking
+        @@ -15 +15 @@
+        -    compile 'com.example.ads.third.party:example:7.1.1' // Policy (Device and Network Abuse), blocking
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (Device and Network Abuse), blocking
         Show URL for build.gradle line 15: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 18: Change to 8.0.0:
-        @@ -18 +18
-        -     compile 'com.example.ads.third.party:example:7.1.4' // Policy (Permissions), blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (Permissions), blocking
+        @@ -18 +18 @@
+        -    compile 'com.example.ads.third.party:example:7.1.4' // Policy (Permissions), blocking
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (Permissions), blocking
         Show URL for build.gradle line 18: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 22: Change to 8.0.0:
-        @@ -22 +22
-        -     compile 'com.example.ads.third.party:example:7.1.8' // Policy (multiple types), blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), blocking
-        Show URL for build.gradle line 22: View details in Google Play SDK Index:
-        http://another.example.url/
-        Fix for build.gradle line 22: Change to 8.0.0:
-        @@ -22 +22
-        -     compile 'com.example.ads.third.party:example:7.1.8' // Policy (multiple types), blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), blocking
+        @@ -22 +22 @@
+        -    compile 'com.example.ads.third.party:example:7.1.8' // Policy (multiple types), blocking
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), blocking
         Show URL for build.gradle line 22: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 6: Change to 1.2.18:
-        @@ -6 +6
-        -     compile 'log4j:log4j:1.2.14' // Non compliant
-        +     compile 'log4j:log4j:1.2.18' // Non compliant
+        @@ -6 +6 @@
+        -    compile 'log4j:log4j:1.2.14' // Non compliant
+        +    compile 'log4j:log4j:1.2.18' // Non compliant
         Show URL for build.gradle line 6: View details in Google Play SDK Index:
         http://index.example.url/
         Fix for build.gradle line 13: Change to 8.0.0:
-        @@ -13 +13
-        -     compile 'com.example.ads.third.party:example:7.2.0' // Outdated + Critical + Policy (multiple issues), no severity
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Outdated + Critical + Policy (multiple issues), no severity
+        @@ -13 +13 @@
+        -    compile 'com.example.ads.third.party:example:7.2.0' // Outdated + Critical + Policy (multiple issues), no severity
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Outdated + Critical + Policy (multiple issues), no severity
         Show URL for build.gradle line 13: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 14: Change to 8.0.0:
-        @@ -14 +14
-        -     compile 'com.example.ads.third.party:example:7.1.0' // Policy (Ads), non-blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (Ads), non-blocking
+        @@ -14 +14 @@
+        -    compile 'com.example.ads.third.party:example:7.1.0' // Policy (Ads), non-blocking
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (Ads), non-blocking
         Show URL for build.gradle line 14: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 16: Change to 8.0.0:
-        @@ -16 +16
-        -     compile 'com.example.ads.third.party:example:7.1.2' // Policy (Deceptive Behavior), no severity
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (Deceptive Behavior), no severity
+        @@ -16 +16 @@
+        -    compile 'com.example.ads.third.party:example:7.1.2' // Policy (Deceptive Behavior), no severity
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (Deceptive Behavior), no severity
         Show URL for build.gradle line 16: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 17: Change to 8.0.0:
-        @@ -17 +17
-        -     compile 'com.example.ads.third.party:example:7.1.3' // Policy (User Data), non-blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (User Data), non-blocking
+        @@ -17 +17 @@
+        -    compile 'com.example.ads.third.party:example:7.1.3' // Policy (User Data), non-blocking
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (User Data), non-blocking
         Show URL for build.gradle line 17: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 19: Change to 8.0.0:
-        @@ -19 +19
-        -     compile 'com.example.ads.third.party:example:7.1.5' // Policy (Mobile Unwanted Software), no-severity
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (Mobile Unwanted Software), no-severity
+        @@ -19 +19 @@
+        -    compile 'com.example.ads.third.party:example:7.1.5' // Policy (Mobile Unwanted Software), no-severity
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (Mobile Unwanted Software), no-severity
         Show URL for build.gradle line 19: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 20: Change to 8.0.0:
-        @@ -20 +20
-        -     compile 'com.example.ads.third.party:example:7.1.6' // Policy (Malware), non-blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (Malware), non-blocking
+        @@ -20 +20 @@
+        -    compile 'com.example.ads.third.party:example:7.1.6' // Policy (Malware), non-blocking
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (Malware), non-blocking
         Show URL for build.gradle line 20: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 21: Change to 8.0.0:
-        @@ -21 +21
-        -     compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), non-blocking
-        Show URL for build.gradle line 21: View details in Google Play SDK Index:
-        http://another.example.url/
-        Fix for build.gradle line 21: Change to 8.0.0:
-        @@ -21 +21
-        -     compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), non-blocking
-        Show URL for build.gradle line 21: View details in Google Play SDK Index:
-        http://another.example.url/
-        Fix for build.gradle line 21: Change to 8.0.0:
-        @@ -21 +21
-        -     compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), non-blocking
+        @@ -21 +21 @@
+        -    compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), non-blocking
         Show URL for build.gradle line 21: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 23: Change to 8.0.0:
-        @@ -23 +23
-        -     compile 'com.example.ads.third.party:example:7.1.9' // Policy (multiple types), no severity
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), no severity
-        Show URL for build.gradle line 23: View details in Google Play SDK Index:
-        http://another.example.url/
-        Fix for build.gradle line 23: Change to 8.0.0:
-        @@ -23 +23
-        -     compile 'com.example.ads.third.party:example:7.1.9' // Policy (multiple types), no severity
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), no severity
+        @@ -23 +23 @@
+        -    compile 'com.example.ads.third.party:example:7.1.9' // Policy (multiple types), no severity
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Policy (multiple types), no severity
         Show URL for build.gradle line 23: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 25: Change to 8.0.0:
-        @@ -25 +25
-        -     compile 'com.example.ads.third.party:example:7.1.11' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
+        @@ -25 +25 @@
+        -    compile 'com.example.ads.third.party:example:7.1.11' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
         Show URL for build.gradle line 25: Learn more about Unsafe SSL Error Handler vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 25: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 25: Change to 8.0.0:
-        @@ -25 +25
-        -     compile 'com.example.ads.third.party:example:7.1.11' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
+        @@ -25 +25 @@
+        -    compile 'com.example.ads.third.party:example:7.1.11' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
         Show URL for build.gradle line 25: Learn more about Zip Path Traversal vulnerability:
         https://support.google.com/faqs/answer/9294009
         Show URL for build.gradle line 25: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 25: Change to 8.0.0:
-        @@ -25 +25
-        -     compile 'com.example.ads.third.party:example:7.1.11' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
+        @@ -25 +25 @@
+        -    compile 'com.example.ads.third.party:example:7.1.11' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (UNSAFE_SSL_ERROR_HANDLER, ZIP_PATH_TRAVERSAL, UNSAFE_WEBVIEW_OAUTH, blocking)
         Show URL for build.gradle line 25: Learn more about Unsafe OAuth via WebView vulnerability:
         https://support.google.com/faqs/answer/12284343
         Show URL for build.gradle line 25: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 13: Change to 8.0.0:
-        @@ -13 +13
-        -     compile 'com.example.ads.third.party:example:7.2.0' // Outdated + Critical + Policy (multiple issues), no severity
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Outdated + Critical + Policy (multiple issues), no severity
+        @@ -13 +13 @@
+        -    compile 'com.example.ads.third.party:example:7.2.0' // Outdated + Critical + Policy (multiple issues), no severity
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Outdated + Critical + Policy (multiple issues), no severity
         Show URL for build.gradle line 13: Learn more about Unsafe TrustManager vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 13: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 24: Change to 8.0.0:
-        @@ -24 +24
-        -     compile 'com.example.ads.third.party:example:7.1.10' // Vulnerability (UNSAFE_HOSTNAME_VERIFIER, non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability (UNSAFE_HOSTNAME_VERIFIER, non-blocking)
+        @@ -24 +24 @@
+        -    compile 'com.example.ads.third.party:example:7.1.10' // Vulnerability (UNSAFE_HOSTNAME_VERIFIER, non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability (UNSAFE_HOSTNAME_VERIFIER, non-blocking)
         Show URL for build.gradle line 24: Learn more about Unsafe HostnameVerifier vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 24: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Implicit Internal Intent vulnerability:
         https://support.google.com/faqs/answer/10437428
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Implicit PendingIntent vulnerability:
         https://support.google.com/faqs/answer/10437428
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Fragment Injection vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Unsafe Encryption Mode Usage vulnerability:
         https://support.google.com/faqs/answer/10046138
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Leaked GCP keys vulnerability:
         https://support.google.com/faqs/answer/9287711
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Known Vulnerable Library (JS) vulnerability:
         https://support.google.com/faqs/answer/9464300
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Unsafe Cryptographic Encryption vulnerability:
         https://support.google.com/faqs/answer/9450925
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about ContentProvider Path Traversal vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about ContentProvider SQL Injection vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about File Based XSS vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Intent Redirection vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Intent Scheme Hijacking vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about JavaScript Interface Injection vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 26: Change to 8.0.0:
-        @@ -26 +26
-        -     compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
+        @@ -26 +26 @@
+        -    compile 'com.example.ads.third.party:example:7.1.12' // Vulnerability multiple (non-blocking)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Vulnerability multiple (non-blocking)
         Show URL for build.gradle line 26: Learn more about Cross-App Scripting vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 26: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 8: Change to 1.2.18:
-        @@ -8 +8
-        -     compile 'log4j:log4j:1.2.12' // OUTDATED BLOCKING
-        +     compile 'log4j:log4j:1.2.18' // OUTDATED BLOCKING
+        @@ -8 +8 @@
+        -    compile 'log4j:log4j:1.2.12' // OUTDATED BLOCKING
+        +    compile 'log4j:log4j:1.2.18' // OUTDATED BLOCKING
         Show URL for build.gradle line 8: View details in Google Play SDK Index:
         http://index.example.url/
         Fix for build.gradle line 5: Change to 1.2.18:
-        @@ -5 +5
-        -     compile 'log4j:log4j:1.2.15' // Outdated NON_BLOCKING
-        +     compile 'log4j:log4j:1.2.18' // Outdated NON_BLOCKING
+        @@ -5 +5 @@
+        -    compile 'log4j:log4j:1.2.15' // Outdated NON_BLOCKING
+        +    compile 'log4j:log4j:1.2.18' // Outdated NON_BLOCKING
         Show URL for build.gradle line 5: View details in Google Play SDK Index:
         http://index.example.url/
         Fix for build.gradle line 13: Change to 8.0.0:
-        @@ -13 +13
-        -     compile 'com.example.ads.third.party:example:7.2.0' // Outdated + Critical + Policy (multiple issues), no severity
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Outdated + Critical + Policy (multiple issues), no severity
+        @@ -13 +13 @@
+        -    compile 'com.example.ads.third.party:example:7.2.0' // Outdated + Critical + Policy (multiple issues), no severity
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Outdated + Critical + Policy (multiple issues), no severity
         Show URL for build.gradle line 13: View details in Google Play SDK Index:
         http://another.example.url/
         Show URL for build.gradle line 27: View details in Google Play SDK Index:
@@ -5727,10 +5718,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           build.gradle:18: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.4 has Permissions policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.4' // Policy (Permissions), blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:22: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has Malware policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.8' // Policy (multiple types), blocking
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:22: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has User Data policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
+          build.gradle:22: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has Malware policy, User Data policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.8' // Policy (multiple types), blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           build.gradle:6: Warning: log4j:log4j version 1.2.14 has policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
@@ -5754,19 +5742,10 @@ class GradleDetectorTest : AbstractCheckTest() {
           build.gradle:20: Warning: com.example.ads.third.party:example version 7.1.6 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.6' // Policy (Malware), non-blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:21: Warning: com.example.ads.third.party:example version 7.1.7 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+          build.gradle:21: Warning: com.example.ads.third.party:example version 7.1.7 has Malware policy, Permissions policy, User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:21: Warning: com.example.ads.third.party:example version 7.1.7 has Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:21: Warning: com.example.ads.third.party:example version 7.1.7 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.7' // Policy (multiple types), non-blocking
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:23: Warning: com.example.ads.third.party:example version 7.1.9 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-              compile 'com.example.ads.third.party:example:7.1.9' // Policy (multiple types), no severity
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          build.gradle:23: Warning: com.example.ads.third.party:example version 7.1.9 has Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+          build.gradle:23: Warning: com.example.ads.third.party:example version 7.1.9 has Malware policy, Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
               compile 'com.example.ads.third.party:example:7.1.9' // Policy (multiple types), no severity
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           build.gradle:25: Error: com.example.ads.third.party:example version 7.1.11 contains an unsafe implementation of the onReceivedSslError handler. [PlaySdkIndexVulnerability]
@@ -5849,7 +5828,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             - 1.1.0 or higher [OutdatedLibrary]
               compile 'com.example.issues:latest-is-preview:1.0.0' // Outdated non-blocking
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          9 errors, 38 warnings
+          8 errors, 35 warnings
         """
       )
       .expectFixDiffs(expectedFixes)
@@ -5949,10 +5928,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           ../gradle/libs.versions.toml:14: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.4 has Permissions policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
                           exPolicyPermBlock = "7.1.4"     # Policy (Permissions), blocking
                                               ~~~~~~~
-          ../gradle/libs.versions.toml:18: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has Malware policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
-                          exPolicyMultiBlock = "7.1.8"    # Policy (multiple types), blocking
-                                               ~~~~~~~
-          ../gradle/libs.versions.toml:18: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has User Data policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
+          ../gradle/libs.versions.toml:18: Error: [Prevents app release in Google Play Console] com.example.ads.third.party:example version 7.1.8 has Malware policy, User Data policy issues that will block publishing of your app to Play Console [PlaySdkIndexNonCompliant]
                           exPolicyMultiBlock = "7.1.8"    # Policy (multiple types), blocking
                                                ~~~~~~~
           ../gradle/libs.versions.toml:9: Warning: com.example.ads.third.party:example version 7.2.0 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
@@ -5973,19 +5949,10 @@ class GradleDetectorTest : AbstractCheckTest() {
           ../gradle/libs.versions.toml:16: Warning: com.example.ads.third.party:example version 7.1.6 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
                           exPolicyMalware = "7.1.6"       # Policy (Malware), non-blocking
                                             ~~~~~~~
-          ../gradle/libs.versions.toml:17: Warning: com.example.ads.third.party:example version 7.1.7 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+          ../gradle/libs.versions.toml:17: Warning: com.example.ads.third.party:example version 7.1.7 has Malware policy, Permissions policy, User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
                           exPolicyMultiNon = "7.1.7"      # Policy (multiple types), non-blocking
                                              ~~~~~~~
-          ../gradle/libs.versions.toml:17: Warning: com.example.ads.third.party:example version 7.1.7 has Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-                          exPolicyMultiNon = "7.1.7"      # Policy (multiple types), non-blocking
-                                             ~~~~~~~
-          ../gradle/libs.versions.toml:17: Warning: com.example.ads.third.party:example version 7.1.7 has User Data policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-                          exPolicyMultiNon = "7.1.7"      # Policy (multiple types), non-blocking
-                                             ~~~~~~~
-          ../gradle/libs.versions.toml:19: Warning: com.example.ads.third.party:example version 7.1.9 has Malware policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
-                          exPolicyMulti = "7.1.9"         # Policy (multiple types), no severity
-                                          ~~~~~~~
-          ../gradle/libs.versions.toml:19: Warning: com.example.ads.third.party:example version 7.1.9 has Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
+          ../gradle/libs.versions.toml:19: Warning: com.example.ads.third.party:example version 7.1.9 has Malware policy, Permissions policy issues that will block publishing of your app to Play Console in the future [PlaySdkIndexNonCompliant]
                           exPolicyMulti = "7.1.9"         # Policy (multiple types), no severity
                                           ~~~~~~~
           ../gradle/libs.versions.toml:21: Error: com.example.ads.third.party:example version 7.1.11 contains an unsafe implementation of the onReceivedSslError handler. [PlaySdkIndexVulnerability]
@@ -6065,7 +6032,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             - 1.1.0 or higher [OutdatedLibrary]
                           exOutPreview = "1.0.0"          # Outdated NON_BLOCKING
                                          ~~~~~~~
-          9 errors, 34 warnings
+          8 errors, 31 warnings
         """
       )
   }
@@ -6148,45 +6115,45 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle line 3: Change to 8.0.0:
-        @@ -3 +3
-        -     compile 'com.example.ads.third.party:example:7.2.1' // suggest 8.0.0 since it does not have issues
-        +     compile 'com.example.ads.third.party:example:8.0.0' // suggest 8.0.0 since it does not have issues
+        @@ -3 +3 @@
+        -    compile 'com.example.ads.third.party:example:7.2.1' // suggest 8.0.0 since it does not have issues
+        +    compile 'com.example.ads.third.party:example:8.0.0' // suggest 8.0.0 since it does not have issues
         Fix for build.gradle line 4: Change to 1.2.18:
-        @@ -4 +4
-        -     compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
-        +     compile 'log4j:log4j:1.2.18' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
+        @@ -4 +4 @@
+        -    compile 'log4j:log4j:1.2.10' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
+        +    compile 'log4j:log4j:1.2.18' // Suggest 1.2.18 (it is latest in SDK Index, even if it is not in maven)
         Show URL for build.gradle line 7: View details in Google Play SDK Index:
         http://sdk.google.com/
         Fix for build.gradle line 2: Change to 8.0.0:
-        @@ -2 +2
-        -     compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Show SDK Index link and suggest 8.0.0
+        @@ -2 +2 @@
+        -    compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Show SDK Index link and suggest 8.0.0
         Show URL for build.gradle line 2: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 2: Change to 8.0.0:
-        @@ -2 +2
-        -     compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Show SDK Index link and suggest 8.0.0
+        @@ -2 +2 @@
+        -    compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Show SDK Index link and suggest 8.0.0
         Show URL for build.gradle line 2: Learn more about Unsafe TrustManager vulnerability:
         https://support.google.com/googleplay/android-developer/answer/9888379
         Show URL for build.gradle line 2: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 2: Change to 8.0.0:
-        @@ -2 +2
-        -     compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Show SDK Index link and suggest 8.0.0
+        @@ -2 +2 @@
+        -    compile 'com.example.ads.third.party:example:7.2.0' // Show SDK Index link and suggest 8.0.0
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Show SDK Index link and suggest 8.0.0
         Show URL for build.gradle line 2: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 5: Change to 1.9.0:
-        @@ -5 +5
-        -     compile 'com.example.issues:issues-on-latest:1.8.0' // Should not suggest 2.0 because it has blocking issues
-        +     compile 'com.example.issues:issues-on-latest:1.9.0' // Should not suggest 2.0 because it has blocking issues
+        @@ -5 +5 @@
+        -    compile 'com.example.issues:issues-on-latest:1.8.0' // Should not suggest 2.0 because it has blocking issues
+        +    compile 'com.example.issues:issues-on-latest:1.9.0' // Should not suggest 2.0 because it has blocking issues
         Show URL for build.gradle line 5: View details in Google Play SDK Index:
         http://sdk.google.com/
         Fix for build.gradle line 6: Change to 1.1.0:
-        @@ -6 +6
-        -     compile 'com.example.issues:latest-is-preview:1.0.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
-        +     compile 'com.example.issues:latest-is-preview:1.1.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
+        @@ -6 +6 @@
+        -    compile 'com.example.issues:latest-is-preview:1.0.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
+        +    compile 'com.example.issues:latest-is-preview:1.1.0' // 1.2 is latest in SDK Index but is preview, should suggest 1.1
         Show URL for build.gradle line 6: View details in Google Play SDK Index:
         http://sdk.google.com/
         """
@@ -6201,27 +6168,27 @@ class GradleDetectorTest : AbstractCheckTest() {
     val expectedFixes =
       """
         Fix for build.gradle line 2: Change to 1.2.18:
-        @@ -2 +2
-        -     compile 'log4j:log4j:1.2.11' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
-        +     compile 'log4j:log4j:1.2.18' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
+        @@ -2 +2 @@
+        -    compile 'log4j:log4j:1.2.11' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
+        +    compile 'log4j:log4j:1.2.18' // No Issue, but should suggest 1.2.18 since it is the latest version from SDK Index
         Show URL for build.gradle line 6: View details in Google Play SDK Index:
         http://sdk.google.com/
         Fix for build.gradle line 3: Change to 8.0.0:
-        @@ -3 +3
-        -     compile 'com.example.ads.third.party:example:7.1.0' // Issue, suggest 8.0 (latest from SDK Index)
-        +     compile 'com.example.ads.third.party:example:8.0.0' // Issue, suggest 8.0 (latest from SDK Index)
+        @@ -3 +3 @@
+        -    compile 'com.example.ads.third.party:example:7.1.0' // Issue, suggest 8.0 (latest from SDK Index)
+        +    compile 'com.example.ads.third.party:example:8.0.0' // Issue, suggest 8.0 (latest from SDK Index)
         Show URL for build.gradle line 3: View details in Google Play SDK Index:
         http://another.example.url/
         Fix for build.gradle line 4: Change to 1.9.0:
-        @@ -4 +4
-        -     compile 'com.example.issues:issues-on-latest:1.8.0' // Suggest 1.9 (2.0 is marked as latest, but has issues)
-        +     compile 'com.example.issues:issues-on-latest:1.9.0' // Suggest 1.9 (2.0 is marked as latest, but has issues)
+        @@ -4 +4 @@
+        -    compile 'com.example.issues:issues-on-latest:1.8.0' // Suggest 1.9 (2.0 is marked as latest, but has issues)
+        +    compile 'com.example.issues:issues-on-latest:1.9.0' // Suggest 1.9 (2.0 is marked as latest, but has issues)
         Show URL for build.gradle line 4: View details in Google Play SDK Index:
         http://sdk.google.com/
         Fix for build.gradle line 5: Change to 1.1.0:
-        @@ -5 +5
-        -     compile 'com.example.issues:latest-is-preview:1.0.0' // Should suggest 1.1 (1.2 is latest but is preview)
-        +     compile 'com.example.issues:latest-is-preview:1.1.0' // Should suggest 1.1 (1.2 is latest but is preview)
+        @@ -5 +5 @@
+        -    compile 'com.example.issues:latest-is-preview:1.0.0' // Should suggest 1.1 (1.2 is latest but is preview)
+        +    compile 'com.example.issues:latest-is-preview:1.1.0' // Should suggest 1.1 (1.2 is latest but is preview)
         Show URL for build.gradle line 5: View details in Google Play SDK Index:
         http://sdk.google.com/
       """
@@ -6296,17 +6263,17 @@ class GradleDetectorTest : AbstractCheckTest() {
     val expectedFixes =
       """
         Fix for build.gradle line 4: Change to 18.3.0:
-        @@ -4 +4
-        -     compile 'com.google.android.gms:play-services-maps:18.2.0' // There is a custom message but no issues
-        +     compile 'com.google.android.gms:play-services-maps:18.3.0' // There is a custom message but no issues
+        @@ -4 +4 @@
+        -    compile 'com.google.android.gms:play-services-maps:18.2.0' // There is a custom message but no issues
+        +    compile 'com.google.android.gms:play-services-maps:18.3.0' // There is a custom message but no issues
         Fix for build.gradle line 2: Change to 1.2.0:
-        @@ -2 +2
-        -     compile 'androidx.slidingpanelayout:slidingpanelayout:1.1.0' // Current has issues but there is a custom message
-        +     compile 'androidx.slidingpanelayout:slidingpanelayout:1.2.0' // Current has issues but there is a custom message
+        @@ -2 +2 @@
+        -    compile 'androidx.slidingpanelayout:slidingpanelayout:1.1.0' // Current has issues but there is a custom message
+        +    compile 'androidx.slidingpanelayout:slidingpanelayout:1.2.0' // Current has issues but there is a custom message
         Fix for build.gradle line 3: Change to 18.3.0:
-        @@ -3 +3
-        -     compile 'com.google.android.gms:play-services-maps:18.1.0' // Current has issues but there is a custom message
-        +     compile 'com.google.android.gms:play-services-maps:18.3.0' // Current has issues but there is a custom message
+        @@ -3 +3 @@
+        -    compile 'com.google.android.gms:play-services-maps:18.1.0' // Current has issues but there is a custom message
+        +    compile 'com.google.android.gms:play-services-maps:18.3.0' // Current has issues but there is a custom message
       """
     lint()
       .files(
@@ -6755,21 +6722,21 @@ class GradleDetectorTest : AbstractCheckTest() {
     val expectedFix =
       """
             Autofix for build.gradle line 9: Replace 'compile' with 'api':
-            @@ -9 +9
-            -     compile 'androidx.appcompat:appcompat:1.0.0'
-            +     api 'androidx.appcompat:appcompat:1.0.0'
+            @@ -9 +9 @@
+            -    compile 'androidx.appcompat:appcompat:1.0.0'
+            +    api 'androidx.appcompat:appcompat:1.0.0'
             Autofix for build.gradle line 9: Replace 'compile' with 'implementation':
-            @@ -9 +9
-            -     compile 'androidx.appcompat:appcompat:1.0.0'
-            +     implementation 'androidx.appcompat:appcompat:1.0.0'
+            @@ -9 +9 @@
+            -    compile 'androidx.appcompat:appcompat:1.0.0'
+            +    implementation 'androidx.appcompat:appcompat:1.0.0'
             Autofix for build.gradle line 10: Replace 'debugCompile' with 'debugApi':
-            @@ -10 +10
-            -     debugCompile 'androidx.appcompat:appcompat:1.0.0'
-            +     debugApi 'androidx.appcompat:appcompat:1.0.0'
+            @@ -10 +10 @@
+            -    debugCompile 'androidx.appcompat:appcompat:1.0.0'
+            +    debugApi 'androidx.appcompat:appcompat:1.0.0'
             Autofix for build.gradle line 10: Replace 'debugCompile' with 'debugImplementation':
-            @@ -10 +10
-            -     debugCompile 'androidx.appcompat:appcompat:1.0.0'
-            +     debugImplementation 'androidx.appcompat:appcompat:1.0.0'
+            @@ -10 +10 @@
+            -    debugCompile 'androidx.appcompat:appcompat:1.0.0'
+            +    debugImplementation 'androidx.appcompat:appcompat:1.0.0'
             """
 
     lint()
@@ -6808,9 +6775,9 @@ class GradleDetectorTest : AbstractCheckTest() {
     val expectedFix =
       """
             Autofix for build.gradle line 9: Replace 'compile' with 'implementation':
-            @@ -9 +9
-            -     compile 'androidx.appcompat:appcompat:1.0.0'
-            +     implementation 'androidx.appcompat:appcompat:1.0.0'
+            @@ -9 +9 @@
+            -    compile 'androidx.appcompat:appcompat:1.0.0'
+            +    implementation 'androidx.appcompat:appcompat:1.0.0'
             """
 
     lint()
@@ -6901,9 +6868,9 @@ class GradleDetectorTest : AbstractCheckTest() {
     val expectedFix =
       """
             Autofix for build.gradle line 9: Replace 'compile' with 'implementation':
-            @@ -9 +9
-            -     compile files('libs/luaj-jse-3.0.2.jar')
-            +     implementation files('libs/luaj-jse-3.0.2.jar')
+            @@ -9 +9 @@
+            -    compile files('libs/luaj-jse-3.0.2.jar')
+            +    implementation files('libs/luaj-jse-3.0.2.jar')
             """
 
     lint()
@@ -6956,29 +6923,29 @@ class GradleDetectorTest : AbstractCheckTest() {
     val fixDiff =
       """
             Autofix for build.gradle line 2: Replace api with annotationProcessor:
-            @@ -2 +2
-            -     api 'com.jakewharton:butterknife-compiler:10.1.0'
-            +     annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'
+            @@ -2 +2 @@
+            -    api 'com.jakewharton:butterknife-compiler:10.1.0'
+            +    annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'
             Autofix for build.gradle line 3: Replace implementation with annotationProcessor:
-            @@ -3 +3
-            -     implementation 'com.github.bumptech.glide:compiler:4.9.0'
-            +     annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
+            @@ -3 +3 @@
+            -    implementation 'com.github.bumptech.glide:compiler:4.9.0'
+            +    annotationProcessor 'com.github.bumptech.glide:compiler:4.9.0'
             Autofix for build.gradle line 4: Replace compile with annotationProcessor:
-            @@ -4 +4
-            -     compile "androidx.lifecycle:lifecycle-compiler:2.2.0-alpha01"
-            +     annotationProcessor "androidx.lifecycle:lifecycle-compiler:2.2.0-alpha01"
+            @@ -4 +4 @@
+            -    compile "androidx.lifecycle:lifecycle-compiler:2.2.0-alpha01"
+            +    annotationProcessor "androidx.lifecycle:lifecycle-compiler:2.2.0-alpha01"
             Autofix for build.gradle line 5: Replace testImplementation with testAnnotationProcessor:
-            @@ -5 +5
-            -     testImplementation "com.google.auto.value:auto-value:1.6.2"
-            +     testAnnotationProcessor "com.google.auto.value:auto-value:1.6.2"
+            @@ -5 +5 @@
+            -    testImplementation "com.google.auto.value:auto-value:1.6.2"
+            +    testAnnotationProcessor "com.google.auto.value:auto-value:1.6.2"
             Autofix for build.gradle line 6: Replace androidTestCompile with androidTestAnnotationProcessor:
-            @@ -6 +6
-            -     androidTestCompile "org.projectlombok:lombok:1.18.8"
-            +     androidTestAnnotationProcessor "org.projectlombok:lombok:1.18.8"
+            @@ -6 +6 @@
+            -    androidTestCompile "org.projectlombok:lombok:1.18.8"
+            +    androidTestAnnotationProcessor "org.projectlombok:lombok:1.18.8"
             Autofix for build.gradle line 8: Replace debugCompile with debugAnnotationProcessor:
-            @@ -8 +8
-            -     debugCompile "android.arch.persistence.room:compiler:1.1.1"
-            +     debugAnnotationProcessor "android.arch.persistence.room:compiler:1.1.1"
+            @@ -8 +8 @@
+            -    debugCompile "android.arch.persistence.room:compiler:1.1.1"
+            +    debugAnnotationProcessor "android.arch.persistence.room:compiler:1.1.1"
         """
     lint()
       .files(
@@ -7036,9 +7003,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle line 7: Replace with KTX dependency:
-                @@ -7 +7
-                -     implementation "androidx.core:core:1.2.0"
-                +     implementation "androidx.core:core-ktx:1.2.0"
+                @@ -7 +7 @@
+                -    implementation "androidx.core:core:1.2.0"
+                +    implementation "androidx.core:core-ktx:1.2.0"
                 """
       )
   }
@@ -7184,21 +7151,21 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle line 9: Replace usage of kapt with KSP:
-                @@ -9 +9
-                -   kapt 'androidx.room:room-compiler:2.5.0'
-                +   ksp 'androidx.room:room-compiler:2.5.0'
+                @@ -9 +9 @@
+                -  kapt 'androidx.room:room-compiler:2.5.0'
+                +  ksp 'androidx.room:room-compiler:2.5.0'
                 Fix for build.gradle line 10: Replace usage of kapt with KSP:
-                @@ -10 +10
-                -   kapt "androidx.room:room-compiler:＄room_version"
-                +   ksp "androidx.room:room-compiler:＄room_version"
+                @@ -10 +10 @@
+                -  kapt "androidx.room:room-compiler:＄room_version"
+                +  ksp "androidx.room:room-compiler:＄room_version"
                 Fix for build.gradle line 13: Replace usage of kapt with KSP:
-                @@ -13 +13
-                -   kapt 'com.github.bumptech.glide:compiler:4.14.2'
-                +   ksp 'com.github.bumptech.glide:ksp:4.14.2'
+                @@ -13 +13 @@
+                -  kapt 'com.github.bumptech.glide:compiler:4.14.2'
+                +  ksp 'com.github.bumptech.glide:ksp:4.14.2'
                 Fix for build.gradle line 14: Replace usage of kapt with KSP:
-                @@ -14 +14
-                -   kapt("com.github.bumptech.glide:compiler:glide_version")
-                +   ksp("com.github.bumptech.glide:ksp:glide_version")
+                @@ -14 +14 @@
+                -  kapt("com.github.bumptech.glide:compiler:glide_version")
+                +  ksp("com.github.bumptech.glide:ksp:glide_version")
                 """
       )
   }
@@ -7263,41 +7230,41 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle line 8: Replace usage of kapt with KSP:
-                @@ -8 +8
-                -   kapt(libs.room.compiler)
-                +   ksp(libs.room.compiler)
+                @@ -8 +8 @@
+                -  kapt(libs.room.compiler)
+                +  ksp(libs.room.compiler)
                 Fix for build.gradle line 9: Replace usage of kapt with KSP:
-                @@ -9 +9
-                -   kapt(libs.glide.simple)
-                +   ksp(libs.glide.simple)
+                @@ -9 +9 @@
+                -  kapt(libs.glide.simple)
+                +  ksp(libs.glide.simple)
                 gradle/libs.versions.toml:
-                @@ -5 +5
-                - glide-simple = "com.github.bumptech.glide:compiler:4.14.2"
-                + glide-simple = "com.github.bumptech.glide:ksp:4.14.2"
+                @@ -5 +5 @@
+                -glide-simple = "com.github.bumptech.glide:compiler:4.14.2"
+                +glide-simple = "com.github.bumptech.glide:ksp:4.14.2"
                 Fix for build.gradle line 10: Replace usage of kapt with KSP:
-                @@ -10 +10
-                -   kapt(libs.glide.module)
-                +   ksp(libs.glide.module)
+                @@ -10 +10 @@
+                -  kapt(libs.glide.module)
+                +  ksp(libs.glide.module)
                 gradle/libs.versions.toml:
-                @@ -6 +6
-                - glide-module = { module = "com.github.bumptech.glide:compiler", version = "4.14.2" }
-                + glide-module = { module = "com.github.bumptech.glide:ksp", version = "4.14.2" }
+                @@ -6 +6 @@
+                -glide-module = { module = "com.github.bumptech.glide:compiler", version = "4.14.2" }
+                +glide-module = { module = "com.github.bumptech.glide:ksp", version = "4.14.2" }
                 Fix for build.gradle line 11: Replace usage of kapt with KSP:
-                @@ -11 +11
-                -   kapt(libs.glide.groupname)
-                +   ksp(libs.glide.groupname)
+                @@ -11 +11 @@
+                -  kapt(libs.glide.groupname)
+                +  ksp(libs.glide.groupname)
                 gradle/libs.versions.toml:
-                @@ -7 +7
-                - glide-groupname = { group = "com.github.bumptech.glide", name = "compiler", version = "4.14.2" }
-                + glide-groupname = { group = "com.github.bumptech.glide", name = "ksp", version = "4.14.2" }
+                @@ -7 +7 @@
+                -glide-groupname = { group = "com.github.bumptech.glide", name = "compiler", version = "4.14.2" }
+                +glide-groupname = { group = "com.github.bumptech.glide", name = "ksp", version = "4.14.2" }
                 Fix for build.gradle line 12: Replace usage of kapt with KSP:
-                @@ -12 +12
-                -   kapt(libs.glide.but.fun.and.exciting)
-                +   ksp(libs.glide.but.fun.and.exciting)
+                @@ -12 +12 @@
+                -  kapt(libs.glide.but.fun.and.exciting)
+                +  ksp(libs.glide.but.fun.and.exciting)
                 gradle/libs.versions.toml:
-                @@ -8 +8
-                - glide-but_fun-and_exciting = { group = "com.github.bumptech.glide", name = "compiler", version = "4.14.2" }
-                + glide-but_fun-and_exciting = { group = "com.github.bumptech.glide", name = "ksp", version = "4.14.2" }
+                @@ -8 +8 @@
+                -glide-but_fun-and_exciting = { group = "com.github.bumptech.glide", name = "compiler", version = "4.14.2" }
+                +glide-but_fun-and_exciting = { group = "com.github.bumptech.glide", name = "ksp", version = "4.14.2" }
                 """
       )
   }
@@ -7352,13 +7319,13 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle line 8: Replace usage of kapt with KSP:
-                @@ -8 +8
-                -     kapt(libs.glide)
-                +     ksp(libs.glide)
+                @@ -8 +8 @@
+                -    kapt(libs.glide)
+                +    ksp(libs.glide)
                 gradle/libs.versions.toml:
-                @@ -5 +5
-                - glide = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
-                + glide = { module = "com.github.bumptech.glide:ksp", version.ref = "glide" }
+                @@ -5 +5 @@
+                -glide = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
+                +glide = { module = "com.github.bumptech.glide:ksp", version.ref = "glide" }
                 """
       )
   }
@@ -7492,33 +7459,33 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle line 3: Change to 2023.01.00:
-        @@ -3 +3
-        -     implementation platform("androidx.compose:compose-bom:2022.12.00") // ERROR 1g
-        +     implementation platform("androidx.compose:compose-bom:2023.01.00") // ERROR 1g
+        @@ -3 +3 @@
+        -    implementation platform("androidx.compose:compose-bom:2022.12.00") // ERROR 1g
+        +    implementation platform("androidx.compose:compose-bom:2023.01.00") // ERROR 1g
         Fix for build.gradle line 4: Change to 2023.01.00:
-        @@ -4 +4
-        -     implementation testFixtures("androidx.compose:compose-bom:2022.12.00") // ERROR 2g
-        +     implementation testFixtures("androidx.compose:compose-bom:2023.01.00") // ERROR 2g
+        @@ -4 +4 @@
+        -    implementation testFixtures("androidx.compose:compose-bom:2022.12.00") // ERROR 2g
+        +    implementation testFixtures("androidx.compose:compose-bom:2023.01.00") // ERROR 2g
         Fix for build.gradle line 5: Change to 2023.01.00:
-        @@ -5 +5
-        -     implementation(enforcedPlatform("androidx.compose:compose-bom:2022.12.00")) // ERROR 3g
-        +     implementation(enforcedPlatform("androidx.compose:compose-bom:2023.01.00")) // ERROR 3g
+        @@ -5 +5 @@
+        -    implementation(enforcedPlatform("androidx.compose:compose-bom:2022.12.00")) // ERROR 3g
+        +    implementation(enforcedPlatform("androidx.compose:compose-bom:2023.01.00")) // ERROR 3g
         Fix for build.gradle.kts line 4: Change to 2023.01.00:
-        @@ -4 +4
-        -             implementation(platform("androidx.compose:compose-bom:2022.12.00")) // ERROR 1k
-        +             implementation(platform("androidx.compose:compose-bom:2023.01.00")) // ERROR 1k
+        @@ -4 +4 @@
+        -            implementation(platform("androidx.compose:compose-bom:2022.12.00")) // ERROR 1k
+        +            implementation(platform("androidx.compose:compose-bom:2023.01.00")) // ERROR 1k
         Fix for build.gradle.kts line 5: Change to 2023.01.00:
-        @@ -5 +5
-        -             implementation(testFixtures("androidx.compose:compose-bom:2022.12.00")) // ERROR 2k
-        +             implementation(testFixtures("androidx.compose:compose-bom:2023.01.00")) // ERROR 2k
+        @@ -5 +5 @@
+        -            implementation(testFixtures("androidx.compose:compose-bom:2022.12.00")) // ERROR 2k
+        +            implementation(testFixtures("androidx.compose:compose-bom:2023.01.00")) // ERROR 2k
         Fix for build.gradle.kts line 6: Change to 2023.01.00:
-        @@ -6 +6
-        -             implementation(enforcedPlatform("androidx.compose:compose-bom:2022.12.00")) // ERROR 3k
-        +             implementation(enforcedPlatform("androidx.compose:compose-bom:2023.01.00")) // ERROR 3k
+        @@ -6 +6 @@
+        -            implementation(enforcedPlatform("androidx.compose:compose-bom:2022.12.00")) // ERROR 3k
+        +            implementation(enforcedPlatform("androidx.compose:compose-bom:2023.01.00")) // ERROR 3k
         Fix for gradle/libs.versions.toml line 2: Change to 2023.01.00:
-        @@ -2 +2
-        - composeBom = "2022.12.00" # ERROR 1t
-        + composeBom = "2023.01.00" # ERROR 1t
+        @@ -2 +2 @@
+        -composeBom = "2022.12.00" # ERROR 1t
+        +composeBom = "2023.01.00" # ERROR 1t
         """
       )
   }
@@ -7575,21 +7542,21 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle line 6: Add platform() to BOM declaration:
-        @@ -6 +6
-        -     implementation(libs.compose.bom)
-        +     implementation(platform(libs.compose.bom))
+        @@ -6 +6 @@
+        -    implementation(libs.compose.bom)
+        +    implementation(platform(libs.compose.bom))
         Fix for build.gradle line 7: Add platform() to BOM declaration:
-        @@ -7 +7
-        -     testImplementation(libs.compose.bom)
-        +     testImplementation(platform(libs.compose.bom))
+        @@ -7 +7 @@
+        -    testImplementation(libs.compose.bom)
+        +    testImplementation(platform(libs.compose.bom))
         Fix for build.gradle line 8: Add platform() to BOM declaration:
-        @@ -8 +8
-        -     testImplementation "androidx.compose:compose-bom:2023.01.00"
-        +     testImplementation platform("androidx.compose:compose-bom:2023.01.00")
+        @@ -8 +8 @@
+        -    testImplementation "androidx.compose:compose-bom:2023.01.00"
+        +    testImplementation platform("androidx.compose:compose-bom:2023.01.00")
         Fix for build.gradle line 9: Add platform() to BOM declaration:
-        @@ -9 +9
-        -     api("androidx.compose:compose-bom:2023.01.00")
-        +     api(platform("androidx.compose:compose-bom:2023.01.00"))
+        @@ -9 +9 @@
+        -    api("androidx.compose:compose-bom:2023.01.00")
+        +    api(platform("androidx.compose:compose-bom:2023.01.00"))
         """
       )
   }
@@ -7701,10 +7668,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
         .expectFixDiffs(
           """
-                        Fix for build.gradle line 2: Insert sourceCompatibility directive for JDK8:
-                        @@ -5 +5
-                        + java.sourceCompatibility = JavaVersion.VERSION_1_8
-                    """
+          Fix for build.gradle line 2: Insert sourceCompatibility directive for JDK8:
+          @@ -5 +5
+          + java.sourceCompatibility = JavaVersion.VERSION_1_8
+          """
         )
     }
   }
@@ -7743,10 +7710,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
         .expectFixDiffs(
           """
-                        Fix for build.gradle line 2: Insert targetCompatibility directive for JDK8:
-                        @@ -5 +5
-                        + java.targetCompatibility = JavaVersion.VERSION_1_8
-                    """
+          Fix for build.gradle line 2: Insert targetCompatibility directive for JDK8:
+          @@ -5 +5
+          + java.targetCompatibility = JavaVersion.VERSION_1_8
+          """
         )
     }
   }
@@ -7786,11 +7753,11 @@ class GradleDetectorTest : AbstractCheckTest() {
         .expectFixDiffs(
           """
                     Fix for build.gradle line 2: Insert JDK8 language level directives:
-                    @@ -4 +4
-                    + java {
-                    +     sourceCompatibility = JavaVersion.VERSION_1_8
-                    +     targetCompatibility = JavaVersion.VERSION_1_8
-                    + }
+                    @@ -2,0 +3,4 @@
+                    +}
+                    +java {
+                    +    sourceCompatibility = JavaVersion.VERSION_1_8
+                    +    targetCompatibility = JavaVersion.VERSION_1_8
                     """
         )
     }
@@ -7888,10 +7855,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
         .expectFixDiffs(
           """
-                        Fix for build.gradle.kts line 2: Insert sourceCompatibility directive for JDK8:
-                        @@ -5 +5
-                        + java.sourceCompatibility = JavaVersion.VERSION_1_8
-                    """
+          Fix for build.gradle.kts line 2: Insert sourceCompatibility directive for JDK8:
+          @@ -5 +5
+          + java.sourceCompatibility = JavaVersion.VERSION_1_8
+          """
         )
     }
   }
@@ -7927,10 +7894,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
         .expectFixDiffs(
           """
-                        Fix for build.gradle.kts line 2: Insert targetCompatibility directive for JDK8:
-                        @@ -5 +5
-                        + java.targetCompatibility = JavaVersion.VERSION_1_8
-                    """
+          Fix for build.gradle.kts line 2: Insert targetCompatibility directive for JDK8:
+          @@ -5 +5
+          + java.targetCompatibility = JavaVersion.VERSION_1_8
+          """
         )
     }
   }
@@ -7970,11 +7937,11 @@ class GradleDetectorTest : AbstractCheckTest() {
         .expectFixDiffs(
           """
                     Fix for build.gradle.kts line 2: Insert JDK8 language level directives:
-                    @@ -4 +4
-                    + java {
-                    +     sourceCompatibility = JavaVersion.VERSION_1_8
-                    +     targetCompatibility = JavaVersion.VERSION_1_8
-                    + }
+                    @@ -2,0 +3,4 @@
+                    +}
+                    +java {
+                    +    sourceCompatibility = JavaVersion.VERSION_1_8
+                    +    targetCompatibility = JavaVersion.VERSION_1_8
                     """
         )
     }
@@ -8021,19 +7988,19 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle line 7: Replace with mavenCentral:
-                @@ -7 +7
-                -         jcenter()
-                +         mavenCentral()
+                @@ -7 +7 @@
+                -        jcenter()
+                +        mavenCentral()
                 Fix for build.gradle line 7: Delete this repository declaration:
-                @@ -7 +7
-                -         jcenter()
+                @@ -7 +6,0 @@
+                -        jcenter()
                 Fix for build.gradle line 14: Replace with mavenCentral:
-                @@ -14 +14
-                -         jcenter()
-                +         mavenCentral()
+                @@ -14 +14 @@
+                -        jcenter()
+                +        mavenCentral()
                 Fix for build.gradle line 14: Delete this repository declaration:
-                @@ -14 +14
-                -         jcenter()
+                @@ -14 +13,0 @@
+                -        jcenter()
             """
       )
   }
@@ -8077,19 +8044,19 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle.kts line 5: Replace with mavenCentral:
-                @@ -5 +5
-                -         jcenter()
-                +         mavenCentral()
+                @@ -5 +5 @@
+                -        jcenter()
+                +        mavenCentral()
                 Fix for build.gradle.kts line 5: Delete this repository declaration:
-                @@ -5 +5
-                -         jcenter()
+                @@ -5 +4,0 @@
+                -        jcenter()
                 Fix for build.gradle.kts line 12: Replace with mavenCentral:
-                @@ -12 +12
-                -         jcenter()
-                +         mavenCentral()
+                @@ -12 +12 @@
+                -        jcenter()
+                +        mavenCentral()
                 Fix for build.gradle.kts line 12: Delete this repository declaration:
-                @@ -12 +12
-                -         jcenter()
+                @@ -12 +11,0 @@
+                -        jcenter()
             """
       )
   }
@@ -8124,17 +8091,17 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle line 2: Replace with mavenCentral:
-                @@ -2 +2
-                -     jcenter {
-                +     mavenCentral {
+                @@ -2 +2 @@
+                -    jcenter {
+                +    mavenCentral {
                 Fix for build.gradle line 2: Delete this repository declaration:
-                @@ -2 +2
-                -     jcenter {
-                -         content {
-                -             // exclude artifacts starting with "my.company"
-                -             excludeGroupByRegex "^my\\.company.*"
-                -         }
-                -     }
+                @@ -2,6 +1,0 @@
+                -    jcenter {
+                -        content {
+                -            // exclude artifacts starting with "my.company"
+                -            excludeGroupByRegex "^my\\.company.*"
+                -        }
+                -    }
                 """
       )
   }
@@ -8169,17 +8136,17 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle.kts line 2: Replace with mavenCentral:
-                @@ -2 +2
-                -     jcenter {
-                +     mavenCentral {
+                @@ -2 +2 @@
+                -    jcenter {
+                +    mavenCentral {
                 Fix for build.gradle.kts line 2: Delete this repository declaration:
-                @@ -2 +2
-                -     jcenter {
-                -         content {
-                -             // exclude artifacts starting with "my.company"
-                -             excludeGroupByRegex("^my\\.company.*")
-                -         }
-                -     }
+                @@ -2,6 +1,0 @@
+                -    jcenter {
+                -        content {
+                -            // exclude artifacts starting with "my.company"
+                -            excludeGroupByRegex("^my\\.company.*")
+                -        }
+                -    }
                 """
       )
   }
@@ -8308,13 +8275,13 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for build.gradle.kts line 7: Change to 1.0.1:
-                @@ -7 +7
-                -    implementation("com.android.support:multidex:1.0.0")
-                +    implementation("com.android.support:multidex:1.0.1")
+                @@ -7 +7 @@
+                -   implementation("com.android.support:multidex:1.0.0")
+                +   implementation("com.android.support:multidex:1.0.1")
                 Fix for build.gradle.kts line 8: Change to 1.0.1:
-                @@ -8 +8
-                -    implementation("com.android.support:multidex:1.0.0@aar")
-                +    implementation("com.android.support:multidex:1.0.1@aar")
+                @@ -8 +8 @@
+                -   implementation("com.android.support:multidex:1.0.0@aar")
+                +   implementation("com.android.support:multidex:1.0.1@aar")
                 """
       )
   }
@@ -8355,19 +8322,17 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle line 2: Change to 1.0:
-        @@ -2 +2
-        -   implementation 'com.example.cached:library:1.0-alpha01'
-        +   implementation 'com.example.cached:library:1.0'
+        @@ -2 +2 @@
+        -  implementation 'com.example.cached:library:1.0-alpha01'
+        +  implementation 'com.example.cached:library:1.0'
         Fix for build.gradle line 3: Change to 1.0:
-        @@ -3 +3
-        -   implementation 'com.example.cached:library:1.0-beta01'
-        @@ -5 +4
-        +   implementation 'com.example.cached:library:1.0'
+        @@ -3 +3 @@
+        -  implementation 'com.example.cached:library:1.0-beta01'
+        +  implementation 'com.example.cached:library:1.0'
         Fix for build.gradle line 5: Change to 1.1-beta01:
-        @@ -5 +5
-        -   implementation 'com.example.cached:library:1.1-alpha01'
-        @@ -7 +6
-        +   implementation 'com.example.cached:library:1.1-beta01'
+        @@ -5 +5 @@
+        -  implementation 'com.example.cached:library:1.1-alpha01'
+        +  implementation 'com.example.cached:library:1.1-beta01'
         """
       )
   }
@@ -8410,21 +8375,21 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
           Fix for build.gradle line 2: Change to 18.0-android:
-          @@ -2 +2
-          -   implementation 'com.google.guava:spurious:16.0'
-          +   implementation 'com.google.guava:spurious:18.0-android'
+          @@ -2 +2 @@
+          -  implementation 'com.google.guava:spurious:16.0'
+          +  implementation 'com.google.guava:spurious:18.0-android'
           Fix for build.gradle line 3: Change to 18.0-android:
-          @@ -3 +3
-          -   implementation 'com.google.guava:spurious:16.0-rc01'
-          +   implementation 'com.google.guava:spurious:18.0-android'
+          @@ -3 +3 @@
+          -  implementation 'com.google.guava:spurious:16.0-rc01'
+          +  implementation 'com.google.guava:spurious:18.0-android'
           Fix for build.gradle line 4: Change to 18.0-jre:
-          @@ -4 +4
-          -   implementation 'com.google.guava:spurious:16.0-jre'
-          +   implementation 'com.google.guava:spurious:18.0-jre'
+          @@ -4 +4 @@
+          -  implementation 'com.google.guava:spurious:16.0-jre'
+          +  implementation 'com.google.guava:spurious:18.0-jre'
           Fix for build.gradle line 5: Change to 18.0-android:
-          @@ -5 +5
-          -   implementation 'com.google.guava:spurious:16.0-android'
-          +   implementation 'com.google.guava:spurious:18.0-android'
+          @@ -5 +5 @@
+          -  implementation 'com.google.guava:spurious:16.0-android'
+          +  implementation 'com.google.guava:spurious:18.0-android'
         """
       )
   }
@@ -8463,17 +8428,17 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
       Fix for build.gradle line 2: Change to 1.9:
-      @@ -2 +2
-      -   implementation "commons-beanutils:commons-beanutils:0.9"
-      +   implementation "commons-beanutils:commons-beanutils:1.9"
+      @@ -2 +2 @@
+      -  implementation "commons-beanutils:commons-beanutils:0.9"
+      +  implementation "commons-beanutils:commons-beanutils:1.9"
       Fix for build.gradle line 3: Change to 2.13:
-      @@ -3 +3
-      -   implementation "commons-io:commons-io:1.0"
-      +   implementation "commons-io:commons-io:2.13"
+      @@ -3 +3 @@
+      -  implementation "commons-io:commons-io:1.0"
+      +  implementation "commons-io:commons-io:2.13"
       Fix for build.gradle line 4: Change to 1.13:
-      @@ -4 +4
-      -   implementation "commons-codec:commons-codec:1.0"
-      +   implementation "commons-codec:commons-codec:1.13"
+      @@ -4 +4 @@
+      -  implementation "commons-codec:commons-codec:1.0"
+      +  implementation "commons-codec:commons-codec:1.13"
       """
       )
   }
@@ -8524,9 +8489,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle line 2: Change to 1.0.0.RC7-2:
-        @@ -2 +2
-        -   implementation "io.gitlab.arturbosch.detekt:detekt-cli:1.0.0.RC7"
-        +   implementation "io.gitlab.arturbosch.detekt:detekt-cli:1.0.0.RC7-2"
+        @@ -2 +2 @@
+        -  implementation "io.gitlab.arturbosch.detekt:detekt-cli:1.0.0.RC7"
+        +  implementation "io.gitlab.arturbosch.detekt:detekt-cli:1.0.0.RC7-2"
         """
       )
   }
@@ -8762,9 +8727,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for gradle/libs.versions.toml line 2: Change to 1.9.0:
-        @@ -2 +2
-        - kotlin = "1.7.10"
-        + kotlin = "1.9.0"
+        @@ -2 +2 @@
+        -kotlin = "1.7.10"
+        +kotlin = "1.9.0"
         """
       )
   }
@@ -8812,9 +8777,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for build.gradle line 3: Change to 2.10.2:
-        @@ -3 +3
-        -   implementation("joda-time:joda-time:2.9.+") // WARN 1
-        +   implementation("joda-time:joda-time:2.10.2") // WARN 1
+        @@ -3 +3 @@
+        -  implementation("joda-time:joda-time:2.9.+") // WARN 1
+        +  implementation("joda-time:joda-time:2.10.2") // WARN 1
         """
       )
   }

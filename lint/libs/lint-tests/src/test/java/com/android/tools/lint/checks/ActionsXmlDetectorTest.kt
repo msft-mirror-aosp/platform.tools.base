@@ -425,9 +425,9 @@ class ActionsXmlDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/xml/actions.xml line 2: Set intentName:
-            @@ -4 +4
-            -     <action>
-            +     <action intentName="[TODO]|" >
+            @@ -4 +4 @@
+            -    <action>
+            +    <action intentName="[TODO]|" >
             """
       )
   }
@@ -514,9 +514,9 @@ class ActionsXmlDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/xml/actions.xml line 3: Set urlTemplate:
-            @@ -5 +5
-            -         <fulfillment />
-            +         <fulfillment urlTemplate="[TODO]|" />
+            @@ -5 +5 @@
+            -        <fulfillment />
+            +        <fulfillment urlTemplate="[TODO]|" />
             """
       )
   }

@@ -58,10 +58,10 @@ public class TestUtils {
      * <p>This version needs to be present in prebuilts for tests to pass (see
      * tools/base/bazel/README.md).
      */
-    public static final String KOTLIN_VERSION_FOR_TESTS = "2.2.0-RC";
+    public static final String KOTLIN_VERSION_FOR_TESTS = "2.2.0-RC2";
 
     /** KSP version used by AGP integration tests. */
-    public static final String KSP_VERSION_FOR_TESTS = "2.2.0-RC-2.0.1";
+    public static final String KSP_VERSION_FOR_TESTS = "2.2.0-RC2-2.0.1";
 
     /**
      * Kotlin version used in AGP integration tests for Compose.
@@ -81,7 +81,7 @@ public class TestUtils {
      * <p>The following script updates the dev Kotlin version:
      * sync-memory-tests/src/com/android/tools/idea/gradle/project/sync/UpdateBenchmarkVersions.kt
      */
-    public static final String LATEST_KOTLIN_VERSION = "2.2.20-dev-3603";
+    public static final String LATEST_KOTLIN_VERSION = "2.2.20-dev-4982";
 
     /** Compose compiler compatible with {@link #KOTLIN_VERSION_FOR_COMPOSE_TESTS}. */
     public static final String COMPOSE_COMPILER_FOR_TESTS = "1.5.11";
@@ -189,7 +189,9 @@ public class TestUtils {
             // it. If we're using Bazel, we should still look to see if there's a larger outermost
             // workspace since we might be within a nested workspace.
             while (currDir != null) {
-                if (Files.exists(currDir.resolve("WORKSPACE"))) {
+                Path workspacePath = currDir.resolve("WORKSPACE");
+                // Ensure that the workspacePath being looked at is NOT a directory.
+                if (Files.isRegularFile(workspacePath)) {
                     workspaceRoot = currDir;
                 }
                 currDir = currDir.getParent();
@@ -618,21 +620,37 @@ public class TestUtils {
         }
     }
 
+    /**
+     * @deprecated Use com.android.ide.common.util.Diffs.getDiff instead
+     */
+    @Deprecated
     @NonNull
     public static String getDiff(@NonNull String before, @NonNull  String after) {
         return getDiff(before, after, 0);
     }
 
+    /**
+     * @deprecated Use com.android.ide.common.util.Diffs.getDiff instead
+     */
+    @Deprecated
     @NonNull
     public static String getDiff(@NonNull String before, @NonNull  String after, int windowSize) {
         return getDiff(before.split("\n"), after.split("\n"), windowSize);
     }
 
+    /**
+     * @deprecated Use com.android.ide.common.util.Diffs.getDiff instead
+     */
+    @Deprecated
     @NonNull
     public static String getDiff(@NonNull String[] before, @NonNull String[] after) {
         return getDiff(before, after, 0);
     }
 
+    /**
+     * @deprecated Use com.android.ide.common.util.Diffs.getDiff instead
+     */
+    @Deprecated
     public static String getDiff(@NonNull String[] before, @NonNull String[] after,
             int windowSize) {
         // Based on the LCS section in http://introcs.cs.princeton.edu/java/96optimization/

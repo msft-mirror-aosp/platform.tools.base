@@ -257,53 +257,53 @@ class LocaleDetectorTest : AbstractCheckTest() {
     val expectedFixDiffs =
       """
             Fix for src/test/pkg/LocaleTest.kt line 2: Replace with `capitalize(Locale.ROOT)`:
-            @@ -1 +1
-            + import java.util.Locale
-            @@ -2 +3
-            -     "wrong".capitalize()
-            +     "wrong".capitalize(Locale.ROOT)
+            @@ -0,0 +1 @@
+            +import java.util.Locale
+            @@ -2 +3 @@
+            -    "wrong".capitalize()
+            +    "wrong".capitalize(Locale.ROOT)
             Fix for src/test/pkg/LocaleTest.kt line 2: Replace with `capitalize(Locale.getDefault())`:
-            @@ -1 +1
-            + import java.util.Locale
-            @@ -2 +3
-            -     "wrong".capitalize()
-            +     "wrong".capitalize(Locale.getDefault())
+            @@ -0,0 +1 @@
+            +import java.util.Locale
+            @@ -2 +3 @@
+            -    "wrong".capitalize()
+            +    "wrong".capitalize(Locale.getDefault())
             Fix for src/test/pkg/LocaleTest.kt line 4: Replace with `decapitalize(Locale.ROOT)`:
-            @@ -1 +1
-            + import java.util.Locale
-            @@ -4 +5
-            -     "Wrong".decapitalize()
-            +     "Wrong".decapitalize(Locale.ROOT)
+            @@ -0,0 +1 @@
+            +import java.util.Locale
+            @@ -4 +5 @@
+            -    "Wrong".decapitalize()
+            +    "Wrong".decapitalize(Locale.ROOT)
             Fix for src/test/pkg/LocaleTest.kt line 4: Replace with `decapitalize(Locale.getDefault())`:
-            @@ -1 +1
-            + import java.util.Locale
-            @@ -4 +5
-            -     "Wrong".decapitalize()
-            +     "Wrong".decapitalize(Locale.getDefault())
+            @@ -0,0 +1 @@
+            +import java.util.Locale
+            @@ -4 +5 @@
+            -    "Wrong".decapitalize()
+            +    "Wrong".decapitalize(Locale.getDefault())
             Fix for src/test/pkg/LocaleTest.kt line 6: Replace with `toUpperCase(Locale.ROOT)`:
-            @@ -1 +1
-            + import java.util.Locale
-            @@ -6 +7
-            -     "wrong".toUpperCase()
-            +     "wrong".toUpperCase(Locale.ROOT)
+            @@ -0,0 +1 @@
+            +import java.util.Locale
+            @@ -6 +7 @@
+            -    "wrong".toUpperCase()
+            +    "wrong".toUpperCase(Locale.ROOT)
             Fix for src/test/pkg/LocaleTest.kt line 6: Replace with `toUpperCase(Locale.getDefault())`:
-            @@ -1 +1
-            + import java.util.Locale
-            @@ -6 +7
-            -     "wrong".toUpperCase()
-            +     "wrong".toUpperCase(Locale.getDefault())
+            @@ -0,0 +1 @@
+            +import java.util.Locale
+            @@ -6 +7 @@
+            -    "wrong".toUpperCase()
+            +    "wrong".toUpperCase(Locale.getDefault())
             Fix for src/test/pkg/LocaleTest.kt line 8: Replace with `toLowerCase(Locale.ROOT)`:
-            @@ -1 +1
-            + import java.util.Locale
-            @@ -8 +9
-            -     "WRONG".toLowerCase()
-            +     "WRONG".toLowerCase(Locale.ROOT)
+            @@ -0,0 +1 @@
+            +import java.util.Locale
+            @@ -8 +9 @@
+            -    "WRONG".toLowerCase()
+            +    "WRONG".toLowerCase(Locale.ROOT)
             Fix for src/test/pkg/LocaleTest.kt line 8: Replace with `toLowerCase(Locale.getDefault())`:
-            @@ -1 +1
-            + import java.util.Locale
-            @@ -8 +9
-            -     "WRONG".toLowerCase()
-            +     "WRONG".toLowerCase(Locale.getDefault())
+            @@ -0,0 +1 @@
+            +import java.util.Locale
+            @@ -8 +9 @@
+            -    "WRONG".toLowerCase()
+            +    "WRONG".toLowerCase(Locale.getDefault())
         """
 
     lint()
@@ -332,37 +332,53 @@ class LocaleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/test/pkg/LocaleTest.kt line 2: Replace with `capitalize(Locale.ROOT)`:
-        @@ -2 +2
-        -     "wrong".capitalize()
-        +     "wrong".capitalize(java.util.Locale.ROOT)
+        @@ -0,0 +1 @@
+        +import java.util.Locale
+        @@ -2 +3 @@
+        -    "wrong".capitalize()
+        +    "wrong".capitalize(Locale.ROOT)
         Fix for src/test/pkg/LocaleTest.kt line 2: Replace with `capitalize(Locale.getDefault())`:
-        @@ -2 +2
-        -     "wrong".capitalize()
-        +     "wrong".capitalize(java.util.Locale.getDefault())
+        @@ -0,0 +1 @@
+        +import java.util.Locale
+        @@ -2 +3 @@
+        -    "wrong".capitalize()
+        +    "wrong".capitalize(Locale.getDefault())
         Fix for src/test/pkg/LocaleTest.kt line 4: Replace with `decapitalize(Locale.ROOT)`:
-        @@ -4 +4
-        -     "Wrong".decapitalize()
-        +     "Wrong".decapitalize(java.util.Locale.ROOT)
+        @@ -0,0 +1 @@
+        +import java.util.Locale
+        @@ -4 +5 @@
+        -    "Wrong".decapitalize()
+        +    "Wrong".decapitalize(Locale.ROOT)
         Fix for src/test/pkg/LocaleTest.kt line 4: Replace with `decapitalize(Locale.getDefault())`:
-        @@ -4 +4
-        -     "Wrong".decapitalize()
-        +     "Wrong".decapitalize(java.util.Locale.getDefault())
+        @@ -0,0 +1 @@
+        +import java.util.Locale
+        @@ -4 +5 @@
+        -    "Wrong".decapitalize()
+        +    "Wrong".decapitalize(Locale.getDefault())
         Fix for src/test/pkg/LocaleTest.kt line 6: Replace with `toUpperCase(Locale.ROOT)`:
-        @@ -6 +6
-        -     "wrong".toUpperCase()
-        +     "wrong".toUpperCase(java.util.Locale.ROOT)
+        @@ -0,0 +1 @@
+        +import java.util.Locale
+        @@ -6 +7 @@
+        -    "wrong".toUpperCase()
+        +    "wrong".toUpperCase(Locale.ROOT)
         Fix for src/test/pkg/LocaleTest.kt line 6: Replace with `toUpperCase(Locale.getDefault())`:
-        @@ -6 +6
-        -     "wrong".toUpperCase()
-        +     "wrong".toUpperCase(java.util.Locale.getDefault())
+        @@ -0,0 +1 @@
+        +import java.util.Locale
+        @@ -6 +7 @@
+        -    "wrong".toUpperCase()
+        +    "wrong".toUpperCase(Locale.getDefault())
         Fix for src/test/pkg/LocaleTest.kt line 8: Replace with `toLowerCase(Locale.ROOT)`:
-        @@ -8 +8
-        -     "WRONG".toLowerCase()
-        +     "WRONG".toLowerCase(java.util.Locale.ROOT)
+        @@ -0,0 +1 @@
+        +import java.util.Locale
+        @@ -8 +9 @@
+        -    "WRONG".toLowerCase()
+        +    "WRONG".toLowerCase(Locale.ROOT)
         Fix for src/test/pkg/LocaleTest.kt line 8: Replace with `toLowerCase(Locale.getDefault())`:
-        @@ -8 +8
-        -     "WRONG".toLowerCase()
-        +     "WRONG".toLowerCase(java.util.Locale.getDefault())
+        @@ -0,0 +1 @@
+        +import java.util.Locale
+        @@ -8 +9 @@
+        -    "WRONG".toLowerCase()
+        +    "WRONG".toLowerCase(Locale.getDefault())
         """
       )
   }

@@ -128,17 +128,17 @@ class ScopedStorageDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 3: Set maxSdkVersion="32":
-                @@ -7 +7
-                -     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- ERROR -->
-                +     <uses-permission
-                +         android:name="android.permission.READ_EXTERNAL_STORAGE"
-                +         android:maxSdkVersion="32" /> <!-- ERROR -->
+                @@ -7 +7,3 @@
+                -    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> <!-- ERROR -->
+                +    <uses-permission
+                +        android:name="android.permission.READ_EXTERNAL_STORAGE"
+                +        android:maxSdkVersion="32" /> <!-- ERROR -->
                 Fix for AndroidManifest.xml line 4: Set maxSdkVersion="32":
-                @@ -8 +8
-                -     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- ERROR -->
-                +     <uses-permission
-                +         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-                +         android:maxSdkVersion="32" /> <!-- ERROR -->
+                @@ -8 +8,3 @@
+                -    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- ERROR -->
+                +    <uses-permission
+                +        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                +        android:maxSdkVersion="32" /> <!-- ERROR -->
                 """
       )
   }

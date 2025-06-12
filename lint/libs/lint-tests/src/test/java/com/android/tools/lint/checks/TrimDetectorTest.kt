@@ -72,34 +72,34 @@ class TrimDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for src/test.kt line 3: Remove lambda:
-        @@ -3 +3
-        -     s.trim() { it <= ' ' } // HINT 1
-        +     s.trim() // HINT 1
-        Fix for src/test.kt line 4: Remove lambda:
-        @@ -4 +4
-        -     s.trim { it <= ' ' } // HINT 2
-        +     s.trim() // HINT 2
-        Fix for src/test.kt line 5: Remove lambda:
-        @@ -5 +5
-        -     s.trim({ it <= ' ' }) // HINT 3
-        +     s.trim() // HINT 3
-        Fix for src/test.kt line 6: Remove lambda:
-        @@ -6 +6
-        -     s.trim() {it<=' '} // HINT 4
-        +     s.trim() // HINT 4
-        Fix for src/test.kt line 7: Remove lambda:
-        @@ -7 +7
-        -     s.trim() { c -> c <= ' ' } // HINT 5
-        +     s.trim() // HINT 5
-        Fix for src/test.kt line 8: Remove lambda:
-        @@ -8 +8
-        -     s.trim() { it.isWhitespace() } // HINT 6
-        +     s.trim() // HINT 6
-        Fix for src/test.kt line 10: Remove lambda:
-        @@ -10 +10
-        -     val to = s.trim { it <= ' ' }.substring(2)
-        +     val to = s.trim().substring(2)
+        Autofix for src/test.kt line 3: Remove lambda:
+        @@ -3 +3 @@
+        -    s.trim() { it <= ' ' } // HINT 1
+        +    s.trim() // HINT 1
+        Autofix for src/test.kt line 4: Remove lambda:
+        @@ -4 +4 @@
+        -    s.trim { it <= ' ' } // HINT 2
+        +    s.trim() // HINT 2
+        Autofix for src/test.kt line 5: Remove lambda:
+        @@ -5 +5 @@
+        -    s.trim({ it <= ' ' }) // HINT 3
+        +    s.trim() // HINT 3
+        Autofix for src/test.kt line 6: Remove lambda:
+        @@ -6 +6 @@
+        -    s.trim() {it<=' '} // HINT 4
+        +    s.trim() // HINT 4
+        Autofix for src/test.kt line 7: Remove lambda:
+        @@ -7 +7 @@
+        -    s.trim() { c -> c <= ' ' } // HINT 5
+        +    s.trim() // HINT 5
+        Autofix for src/test.kt line 8: Remove lambda:
+        @@ -8 +8 @@
+        -    s.trim() { it.isWhitespace() } // HINT 6
+        +    s.trim() // HINT 6
+        Autofix for src/test.kt line 10: Remove lambda:
+        @@ -10 +10 @@
+        -    val to = s.trim { it <= ' ' }.substring(2)
+        +    val to = s.trim().substring(2)
         """
       )
   }

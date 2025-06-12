@@ -18,8 +18,6 @@ package com.android.manifmerger;
 
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFile;
 import com.android.resources.NamespaceReferenceRewriter;
 import com.android.utils.PositionXmlParser;
@@ -27,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.xml.parsers.ParserConfigurationException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -47,16 +47,16 @@ public final class XmlLoader {
      *     null, the manifest's package name is used as the namespace instead.
      * @return the initialized {@link XmlDocument}
      */
-    @NonNull
+    @NotNull
     public static XmlDocument load(
-            @NonNull KeyResolver<String> selectors,
-            @NonNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
-            @NonNull String displayName,
-            @NonNull File xmlFile,
-            @NonNull InputStream inputStream,
-            @NonNull XmlDocument.Type type,
+            @NotNull KeyResolver<String> selectors,
+            @NotNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
+            @NotNull String displayName,
+            @NotNull File xmlFile,
+            @NotNull InputStream inputStream,
+            @NotNull XmlDocument.Type type,
             @Nullable String namespace,
-            @NonNull DocumentModel<ManifestModel.NodeTypes> model,
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model,
             boolean rewriteNamespaces)
             throws IOException, SAXException, ParserConfigurationException {
         Document domDocument = PositionXmlParser.parse(inputStream);
@@ -79,16 +79,16 @@ public final class XmlLoader {
      *
      * @param domDocument Manifest Document object.
      */
-    @NonNull
+    @NotNull
     public static XmlDocument load(
-            @NonNull Document domDocument,
-            @NonNull KeyResolver<String> selectors,
-            @NonNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
-            @NonNull String displayName,
-            @NonNull File xmlFile,
-            @NonNull XmlDocument.Type type,
+            @NotNull Document domDocument,
+            @NotNull KeyResolver<String> selectors,
+            @NotNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
+            @NotNull String displayName,
+            @NotNull File xmlFile,
+            @NotNull XmlDocument.Type type,
             @Nullable String namespace,
-            @NonNull DocumentModel<ManifestModel.NodeTypes> model,
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model,
             boolean rewriteNamespaces)
             throws IOException, SAXException, ParserConfigurationException {
         Element rootElement = domDocument.getDocumentElement();
@@ -123,15 +123,15 @@ public final class XmlLoader {
      * @throws SAXException if the xml is incorrect
      * @throws ParserConfigurationException if the xml engine cannot be configured.
      */
-    @NonNull
+    @NotNull
     public static XmlDocument load(
-            @NonNull KeyResolver<String> selectors,
-            @NonNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
-            @NonNull SourceFile sourceFile,
-            @NonNull String xml,
-            @NonNull XmlDocument.Type type,
+            @NotNull KeyResolver<String> selectors,
+            @NotNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
+            @NotNull SourceFile sourceFile,
+            @NotNull String xml,
+            @NotNull XmlDocument.Type type,
             @Nullable String namespace,
-            @NonNull DocumentModel<ManifestModel.NodeTypes> model)
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model)
             throws IOException, SAXException, ParserConfigurationException {
         Document domDocument = PositionXmlParser.parse(xml);
         Element rootElement = domDocument.getDocumentElement();

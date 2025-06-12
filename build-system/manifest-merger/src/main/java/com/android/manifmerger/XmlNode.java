@@ -17,8 +17,6 @@
 package com.android.manifmerger;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
@@ -28,6 +26,8 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -38,38 +38,38 @@ public abstract class XmlNode {
 
     protected static final Function<Node, String> NODE_TO_NAME = Node::getNodeName;
 
-    @NonNull private final Supplier<NodeKey> mOriginalId = Suppliers.memoize(this::getId);
+    @NotNull private final Supplier<NodeKey> mOriginalId = Suppliers.memoize(this::getId);
 
     /**
      * Returns a constant Nodekey that can be used throughout the lifecycle of the xml element.
      * The {@link #getId} can return different values over time as the key of the element can be
      * for instance, changed through placeholder replacement.
      */
-    @NonNull
+    @NotNull
     public synchronized NodeKey getOriginalId() {
         return mOriginalId.get();
     }
 
     /** Returns an unique id within the manifest file for the element. */
-    @NonNull
+    @NotNull
     public abstract NodeKey getId();
 
     /**
      * Returns the element's position
      */
-    @NonNull
+    @NotNull
     public abstract SourcePosition getPosition();
 
     /**
      * Returns the element's document xml source file location.
      */
-    @NonNull
+    @NotNull
     public abstract SourceFile getSourceFile();
 
     /**
      * Returns the element's document xml source file location.
      */
-    @NonNull
+    @NotNull
     public SourceFilePosition getSourceFilePosition() {
         return new SourceFilePosition(getSourceFile(), getPosition());
     }
@@ -77,13 +77,13 @@ public abstract class XmlNode {
     /**
      * Returns the element's xml
      */
-    @NonNull
+    @NotNull
     public abstract Node getXml();
 
     /**
      * Returns the name of this xml element or attribute.
      */
-    @NonNull
+    @NotNull
     public abstract NodeName getName();
 
     /**
@@ -95,14 +95,14 @@ public abstract class XmlNode {
          * Returns true if this attribute name has a namespace declaration and that namespapce is
          * the same as provided, false otherwise.
          */
-        boolean isInNamespace(@NonNull String namespaceURI);
+        boolean isInNamespace(@NotNull String namespaceURI);
 
         /**
          * Adds a new attribute of this name to a xml element with a value.
          * @param to the xml element to add the attribute to.
          * @param withValue the new attribute's value.
          */
-        void addToNode(@NonNull Element to, String withValue);
+        void addToNode(@NotNull Element to, String withValue);
 
         /**
          * The local name.
@@ -116,15 +116,15 @@ public abstract class XmlNode {
      * @param node the xml definition.
      * @return an instance of {@link NodeName} providing namespace handling.
      */
-    @NonNull
-    public static NodeName unwrapName(@NonNull Node node) {
+    @NotNull
+    public static NodeName unwrapName(@NotNull Node node) {
         return node.getNamespaceURI() == null
                 ? new Name(node.getNodeName())
                 : new NamespaceAwareName(node);
     }
 
-    @NonNull
-    public static NodeName fromXmlName(@NonNull String name) {
+    @NotNull
+    public static NodeName fromXmlName(@NotNull String name) {
         if (name.contains(":")) {
             String prefix = name.substring(0, name.indexOf(':'));
             return new NamespaceAwareName(
@@ -134,9 +134,9 @@ public abstract class XmlNode {
         return new Name(name);
     }
 
-    @NonNull
+    @NotNull
     public static NodeName fromNSName(
-            @NonNull String namespaceUri, @NonNull String prefix, @NonNull String localName) {
+            @NotNull String namespaceUri, @NotNull String prefix, @NotNull String localName) {
         return new NamespaceAwareName(namespaceUri, prefix, localName);
     }
 
@@ -146,7 +146,7 @@ public abstract class XmlNode {
      * of the merging process.
      * @return a human readable position.
      */
-    @NonNull
+    @NotNull
     public String printPosition() {
         return getSourceFilePosition().print(true /*shortFormat*/);
     }
@@ -155,17 +155,17 @@ public abstract class XmlNode {
     public static final class Name implements NodeName {
         private final String mName;
 
-        private Name(@NonNull String name) {
+        private Name(@NotNull String name) {
             this.mName = Preconditions.checkNotNull(name);
         }
 
         @Override
-        public boolean isInNamespace(@NonNull String namespaceURI) {
+        public boolean isInNamespace(@NotNull String namespaceURI) {
             return false;
         }
 
         @Override
-        public void addToNode(@NonNull Element to, String withValue) {
+        public void addToNode(@NotNull Element to, String withValue) {
             to.setAttribute(mName, withValue);
         }
 
@@ -193,37 +193,37 @@ public abstract class XmlNode {
     /** Implementation of the {@link NodeName} for a namespace aware attribute. */
     public static final class NamespaceAwareName implements NodeName {
 
-        @NonNull
+        @NotNull
         private final String mNamespaceURI;
 
         // ignore for comparison and hashcoding since different documents can use different
         // prefixes for the same namespace URI.
-        @NonNull
+        @NotNull
         private final String mPrefix;
-        @NonNull
+        @NotNull
         private final String mLocalName;
 
-        private NamespaceAwareName(@NonNull Node node) {
+        private NamespaceAwareName(@NotNull Node node) {
             this.mNamespaceURI = Preconditions.checkNotNull(node.getNamespaceURI());
             this.mPrefix = Preconditions.checkNotNull(node.getPrefix());
             this.mLocalName = Preconditions.checkNotNull(node.getLocalName());
         }
 
-        private NamespaceAwareName(@NonNull String namespaceURI,
-                @NonNull String prefix,
-                @NonNull String localName) {
+        private NamespaceAwareName(@NotNull String namespaceURI,
+                @NotNull String prefix,
+                @NotNull String localName) {
             mNamespaceURI = Preconditions.checkNotNull(namespaceURI);
             mPrefix = Preconditions.checkNotNull(prefix);
             mLocalName = Preconditions.checkNotNull(localName);
         }
 
         @Override
-        public boolean isInNamespace(@NonNull String namespaceURI) {
+        public boolean isInNamespace(@NotNull String namespaceURI) {
             return mNamespaceURI.equals(namespaceURI);
         }
 
         @Override
-        public void addToNode(@NonNull Element to, String withValue) {
+        public void addToNode(@NotNull Element to, String withValue) {
             // TODO: consider standardizing everything on "android:"
             to.setAttributeNS(mNamespaceURI, mPrefix + ":" + mLocalName, withValue);
         }
@@ -240,13 +240,13 @@ public abstract class XmlNode {
                     && ((NamespaceAwareName) o).mNamespaceURI.equals(this.mNamespaceURI));
         }
 
-        @NonNull
+        @NotNull
         @Override
         public String toString() {
             return mPrefix + ":" + mLocalName;
         }
 
-        @NonNull
+        @NotNull
         @Override
         public String getLocalName() {
             return mLocalName;
@@ -259,19 +259,19 @@ public abstract class XmlNode {
     @Immutable
     public static class NodeKey {
 
-        @NonNull
+        @NotNull
         private final String mKey;
 
-        NodeKey(@NonNull String key) {
+        NodeKey(@NotNull String key) {
             mKey = key;
         }
 
         public static NodeKey fromXml(
-                @NonNull Element element, @NonNull DocumentModel<ManifestModel.NodeTypes> model) {
+                @NotNull Element element, @NotNull DocumentModel<ManifestModel.NodeTypes> model) {
             return new OrphanXmlElement(element, model).getId();
         }
 
-        @NonNull
+        @NotNull
         @Override
         public String toString() {
             return mKey;

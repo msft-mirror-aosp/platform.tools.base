@@ -89,8 +89,8 @@ class MotionLayoutIdDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/layout/motion_test.xml line 9: Set id:
-            @@ -10 +10
-            +         android:id="@+id/[TODO]|"
+            @@ -9,0 +10 @@
+            +        android:id="@+id/[TODO]|"
             """
       )
   }
@@ -148,8 +148,8 @@ class MotionLayoutIdDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for res/layout/motion_test.xml line 23: Set id:
-            @@ -24 +24
-            +         a:id="@+id/[TODO]|"
+            @@ -23,0 +24 @@
+            +        a:id="@+id/[TODO]|"
             """
       )
   }

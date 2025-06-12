@@ -20,11 +20,12 @@ import com.android.fakeadbserver.DeviceState.HostConnectionType
 import com.android.fakeadbserver.devicecommandhandlers.AbbCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.AbbExecCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
-import com.android.fakeadbserver.devicecommandhandlers.FakeSyncCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.InteractiveShellHandler
+import com.android.fakeadbserver.devicecommandhandlers.InteractiveShellV2Handler
 import com.android.fakeadbserver.devicecommandhandlers.JdwpCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.ReverseForwardCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.RootCommandHandler
+import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.TrackAppCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.TrackJdwpCommandHandler
 import com.android.fakeadbserver.devicecommandhandlers.UnRootCommandHandler
@@ -54,9 +55,8 @@ import com.android.fakeadbserver.shellcommandhandlers.CatCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.CmdCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.DumpsysCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.EchoCommandHandler
-import com.android.fakeadbserver.shellcommandhandlers.GetPropCommandHandler
-import com.android.fakeadbserver.devicecommandhandlers.InteractiveShellV2Handler
 import com.android.fakeadbserver.shellcommandhandlers.ExitCommandHandler
+import com.android.fakeadbserver.shellcommandhandlers.GetPropCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.LogcatCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.PackageManagerCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.PingCommandHandler
@@ -562,12 +562,13 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
 
             addDeviceHandler(TrackJdwpCommandHandler())
             addDeviceHandler(TrackAppCommandHandler())
-            addDeviceHandler(FakeSyncCommandHandler())
+            addDeviceHandler(SyncCommandHandler())
             addDeviceHandler(ReverseForwardCommandHandler())
             addDeviceHandler(PingCommandHandler(ShellProtocolType.EXEC))
             addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL_V2))
             addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL))
             addDeviceHandler(RmCommandHandler(ShellProtocolType.SHELL))
+            addDeviceHandler(RmCommandHandler(ShellProtocolType.SHELL_V2))
             addDeviceHandler(LogcatCommandHandler(ShellProtocolType.SHELL))
             addDeviceHandler(GetPropCommandHandler(ShellProtocolType.EXEC))
             addDeviceHandler(GetPropCommandHandler(ShellProtocolType.SHELL))

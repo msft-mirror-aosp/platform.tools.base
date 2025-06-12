@@ -219,6 +219,7 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
                 import org.jetbrains.uast.UCallExpression
                 import org.jetbrains.uast.UMethod
                 import org.jetbrains.uast.kotlin.KotlinUastResolveProviderService
+                import org.jetbrains.uast.kotlin.readWriteAccess
 
                 object UnusedValueUtils {
                     fun KtElement.getBindingContext(): BindingContext {
@@ -228,6 +229,7 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
 
                     private val KtExpression.functionalInterfaceType: KotlinType?
                         get() {
+                            this.readWriteAccess()
                             val context = getBindingContext() // ERROR
                             val type = context.getType(this) // ERROR
                             if (type != null && isSamType(type)) { // ERROR
@@ -265,64 +267,64 @@ class KotlincFE10DetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                src/test/pkg/UnusedValueUtils.kt:21: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:22: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         return service?.getBindingContext(this) ?: BindingContext.EMPTY // ERROR
                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:26: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:28: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             val context = getBindingContext() // ERROR
                                           ~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:27: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:29: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             val type = context.getType(this) // ERROR
                                        ~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:28: Warning: org.jetbrains.kotlin.types.KotlinType appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:30: Warning: org.jetbrains.kotlin.types.KotlinType appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             if (type != null && isSamType(type)) { // ERROR
                                 ~~~~
-                src/test/pkg/UnusedValueUtils.kt:30: Warning: org.jetbrains.kotlin.types.KotlinType appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:32: Warning: org.jetbrains.kotlin.types.KotlinType appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                                 return type // ERROR
                                        ~~~~
-                src/test/pkg/UnusedValueUtils.kt:33: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:35: Warning: org.jetbrains.kotlin.resolve.BindingContext appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             val call = argument.getParentResolvedCall(context) ?: return null // ERROR
                                                                       ~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:33: Warning: org.jetbrains.kotlin.resolve.calls.util.CallUtilKt appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:35: Warning: org.jetbrains.kotlin.resolve.calls.util.CallUtilKt appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             val call = argument.getParentResolvedCall(context) ?: return null // ERROR
                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:34: Warning: org.jetbrains.kotlin.resolve.calls.model.ResolvedCall appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:36: Warning: org.jetbrains.kotlin.resolve.calls.model.ResolvedCall appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             val descriptor = call.resultingDescriptor // ERROR
                                                   ~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:34: Warning: org.jetbrains.kotlin.resolve.calls.model.ResolvedCall<? extends org.jetbrains.kotlin.descriptors.CallableDescriptor> appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:36: Warning: org.jetbrains.kotlin.resolve.calls.model.ResolvedCall<? extends org.jetbrains.kotlin.descriptors.CallableDescriptor> appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             val descriptor = call.resultingDescriptor // ERROR
                                              ~~~~
-                src/test/pkg/UnusedValueUtils.kt:36: Warning: org.jetbrains.kotlin.descriptors.CallableDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:38: Warning: org.jetbrains.kotlin.descriptors.CallableDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             return if (descriptor.original is FunctionInterfaceConstructorDescriptor) { // ERROR
                                        ~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:36: Warning: org.jetbrains.kotlin.descriptors.synthetic.FunctionInterfaceConstructorDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:38: Warning: org.jetbrains.kotlin.descriptors.synthetic.FunctionInterfaceConstructorDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                             return if (descriptor.original is FunctionInterfaceConstructorDescriptor) { // ERROR
                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:38: Warning: org.jetbrains.kotlin.descriptors.CallableDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:40: Warning: org.jetbrains.kotlin.descriptors.CallableDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                                 descriptor.returnType // ERROR
                                 ~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:41: Warning: org.jetbrains.kotlin.resolve.calls.model.ResolvedCall<? extends org.jetbrains.kotlin.descriptors.CallableDescriptor> appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:43: Warning: org.jetbrains.kotlin.resolve.calls.model.ResolvedCall<? extends org.jetbrains.kotlin.descriptors.CallableDescriptor> appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                                 call.getParameterTypeForArgument(argument)?.takeIf { isSamType(it) } // ERROR
                                 ~~~~
-                src/test/pkg/UnusedValueUtils.kt:41: Warning: org.jetbrains.kotlin.types.KotlinType appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:43: Warning: org.jetbrains.kotlin.types.KotlinType appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                                 call.getParameterTypeForArgument(argument)?.takeIf { isSamType(it) } // ERROR
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:45: Warning: org.jetbrains.kotlin.resolve.calls.model.ResolvedCall appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:47: Warning: org.jetbrains.kotlin.resolve.calls.model.ResolvedCall appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                     private fun ResolvedCall<*>.getParameterTypeForArgument( // ERROR
                                 ~~~~~~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:48: Warning: org.jetbrains.kotlin.resolve.calls.util.CallUtilKt appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:50: Warning: org.jetbrains.kotlin.resolve.calls.util.CallUtilKt appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         val parameter = getParameterForArgument(argument) ?: return null // ERROR
                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:49: Warning: org.jetbrains.kotlin.descriptors.ValueParameterDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:51: Warning: org.jetbrains.kotlin.descriptors.ValueParameterDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         return if (parameter.isVararg) parameter.varargElementType // ERROR
                                    ~~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:49: Warning: org.jetbrains.kotlin.resolve.calls.components.ArgumentsUtilsKt appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:51: Warning: org.jetbrains.kotlin.resolve.calls.components.ArgumentsUtilsKt appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         return if (parameter.isVararg) parameter.varargElementType // ERROR
                                              ~~~~~~~~
-                src/test/pkg/UnusedValueUtils.kt:50: Warning: org.jetbrains.kotlin.descriptors.ValueDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:52: Warning: org.jetbrains.kotlin.descriptors.ValueDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         else parameter.type // ERROR
                                        ~~~~
-                src/test/pkg/UnusedValueUtils.kt:50: Warning: org.jetbrains.kotlin.descriptors.ValueParameterDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
+                src/test/pkg/UnusedValueUtils.kt:52: Warning: org.jetbrains.kotlin.descriptors.ValueParameterDescriptor appears to be part of the old K1 Kotlin compiler. Avoid using it if possible; K1 will be going away soon. [KotlincFE10]
                         else parameter.type // ERROR
                              ~~~~~~~~~
                 0 errors, 20 warnings

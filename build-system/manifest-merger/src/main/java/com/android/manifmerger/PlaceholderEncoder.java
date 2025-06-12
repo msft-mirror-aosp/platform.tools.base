@@ -16,8 +16,8 @@
 
 package com.android.manifmerger;
 
-import com.android.annotations.NonNull;
 import java.util.regex.Matcher;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -35,7 +35,7 @@ public class PlaceholderEncoder {
      * @param node node to visit attributes on
      * @return true if node was changed. False otherwise.
      */
-    public static boolean encode(@NonNull Node node) {
+    public static boolean encode(@NotNull Node node) {
         if (node instanceof Element) {
             boolean changeFlag = false;
             Element element = (Element) node;

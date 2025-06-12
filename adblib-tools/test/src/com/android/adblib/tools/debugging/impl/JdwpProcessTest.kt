@@ -461,7 +461,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     private suspend fun FakeAdbServerProvider.addDevice(deviceApi: Int = 30): ConnectedDevice {
         val fakeAdb = this
         val fakeDevice = addFakeDevice(fakeAdb, deviceApi)
-        return waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        return session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
     }
 
     private suspend fun ConnectedDevice.createFakeAdbProcess(

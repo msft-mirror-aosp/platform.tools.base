@@ -230,13 +230,13 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/Annotation1.kt line 14: Replace with Target:
-            @@ -14 +14
-            - @java.lang.annotation.Target(ElementType.PARAMETER) // ERROR 1
-            + @Target(ElementType.PARAMETER) // ERROR 1
+            @@ -14 +14 @@
+            -@java.lang.annotation.Target(ElementType.PARAMETER) // ERROR 1
+            +@Target(ElementType.PARAMETER) // ERROR 1
             Fix for src/test/pkg/Annotation1.kt line 19: Delete:
-            @@ -19 +19
-            - @java.lang.annotation.Target(ElementType.PARAMETER) // ERROR 2
-            +  // ERROR 2
+            @@ -19 +19 @@
+            -@java.lang.annotation.Target(ElementType.PARAMETER) // ERROR 2
+            + // ERROR 2
             """
       )
   }
@@ -311,21 +311,21 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for src/test/pkg/IntDefTest.java line 13: Replace with 1L << 44:
-                @@ -13 +13
-                -     public static final long FLAG5 = 0x100000000000L;
-                +     public static final long FLAG5 = 1L << 44;
+                @@ -13 +13 @@
+                -    public static final long FLAG5 = 0x100000000000L;
+                +    public static final long FLAG5 = 1L << 44;
                 Autofix for src/test/pkg/IntDefTest.java line 14: Replace with 1L << 49:
-                @@ -14 +14
-                -     public static final long FLAG6 = 0x0002000000000000L;
-                +     public static final long FLAG6 = 1L << 49;
+                @@ -14 +14 @@
+                -    public static final long FLAG6 = 0x0002000000000000L;
+                +    public static final long FLAG6 = 1L << 49;
                 Autofix for src/test/pkg/IntDefTest.java line 15: Replace with 1L << 3:
-                @@ -15 +15
-                -     public static final long FLAG7 = 8L;
-                +     public static final long FLAG7 = 1L << 3;
+                @@ -15 +15 @@
+                -    public static final long FLAG7 = 8L;
+                +    public static final long FLAG7 = 1L << 3;
                 Autofix for src/test/pkg/IntDefTest.java line 20: Replace with 1 << 4:
-                @@ -20 +20
-                -     public static final int  FLAG12 = 0x10;
-                +     public static final int  FLAG12 = 1 << 4;
+                @@ -20 +20 @@
+                -    public static final int  FLAG12 = 0x10;
+                +    public static final int  FLAG12 = 1 << 4;
                 """
       )
   }
@@ -364,9 +364,9 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for src/test/pkg/DividerFlags.kt line 12: Replace with 1 shl 1:
-                @@ -12 +12
-                - const val DIVIDER_BOTTOM: Int = 2
-                + const val DIVIDER_BOTTOM: Int = 1 shl 1
+                @@ -12 +12 @@
+                -const val DIVIDER_BOTTOM: Int = 2
+                +const val DIVIDER_BOTTOM: Int = 1 shl 1
                 """
       )
   }
@@ -1051,25 +1051,25 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/WrongUsages.java line 6: Specify API level:
-            @@ -6 +6
-            -     @RequiresApi // ERROR 1: Misses API level
-            +     @RequiresApi([TODO]|) // ERROR 1: Misses API level
+            @@ -6 +6 @@
+            -    @RequiresApi // ERROR 1: Misses API level
+            +    @RequiresApi([TODO]|) // ERROR 1: Misses API level
             Fix for src/test/pkg/WrongUsages.java line 9: Delete @RequiresApi:
-            @@ -9 +9
-            -     @RequiresApi(14) // ERROR 2: Already known to be at least 15 from minSdkVersion
-            +      // ERROR 2: Already known to be at least 15 from minSdkVersion
+            @@ -9 +9 @@
+            -    @RequiresApi(14) // ERROR 2: Already known to be at least 15 from minSdkVersion
+            +     // ERROR 2: Already known to be at least 15 from minSdkVersion
             Fix for src/test/pkg/WrongUsages.java line 12: Delete @RequiresApi:
-            @@ -12 +12
-            -     @RequiresApi(15) // ERROR 3: Already known to be at least 15 from minSdkVersion
-            +      // ERROR 3: Already known to be at least 15 from minSdkVersion
+            @@ -12 +12 @@
+            -    @RequiresApi(15) // ERROR 3: Already known to be at least 15 from minSdkVersion
+            +     // ERROR 3: Already known to be at least 15 from minSdkVersion
             Fix for src/test/pkg/WrongUsages.java line 15: Delete @RequiresApi:
-            @@ -15 +15
-            -     @RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH) // ERROR 3: Already known to be at least 15 from minSdkVersion
-            +      // ERROR 3: Already known to be at least 15 from minSdkVersion
+            @@ -15 +15 @@
+            -    @RequiresApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH) // ERROR 3: Already known to be at least 15 from minSdkVersion
+            +     // ERROR 3: Already known to be at least 15 from minSdkVersion
             Fix for src/test/pkg/WrongUsages.java line 20: Delete @RequiresApi:
-            @@ -20 +20
-            -         @RequiresApi(15) // ERROR 4: Already known to be at least 20 from outer annotation
-            +          // ERROR 4: Already known to be at least 20 from outer annotation
+            @@ -20 +20 @@
+            -        @RequiresApi(15) // ERROR 4: Already known to be at least 20 from outer annotation
+            +         // ERROR 4: Already known to be at least 20 from outer annotation
             """
       )
   }
@@ -1143,41 +1143,41 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/test/pkg/WrongUsagesJava.java line 5: Replace with `@RequiresApi`:
-        @@ -4 +4
-        + import androidx.annotation.RequiresApi;
-        @@ -5 +6
-        - @TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
-        + @RequiresApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
+        @@ -3,0 +4 @@
+        +import androidx.annotation.RequiresApi;
+        @@ -5 +6 @@
+        -@TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
+        +@RequiresApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
         Autofix for src/test/pkg/WrongUsagesJava.java line 7: Replace with `@RequiresApi`:
-        @@ -4 +4
-        + import androidx.annotation.RequiresApi;
-        @@ -7 +8
-        -     @TargetApi(31) // ERROR 2
-        +     @RequiresApi(31) // ERROR 2
+        @@ -3,0 +4 @@
+        +import androidx.annotation.RequiresApi;
+        @@ -7 +8 @@
+        -    @TargetApi(31) // ERROR 2
+        +    @RequiresApi(31) // ERROR 2
         Autofix for src/test/pkg/WrongUsagesJava.java line 10: Replace with `@RequiresApi`:
-        @@ -4 +4
-        + import androidx.annotation.RequiresApi;
-        @@ -10 +11
-        -     @TargetApi(value = 32) // ERROR 3
-        +     @RequiresApi(value = 32) // ERROR 3
+        @@ -3,0 +4 @@
+        +import androidx.annotation.RequiresApi;
+        @@ -10 +11 @@
+        -    @TargetApi(value = 32) // ERROR 3
+        +    @RequiresApi(value = 32) // ERROR 3
         Autofix for src/test/pkg/WrongUsagesKotlin.kt line 7: Replace with `@RequiresApi`:
-        @@ -5 +5
-        + import androidx.annotation.RequiresApi
-        @@ -7 +8
-        -     @field:TargetApi(value = 31) // ERROR 4
-        +     @field:RequiresApi(value = 31) // ERROR 4
+        @@ -4,0 +5 @@
+        +import androidx.annotation.RequiresApi
+        @@ -7 +8 @@
+        -    @field:TargetApi(value = 31) // ERROR 4
+        +    @field:RequiresApi(value = 31) // ERROR 4
         Autofix for src/test/pkg/WrongUsagesKotlin.kt line 8: Replace with `@RequiresApi`:
-        @@ -5 +5
-        + import androidx.annotation.RequiresApi
-        @@ -8 +9
-        -     @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
-        +     @get:RequiresApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
+        @@ -4,0 +5 @@
+        +import androidx.annotation.RequiresApi
+        @@ -8 +9 @@
+        -    @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
+        +    @get:RequiresApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
         Autofix for src/test/pkg/WrongUsagesKotlin.kt line 11: Replace with `@RequiresApi`:
-        @@ -5 +5
-        + import androidx.annotation.RequiresApi
-        @@ -11 +12
-        -     @TargetApi(31) // ERROR 6
-        +     @RequiresApi(31) // ERROR 6
+        @@ -4,0 +5 @@
+        +import androidx.annotation.RequiresApi
+        @@ -11 +12 @@
+        -    @TargetApi(31) // ERROR 6
+        +    @RequiresApi(31) // ERROR 6
         """
       )
   }
@@ -1815,9 +1815,9 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/TestClass.kt line 6: Change to `@get:`:
-            @@ -6 +6
-            -     @VisibleForTesting val p1: String, // ERROR
-            +     @get:VisibleForTesting val p1: String, // ERROR
+            @@ -6 +6 @@
+            -    @VisibleForTesting val p1: String, // ERROR
+            +    @get:VisibleForTesting val p1: String, // ERROR
             """
       )
   }

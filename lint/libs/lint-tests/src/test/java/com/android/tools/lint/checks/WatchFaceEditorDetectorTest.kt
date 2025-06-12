@@ -54,9 +54,10 @@ class WatchFaceEditorDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 7: Set launchMode="standard":
-                @@ -9 +9
-                -             android:launchMode="singleTask" >
-                +             android:launchMode="standard" >"""
+                @@ -9 +9 @@
+                -            android:launchMode="singleTask" >
+                +            android:launchMode="standard" >
+        """
       )
   }
 

@@ -316,6 +316,7 @@ _iml_module_ = rule(
         "java_srcs": attr.label_list(allow_files = True),
         "kotlin_srcs": attr.label_list(allow_files = True),
         "kotlin_use_compose": attr.bool(),
+        "kotlin_use_serialization": attr.bool(),
         "kotlin_use_ir": attr.bool(),
         "java_test_srcs": attr.label_list(allow_files = True),
         "kotlin_test_srcs": attr.label_list(allow_files = True),
@@ -360,6 +361,11 @@ _iml_module_ = rule(
         ),
         "_compose_plugin": attr.label(
             default = Label("//prebuilts/tools/common/m2:kotlin-compose-compiler-plugin"),
+            cfg = "exec",
+            allow_single_file = [".jar"],
+        ),
+        "_kotlin_serialization_plugin": attr.label(
+            default = Label("//prebuilts/tools/common/m2:kotlin-serialization-compiler-plugin"),
             cfg = "exec",
             allow_single_file = [".jar"],
         ),
@@ -435,6 +441,7 @@ def iml_module(
         lint_timeout = None,
         exec_properties = {},
         kotlin_use_compose = False,
+        kotlin_use_serialization = False,
         generate_k1_tests = False,
         generate_coverage_baseline = True):
     """A macro corresponding to an IntelliJ module.
@@ -502,6 +509,7 @@ def iml_module(
         lint_timeout: See impl.
         exec_properties: See https://bazel.build/reference/be/common-definitions#common.exec_properties
         kotlin_use_compose: See impl.
+        kotlin_use_serialization: See impl.
         generate_k1_tests: Creates an additional test target to use the kotlin K1 plugin.
     """
     srcs = split_srcs(srcs, resources, exclude)
@@ -522,6 +530,7 @@ def iml_module(
         java_srcs = srcs.javas,
         kotlin_srcs = srcs.kotlins,
         kotlin_use_compose = kotlin_use_compose,
+        kotlin_use_serialization = kotlin_use_serialization,
         resources = srcs.resources,
         res_zips = res_zips,
         roots = srcs.roots,
@@ -916,9 +925,11 @@ def _validate_split_test_filter(test_filter):
     """Validates the test_filter matches a package or FQCN format."""
     if not test_filter:
         return
+
     # Allow trailing packages, e.g. ".gradle", which could for example match
     # against "test.subpackage1.gradle" AND "test.subpackage2.gradle"
     test_filter = test_filter.removeprefix(".")
+
     # Allow trailing "." in filters.
     test_filter = test_filter.removesuffix("\\.")
     for split in test_filter.split("."):

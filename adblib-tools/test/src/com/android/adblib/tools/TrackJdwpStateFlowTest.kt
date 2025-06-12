@@ -61,7 +61,7 @@ class TrackJdwpStateFlowTest {
         val fakeDevice = createFakeDevice(deviceID)
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
 
@@ -164,7 +164,7 @@ class TrackJdwpStateFlowTest {
         val fakeDevice = createFakeDevice(deviceID)
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
         setHostPropertyValue(
@@ -211,7 +211,7 @@ class TrackJdwpStateFlowTest {
         val fakeDevice = createFakeDevice(deviceID)
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
 
@@ -242,7 +242,7 @@ class TrackJdwpStateFlowTest {
         val fakeDevice = createFakeDevice(deviceID)
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
 
         // Act
@@ -266,7 +266,7 @@ class TrackJdwpStateFlowTest {
         val fakeDevice = createFakeDevice(deviceID)
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
 
         // Act/Assert

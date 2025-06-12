@@ -96,7 +96,7 @@ class JdwpProcessViewHierarchyTest : AdbLibToolsTestBase() {
             deviceID, "test1", "test2", "model", AndroidApiLevel(30), DeviceState.HostConnectionType.USB
         )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = waitForOnlineConnectedDevice(session, fakeDevice.deviceId)
+        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         fakeDevice.startClient(10, 0, "a.b.c", false)
         val process = connectedDevice.jdwpProcessManager.getProcess(10)
         return JdwpProcessViewHierarchyImpl(process)

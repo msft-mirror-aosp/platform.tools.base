@@ -456,8 +456,8 @@ class ManifestDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 11: Delete allowBackup:
-            @@ -10 +10
-            -         android:allowBackup="true"
+            @@ -10 +9,0 @@
+            -        android:allowBackup="true"
             """
       )
   }
@@ -783,17 +783,17 @@ class ManifestDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 1: Set versionCode:
-                @@ -3 +3
-                  <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                -     package="foo.bar2" >
-                +     package="foo.bar2"
-                +     android:versionCode="[TODO]|" >
+                @@ -2,3 +2,4 @@
+                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                -    package="foo.bar2" >
+                +    package="foo.bar2"
+                +    android:versionCode="[TODO]|" >
                 Fix for AndroidManifest.xml line 1: Set versionName:
-                @@ -3 +3
-                  <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                -     package="foo.bar2" >
-                +     package="foo.bar2"
-                +     android:versionName="[TODO]|" >
+                @@ -2,3 +2,4 @@
+                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                -    package="foo.bar2" >
+                +    package="foo.bar2"
+                +    android:versionName="[TODO]|" >
                 """
       )
   }
@@ -943,13 +943,13 @@ class ManifestDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 8: Set icon:
-                @@ -9 +9
+                @@ -8,3 +8,5 @@
 
-                -     <application android:label="@string/app_name" >
-                +     <application
-                +         android:icon="@mipmap/|"
-                +         android:label="@string/app_name" >
-                          <activity
+                -    <application android:label="@string/app_name" >
+                +    <application
+                +        android:icon="@mipmap/|"
+                +        android:label="@string/app_name" >
+                         <activity
                 """
       )
   }
@@ -2090,17 +2090,17 @@ class ManifestDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 5: Create data_extraction_rules.xml:
-            @@ -11 +11
-            +         android:dataExtractionRules="@xml/data_extraction_rules"
+            @@ -10,0 +11 @@
+            +        android:dataExtractionRules="@xml/data_extraction_rules"
             res/xml/data_extraction_rules.xml:
-            @@ -1 +1
-            + <data-extraction-rules>
-            +     <cloud-backup>
-            +          |<include domain="file" path="dd"/>
-            +          <exclude domain="file" path="dd/fo3o.txt"/>
-            +          <exclude domain="file" path="dd/ss/foo.txt"/>
-            +     </cloud-backup>
-            + </data-extraction-rules>
+            @@ -0,0 +1,7 @@
+            +<data-extraction-rules>
+            +    <cloud-backup>
+            +         |<include domain="file" path="dd"/>
+            +         <exclude domain="file" path="dd/fo3o.txt"/>
+            +         <exclude domain="file" path="dd/ss/foo.txt"/>
+            +    </cloud-backup>
+            +</data-extraction-rules>
             """
       )
   }
@@ -2154,23 +2154,23 @@ class ManifestDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 5: Create data_extraction_rules.xml:
-            @@ -11 +11
-            +         android:dataExtractionRules="@xml/data_extraction_rules"
+            @@ -10,0 +11 @@
+            +        android:dataExtractionRules="@xml/data_extraction_rules"
             res/xml/data_extraction_rules.xml:
-            @@ -1 +1
-            + <!-- Our copyright here -->
-            + <data-extraction-rules>
-            +     <cloud-backup disableIfNoEncryptionCapabilities="true">
-            +          <!-- Some comment -->
-            +          |<include domain="file" path="dd"/>
-            +          <!-- <exclude domain="file" path="dd/fo3o.txt" requireFlags="deviceToDeviceTransfer"/> -->
-            +          <exclude domain="file" path="dd/fo3o2.txt" requireFlags="clientSideEncryption"/>
-            +          <exclude domain="file" path="dd/fo3o3.txt"/>
-            +          <!-- <exclude domain="file" path="dd/ss/foo.txt" requireFlags="deviceToDeviceTransfer"/> -->
-            +          <!--<exclude domain="file" path="dd/ss/foo.txt" requireFlags="clientSideEncryption|deviceToDeviceTransfer" />-->
-            +          <!-- Final comment -->
-            +     </cloud-backup>
-            + </data-extraction-rules>
+            @@ -0,0 +1,13 @@
+            +<!-- Our copyright here -->
+            +<data-extraction-rules>
+            +    <cloud-backup disableIfNoEncryptionCapabilities="true">
+            +         <!-- Some comment -->
+            +         |<include domain="file" path="dd"/>
+            +         <!-- <exclude domain="file" path="dd/fo3o.txt" requireFlags="deviceToDeviceTransfer"/> -->
+            +         <exclude domain="file" path="dd/fo3o2.txt" requireFlags="clientSideEncryption"/>
+            +         <exclude domain="file" path="dd/fo3o3.txt"/>
+            +         <!-- <exclude domain="file" path="dd/ss/foo.txt" requireFlags="deviceToDeviceTransfer"/> -->
+            +         <!--<exclude domain="file" path="dd/ss/foo.txt" requireFlags="clientSideEncryption|deviceToDeviceTransfer" />-->
+            +         <!-- Final comment -->
+            +    </cloud-backup>
+            +</data-extraction-rules>
             """
       )
   }
@@ -2206,49 +2206,49 @@ class ManifestDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 4: Create data_extraction_rules.xml:
-            @@ -9 +9
-            -     <application android:allowBackup="false" >
-            +     <application
-            +         android:allowBackup="false"
-            +         android:dataExtractionRules="@xml/data_extraction_rules" >
+            @@ -9 +9,3 @@
+            -    <application android:allowBackup="false" >
+            +    <application
+            +        android:allowBackup="false"
+            +        android:dataExtractionRules="@xml/data_extraction_rules" >
             res/xml/data_extraction_rules.xml:
-            @@ -1 +1
-            + <?xml version="1.0" encoding="utf-8"?>
-            + <!--
-            +    Sample data extraction rules file; uncomment and customize as necessary.
-            +    See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-            +    for details.
-            + -->
-            + <data-extraction-rules>
-            +     <cloud-backup>
-            +         <!--
-            +         |TODO: Use <include> and <exclude> to control what is backed up.
-            +         The domain can be file, database, sharedpref, external or root.
-            +         Examples:
+            @@ -0,0 +1,36 @@
+            +<?xml version="1.0" encoding="utf-8"?>
+            +<!--
+            +   Sample data extraction rules file; uncomment and customize as necessary.
+            +   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+            +   for details.
+            +-->
+            +<data-extraction-rules>
+            +    <cloud-backup>
+            +        <!--
+            +        |TODO: Use <include> and <exclude> to control what is backed up.
+            +        The domain can be file, database, sharedpref, external or root.
+            +        Examples:
             +
-            +         <include domain="file" path="file_to_include"/>
-            +         <exclude domain="file" path="file_to_exclude"/>
-            +         <include domain="file" path="include_folder"/>
-            +         <exclude domain="file" path="include_folder/file_to_exclude"/>
-            +         <exclude domain="file" path="exclude_folder"/>
-            +         <include domain="file" path="exclude_folder/file_to_include"/>
+            +        <include domain="file" path="file_to_include"/>
+            +        <exclude domain="file" path="file_to_exclude"/>
+            +        <include domain="file" path="include_folder"/>
+            +        <exclude domain="file" path="include_folder/file_to_exclude"/>
+            +        <exclude domain="file" path="exclude_folder"/>
+            +        <include domain="file" path="exclude_folder/file_to_include"/>
             +
-            +         <include domain="sharedpref" path="include_shared_pref1.xml"/>
-            +         <include domain="database" path="db_name/file_to_include"/>
-            +         <exclude domain="database" path="db_name/include_folder/file_to_exclude"/>
-            +         <include domain="external" path="file_to_include"/>
-            +         <exclude domain="external" path="file_to_exclude"/>
-            +         <include domain="root" path="file_to_include"/>
-            +         <exclude domain="root" path="file_to_exclude"/>
-            +         -->
-            +     </cloud-backup>
-            +     <!--
-            +     <device-transfer>
-            +         <include .../>
-            +         <exclude .../>
-            +     </device-transfer>
-            +     -->
-            + </data-extraction-rules>
+            +        <include domain="sharedpref" path="include_shared_pref1.xml"/>
+            +        <include domain="database" path="db_name/file_to_include"/>
+            +        <exclude domain="database" path="db_name/include_folder/file_to_exclude"/>
+            +        <include domain="external" path="file_to_include"/>
+            +        <exclude domain="external" path="file_to_exclude"/>
+            +        <include domain="root" path="file_to_include"/>
+            +        <exclude domain="root" path="file_to_exclude"/>
+            +        -->
+            +    </cloud-backup>
+            +    <!--
+            +    <device-transfer>
+            +        <include .../>
+            +        <exclude .../>
+            +    </device-transfer>
+            +    -->
+            +</data-extraction-rules>
             """
       )
   }
@@ -2403,11 +2403,11 @@ class ManifestDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 7: Delete label:
-            @@ -12 +12
-            -         <activity
-            -             android:name=".MainActivity"
-            -             android:label="@string/app_name" >
-            +         <activity android:name=".MainActivity" >
+            @@ -12,3 +12 @@
+            -        <activity
+            -            android:name=".MainActivity"
+            -            android:label="@string/app_name" >
+            +        <activity android:name=".MainActivity" >
         """
       )
   }

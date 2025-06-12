@@ -16,11 +16,10 @@
 
 package com.android.build.gradle.internal.dependency
 
-import com.android.builder.dexing.isProguardRule
-import com.android.builder.dexing.isToolsConfigurationFile
+import com.android.build.gradle.internal.r8.TargetedShrinkRules
+import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter
+import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter.createJarContents
 import com.android.utils.FileUtils
-import com.android.utils.FileUtils.mkdirs
-import com.google.common.io.ByteStreams
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -28,21 +27,7 @@ import org.gradle.api.artifacts.transform.TransformOutputs
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.File
-import java.nio.charset.StandardCharsets
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 import javax.inject.Inject
-
-fun isProguardRule(entry: ZipEntry): Boolean {
-    return !entry.isDirectory && isProguardRule(entry.name)
-}
-
-fun isToolsConfigurationFile(entry: ZipEntry): Boolean {
-    return !entry.isDirectory && isToolsConfigurationFile(entry.name)
-}
 
 @CacheableTransform
 abstract class ExtractProGuardRulesTransform @Inject constructor() :
@@ -53,49 +38,27 @@ abstract class ExtractProGuardRulesTransform @Inject constructor() :
     abstract val inputArtifact: Provider<FileSystemLocation>
 
     override fun transform(transformOutputs: TransformOutputs) {
-        performTransform(inputArtifact.get().asFile, transformOutputs)
+        val targetedShrinkRules = TargetedShrinkRulesReadWriter.readFromJar(inputArtifact.get().asFile)
+        writeTargetedShrinkRules(targetedShrinkRules, transformOutputs)
     }
 
     companion object {
-        /** Returns true if some rules were found in the jar. */
-        @JvmStatic
-        fun performTransform(
-            jarFile: File,
-            transformOutputs: TransformOutputs,
-            extractLegacyProguardRules: Boolean = true
-        ): Boolean {
-            ZipFile(jarFile, StandardCharsets.UTF_8).use { zipFile ->
-                val entries = getEntriesWithProguardRules(zipFile, extractLegacyProguardRules)
-                if (!entries.hasNext()) {
-                    return false;
-                }
-                val outputDirectory = transformOutputs.dir("rules")
-                while (entries.hasNext()) {
-                    val zipEntry = entries.next()
-                    val outPath = zipEntry.name.replace('/', File.separatorChar)
-                    val outFile = FileUtils.join(outputDirectory.resolve("lib"), outPath)
-                    mkdirs(outFile.parentFile)
-                    BufferedInputStream(zipFile.getInputStream(zipEntry)).use { inFileStream ->
-                        BufferedOutputStream(outFile.outputStream()).use {
-                            ByteStreams.copy(inFileStream, it)
-                        }
-                    }
-                }
-                return true
-            }
-        }
 
-        @JvmStatic
-        fun getEntriesWithProguardRules(
-            zipFile: ZipFile,
-            extractLegacyProguardRules: Boolean
-        ): Iterator<ZipEntry> {
-            return zipFile
-                .stream()
-                .filter { zipEntry ->
-                    isToolsConfigurationFile(zipEntry)
-                        || (extractLegacyProguardRules && isProguardRule(zipEntry))
-                }.iterator()
+        fun writeTargetedShrinkRules(
+            targetedShrinkRules: TargetedShrinkRules,
+            transformOutputs: TransformOutputs,
+            isClassesJarInAar: Boolean = false
+        ) {
+            // Create a subdirectory called "lib" as FilterShrinkerRulesTransform expects this structure
+            val outputDirectory = transformOutputs.dir("shrink-rules").resolve("lib")
+            FileUtils.mkdirs(outputDirectory)
+
+            targetedShrinkRules.createJarContents(isClassesJarInAar = isClassesJarInAar).forEach { (relativePath, contents) ->
+                outputDirectory.resolve(relativePath).run {
+                    FileUtils.mkdirs(parentFile)
+                    writeBytes(contents)
+                }
+            }
         }
     }
 }

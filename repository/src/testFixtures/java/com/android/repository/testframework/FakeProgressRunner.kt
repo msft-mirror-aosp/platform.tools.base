@@ -29,10 +29,10 @@ class FakeProgressRunner(
   var progressIndicator: FakeProgressIndicator = FakeProgressIndicator()
 
   override fun runAsyncWithProgress(r: ProgressRunnable) {
-    coroutineScope.launch { r.run(progressIndicator, this@FakeProgressRunner) }
+    coroutineScope.launch { r.run(progressIndicator) }
   }
 
   override fun runSyncWithProgress(r: ProgressRunnable) {
-    runBlocking { r.run(progressIndicator, this@FakeProgressRunner) }
+    runBlocking { r.run(progressIndicator) }
   }
 }

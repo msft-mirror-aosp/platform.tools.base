@@ -71,7 +71,7 @@ class TrackAppStateFlowTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
 
@@ -188,7 +188,7 @@ class TrackAppStateFlowTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
         setHostPropertyValue(
@@ -242,7 +242,7 @@ class TrackAppStateFlowTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         fakeDevice.startClient(10, 0, "a.b.c", false)
 
         // Act
@@ -269,7 +269,7 @@ class TrackAppStateFlowTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
         val pid11 = 11
 
@@ -308,7 +308,7 @@ class TrackAppStateFlowTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
 
         // Act
@@ -341,7 +341,7 @@ class TrackAppStateFlowTest {
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
-            waitForOnlineConnectedDevice(hostServices.session, fakeDevice.deviceId)
+            hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         val pid10 = 10
 
         // Act/Assert

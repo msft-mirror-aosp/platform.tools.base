@@ -118,6 +118,7 @@ import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import javax.inject.Inject
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.publishSources
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import org.jetbrains.kotlin.gradle.testing.internal.KotlinTestsRegistry
 import java.io.File
 
 class KotlinMultiplatformAndroidPlugin @Inject constructor(
@@ -630,7 +631,8 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             global = global,
             androidKotlinCompilation = kotlinCompilation,
             mainVariant = mainVariant,
-            manifestFile = getAndroidManifestDefaultLocation(kotlinCompilation)
+            manifestFile = getAndroidManifestDefaultLocation(kotlinCompilation),
+            testRegistry = project.kotlinTestRegistry
         )
     }
 
@@ -766,5 +768,8 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         const val DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME = "androidLibrary"
         const val ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME = "android"
         fun String.getNamePrefixedWithAndroidTarget() = ANDROID_TARGET_NAME.appendCapitalized(this)
+
+        internal val Project.kotlinTestRegistry: KotlinTestsRegistry
+            get() = extensions.getByName(KotlinTestsRegistry.PROJECT_EXTENSION_NAME) as KotlinTestsRegistry
     }
 }

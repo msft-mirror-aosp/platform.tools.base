@@ -664,4 +664,42 @@ class AndroidTestApkInstallerPluginTest {
                 "-m", "speed", "-f", "com.example.myapplication"),
             null)
     }
+
+    @Test
+    fun disableAnrInDebugRunApi35() {
+
+        // given
+        mockDeviceProperties =
+            AndroidDeviceProperties(mapOf(DEVICE_API_LEVEL to "35"))
+        `when`(mockDeviceController.getDevice().properties).thenReturn(mockDeviceProperties)
+        val packageName = "com.example.myapplication"
+
+
+        // when
+        val plugin = createPlugin(AndroidApkInstallerConfig.newBuilder().apply {
+            instrumentationTargetPackageId = packageName
+            addApksToInstallBuilder().apply {
+                addAllApkPaths(testApkPaths)
+                installOptionsBuilder.apply {
+                    addAllCommandLineParameter(additionalInstallOptions)
+                    forceCompilation = ForceCompilation.FULL_COMPILATION
+                }.build()
+            }.build()
+        }.build()).apply {
+            beforeAll(mockDeviceController)
+        }
+
+        // then
+        verify(mockDeviceController).execute(
+            listOf("shell", "am", "set-debug-app", packageName))
+
+        // when
+        plugin.afterAll(TestSuiteResultProto.TestSuiteResult.getDefaultInstance(),
+            mockDeviceController)
+
+        // then
+        verify(mockDeviceController).execute(
+            listOf("shell", "am", "clear-debug-app"))
+
+    }
 }

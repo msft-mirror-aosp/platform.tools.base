@@ -16,12 +16,28 @@
 
 package com.android.tools.lint.checks.infrastructure
 
-import com.android.tools.lint.checks.infrastructure.TestLintResult.Companion.getDiff
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class TestLintResultTest {
+  private fun getDiff(
+    before: String,
+    after: String,
+    windowSize: Int = 0,
+    diffCompatMode: Boolean = false,
+    diffCompatMode2: Boolean = false,
+  ): String {
+    return TestLintResult.Companion.getDiff(
+      before,
+      after,
+      windowSize,
+      diffCompatMode,
+      diffCompatMode2,
+      true,
+    )
+  }
+
   @Test
   fun testDiff() {
     assertEquals("", getDiff("", ""))

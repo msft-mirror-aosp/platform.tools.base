@@ -28,7 +28,7 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-          """
+            """
           import android.animation.ObjectAnimator;
 
           public class AnimationExample {
@@ -52,11 +52,11 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
               }
           }
                 """
-        )
+          )
           .indented(),
         SUPPORT_ANNOTATIONS_JAR,
         gradle(
-          """
+            """
             /* HIDE-FROM-DOCUMENTATION */
             android {
                 buildTypes {
@@ -66,7 +66,7 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
                 }
             }
             """
-        )
+          )
           .indented(),
       )
       .run()
@@ -90,10 +90,10 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for src/main/java/AnimationExample.java line 14: Annotate with @Keep:
-        @@ -2 +2
-        + import androidx.annotation.Keep;
-        @@ -14 +15
-        +         @Keep
+        @@ -1,0 +2 @@
+        +import androidx.annotation.Keep;
+        @@ -13,0 +15 @@
+        +        @Keep
         """
       )
   }
@@ -247,11 +247,11 @@ class ObjectAnimatorDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/main/java/test/pkg/AnimatorTest.java line 55: Annotate with @Keep:
-            @@ -55 +55
-            +         @Keep
+            @@ -54,0 +55 @@
+            +        @Keep
             Fix for src/main/java/test/pkg/AnimatorTest.java line 58: Annotate with @Keep:
-            @@ -58 +58
-            +         @Keep
+            @@ -57,0 +58 @@
+            +        @Keep
             """
       )
   }

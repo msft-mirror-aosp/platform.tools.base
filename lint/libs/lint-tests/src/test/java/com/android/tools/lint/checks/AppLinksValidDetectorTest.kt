@@ -130,45 +130,45 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for AndroidManifest.xml line 5: Replace with <data android:scheme="https" />...:
-        @@ -5 +5
-        -             <data android:scheme="https" android:host="example.com"/>
-        +             <data android:scheme="https" />
-        +             <data android:host="example.com" />
+        @@ -5 +5,2 @@
+        -            <data android:scheme="https" android:host="example.com"/>
+        +            <data android:scheme="https" />
+        +            <data android:host="example.com" />
         Autofix for AndroidManifest.xml line 6: Replace with <data android:scheme="http" />...:
-        @@ -6 +6
-        -             <data android:scheme="http" android:host="example.org"/>
-        +             <data android:scheme="http" />
-        +             <data android:host="example.org" />
+        @@ -6 +6,2 @@
+        -            <data android:scheme="http" android:host="example.org"/>
+        +            <data android:scheme="http" />
+        +            <data android:host="example.org" />
         Autofix for AndroidManifest.xml line 12: Replace with <data android:scheme="https" />...:
-        @@ -12 +12
-        -             <data
-        -                 android:host="example.com"
-        -                 android:path="/path"
-        -                 android:scheme="https"
-        -                 />
-        +             <data android:scheme="https" />
-        +             <data android:host="example.com" />
-        +             <data android:path="/path" />
+        @@ -12,5 +12,3 @@
+        -            <data
+        -                android:host="example.com"
+        -                android:path="/path"
+        -                android:scheme="https"
+        -                />
+        +            <data android:scheme="https" />
+        +            <data android:host="example.com" />
+        +            <data android:path="/path" />
         Autofix for AndroidManifest.xml line 25: Replace with <data android:host="example.com" android:port="41" />...:
-        @@ -25 +25
-        -             <data android:host="example.com" android:port="41" android:path="/sub"/>
-        +             <data android:host="example.com" android:port="41" />
-        +             <data android:path="/sub" />
+        @@ -25 +25,2 @@
+        -            <data android:host="example.com" android:port="41" android:path="/sub"/>
+        +            <data android:host="example.com" android:port="41" />
+        +            <data android:path="/sub" />
         Autofix for AndroidManifest.xml line 36: Replace with <data android:scheme="https" />...:
-        @@ -36 +36
-        -             <data android:scheme="https" android:host="example.com"/>
-        +             <data android:scheme="https" />
-        +             <data android:host="example.com" />
+        @@ -36 +36,2 @@
+        -            <data android:scheme="https" android:host="example.com"/>
+        +            <data android:scheme="https" />
+        +            <data android:host="example.com" />
         Autofix for AndroidManifest.xml line 37: Replace with <data android:path="/path" />...:
-        @@ -37 +37
-        -             <data
-        -                 android:pathPrefix="/prefix"
-        -                 android:path="/path"
-        -                 android:pathPattern="/pattern/*"
-        -                 />
-        +             <data android:path="/path" />
-        +             <data android:pathPrefix="/prefix" />
-        +             <data android:pathPattern="/pattern/*" />
+        @@ -37,5 +37,3 @@
+        -            <data
+        -                android:pathPrefix="/prefix"
+        -                android:path="/path"
+        -                android:pathPattern="/pattern/*"
+        -                />
+        +            <data android:path="/path" />
+        +            <data android:pathPrefix="/prefix" />
+        +            <data android:pathPattern="/pattern/*" />
         """
       )
   }
@@ -210,15 +210,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for AndroidManifest.xml line 5: Replace with <data alt-android:scheme="https" />...:
-        @@ -5 +5
-        -             <data alt-android:scheme="https" alt-android:host="example.com"/>
-        +             <data alt-android:scheme="https" />
-        +             <data alt-android:host="example.com" />
+        @@ -5 +5,2 @@
+        -            <data alt-android:scheme="https" alt-android:host="example.com"/>
+        +            <data alt-android:scheme="https" />
+        +            <data alt-android:host="example.com" />
         Autofix for AndroidManifest.xml line 6: Replace with <data alt-android:scheme="http" />...:
-        @@ -6 +6
-        -             <data alt-android:scheme="http" alt-android:host="example.org"/>
-        +             <data alt-android:scheme="http" />
-        +             <data alt-android:host="example.org" />
+        @@ -6 +6,2 @@
+        -            <data alt-android:scheme="http" alt-android:host="example.org"/>
+        +            <data alt-android:scheme="http" />
+        +            <data alt-android:host="example.org" />
         """
       )
   }
@@ -1315,13 +1315,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for AndroidManifest.xml line 9: Replace with /samplePrefix:
-            @@ -9 +9
-            -                       android:pathPrefix="samplePrefix"
-            +                       android:pathPrefix="/samplePrefix"
+            @@ -9 +9 @@
+            -                      android:pathPrefix="samplePrefix"
+            +                      android:pathPrefix="/samplePrefix"
             Fix for AndroidManifest.xml line 10: Replace with /samplePath:
-            @@ -10 +10
-            -                       android:path="samplePath"
-            +                       android:path="/samplePath"
+            @@ -10 +10 @@
+            -                      android:path="samplePath"
+            +                      android:path="/samplePath"
             """
       )
   }
@@ -1507,19 +1507,19 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 16: Set host:
-                @@ -18 +18
+                @@ -17,3 +17,5 @@
 
-                -                 <data android:pathPrefix="/gizmos" />
-                +                 <data
-                +                     android:host="[TODO]|"
-                +                     android:pathPrefix="/gizmos" />
+                -                <data android:pathPrefix="/gizmos" />
+                +                <data
+                +                    android:host="[TODO]|"
+                +                    android:pathPrefix="/gizmos" />
                 Fix for AndroidManifest.xml line 16: Set scheme:
-                @@ -18 +18
+                @@ -17,3 +17,5 @@
 
-                -                 <data android:pathPrefix="/gizmos" />
-                +                 <data
-                +                     android:pathPrefix="/gizmos"
-                +                     android:scheme="[TODO]|" />
+                -                <data android:pathPrefix="/gizmos" />
+                +                <data
+                +                    android:pathPrefix="/gizmos"
+                +                    android:scheme="[TODO]|" />
                 """
       )
   }
@@ -1571,13 +1571,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for AndroidManifest.xml line 18: Set scheme:
-        @@ -21 +21
+        @@ -20,3 +20,5 @@
 
-        -                 <data android:host="example.com" />
-        +                 <data
-        +                     android:host="example.com"
-        +                     android:scheme="[TODO]|" />
-                          <data android:path="/gizmos" />
+        -                <data android:host="example.com" />
+        +                <data
+        +                    android:host="example.com"
+        +                    android:scheme="[TODO]|" />
+                         <data android:path="/gizmos" />
         """
       )
   }
@@ -1719,10 +1719,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Fix for AndroidManifest.xml line 20: Set host:
-                @@ -24 +24
-                                  <data
-                +                     android:host="[TODO]|"
-                                      android:pathPrefix="/gizmos"
+                @@ -23,2 +23,3 @@
+                                 <data
+                +                    android:host="[TODO]|"
+                                     android:pathPrefix="/gizmos"
                 """
       )
   }
@@ -1913,13 +1913,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
     val expectedFixDiff =
       """
       Fix for AndroidManifest.xml line 16: Set scheme:
-      @@ -18 +18
-      -                 <data />
-      +                 <data android:scheme="[TODO]|" />
+      @@ -18 +18 @@
+      -                <data />
+      +                <data android:scheme="[TODO]|" />
       Fix for AndroidManifest.xml line 16: Set mimeType:
-      @@ -18 +18
-      -                 <data />
-      +                 <data android:mimeType="[TODO]|" />
+      @@ -18 +18 @@
+      -                <data />
+      +                <data android:mimeType="[TODO]|" />
       """
     lint()
       .files(
@@ -2509,44 +2509,44 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for AndroidManifest.xml line 27: Add VIEW action:
-        @@ -27 +27
-        -             <intent-filter android:autoVerify="true"> <!-- Missing VIEW -->
-        +             <intent-filter android:autoVerify="true">
-        +                 <action android:name="android.intent.action.VIEW" /> <!-- Missing VIEW -->
+        @@ -27 +27,2 @@
+        -            <intent-filter android:autoVerify="true"> <!-- Missing VIEW -->
+        +            <intent-filter android:autoVerify="true">
+        +                <action android:name="android.intent.action.VIEW" /> <!-- Missing VIEW -->
         Autofix for AndroidManifest.xml line 38: Add DEFAULT category:
-        @@ -38 +38
-        -             <intent-filter android:autoVerify="true"> <!-- Missing DEFAULT -->
-        +             <intent-filter android:autoVerify="true">
-        +                 <category android:name="android.intent.category.DEFAULT" /> <!-- Missing DEFAULT -->
+        @@ -38 +38,2 @@
+        -            <intent-filter android:autoVerify="true"> <!-- Missing DEFAULT -->
+        +            <intent-filter android:autoVerify="true">
+        +                <category android:name="android.intent.category.DEFAULT" /> <!-- Missing DEFAULT -->
         Autofix for AndroidManifest.xml line 49: Add BROWSABLE category:
-        @@ -49 +49
-        -             <intent-filter android:autoVerify="true"> <!-- Missing BROWSABLE -->
-        +             <intent-filter android:autoVerify="true">
-        +                 <category android:name="android.intent.category.BROWSABLE" /> <!-- Missing BROWSABLE -->
+        @@ -49 +49,2 @@
+        -            <intent-filter android:autoVerify="true"> <!-- Missing BROWSABLE -->
+        +            <intent-filter android:autoVerify="true">
+        +                <category android:name="android.intent.category.BROWSABLE" /> <!-- Missing BROWSABLE -->
         Autofix for AndroidManifest.xml line 60: Add `http(s)` scheme:
-        @@ -60 +60
-        -             <intent-filter android:autoVerify="true"> <!-- Has custom scheme, but missing http -->
-        +             <intent-filter android:autoVerify="true">
-        +                 <data android:scheme="http" />
-        +                 <data android:scheme="https" /> <!-- Has custom scheme, but missing http -->
+        @@ -60 +60,3 @@
+        -            <intent-filter android:autoVerify="true"> <!-- Has custom scheme, but missing http -->
+        +            <intent-filter android:autoVerify="true">
+        +                <data android:scheme="http" />
+        +                <data android:scheme="https" /> <!-- Has custom scheme, but missing http -->
         Fix for AndroidManifest.xml line 76: Set scheme:
-        @@ -71 +71
-        -                 <data android:host="example.com" />
-        +                 <data
-        +                     android:host="example.com"
-        +                     android:scheme="[TODO]|" />
+        @@ -71 +71,3 @@
+        -                <data android:host="example.com" />
+        +                <data
+        +                    android:host="example.com"
+        +                    android:scheme="[TODO]|" />
         Fix for AndroidManifest.xml line 80: Add `host` attribute:
-        @@ -80 +80
-        -             <intent-filter android:autoVerify="true"> <!-- Missing host -->
-        +             <intent-filter android:autoVerify="true">
-        +                 <data android:host="[TODO]|" /> <!-- Missing host -->
+        @@ -80 +80,2 @@
+        -            <intent-filter android:autoVerify="true"> <!-- Missing host -->
+        +            <intent-filter android:autoVerify="true">
+        +                <data android:host="[TODO]|" /> <!-- Missing host -->
         Fix for AndroidManifest.xml line 89: Add `http(s)` scheme and `host` attribute:
-        @@ -89 +89
-        -             <intent-filter android:autoVerify="true"> <!-- No data tags at all -->
-        +             <intent-filter android:autoVerify="true">
-        +                 <data android:scheme="http" />
-        +                 <data android:scheme="https" />
-        +                 <data android:host="[TODO]|" /> <!-- No data tags at all -->
+        @@ -89 +89,4 @@
+        -            <intent-filter android:autoVerify="true"> <!-- No data tags at all -->
+        +            <intent-filter android:autoVerify="true">
+        +                <data android:scheme="http" />
+        +                <data android:scheme="https" />
+        +                <data android:host="[TODO]|" /> <!-- No data tags at all -->
         """
       )
   }
@@ -2640,26 +2640,26 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for AndroidManifest.xml line 29: Delete:
-        @@ -29 +29
-        -                 <data android:mimeType="application/json" />
+        @@ -29 +28,0 @@
+        -                <data android:mimeType="application/json" />
         Autofix for AndroidManifest.xml line 40: Delete:
-        @@ -40 +40
-        -                 <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
-        +                 <data android:host="example.com"  android:pathPrefix="/gizmos" />
+        @@ -40 +40 @@
+        -                <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
+        +                <data android:host="example.com"  android:pathPrefix="/gizmos" />
         Autofix for AndroidManifest.xml line 51: Delete:
-        @@ -51 +51
-        -                 <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
-        +                 <data android:host='example.com'  android:pathPrefix='/gizmos' />
+        @@ -51 +51 @@
+        -                <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
+        +                <data android:host='example.com'  android:pathPrefix='/gizmos' />
         Autofix for AndroidManifest.xml line 40: Replace with <data android:host="example.com" />...:
-        @@ -40 +40
-        -                 <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
-        +                 <data android:host="example.com" />
-        +                 <data android:pathPrefix="/gizmos" />
+        @@ -40 +40,2 @@
+        -                <data android:host="example.com" android:mimeType="application/json" android:pathPrefix="/gizmos" />
+        +                <data android:host="example.com" />
+        +                <data android:pathPrefix="/gizmos" />
         Autofix for AndroidManifest.xml line 51: Replace with <data android:host="example.com" />...:
-        @@ -51 +51
-        -                 <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
-        +                 <data android:host="example.com" />
-        +                 <data android:pathPrefix="/gizmos" />
+        @@ -51 +51,2 @@
+        -                <data android:host='example.com' android:mimeType="application/json" android:pathPrefix='/gizmos' />
+        +                <data android:host="example.com" />
+        +                <data android:pathPrefix="/gizmos" />
         """
       )
   }
@@ -2779,10 +2779,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-      Fix for AndroidManifest.xml line 6: Set autoVerify="true":
-      @@ -7 +7
-      -             <intent-filter> <!-- We expect a warning here -->
-      +             <intent-filter android:autoVerify="true" > <!-- We expect a warning here -->
+      Autofix for AndroidManifest.xml line 6: Set autoVerify="true":
+      @@ -7 +7 @@
+      -            <intent-filter> <!-- We expect a warning here -->
+      +            <intent-filter android:autoVerify="true" > <!-- We expect a warning here -->
       """
       )
   }
@@ -2819,13 +2819,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for AndroidManifest.xml line 6: Add missing elements/attributes:
-        @@ -7 +7
-        +                 <action android:name="android.intent.action.VIEW" />
-        +                 <category android:name="android.intent.category.BROWSABLE" />
-        +                 <category android:name="android.intent.category.DEFAULT" />
-        +                 <data android:scheme="http" />
-        +                 <data android:scheme="https" />
-        +                 <data android:host="[TODO]|" />
+        @@ -6,0 +7,6 @@
+        +                <action android:name="android.intent.action.VIEW" />
+        +                <category android:name="android.intent.category.BROWSABLE" />
+        +                <category android:name="android.intent.category.DEFAULT" />
+        +                <data android:scheme="http" />
+        +                <data android:scheme="https" />
+        +                <data android:host="[TODO]|" />
         """
       )
   }
@@ -2862,13 +2862,13 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for AndroidManifest.xml line 6: Add missing elements/attributes:
-        @@ -7 +7
-        +                 <action android-ns:name="android.intent.action.VIEW" />
-        +                 <category android-ns:name="android.intent.category.BROWSABLE" />
-        +                 <category android-ns:name="android.intent.category.DEFAULT" />
-        +                 <data android-ns:scheme="http" />
-        +                 <data android-ns:scheme="https" />
-        +                 <data android-ns:host="[TODO]|" />
+        @@ -6,0 +7,6 @@
+        +                <action android-ns:name="android.intent.action.VIEW" />
+        +                <category android-ns:name="android.intent.category.BROWSABLE" />
+        +                <category android-ns:name="android.intent.category.DEFAULT" />
+        +                <data android-ns:scheme="http" />
+        +                <data android-ns:scheme="https" />
+        +                <data android-ns:host="[TODO]|" />
         """
       )
   }
@@ -2954,22 +2954,22 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for AndroidManifest.xml line 21: Replace with <data android:scheme="https" />...:
-        @@ -21 +21
-        -                 <data android:scheme="https"
-        -                       android:host="example.com"
-        -                       android:pathPrefix="/gizmos"
-        -                       android:pathAdvancedPattern="[A-Z]gizmos"
-        -                       android:pathPattern=".*gizmos"
-        -                       android:path="/gizmos"
-        -                       android:pathSuffix="gizmos" />
-        +                 <data android:scheme="https" />
-        +                 <data android:host="example.com" />
-        +                 <data android:path="/gizmos" />
-        +                 <data android:pathPrefix="/gizmos" />
-        +                 <data android:pathPattern=".*gizmos" />
-        +                 <data android:pathAdvancedPattern="[A-Z]gizmos" />
-        +                 <data android:pathSuffix="gizmos" />
-      """
+        @@ -21,7 +21,7 @@
+        -                <data android:scheme="https"
+        -                      android:host="example.com"
+        -                      android:pathPrefix="/gizmos"
+        -                      android:pathAdvancedPattern="[A-Z]gizmos"
+        -                      android:pathPattern=".*gizmos"
+        -                      android:path="/gizmos"
+        -                      android:pathSuffix="gizmos" />
+        +                <data android:scheme="https" />
+        +                <data android:host="example.com" />
+        +                <data android:path="/gizmos" />
+        +                <data android:pathPrefix="/gizmos" />
+        +                <data android:pathPattern=".*gizmos" />
+        +                <data android:pathAdvancedPattern="[A-Z]gizmos" />
+        +                <data android:pathSuffix="gizmos" />
+        """
       )
   }
 
@@ -3202,11 +3202,11 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for AndroidManifest.xml line 20: Set host:
-        @@ -21 +21
-        -                 <data android:scheme="http" />
-        +                 <data
-        +                     android:host="[TODO]|"
-        +                     android:scheme="http" />
+        @@ -21 +21,3 @@
+        -                <data android:scheme="http" />
+        +                <data
+        +                    android:host="[TODO]|"
+        +                    android:scheme="http" />
         """
       )
   }
@@ -3384,42 +3384,42 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
-        @@ -15 +15
-        -                 <data android:path="/gizmos?queryParam=1&amp;otherParam=2" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:path="/gizmos" />
-        +                     <data android:query="otherParam=2" />
-        +                     <data android:query="queryParam=1" />
-        +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
-        @@ -16 +16
-        -                 <data android:pathPrefix="/gizmos?queryParam" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:pathPrefix="/gizmos" />
-        +                     <data android:query="queryParam" />
-        +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 17: Replace with <uri-relative-filter-group>...:
-        @@ -17 +17
-        -                 <data android:pathSuffix="/gizmos?queryParam" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:pathSuffix="/gizmos" />
-        +                     <data android:query="queryParam" />
-        +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 18: Replace with <uri-relative-filter-group>...:
-        @@ -18 +18
-        -                 <data android:pathPattern="/gizmos?queryParam" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:pathPattern="/gizmos" />
-        +                     <data android:query="queryParam" />
-        +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 19: Replace with <uri-relative-filter-group>...:
-        @@ -19 +19
-        -                 <data android:pathAdvancedPattern="/gizmos?queryParam" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:pathAdvancedPattern="/gizmos" />
-        +                     <data android:query="queryParam" />
-        +                 </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
+        @@ -15 +15,5 @@
+        -                <data android:path="/gizmos?queryParam=1&amp;otherParam=2" />
+        +                <uri-relative-filter-group>
+        +                    <data android:path="/gizmos" />
+        +                    <data android:query="otherParam=2" />
+        +                    <data android:query="queryParam=1" />
+        +                </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
+        @@ -16 +16,4 @@
+        -                <data android:pathPrefix="/gizmos?queryParam" />
+        +                <uri-relative-filter-group>
+        +                    <data android:pathPrefix="/gizmos" />
+        +                    <data android:query="queryParam" />
+        +                </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 17: Replace with <uri-relative-filter-group>...:
+        @@ -17 +17,4 @@
+        -                <data android:pathSuffix="/gizmos?queryParam" />
+        +                <uri-relative-filter-group>
+        +                    <data android:pathSuffix="/gizmos" />
+        +                    <data android:query="queryParam" />
+        +                </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 18: Replace with <uri-relative-filter-group>...:
+        @@ -18 +18,4 @@
+        -                <data android:pathPattern="/gizmos?queryParam" />
+        +                <uri-relative-filter-group>
+        +                    <data android:pathPattern="/gizmos" />
+        +                    <data android:query="queryParam" />
+        +                </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 19: Replace with <uri-relative-filter-group>...:
+        @@ -19 +19,4 @@
+        -                <data android:pathAdvancedPattern="/gizmos?queryParam" />
+        +                <uri-relative-filter-group>
+        +                    <data android:pathAdvancedPattern="/gizmos" />
+        +                    <data android:query="queryParam" />
+        +                </uri-relative-filter-group>
         """
       )
   }
@@ -3508,40 +3508,40 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
-        @@ -15 +15
-        -                 <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:path="/gizmos" />
-        +                     <data android:fragment="fragment=1&amp;otherFragment=2" />
-        +                 </uri-relative-filter-group>
+        @@ -15 +15,4 @@
+        -                <data android:path="/gizmos#fragment=1&amp;otherFragment=2" />
+        +                <uri-relative-filter-group>
+        +                    <data android:path="/gizmos" />
+        +                    <data android:fragment="fragment=1&amp;otherFragment=2" />
+        +                </uri-relative-filter-group>
         Autofix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
-        @@ -16 +16
-        -                 <data android:pathPrefix="/gizmos#fragment!" /> <!-- Special character -->
-        +                 <uri-relative-filter-group>
-        +                     <data android:pathPrefix="/gizmos" />
-        +                     <data android:fragment="fragment!" />
-        +                 </uri-relative-filter-group> <!-- Special character -->
+        @@ -16 +16,4 @@
+        -                <data android:pathPrefix="/gizmos#fragment!" /> <!-- Special character -->
+        +                <uri-relative-filter-group>
+        +                    <data android:pathPrefix="/gizmos" />
+        +                    <data android:fragment="fragment!" />
+        +                </uri-relative-filter-group> <!-- Special character -->
         Autofix for src/main/AndroidManifest.xml line 17: Replace with <uri-relative-filter-group>...:
-        @@ -17 +17
-        -                 <data android:pathSuffix="/gizmos#fragment" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:pathSuffix="/gizmos" />
-        +                     <data android:fragment="fragment" />
-        +                 </uri-relative-filter-group>
+        @@ -17 +17,4 @@
+        -                <data android:pathSuffix="/gizmos#fragment" />
+        +                <uri-relative-filter-group>
+        +                    <data android:pathSuffix="/gizmos" />
+        +                    <data android:fragment="fragment" />
+        +                </uri-relative-filter-group>
         Autofix for src/main/AndroidManifest.xml line 18: Replace with <uri-relative-filter-group>...:
-        @@ -18 +18
-        -                 <data android:pathPattern="/gizmos#fragment" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:pathPattern="/gizmos" />
-        +                     <data android:fragment="fragment" />
-        +                 </uri-relative-filter-group>
+        @@ -18 +18,4 @@
+        -                <data android:pathPattern="/gizmos#fragment" />
+        +                <uri-relative-filter-group>
+        +                    <data android:pathPattern="/gizmos" />
+        +                    <data android:fragment="fragment" />
+        +                </uri-relative-filter-group>
         Autofix for src/main/AndroidManifest.xml line 19: Replace with <uri-relative-filter-group>...:
-        @@ -19 +19
-        -                 <data android:pathAdvancedPattern="/gizmos#fragment" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:pathAdvancedPattern="/gizmos" />
-        +                     <data android:fragment="fragment" />
-        +                 </uri-relative-filter-group>
+        @@ -19 +19,4 @@
+        -                <data android:pathAdvancedPattern="/gizmos#fragment" />
+        +                <uri-relative-filter-group>
+        +                    <data android:pathAdvancedPattern="/gizmos" />
+        +                    <data android:fragment="fragment" />
+        +                </uri-relative-filter-group>
         """
       )
   }
@@ -3604,22 +3604,22 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
-        @@ -15 +15
-        -                 <data android:path="/gizmos?queryParam#fragment" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:path="/gizmos" />
-        +                     <data android:query="queryParam" />
-        +                     <data android:fragment="fragment" />
-        +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
-        @@ -16 +16
-        -                 <data android:path="/gizmos#fragment?queryParam" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:path="/gizmos" />
-        +                     <data android:query="queryParam" />
-        +                     <data android:fragment="fragment" />
-        +                 </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
+        @@ -15 +15,5 @@
+        -                <data android:path="/gizmos?queryParam#fragment" />
+        +                <uri-relative-filter-group>
+        +                    <data android:path="/gizmos" />
+        +                    <data android:query="queryParam" />
+        +                    <data android:fragment="fragment" />
+        +                </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
+        @@ -16 +16,5 @@
+        -                <data android:path="/gizmos#fragment?queryParam" />
+        +                <uri-relative-filter-group>
+        +                    <data android:path="/gizmos" />
+        +                    <data android:query="queryParam" />
+        +                    <data android:fragment="fragment" />
+        +                </uri-relative-filter-group>
         """
       )
   }
@@ -3681,22 +3681,22 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
-        @@ -15 +15
-        -                 <data android-ns:path="/gizmos?queryParam#fragment" />
-        +                 <uri-relative-filter-group>
-        +                     <data android-ns:path="/gizmos" />
-        +                     <data android-ns:query="queryParam" />
-        +                     <data android-ns:fragment="fragment" />
-        +                 </uri-relative-filter-group>
-        Fix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
-        @@ -16 +16
-        -                 <data android-ns:path="/gizmos#fragment?queryParam" />
-        +                 <uri-relative-filter-group>
-        +                     <data android-ns:path="/gizmos" />
-        +                     <data android-ns:query="queryParam" />
-        +                     <data android-ns:fragment="fragment" />
-        +                 </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 15: Replace with <uri-relative-filter-group>...:
+        @@ -15 +15,5 @@
+        -                <data android-ns:path="/gizmos?queryParam#fragment" />
+        +                <uri-relative-filter-group>
+        +                    <data android-ns:path="/gizmos" />
+        +                    <data android-ns:query="queryParam" />
+        +                    <data android-ns:fragment="fragment" />
+        +                </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 16: Replace with <uri-relative-filter-group>...:
+        @@ -16 +16,5 @@
+        -                <data android-ns:path="/gizmos#fragment?queryParam" />
+        +                <uri-relative-filter-group>
+        +                    <data android-ns:path="/gizmos" />
+        +                    <data android-ns:query="queryParam" />
+        +                    <data android-ns:fragment="fragment" />
+        +                </uri-relative-filter-group>
         """
       )
   }
@@ -3753,15 +3753,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for src/main/AndroidManifest.xml line 13: Replace with <data android:host="example.com" android:pathPattern="/correctPathPattern*" android:scheme="http" />...:
-        @@ -13 +13
-        -                 <data android:scheme="http" android:host="example.com" android:path="/gizmos?queryParam#fragment" android:pathPattern="/correctPathPattern*" />
-        +                 <data android:host="example.com" android:pathPattern="/correctPathPattern*" android:scheme="http" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:path="/gizmos" />
-        +                     <data android:query="queryParam" />
-        +                     <data android:fragment="fragment" />
-        +                 </uri-relative-filter-group>
+        Autofix for src/main/AndroidManifest.xml line 13: Replace with <data android:host="example.com" android:pathPattern="/correctPathPattern*" android:scheme="http" />...:
+        @@ -13 +13,6 @@
+        -                <data android:scheme="http" android:host="example.com" android:path="/gizmos?queryParam#fragment" android:pathPattern="/correctPathPattern*" />
+        +                <data android:host="example.com" android:pathPattern="/correctPathPattern*" android:scheme="http" />
+        +                <uri-relative-filter-group>
+        +                    <data android:path="/gizmos" />
+        +                    <data android:query="queryParam" />
+        +                    <data android:fragment="fragment" />
+        +                </uri-relative-filter-group>
         """
       )
   }
@@ -3943,15 +3943,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for src/main/AndroidManifest.xml line 16: Replace with <data android:path="/gizmos" />...:
-        @@ -16 +16
-        -                     <data android:path="/gizmos?queryParam" />
-        +                     <data android:path="/gizmos" />
-        +                     <data android:query="queryParam" />
+        @@ -16 +16,2 @@
+        -                    <data android:path="/gizmos?queryParam" />
+        +                    <data android:path="/gizmos" />
+        +                    <data android:query="queryParam" />
         Autofix for src/main/AndroidManifest.xml line 17: Replace with <data android:path="/gizmos" />...:
-        @@ -17 +17
-        -                     <data android:path="/gizmos#fragment" />
-        +                     <data android:path="/gizmos" />
-        +                     <data android:fragment="fragment" />
+        @@ -17 +17,2 @@
+        -                    <data android:path="/gizmos#fragment" />
+        +                    <data android:path="/gizmos" />
+        +                    <data android:fragment="fragment" />
         """
       )
   }
@@ -4086,18 +4086,18 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for AndroidManifest.xml line 16: Delete:
-        @@ -16 +16
-        -                     <data android:scheme="http" android:host="example.com" android:port="8000" android:mimeType="application/pdf" android:path="/path" />
-        +                     <data     android:path="/path" />
-        Fix for AndroidManifest.xml line 18: Delete:
-        @@ -18 +18
-        -                     <data android:scheme="" android:query="param" />
-        +                     <data  android:query="param" />
-        Fix for AndroidManifest.xml line 20: Delete:
-        @@ -20 +20
-        -                     <data android:scheme="http" android:path="/path" android:host="example.com" android:query="param" />
-        +                     <data  android:path="/path"  android:query="param" />
+        Autofix for AndroidManifest.xml line 16: Delete:
+        @@ -16 +16 @@
+        -                    <data android:scheme="http" android:host="example.com" android:port="8000" android:mimeType="application/pdf" android:path="/path" />
+        +                    <data     android:path="/path" />
+        Autofix for AndroidManifest.xml line 18: Delete:
+        @@ -18 +18 @@
+        -                    <data android:scheme="" android:query="param" />
+        +                    <data  android:query="param" />
+        Autofix for AndroidManifest.xml line 20: Delete:
+        @@ -20 +20 @@
+        -                    <data android:scheme="http" android:path="/path" android:host="example.com" android:query="param" />
+        +                    <data  android:path="/path"  android:query="param" />
         """
       )
   }
@@ -4144,10 +4144,10 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for AndroidManifest.xml line 16: Delete:
-        @@ -16 +16
-        -                     <data android-ns:scheme="http" android-ns:host="example.com" android-ns:port="8000" android-ns:mimeType="application/pdf" android-ns:path="/path" />
-        +                     <data     android-ns:path="/path" />
+        Autofix for AndroidManifest.xml line 16: Delete:
+        @@ -16 +16 @@
+        -                    <data android-ns:scheme="http" android-ns:host="example.com" android-ns:port="8000" android-ns:mimeType="application/pdf" android-ns:path="/path" />
+        +                    <data     android-ns:path="/path" />
         """
       )
   }
@@ -4198,14 +4198,14 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for AndroidManifest.xml line 16: Delete:
-        @@ -16 +16
-        -                     <data android:scheme="http" android:host='example.com' android:port="8080" android:path='/path"with"quote' />
-        +                     <data    android:path='/path"with"quote' />
-        Fix for AndroidManifest.xml line 17: Delete:
-        @@ -17 +17
-        -                     <data android:scheme='http' android:host="example.com" android:port='8080' android:path="/path'with'quote" />
-        +                     <data    android:path="/path'with'quote" />
+        Autofix for AndroidManifest.xml line 16: Delete:
+        @@ -16 +16 @@
+        -                    <data android:scheme="http" android:host='example.com' android:port="8080" android:path='/path"with"quote' />
+        +                    <data    android:path='/path"with"quote' />
+        Autofix for AndroidManifest.xml line 17: Delete:
+        @@ -17 +17 @@
+        -                    <data android:scheme='http' android:host="example.com" android:port='8080' android:path="/path'with'quote" />
+        +                    <data    android:path="/path'with'quote" />
         """
       )
   }
@@ -4375,41 +4375,41 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Autofix for AndroidManifest.xml line 7: Replace with <intent-filter android:autoVerify="true" android:order="-1" android:priority="-1">...:
-        @@ -15 +15
-        +                 <action android:name="android.intent.action.SEND" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:path="/path" />
-        +                     <data android:query="queryparam=value" />
-        +                 </uri-relative-filter-group>
-        @@ -16 +21
-        -                 <data android:scheme="custom" />
-        @@ -18 +22
-        -                 <data android:path="@string/path" />
-        -                 <data android:path="/&lt;&amp;&apos;'" />
-        -                 <data android:path='/single"quote' />
-        @@ -22 +23
-        -                 <!-- Test having tags underneath the host elements as well -->
-        -                 <action android:name="android.intent.action.SEND"/>
-        +                 <data android:path="/&lt;&amp;&apos;&apos;" />
-        +                 <data android:path="/single&quot;quote" />
-        +                 <data android:path="@string/path" />
-        +             </intent-filter>
-        +             <intent-filter android:order="-1" android:priority="-1">
-        +                 <action android:name="android.intent.action.VIEW" />
-        +                 <category android:name="android.intent.category.DEFAULT" />
-        +                 <category android:name="android.intent.category.BROWSABLE" />
-        @@ -28 +35
-        +                 <action android:name="android.intent.action.SEND" />
-        +                 <uri-relative-filter-group>
-        +                     <data android:path="/path" />
-        +                     <data android:query="queryparam=value" />
-        +                 </uri-relative-filter-group>
-        +                 <data android:scheme="custom" />
-        +                 <data android:host="example.com" />
-        +                 <data android:path="" />
-        +                 <data android:path="/&lt;&amp;&apos;&apos;" />
-        +                 <data android:path="/single&quot;quote" />
-        +                 <data android:path="@string/path" />
+        @@ -10,0 +11,5 @@
+        +                <uri-relative-filter-group>
+        +                    <data android:path="/path" />
+        +                    <data android:query="queryparam=value" />
+        +                </uri-relative-filter-group>
+        +                <action android:name="android.intent.action.SEND" />
+        @@ -16 +20,0 @@
+        -                <data android:scheme="custom" />
+        @@ -18,3 +21,0 @@
+        -                <data android:path="@string/path" />
+        -                <data android:path="/&lt;&amp;&apos;'" />
+        -                <data android:path='/single"quote' />
+        @@ -22,2 +23,13 @@
+        -                <!-- Test having tags underneath the host elements as well -->
+        -                <action android:name="android.intent.action.SEND"/>
+        +                <data android:path="/&lt;&amp;&apos;&apos;" />
+        +                <data android:path="/single&quot;quote" />
+        +                <data android:path="@string/path" />
+        +            </intent-filter>
+        +            <intent-filter android:order="-1" android:priority="-1">
+        +                <action android:name="android.intent.action.VIEW" />
+        +                <category android:name="android.intent.category.DEFAULT" />
+        +                <category android:name="android.intent.category.BROWSABLE" />
+        +                <uri-relative-filter-group>
+        +                    <data android:path="/path" />
+        +                    <data android:query="queryparam=value" />
+        +                </uri-relative-filter-group>
+        +                <action android:name="android.intent.action.SEND" />
+        @@ -27,0 +40,6 @@
+        +                <data android:scheme="custom" />
+        +                <data android:host="example.com" />
+        +                <data android:path="" />
+        +                <data android:path="/&lt;&amp;&apos;&apos;" />
+        +                <data android:path="/single&quot;quote" />
+        +                <data android:path="@string/path" />
         """
       )
   }
@@ -4452,14 +4452,14 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for AndroidManifest.xml line 7: Replace with <intent-filter android-ns:autoVerify="true" android-ns:order="-1" android-ns:priority="-1">...:
-        @@ -12 +12
-        +                 <data android-ns:host="example.com" />
-        +             </intent-filter>
-        +             <intent-filter android-ns:order="-1" android-ns:priority="-1">
-        +                 <action android-ns:name="android.intent.action.VIEW" />
-        +                 <category android-ns:name="android.intent.category.DEFAULT" />
-        +                 <category android-ns:name="android.intent.category.BROWSABLE" />
+        Autofix for AndroidManifest.xml line 7: Replace with <intent-filter android-ns:autoVerify="true" android-ns:order="-1" android-ns:priority="-1">...:
+        @@ -11,0 +12,6 @@
+        +                <data android-ns:host="example.com" />
+        +            </intent-filter>
+        +            <intent-filter android-ns:order="-1" android-ns:priority="-1">
+        +                <action android-ns:name="android.intent.action.VIEW" />
+        +                <category android-ns:name="android.intent.category.DEFAULT" />
+        +                <category android-ns:name="android.intent.category.BROWSABLE" />
         """
       )
   }
@@ -4514,15 +4514,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for AndroidManifest.xml line 17: Replace with <intent-filter android:autoVerify="true">...:
-        @@ -22 +22
-        +                 <data android:host="host1.com" />
-        +                 <data android:host="host2.com" />
-        +             </intent-filter>
-        +             <intent-filter>
-        +                 <action android:name="android.intent.action.VIEW" />
-        +                 <category android:name="android.intent.category.DEFAULT" />
-        +                 <category android:name="android.intent.category.BROWSABLE" />
+        Autofix for AndroidManifest.xml line 17: Replace with <intent-filter android:autoVerify="true">...:
+        @@ -21,0 +22,7 @@
+        +                <data android:host="host1.com" />
+        +                <data android:host="host2.com" />
+        +            </intent-filter>
+        +            <intent-filter>
+        +                <action android:name="android.intent.action.VIEW" />
+        +                <category android:name="android.intent.category.DEFAULT" />
+        +                <category android:name="android.intent.category.BROWSABLE" />
         """
       )
   }
@@ -4578,15 +4578,15 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for AndroidManifest.xml line 18: Replace with <intent-filter android:autoVerify="true">...:
-        @@ -23 +23
-        +                 <data android:host="host1.com" />
-        +                 <data android:host="host2.com" />
-        +             </intent-filter>
-        +             <intent-filter>
-        +                 <action android:name="android.intent.action.VIEW" />
-        +                 <category android:name="android.intent.category.DEFAULT" />
-        +                 <category android:name="android.intent.category.BROWSABLE" />
+        Autofix for AndroidManifest.xml line 18: Replace with <intent-filter android:autoVerify="true">...:
+        @@ -22,0 +23,7 @@
+        +                <data android:host="host1.com" />
+        +                <data android:host="host2.com" />
+        +            </intent-filter>
+        +            <intent-filter>
+        +                <action android:name="android.intent.action.VIEW" />
+        +                <category android:name="android.intent.category.DEFAULT" />
+        +                <category android:name="android.intent.category.BROWSABLE" />
         """
       )
   }

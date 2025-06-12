@@ -247,9 +247,9 @@ class AppCompatCustomViewDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
                 Autofix for src/test/pkg/MyButton.java line 7: Extend AppCompat widget instead:
-                @@ -7 +7
-                - public class MyButton extends Button implements Runnable {
-                + public class MyButton extends android.support.v7.widget.AppCompatButton implements Runnable {
+                @@ -7 +7 @@
+                -public class MyButton extends Button implements Runnable {
+                +public class MyButton extends android.support.v7.widget.AppCompatButton implements Runnable {
                 """
       )
   }

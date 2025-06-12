@@ -402,6 +402,7 @@ fun syncAgpAndKgpSources(
         val kotlinSourceSet = it.findKotlinSourceSet()
         if (kotlinSourceSet != null) {
             if (!hasMpp) {
+                kotlinSourceSet.srcDirs((it.java as DefaultAndroidSourceDirectorySet).srcDirs)
                 kotlinSourceSet.srcDirs((it.kotlin as DefaultAndroidSourceDirectorySet).srcDirs)
             }
             it.kotlin.setSrcDirs(kotlinSourceSet.srcDirs)

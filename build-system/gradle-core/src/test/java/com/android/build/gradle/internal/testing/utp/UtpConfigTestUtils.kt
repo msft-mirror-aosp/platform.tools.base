@@ -282,6 +282,7 @@ fun assertRunnerConfigProto(
                 $uninstallAfterTest
                 $forceReinstallBeforeTest
               }
+              instrumentation_target_package_id: "com.example.application"
             }
           }
           use_single_class_loader: true

@@ -29,6 +29,6 @@ class FakeFilterShrinkerRulesParameters constructor(
     override val projectName: Property<String>
         get() = FakeGradleProperty(name)
 
-    override val shrinker: Property<ShrinkerVersion>
+    override val shrinkerVersion: Property<ShrinkerVersion>
         get() = FakeGradleProperty(codeShrinker)
 }

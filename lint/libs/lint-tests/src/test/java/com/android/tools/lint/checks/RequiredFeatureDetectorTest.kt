@@ -103,64 +103,63 @@ class RequiredFeatureDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for AndroidManifest.xml line 7: Set required="false":
-        @@ -11 +11
-        -     <uses-feature android:name="android.hardware.camera.autofocus" /> <!-- WARN 1 -->
-        +     <uses-feature
-        +         android:name="android.hardware.camera.autofocus"
-        +         android:required="false" /> <!-- WARN 1 -->
+        @@ -11 +11,3 @@
+        -    <uses-feature android:name="android.hardware.camera.autofocus" /> <!-- WARN 1 -->
+        +    <uses-feature
+        +        android:name="android.hardware.camera.autofocus"
+        +        android:required="false" /> <!-- WARN 1 -->
         Fix for AndroidManifest.xml line 8: Set required="false":
-        @@ -12 +12
-        -     <uses-feature android:name="android.hardware.camera.flash" /> <!-- WARN 2 -->
-        +     <uses-feature
-        +         android:name="android.hardware.camera.flash"
-        +         android:required="false" /> <!-- WARN 2 -->
+        @@ -12 +12,3 @@
+        -    <uses-feature android:name="android.hardware.camera.flash" /> <!-- WARN 2 -->
+        +    <uses-feature
+        +        android:name="android.hardware.camera.flash"
+        +        android:required="false" /> <!-- WARN 2 -->
         Fix for AndroidManifest.xml line 9: Set required="false":
-        @@ -13 +13
-        -     <uses-feature android:name="android.hardware.location.gps" /> <!-- WARN 3 -->
-        +     <uses-feature
-        +         android:name="android.hardware.location.gps"
-        +         android:required="false" /> <!-- WARN 3 -->
+        @@ -13 +13,3 @@
+        -    <uses-feature android:name="android.hardware.location.gps" /> <!-- WARN 3 -->
+        +    <uses-feature
+        +        android:name="android.hardware.location.gps"
+        +        android:required="false" /> <!-- WARN 3 -->
         Fix for AndroidManifest.xml line 10: Set required="false":
-        @@ -14 +14
-        -     <uses-feature android:name="android.hardware.nfc" /> <!-- WARN 4 -->
-        +     <uses-feature
-        +         android:name="android.hardware.nfc"
-        +         android:required="false" /> <!-- WARN 4 -->
+        @@ -14 +14,3 @@
+        -    <uses-feature android:name="android.hardware.nfc" /> <!-- WARN 4 -->
+        +    <uses-feature
+        +        android:name="android.hardware.nfc"
+        +        android:required="false" /> <!-- WARN 4 -->
         Fix for AndroidManifest.xml line 11: Set required="false":
-        @@ -15 +15
-        -     <uses-feature android:name="android.hardware.nfc.hce" /> <!-- WARN 5 -->
-        +     <uses-feature
-        +         android:name="android.hardware.nfc.hce"
-        +         android:required="false" /> <!-- WARN 5 -->
+        @@ -15 +15,3 @@
+        -    <uses-feature android:name="android.hardware.nfc.hce" /> <!-- WARN 5 -->
+        +    <uses-feature
+        +        android:name="android.hardware.nfc.hce"
+        +        android:required="false" /> <!-- WARN 5 -->
         Fix for AndroidManifest.xml line 12: Set required="false":
-        @@ -16 +16
-        -     <uses-feature android:name="android.hardware.telephony" /> <!-- WARN 6 -->
-        +     <uses-feature
-        +         android:name="android.hardware.telephony"
-        +         android:required="false" /> <!-- WARN 6 -->
+        @@ -16 +16,3 @@
+        -    <uses-feature android:name="android.hardware.telephony" /> <!-- WARN 6 -->
+        +    <uses-feature
+        +        android:name="android.hardware.telephony"
+        +        android:required="false" /> <!-- WARN 6 -->
         Fix for AndroidManifest.xml line 13: Set required="false":
-        @@ -17 +17
-        -     <uses-feature android:name="android.hardware.touchscreen" /> <!-- WARN 7 -->
-        +     <uses-feature
-        +         android:name="android.hardware.touchscreen"
-        +         android:required="false" /> <!-- WARN 7 -->
+        @@ -17 +17,3 @@
+        -    <uses-feature android:name="android.hardware.touchscreen" /> <!-- WARN 7 -->
+        +    <uses-feature
+        +        android:name="android.hardware.touchscreen"
+        +        android:required="false" /> <!-- WARN 7 -->
         Fix for AndroidManifest.xml line 14: Set required="false":
-        @@ -18 +18
-        -     <uses-feature android:name="android.hardware.touchscreen.multitouch" /> <!-- WARN 8 -->
-        +     <uses-feature
-        +         android:name="android.hardware.touchscreen.multitouch"
-        +         android:required="false" /> <!-- WARN 8 -->
+        @@ -18 +18,3 @@
+        -    <uses-feature android:name="android.hardware.touchscreen.multitouch" /> <!-- WARN 8 -->
+        +    <uses-feature
+        +        android:name="android.hardware.touchscreen.multitouch"
+        +        android:required="false" /> <!-- WARN 8 -->
         Fix for AndroidManifest.xml line 15: Set required="false":
-        @@ -19 +19
-        -     <uses-feature android:name="android.hardware.screen.portrait" /> <!-- WARN 9 -->
-        @@ -22 +21
-        +         android:required="false" /> <!-- WARN 9 -->
-        +     <uses-feature
-        +         android:name="android.hardware.screen.portrait"
+        @@ -19 +19,3 @@
+        -    <uses-feature android:name="android.hardware.screen.portrait" /> <!-- WARN 9 -->
+        +    <uses-feature
+        +        android:name="android.hardware.screen.portrait"
+        +        android:required="false" /> <!-- WARN 9 -->
         Fix for AndroidManifest.xml line 16: Set required="false":
-        @@ -22 +22
-        -         android:required="true" /> <!-- WARN 10 -->
-        +         android:required="false" /> <!-- WARN 10 -->
+        @@ -22 +22 @@
+        -        android:required="true" /> <!-- WARN 10 -->
+        +        android:required="false" /> <!-- WARN 10 -->
         """
       )
   }

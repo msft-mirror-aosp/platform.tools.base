@@ -20,10 +20,12 @@ import com.android.annotations.concurrency.Slow
 import com.android.repository.api.Downloader
 import com.android.repository.api.FallbackLocalRepoLoader
 import com.android.repository.api.FallbackRemoteRepoLoader
+import com.android.repository.api.LocalPackage
 import com.android.repository.api.PackageOperation
 import com.android.repository.api.ProgressIndicator
 import com.android.repository.api.ProgressRunner
 import com.android.repository.api.ProgressRunner.ProgressRunnable
+import com.android.repository.api.RemotePackage
 import com.android.repository.api.RepoManager
 import com.android.repository.api.RepoPackage
 import com.android.repository.api.RepositorySource
@@ -37,10 +39,9 @@ import java.nio.file.Path
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import java.util.Queue
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.completeWith
 import org.w3c.dom.ls.LSResourceResolver
 
 /**
@@ -81,12 +82,18 @@ internal constructor(
   private var lastLocalRefreshMs: Long = 0
 
   /** The task used to load packages. If non-null, a load is currently in progress. */
-  @GuardedBy("taskLock") private var task: LoadTask? = null
+  @GuardedBy("taskLock") private var task: LocalLoadTask? = null
 
-  /** The time at which our current [LoadTask] was created. */
-  @GuardedBy("taskLock") private var taskCreateTime: Instant = Instant.EPOCH
+  private data class RemoteLoadTaskKey(
+    val downloader: Downloader,
+    val settings: SettingsController?,
+  )
 
-  /** Lock used when setting [.task]. */
+  /** The task used to load remote packages. If non-null, a load is currently in progress. */
+  @GuardedBy("taskLock")
+  private val remoteTasks: MutableMap<RemoteLoadTaskKey, RemoteLoadTask> = mutableMapOf()
+
+  /** Lock guarding [.task] and [.remoteTasks]. */
   private val taskLock = Any()
 
   /** Listeners that will be called when the known local packages change. */
@@ -183,9 +190,9 @@ internal constructor(
 
   override fun loadSynchronously(
     cacheExpirationMs: Long,
-    onLocalComplete: List<RepoLoadedListener>?,
-    onSuccess: List<RepoLoadedListener>?,
-    onError: List<Runnable>?,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
     runner: ProgressRunner,
     downloader: Downloader?,
     settings: SettingsController?,
@@ -195,9 +202,9 @@ internal constructor(
 
   override fun load(
     cacheExpirationMs: Long,
-    onLocalComplete: List<RepoLoadedListener>?,
-    onSuccess: List<RepoLoadedListener>?,
-    onError: List<Runnable>?,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
     runner: ProgressRunner,
     downloader: Downloader?,
     settings: SettingsController?,
@@ -220,12 +227,12 @@ internal constructor(
    * @param cacheExpirationMs How long must have passed since the last load for us to reload.
    *   Specify `0` to reload immediately.
    * @param onLocalComplete When loading, the local repo load happens first, and should be
-   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener]s are run. Will be
+   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener] is run. Will be
    *   called with a [RepositoryPackages] that contains only the local packages.
-   * @param onSuccess Callbacks that are run when the entire load (local and remote) has completed
+   * @param onSuccess Callback that is run when the entire load (local and remote) has completed
    *   successfully. Called with an [RepositoryPackages] containing both the local and remote
    *   packages.
-   * @param onError Callbacks that are run when there's an error at some point during the load.
+   * @param onError Callback that is run when there's an error at some point during the load.
    * @param runner The [ProgressRunner] to use for any tasks started during the load, including
    *   running the callbacks.
    * @param downloader The [Downloader] to use for downloading remote files, including any remote
@@ -241,60 +248,66 @@ internal constructor(
   //       are cached here.
   private fun load(
     cacheExpirationMs: Long,
-    onLocalComplete: List<RepoLoadedListener>?,
-    onSuccess: List<RepoLoadedListener>?,
-    onError: List<Runnable>?,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
     runner: ProgressRunner,
     downloader: Downloader?,
     settings: SettingsController?,
     sync: Boolean,
   ) {
-    val onLocalComplete = onLocalComplete ?: emptyList()
-    val onSuccess = onSuccess ?: emptyList()
-    val onError = onError ?: emptyList()
+    // Build a task that will load the local and, if applicable, the remote repos, or wait for
+    // existing tasks that are doing that.
+    val runnable: ProgressRunnable
+    val localRunnable =
+      getOrCreateLocalLoadTask(cacheExpirationMs).wrapRun(onLocalComplete, onError)
 
-    // So we can block until complete in the synchronous case.
-    val isComplete = CompletableDeferred<Unit>()
+    if (downloader == null) {
+      runnable = localRunnable
+    } else {
+      val remoteRunnable =
+        getOrCreateRemoteLoadTask(cacheExpirationMs, downloader, settings)
+          .wrapRun(onSuccess, onError)
 
-    // If we created the currently running task, we need to clean it up at the end.
-    val createNewTask: Boolean
-    val task: LoadTask
-    synchronized(taskLock) {
-      val currentTask =
-        this.task?.takeIf { Clock.systemUTC().instant() < taskCreateTime + TASK_TIMEOUT }
-      createNewTask = currentTask == null
-      if (createNewTask) {
-        task = LoadTask(cacheExpirationMs, downloader, settings)
-        task.addCallbacks(onLocalComplete, onSuccess, onError)
-        this.task = task
-        taskCreateTime = Clock.systemUTC().instant()
-      } else {
-        task = currentTask
-        // If there's a task running already, just add our callbacks to it.
-        task.addCallbacks(onLocalComplete, onSuccess, onError)
-        if (sync) {
-          // If we're running synchronously, signal completion after the run completes.
-          task.addCallbacks(
-            onLocalComplete = emptyList(),
-            onSuccess = listOf(RepoLoadedListener { isComplete.complete(Unit) }),
-            onError = listOf(Runnable { isComplete.complete(Unit) }),
-          )
-        }
+      runnable = ProgressRunnable { indicator ->
+        localRunnable.run(indicator)
+        remoteRunnable.run(indicator)
       }
     }
 
-    if (createNewTask) {
-      // If we created a task, run it.
-      if (sync) {
-        runner.runSyncWithProgress(task)
-      } else {
-        runner.runAsyncWithProgress(task)
-      }
-    } else if (sync) {
-      // Wait for the task to complete if we're running synchronously.
-      runner.runSyncWithProgress { _, _ -> isComplete.await() }
+    if (sync) {
+      runner.runSyncWithProgress(runnable)
+    } else {
+      runner.runAsyncWithProgress(runnable)
     }
   }
+
+  private fun getOrCreateLocalLoadTask(cacheExpirationMs: Long): LoadTask<LocalPackage> =
+    synchronized(taskLock) {
+      val existingLocalTask = this.task?.takeIfNotTimedOut()
+      if (existingLocalTask == null) {
+        return LocalLoadTask(cacheExpirationMs).also { this.task = it }
+      } else {
+        return existingLocalTask.newPiggybackTask()
+      }
+    }
+
+  private fun getOrCreateRemoteLoadTask(
+    cacheExpirationMs: Long,
+    downloader: Downloader,
+    settings: SettingsController?,
+  ): LoadTask<RemotePackage> =
+    synchronized(taskLock) {
+      val remoteTaskKey = RemoteLoadTaskKey(downloader, settings)
+      val existingRemoteTask = remoteTasks[remoteTaskKey]?.takeIfNotTimedOut()
+      if (existingRemoteTask == null) {
+        return RemoteLoadTask(cacheExpirationMs, downloader, settings).also {
+          remoteTasks[remoteTaskKey] = it
+        }
+      } else {
+        return existingRemoteTask.newPiggybackTask()
+      }
+    }
 
   @Slow
   override fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean {
@@ -339,148 +352,137 @@ internal constructor(
     return inProgressInstalls[remotePackage]
   }
 
+  private fun interface LoadTask<T : RepoPackage> {
+    suspend fun load(indicator: ProgressIndicator): List<T>
+  }
+
   /** A task to load the local and remote repos. */
-  private inner class LoadTask(
-    private val cacheExpirationMs: Long,
-    private val downloader: Downloader?,
-    private val settings: SettingsController?,
-  ) : ProgressRunnable {
-    @GuardedBy("taskLock") private val onSuccesses = mutableListOf<RepoLoadedListener>()
-    @GuardedBy("taskLock") private val onErrors = mutableListOf<Runnable>()
-    // Must be synchronized since new elements can be added while the task is still in progress
-    // (that is, before task is set to null).
-    private val onLocalCompletes: Queue<RepoLoadedListener> =
-      ConcurrentLinkedQueue<RepoLoadedListener>()
+  private abstract inner class AbstractLoadTask<T : RepoPackage> : LoadTask<T> {
+    /** The time at which this [AbstractLoadTask] was created. */
+    val taskCreateTime: Instant = Clock.systemUTC().instant()
 
-    /**
-     * Add callbacks to this task (if e.g. [.load] is called again while a task is already running).
-     */
-    fun addCallbacks(
-      onLocalComplete: List<RepoLoadedListener>,
-      onSuccess: List<RepoLoadedListener>,
-      onError: List<Runnable>,
-    ) {
-      for (local in onLocalComplete) {
-        onLocalCompletes.add(local)
-      }
-      for (success in onSuccess) {
-        onSuccesses.add(success)
-      }
-      onErrors.addAll(onError)
-    }
+    private val result = CompletableDeferred<List<T>>()
 
-    /**
-     * Do the actual load.
-     *
-     * @param indicator [ProgressIndicator] for logging and showing actual progress
-     * @param runner [ProgressRunner] for running asynchronous tasks and callbacks.
-     */
-    override suspend fun run(indicator: ProgressIndicator, runner: ProgressRunner) {
-      var success = false
-      var localSuccess = false
+    override suspend fun load(indicator: ProgressIndicator): List<T> {
       val wasIndeterminate = indicator.isIndeterminate()
       indicator.setIndeterminate(false)
-      try {
-        val local = localRepoLoaderFactory.createLocalRepoLoader()
-        if (
-          local != null &&
-            (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() ||
-              local.needsUpdate(lastLocalRefreshMs, false))
-        ) {
-          fallbackLocalRepoLoader?.refresh()
-          indicator.setText("Loading local repository...")
-          val newLocals = local.getPackages(indicator)
-          val fireListeners = newLocals != packages.localPackages
-          packages.setLocalPkgInfos(newLocals.values)
-          lastLocalRefreshMs = System.currentTimeMillis()
-          if (fireListeners) {
-            for (listener in localListeners) {
-              listener.loaded(packages)
-            }
+      val result = runCatching { doLoad(indicator) }
+      this.result.completeWith(result)
+      indicator.setIndeterminate(wasIndeterminate)
+      cleanUp()
+      return result.getOrThrow()
+    }
+
+    abstract suspend fun doLoad(indicator: ProgressIndicator): List<T>
+
+    abstract fun cleanUp()
+
+    /** Returns a LoadTask that simply waits on the result of this LoadTask and returns it. */
+    fun newPiggybackTask(): LoadTask<T> = LoadTask { result.await() }
+  }
+
+  private fun <T : AbstractLoadTask<*>> T.takeIfNotTimedOut(): T? = takeIf {
+    Clock.systemUTC().instant() < it.taskCreateTime + TASK_TIMEOUT
+  }
+
+  /**
+   * Produces a ProgressRunnable that invokes this LoadTask and then performs the given callbacks
+   * when finished.
+   */
+  private fun LoadTask<*>.wrapRun(
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
+  ): ProgressRunnable = ProgressRunnable { indicator ->
+    try {
+      load(indicator)
+      onSuccess?.loaded(packages)
+    } catch (t: Throwable) {
+      onError?.run()
+      throw t
+    }
+  }
+
+  private inner class LocalLoadTask(val cacheExpirationMs: Long) :
+    AbstractLoadTask<LocalPackage>() {
+    override suspend fun doLoad(indicator: ProgressIndicator): List<LocalPackage> {
+      val local = localRepoLoaderFactory.createLocalRepoLoader()
+      val result: List<LocalPackage>
+      if (
+        local != null &&
+          (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() ||
+            local.needsUpdate(lastLocalRefreshMs, false))
+      ) {
+        fallbackLocalRepoLoader?.refresh()
+        indicator.setText("Loading local repository...")
+        val newLocals = local.getPackages(indicator)
+        val fireListeners = newLocals != packages.localPackages
+        result = newLocals.values.toList()
+        packages.setLocalPkgInfos(newLocals.values)
+        lastLocalRefreshMs = System.currentTimeMillis()
+        if (fireListeners) {
+          for (listener in localListeners) {
+            listener.loaded(packages)
           }
         }
-        indicator.setFraction(0.25)
-        if (indicator.isCanceled()) {
-          return
-        }
-        // Set to true even if we didn't reload locals: the no-op is complete.
-        localSuccess = true
-
-        // Access using the synchronized queue interface so we don't have to worry about
-        // more elements getting added while we're in the middle of processing.
-        while (true) {
-          when (val onLocalComplete = onLocalCompletes.poll()) {
-            null -> break
-            else -> onLocalComplete.loaded(packages)
-          }
-        }
-        indicator.setText("Fetch remote repository...")
-        indicator.setSecondaryText("")
-
-        if (
-          !sourceProviders.isEmpty() &&
-            downloader != null &&
-            lastRemoteRefreshMs + cacheExpirationMs <= System.currentTimeMillis()
-        ) {
-          val remoteLoader = remoteRepoLoaderFactory.createRemoteRepoLoader(indicator)
-          val remotes =
-            remoteLoader.fetchPackages(indicator.createSubProgress(.75), downloader, settings)
-          indicator.setText("Computing updates...")
-          indicator.setFraction(0.75)
-          val fireListeners = remotes != packages.remotePackages
-          packages.setRemotePkgInfos(remotes.values)
-          lastRemoteRefreshMs = System.currentTimeMillis()
-          if (fireListeners) {
-            for (callback in remoteListeners) {
-              callback.loaded(packages)
-            }
-          }
-        }
-
-        if (indicator.isCanceled()) {
-          return
-        }
-        indicator.setSecondaryText("")
-        indicator.setFraction(1.0)
-
-        if (indicator.isCanceled()) {
-          return
-        }
-        success = true
-      } finally {
-        indicator.setIndeterminate(wasIndeterminate)
-        val onSuccesses: List<RepoLoadedListener>
-        val onErrors: List<Runnable>
-        synchronized(taskLock) {
-          // The processing of the task is now complete.
-          // To ensure that no more callbacks are added, and to allow another task to be
-          // kicked off when needed, set task to null.
-          task = null
-          onSuccesses = this.onSuccesses
-          onErrors = this.onErrors
-        }
-
-        // Note: in theory it's possible that another task could now be started and modify
-        // packages before the callbacks are run below, since we're out of the synchronized
-        // block. Since RepositoryPackages itself is synchronized, though, that should be
-        // ok.
-
-        // in case some were added by another call in the interim.
-        if (localSuccess) {
-          for (onLocalComplete in onLocalCompletes) {
-            onLocalComplete.loaded(packages)
-          }
-        }
-        if (success) {
-          for (onSuccess in onSuccesses) {
-            onSuccess.loaded(packages)
-          }
-        } else {
-          for (onError in onErrors) {
-            onError.run()
-          }
-        }
+      } else {
+        result = packages.localPackages.values.toList()
       }
+      indicator.setFraction(0.25)
+      return result
+    }
+
+    override fun cleanUp() {
+      synchronized(taskLock) { task = null }
+    }
+  }
+
+  private inner class RemoteLoadTask(
+    private val cacheExpirationMs: Long,
+    private val downloader: Downloader,
+    private val settings: SettingsController?,
+  ) : AbstractLoadTask<RemotePackage>() {
+
+    override suspend fun doLoad(indicator: ProgressIndicator): List<RemotePackage> {
+      indicator.setText("Fetch remote repository...")
+      indicator.setSecondaryText("")
+
+      val result = loadRemote(indicator)
+
+      indicator.setSecondaryText("")
+      indicator.setFraction(1.0)
+
+      return result
+    }
+
+    private fun loadRemote(indicator: ProgressIndicator): List<RemotePackage> {
+      if (
+        !sourceProviders.isEmpty() &&
+          lastRemoteRefreshMs + cacheExpirationMs <= System.currentTimeMillis()
+      ) {
+        val remoteLoader = remoteRepoLoaderFactory.createRemoteRepoLoader(indicator)
+        val remotes =
+          remoteLoader.fetchPackages(indicator.createSubProgress(.75), downloader, settings)
+        indicator.setText("Computing updates...")
+        indicator.setFraction(0.75)
+        val fireListeners = remotes != packages.remotePackages
+        packages.setRemotePkgInfos(remotes.values)
+        lastRemoteRefreshMs = System.currentTimeMillis()
+        if (fireListeners) {
+          for (callback in remoteListeners) {
+            try {
+              callback.loaded(packages)
+            } catch (e: Exception) {
+              indicator.logWarning("Processing remoteListener callback", e)
+            }
+          }
+        }
+        return remotes.values.toList()
+      }
+      return packages.remotePackages.values.toList()
+    }
+
+    override fun cleanUp() {
+      synchronized(taskLock) { remoteTasks.remove(RemoteLoadTaskKey(downloader, settings)) }
     }
   }
 

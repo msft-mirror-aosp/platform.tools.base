@@ -28,8 +28,6 @@ import static com.android.manifmerger.AttributeModel.STRING_VALUE_MERGING_POLICY
 import static com.android.manifmerger.AttributeModel.SeparatedValuesValidator;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.manifmerger.XmlDocument.Type;
 import com.android.utils.SdkUtils;
@@ -39,6 +37,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -79,11 +79,11 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
 
         @Override
         @Nullable
-        public String getKey(@NonNull Element element) {
+        public String getKey(@NotNull Element element) {
             return null;
         }
 
-        @NonNull
+        @NotNull
         @Override
         public ImmutableList<String> getKeyAttributesNames() {
             return ImmutableList.of();
@@ -105,14 +105,14 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
          * @param attributeName attribute name
          */
         private AttributeBasedNodeKeyResolver(@Nullable String namespaceUri,
-                @NonNull String attributeName) {
+                @NotNull String attributeName) {
             this.mNamespaceUri = namespaceUri;
             this.mAttributeName = Preconditions.checkNotNull(attributeName);
         }
 
         @Override
         @Nullable
-        public String getKey(@NonNull Element element) {
+        public String getKey(@NotNull Element element) {
             String key =
                     mNamespaceUri == null
                             ? element.getAttribute(mAttributeName)
@@ -137,7 +137,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
             return key;
         }
 
-        @NonNull
+        @NotNull
         @Override
         public ImmutableList<String> getKeyAttributesNames() {
             return ImmutableList.of(mAttributeName);
@@ -186,12 +186,12 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
 
                 @Nullable
                 @Override
-                public String getKey(@NonNull Element element) {
+                public String getKey(@NotNull Element element) {
                     @Nullable String key = nameAttrResolver.getKey(element);
                     return Strings.isNullOrEmpty(key) ? glEsVersionResolver.getKey(element) : key;
                 }
 
-                @NonNull
+                @NotNull
                 @Override
                 public ImmutableList<String> getKeyAttributesNames() {
                     return ImmutableList.of(
@@ -216,7 +216,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
 
         @Nullable
         @Override
-        public String getKey(@NonNull Element element) {
+        public String getKey(@NotNull Element element) {
             @Nullable String firstKey = firstAttributeKeyResolver.getKey(element);
             @Nullable String secondKey = secondAttributeKeyResolver.getKey(element);
 
@@ -227,7 +227,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                             : firstKey + "+" + secondKey;
         }
 
-        @NonNull
+        @NotNull
         @Override
         public ImmutableList<String> getKeyAttributesNames() {
             return ImmutableList.of(firstAttributeKeyResolver.getKeyAttributesNames().get(0),
@@ -325,7 +325,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
 
                                     @Override
                                     public boolean canMergeWithLowerPriority(
-                                            @NonNull XmlDocument document) {
+                                            @NotNull XmlDocument document) {
                                         return EnumSet.of(Type.MAIN, Type.OVERLAY)
                                                 .contains(document.getFileType());
                                     }
@@ -333,8 +333,8 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                                     @Nullable
                                     @Override
                                     public String merge(
-                                            @NonNull String higherPriority,
-                                            @NonNull String lowerPriority) {
+                                            @NotNull String higherPriority,
+                                            @NotNull String lowerPriority) {
                                         return OR_MERGING_POLICY.merge(
                                                 higherPriority, lowerPriority);
                                     }
@@ -773,8 +773,8 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         private final EnumSet<XmlDocument.Type> mMergeableLowerPriorityTypes;
 
         NodeTypes(
-                @NonNull MergeType mergeType,
-                @NonNull NodeKeyResolver nodeKeyResolver,
+                @NotNull MergeType mergeType,
+                @NotNull NodeKeyResolver nodeKeyResolver,
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this(
                     mergeType,
@@ -785,8 +785,8 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         }
 
         NodeTypes(
-                @NonNull MergeType mergeType,
-                @NonNull NodeKeyResolver nodeKeyResolver,
+                @NotNull MergeType mergeType,
+                @NotNull NodeKeyResolver nodeKeyResolver,
                 boolean multipleDeclarationAllowed,
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this(
@@ -798,9 +798,9 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         }
 
         NodeTypes(
-                @NonNull MergeType mergeType,
-                @NonNull NodeKeyResolver nodeKeyResolver,
-                @NonNull EnumSet<XmlDocument.Type> mergeableLowerPriorityTypes,
+                @NotNull MergeType mergeType,
+                @NotNull NodeKeyResolver nodeKeyResolver,
+                @NotNull EnumSet<XmlDocument.Type> mergeableLowerPriorityTypes,
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this(
                     mergeType,
@@ -811,14 +811,14 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         }
 
         NodeTypes(
-                @NonNull MergeType mergeType,
-                @NonNull NodeKeyResolver nodeKeyResolver,
+                @NotNull MergeType mergeType,
+                @NotNull NodeKeyResolver nodeKeyResolver,
                 boolean mutipleDeclarationAllowed,
-                @NonNull EnumSet<XmlDocument.Type> mergeableLowerPriorityTypes,
+                @NotNull EnumSet<XmlDocument.Type> mergeableLowerPriorityTypes,
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this.mMergeType = Preconditions.checkNotNull(mergeType);
             this.mNodeKeyResolver = Preconditions.checkNotNull(nodeKeyResolver);
-            @NonNull ImmutableList.Builder<AttributeModel> attributeModels =
+            @NotNull ImmutableList.Builder<AttributeModel> attributeModels =
                     new ImmutableList.Builder<AttributeModel>();
             if (attributeModelBuilders != null) {
                 for (AttributeModel.Builder attributeModelBuilder : attributeModelBuilders) {
@@ -830,7 +830,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
             this.mMergeableLowerPriorityTypes = mergeableLowerPriorityTypes;
         }
 
-        @NonNull
+        @NotNull
         NodeKeyResolver getNodeKeyResolver() {
             return mNodeKeyResolver;
         }
@@ -865,7 +865,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         /**
          * Returns if XmlElement with this NodeTypes can be merged from lower priority XmlElement
          */
-        boolean canMergeWithLowerPriority(@NonNull XmlElement xmlElement) {
+        boolean canMergeWithLowerPriority(@NotNull XmlElement xmlElement) {
             return mMergeableLowerPriorityTypes.contains(xmlElement.getDocument().getFileType());
         }
 
@@ -873,7 +873,7 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
 
     /** Returns the Xml name for this node type */
     @Override
-    public String toXmlName(@NonNull NodeTypes type) {
+    public String toXmlName(@NotNull NodeTypes type) {
         return SdkUtils.constantNameToXmlName(type.name());
     }
 

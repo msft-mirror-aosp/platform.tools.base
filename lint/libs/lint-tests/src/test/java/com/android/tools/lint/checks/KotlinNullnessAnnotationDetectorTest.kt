@@ -75,17 +75,17 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/test.kt line 11: Delete `@Nullable`:
-            @@ -11 +11
-            - fun testError(@Nullable string: String) { }
-            + fun testError(string: String) { }
+            @@ -11 +11 @@
+            -fun testError(@Nullable string: String) { }
+            +fun testError(string: String) { }
             Fix for src/test/pkg/test.kt line 15: Delete `@NonNull`:
-            @@ -15 +15
-            - fun testError(@NonNull number: Number?) { }
-            + fun testError(number: Number?) { }
+            @@ -15 +15 @@
+            -fun testError(@NonNull number: Number?) { }
+            +fun testError(number: Number?) { }
             Autofix for src/test/pkg/test.kt line 7: Delete `@NonNull`:
-            @@ -7 +7
-            - fun testWarning(@NonNull string: String) { }
-            + fun testWarning(string: String) { }
+            @@ -7 +7 @@
+            -fun testWarning(@NonNull string: String) { }
+            +fun testWarning(string: String) { }
             """
       )
   }
@@ -205,61 +205,61 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Fix for src/test/pkg/Test1.kt line 15: Delete `@Nullable`:
-            @@ -15 +15
-            -     @Nullable a: String,        // ERROR 1
-            +     a: String,        // ERROR 1
+            @@ -15 +15 @@
+            -    @Nullable a: String,        // ERROR 1
+            +    a: String,        // ERROR 1
             Fix for src/test/pkg/Test1.kt line 16: Delete `@NonNull`:
-            @@ -16 +16
-            -     @NonNull b: String?,        // ERROR 2
-            +     b: String?,        // ERROR 2
+            @@ -16 +16 @@
+            -    @NonNull b: String?,        // ERROR 2
+            +    b: String?,        // ERROR 2
             Fix for src/test/pkg/Test1.kt line 17: Delete `@Nullable`:
-            @@ -17 +17
-            -     @Nullable c: List<String>,  // ERROR 3
-            +     c: List<String>,  // ERROR 3
+            @@ -17 +17 @@
+            -    @Nullable c: List<String>,  // ERROR 3
+            +    c: List<String>,  // ERROR 3
             Fix for src/test/pkg/Test1.kt line 18: Delete `@NonNull`:
-            @@ -18 +18
-            -     @NonNull d: List<String>?   // ERROR 4
-            +     d: List<String>?   // ERROR 4
+            @@ -18 +18 @@
+            -    @NonNull d: List<String>?   // ERROR 4
+            +    d: List<String>?   // ERROR 4
             Fix for src/test/pkg/Test1.kt line 21: Delete `@Nullable`:
-            @@ -21 +21
-            - class Test1(@Nullable s: String)             // ERROR 5
-            + class Test1(s: String)             // ERROR 5
+            @@ -21 +21 @@
+            -class Test1(@Nullable s: String)             // ERROR 5
+            +class Test1(s: String)             // ERROR 5
             Fix for src/test/pkg/Test1.kt line 24: Delete `@Nullable`:
-            @@ -24 +24
-            -   @Nullable val string1: String              // ERROR 6
-            +   val string1: String              // ERROR 6
+            @@ -24 +24 @@
+            -  @Nullable val string1: String              // ERROR 6
+            +  val string1: String              // ERROR 6
             Fix for src/test/pkg/Test1.kt line 25: Delete `@NonNull`:
-            @@ -25 +25
-            -   @NonNull                                   // ERROR 7
-            +                                     // ERROR 7
+            @@ -25 +25 @@
+            -  @NonNull                                   // ERROR 7
+            +                                    // ERROR 7
             Fix for src/test/pkg/Test1.kt line 27: Delete `@NonNull`:
-            @@ -27 +27
-            -   @JvmField @NonNull @VisibleForTesting var foo: Number? = null // ERROR 8
-            +   @JvmField @VisibleForTesting var foo: Number? = null // ERROR 8
+            @@ -27 +27 @@
+            -  @JvmField @NonNull @VisibleForTesting var foo: Number? = null // ERROR 8
+            +  @JvmField @VisibleForTesting var foo: Number? = null // ERROR 8
             Fix for src/test/pkg/Test1.kt line 29: Delete `@Nullable`:
-            @@ -29 +29
-            - @Nullable fun test1(): String = ""           // ERROR 9
-            + fun test1(): String = ""           // ERROR 9
+            @@ -29 +29 @@
+            -@Nullable fun test1(): String = ""           // ERROR 9
+            +fun test1(): String = ""           // ERROR 9
             Fix for src/test/pkg/Test1.kt line 30: Delete `@NonNull`:
-            @@ -30 +30
-            - @NonNull fun test2(): String? = null         // ERROR 10
-            + fun test2(): String? = null         // ERROR 10
+            @@ -30 +30 @@
+            -@NonNull fun test2(): String? = null         // ERROR 10
+            +fun test2(): String? = null         // ERROR 10
             Autofix for src/test/pkg/Test1.kt line 9: Delete `@NonNull`:
-            @@ -9 +9
-            -     @NonNull a: String,         // WARN 1
-            +     a: String,         // WARN 1
+            @@ -9 +9 @@
+            -    @NonNull a: String,         // WARN 1
+            +    a: String,         // WARN 1
             Autofix for src/test/pkg/Test1.kt line 10: Delete `@Nullable`:
-            @@ -10 +10
-            -     @Nullable b: String?,       // WARN 2
-            +     b: String?,       // WARN 2
+            @@ -10 +10 @@
+            -    @Nullable b: String?,       // WARN 2
+            +    b: String?,       // WARN 2
             Autofix for src/test/pkg/Test1.kt line 11: Delete `@NonNull`:
-            @@ -11 +11
-            -     @NonNull c: List<String>,   // WARN 3
-            +     c: List<String>,   // WARN 3
+            @@ -11 +11 @@
+            -    @NonNull c: List<String>,   // WARN 3
+            +    c: List<String>,   // WARN 3
             Autofix for src/test/pkg/Test1.kt line 12: Delete `@Nullable`:
-            @@ -12 +12
-            -     @Nullable d: List<String>?  // WARN 4
-            +     d: List<String>?  // WARN 4
+            @@ -12 +12 @@
+            -    @Nullable d: List<String>?  // WARN 4
+            +    d: List<String>?  // WARN 4
             """
       )
   }
@@ -290,9 +290,9 @@ class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
             Autofix for src/test/pkg/test.kt line 3: Delete `@NonNull`:
-            @@ -3 +3
-            - fun testWarning(@androidx.annotation.NonNull a: String) { } // ERROR
-            + fun testWarning(a: String) { } // ERROR
+            @@ -3 +3 @@
+            -fun testWarning(@androidx.annotation.NonNull a: String) { } // ERROR
+            +fun testWarning(a: String) { } // ERROR
             """
       )
   }

@@ -146,6 +146,10 @@ _intellij_plugin = rule(
 def intellij_plugin(name, plugin_id, platforms, **kwargs):
     studio_plugin(
         name = plugin_id,
+        target_compatible_with = select(
+            {"@intellij//:" + platform: [] for platform in platforms} |
+            {"//conditions:default": ["@platforms//:incompatible"]},
+        ),
         **kwargs
     )
     _platform_intellij_plugin(

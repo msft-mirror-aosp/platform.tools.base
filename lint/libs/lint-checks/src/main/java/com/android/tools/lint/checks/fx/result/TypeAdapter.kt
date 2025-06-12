@@ -70,6 +70,7 @@ internal object PsiTypeAdapter : TypeAdapter<PsiType> {
         PsiTypes.floatType() -> Type.Float
         PsiTypes.doubleType() -> Type.Double
         PsiTypes.voidType() -> Type.Unit
+        PsiTypes.nullType() -> Type.None
         is PsiClassType ->
           when (val c = t.className) {
             in env -> Type.Sym.Param(c)
@@ -85,7 +86,7 @@ internal object PsiTypeAdapter : TypeAdapter<PsiType> {
           )
         is UastErrorType -> Type.WildCard
         is PsiCapturedWildcardType -> Type.WildCard // TODO
-        else -> throw NotImplementedError("Translate $t of type ${t::class.java}")
+        else -> throw NotImplementedError("Translate XXX $t of type '${t::class.java}'")
       }
     return loop(repr)
   }

@@ -101,32 +101,32 @@ public class FakeRepoManager extends RepoManager {
     @Override
     public void load(
             long cacheExpirationMs,
-            @Nullable List<? extends RepoLoadedListener> onLocalComplete,
-            @Nullable List<? extends RepoLoadedListener> onSuccess,
-            @Nullable List<? extends Runnable> onError,
+            @Nullable RepoLoadedListener onLocalComplete,
+            @Nullable RepoLoadedListener onSuccess,
+            @Nullable Runnable onError,
             @NonNull ProgressRunner runner,
             @Nullable Downloader downloader,
             @Nullable SettingsController settings) {
         if (onLocalComplete != null) {
-            onLocalComplete.forEach(callback -> callback.loaded(mPackages));
+            onLocalComplete.loaded(mPackages);
         }
         if (onSuccess != null) {
-            onSuccess.forEach(callback -> callback.loaded(mPackages));
+            onSuccess.loaded(mPackages);
         }
     }
     @Override
     public void loadSynchronously(long cacheExpirationMs,
-            @Nullable List<? extends RepoLoadedListener> onLocalComplete,
-            @Nullable List<? extends RepoLoadedListener> onSuccess,
-            @Nullable List<? extends Runnable> onError,
+            @Nullable RepoLoadedListener onLocalComplete,
+            @Nullable RepoLoadedListener onSuccess,
+            @Nullable Runnable onError,
             @NonNull ProgressRunner runner,
             @Nullable Downloader downloader,
             @Nullable SettingsController settings) {
         if (onLocalComplete != null) {
-            onLocalComplete.forEach(callback -> callback.loaded(mPackages));
+            onLocalComplete.loaded(mPackages);
         }
         if (onSuccess != null) {
-            onSuccess.forEach(callback -> callback.loaded(mPackages));
+            onSuccess.loaded(mPackages);
         }
     }
 

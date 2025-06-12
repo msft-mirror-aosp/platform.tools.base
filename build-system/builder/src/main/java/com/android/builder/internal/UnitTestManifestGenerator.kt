@@ -34,6 +34,9 @@ class UnitTestManifestGenerator(
     testRunnerName
 ) {
 
-    override val templateResourceName: String =
+    override val templateResourceName: String = if (testRunnerName != null) {
         "AndroidManifest.UnitTestTemplate"
+    } else {
+        "AndroidManifest.UnitTestNoInstrumentationTemplate"
+    }
 }
