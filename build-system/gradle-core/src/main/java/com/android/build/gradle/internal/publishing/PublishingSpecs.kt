@@ -360,6 +360,7 @@ class PublishingSpecs {
                 runtime(AAR_METADATA, ArtifactType.AAR_METADATA)
                 runtime(CONSUMER_PROGUARD_DIR, ArtifactType.UNFILTERED_PROGUARD_RULES)
                 runtime(LIBRARY_AND_LOCAL_JARS_JNI, ArtifactType.JNI)
+                runtime(COMPILED_LOCAL_RESOURCES, ArtifactType.COMPILED_DEPENDENCIES_RESOURCES)
 
                 // Publish lint artifacts to API_AND_RUNTIME_ELEMENTS to support compileOnly module
                 // dependencies.

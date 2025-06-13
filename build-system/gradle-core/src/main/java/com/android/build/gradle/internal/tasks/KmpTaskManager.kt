@@ -48,6 +48,7 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.tasks.factory.registerTask
 import com.android.build.gradle.tasks.ProcessLibraryArtProfileTask
 import com.android.build.gradle.tasks.BundleAar
+import com.android.build.gradle.tasks.CompileLibraryResourcesTask
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import com.android.build.gradle.tasks.ProcessLibraryManifest
@@ -132,6 +133,7 @@ class KmpTaskManager(
                 }
             )
             registerParseLibraryResourcesTask(variant)
+            createCompileLibraryResourcesTask(variant)
             taskFactory.register(GenerateLibraryRFileTask.CreationAction(variant))
 
             // Task to generate the public.txt for the API that always exists
@@ -278,6 +280,15 @@ class KmpTaskManager(
             }
 
         project.tasks.named("assemble").dependsOn(variant.taskContainer.assembleTask)
+    }
+
+    private fun createCompileLibraryResourcesTask(variant: KmpCreationConfig) {
+        if (variant.androidResourcesCreationConfig != null
+            && variant.androidResourcesCreationConfig!!
+                .isPrecompileDependenciesResourcesEnabled
+        ) {
+            taskFactory.register(CompileLibraryResourcesTask.CreationAction(variant))
+        }
     }
 
     private fun createPackageResourcesTask(
