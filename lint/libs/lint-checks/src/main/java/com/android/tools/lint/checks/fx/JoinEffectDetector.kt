@@ -79,17 +79,26 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>) :
 
   final override fun getApplicableUastTypes() = listOf(UDeclaration::class.java)
 
-  private val uElementHandler =
+  final override fun createUastHandler(context: JavaContext) =
     object : UElementHandler() {
       override fun visitDeclaration(node: UDeclaration) {
         val dec = node as? UVariable ?: return
         val fn = dec.sourcePsi as? KtNamedFunction ?: return
         val fnUast = dec.uastInitializer as? ULambdaExpression ?: return
-        programBuilder.addLocalFunction(LocalFun(fnUast, fn))
+        try {
+          programBuilder.addLocalFunction(LocalFun(fnUast, fn))
+        } catch (e: Throwable) {
+          if (LintClient.isUnitTest) {
+            throw e
+          } else {
+            context.log(
+              e,
+              "Error while indexing local function ${fn.name} in file ${fn.containingFile.name}",
+            )
+          }
+        }
       }
     }
-
-  final override fun createUastHandler(context: JavaContext) = uElementHandler
 
   final override fun afterCheckEachProject(context: Context) {
     if (!isSummariesCacheValid) {
