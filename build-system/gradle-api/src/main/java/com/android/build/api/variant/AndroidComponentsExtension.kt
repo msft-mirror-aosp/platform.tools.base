@@ -300,6 +300,5 @@ interface AndroidComponentsExtension<
      * @suppress This API is only intended to be used by the KSP Gradle plugin. Other users should
      * instead use [addSourceSetConfigurations]
      */
-    @Incubating
     fun addKspConfigurations(useGlobalConfiguration: Boolean)
 }
