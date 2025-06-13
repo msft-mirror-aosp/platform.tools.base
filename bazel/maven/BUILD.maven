@@ -63163,12 +63163,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.com.google.devtools.ksp.gradle.plugin_2.0.21-1.0.28",
-    pom = "repository/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.28/com.google.devtools.ksp.gradle.plugin-2.0.21-1.0.28.pom",
+    name = "com.google.devtools.ksp.com.google.devtools.ksp.gradle.plugin_2.1.20-2.0.1",
+    pom = "repository/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.1.20-2.0.1/com.google.devtools.ksp.gradle.plugin-2.1.20-2.0.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.0.21-1.0.28",
+    repo_path = "com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.1.20-2.0.1",
     deps = [
-        "com.google.devtools.ksp.symbol-processing-gradle-plugin_2.0.21-1.0.28",
+        "com.google.devtools.ksp.symbol-processing-gradle-plugin_2.1.20-2.0.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -63180,6 +63180,20 @@ maven_artifact(
     repo_path = "com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/2.2.0-RC2-2.0.1",
     deps = [
         "com.google.devtools.ksp.symbol-processing-gradle-plugin_2.2.0-RC2-2.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.devtools.ksp.symbol-processing-aa-embeddable_2.1.20-2.0.1",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-aa-embeddable/2.1.20-2.0.1/symbol-processing-aa-embeddable-2.1.20-2.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/devtools/ksp/symbol-processing-aa-embeddable/2.1.20-2.0.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.6.4",
+        "com.google.devtools.ksp.symbol-processing-api_2.1.20-2.0.1",
+        "com.google.devtools.ksp.symbol-processing-common-deps_2.1.20-2.0.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -63287,10 +63301,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-api_2.0.21-1.0.28",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.0.21-1.0.28/symbol-processing-api-2.0.21-1.0.28.pom",
+    name = "com.google.devtools.ksp.symbol-processing-api_2.1.10-1.0.31",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.1.10-1.0.31/symbol-processing-api-2.1.10-1.0.31.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.0.21-1.0.28",
+    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.1.10-1.0.31",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.20",
     ],
@@ -63298,12 +63312,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-api_2.1.10-1.0.31",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.1.10-1.0.31/symbol-processing-api-2.1.10-1.0.31.pom",
+    name = "com.google.devtools.ksp.symbol-processing-api_2.1.20-2.0.1",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.1.20-2.0.1/symbol-processing-api-2.1.20-2.0.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.1.10-1.0.31",
+    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.1.20-2.0.1",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.20",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -63320,12 +63334,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-common-deps_2.0.21-1.0.28",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.0.21-1.0.28/symbol-processing-common-deps-2.0.21-1.0.28.pom",
+    name = "com.google.devtools.ksp.symbol-processing-common-deps_2.1.20-2.0.1",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.1.20-2.0.1/symbol-processing-common-deps-2.1.20-2.0.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-common-deps/2.0.21-1.0.28",
+    repo_path = "com/google/devtools/ksp/symbol-processing-common-deps/2.1.20-2.0.1",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.20",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -63394,13 +63408,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-gradle-plugin_2.0.21-1.0.28",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.0.21-1.0.28/symbol-processing-gradle-plugin-2.0.21-1.0.28.pom",
+    name = "com.google.devtools.ksp.symbol-processing-gradle-plugin_2.1.20-2.0.1",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.1.20-2.0.1/symbol-processing-gradle-plugin-2.1.20-2.0.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-gradle-plugin/2.0.21-1.0.28",
+    repo_path = "com/google/devtools/ksp/symbol-processing-gradle-plugin/2.1.20-2.0.1",
     deps = [
-        "com.google.devtools.ksp.symbol-processing-api_2.0.21-1.0.28",
-        "com.google.devtools.ksp.symbol-processing-common-deps_2.0.21-1.0.28",
+        "com.google.devtools.ksp.symbol-processing-api_2.1.20-2.0.1",
+        "com.google.devtools.ksp.symbol-processing-common-deps_2.1.20-2.0.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -63457,14 +63471,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing_2.0.21-1.0.28",
-    pom = "repository/com/google/devtools/ksp/symbol-processing/2.0.21-1.0.28/symbol-processing-2.0.21-1.0.28.pom",
+    name = "com.google.devtools.ksp.symbol-processing_2.1.20-2.0.1",
+    pom = "repository/com/google/devtools/ksp/symbol-processing/2.1.20-2.0.1/symbol-processing-2.1.20-2.0.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing/2.0.21-1.0.28",
+    repo_path = "com/google/devtools/ksp/symbol-processing/2.1.20-2.0.1",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
         "org.jetbrains.kotlinx.kotlinx-serialization-json_1.6.3",
-        "com.google.devtools.ksp.symbol-processing-api_2.0.21-1.0.28",
+        "com.google.devtools.ksp.symbol-processing-api_2.1.20-2.0.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -73133,6 +73147,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.0.21",
     deps = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.1.20",
+    pom = "repository/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.1.20/org.jetbrains.kotlin.android.gradle.plugin-2.1.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.1.20",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
