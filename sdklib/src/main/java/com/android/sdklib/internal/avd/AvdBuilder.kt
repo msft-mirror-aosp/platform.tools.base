@@ -106,6 +106,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
         GenericSkin(it.width, it.height)
       }
 
+    cpuCoreCount = EmulatedProperties.defaultCpuCount(device)
     ram = EmulatedProperties.defaultRamSize(device)
     vmHeap = EmulatedProperties.defaultVmHeapSize(device)
     internalStorage = EmulatedProperties.defaultInternalStorage(device)

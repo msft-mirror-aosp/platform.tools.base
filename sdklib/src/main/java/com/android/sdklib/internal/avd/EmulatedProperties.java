@@ -21,6 +21,8 @@ import static com.android.resources.Density.NODPI;
 
 import static com.google.common.collect.Comparators.min;
 
+import static java.lang.Integer.max;
+import static java.lang.Integer.min;
 import static java.util.Comparator.comparing;
 
 import com.android.annotations.NonNull;
@@ -50,8 +52,12 @@ public class EmulatedProperties {
     public static final String USE_HOST_GPU_KEY = ConfigKey.GPU_EMULATION;
     public static final String VM_HEAP_STORAGE_KEY = ConfigKey.VM_HEAP_SIZE;
 
-    public static final int MAX_NUMBER_OF_CORES = Integer.max(1, Runtime.getRuntime().availableProcessors() / 2);
-    public static final int RECOMMENDED_NUMBER_OF_CORES = Integer.min(4, MAX_NUMBER_OF_CORES);
+    /**
+     * A default number of cores to use, not considering the device. Use defaultCpuCount if
+     * possible.
+     */
+    public static final int RECOMMENDED_NUMBER_OF_CORES =
+            max(2, min(4, Runtime.getRuntime().availableProcessors() / 2));
 
     public static final Storage DEFAULT_INTERNAL_STORAGE = new Storage(6, Storage.Unit.GiB);
     public static final Storage DEFAULT_HEAP = new Storage(16, Storage.Unit.MiB);
@@ -213,5 +219,11 @@ public class EmulatedProperties {
 
     public static Storage defaultInternalStorage(@NonNull Device device) {
         return DEFAULT_INTERNAL_STORAGE;
+    }
+
+    public static int defaultCpuCount(@NonNull Device device) {
+        int minCpuCount = Device.isXr(device) ? 4 : 2;
+        int idealCpuCount = Device.isXr(device) ? 8 : 4;
+        return max(minCpuCount, min(idealCpuCount, Runtime.getRuntime().availableProcessors() / 2));
     }
 }

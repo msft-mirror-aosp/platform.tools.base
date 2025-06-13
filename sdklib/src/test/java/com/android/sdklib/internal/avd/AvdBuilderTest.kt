@@ -58,7 +58,7 @@ class AvdBuilderTest {
       assertThat(showDeviceFrame).isTrue()
       assertThat(screenOrientation).isEqualTo(ScreenOrientation.PORTRAIT)
 
-      assertThat(cpuCoreCount).isEqualTo(1)
+      assertThat(cpuCoreCount).isAtLeast(2)  // depends on what machine this test runs on
       assertThat(ram).isEqualTo(EmulatedProperties.MAX_DEFAULT_RAM_SIZE)
       assertThat(vmHeap.size).isGreaterThan(0)
       assertThat(internalStorage).isEqualTo(EmulatedProperties.DEFAULT_INTERNAL_STORAGE)
