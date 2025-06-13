@@ -566,7 +566,7 @@ internal open class Analysis<FX : Any>(
         is USuperExpression -> pure(getType(e))
 
         // TODO: is this just the Java's `yield` in `switch`?
-        is UYieldExpression -> loop(e.expression!!)
+        is UYieldExpression -> e.expression?.let(::loop) ?: unsureResult
         is USimpleNameReferenceExpression ->
           when (val target = e.resolve()) {
             is KtLightMethod ->
