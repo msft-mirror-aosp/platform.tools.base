@@ -35,6 +35,7 @@ sdk_jvm_flags = [
 #keep sorted
 TEST_DEPS = [
     ":managed-devices",
+    "//tools/base/build-system:gradle-api",
     "//tools/base/build-system/gradle-core",
     "//tools/base/build-system/integration-test/framework",
     "//tools/base/common:tools.common",

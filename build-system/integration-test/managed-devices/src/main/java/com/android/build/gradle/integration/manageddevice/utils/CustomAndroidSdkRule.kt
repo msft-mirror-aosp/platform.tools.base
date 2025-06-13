@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.manageddevice.utils
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
@@ -57,7 +58,8 @@ class CustomAndroidSdkRule : ExternalResource() {
             .toList()
     private val systemImageRemotePackage = System.getProperty("sdk.repo.sysimage.remotePackage")
     private val systemImageDisplayName = System.getProperty("sdk.repo.sysimage.displayName")
-    private val systemImageApiLevel = System.getProperty("sdk.repo.sysimage.apiLevel")
+    val systemImageApiLevel = System.getProperty("sdk.repo.sysimage.apiLevel")
+    val systemImageSource = System.getProperty("sdk.repo.sysimage.source")
 
     private val emulatorZip = File(System.getProperty("sdk.repo.emulator.zip"))
 
@@ -85,6 +87,30 @@ class CustomAndroidSdkRule : ExternalResource() {
             FileUtils.mkdirs(customAndroidPrefDir)
         }
         return executor()
+            .withLocalPrefsRoot()
+            .withEnvironmentVariables(mapOf(
+                "HOME" to customUserHomeDir.absolutePath,
+                "ANDROID_USER_HOME" to customAndroidPrefDir.absolutePath
+            ))
+            .withoutOfflineFlag()
+            .withSdkAutoDownload()
+            .with(IntegerOption.ANDROID_SDK_CHANNEL, 3)
+            .with(StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE, "swiftshader_indirect")
+            .with(BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING, true)
+            .with(IntegerOption.GRADLE_MANAGED_DEVICE_SETUP_TIMEOUT_MINUTES, 2)
+            .withArgument("-D${AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}=file:///${customSdkRepo.absolutePath}/")
+    }
+
+    fun GradleRule.executorWithCustomAndroidSdk(): GradleTaskExecutor {
+        if (!customUserHomeDir.exists()) {
+            FileUtils.mkdirs(customUserHomeDir)
+        }
+        if (!customAndroidPrefDir.exists()) {
+            FileUtils.mkdirs(customAndroidPrefDir)
+        }
+        return configure().withSdk {
+            sdkDir(customSdkDir.toPath())
+        }.build.executor
             .withLocalPrefsRoot()
             .withEnvironmentVariables(mapOf(
                 "HOME" to customUserHomeDir.absolutePath,
