@@ -26,11 +26,15 @@ import com.android.adblib.tools.debugging.processinventory.protos.ProcessInvento
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.OptionalInt32
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.OptionalString
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.OptionalStringList
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessCommand
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessCommandReply
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessUpdate
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessUpdates
 import com.android.adblib.withPrefix
+import com.google.protobuf.TextFormat
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 
@@ -48,20 +52,24 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
 
     private val processListFlow = processListAtomicStateFlow.asStateFlow()
 
+    private val processCommandSharedFlow = MutableSharedFlow<ProcessCommand>()
+
+    private val processCommandReplySharedFlow = MutableSharedFlow<ProcessCommandReply>()
+
     /**
      * Returns a [Flow] of [ProcessInventoryServerProto.ProcessUpdates] that emits a new item
      * everytime anything changes in the [list of processes][ProcessList] tracked by
      * this [DeviceProcessCatalog].
      */
-    fun trackProcesses(): Flow<ProcessUpdates> = flow {
+    fun trackProcessUpdates(): Flow<ProcessUpdates> = flow {
         val collector = this
-        logger.debug { "trackProcesses(): entering flow" }
+        logger.debug { "trackProcessUpdates(): entering flow" }
 
         // Capture known list (snapshot) so that we can compute deltas over time
         var currentList = processListFlow.value
 
         // Send known list so that
-        logger.debug { "trackProcesses(): emitting initial list of processes" }
+        logger.debug { "trackProcessUpdates(): emitting initial list of processes" }
         collector.emitInitialProcessList(currentList)
 
         // Note: We rely on any change to any process properties results in a new list
@@ -79,12 +87,24 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
         }
     }
 
+    fun trackProcessCommands(): Flow<ProcessCommand> = flow {
+        processCommandSharedFlow.collect {
+            emit(it)
+        }
+    }
+
+    fun trackProcessCommandReplies(): Flow<ProcessCommandReply> = flow {
+        processCommandReplySharedFlow.collect {
+            emit(it)
+        }
+    }
+
     /**
      * Updates the [list of processes][ProcessList] tracked by this [DeviceProcessCatalog].
      *
-     * Updates are reflected in the [Flow] returned by [trackProcesses].
+     * Updates are reflected in the [Flow] returned by [trackProcessUpdates].
      */
-    fun updateProcessList(processUpdates: ProcessUpdates) {
+    suspend fun handleProcessUpdates(processUpdates: ProcessUpdates) {
         updateProcessListStateFlow { oldProcessList ->
             // Create a new process list from the updates we are receiving
             // * Remove "deleted" processes
@@ -115,6 +135,16 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
                 processes = processInfoMap.values.sortedBy { it.pid },
             )
         }
+    }
+
+    suspend fun handleProcessCommand(processCommand: ProcessCommand) {
+        logger.debug { "Emitting process command to shared flow: ${TextFormat.shortDebugString(processCommand)}" }
+        processCommandSharedFlow.emit(processCommand)
+    }
+
+    suspend fun handleProcessCommandReply(processCommandReply: ProcessCommandReply) {
+        logger.debug { "Emitting process command reply to shared flow: ${TextFormat.shortDebugString(processCommandReply)}" }
+        processCommandReplySharedFlow.emit(processCommandReply)
     }
 
     private suspend fun FlowCollector<ProcessUpdates>.emitInitialProcessList(

@@ -47,24 +47,42 @@ message Request {
     oneof payload {
         TrackDeviceRequestPayload track_device_request_payload = 10;
         UpdateDeviceRequestPayload update_device_request_payload = 11;
+        ProcessCommandPayload process_command_payload = 12;
+        ProcessCommandReplyPayload process_command_reply_payload = 13;
     }
 
     /*
-     * Ask the server to start emitting `TrackDeviceResponsePayload` responses as process updates
-     * are sent to the server.
+     * Ask the server to start emitting `TrackDeviceResponsePayload` responses as [ProcessUpdates],
+     * [ProcessCommand] and [ProcessCommandReply] are sent to the server.
      */
     message TrackDeviceRequestPayload {
         DeviceId device_id = 1;
     }
 
     /*
-     * Request to notify of updates to one or more processes, including "process termination"
+     * Request to notify of updates to one or more processes, including "process termination".
+     * Changes are sent to all receivers of [TrackDeviceResponsePayload]
      */
     message UpdateDeviceRequestPayload {
         DeviceId device_id = 1;
         ProcessUpdates process_updates = 2;
     }
 
+    /*
+     * Request to dispatch a [ProcessCommand] to all receivers of [TrackDeviceResponsePayload]
+     */
+    message ProcessCommandPayload {
+        DeviceId device_id = 1;
+        ProcessCommand process_command = 2;
+    }
+
+    /*
+     * Request to dispatch a [ProcessCommandReply] to all receivers of [TrackDeviceResponsePayload]
+     */
+    message ProcessCommandReplyPayload {
+        DeviceId device_id = 1;
+        ProcessCommandReply process_command_reply = 2;
+    }
 }
 
 message Response {
@@ -89,6 +107,8 @@ message Response {
     oneof payload {
         TrackDeviceResponsePayload track_device_response_payload = 11;
         UpdateDeviceResponsePayload update_device_response_payload = 12;
+        ProcessCommandResponsePayload process_command_response_payload = 13;
+        ProcessCommandReplyResponsePayload process_command_reply_response_payload = 14;
     }
 
     /*
@@ -97,10 +117,31 @@ message Response {
      * Note: This response is sent multiple times until the connection is closed.
      */
     message TrackDeviceResponsePayload {
-        ProcessUpdates process_updates = 1;
+        oneof response {
+            ProcessUpdates process_updates = 1;
+            ProcessCommand process_command = 2;
+            ProcessCommandReply process_command_reply = 3;
+        }
     }
 
+    /*
+     * A response to a [UpdateDeviceRequestPayload]
+     */
     message UpdateDeviceResponsePayload {
+        // Nothing, just an "ACK"
+    }
+
+    /*
+     * A response to a [ProcessCommandPayload]
+     */
+    message ProcessCommandResponsePayload {
+        // Nothing, just an "ACK"
+    }
+
+    /*
+     * A response to a [ProcessCommandReplyPayload]
+     */
+    message ProcessCommandReplyResponsePayload {
         // Nothing, just an "ACK"
     }
 }
@@ -141,6 +182,52 @@ message ProcessUpdate {
         JdwpProcessInfo process_updated = 1;
         // A previously known process has exited
         int32 process_terminated_pid = 2;
+    }
+}
+
+/*
+ * A command to execute for the given process
+ */
+message ProcessCommand {
+    /*
+     * The unique ID of this command, that will be re-used in the corresponding
+     * [ProcessCommandReply] when the command has been executed.
+     */
+    string command_uuid = 1;
+
+    /* The process ID, always present */
+    int32 pid = 2;
+
+    /* The enumeration of all supported commands */
+    oneof command {
+        ResumeJdwpProcess resume_jdwp_process = 3;
+    }
+
+    /*
+     * A command to resume a JDWP process in the `isWaitingForDebugger` state
+     */
+    message ResumeJdwpProcess {
+        // No argument
+    }
+}
+
+/*
+ * A command to execute for the given process
+ */
+message ProcessCommandReply {
+    /* The unique ID of the [ProcessCommand] this reply applies to */
+    string command_uuid = 1;
+
+    /* The process ID, always present */
+    int32 pid = 2;
+
+    oneof command_result {
+        /* The command has been ignored because the receiver can't execute it */
+        bool command_ignored = 3;
+        /* The command was executed successfully by the receiver */
+        bool command_executed_ok = 4;
+        /* The command was executed by the receiver but an error occurred */
+        string command_executed_with_error = 5;
     }
 }
 

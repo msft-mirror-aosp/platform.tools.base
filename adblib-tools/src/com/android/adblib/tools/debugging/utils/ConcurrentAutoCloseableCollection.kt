@@ -35,32 +35,41 @@ internal class ConcurrentAutoCloseableCollection<T> : AutoCloseable, Iterable<T>
     private var isClosed = false
 
     fun add(element: T) {
-        lock.withLock {
+        val toClose = lock.withLock {
             if (!isClosed) {
                 list.add(element)
+                null
             } else {
-                // If the collection is closed, immediately close the added AutoCloseable
-                runCatching {
-                    (element as? AutoCloseable)?.close()
-                }.onFailure {
-                        val error =
-                            Exception("Error closing element when adding it to a closed collection")
-                        error.addSuppressed(it)
-                        throw error
-                    }
+                (element as? AutoCloseable)
+            }
+        }
+        // If the collection is closed, immediately close the added AutoCloseable
+        if (toClose != null) {
+            runCatching {
+                toClose.close()
+            }.onFailure {
+                val error =
+                    Exception("Error closing element when adding it to a closed collection")
+                error.addSuppressed(it)
+                throw error
             }
         }
     }
 
     override fun close() {
-        lock.withLock {
+        val toClose = lock.withLock {
             if (!isClosed) {
                 isClosed = true
-                val toClose = list.filterIsInstance<AutoCloseable>()
-                list.clear()
-                closeAll(toClose)
+                list.filterIsInstance<AutoCloseable>().also {
+                    list.clear()
+                }
+            } else {
+                emptyList()
             }
         }
+
+        // Close outside lock to prevent potential deadlocks
+        closeAll(toClose)
     }
 
     /**

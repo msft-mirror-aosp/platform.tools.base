@@ -19,15 +19,16 @@ import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.processinventory.impl.ProcessInventoryServerConnectionImpl
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * A connection to a remote [ProcessInventoryServer] to help with tracking and
- * updating [devices][ConnectedDevice] and the [JdwpProcessProperties] of their
- * JDWP processes.
+ * A connection to a remote [ProcessInventoryServer] that provides access
+ * to [ConnectionForDevice] services for a given [ConnectedDevice].
  *
  * Implementation are guaranteed to be thread-safe, and typically shared across
  * a given [AdbSession] to ensure efficient use of th underlying communication
@@ -60,7 +61,20 @@ interface ProcessInventoryServerConnection : AutoCloseable {
         val processListStateFlow: StateFlow<List<JdwpProcessProperties>>
 
         /**
-         * Sends the given [JdwpProcessProperties] of a given [process] to the underlying [ProcessInventoryServer]
+         * The [SharedFlow] of [ProcessInventoryServerProto.ProcessCommand] that are dispatched from the underlying
+         * [ProcessInventoryServer]. See [sendProcessCommand]
+         */
+        val processCommandSharedFlow: SharedFlow<ProcessInventoryServerProto.ProcessCommand>
+
+        /**
+         * The [SharedFlow] of [ProcessInventoryServerProto.ProcessCommandReply] that are dispatched from the underlying
+         * [ProcessInventoryServer]. See [sendProcessCommandReply]
+         */
+        val processCommandReplySharedFlow: SharedFlow<ProcessInventoryServerProto.ProcessCommandReply>
+
+        /**
+         * Sends the given [JdwpProcessProperties] of a given [process] to
+         * the underlying [ProcessInventoryServer]
          */
         suspend fun sendProcessProperties(properties: JdwpProcessProperties)
 
@@ -68,10 +82,22 @@ interface ProcessInventoryServerConnection : AutoCloseable {
          * Notify the underlying [ProcessInventoryServer] that the given process has exited.
          */
         suspend fun notifyProcessExit(pid: Int)
+
+        /**
+         * Sends a [ProcessInventoryServerProto.ProcessCommand] to the underlying [ProcessInventoryServer]. The
+         * [ProcessInventoryServerProto.ProcessCommand] is dispatched to all clients through the [processCommandSharedFlow]
+         */
+        suspend fun sendProcessCommand(command: ProcessInventoryServerProto.ProcessCommand)
+
+        /**
+         * Sends a [ProcessInventoryServerProto.ProcessCommandReply] to the underlying [ProcessInventoryServer]. The
+         * [ProcessInventoryServerProto.ProcessCommandReply] is dispatched to all clients through the [processCommandReplySharedFlow]
+         */
+        suspend fun sendProcessCommandReply(commandReply: ProcessInventoryServerProto.ProcessCommandReply)
+
     }
 
     companion object {
-
         fun create(
             session: AdbSession,
             config: ProcessInventoryServerConfiguration

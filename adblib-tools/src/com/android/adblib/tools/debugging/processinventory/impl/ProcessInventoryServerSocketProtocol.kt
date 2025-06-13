@@ -26,6 +26,7 @@ import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.skipRemaining
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto
 import com.android.adblib.utils.ResizableBuffer
+import com.google.protobuf.TextFormat
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.nio.ByteOrder
@@ -61,7 +62,7 @@ internal class ProcessInventoryServerSocketProtocol(
          * [ProcessInventoryServerProto.Response] each time there are updates to the inventory
          * of [ProcessInventoryServerProto.JdwpProcessInfo] of the corresponding device.
          */
-        suspend fun trackDevice(deviceSerial: String): Flow<ProcessInventoryServerProto.Response> =
+        fun trackDeviceRequests(deviceSerial: String): Flow<ProcessInventoryServerProto.Response> =
             flow {
                 val request = ProcessInventoryServerProto.Request.newBuilder()
                     .setClientDescription(clientDescription)
@@ -97,6 +98,52 @@ internal class ProcessInventoryServerSocketProtocol(
             processInfoUpdateList: List<ProcessInventoryServerProto.JdwpProcessInfo>,
         ): ProcessInventoryServerProto.Response {
             return sendDeviceProcessInfoUpdates(deviceSerial, processInfoUpdateList, emptyList())
+        }
+
+        /**
+         * Invokes the [ProcessInventoryServerProto.Request.UpdateDeviceRequestPayload] service
+         * on the server given a device [deviceSerial], returning a
+         * [ProcessInventoryServerProto.Response] with "ok" status.
+         */
+        suspend fun sendDeviceProcessCommand(
+            deviceSerial: String,
+            processCommand: ProcessInventoryServerProto.ProcessCommand
+        ): ProcessInventoryServerProto.Response {
+            val request = ProcessInventoryServerProto.Request
+                .newBuilder()
+                .setClientDescription(clientDescription)
+                .setProcessCommandPayload(
+                    ProcessInventoryServerProto.Request.ProcessCommandPayload
+                        .newBuilder()
+                        .setDeviceId(deviceId(deviceSerial))
+                        .setProcessCommand(processCommand)
+                )
+                .build()
+            writeRequest(request)
+            return readResponse()
+        }
+
+        /**
+         * Invokes the [ProcessInventoryServerProto.Request.UpdateDeviceRequestPayload] service
+         * on the server given a device [deviceSerial], returning a
+         * [ProcessInventoryServerProto.Response] with "ok" status.
+         */
+        suspend fun sendDeviceProcessCommandReply(
+            deviceSerial: String,
+            processCommandReply: ProcessInventoryServerProto.ProcessCommandReply
+        ): ProcessInventoryServerProto.Response {
+            val request = ProcessInventoryServerProto.Request
+                .newBuilder()
+                .setClientDescription(clientDescription)
+                .setProcessCommandReplyPayload(
+                    ProcessInventoryServerProto.Request.ProcessCommandReplyPayload
+                        .newBuilder()
+                        .setDeviceId(deviceId(deviceSerial))
+                        .setProcessCommandReply(processCommandReply)
+                )
+                .build()
+            writeRequest(request)
+            return readResponse()
         }
 
         /**
@@ -228,7 +275,7 @@ internal class ProcessInventoryServerSocketProtocol(
             inputChannel.readExactly(workBuffer.forChannelRead(length))
             val buffer = workBuffer.afterChannelRead()
             return ProcessInventoryServerProto.Request.parseFrom(buffer).also {
-                logger.verbose { "Read request: $it" }
+                logger.verbose { "Read request: ${TextFormat.shortDebugString(it)}" }
                 // A response is allowed after reading a full request
                 readingAllowed = true
             }
@@ -244,7 +291,7 @@ internal class ProcessInventoryServerSocketProtocol(
             inputChannel.readExactly(workBuffer.forChannelRead(length))
             val buffer = workBuffer.afterChannelRead()
             return ProcessInventoryServerProto.Response.parseFrom(buffer).also {
-                logger.verbose { "Read response: $it" }
+                logger.verbose { "Read response: ${TextFormat.shortDebugString(it)}" }
                 // A response is allowed after reading a full response
                 readingAllowed = true
             }
@@ -272,7 +319,7 @@ internal class ProcessInventoryServerSocketProtocol(
         suspend fun writeResponse(response: ProcessInventoryServerProto.Response) {
             check(writingAllowed)
             writingAllowed = false
-            logger.verbose { "Write response: $response" }
+            logger.verbose { "Write response: ${TextFormat.shortDebugString(response)}" }
 
             //TODO: Maybe we can avoid this allocation and write directly to the ByteBuffer...
             val bytes = response.toByteArray()
@@ -287,7 +334,7 @@ internal class ProcessInventoryServerSocketProtocol(
         suspend fun writeRequest(request: ProcessInventoryServerProto.Request) {
             check(writingAllowed)
             writingAllowed = false
-            logger.verbose { "Write request: $request" }
+            logger.verbose { "Write request: ${TextFormat.shortDebugString(request)}" }
 
             //TODO: Maybe we can avoid this allocation and write directly to the ByteBuffer...
             val bytes = request.toByteArray()

@@ -32,6 +32,7 @@ import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServe
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection.ConnectionForDevice
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessUpdate
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.Response.TrackDeviceResponsePayload
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
@@ -40,12 +41,15 @@ import com.android.adblib.tools.tcpserver.TcpServerConnection
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.utils.runAlongOtherScope
 import com.android.adblib.withPrefix
+import com.google.protobuf.TextFormat
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -79,6 +83,10 @@ internal class ProcessInventoryServerConnectionImpl(
         return runAlongOtherScope(device.scope) {
             val connectionForDevice =
                 device.processInventoryServerConnection(config, serverWithFailOver)
+
+            // Wait for all flows to be active, in case `block` collects them
+            connectionForDevice.awaitFlowsAreActive()
+
             connectionForDevice.block()
         }
     }
@@ -119,18 +127,53 @@ private class ProcessInventoryServerConnectionForDevice(
 
     private val scope = device.scope.createChildScope(isSupervisor = true)
 
-    private val processPropertiesListMutableStateFlow =
-        MutableStateFlow<List<JdwpProcessProperties>>(emptyList())
+    private val processPropertiesListMutableStateFlow = MutableStateFlow<List<JdwpProcessProperties>>(emptyList())
+
+    /**
+     * The [MutableSharedFlow] of [ProcessInventoryServerProto.ProcessCommand] that contains the
+     * commands received from the remote [ProcessInventoryServer].
+     *
+     * Note: The flow is non-suspending there may not be consumers of the flow.
+     */
+    private val processCommandMutableSharedFlow =
+        MutableSharedFlow<ProcessInventoryServerProto.ProcessCommand>(
+            extraBufferCapacity = 10,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+    /**
+     * The [MutableSharedFlow] of [ProcessInventoryServerProto.ProcessCommandReply] that contains
+     * the command replies received from the remote [ProcessInventoryServer].
+     *
+     * Note: The flow is non-suspending there may not be consumers of the flow.
+     */
+    private val processCommandReplyMutableSharedFlow =
+        MutableSharedFlow<ProcessInventoryServerProto.ProcessCommandReply>(
+            extraBufferCapacity = 10,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+    private val trackerIsActiveDeferred = CompletableDeferred<Unit>()
 
     override val processListStateFlow = processPropertiesListMutableStateFlow.asStateFlow()
+
+    override val processCommandSharedFlow = processCommandMutableSharedFlow.asSharedFlow()
+
+    override val processCommandReplySharedFlow = processCommandReplyMutableSharedFlow.asSharedFlow()
 
     init {
         scope.launch {
             runCatching {
-                trackProcessesFromServer()
+                trackDeviceRequestsFromServer()
             }.onFailure { throwable ->
                 logger.logIOCompletionErrors(throwable, "Remote process tracking coroutine")
             }
+        }
+    }
+
+    suspend fun awaitFlowsAreActive() {
+        if (!trackerIsActiveDeferred.isCompleted) {
+            logger.verbose { "Waiting for tracker to be active" }
+            trackerIsActiveDeferred.await()
+            logger.verbose { "Done waiting for tracker to be active" }
         }
     }
 
@@ -147,12 +190,35 @@ private class ProcessInventoryServerConnectionForDevice(
                 .forClient(config.clientDescription)
 
             val processInfo = properties.toJdwpProcessInfoProto()
-            val response = protocolChannel.sendDeviceProcessInfoUpdates(
+            val response = protocolChannel.sendDeviceProcessInfoList(
                     device.serialNumber,
-                    listOf(processInfo),
-                    emptyList()
+                    listOf(processInfo)
                 )
             logger.debug { "Sent process properties: $response" }
+        }
+    }
+
+    override suspend fun sendProcessCommand(command: ProcessInventoryServerProto.ProcessCommand) {
+        // Note: This will retry until the server is available
+        server.withClientSocket { _, socketChannel ->
+            logger.debug { "Sending process command on socket $socketChannel: ${TextFormat.shortDebugString(command)}" }
+            val protocolChannel = ProcessInventoryServerSocketProtocol(session, socketChannel)
+                .forClient(config.clientDescription)
+            val response =
+                protocolChannel.sendDeviceProcessCommand(device.serialNumber, command)
+            logger.debug { "Process command response: ${TextFormat.shortDebugString(response)}" }
+        }
+    }
+
+    override suspend fun sendProcessCommandReply(commandReply: ProcessInventoryServerProto.ProcessCommandReply) {
+        // Note: This will retry until the server is available
+        server.withClientSocket { _, socketChannel ->
+            logger.debug { "Sending process command reply on socket $socketChannel: ${TextFormat.shortDebugString(commandReply)}" }
+            val protocolChannel = ProcessInventoryServerSocketProtocol(session, socketChannel)
+                .forClient(config.clientDescription)
+            val response =
+                protocolChannel.sendDeviceProcessCommandReply(device.serialNumber, commandReply)
+            logger.debug { "Process command response: ${TextFormat.shortDebugString(response)}" }
         }
     }
 
@@ -168,18 +234,17 @@ private class ProcessInventoryServerConnectionForDevice(
     }
 
     /**
-     * Collects process info updates from [ProcessInventoryServer], converting the received
-     * [ProcessInventoryServerProto.JdwpProcessInfo] updates into a [StateFlow] of
-     * [JdwpProcessProperties].
+     * Collects and process all [TrackDeviceResponsePayload] messages from the
+     * [ProcessInventoryServer].
      */
-    private suspend fun trackProcessesFromServer() {
+    private suspend fun trackDeviceRequestsFromServer() {
         val processMap = mutableMapOf<Int, JdwpProcessProperties>()
 
         // Note: This is a long-running connection that should remain active as long
         // as the device is connected. If the server becomes unavailable, a new connection
         // is opened automatically (until the device is disconnected)
         server.withClientSocket { newServerInstance, socketChannel ->
-            logger.info { "Tracking processes from server socket '$socketChannel'" }
+            logger.info { "Tracking requests from server socket '$socketChannel'" }
 
             val protocolChannel = ProcessInventoryServerSocketProtocol(session, socketChannel)
                 .forClient(config.clientDescription)
@@ -204,17 +269,58 @@ private class ProcessInventoryServerConnectionForDevice(
             }
 
             logger.debug { "Start collecting ${ProcessInventoryServerProto.ProcessUpdates::class.java.simpleName} from socket $socketChannel" }
-            protocolChannel.trackDevice(device.serialNumber).mapNotNull {
-                if (it.hasTrackDeviceResponsePayload() && it.trackDeviceResponsePayload.hasProcessUpdates()) {
-                    it.trackDeviceResponsePayload.processUpdates
-                } else {
-                    null
+            protocolChannel.trackDeviceRequests(device.serialNumber).collect { response ->
+                logger.verbose { "Received tracker response: ${TextFormat.shortDebugString(response)}" }
+
+                // Signal that we are actively collecting messages
+                //
+                // Note: We are guaranteed to always get at least one message from the
+                // `trackerDeviceRequests` flow (a "process list update" message). This means
+                // setting the completable here is guaranteed to be almost "immediate"
+                if (!trackerIsActiveDeferred.isCompleted) {
+                    logger.verbose { "Completing \"tracker active\" deferred" }
+                    trackerIsActiveDeferred.complete(Unit)
                 }
-            }.collect { processUpdates ->
-                processUpdates.processUpdateList.forEach { processUpdate ->
-                    applyProcessUpdate(processMap, processUpdate)
+
+                if (response.hasTrackDeviceResponsePayload()) {
+                    when (response.trackDeviceResponsePayload.responseCase) {
+                        TrackDeviceResponsePayload.ResponseCase.PROCESS_UPDATES -> {
+                            // One or more process properties have been updated
+                            applyProcessUpdates(
+                                response.trackDeviceResponsePayload.processUpdates,
+                                processMap
+                            )
+                        }
+
+                        TrackDeviceResponsePayload.ResponseCase.PROCESS_COMMAND -> {
+                            // Forward command to our shared flow for collectors
+                            val emitted = processCommandMutableSharedFlow.tryEmit(
+                                response.trackDeviceResponsePayload.processCommand)
+                            assert(emitted) { "SharedFlow should be non-suspending" }
+                        }
+
+                        TrackDeviceResponsePayload.ResponseCase.PROCESS_COMMAND_REPLY -> {
+                            // Forward command to our shared flow for collectors
+                            val emitted = processCommandReplyMutableSharedFlow.tryEmit(
+                                response.trackDeviceResponsePayload.processCommandReply)
+                            assert(emitted) { "SharedFlow should be non-suspending" }
+                        }
+
+                        TrackDeviceResponsePayload.ResponseCase.RESPONSE_NOT_SET, null -> {
+                            logger.info { "Unknown process update message: $response" }
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    private fun applyProcessUpdates(
+        processUpdates: ProcessInventoryServerProto.ProcessUpdates,
+        processMap: MutableMap<Int, JdwpProcessProperties>
+    ) {
+        processUpdates.processUpdateList.forEach { processUpdate ->
+            applyProcessUpdate(processMap, processUpdate)
         }
     }
 

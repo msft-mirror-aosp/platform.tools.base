@@ -32,6 +32,7 @@ import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.jdwpProcessFlow
+import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
@@ -64,6 +65,41 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
     @JvmField
     @Rule
     val closeables = CloseablesRule()
+
+    @Test
+    fun testFactoryCanBeEnabledAndDisabled(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+        // Prepare
+        val session = fakeAdbRule.adbSession
+        val server = ProcessInventoryServerConnection.create(session, TestServerConfig())
+        val pid1 = 20
+        val fakeDevice = fakeAdbRule.fakeAdb.addSampleDevice(apiLevel = 30)
+        fakeDevice.addSampleJdwpProcess(pid1)
+        val device = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+        val jdwpProcess = device.jdwpProcessTracker.processesFlow.mapNotNull { processList ->
+            processList.firstOrNull { it.pid == pid1 }
+        }.first()
+
+        var enabled = true
+        session.installProcessInventoryJdwpProcessPropertiesCollectorFactory(
+            server,
+            enabled = { enabled }
+        )
+
+        // Act
+        enabled = true
+        val externalCollectorList1 = session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull {
+            it.create(jdwpProcess)
+        }
+
+        enabled = false
+        val externalCollectorList2 = session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull {
+            it.create(jdwpProcess)
+        }
+
+        // Assert
+        Assert.assertEquals(1, externalCollectorList1.size)
+        Assert.assertEquals(0, externalCollectorList2.size)
+    }
 
     @Test
     fun testJdwpPropertiesCollectionIsDistributed(): Unit =

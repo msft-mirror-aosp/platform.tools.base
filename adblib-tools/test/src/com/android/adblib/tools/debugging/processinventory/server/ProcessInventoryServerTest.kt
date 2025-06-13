@@ -46,7 +46,7 @@ class ProcessInventoryServerTest {
 
         // Act
         val protocol = connectToServer(session, localServerSocket)
-        val response = protocol.forClient("foo").trackDevice("123").first()
+        val response = protocol.forClient("foo").trackDeviceRequests("123").first()
 
         // Assert
         assertTrue(response.ok)
@@ -65,7 +65,7 @@ class ProcessInventoryServerTest {
         // Act
         val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
         val deferred = async {
-            connectToServer(session, localServerSocket).forClient("foo").trackDevice(deviceSerial).collect {
+            connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect {
                 trackerResponses.add(it)
             }
         }
@@ -103,7 +103,7 @@ class ProcessInventoryServerTest {
         // Act
         val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
         val deferred = async {
-            connectToServer(session, localServerSocket).forClient("foo").trackDevice(deviceSerial).collect {
+            connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect {
                 trackerResponses.add(it)
             }
         }
@@ -141,7 +141,7 @@ class ProcessInventoryServerTest {
         // Act
         val trackerResponses = mutableListOf<ProcessInventoryServerProto.Response>()
         val deferred = async {
-            connectToServer(session, localServerSocket).forClient("foo").trackDevice(deviceSerial).collect {
+            connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect {
                 trackerResponses.add(it)
             }
         }
@@ -188,7 +188,7 @@ class ProcessInventoryServerTest {
         val deferred = async {
             connectToServer(session, localServerSocket)
                 .forClient("foo")
-                .trackDevice(deviceSerial).collect {
+                .trackDeviceRequests(deviceSerial).collect {
                     trackerResponses.add(it)
                 }
         }
@@ -231,7 +231,7 @@ class ProcessInventoryServerTest {
         // Act
         val trackerResponses = CopyOnWriteArrayList<ProcessInventoryServerProto.Response>()
         val deferred = async {
-            connectToServer(session, localServerSocket).forClient("foo").trackDevice(deviceSerial).collect {
+            connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect {
                 trackerResponses.add(it)
             }
         }
@@ -284,7 +284,7 @@ class ProcessInventoryServerTest {
 
         val trackerResponses = CopyOnWriteArrayList<ProcessInventoryServerProto.Response>()
         val deferred = async {
-            connectToServer(session, localServerSocket).forClient("foo").trackDevice(deviceSerial).collect {
+            connectToServer(session, localServerSocket).forClient("foo").trackDeviceRequests(deviceSerial).collect {
                 trackerResponses.add(it)
             }
         }
