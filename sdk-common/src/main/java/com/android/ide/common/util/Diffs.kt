@@ -43,13 +43,18 @@ class Diffs {
     val content: String,
   )
 
-  private enum class LineType {
+  enum class LineType {
     COMMON,
     ADDED,
     REMOVED,
   }
 
-  private data class DiffLine(val text: String, val type: LineType)
+  data class DiffLine(
+    /** Text on the line including any final line separator(s). */
+    val text: String,
+    /** Whether the line is common, added, or removed. */
+    val type: LineType,
+  )
 
   companion object {
     /**
@@ -90,25 +95,27 @@ class Diffs {
      *
      * @param originalText The original string.
      * @param newText The new string.
-     * @param windowSize The number of context lines to include around a difference.
-     * @param trimEnds If true, trim any trailing whitespace on the diff lines
-     * @return A string in a format similar to `git diff`, showing differences. Returns an empty
-     *   string if texts are identical or both are empty.
+     * @return A list of lines that are common, added, or removed.
      */
-    fun diff(
-      originalText: String,
-      newText: String,
-      windowSize: Int = 3,
-      trimEnds: Boolean = false,
-    ): String {
+    fun diffLines(originalText: String, newText: String): List<DiffLine> {
       // Treat empty strings as having zero lines, otherwise split by lines.
-
       val originalLines =
         if (originalText.isEmpty()) emptyList() else originalText.splitWithLineSeparators()
       val newLines = if (newText.isEmpty()) emptyList() else newText.splitWithLineSeparators()
 
+      return diffLines(originalLines, newLines)
+    }
+
+    /**
+     * Computes the diff between two strings, split into lines.
+     *
+     * @param originalLines The original string.
+     * @param newLines The new string.
+     * @return A list of lines that are common, added, or removed.
+     */
+    private fun diffLines(originalLines: List<String>, newLines: List<String>): List<DiffLine> {
       if (originalLines == newLines) {
-        return ""
+        return emptyList()
       }
 
       // Use Longest Common Subsequence (LCS) to find differences.
@@ -150,6 +157,33 @@ class Diffs {
         }
       }
       diffLines.reverse() // Lines were added in reverse order
+
+      return diffLines
+    }
+
+    /**
+     * Computes the diff between two strings.
+     *
+     * @param originalText The original string.
+     * @param newText The new string.
+     * @param windowSize The number of context lines to include around a difference.
+     * @param trimEnds If true, trim any trailing whitespace on the diff lines
+     * @return A string in a format similar to `git diff`, showing differences. Returns an empty
+     *   string if texts are identical or both are empty.
+     */
+    fun diff(
+      originalText: String,
+      newText: String,
+      windowSize: Int = 3,
+      trimEnds: Boolean = false,
+    ): String {
+      // Treat empty strings as having zero lines, otherwise split by lines.
+      val originalLines =
+        if (originalText.isEmpty()) emptyList() else originalText.splitWithLineSeparators()
+      val newLines = if (newText.isEmpty()) emptyList() else newText.splitWithLineSeparators()
+
+      val diffLines = diffLines(originalLines, newLines)
+      if (diffLines.isEmpty()) return ""
 
       return formatHunks(diffLines, originalLines.size, newLines.size, windowSize, trimEnds)
     }
