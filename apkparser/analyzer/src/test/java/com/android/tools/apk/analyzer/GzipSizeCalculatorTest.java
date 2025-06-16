@@ -33,6 +33,7 @@ public class GzipSizeCalculatorTest {
     private static final String VIRTUAL_ENTRY_NAME = "";
 
     private ApkSizeCalculator calculator;
+
     private Path apk;
 
     @Before
@@ -127,6 +128,27 @@ public class GzipSizeCalculatorTest {
         Map<String, ZipEntryInfo> entries = calculator.getInfoPerFile(apkWithVirtualEntries);
         assertThat(entries.size()).isNotEqualTo(0);
         assertThat(entries.get(VIRTUAL_ENTRY_NAME)).isNull();
+    }
+
+    @Test
+    public void getDownloadSizePerFile_ignoresBundledMetadata() throws IOException {
+        Path aab = TestResources.getFile("/bundle-metadata.aab").toPath();
+
+        Map<String, Long> data = calculator.getDownloadSizePerFile(aab);
+
+        assertThat(data.get("/BUNDLE-METADATA/com.android.tools.build.libraries/dependencies.pb"))
+                .isNull();
+        assertThat(data.get("/BUNDLE-METADATA/com.android.tools.build.obfuscation/proguard.map"))
+                .isNull();
+        assertThat(data.get("/BUNDLE-METADATA/com.android.tools/r8.json")).isNull();
+        assertThat(
+                        data.get(
+                                "/BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties"))
+                .isGreaterThan(0L);
+        assertThat(data.get("/BUNDLE-METADATA/com.android.tools.build.profiles/baseline.prof"))
+                .isGreaterThan(0L);
+        assertThat(data.get("/BUNDLE-METADATA/com.android.tools.build.profiles/baseline.profm"))
+                .isGreaterThan(0L);
     }
 
     public static boolean isVirtualEntry(String name) {

@@ -48,6 +48,14 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
 
     private static final long OFFSET_16K = 16 * 1024;
 
+    private static final String BUNDLE_METADATA = "BUNDLE-METADATA/";
+
+    private static final String PROFILES_METADATA =
+            "BUNDLE-METADATA/com.android.tools.build.profiles/";
+
+    private static final String APP_METADATA =
+            "BUNDLE-METADATA/com.android.tools.build.gradle/app-metadata.properties";
+
     public GzipSizeCalculator() {}
 
     private static void verify(@NonNull Path apk) {
@@ -101,6 +109,11 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
                     continue;
                 }
                 String name = entry.getName();
+                if (name.startsWith(BUNDLE_METADATA)
+                        && !name.startsWith(PROFILES_METADATA)
+                        && !name.equals(APP_METADATA)) {
+                    continue;
+                }
                 try (InputStream zip = zipRepo.getInputStream(name);
                         MaxGzipCountingOutputStream gzip = new MaxGzipCountingOutputStream()) {
                     ByteStreams.copy(zip, gzip);
