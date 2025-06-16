@@ -16,12 +16,12 @@
 
 package com.android.build.gradle.internal.testsuites.impl
 
-import com.android.build.api.dsl.AgpTestSuiteTarget
 import com.android.build.api.variant.impl.capitalizeFirstChar
+import com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl
 import com.android.build.gradle.internal.testsuites.TestSuiteTargetBuilder
 
 class TestSuiteTargetBuilderImpl(
-    private val dslDefinedTestSuiteTarget: AgpTestSuiteTarget
+    private val dslDefinedTestSuiteTarget: AgpTestSuiteTargetImpl
 ): TestSuiteTargetBuilder {
 
     override var enable = true
@@ -44,6 +44,6 @@ class TestSuiteTargetBuilderImpl(
      */
     internal fun uniqueName() =
         // so far, I am joining the targetDevices to the name in case we start creating more than
-        // one test task instance per target (to target a different device for instance).
+        // one test task instance per target (to target a different devices for instance).
         name + targetDevices.joinToString(separator = "_").capitalizeFirstChar()
 }

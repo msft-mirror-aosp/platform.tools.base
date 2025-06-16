@@ -16,14 +16,13 @@
 
 package com.android.build.gradle.internal.testsuites
 
-import com.android.build.api.dsl.AgpTestSuite.TestTaskContext
+import com.android.build.api.dsl.TestTaskContext
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 import org.gradle.api.tasks.testing.Test
 
 interface TestSuite: Named {
 
-    /**
     /**
      * Configure the test tasks for this test target.
      *
@@ -39,7 +38,7 @@ interface TestSuite: Named {
      * determine what the [Test] task applies to.
      *
      * @param action a block to configure the [Test] tasks associated with this test suite target.
-    */
+     *
      * Example :
      * ```(kotlin)
      *  androidComponents {
@@ -49,7 +48,7 @@ interface TestSuite: Named {
      *                  testTask.beforeTest { descriptor ->
      *                      println("Running test: " + descriptor)
      *                  }
- *                  }
+     *              }
      *          }
      *      }
      *  }

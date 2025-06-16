@@ -2298,6 +2298,17 @@ package com.android.build.api.dsl {
   public interface TestProductFlavor extends com.android.build.api.dsl.TestBaseFlavor com.android.build.api.dsl.ProductFlavor {
   }
 
+  @org.gradle.api.Incubating public interface TestTaskContext {
+    method @org.gradle.api.Incubating public String getSuiteName();
+    method @org.gradle.api.Incubating public String getTargetName();
+    method @org.gradle.api.Incubating public java.util.Collection<java.lang.String> getTargetedDevices();
+    method @org.gradle.api.Incubating public String getTargetedVariant();
+    property @org.gradle.api.Incubating public abstract String suiteName;
+    property @org.gradle.api.Incubating public abstract String targetName;
+    property @org.gradle.api.Incubating public abstract java.util.Collection<java.lang.String> targetedDevices;
+    property @org.gradle.api.Incubating public abstract String targetedVariant;
+  }
+
   public interface TestVariantDimension extends com.android.build.api.dsl.VariantDimension {
     method public Boolean? getMultiDexEnabled();
     method public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();

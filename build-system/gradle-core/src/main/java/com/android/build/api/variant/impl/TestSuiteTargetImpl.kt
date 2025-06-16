@@ -29,5 +29,5 @@ class TestSuiteTargetImpl(
 
     override fun getName(): String = testSuiteBuilder.name
 
-    override val targetedDevices: Collection<String> = emptyList()
+    override val targetDevices: Collection<String> = emptyList()
 }

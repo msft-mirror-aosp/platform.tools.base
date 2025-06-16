@@ -22,6 +22,7 @@ import com.android.build.api.dsl.JUnitEngineSpec
 import com.android.build.api.dsl.TestSuiteAssetsSpec
 import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.TestSuiteTestApkSpec
+import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
@@ -110,7 +111,12 @@ abstract class AgpTestSuiteImpl(
     internal fun  getSourceContainers(): Collection<TestSuiteSourceCreationConfig> =
         sources
 
-    override fun configureTestTasks(action: Test.(AgpTestSuite.TestTaskContext) -> Unit) {
-        throw RuntimeException("Not implemented")
+    override fun configureTestTasks(action: Test.(TestTaskContext) -> Unit) {
+        testTaskConfigActions.add(action)
     }
+
+    /**
+     * Internal APIs
+     */
+    internal val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
 }

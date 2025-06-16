@@ -29,7 +29,6 @@ import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.Provider
 import org.gradle.testfixtures.ProjectBuilder
 import org.gradle.testing.base.TestSuite
-import org.gradle.testing.base.TestSuiteTarget
 import org.junit.Before
 import org.junit.rules.TemporaryFolder
 import org.mockito.Mockito
@@ -71,7 +70,7 @@ class TestOptionsTest {
         override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
             throw RuntimeException("Unexpected call")
         }
-        override fun configureTestTasks(action: org.gradle.api.tasks.testing.Test.(AgpTestSuite.TestTaskContext) -> Unit) {
+        override fun configureTestTasks(action: org.gradle.api.tasks.testing.Test.(TestTaskContext) -> Unit) {
             throw RuntimeException("Unexpected call")
         }
     }

@@ -186,7 +186,7 @@ com.android.build.gradle.internal.dsl.AaptOptions.setIgnoreAssetsPattern: void (
 com.android.build.gradle.internal.dsl.AdbOptions.installOptions: void (java.lang.String)
 com.android.build.gradle.internal.dsl.AdbOptions.installOptions: void (java.lang.String[])
 com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.assets: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteAssetsSpec, kotlin.Unit>)
-com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.configureTestTasks: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test, ? super com.android.build.api.dsl.AgpTestSuite$TestTaskContext, kotlin.Unit>)
+com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.configureTestTasks: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test, ? super com.android.build.api.dsl.TestTaskContext, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.getName: java.lang.String ()
 com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.getTargetVariants: java.util.List<java.lang.String> ()
 com.android.build.gradle.internal.dsl.AgpTestSuiteImpl.getTargets: org.gradle.api.DomainObjectCollection ()

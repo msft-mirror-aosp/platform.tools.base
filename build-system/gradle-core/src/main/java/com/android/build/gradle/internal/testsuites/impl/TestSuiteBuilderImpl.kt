@@ -145,6 +145,4 @@ internal class JUnitEngineSpecForVariantBuilder(
 
     override val enginesDependencies: DependencyCollector =
         dslDefinedJUnitEngineSpec.enginesDependencies
-
-
 }

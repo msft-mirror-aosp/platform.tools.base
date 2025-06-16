@@ -16,7 +16,7 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
 import com.android.build.gradle.internal.testsuites.TestSuite
 import com.android.build.gradle.internal.testsuites.TestSuiteTarget
@@ -30,7 +30,7 @@ open class AnalyticsEnabledTestSuite(
     val objectFactory: ObjectFactory
 ): TestSuite {
 
-    override fun configureTestTasks(action: Test.(context: AgpTestSuite.TestTaskContext) -> Unit) {
+    override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
         stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
             VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE
         delegate.configureTestTasks(action)

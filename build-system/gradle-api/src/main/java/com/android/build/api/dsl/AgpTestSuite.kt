@@ -150,40 +150,6 @@ interface AgpTestSuite: TestSuite {
     @Incubating
     override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget>
 
-    @Incubating
-    interface TestTaskContext {
-
-        /**
-         * [AgpTestSuiteTarget] name the [Test] task is targeting.
-         */
-        @get:Incubating
-        val targetName: String
-
-        /**
-         * Suite name the [Test] task is testing.
-         *
-         * TODO : Maybe replace with TestSuite Variant object once the variant interfaces become
-         * public.
-         */
-        @get:Incubating
-        val suiteName: String
-
-        /**
-         * Targeted variant the [Test] task is running against.
-         *
-         * TODO: Replace with [com.android.build.api.variant.Component] ?
-         */
-        @get:Incubating
-        val targetedVariant: String
-
-        /**
-         * Returns the list of devices this [Test] task targets. In case the test runs on the host
-         * machine, the list will be empty.
-         */
-        @get:Incubating
-        val targetedDevices: Collection<String>
-    }
-
     /**
      * Configure the test tasks for this test target.
      *

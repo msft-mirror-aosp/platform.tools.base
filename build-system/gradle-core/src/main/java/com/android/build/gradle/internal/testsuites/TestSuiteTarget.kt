@@ -26,5 +26,5 @@ interface TestSuiteTarget: Named {
     val enabled: Boolean
 
     @get: Incubating
-    val targetedDevices: Collection<String>
+    val targetDevices: Collection<String>
 }

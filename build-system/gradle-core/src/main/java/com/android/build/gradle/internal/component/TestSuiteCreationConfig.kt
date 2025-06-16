@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.component
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -29,7 +30,13 @@ interface TestSuiteCreationConfig: TestSuite {
 
     val global: GlobalTaskCreationConfig
 
-    fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>)
+    /**
+     * Runs all the registered config actions on the test tasks for this suite.
+     */
+    fun runTestTaskConfigurationActions(
+        context: TestTaskContext,
+        testTaskProvider: TaskProvider<out Test>
+    )
 
     /**
      * Returns information on the junit engines to run the tests with or null if no junit test

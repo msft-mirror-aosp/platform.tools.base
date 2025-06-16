@@ -18,7 +18,7 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.computeTaskName
-import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
@@ -70,14 +70,24 @@ class TestSuiteImpl internal constructor(
         }
 
     @Synchronized
-    override fun configureTestTasks(action: Test.(context: AgpTestSuite.TestTaskContext) -> Unit) {
-        throw RuntimeException("Not yet implemented")
+    override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
+        testTaskConfigActions.add(action)
     }
 
-    //
-    // Internal APIs
-    //
-    override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>) {
-        throw RuntimeException("Not yet implemented")
+    /**
+     * Internal APIs
+     */
+    private val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>().also {
+        it.addAll(testSuiteBuilder.testSuite.testTaskConfigActions)
+    }
+
+    @Synchronized
+    override fun runTestTaskConfigurationActions(
+        context: TestTaskContext,
+        testTaskProvider: TaskProvider<out Test>
+    ) {
+        testTaskConfigActions.forEach {
+            testTaskProvider.configure { testTask -> it(testTask, context) }
+        }
     }
 }

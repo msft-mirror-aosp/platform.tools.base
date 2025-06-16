@@ -415,7 +415,7 @@ class ModelBuilder<
                             TestSuiteTargetImpl(
                                 variantSpecificTarget.name,
                                 variantSpecificTarget.testTaskName,
-                                variantSpecificTarget.targetedDevices
+                                variantSpecificTarget.targetDevices
                             )
                         }
                     )
@@ -1117,7 +1117,7 @@ class ModelBuilder<
             TestSuiteTargetImpl(
                 testSuiteTarget.name,
                 testSuiteTarget.testTaskName,
-                testSuiteTarget.targetedDevices
+                testSuiteTarget.targetDevices
             )
         }
         return TestSuiteArtifactImpl(
