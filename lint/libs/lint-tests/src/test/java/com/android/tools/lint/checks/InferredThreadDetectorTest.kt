@@ -635,7 +635,10 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
 
           @UiThread fun ui() { }
 
-          @WorkerThread fun worker() { id(::ui).invoke() }
+          @WorkerThread fun worker() {
+             id(::ui).invoke()
+             id(::ui)()
+          }
           """
               .trimIndent()
           )
@@ -645,10 +648,13 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          src/test/pkg/test.kt:12: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
-          @WorkerThread fun worker() { id(::ui).invoke() }
-                                                ~~~~~~~~
-          1 errors, 0 warnings
+          src/test/pkg/test.kt:13: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+             id(::ui).invoke()
+                      ~~~~~~~~
+          src/test/pkg/test.kt:14: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+             id(::ui)()
+             ~~~~~~~~~~
+          2 errors
         """
           .trimIndent()
       )
@@ -1591,7 +1597,9 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
               @UiThread fun ui() { id(42) }
               @WorkerThread fun work() { id("foo") }
               id(::ui).invoke() // ok
+              id(::ui)() //ok
               id(::work).invoke() // ERROR
+              id(::work)() // ERROR
           }
           """
           )
@@ -1601,10 +1609,13 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          src/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          src/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
               id(::work).invoke() // ERROR
                          ~~~~~~~~
-          1 error
+          src/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              id(::work)() // ERROR
+              ~~~~~~~~~~~~
+          2 errors
         """
           .trimIndent()
       )
