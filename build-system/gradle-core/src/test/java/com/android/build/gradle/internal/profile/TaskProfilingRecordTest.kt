@@ -25,6 +25,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
 class TaskProfilingRecordTest {
@@ -42,7 +43,7 @@ class TaskProfilingRecordTest {
                 null,
                 ConcurrentHashMap(),
                 null,
-                null,
+                Collections.synchronizedSet(mutableSetOf()),
             ),
             GradleBuildProfileSpan.newBuilder(),
             "dummy", ":dummy", "variant")

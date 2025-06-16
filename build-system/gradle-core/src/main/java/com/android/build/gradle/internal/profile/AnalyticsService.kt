@@ -31,6 +31,7 @@ import com.google.wireless.android.sdk.stats.GradleTransformExecution
 import org.gradle.api.Project
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
@@ -39,6 +40,7 @@ import org.gradle.tooling.events.FinishEvent
 import org.gradle.tooling.events.OperationCompletionListener
 import java.io.File
 import java.util.Base64
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -82,7 +84,7 @@ abstract class AnalyticsService :
             parameters.profileDir.orNull,
             ConcurrentHashMap(parameters.taskMetadata.get()),
             parameters.rootProjectPath.get(),
-            parameters.applicationId,
+            Collections.synchronizedSet(HashSet(parameters.applicationId.get())),
             NameAnonymizerSerializer().fromJson(parameters.anonymizer.get())
         )
     }
