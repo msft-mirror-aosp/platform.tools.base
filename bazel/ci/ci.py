@@ -9,6 +9,7 @@ import sys
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import errors
 from tools.base.bazel.ci import query_checks
+from tools.base.bazel.ci import owners_checks
 from tools.base.bazel.ci import studio_linux
 from tools.base.bazel.ci import studio_mac
 from tools.base.bazel.ci import studio_win
@@ -67,6 +68,7 @@ def studio_build_checks(ci: CI):
   ci.run(query_checks.no_local_genrules)
   ci.run(query_checks.require_cpu_tags)
   ci.run(query_checks.gradle_requires_cpu4_or_more)
+  ci.run(owners_checks.require_component_id)
 
   def validate_coverage_graph(env: bazel.BuildEnv):
     inv_id = uuid.uuid4()
