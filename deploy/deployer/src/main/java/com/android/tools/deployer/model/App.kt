@@ -115,6 +115,7 @@ class App(
             return fromPaths(appId, listOf(path))
         }
 
+        @JvmStatic
         @Throws(ApkParserException::class)
         fun fromStrategy(path: Path, logger: ILogger): App {
             val artifacts = checkNotNull(loadFromFile(path.toFile(), logger))

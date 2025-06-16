@@ -23,7 +23,7 @@ class DeployStrategyReaderTest {
     @Test
     fun abiFilter() {
         val app = App.fromStrategy(Path.of(BASE + "arch_filter.json"), TestLogger())
-        Assert.assertEquals("com.example.myapplication", app.appId)
+        Assert.assertEquals("com.example.simpleapp", app.appId)
         val strategies = app.allStrategies;
         Assert.assertEquals(3, strategies.size)
         val targetArm64 = app.getApksForPackageManager("arm64-v8a")
