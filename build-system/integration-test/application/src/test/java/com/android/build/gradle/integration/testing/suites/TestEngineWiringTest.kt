@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.testing.suites
 
+import com.android.Version
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ApplicationExtension
@@ -24,8 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.utils.getDebugVariant
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.BasicVariant
 import com.android.builder.model.v2.ide.Library
@@ -100,10 +99,6 @@ class TestEngineWiringTest(
                 .addClasses(
                     ToyJunitEngineForTesting::class.java,
                     ToyTestDescriptor::class.java,
-                    TestEngineInputProperties::class.java,
-                    TestEngineInputProperties.Companion::class.java,
-                    TestEngineInputProperty::class.java,
-                    TestEngineInputProperty.Companion::class.java
                 )
                 .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine",
                     ToyJunitEngineForTesting::class.java.name)
@@ -132,6 +127,7 @@ class TestEngineWiringTest(
                             includeEngines.add(
                                 "[engine:toy-junit-engine-for-tests]"
                             )
+                            enginesDependencies.add("com.android.tools.build:gradle-api:${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
                             enginesDependencies.add("org.junit.platform:junit-platform-launcher")
                             enginesDependencies.add("com.test:toy-junit-engine:1.0")
                             enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")

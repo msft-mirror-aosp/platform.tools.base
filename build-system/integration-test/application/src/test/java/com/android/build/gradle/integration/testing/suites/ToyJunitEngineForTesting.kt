@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.integration.testing.suites
 
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
+import com.android.build.api.testsuites.TestEngineInputProperty
+import com.android.build.api.testsuites.TestSuiteExecutionClient
 import java.time.LocalDateTime
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.EngineExecutionListener
@@ -34,10 +34,11 @@ import java.time.format.DateTimeFormatter
 class ToyJunitEngineForTesting: TestEngine {
 
     // load my input properties as a json object, I am only using a handful of those so far.
-    private val inputParameters: TestEngineInputProperties = TestEngineInputProperties.read()
+    private val inputParams = TestSuiteExecutionClient.default()
+
     private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
 
-    private val loggerFile = File(inputParameters.get(TestEngineInputProperty.LOGGING_FILE))
+    private val loggerFile = File(inputParams.getInputParameter(TestEngineInputProperty.LOGGING_FILE))
 
     // Bare minimum logger, we should move this to a Service class.
     private fun log(level: String, message: String) {
@@ -69,7 +70,7 @@ class ToyJunitEngineForTesting: TestEngine {
     override fun execute(p0: ExecutionRequest?) {
         p0?.let { executionRequest ->
             info("Executing toy engine ! ${executionRequest.rootTestDescriptor}")
-            inputParameters.properties.forEach {
+            inputParams.inputParameters.forEach {
                 info("Input : $it")
             }
             val listener: EngineExecutionListener = executionRequest.engineExecutionListener

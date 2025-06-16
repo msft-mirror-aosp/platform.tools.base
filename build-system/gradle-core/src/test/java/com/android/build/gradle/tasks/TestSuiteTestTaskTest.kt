@@ -17,13 +17,13 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
+import com.android.build.api.testsuites.TestEngineInputProperty
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.Test
+import java.io.FileReader
+import java.util.Properties
 
 class TestSuiteTestTaskTest {
 
@@ -43,7 +43,9 @@ class TestSuiteTestTaskTest {
             outputFile
         )
         assertThat(outputFile.exists()).isTrue()
-        val serializedInputs = TestEngineInputProperties.read(outputFile)
-        assertThat(serializedInputs.properties).hasSize(2)
+        val serializedInputs = Properties().also {
+            it.load(FileReader(outputFile))
+        }
+        assertThat(serializedInputs).hasSize(2)
     }
  }

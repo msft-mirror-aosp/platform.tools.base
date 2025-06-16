@@ -710,6 +710,12 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.dsl.TestTaskContext.getTargetName: java.lang.String ()
   * com.android.build.api.dsl.TestTaskContext.getTargetedDevices: java.util.Collection<java.lang.String> ()
   * com.android.build.api.dsl.TestTaskContext.getTargetedVariant: java.lang.String ()
+  * com.android.build.api.testsuites.TestSuiteExecutionClient
+  * com.android.build.api.testsuites.TestSuiteExecutionClient$Companion.default: com.android.build.api.testsuites.TestSuiteExecutionClient ()
+  * com.android.build.api.testsuites.TestSuiteExecutionClient$Companion.withEnvVariable: com.android.build.api.testsuites.TestSuiteExecutionClient (java.lang.String)
+  * com.android.build.api.testsuites.TestSuiteExecutionClient.<init>: com.android.build.api.testsuites.TestSuiteExecutionClient (java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty>)
+  * com.android.build.api.testsuites.TestSuiteExecutionClient.getInputParameter: java.lang.String (java.lang.String)
+  * com.android.build.api.testsuites.TestSuiteExecutionClient.getInputParameters: java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty> ()
 https://issuetracker.google.com/398918561
   * com.android.build.api.dsl.ManagedVirtualDevice.getTestedAbi: java.lang.String ()
   * com.android.build.api.dsl.ManagedVirtualDevice.setTestedAbi: void (java.lang.String)

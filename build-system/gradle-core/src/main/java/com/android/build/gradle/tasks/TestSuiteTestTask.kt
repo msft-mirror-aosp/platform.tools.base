@@ -29,8 +29,8 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.DeviceProviderFactory
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
-import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
+import com.android.build.api.testsuites.TestEngineInputProperty
+import com.android.build.api.testsuites.TestSuiteExecutionClient.Companion.DEFAULT_ENV_VARIABLE
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.testing.api.DeviceProvider
 import org.gradle.api.file.Directory
@@ -52,6 +52,8 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
 import java.io.File
+import java.io.FileWriter
+import java.util.Properties
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
@@ -283,7 +285,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 task.project.layout.buildDirectory
                     .dir("intermediates/${creationConfig.testedVariant.name}/$name/results")
             )
-            task.environment(TestEngineInputProperties.INPUT_PARAMETERS, task.engineInputPropertiesFiles.get().asFile.absolutePath)
+            task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
             task.environment("junit.platform.commons.logging.level","debug")
             task.deviceProviderFactory.timeOutInMs.set(10000)
 
@@ -313,14 +315,17 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 engineInputProperties: Map<String, String>,
                 into: File
             ) {
-                TestEngineInputProperties(
-                    engineInputParameters
-                        .plus(
-                            engineInputProperties.map {
-                                TestEngineInputProperty(it.key, it.value)
-                            }
-                        )
-                ).save(into)
+                val properties = Properties()
+                engineInputParameters
+                    .plus(
+                        engineInputProperties.map {
+                            TestEngineInputProperty(it.key, it.value)
+                        }
+                    )
+                    .forEach { testEngineInputProperty ->
+                        properties.put(testEngineInputProperty.name, testEngineInputProperty.value)
+                    }
+                properties.store(FileWriter(into), "Input properties for test engine")
             }
         }
     }

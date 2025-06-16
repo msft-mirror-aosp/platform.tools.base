@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testsuites.impl
+package com.android.build.api.testsuites
 
 /**
  * Definition of a single property that is passed from the AGP Test task to the junit engine

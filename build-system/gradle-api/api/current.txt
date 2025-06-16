@@ -2456,6 +2456,52 @@ package com.android.build.api.instrumentation {
 
 }
 
+package com.android.build.api.testsuites {
+
+  public final class TestEngineInputProperty {
+    ctor public TestEngineInputProperty(String name, String value);
+    method public String component1();
+    method public String component2();
+    method public com.android.build.api.testsuites.TestEngineInputProperty copy(String name, String value);
+    method public String getName();
+    method public String getValue();
+    property public final String name;
+    property public final String value;
+    field public static final com.android.build.api.testsuites.TestEngineInputProperty.Companion Companion;
+    field public static final String LOGGING_FILE = "com.android.junit.engine.logging.file";
+    field public static final String RESULTS_DIR = "com.android.junit.engine.results.dir";
+    field public static final String SERIAL_IDS = "com.android.junit.engine.serial.ids";
+    field public static final String SOURCE_FOLDERS = "com.android.junit.engine.source.folders";
+    field public static final String STREAMING_FILE = "com.android.junit.engine.results.streaming.file";
+    field public static final String TESTED_APPLICATION_ID = "com.android.junit.engine.tested.application.id";
+  }
+
+  public static final class TestEngineInputProperty.Companion {
+    property public static final String LOGGING_FILE;
+    property public static final String RESULTS_DIR;
+    property public static final String SERIAL_IDS;
+    property public static final String SOURCE_FOLDERS;
+    property public static final String STREAMING_FILE;
+    property public static final String TESTED_APPLICATION_ID;
+  }
+
+  @org.gradle.api.Incubating public final class TestSuiteExecutionClient {
+    ctor public TestSuiteExecutionClient(java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty> inputParameters);
+    method @org.gradle.api.Incubating public String getInputParameter(String key);
+    method public java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty> getInputParameters();
+    property public final java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty> inputParameters;
+    field public static final com.android.build.api.testsuites.TestSuiteExecutionClient.Companion Companion;
+    field public static final String DEFAULT_ENV_VARIABLE = "com.android.junit.engine.input.parameters";
+  }
+
+  public static final class TestSuiteExecutionClient.Companion {
+    method @org.gradle.api.Incubating public com.android.build.api.testsuites.TestSuiteExecutionClient default();
+    method @org.gradle.api.Incubating public com.android.build.api.testsuites.TestSuiteExecutionClient withEnvVariable(String variableName);
+    property public static final String DEFAULT_ENV_VARIABLE;
+  }
+
+}
+
 package com.android.build.api.transform {
 
   @Deprecated public interface Context {
