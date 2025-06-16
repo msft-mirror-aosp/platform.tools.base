@@ -21,79 +21,61 @@ import java.io.File
 import java.util.zip.ZipInputStream
 
 /**
- * Shrinking rules that are tailored for specific code shrinkers (R8 or Proguard), as well as
- * specific shrinker versions.
+ * R8 rules that are tailored for specific R8 versions.
  *
- * Targeted shrink rules were first introduced in AGP 3.6
- * (https://issuetracker.google.com/135672715).
+ * Targeted R8 rules were first introduced in AGP 3.6 (https://issuetracker.google.com/135672715).
  *
  * The rules consist of:
- *   - [VersionedR8Rules] (implementing [VersionedShrinkRules])
- *   - [VersionedProguardRules] (implementing [VersionedShrinkRules])
+ *   - [VersionedR8Rules] (version-specific R8 rules)
  *   - [LegacyProguardRules] (non-version-specific Proguard rules, which existed before the
- *     introduction of targeted shrink rules)
+ *   introduction of targeted R8 rules)
  *
  * [LegacyProguardRules] are included to maintain backward compatibility. Specifically:
- *   - On the producing side, a library (AAR or JAR) can choose to specify both
- *   [VersionedShrinkRules] and [LegacyProguardRules], or only [LegacyProguardRules]. (If the
- *   library was created before the introduction of targeted shrink rules, then
- *   [LegacyProguardRules] was the only option.) The library should not specify only
- *   [VersionedShrinkRules] as older code shrinkers will not be able to consume it.
- *   - On the consuming side, a code shrinker (R8 or Proguard) needs to be able to consume both
- *   types of libraries:
- *     + If a library has [LegacyProguardRules] only, the code shrinker will consume it.
- *     + If a library has both [VersionedShrinkRules] and [LegacyProguardRules], the code shrinker
- *       will consume [VersionedShrinkRules] and ignore [LegacyProguardRules]. Note that older code
- *       shrinkers that are not able to consume [VersionedShrinkRules] will continue to consume
- *       [LegacyProguardRules].
+ *   - On the producing side, a library (AAR or JAR) can choose to specify both [VersionedR8Rules]
+ *   and [LegacyProguardRules], or only [LegacyProguardRules]. (If the library was created before
+ *   the introduction of targeted R8 rules, then [LegacyProguardRules] was the only option.) The
+ *   library should not specify only [VersionedR8Rules] as older R8 versions will not be able to
+ *   consume it.
+ *   - On the consuming side, R8 needs to be able to consume both types of libraries:
+ *     + If a library has [LegacyProguardRules] only, R8 will consume it.
+ *     + If a library has both [VersionedR8Rules] and [LegacyProguardRules], R8 will consume
+ *       [VersionedR8Rules] and ignore [LegacyProguardRules]. Note that older R8 versions that are
+ *       not able to consume [VersionedR8Rules] will continue to consume [LegacyProguardRules].
  */
-data class TargetedShrinkRules(
+data class TargetedR8Rules(
     val r8Rules: List<VersionedR8Rules>,
-    val proguardRules: List<VersionedProguardRules>,
     val legacyProguardRules: List<LegacyProguardRules>
 )
 
-/** Version-specific R8 or Proguard rules. */
-sealed interface VersionedShrinkRules {
+/** Version-specific R8 rules. */
+data class VersionedR8Rules(
 
     /**
-     * The minimum shrinker version which supports reading the [shrinkRules].
+     * The minimum R8 version which supports reading the [r8Rules].
      *
      * If it is null, there is no constraint.
      */
-    val minVersion: ShrinkerVersion?
+    val minVersion: ShrinkerVersion?,
 
     /**
-     * The lowest shrinker version above [minVersion] which no longer supports reading the
-     * [shrinkRules].
+     * The lowest R8 version above [minVersion] which no longer supports reading the [r8Rules].
      *
      * If it is null, there is no constraint.
      */
-    val maxVersionExclusive: ShrinkerVersion?
+    val maxVersionExclusive: ShrinkerVersion?,
 
-    /** The name of the file containing [shrinkRules]. */
-    val fileName: String
+    /** The name of the file containing [r8Rules]. */
+    val fileName: String,
+
+    /** The R8 rules. */
+    val r8Rules: String
+) {
 
     /**
-     * The relative path of the file containing [shrinkRules]. It is relative to the root directory
+     * The relative path of the file containing [r8Rules]. It is relative to the root directory
      * inside a JAR or inside classes.jar of an AAR.
      */
     val relativeFilePath: String
-
-    /** The R8/Proguard rules. */
-    val shrinkRules: String
-
-}
-
-/** Version-specific R8 rules. */
-data class VersionedR8Rules(
-    override val minVersion: ShrinkerVersion?,
-    override val maxVersionExclusive: ShrinkerVersion?,
-    override val fileName: String,
-    override val shrinkRules: String
-) : VersionedShrinkRules {
-
-    override val relativeFilePath: String
         get() = "META-INF/com.android.tools/r8" +
                 (minVersion?.let { "-from-${it.asString()}" } ?: "") +
                 (maxVersionExclusive?.let { "-upto-${it.asString()}" } ?: "") +
@@ -106,32 +88,10 @@ data class VersionedR8Rules(
             "META-INF/com.android.tools/r8(-from-(?<minVersion>((?!-upto-)[^/])+))?(-upto-(?<maxVersionExclusive>[^/]+))?/(?<fileName>[^/]+)".toRegex()
         }
     }
+
 }
 
-/** Version-specific Proguard rules. */
-data class VersionedProguardRules(
-    override val minVersion: ShrinkerVersion?,
-    override val maxVersionExclusive: ShrinkerVersion?,
-    override val fileName: String,
-    override val shrinkRules: String
-) : VersionedShrinkRules {
-
-    override val relativeFilePath: String
-        get() = "META-INF/com.android.tools/proguard" +
-                (minVersion?.let { "-from-${it.asString()}" } ?: "") +
-                (maxVersionExclusive?.let { "-upto-${it.asString()}" } ?: "") +
-                "/$fileName"
-
-    companion object {
-
-        /** [Regex] describing the [relativeFilePath] of Proguard rules. */
-        val relativeFilePathRegex: Regex by lazy {
-            "META-INF/com.android.tools/proguard(-from-(?<minVersion>((?!-upto-)[^/])+))?(-upto-(?<maxVersionExclusive>[^/]+))?/(?<fileName>[^/]+)".toRegex()
-        }
-    }
-}
-
-/** Legacy Proguard rules, which existed before the introduction of [TargetedShrinkRules]. */
+/** Legacy Proguard rules, which existed before the introduction of [TargetedR8Rules]. */
 data class LegacyProguardRules(
 
     /**
@@ -180,36 +140,35 @@ data class LegacyProguardRules(
     }
 }
 
-/** Utility to read/write [TargetedShrinkRules]. */
-object TargetedShrinkRulesReadWriter {
+/** Utility to read/write [TargetedR8Rules]. */
+object TargetedR8RulesReadWriter {
 
     /**
-     * Given the [TargetedShrinkRules], returns a map from the relative file paths of the
-     * [TargetedShrinkRules] to their contents. This map can then be used to write to a JAR or
+     * Given the [TargetedR8Rules], returns a map from the relative file paths of the
+     * [TargetedR8Rules] to their contents. This map can then be used to write to a JAR or
      * classes.jar of an AAR.
      *   - For a JAR, return all contents including [LegacyProguardRules].
      *   - For classes.jar of an AAR ([isClassesJarInAar] = true), return all contents except
      *   [LegacyProguardRules]. This is because for an AAR, the location of the legacy Proguard
      *   rules is outside classes.jar (see [LegacyProguardRules.PROGUARD_TXT_FOR_AAR]).
      */
-    fun TargetedShrinkRules.createJarContents(isClassesJarInAar: Boolean = false): Map<String, ByteArray> {
-        return (r8Rules + proguardRules).associate {
-            it.relativeFilePath to it.shrinkRules.toByteArray()
+    fun TargetedR8Rules.createJarContents(isClassesJarInAar: Boolean = false): Map<String, ByteArray> {
+        return r8Rules.associate {
+            it.relativeFilePath to it.r8Rules.toByteArray()
         } + if (isClassesJarInAar) emptyMap() else legacyProguardRules.associate {
             it.getRelativeFilePath(forAar = false) to it.legacyProguardRules.toByteArray()
         }
     }
 
     /**
-     * Reads [TargetedShrinkRules] from the given JAR or classes.jar of an AAR.
+     * Reads [TargetedR8Rules] from the given JAR or classes.jar of an AAR.
      *   - For a JAR, read all contents including [LegacyProguardRules].
      *   - For classes.jar of an AAR ([isClassesJarInAar] = true), read all contents except
      *   [LegacyProguardRules]. This is because for an AAR, the location of the legacy Proguard
      *   rules is outside classes.jar (see [LegacyProguardRules.PROGUARD_TXT_FOR_AAR]).
      */
-    fun readFromJar(jarFile: File, isClassesJarInAar: Boolean = false): TargetedShrinkRules {
+    fun readFromJar(jarFile: File, isClassesJarInAar: Boolean = false): TargetedR8Rules {
         val r8Rules = mutableListOf<VersionedR8Rules>()
-        val proguardRules = mutableListOf<VersionedProguardRules>()
         val legacyProguardRules = mutableListOf<LegacyProguardRules>()
 
         ZipInputStream(jarFile.inputStream().buffered()).use { zipInputStream ->
@@ -222,20 +181,11 @@ object TargetedShrinkRulesReadWriter {
                             minVersion = matchResult.groups["minVersion"]?.value?.let { ShrinkerVersion.tryParse(it) },
                             maxVersionExclusive = matchResult.groups["maxVersionExclusive"]?.value?.let { ShrinkerVersion.tryParse(it) },
                             fileName = matchResult.groups["fileName"]!!.value,
-                            shrinkRules = zipInputStream.readBytes().decodeToString()
+                            r8Rules = zipInputStream.readBytes().decodeToString()
                         )
                     )
-                } ?: VersionedProguardRules.relativeFilePathRegex.matchEntire(zipEntry.name)?.let { matchResult ->
-                        proguardRules.add(
-                            VersionedProguardRules(
-                                minVersion = matchResult.groups["minVersion"]?.value?.let { ShrinkerVersion.tryParse(it) },
-                                maxVersionExclusive = matchResult.groups["maxVersionExclusive"]?.value?.let { ShrinkerVersion.tryParse(it) },
-                                fileName = matchResult.groups["fileName"]!!.value,
-                                shrinkRules = zipInputStream.readBytes().decodeToString()
-                            )
-                        )
-                } ?: LegacyProguardRules.legacyProguardRulesRelativeFilePathRegexForJar.matchEntire(zipEntry.name)?.let { matchResult ->
-                    if (!isClassesJarInAar) {
+                } ?: if (isClassesJarInAar) null else {
+                    LegacyProguardRules.legacyProguardRulesRelativeFilePathRegexForJar.matchEntire(zipEntry.name)?.let { matchResult ->
                         legacyProguardRules.add(
                             LegacyProguardRules(
                                 fileName = matchResult.groups["fileName"]!!.value,
@@ -247,6 +197,6 @@ object TargetedShrinkRulesReadWriter {
             }
         }
 
-        return TargetedShrinkRules(r8Rules, proguardRules, legacyProguardRules)
+        return TargetedR8Rules(r8Rules, legacyProguardRules)
     }
 }

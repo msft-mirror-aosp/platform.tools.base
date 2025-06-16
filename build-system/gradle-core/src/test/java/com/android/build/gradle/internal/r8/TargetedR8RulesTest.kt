@@ -16,42 +16,42 @@
 
 package com.android.build.gradle.internal.r8
 
-import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter.createJarContents
-import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter.readFromJar
+import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter.createJarContents
+import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter.readFromJar
 import com.android.testutils.ZipContents
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import kotlin.test.assertEquals
 
-/** Unit test for [TargetedShrinkRules]. */
-class TargetedShrinkRulesTest {
+/** Unit test for [TargetedR8Rules]. */
+class TargetedR8RulesTest {
 
     @get:Rule
     val tmpDir = TemporaryFolder()
 
     private fun exampleShrinkRules(): Map<String, String> {
         return mapOf(
+            "META-INF/com.android.tools/r8/r8.ext" to "# R8 rules",
             "META-INF/com.android.tools/r8-from-8.2.0/r8-from-8.2.0.ext" to "# R8-from-8.2.0 rules",
             "META-INF/com.android.tools/r8-from-8.0.0-upto-8.2.0/r8-from-8.0.0-upto-8.2.0.ext" to "# R8-from-8.0.0-upto-8.2.0 rules",
             "META-INF/com.android.tools/r8-upto-8.0.0/r8-upto-8.0.0.ext" to "# R8-upto-8.0.0 rules",
-            "META-INF/com.android.tools/proguard/proguard.ext" to "# Proguard rules",
             "META-INF/proguard/proguard.pro" to "# Legacy Proguard rules"
         )
     }
 
     @Test
-    fun `test producing and consuming targeted shrinking rules`() {
-        val shrinkRulesContentsAtProducer: Map<String, String> = exampleShrinkRules()
+    fun `test producing and consuming targeted R8 rules`() {
+        val r8RulesContentsAtProducer: Map<String, String> = exampleShrinkRules()
         val jarFile = tmpDir.root.resolve("lib.jar")
-        ZipContents(shrinkRulesContentsAtProducer.mapValues { it.value.toByteArray() })
+        ZipContents(r8RulesContentsAtProducer.mapValues { it.value.toByteArray() })
             .writeToFile(jarFile)
 
-        val shrinkRulesAtConsumer: TargetedShrinkRules = readFromJar(jarFile)
-        val shrinkRulesContentsAtConsumer: Map<String, String> =
-            shrinkRulesAtConsumer.createJarContents().mapValues { it.value.decodeToString() }
+        val r8RulesAtConsumer: TargetedR8Rules = readFromJar(jarFile)
+        val r8RulesContentsAtConsumer: Map<String, String> =
+            r8RulesAtConsumer.createJarContents().mapValues { it.value.decodeToString() }
 
-        assertEquals(shrinkRulesContentsAtProducer, shrinkRulesContentsAtConsumer)
+        assertEquals(r8RulesContentsAtProducer, r8RulesContentsAtConsumer)
     }
 
 }
