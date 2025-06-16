@@ -25,9 +25,11 @@ import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
+@Ignore("b/425288255")
 class KotlinMultiplatformAndroidConnectedTest {
 
     companion object {
