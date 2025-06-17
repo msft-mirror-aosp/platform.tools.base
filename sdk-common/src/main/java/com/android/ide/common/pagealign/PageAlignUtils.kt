@@ -22,6 +22,9 @@ import java.io.InputStream
 import java.util.zip.ZipEntry
 import com.android.ide.common.pagealign.AlignmentProblems.ElfLoadSectionsNot16kAligned
 import com.android.ide.common.pagealign.AlignmentProblems.ElfNot16kAlignedInZip
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
+import java.io.IOException
+import java.util.zip.ZipException
 
 // Define some ELF constants we'll need for parsing ELF file.
 private const val ELF_64BIT = 2.toByte()
@@ -148,7 +151,23 @@ fun findElfFile16kAlignmentProblems(input: ZipArchiveInputStream) : Map<String, 
 
 fun findElfFile16kAlignmentInfo(input: ZipArchiveInputStream) : PageAlignmentInfo {
     val alignmentProblems = mutableMapOf<String, MutableSet<AlignmentProblems>>()
-    var entry = input.getNextZipEntry()
+
+    fun tolerantNext() =
+        try {
+            input.getNextZipEntry()
+        }
+        catch (e: IOException) {
+            // b/425337033 handle the case where the zip is corrupted
+            // This covers ZipException from the bug as well.
+            null
+        }
+        catch (e: IllegalArgumentException) {
+            // Guard against b/409286560 even though that has since been fixed.
+            null
+        }
+
+
+    var entry = tolerantNext()
     var hasElfFiles = false
     fun addProblem(name : String, problem: AlignmentProblems) {
         alignmentProblems.computeIfAbsent(name) { mutableSetOf() } .add(problem)
@@ -171,7 +190,7 @@ fun findElfFile16kAlignmentInfo(input: ZipArchiveInputStream) : PageAlignmentInf
                 }
             }
         } finally {
-            entry = input.getNextZipEntry()
+            entry = tolerantNext()
         }
     }
     return PageAlignmentInfo(
