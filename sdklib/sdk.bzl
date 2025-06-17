@@ -1,8 +1,6 @@
-load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
-load("//tools/base/bazel:utils.bzl", "fileset", "flat_archive")
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
 load("//tools/base/bazel/sdk:sdk_utils.bzl", "calculate_jar_name_for_sdk_package", "tool_start_script")
+load("@rules_license//rules_gathering:gather_metadata.bzl", "gather_metadata_info")
+load("@rules_license//rules_gathering:gathering_providers.bzl", "TransitiveMetadataInfo")
 
 platforms = ["win", "linux", "mac"]
 
@@ -73,35 +71,21 @@ def sdk_java_binary(name, command_name = None, main_class = None, runtime_deps =
             visibility = visibility,
         )
 
-def _license_aspect_impl(target, ctx):
-    files = []
-    attrs = ctx.rule.attr
-    files = []
-    if "require_license" in attrs.tags:
-        out = ctx.actions.declare_file(target.notice.name + ".NOTICE", sibling = target.notice.file.files.to_list()[0])
-        ctx.actions.run_shell(
-            outputs = [out],
-            inputs = target.notice.file.files.to_list(),
-            arguments = [target.notice.file.files.to_list()[0].path, out.path],
-            command = "cp $1 $2",
-        )
-        files = [out]
-
-    all_deps = (attrs.deps if hasattr(attrs, "deps") else []) + \
-               (attrs.runtime_deps if hasattr(attrs, "runtime_deps") else []) + \
-               (attrs.exports if hasattr(attrs, "exports") else [])
-    transitive_notices = []
-    for dep in all_deps:
-        transitive_notices = transitive_notices + [dep.notices]
-    return struct(notices = depset(files, transitive = transitive_notices))
-
-license_aspect = aspect(
-    implementation = _license_aspect_impl,
-    attr_aspects = ["deps", "runtime_deps", "exports"],
-)
-
 def _combine_licenses_impl(ctx):
-    inputs = depset(transitive = [dep.notices for dep in ctx.attr.deps]).to_list()
+    inputs = []
+    license_infos = set([])
+    for dep in ctx.attr.deps:
+        if not TransitiveMetadataInfo in dep:
+          continue
+        metadata = dep[TransitiveMetadataInfo]
+        for license_info in metadata.licenses.to_list():
+          if license_info in license_infos:
+            continue
+          license_infos.add(license_info)
+          notice_link = ctx.actions.declare_file(license_info.label.name + ".NOTICE")
+          ctx.actions.symlink(output=notice_link, target_file=license_info.license_text)
+          inputs.append(notice_link)
+
     ctx.actions.run(
         inputs = inputs,
         outputs = [ctx.outputs.out],
@@ -112,7 +96,7 @@ def _combine_licenses_impl(ctx):
 combine_licenses = rule(
     implementation = _combine_licenses_impl,
     attrs = {
-        "deps": attr.label_list(aspects = [license_aspect]),
+        "deps": attr.label_list(aspects = [gather_metadata_info]),
         "out": attr.output(mandatory = True),
         "_combine_notices": attr.label(executable = True, cfg = "host", default = Label("//tools/base/bazel/sdk:combine_notices")),
     },
