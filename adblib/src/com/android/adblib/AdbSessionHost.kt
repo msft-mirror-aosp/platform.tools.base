@@ -27,6 +27,7 @@ import kotlinx.coroutines.SupervisorJob
 import java.nio.channels.AsynchronousChannelGroup
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
@@ -113,6 +114,14 @@ open class AdbSessionHost : AutoCloseable {
      * Returns [Instant.now]
      */
     open fun utcNow(): Instant = Instant.now()
+
+    /**
+     * Return a unique UUID, for example a UUID generated using a cryptographically strong
+     * pseudo random number generator.
+     */
+    open fun generateUniqueUUID(): String {
+        return UUID.randomUUID().toString()
+    }
 
     /**
      * Return the value of [property], either the [Property.defaultValue] or the value

@@ -19,7 +19,6 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
-import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CoroutineScope
@@ -766,6 +765,27 @@ class AdbSessionTest {
             Assert.assertEquals(firstValue, result1)
             Assert.assertEquals(secondValue, result2)
         }
+
+
+    @Test
+    fun testSessionGenerateUniqueUUIDs(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session2 = AdbSession.create(session.host)
+        val uuidCount = 50
+
+        // Act
+        val uuids1 = (1..uuidCount).map {
+            session.generateUniqueUUID()
+        }.toSet()
+        val uuids2 = (1..uuidCount).map {
+            session2.generateUniqueUUID()
+        }.toSet()
+
+        // Assert
+        Assert.assertEquals(uuidCount, uuids1.size)
+        Assert.assertEquals(uuidCount, uuids2.size)
+        Assert.assertEquals(uuidCount * 2, (uuids1 + uuids2).size)
+    }
 
     class MyTestException(message: String) : IOException(message)
 

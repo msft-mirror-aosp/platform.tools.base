@@ -173,7 +173,12 @@ abstract class CoroutineScopeCache : AutoCloseable {
          * Friendly name of the key, does not need to be an identifier.
          */
         val name: String
-    )
+    ) {
+
+        override fun toString(): String {
+            return "${Key::class.simpleName}(\"$name\")"
+        }
+    }
 
     companion object {
         fun create(parentScope: CoroutineScope, description: String): CoroutineScopeCache {
