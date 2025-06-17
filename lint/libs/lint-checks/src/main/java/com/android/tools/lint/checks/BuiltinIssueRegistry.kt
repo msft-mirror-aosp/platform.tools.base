@@ -244,6 +244,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           InefficientWeightDetector.ORIENTATION,
           InefficientWeightDetector.WRONG_0DP,
           InferredThreadDetector.THREAD,
+          InstantAppDetector.ISSUE,
           IntentDetector.ISSUE,
           IntentWillNullActionDetector.ISSUE,
           InternalInsetResourceDetector.ISSUE,
