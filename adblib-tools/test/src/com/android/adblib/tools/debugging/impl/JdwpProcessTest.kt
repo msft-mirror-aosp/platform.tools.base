@@ -27,11 +27,13 @@ import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.TestingAdbUsageTracker
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpProcessProperties
+import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.flow
 import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.jdwpProcessFlow
+import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
 import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import com.android.adblib.tools.debugging.packets.payloadLength
@@ -251,7 +253,12 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         }
 
         // Assert
-        val properties = process.properties
+        assertTrue(process.properties.isWaitingForDebugger.isEmpty)
+        val properties = process.properties.run {
+            // With a very long timeout, "isWaitingForDebugger" is never set to a known value
+            // (see `UsingJdwpSessionFlowUpdater`)
+            copy(isWaitingForDebugger = isWaitingForDebugger.orElse(OptionalValue.of(false)))
+        }
         assertTrue("All JDWP properties should have been retrieved even if " +
                            "the JDWP session timeout is long",
                    properties.areAllPropertiesInitialized())

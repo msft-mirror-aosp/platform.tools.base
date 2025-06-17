@@ -56,7 +56,7 @@ internal class JdwpProcessPropertiesCollectorImpl(
     private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
     private val propertiesAtomicStateFlow =
-        AtomicStateFlow(MutableStateFlow(JdwpProcessProperties(pid, isWaitingForDebugger = OptionalValue.of(false))))
+        AtomicStateFlow(MutableStateFlow(JdwpProcessProperties(pid)))
 
     override val stateFlow: StateFlow<JdwpProcessProperties> =
         propertiesAtomicStateFlow.asStateFlow()

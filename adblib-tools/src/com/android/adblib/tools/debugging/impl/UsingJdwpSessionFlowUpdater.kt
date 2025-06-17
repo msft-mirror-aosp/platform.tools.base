@@ -201,6 +201,15 @@ internal class UsingJdwpSessionFlowUpdater(
                                 "because previous attempt failed with an error ('${throwable.message}')"
                     }
                 } else {
+                    // When we stop collecting properties, we know that `isWaitingForDebugger` will
+                    // never be set to `true` (because we did not see a WAIT DDMS packet), so we
+                    // can "update" the `isWaitingForDebugger` from `empty` to `false`.
+                    stateFlow.update { oldProps ->
+                        oldProps.copy(
+                            isWaitingForDebugger = oldProps.isWaitingForDebugger
+                                .orElse(optionalValueFactory.of(false))
+                        )
+                    }
                     logUsage(
                         isSuccess = true,
                         throwable = null, // Do not record a throwable since property collection was successful
