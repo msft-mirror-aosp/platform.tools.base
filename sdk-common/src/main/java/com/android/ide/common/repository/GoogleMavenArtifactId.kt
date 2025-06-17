@@ -299,6 +299,8 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
 
   // Core-Ktx
   ANDROIDX_CORE_KTX("androidx.core", "core-ktx"),
+  // Room-Ktx
+  ANDROIDX_ROOM_KTX("androidx.room", "room-ktx"),
   ;
 
   override val groupId = mavenGroupId
