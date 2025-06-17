@@ -48,6 +48,7 @@ import com.android.fakeadbserver.hostcommandhandlers.NetworkDisconnectCommandHan
 import com.android.fakeadbserver.hostcommandhandlers.PairCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ServerStatusCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.TrackDevicesCommandHandler
+import com.android.fakeadbserver.hostcommandhandlers.TrackMdnsServicesCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.VersionCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.WaitForCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.ActivityManagerCommandHandler
@@ -69,6 +70,7 @@ import com.android.fakeadbserver.shellcommandhandlers.StatCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.WindowManagerCommandHandler
 import com.android.fakeadbserver.shellcommandhandlers.WriteNoStopCommandHandler
 import com.android.fakeadbserver.statechangehubs.DeviceStateChangeHub
+import com.android.fakeadbserver.statechangehubs.MdnsStateChangeHub
 import com.android.sdklib.AndroidApiLevel
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -125,6 +127,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
      * host:track-devices messages.
      */
     val deviceChangeHub = DeviceStateChangeHub()
+    val mdnsChangeHub = MdnsStateChangeHub()
     private val mLastTransportId = AtomicInteger()
 
     // This is the executor for accepting incoming connections as well as handling the execution of
@@ -209,6 +212,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
                 }
                 mServerKeepAccepting = false
                 deviceChangeHub.stop()
+                mdnsChangeHub.stop()
                 mDevices.forEach { (id: String?, device: DeviceState) -> device.stop() }
                 mConnectionHandlerTask!!.cancel(true)
                 try {
@@ -380,6 +384,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
         return if (mConnectionHandlerTask == null) {
             assert(!mMdnsServices.contains(service))
             mMdnsServices.add(service)
+            mdnsChangeHub.mdnsServiceListChanged(ArrayList(mMdnsServices))
             Futures.immediateFuture<Any?>(null)
         } else {
             mMainServerThreadExecutor.submit<Any?> {
@@ -393,6 +398,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
     fun removeMdnsService(service: MdnsService): Future<*> {
         return if (mConnectionHandlerTask == null) {
             mMdnsServices.remove(service)
+            mdnsChangeHub.mdnsServiceListChanged(ArrayList(mMdnsServices))
             Futures.immediateFuture<Any?>(null)
         } else {
             mMainServerThreadExecutor.submit<Any?> {
@@ -543,6 +549,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
             addHostHandler(KillCommandHandler())
             addHostHandler(ListDevicesCommandHandler())
             addHostHandler(TrackDevicesCommandHandler())
+            addHostHandler(TrackMdnsServicesCommandHandler())
             addHostHandler(ForwardCommandHandler())
             addHostHandler(KillForwardCommandHandler())
             addHostHandler(KillForwardAllCommandHandler())

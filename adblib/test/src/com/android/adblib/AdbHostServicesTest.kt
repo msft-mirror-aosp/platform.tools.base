@@ -22,6 +22,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.MdnsService
+import com.android.fakeadbserver.ServiceType
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.FaultyVersionCommandHandler
 import com.android.sdklib.AndroidApiLevel
@@ -358,27 +359,30 @@ class AdbHostServicesTest {
             MdnsService(
                 "foo-bar",
                 "service",
-                InetSocketAddress.createUnresolved("192.168.1.1", 10)
+                InetSocketAddress.createUnresolved("192.168.1.1", 10),
+                serviceType = ServiceType.TLS
             )
         )
         fakeAdb.addMdnsService(
             MdnsService(
                 "foo-bar2",
                 "service",
-                InetSocketAddress.createUnresolved("192.168.1.1", 11)
+                InetSocketAddress.createUnresolved("192.168.1.1", 11),
+                serviceType = ServiceType.TLS
             )
         )
         val result = runBlocking { hostServices.mdnsServices() }
+        val sortedEntries = result.entries.sortedBy { it.instanceName }
 
         // Assert
         Assert.assertEquals(2, result.size)
-        result[0].let { service ->
+        sortedEntries[0].let { service ->
             Assert.assertEquals("foo-bar", service.instanceName)
             Assert.assertEquals("service", service.serviceName)
             Assert.assertEquals("192.168.1.1:10", service.deviceAddress.address)
 
         }
-        result[1].let { service ->
+        sortedEntries[1].let { service ->
             Assert.assertEquals("foo-bar2", service.instanceName)
             Assert.assertEquals("service", service.serviceName)
             Assert.assertEquals("192.168.1.1:11", service.deviceAddress.address)
@@ -394,7 +398,8 @@ class AdbHostServicesTest {
             MdnsService(
                 "foo-bar2",
                 "service",
-                InetSocketAddress.createUnresolved("foo", 11)
+                InetSocketAddress.createUnresolved("foo", 11),
+                serviceType = ServiceType.TLS
             )
         )
 
@@ -405,6 +410,100 @@ class AdbHostServicesTest {
 
         // Assert
         Assert.assertTrue(result.success)
+    }
+
+    @Test
+    fun testTrackMdnsServicesWorks() {
+        // Prepare
+        fakeAdb.addMdnsService(
+            MdnsService(
+                "foo-bar1",
+                "service1",
+                InetSocketAddress.createUnresolved("192.168.1.1", 10),
+                serviceType = ServiceType.TLS
+            )
+        )
+        fakeAdb.addMdnsService(
+            MdnsService(
+                "foo-bar2",
+                "service2",
+                InetSocketAddress.createUnresolved("192.168.1.2", 11),
+                serviceType = ServiceType.TCP
+            )
+        )
+        fakeAdb.addMdnsService(
+            MdnsService(
+                "foo-bar3",
+                "service3",
+                InetSocketAddress.createUnresolved("192.168.1.3", 12),
+                serviceType = ServiceType.PAIRING
+            )
+        )
+
+        // Act
+        val result = runBlocking {
+            val flow = hostServices.trackMdnsServices()
+
+            // Wait for the first list of devices (and terminate the flow, since `first` is a
+            // flow termination operator)
+            flow.first()
+        }
+
+        // Assert
+        Assert.assertEquals(1, result.tlsMdnsServices.size)
+        result.tlsMdnsServices[0].let { service ->
+            Assert.assertEquals("foo-bar1", service.service.serviceInstanceName.instance)
+            Assert.assertEquals("service1", service.service.serviceInstanceName.service)
+            Assert.assertEquals("192.168.1.1", service.service.ipv4)
+            Assert.assertEquals(10, service.service.port)
+        }
+
+        Assert.assertEquals(1, result.tcpMdnsServices.size)
+        result.tcpMdnsServices[0].let { service ->
+            Assert.assertEquals("foo-bar2", service.mdnsService.serviceInstanceName.instance)
+            Assert.assertEquals("service2", service.mdnsService.serviceInstanceName.service)
+            Assert.assertEquals("192.168.1.2", service.mdnsService.ipv4)
+            Assert.assertEquals(11, service.mdnsService.port)
+        }
+
+        Assert.assertEquals(1, result.pairingMdnsServices.size)
+        result.pairingMdnsServices[0].let { service ->
+            Assert.assertEquals("foo-bar3", service.mdnsService.serviceInstanceName.instance)
+            Assert.assertEquals("service3", service.mdnsService.serviceInstanceName.service)
+            Assert.assertEquals("192.168.1.3", service.mdnsService.ipv4)
+            Assert.assertEquals(12, service.mdnsService.port)
+        }
+    }
+
+    @Test
+    fun testTrackMdnsServicesPropagatesExceptions() = runBlockingWithTimeout {
+        // Prepare
+        fakeAdb.addMdnsService(
+            MdnsService(
+                "errorInstance",
+                "_error._tcp",
+                InetSocketAddress.createUnresolved("192.168.1.250", 1234),
+                serviceType = ServiceType.TCP
+            )
+        )
+
+        // Act
+        var exception: Throwable? = null
+        try {
+            val flow = hostServices.trackMdnsServices()
+            flow.collect {
+                throw IllegalStateException()
+            }
+        } catch (t: Throwable) {
+            exception = t
+        }
+
+        // Assert
+        Assert.assertNotNull(exception)
+        Assert.assertTrue(exception is IllegalStateException)
+        // Check SocketChannel has been closed
+        Assert.assertNotNull(fakeAdb.channelProvider.lastCreatedChannel)
+        Assert.assertFalse(fakeAdb.channelProvider.lastCreatedChannel!!.isOpen)
     }
 
     @Test

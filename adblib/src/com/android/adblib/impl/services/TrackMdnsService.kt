@@ -35,7 +35,6 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
-// TODO(b/412571872) add tests
 internal class TrackMdnsService(private val serviceRunner: AdbServiceRunner) {
 
   private val logger = adbLogger(host)

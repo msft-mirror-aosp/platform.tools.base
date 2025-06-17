@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.fakeadbserver
+package com.android.fakeadbserver.statechangehubs
 
-import java.net.InetSocketAddress
+import com.android.fakeadbserver.MdnsService
+import java.util.concurrent.Callable
 
-data class MdnsService(
-  val instanceName: String,
-  val serviceName: String,
-  val deviceAddress: InetSocketAddress,
-  val serviceType: ServiceType,
-)
+/** Factory for creating handlers related to mDNS service state changes. */
+interface MdnsStateChangeHandlerFactory : StateChangeHandlerFactory {
 
-enum class ServiceType {
-  TCP,
-  TLS,
-  PAIRING,
+  fun createMdnsServiceListChangedHandler(
+    serviceList: Collection<MdnsService>
+  ): Callable<StateChangeHandlerFactory.HandlerResult>
 }
