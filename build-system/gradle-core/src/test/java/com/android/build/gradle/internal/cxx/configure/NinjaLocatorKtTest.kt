@@ -69,27 +69,27 @@ class NinjaLocatorKtTest {
     }
 
     @Test
-    fun `other SDK CMake locations have second highest precedence`() {
+    fun `PATH has second highest precedence`() {
         val found = findNinjaPath(
             cmakePath = File("/path/to/sdk/cmake2/bin"),
             sdkCMakeFolders = listOf("/path/to/sdk/cmake1/bin", "/path/to/sdk/cmake2/bin"),
             environmentPaths = listOf("/path/to/environment1/ninja/bin", "/path/to/environment2/ninja/bin")
         ) { path -> path != "/path/to/sdk/cmake2/bin" }
-        assertThat(found.result).isEqualTo("/path/to/sdk/cmake1/bin/ninja")
-        assertThat(found.environmentPathsRetrieved).isFalse()
-        assertThat(found.sdkCMakeFoldersRetrieved).isTrue()
+        assertThat(found.result).isEqualTo("/path/to/environment1/ninja/bin/ninja")
+        assertThat(found.environmentPathsRetrieved).isTrue()
+        assertThat(found.sdkCMakeFoldersRetrieved).isFalse()
         assertThat(found.errors).isEmpty()
         assertThat(found.warnings).isEmpty()
     }
 
     @Test
-    fun `PATH has lowest precedence`() {
+    fun `Other CMake paths has lowest precedence`() {
         val found = findNinjaPath(
             cmakePath = File("/path/to/sdk/cmake2/bin"),
             sdkCMakeFolders = listOf("/path/to/sdk/cmake1/bin", "/path/to/sdk/cmake2/bin"),
-            environmentPaths = listOf("/path/to/environment1/ninja/bin", "/path/to/environment2/ninja/bin")
-        ) { path -> path == "/path/to/environment2/ninja/bin" }
-        assertThat(found.result).isEqualTo("/path/to/environment2/ninja/bin/ninja")
+            environmentPaths = listOf()
+        ) { path -> path == "/path/to/sdk/cmake1/bin" }
+        assertThat(found.result).isEqualTo("/path/to/sdk/cmake1/bin/ninja")
         assertThat(found.environmentPathsRetrieved).isTrue()
         assertThat(found.sdkCMakeFoldersRetrieved).isTrue()
         assertThat(found.errors).isEmpty()
@@ -105,7 +105,7 @@ class NinjaLocatorKtTest {
         ) { path -> path.startsWith("/path/to/environment") }
         assertThat(found.result).isEqualTo("/path/to/environment1/ninja/bin/ninja")
         assertThat(found.environmentPathsRetrieved).isTrue()
-        assertThat(found.sdkCMakeFoldersRetrieved).isTrue()
+        assertThat(found.sdkCMakeFoldersRetrieved).isFalse()
         assertThat(found.errors).isEmpty()
         assertThat(found.warnings).isEmpty()
     }
