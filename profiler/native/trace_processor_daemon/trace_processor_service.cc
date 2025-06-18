@@ -52,6 +52,13 @@ namespace perfetto {
 using proto::QueryParameters;
 using proto::QueryResult;
 
+// This function is similar to `perfetto::trace_processor::LoadTrace`.
+//
+// - Any error returned from a trace processor interface is usually fatal.
+//   Recoverable errors are logged as "stats" within the trace processor
+//   and are queryable via SQL, not causing C++ errors.
+// - Calling any interface on TraceProcessor after a fatal error is undefined
+//   behavior.
 grpc::Status TraceProcessorServiceImpl::LoadTrace(
     grpc::ServerContext* context, const proto::LoadTraceRequest* request,
     proto::LoadTraceResponse* response) {
@@ -93,7 +100,10 @@ grpc::Status TraceProcessorServiceImpl::LoadTrace(
   std::cout << "Loading trace (" << trace_id << ") from: " << trace_path
             << std::endl;
 
-  auto read_status = ReadTrace(tp_.get(), trace_path.c_str(), [](uint64_t) {});
+  auto read_status =
+      ReadTrace(tp_.get(), trace_path.c_str(), [](uint64_t) {}, false);
+
+  tp_->Flush();
 
   response->set_ok(read_status.ok());
   if (!read_status.ok()) {
@@ -137,8 +147,8 @@ grpc::Status TraceProcessorServiceImpl::LoadTrace(
     if (output_file_fd != nullptr) {
       fclose(output_file_fd);
     }
-    tp_->NotifyEndOfFile();
   }
+  tp_->NotifyEndOfFile();
 
   loaded_trace_id = trace_id;
   return grpc::Status::OK;
