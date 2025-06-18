@@ -21,15 +21,18 @@ import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 import com.android.ide.common.blame.SourceFile;
 import com.android.resources.NamespaceReferenceRewriter;
 import com.android.utils.PositionXmlParser;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import javax.xml.parsers.ParserConfigurationException;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Responsible for loading XML files.
@@ -51,7 +54,7 @@ public final class XmlLoader {
     public static XmlDocument load(
             @NotNull KeyResolver<String> selectors,
             @NotNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
-            @NotNull String displayName,
+            @Nullable String displayName,
             @NotNull File xmlFile,
             @NotNull InputStream inputStream,
             @NotNull XmlDocument.Type type,
@@ -84,7 +87,7 @@ public final class XmlLoader {
             @NotNull Document domDocument,
             @NotNull KeyResolver<String> selectors,
             @NotNull KeyBasedValueResolver<ManifestSystemProperty> systemPropertyResolver,
-            @NotNull String displayName,
+            @Nullable String displayName,
             @NotNull File xmlFile,
             @NotNull XmlDocument.Type type,
             @Nullable String namespace,
