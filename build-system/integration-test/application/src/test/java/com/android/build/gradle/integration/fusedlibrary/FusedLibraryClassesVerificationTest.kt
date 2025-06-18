@@ -350,9 +350,9 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         build.checkFusedLibReportContents(
             include = listOf("project :androidLib2"),
             dependencies = listOf(
+                "project.:androidLib1:unspecified",
                 "org.jetbrains.kotlin:kotlin-stdlib:<version>",
-                "org.jetbrains:annotations:<version>",
-                "project.:androidLib1:unspecified"
+                "org.jetbrains:annotations:<version>"
             )
         )
     }
@@ -465,7 +465,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
             listOf("publishToMavenLocal", "bundle").forEach {
                 val buildFailure = failureExecutor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
                 buildFailure.assertErrorContains(
-                    "> Could not resolve all files for configuration ':androidLibWithDatabinding:debugCompileClasspath'.\n" +
+                    "> Could not resolve all files for configuration ':androidLibWithDatabinding:releaseCompileClasspath'.\n" +
                             "   > Could not find androidx.databinding:viewbinding:")
             }
         }

@@ -21,6 +21,7 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.FusedLibraryExtension
+import com.android.build.gradle.internal.dependency.configureKotlinPlatformAttribute
 import com.android.build.gradle.internal.dsl.FusedLibraryExtensionImpl
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
@@ -167,10 +168,6 @@ class FusedLibraryPlugin @Inject constructor(
                             AndroidArtifacts.ArtifactType.AAR.type
                     )
             )
-            it.attributes.attribute(
-                    BuildTypeAttr.ATTRIBUTE,
-                    project.objects.named(BuildTypeAttr::class.java, "debug")
-            )
             it.dependencies.addAllLater(fusedAarRuntimeDependenciesProvider)
             it.outgoing.artifact(bundleTaskProvider) { artifact ->
                 artifact.type = AndroidArtifacts.ArtifactType.AAR.type
@@ -279,8 +276,8 @@ class FusedLibraryPlugin @Inject constructor(
                         "setting `${BooleanOption.FUSED_LIBRARY_SUPPORT.propertyName}=true` to gradle.properties"
             )
         }
-
-        // so far by default, we consume and publish only 'debug' variant
+        val consumptionBuildType: BuildTypeAttr =
+            project.objects.named(BuildTypeAttr::class.java, "release")
 
         // 'include' is the configuration that users will use to indicate which dependencies should
         // be fused.
@@ -288,10 +285,9 @@ class FusedLibraryPlugin @Inject constructor(
             include.description =
                 "Used for declaring dependencies that should be packaged in the fused artifact."
             include.isCanBeConsumed = false
-            val buildType: BuildTypeAttr = project.objects.named(BuildTypeAttr::class.java, "debug")
             include.attributes.attribute(
                 BuildTypeAttr.ATTRIBUTE,
-                buildType,
+                consumptionBuildType,
             )
         }
 
@@ -308,11 +304,9 @@ class FusedLibraryPlugin @Inject constructor(
                     includePlatform.isCanBeConsumed = false
                     includePlatform.isCanBeResolved = true
                     includePlatform.isTransitive = true
-                    val buildType: BuildTypeAttr =
-                        project.objects.named(BuildTypeAttr::class.java, "debug")
                     includePlatform.attributes.attribute(
                         BuildTypeAttr.ATTRIBUTE,
-                        buildType,
+                        consumptionBuildType,
                     )
                     includePlatform.attributes.attribute(
                         Usage.USAGE_ATTRIBUTE,
@@ -336,11 +330,9 @@ class FusedLibraryPlugin @Inject constructor(
                     Usage.USAGE_ATTRIBUTE,
                     project.objects.named(Usage::class.java, Usage.JAVA_API)
                 )
-                val buildType: BuildTypeAttr =
-                    project.objects.named(BuildTypeAttr::class.java, "debug")
                 apiClasspath.attributes.attribute(
                     BuildTypeAttr.ATTRIBUTE,
-                    buildType,
+                    consumptionBuildType,
                 )
                 apiClasspath.shouldResolveConsistentlyWith(includeTransitiveApiResolved)
                 apiClasspath.extendsFrom(include.get())
@@ -358,11 +350,9 @@ class FusedLibraryPlugin @Inject constructor(
                     Usage.USAGE_ATTRIBUTE,
                     project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME)
                 )
-                val buildType: BuildTypeAttr =
-                    project.objects.named(BuildTypeAttr::class.java, "debug")
                 runtimeClasspath.attributes.attribute(
                     BuildTypeAttr.ATTRIBUTE,
-                    buildType,
+                    consumptionBuildType,
                 )
                 runtimeClasspath.shouldResolveConsistentlyWith(includeTransitiveRuntimeResolved)
                 runtimeClasspath.extendsFrom(include.get())
@@ -397,6 +387,17 @@ class FusedLibraryPlugin @Inject constructor(
                 runtimeElements.extendsFrom(include.get())
             }
         }
+
+        configureKotlinPlatformAttribute(
+            listOf(
+                include.get(),
+                fusedApi.get(),
+                fusedRuntime.get(),
+                includeTransitiveApiResolved,
+                includeTransitiveRuntimeResolved
+            ),
+            project
+        )
 
         val resolvableConfigurations = listOf(fusedApi.get(), fusedRuntime.get())
         variantScope.incomingConfigurations.addAll(resolvableConfigurations)
