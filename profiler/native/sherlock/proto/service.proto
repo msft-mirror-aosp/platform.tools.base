@@ -1,0 +1,152 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+import "perfetto.proto";
+
+option java_package = "com.google.gapid.proto.service";
+option java_outer_classname = "Service";
+
+package service;
+
+service Gapid {
+  rpc Ping(PingRequest) returns (PingResponse) {}
+  rpc GetServerInfo(GetServerInfoRequest) returns (GetServerInfoResponse) {}
+  rpc GetAvailableStringTables(GetAvailableStringTablesRequest) returns (GetAvailableStringTablesResponse) {}
+  rpc LoadCapture(LoadCaptureRequest) returns (LoadCaptureResponse) {}
+  rpc Get(GetRequest) returns (GetResponse) {}
+  rpc PerfettoQuery(PerfettoQueryRequest) returns (PerfettoQueryResponse) {}
+}
+
+message PingRequest {}
+
+message PingResponse {}
+
+message ID {
+  bytes data = 1;
+}
+message Device {
+  ID ID = 1;
+}
+
+message ErrInternal {
+  string message = 1;
+}
+message Error {
+  oneof err {
+    ErrInternal err_internal = 1;
+  }
+}
+message ServerInfo {
+  string name = 1;
+  uint32 version_major = 2;
+  uint32 version_minor = 3;
+  uint32 version_point = 4;
+  repeated string features = 5;
+  Device server_local_device = 6;
+}
+
+message GetServerInfoRequest {}
+
+message GetServerInfoResponse {
+  oneof res {
+    ServerInfo info = 1;
+    Error error = 2;
+  }
+}
+
+
+
+message StringTableInfos {}
+
+message GetAvailableStringTablesRequest {}
+message GetAvailableStringTablesResponse {
+  oneof res {
+    StringTableInfos tables = 1;
+    Error error = 2;
+  }
+}
+
+
+message path_Capture {
+  ID ID = 1;
+  bool exclude_memory_ranges = 2;
+}
+
+message LoadCaptureRequest {
+  string path = 1;
+}
+
+message LoadCaptureResponse {
+  oneof res {
+    path_Capture capture = 1;
+    Error error = 2;
+  }
+}
+
+enum TraceType {
+  Graphics = 0;
+  Perfetto = 1;
+}
+
+message Capture {
+  TraceType type = 7;
+  string name = 1;
+  // others...
+}
+
+message Value {
+  oneof val {
+    Capture capture = 1;
+  }
+}
+
+message Any {
+  oneof path {
+    path_Capture capture = 5;
+  }
+}
+
+message ResolveConfig {
+  Device replay_device = 1;
+}
+
+message GetRequest {
+  Any path = 1;
+  ResolveConfig config = 2;
+}
+
+message GetResponse {
+  oneof res {
+    Value value = 1;
+    Error error = 2;
+  }
+}
+
+
+
+
+message PerfettoQueryRequest {
+  path_Capture capture = 1;
+  string query = 2;
+}
+
+message PerfettoQueryResponse {
+  oneof res {
+    perfetto.QueryResult result = 1;
+    Error error = 2;
+  }
+}
