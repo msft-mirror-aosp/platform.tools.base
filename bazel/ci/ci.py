@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import pathlib
 import platform
 import subprocess
 import sys
@@ -87,6 +88,14 @@ def studio_build_checks(ci: CI):
       ))
 
   ci.run(validate_coverage_graph)
+  if not ci.exceptions:
+    return
+  # Write the exceptions to a file, so Android Build shows a clear and
+  # understandable failure message, instead of truncating bazel output.
+  error_log = pathlib.Path(ci.build_env.dist_dir) / 'logs/build_error.log'
+  with open(error_log, 'w') as f:
+    for e in ci.exceptions:
+      f.write(str(e))
 
 
 def main():
