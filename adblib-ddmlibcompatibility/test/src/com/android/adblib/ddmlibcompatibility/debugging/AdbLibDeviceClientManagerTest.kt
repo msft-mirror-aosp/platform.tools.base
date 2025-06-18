@@ -27,6 +27,7 @@ import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.tools.debugging.DdmsProtocolKind
+import com.android.adblib.tools.debugging.JdwpProcessHolder
 import com.android.adblib.tools.debugging.ddmsProtocolKind
 import com.android.adblib.tools.debugging.packets.ddms.DdmsPacketConstants
 import com.android.ddmlib.AndroidDebugBridge
@@ -468,6 +469,31 @@ class AdbLibDeviceClientManagerTest {
         Assert.assertSame(event.deviceClientManager, deviceClientManager)
         Assert.assertNotNull(event.client)
         Assert.assertEquals("FakeVM", event.client!!.clientData.vmIdentifier)
+    }
+
+    @Test
+    fun testClientIsJdwpProcessHolder() = runBlockingWithTimeout {
+        // Prepare
+        val session = fakeAdb.createAdbSession(closeables)
+        val clientManager = AdbLibClientManager(session)
+        val listener = TestDeviceClientManagerListener()
+        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceClientManager =
+            clientManager.createDeviceClientManager(
+                fakeAdb.bridge,
+                device,
+                listener
+            )
+
+        // Act
+        deviceState.startClient(10, 0, "foo.bar", false)
+        yieldUntil { deviceClientManager.clients.size == 1 }
+        val client = deviceClientManager.clients.first { it.clientData.pid == 10 }
+
+        // Assert
+        Assert.assertTrue(client is JdwpProcessHolder)
+        val jdwpProcess = (client as JdwpProcessHolder).jdwpProcessValue
+        Assert.assertEquals(client.clientData.pid, jdwpProcess.pid)
     }
 
     @Test

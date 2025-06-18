@@ -23,6 +23,7 @@ import com.android.adblib.property
 import com.android.adblib.tools.debugging.DdmsCommandException
 import com.android.adblib.tools.debugging.JdwpCommandProgress
 import com.android.adblib.tools.debugging.JdwpProcess
+import com.android.adblib.tools.debugging.JdwpProcessHolder
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProxySocketServerStatus
 import com.android.adblib.tools.debugging.OptionalValue
@@ -74,7 +75,7 @@ import java.util.concurrent.TimeoutException
 internal class AdblibClientWrapper(
     private val trackerHost: ProcessTrackerHost,
     val jdwpProcess: JdwpProcess
-) : Client {
+) : Client, JdwpProcessHolder {
     private val session: AdbSession
         get() = trackerHost.device.session
 
@@ -85,6 +86,12 @@ internal class AdblibClientWrapper(
     private var featuresAdded = false
 
     private val legacyOperationsScope = jdwpProcess.scope.createChildScope(isSupervisor = true)
+
+    /**
+     * Implementation of [JdwpProcessHolder]
+     */
+    override val jdwpProcessValue: JdwpProcess
+        get() = jdwpProcess
 
     fun startTracking() {
         // Track process changes as long as process coroutine scope is active
