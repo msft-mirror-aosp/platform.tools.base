@@ -1,6 +1,5 @@
 #!/bin/bash
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-WORKSPACE="$(realpath $SCRIPT_DIR/../../../..)"
+WORKSPACE="$(pwd)"
 
 if [[ "$OSTYPE" = "linux"* ]]; then
   PLATFORM="linux-x86_64"
