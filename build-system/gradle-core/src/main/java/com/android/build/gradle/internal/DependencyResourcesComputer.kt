@@ -222,9 +222,7 @@ abstract class DependencyResourcesComputer {
                 resSources.getVariantSourcesWithFilter {
                     !it.isUserAdded && !it.isGenerated
                 }
-            ) {
-                services.newInstance(ResourceSourceSetInput::class.java)
-            }
+            ) { services.newInstance(ResourceSourceSetInput::class.java) }
 
             // Add the user added generated directories to the extraGeneratedResFolders.
             // this should be cleaned up once the old variant API is removed.

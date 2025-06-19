@@ -34,6 +34,7 @@ import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.SourceDirectories
 import com.android.build.api.variant.impl.AndroidResourcesImpl
 import com.android.build.api.variant.impl.DirectoryEntries
+import com.android.build.api.variant.impl.DirectoryEntry
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.KotlinMultiplatformFlatSourceDirectoriesImpl
@@ -69,6 +70,7 @@ import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.VariantPathHelper
+import com.android.builder.core.BuilderConstants
 import com.android.builder.core.ComponentType
 import com.android.utils.appendCapitalized
 import org.gradle.api.NamedDomainObjectContainer
@@ -148,7 +150,7 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
         internalServices,
         manifestFile,
         androidKotlinCompilation,
-        buildFeatures
+        buildFeatures,
     )
 
     final override fun getJavaClasspath(
@@ -308,7 +310,11 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
                 _name = SourceType.RES.folder,
                 variantServices = variantServices,
                 variantDslFilters = PatternSet(),
-            )
+            ).let { sourceDirectoriesImpl ->
+                val generatedFolders = mutableListOf<DirectoryEntry>()
+                sourceDirectoriesImpl.addStaticSources(DirectoryEntries(BuilderConstants.GENERATED, generatedFolders))
+                return@let sourceDirectoriesImpl
+            }
         } else null
 
         override val assets = if (buildFeatures.androidResources) {

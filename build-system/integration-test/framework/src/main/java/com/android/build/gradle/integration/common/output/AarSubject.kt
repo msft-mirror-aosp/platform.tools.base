@@ -250,6 +250,14 @@ class AarSubject(
     }
 
     /**
+     * returns a [StringSubject] for the public resources file (public.txt)
+     */
+    fun publicResFile(): StringSubject {
+        contains("public.txt")
+        return check("publicResFile()").that(actual().textFile("public.txt"))
+    }
+
+    /**
      * returns a [JarSubject] for the lint jar of the AAR (lint.jar).
      */
     fun lintJar(): JarSubject = jar("lint.jar", methodName = "lintJar()")
