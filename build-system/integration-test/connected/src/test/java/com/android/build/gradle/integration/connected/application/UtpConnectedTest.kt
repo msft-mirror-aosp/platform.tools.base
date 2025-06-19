@@ -28,9 +28,8 @@ import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.DeviceTestSpanProfile
-import com.google.wireless.android.sdk.stats.TestRun;
+import com.google.wireless.android.sdk.stats.TestRun
 import org.junit.ClassRule
-import org.junit.Ignore
 import org.junit.Test
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
@@ -175,11 +174,10 @@ class UtpConnectedTest : UtpTestBase() {
         assertThat(utpLogFile).doesNotContain("Uninstalling com.example.android.kotlin.library.test")
     }
 
-    @Ignore("Disable until we update ProfileCapturer to support custom extension")
     @Test
     fun connectedAndroidTestUtpPerformance() {
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestUtpPerformance").setProject("Android Studio Gradle").build()
-        val capturer = ProfileCapturer(rule.build.profileDirectory!!.toAbsolutePath()) // captures AndroidStudioEvents
+        val capturer = ProfileCapturer(rule.build.profileDirectory!!.toAbsolutePath(), ".trk") // captures AndroidStudioEvents
 
         selectModule("app", false)
 
