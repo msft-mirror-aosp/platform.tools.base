@@ -124,6 +124,12 @@ maven_repository(
 )
 
 filegroup(
+    name = "gradle-distrib-8.13",
+    srcs = ["//tools/external/gradle:gradle-distrib-8.13"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "gradle-distrib-8.11.1",
     srcs = ["//tools/external/gradle:gradle-distrib-8.11.1"],
     visibility = ["//visibility:public"],
