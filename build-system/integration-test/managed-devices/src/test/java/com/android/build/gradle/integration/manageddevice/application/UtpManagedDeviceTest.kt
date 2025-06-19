@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.integration.manageddevice.application
 
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule
-import com.android.build.gradle.integration.manageddevice.utils.addManagedDevice
 import com.android.build.gradle.integration.utp.UtpTestBase
 import org.junit.Rule
 
@@ -28,7 +29,9 @@ import org.junit.Rule
 class UtpManagedDeviceTest : UtpTestBase() {
 
     @get:Rule
-    val customAndroidSdkRule = CustomAndroidSdkRule()
+    val customAndroidSdkRule = CustomAndroidSdkRule().apply {
+        ruleBuilder.setCustomSdkDir()
+    }
 
     companion object {
         private const val DSL_DEVICE_NAME = "device1"
@@ -50,11 +53,28 @@ class UtpManagedDeviceTest : UtpTestBase() {
         private const val TEST_COV_XML = "$REPORTS/coverage/androidTest/debug/managedDevice/report.xml"
     }
 
-    override val executor: GradleTaskExecutor
-        get() = customAndroidSdkRule.run { project.executorWithCustomAndroidSdk() }
+    override fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {
+        customAndroidSdkRule.run {
+            withCustomAndroidSdk()
+        }
+        return this
+    }
 
     override fun selectModule(moduleName: String, isDynamicFeature: Boolean) {
-        project.getSubproject(moduleName).addManagedDevice(DSL_DEVICE_NAME)
+        rule.build.subProject(":$moduleName").reconfigure {
+            this as AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>
+            android {
+                testOptions.managedDevices {
+                    localDevices.create(DSL_DEVICE_NAME) {
+                        it.device = "Pixel 2"
+                        it.sdkVersion = System.getProperty("sdk.repo.sysimage.apiLevel").toInt()
+                        it.systemImageSource = System.getProperty("sdk.repo.sysimage.source")
+                        it.require64Bit = true
+                    }
+                }
+            }
+        }
+
         testTaskName = ":${moduleName}:allDevicesCheck"
         testResultXmlPath = "${moduleName}/$TEST_RESULT_XML$moduleName-.xml"
         if (isDynamicFeature) {
