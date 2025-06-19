@@ -581,6 +581,7 @@ abstract class BasePlugin<
             },
             { variantManager.mainComponents.map { it.variant } },
             { variantManager.testComponents },
+            { variantManager.testSuites },
             { variantManager.buildFeatureValues },
             getProjectType(),
             getProjectTypeV2(),

@@ -51,6 +51,27 @@ py_library(
 )
 
 py_library(
+    name = "owners_checks",
+    srcs = ["owners_checks.py"],
+    deps = [
+        ":bazel",
+        ":errors",
+    ],
+)
+
+# This is a temporary target while we need owners_exempt.txt
+# Once that list is empty we can remove this.
+py_binary(
+    name = "update_owners_exempt",
+    srcs = ["owners_checks.py"],
+    main = "owners_checks.py",
+    deps = [
+        ":bazel",
+        ":errors",
+    ],
+)
+
+py_library(
     name = "query_checks",
     srcs = ["query_checks.py"],
     deps = [
@@ -107,6 +128,7 @@ py_library(
     deps = [
         ":bazel",
         ":errors",
+        ":owners_checks",
         ":query_checks",
         ":studio_linux",
         ":studio_mac",

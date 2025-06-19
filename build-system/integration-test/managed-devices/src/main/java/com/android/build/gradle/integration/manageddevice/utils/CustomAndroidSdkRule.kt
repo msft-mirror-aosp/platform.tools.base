@@ -19,13 +19,16 @@ package com.android.build.gradle.integration.manageddevice.utils
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.StringOption
 import com.android.sdklib.repository.AndroidSdkHandler
+import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
+import com.android.utils.FileUtils.copyDirectory
 import com.google.common.base.Splitter
 import com.google.common.hash.Funnels
 import com.google.common.hash.Hashing
@@ -36,7 +39,6 @@ import java.io.BufferedOutputStream
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.fileSize
@@ -51,15 +53,17 @@ class CustomAndroidSdkRule : ExternalResource() {
     private val customUserHomeDir = File(testTmpDir, "CustomUserLocal")
     private val customAndroidPrefDir = File(customUserHomeDir, ".android")
 
-    private val systemImageFiles = Splitter.on(' ')
+    private val systemImageFiles by lazy { Splitter.on(' ')
             .split(System.getProperty("sdk.repo.sysimage.files"))
             .map { File(it) }
             .toList()
-    private val systemImageRemotePackage = System.getProperty("sdk.repo.sysimage.remotePackage")
-    private val systemImageDisplayName = System.getProperty("sdk.repo.sysimage.displayName")
-    private val systemImageApiLevel = System.getProperty("sdk.repo.sysimage.apiLevel")
+    }
+    private val systemImageRemotePackage by lazy { System.getProperty("sdk.repo.sysimage.remotePackage") }
+    private val systemImageDisplayName by lazy { System.getProperty("sdk.repo.sysimage.displayName") }
+    val systemImageApiLevel: String by lazy { System.getProperty("sdk.repo.sysimage.apiLevel") }
+    val systemImageSource: String by lazy { System.getProperty("sdk.repo.sysimage.source") }
 
-    private val emulatorZip = File(System.getProperty("sdk.repo.emulator.zip"))
+    private val emulatorZip by lazy { File(System.getProperty("sdk.repo.emulator.zip")) }
 
     override fun before() {
         setupSdk()
@@ -96,7 +100,39 @@ class CustomAndroidSdkRule : ExternalResource() {
             .with(StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE, "swiftshader_indirect")
             .with(BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING, true)
             .with(IntegerOption.GRADLE_MANAGED_DEVICE_SETUP_TIMEOUT_MINUTES, 2)
-            .withArgument("-D${AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}=file:///${customSdkRepo.absolutePath}/")
+            .apply {
+                if (TestUtils.runningFromBazel()) {
+                    withArgument("-D${AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}=file:///${customSdkRepo.absolutePath}/")
+                }
+            }
+    }
+
+    fun GradleRule.executorWithCustomAndroidSdk(): GradleTaskExecutor {
+        if (!customUserHomeDir.exists()) {
+            FileUtils.mkdirs(customUserHomeDir)
+        }
+        if (!customAndroidPrefDir.exists()) {
+            FileUtils.mkdirs(customAndroidPrefDir)
+        }
+        return configure().withSdk {
+            sdkDir(customSdkDir.toPath())
+        }.build.executor
+            .withLocalPrefsRoot()
+            .withEnvironmentVariables(mapOf(
+                "HOME" to customUserHomeDir.absolutePath,
+                "ANDROID_USER_HOME" to customAndroidPrefDir.absolutePath
+            ))
+            .withoutOfflineFlag()
+            .withSdkAutoDownload()
+            .with(IntegerOption.ANDROID_SDK_CHANNEL, 3)
+            .with(StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE, "swiftshader_indirect")
+            .with(BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING, true)
+            .with(IntegerOption.GRADLE_MANAGED_DEVICE_SETUP_TIMEOUT_MINUTES, 2)
+            .apply {
+                if (TestUtils.runningFromBazel()) {
+                    withArgument("-D${AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}=file:///${customSdkRepo.absolutePath}/")
+                }
+            }
     }
 
     /**
@@ -108,10 +144,7 @@ class CustomAndroidSdkRule : ExternalResource() {
             return
         }
         FileUtils.mkdirs(customSdkDir)
-        SdkHelper.findSdkDir().copyRecursively(customSdkDir)
-        Path.of(customSdkDir.absolutePath, "platform-tools", "adb").toFile().setExecutable(true)
-        Path.of(customSdkDir.absolutePath, "build-tools",
-            GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, "aapt").toFile().setExecutable(true)
+        copyDirectory(SdkHelper.findSdkDir().toPath(), customSdkDir.toPath(), false)
         setupLicenses()
     }
 
@@ -145,7 +178,7 @@ class CustomAndroidSdkRule : ExternalResource() {
      * system image for managed devices locally.
      */
     private fun setupSdkRepo() {
-        if (customSdkRepo.exists()) {
+        if (customSdkRepo.exists() || !TestUtils.runningFromBazel()) {
             return
         }
         FileUtils.mkdirs(customSdkRepo)

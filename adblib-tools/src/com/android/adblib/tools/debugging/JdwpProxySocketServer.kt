@@ -16,9 +16,18 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbChannelFactory
+import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.adbLogger
+import com.android.adblib.tools.debugging.impl.AbstractJdwpProcessDelegateProvider
 import com.android.adblib.tools.debugging.impl.JdwpProxySocketServerImpl
+import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.withPrefix
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.net.InetSocketAddress
 
 /**
@@ -105,8 +114,8 @@ val JdwpProcess.jdwpProxySocketServer: JdwpProxySocketServer
             // a custom one. In the case of JdwpProcessDelegate, for example,
             // we want to re-use the same proxy as the delegate process, to avoid
             // creating additional (and redundant) socket servers.
-            if (this is CustomJdwpProxySocketServerProvider) {
-                createProxy()
+            if (this is AbstractJdwpProcessDelegateProvider) {
+                JdwpProxySocketServerDelegate(this, this)
             } else {
                 JdwpProxySocketServerImpl(this)
             }
@@ -114,13 +123,47 @@ val JdwpProcess.jdwpProxySocketServer: JdwpProxySocketServer
     }
 
 /**
- * Interface a [JdwpProcess] can implement to return a custom [JdwpProxySocketServer]
+ * Delegates [JdwpProxySocketServer] methods while exposing a custom [process] property passed
+ * as constructor parameter.
  */
-internal interface CustomJdwpProxySocketServerProvider {
-    /**
-     * Creates an instance of [JdwpProxySocketServer] for this process. This function
-     * is internal only, as it is an implementation detail of custom [JdwpProcess]
-     * implementations.
-     */
-    fun createProxy(): JdwpProxySocketServer
+private class JdwpProxySocketServerDelegate(
+    override val process: JdwpProcess,
+    private val processProvider: AbstractJdwpProcessDelegateProvider
+) : JdwpProxySocketServer {
+
+    private val processDescription = "${device.session} - $device - pid=${process.pid}"
+
+    private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
+
+    private val device: ConnectedDevice
+        get() = process.device
+
+    private val proxyStatusMutableFlow = MutableStateFlow(JdwpProxySocketServerStatus(process.pid))
+
+    private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        forwardStateFlowFromDelegateProcess()
+    }
+
+    override val proxyStatusFlow = proxyStatusMutableFlow.asStateFlow()
+        get() {
+            lazyStartMonitoring
+            return field
+        }
+
+    private fun forwardStateFlowFromDelegateProcess() {
+        logger.debug { "Forwarding proxy state flow from delegate" }
+        process.scope.launch {
+            runCatching {
+                processProvider.abstractJdwpProcess().also { delegateProcess ->
+                    logger.debug { "Acquired delegate process, starting forwarding" }
+                    delegateProcess.jdwpProxySocketServer.proxyStatusFlow.collect { newStatus ->
+                        logger.verbose { "Forwarding new proxy status: $newStatus" }
+                        proxyStatusMutableFlow.update { newStatus }
+                    }
+                }
+            }.onFailure { throwable ->
+                logger.logIOCompletionErrors(throwable)
+            }
+        }
+    }
 }

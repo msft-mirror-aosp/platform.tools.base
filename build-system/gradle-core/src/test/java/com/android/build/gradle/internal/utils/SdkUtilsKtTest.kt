@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.utils
 
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -75,23 +76,23 @@ internal class SdkUtilsKtTest {
     @Test
     fun `api level target`() {
         Truth.assertThat(parseTargetHash("android-23")).isEqualTo(
-            CompileData(apiLevel = 23)
+            CompileSdkVersionImpl(apiLevel = 23)
         )
     }
 
     @Test
     fun `preview target`() {
         Truth.assertThat(parseTargetHash("android-R")).isEqualTo(
-            CompileData(codeName = "R")
+            CompileSdkVersionImpl(codeName = "R")
         )
 
         Truth.assertThat(parseTargetHash("android-Rv2")).isEqualTo(
-            CompileData(codeName = "Rv2")
+            CompileSdkVersionImpl(codeName = "Rv2")
         )
 
         // Test that underscores are allowed in code names
         Truth.assertThat(parseTargetHash("android-O_MR1")).isEqualTo(
-            CompileData(codeName = "O_MR1")
+            CompileSdkVersionImpl(codeName = "O_MR1")
         )
 
         Truth.assertThat(validatePreviewTargetValue("android-Rv2")).isNull()
@@ -105,21 +106,21 @@ internal class SdkUtilsKtTest {
     @Test
     fun `api level + extension target`() {
         Truth.assertThat(parseTargetHash("android-23-ext12")).isEqualTo(
-            CompileData(apiLevel = 23, sdkExtension = 12)
+            CompileSdkVersionImpl(apiLevel = 23, sdkExtension = 12)
         )
     }
 
     @Test
     fun `api level + minor api level`() {
         Truth.assertThat(parseTargetHash("android-36.2")).isEqualTo(
-            CompileData(apiLevel = 36, minorApiLevel = 2)
+            CompileSdkVersionImpl(apiLevel = 36, minorApiLevel = 2)
         )
     }
 
     @Test
     fun `api level + minor api level + extension target`() {
         Truth.assertThat(parseTargetHash("android-36.2-ext12")).isEqualTo(
-            CompileData(apiLevel = 36, sdkExtension = 12, minorApiLevel = 2)
+            CompileSdkVersionImpl(apiLevel = 36, sdkExtension = 12, minorApiLevel = 2)
         )
     }
 
@@ -141,7 +142,7 @@ internal class SdkUtilsKtTest {
     @Test
     fun `addon target`() {
         Truth.assertThat(parseTargetHash("foo:bar:12")).isEqualTo(
-            CompileData(
+            CompileSdkVersionImpl(
                 vendorName = "foo",
                 addonName = "bar",
                 apiLevel = 12,
@@ -226,23 +227,23 @@ internal class SdkUtilsKtTest {
 
     @Test
     fun `compile data to hash`() {
-        Truth.assertThat(CompileData(36).toHash())
+        Truth.assertThat(CompileSdkVersionImpl(36).toHash())
             .isEqualTo("android-36")
-        Truth.assertThat(CompileData(36, sdkExtension = 12).toHash())
+        Truth.assertThat(CompileSdkVersionImpl(36, sdkExtension = 12).toHash())
             .isEqualTo("android-36-ext12")
-        Truth.assertThat(CompileData(36, minorApiLevel = 3).toHash())
+        Truth.assertThat(CompileSdkVersionImpl(36, minorApiLevel = 3).toHash())
             .isEqualTo("android-36.3")
-        Truth.assertThat(CompileData(36, sdkExtension = 12, minorApiLevel = 3).toHash())
+        Truth.assertThat(CompileSdkVersionImpl(36, sdkExtension = 12, minorApiLevel = 3).toHash())
             .isEqualTo("android-36.3-ext12")
-        Truth.assertThat(CompileData(minorApiLevel = 3, sdkExtension = 12).toHash())
+        Truth.assertThat(CompileSdkVersionImpl(minorApiLevel = 3, sdkExtension = 12).toHash())
             .isNull()
-        Truth.assertThat(CompileData(addonName = "addon", vendorName = "vendor").toHash())
+        Truth.assertThat(CompileSdkVersionImpl(addonName = "addon", vendorName = "vendor").toHash())
             .isNull()
-        Truth.assertThat(CompileData(35, addonName = "addon", vendorName = "vendor").toHash())
+        Truth.assertThat(CompileSdkVersionImpl(35, addonName = "addon", vendorName = "vendor").toHash())
             .isEqualTo("vendor:addon:35")
-        Truth.assertThat(CompileData(35, addonName = "addonName").toHash())
+        Truth.assertThat(CompileSdkVersionImpl(35, addonName = "addonName").toHash())
             .isEqualTo("android-35")
-        Truth.assertThat(CompileData(codeName = "codeName").toHash())
+        Truth.assertThat(CompileSdkVersionImpl(codeName = "codeName").toHash())
             .isEqualTo("android-codeName")
     }
 }

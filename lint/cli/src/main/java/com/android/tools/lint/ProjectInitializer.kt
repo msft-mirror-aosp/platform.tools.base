@@ -29,6 +29,7 @@ import com.android.SdkConstants.FN_RESOURCE_TEXT
 import com.android.SdkConstants.VALUE_FALSE
 import com.android.SdkConstants.VALUE_TRUE
 import com.android.ide.common.repository.ResourceVisibilityLookup
+import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidTargetHash.PLATFORM_HASH_PREFIX
 import com.android.sdklib.SdkVersionInfo
@@ -1167,6 +1168,7 @@ internal class ManualProject(
     this.library = library
     // We don't have this info yet; add support to the XML to specify it
     this.buildSdk = SdkVersionInfo.HIGHEST_KNOWN_STABLE_API
+    this.buildSdkLevel = AndroidApiLevel(SdkVersionInfo.HIGHEST_KNOWN_STABLE_API)
     this.mergeManifests = true
   }
 
@@ -1270,8 +1272,14 @@ internal class ManualProject(
       val version = AndroidTargetHash.getPlatformVersion(buildApi)
       if (version != null) {
         buildSdk = version.featureLevel
+        buildSdkLevel = version.androidApiLevel
       } else {
-        client.log(Severity.WARNING, null, "Unexpected build target format: %1\$s", buildApi)
+        buildSdkLevel = AndroidApiLevel.fromString(buildApi)
+        if (buildSdkLevel != null) {
+          buildSdk = buildSdkLevel.majorVersion
+        } else {
+          client.log(Severity.WARNING, null, "Unexpected build target format: %1\$s", buildApi)
+        }
       }
     }
   }

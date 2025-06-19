@@ -37,9 +37,9 @@ import com.android.repository.impl.meta.SchemaModuleUtil
 import com.google.common.annotations.VisibleForTesting
 import java.nio.file.Path
 import java.time.Clock
-import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.time.Duration
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.completeWith
 import org.w3c.dom.ls.LSResourceResolver
@@ -309,6 +309,21 @@ internal constructor(
       }
     }
 
+  override suspend fun loadLocalPackages(
+    indicator: ProgressIndicator,
+    cacheExpiration: Duration,
+  ): List<LocalPackage> =
+    getOrCreateLocalLoadTask(cacheExpiration.inWholeMilliseconds).load(indicator)
+
+  override suspend fun loadRemotePackages(
+    indicator: ProgressIndicator,
+    cacheExpiration: Duration,
+    downloader: Downloader,
+    settings: SettingsController?,
+  ): List<RemotePackage> =
+    getOrCreateRemoteLoadTask(cacheExpiration.inWholeMilliseconds, downloader, settings)
+      .load(indicator)
+
   @Slow
   override fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean {
     // TODO: there should be a nice interface whereby we can do this check without creating a
@@ -511,6 +526,6 @@ internal constructor(
 
   companion object {
     /** How long we should let a load task run before assuming that it's dead. */
-    private val TASK_TIMEOUT = Duration.ofMinutes(3)
+    private val TASK_TIMEOUT = java.time.Duration.ofMinutes(3)
   }
 }

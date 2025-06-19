@@ -29,11 +29,18 @@ import com.android.adblib.tools.debugging.processinventory.protos.ProcessInvento
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.Response
 import com.android.adblib.utils.closeOnException
 import com.android.adblib.withPrefix
+import com.google.protobuf.TextFormat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -144,25 +151,37 @@ internal class ProcessInventoryServerInstance(
             val request = protocolSocket.readRequest()
             logger.verbose { "Processing request ${request.payloadCase}" }
             processRequest(request).collect { response ->
-                logger.verbose { "Sending one response: $response" }
+                logger.verbose { "Sending one response: ${TextFormat.shortDebugString(response)}" }
                 protocolSocket.writeResponse(response)
             }
             protocolSocket.shutdown()
             logger.verbose { "Done processing request ${request.payloadCase}" }
         }
 
-        private suspend fun processRequest(request: Request) = flow {
-            when {
-                request.hasTrackDeviceRequestPayload() -> {
-                    emitAll(trackDeviceProcesses(request.trackDeviceRequestPayload))
+        private fun processRequest(request: Request) = channelFlow {
+            when (request.payloadCase) {
+                Request.PayloadCase.TRACK_DEVICE_REQUEST_PAYLOAD -> {
+                    trackDeviceRequestFlow(request.trackDeviceRequestPayload).collect {
+                        send(it)
+                    }
                 }
 
-                request.hasUpdateDeviceRequestPayload() -> {
+                Request.PayloadCase.UPDATE_DEVICE_REQUEST_PAYLOAD -> {
                     notifyUpdateDevice(request.updateDeviceRequestPayload)
                     emitOkResponse()
                 }
 
-                else -> {
+                Request.PayloadCase.PROCESS_COMMAND_PAYLOAD -> {
+                    notifyProcessCommand(request.processCommandPayload)
+                    emitOkResponse()
+                }
+
+                Request.PayloadCase.PROCESS_COMMAND_REPLY_PAYLOAD -> {
+                    notifyProcessCommandReply(request.processCommandReplyPayload)
+                    emitOkResponse()
+                }
+
+                Request.PayloadCase.PAYLOAD_NOT_SET, null -> {
                     emitErrorResponse("Request is not supported by this server")
                 }
             }
@@ -172,36 +191,79 @@ internal class ProcessInventoryServerInstance(
          * Tracks changes to the processes of a given device for as long as the device is
          * active.
          */
-        private suspend fun trackDeviceProcesses(
+        private fun trackDeviceRequestFlow(
             trackDeviceRequest: Request.TrackDeviceRequestPayload
-        ) = flow {
+        ): Flow<Response> = channelFlow {
             val deviceId = trackDeviceRequest.deviceId
             // Acquire device process catalog for device, collect it and emit response to our flow
             activeDevicesMap.withDeviceProcessCatalog(deviceId) { deviceCatalog ->
-                deviceCatalog.trackProcesses().collect { processUpdates ->
-                    emitOkResponse { builder ->
-                        builder.setTrackDeviceResponsePayload(
-                            Response.TrackDeviceResponsePayload.newBuilder()
-                                .setProcessUpdates(processUpdates)
-                        )
-                    }
+                coroutineScope {
+                    awaitAll(
+                        async {
+                            deviceCatalog.trackProcessUpdates().collect { processUpdates ->
+                                emitOkResponse { builder ->
+                                    builder.setTrackDeviceResponsePayload(
+                                        Response.TrackDeviceResponsePayload
+                                            .newBuilder()
+                                            .setProcessUpdates(processUpdates)
+                                    )
+                                }
+                            }
+                        },
+                        async {
+                            deviceCatalog.trackProcessCommands().collect {
+                                emitOkResponse { builder ->
+                                    builder.setTrackDeviceResponsePayload(
+                                        Response.TrackDeviceResponsePayload
+                                            .newBuilder()
+                                            .setProcessCommand(it)
+                                    )
+                                }
+                            }
+                        },
+                        async {
+                            deviceCatalog.trackProcessCommandReplies().collect {
+                                emitOkResponse { builder ->
+                                    builder.setTrackDeviceResponsePayload(
+                                        Response.TrackDeviceResponsePayload
+                                            .newBuilder()
+                                            .setProcessCommandReply(it)
+                                    )
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }
 
-        private fun notifyUpdateDevice(updateDeviceRequest: Request.UpdateDeviceRequestPayload) {
-            val deviceId = updateDeviceRequest.deviceId
+        private suspend fun notifyUpdateDevice(updateDeviceRequestPayload: Request.UpdateDeviceRequestPayload) {
+            val deviceId = updateDeviceRequestPayload.deviceId
             activeDevicesMap.withDeviceProcessCatalog(deviceId) { deviceCatalog ->
-                deviceCatalog.updateProcessList(updateDeviceRequest.processUpdates)
+                deviceCatalog.handleProcessUpdates(updateDeviceRequestPayload.processUpdates)
             }
         }
 
-        private suspend fun FlowCollector<Response>.emitOkResponse(block: (Response.Builder) -> Unit = {}) {
-            emit(protocolSocket.buildOkResponse(block))
+        private suspend fun notifyProcessCommand(processCommandPayload: Request.ProcessCommandPayload) {
+            val deviceId = processCommandPayload.deviceId
+            activeDevicesMap.withDeviceProcessCatalog(deviceId) { deviceCatalog ->
+                deviceCatalog.handleProcessCommand(processCommandPayload.processCommand)
+            }
         }
 
-        private suspend fun FlowCollector<Response>.emitErrorResponse(message: String) {
-            emit(protocolSocket.buildErrorResponse(message))
+        private suspend fun notifyProcessCommandReply(processCommandReplyPayload: Request.ProcessCommandReplyPayload) {
+            val deviceId = processCommandReplyPayload.deviceId
+            activeDevicesMap.withDeviceProcessCatalog(deviceId) { deviceCatalog ->
+                deviceCatalog.handleProcessCommandReply(processCommandReplyPayload.processCommandReply)
+            }
+        }
+
+        private suspend fun ProducerScope<Response>.emitOkResponse(block: (Response.Builder) -> Unit = {}) {
+            send(protocolSocket.buildOkResponse(block))
+        }
+
+        private suspend fun ProducerScope<Response>.emitErrorResponse(message: String) {
+            send(protocolSocket.buildErrorResponse(message))
         }
     }
 

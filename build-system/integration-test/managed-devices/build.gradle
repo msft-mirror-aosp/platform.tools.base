@@ -76,5 +76,8 @@ configurations {
 apply from: '../integration-tests.gradle'
 
 test {
-    dependsOn ':publishLocal'
+    systemProperty('sdk.repo.sysimage.apiLevel', '33')
+    systemProperty('sdk.repo.sysimage.source', 'aosp-atd')
+    environment['CUSTOM_TEST_VERBOSE'] = 'true'
+    dependsOn ':publishAndroidGradleLocal'
 }

@@ -17,50 +17,84 @@ package com.android.tools.deploy.liveedit;
 
 import com.android.deploy.asm.Type;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 // Handler class bound to an instance of a proxy class, responsible for resolving field access and
 // method invocations. Holds the instance fields of the proxy object.
 //
+// A proxy is an object's interface; the bound handler is the implementation.
+//
 // Must be public; accessed cross-classloader from LiveEditSuspendLambda and
 // LiveEditRestrictedSuspendLambda.
 public final class ProxyClassHandler implements InvocationHandler {
-    private final LiveEditClass clazz;
+    private final LiveEditContext context;
+
+    private final Type type;
+    private final Class<?> superclass;
+    private final Set<Class<?>> interfaces;
+    private final Set<Type> supertypes;
     private final HashMap<String, Object> fields;
 
-    // Instance of the superclass for handling super method and field access.
+    // To handle access to methods and fields of proxy superclasses, an instance of the superclass
+    // is instantiated when the super-constructor is called.
     private Object superInstance;
 
-    ProxyClassHandler(LiveEditClass clazz, Map<String, Object> defaultFieldValues) {
-        this.clazz = clazz;
-        this.fields = new HashMap<>();
-        fields.putAll(defaultFieldValues);
+    ProxyClassHandler(
+            LiveEditContext context,
+            Type type,
+            Class<?> superclass,
+            Set<Class<?>> interfaces,
+            Set<Class<?>> supertypes,
+            Map<String, Object> defaultFieldValues) {
+        this.context = context;
+        this.type = type;
+        this.superclass = superclass;
+
+        this.interfaces = new HashSet<>();
+        this.interfaces.addAll(interfaces);
+
+        this.supertypes = supertypes.stream().map(Type::getType).collect(Collectors.toSet());
+
+        this.fields = new HashMap<>(defaultFieldValues);
+        this.fields.putAll(defaultFieldValues);
     }
 
-    Map<String, Object> getSourceLineLocation() {
-        ProxySourceLocation location = ProxySourceLocation.findSourceLocation(clazz);
+    Map<String, Object> getSourceLocationInfo() {
+        ProxySourceLocation location = ProxySourceLocation.findSourceLocation(currentBytecode());
         if (location != null) {
             return location.asMap();
         }
         return new HashMap<>();
     }
 
-    void initSuperClass(String superInternalName, Object[] args, Object proxy) {
+    Object getSuperInstance() {
+        return superInstance;
+    }
+
+    void superInit(Class<?>[] types, Object[] args) {
         try {
-            Class<?> factory =
-                    Class.forName(
-                            "com.android.tools.deploy.liveedit.LambdaFactory",
-                            true,
-                            clazz.getClassLoader());
-            superInstance =
-                    factory.getDeclaredMethod("create", String.class, args.getClass(), Object.class)
-                            .invoke(null, superInternalName, args, proxy);
+            Constructor<?> constructor;
+            Class<?> proxyType = context.getProxyType(superclass, interfaces);
+
+            // Create a specialized proxy supertype, if one exists for this combination of parent
+            // classes and interfaces.
+            if (proxyType != null) {
+                constructor = proxyType.getConstructor(types);
+            } else {
+                constructor = superclass.getConstructor(types);
+            }
+            constructor.setAccessible(true);
+            superInstance = constructor.newInstance(args);
         } catch (Exception e) {
-            throw new LiveEditException("Could not instantiate superclass", e);
+            throw new LiveEditException("Error instantiating superclass: " + type, e);
         }
     }
 
@@ -69,58 +103,66 @@ public final class ProxyClassHandler implements InvocationHandler {
             fields.put(name, value);
             return;
         }
-        Field superField = clazz.getSuperField(name);
-        if (superField != null) {
-            try {
-                superField.set(superInstance, value);
-                return;
-            } catch (Exception e) {
-                throw new LiveEditException("Could not access field", e);
-            }
+        try {
+            Field superField = superInstance.getClass().getField(name);
+            superField.set(superInstance, value);
+        } catch (Exception e) {
+            throw new LiveEditException("Could not access field", e);
         }
-        throw new ProxyMissingFieldException(clazz, name);
     }
 
     Object getField(String name) {
         if (fields.containsKey(name)) {
             return fields.get(name);
         }
-        Field superField = clazz.getSuperField(name);
-        if (superField != null) {
-            try {
-                return superField.get(superInstance);
-            } catch (Exception e) {
-                throw new LiveEditException("Could not access field", e);
-            }
+        try {
+            Field superField = superInstance.getClass().getField(name);
+            return superField.get(superInstance);
+        } catch (Exception e) {
+            throw new LiveEditException("Could not access field", e);
         }
-        throw new ProxyMissingFieldException(clazz, name);
-    }
-
-    // Must be public; invoked cross-classloader from LiveEditSuspendLambda and
-    // LiveEditRestrictedSuspendLambda.
-    public Object invokeMethod(Object instance, String name, String desc, Object[] args) {
-        if (clazz.declaresMethod(name, desc)) {
-            return clazz.invokeDeclaredMethod(name, desc, instance, args);
-        }
-        Method superMethod = clazz.getSuperMethod(name, desc);
-        if (superMethod != null) {
-            try {
-                return superMethod.invoke(superInstance, args);
-            } catch (Exception e) {
-                throw new LiveEditException("Could not invoke method '" + name + desc + "'", e);
-            }
-        }
-        throw new ProxyMissingMethodException(clazz, name, desc);
-    }
-
-    boolean isInstanceOf(Type type) {
-        return clazz.isInstanceOf(type);
     }
 
     /**
-     * This proxy method is invoked whenever a function literal instance that has "leaked" outside
-     * of the context of the interpreter is invoked. It allows methods that have not been
-     * instrumented to correctly call the proxy class as if it existed in the VM.
+     * This method links generated proxy interfaces to the backing bytecode in LiveEdit.
+     *
+     * <p>It is called to determine if a given method has an implementation defined in the class
+     * bytes in Live Edit, or if the execution should fall back to the superclass implementation.
+     *
+     * <p>This method is only called by a proxy if this handler is bound to a Live Edit generated
+     * proxy interface (see Proxies.java)
+     */
+    public boolean implementsMethod(String name, String desc) {
+        return currentBytecode().getMethod(name, desc) != null;
+    }
+
+    /**
+     * This method links generated proxy interfaces to the class bytecode in LiveEdit.
+     *
+     * <p>It is called to execute the bytecode for the given method when implementsMethod() returns
+     * true for a given method name and descriptor.
+     *
+     * <p>This method is only called by a proxy if this handler is bound to a Live Edit generated
+     * proxy interface (see Proxies.java)
+     */
+    public Object invokeMethod(Object instance, String name, String desc, Object[] args) {
+        Interpretable bytecode = currentBytecode();
+        MethodBodyEvaluator evaluator = new MethodBodyEvaluator(context, bytecode, name, desc);
+        return evaluator.eval(instance, bytecode.getInternalName(), args);
+    }
+
+    boolean isInstanceOf(Type type) {
+        if (type == null) {
+            return false;
+        }
+        return type.equals(this.type) || supertypes.contains(type);
+    }
+
+    /**
+     * This method links VM proxies (those generated by {@link java.lang.reflect.Proxy}) to the
+     * class bytecode in LiveEdit.
+     *
+     * <p>This method is only called by the proxy if this handler is bound to a VM generated proxy.
      */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -132,11 +174,33 @@ public final class ProxyClassHandler implements InvocationHandler {
 
         if (method.getDeclaringClass() == SourceLocationAware.class
                 && method.getName().equals("getSourceLocationInfo")) {
-            return getSourceLineLocation();
+            return getSourceLocationInfo();
         }
 
-        // It's safe to pass the proxy object here, since it's serving as a 'this' pointer, not
-        // having the specified method reflectively invoked on it.
-        return invokeMethod(proxy, method.getName(), Type.getMethodDescriptor(method), args);
+        if (method.getDeclaringClass() == ProxyClass.class) {
+            return this;
+        }
+
+        String name = method.getName();
+        String desc = Type.getMethodDescriptor(method);
+        if (implementsMethod(name, desc)) {
+            // It's safe to pass the proxy object here, since it's serving as a 'this' pointer, not
+            // having the specified method reflectively invoked on it.
+            return invokeMethod(proxy, name, desc, args);
+        }
+
+        // Try to invoke the method on the super instance
+        try {
+            return method.invoke(superInstance, args);
+        } catch (Exception e) {
+            throw new LiveEditException("Could not access method", e);
+        }
+    }
+
+    // Placeholder until we implement bytecode versioning; first step in decoupling proxy handlers
+    // (implicitly versioned & instanced) from LiveEditClass (not versioned; stores all bytecode and
+    // implicitly represents the latest version)
+    private Interpretable currentBytecode() {
+        return context.getClass(type.getInternalName()).getBytecode();
     }
 }

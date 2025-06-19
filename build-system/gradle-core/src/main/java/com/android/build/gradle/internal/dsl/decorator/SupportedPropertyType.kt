@@ -40,7 +40,7 @@ sealed class SupportedPropertyType {
         object NullableInt : Var(Type.getType(java.lang.Integer::class.java))
         object File : Var(Type.getType(java.io.File::class.java))
 
-        class Enum(enumType: Class<*>): Var(Type.getType(enumType))
+        class Custom(customType: Class<*>): Var(Type.getType(customType))
     }
 
     sealed class Collection(

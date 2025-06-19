@@ -16,29 +16,26 @@
 
 package com.android.builder.files;
 
-import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.android.ide.common.resources.FileStatus;
 import com.android.tools.build.apkzlib.zip.ZFile;
 import com.android.utils.FileUtils;
-import com.google.common.base.Functions;
+
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.io.Closer;
 import com.google.common.truth.Truth;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Tests for {@link IncrementalRelativeFileSets}.
@@ -100,7 +97,8 @@ public class IncrementalRelativeFileSetsTest {
             closer.close();
         }
 
-        ImmutableMap<RelativeFile, FileStatus> set = IncrementalRelativeFileSets.fromZip(zipFile);
+        ImmutableMap<RelativeFile, FileStatus> set =
+                IncrementalRelativeFileSets.fromZipSnapshot(zipFile, FileStatus.NEW);
 
         assertEquals(0, set.size());
     }
@@ -127,7 +125,8 @@ public class IncrementalRelativeFileSetsTest {
             closer.close();
         }
 
-        ImmutableMap<RelativeFile, FileStatus> set = IncrementalRelativeFileSets.fromZip(zipFile);
+        ImmutableMap<RelativeFile, FileStatus> set =
+                IncrementalRelativeFileSets.fromZipSnapshot(zipFile, FileStatus.NEW);
 
         assertEquals(3, set.size());
         assertTrue(set.containsKey(expectedB));
@@ -164,7 +163,7 @@ public class IncrementalRelativeFileSetsTest {
     @Test
     public void makingFromCacheNewZip() throws Exception {
         File cacheDir = temporaryFolder.newFolder();
-        KeyedFileCache cache = new KeyedFileCache(cacheDir, KeyedFileCache::fileNameKey);
+        ZipSnapshotRepository cache = new ZipSnapshotRepository(cacheDir);
 
         File foo = new File(temporaryFolder.getRoot(), "foo");
         try (ZFile zffooz = ZFile.openReadWrite(foo)) {
@@ -173,8 +172,7 @@ public class IncrementalRelativeFileSetsTest {
         }
 
         Set<Runnable> updates = new HashSet<>();
-        Map<RelativeFile, FileStatus> m =
-                IncrementalRelativeFileSets.fromZip(new ZipCentralDirectory(foo), cache, updates);
+        Map<RelativeFile, FileStatus> m = IncrementalRelativeFileSets.fromZip(foo, cache, updates);
         assertEquals(2, m.size());
 
         RelativeFile f0z = new RelativeFile(foo, "f0z");
@@ -186,14 +184,14 @@ public class IncrementalRelativeFileSetsTest {
         assertEquals(m.get(f1z), FileStatus.NEW);
 
         updates.forEach(Runnable::run);
-        m = IncrementalRelativeFileSets.fromZip(new ZipCentralDirectory(foo), cache, updates);
+        m = IncrementalRelativeFileSets.fromZip(foo, cache, updates);
         assertEquals(0, m.size());
     }
 
     @Test
     public void makingFromCacheDeletedZip() throws Exception {
         File cacheDir = temporaryFolder.newFolder();
-        KeyedFileCache cache = new KeyedFileCache(cacheDir, KeyedFileCache::fileNameKey);
+        ZipSnapshotRepository cache = new ZipSnapshotRepository(cacheDir);
 
         File foo = new File(temporaryFolder.getRoot(), "foo");
         try (ZFile zffooz = ZFile.openReadWrite(foo)) {
@@ -201,12 +199,11 @@ public class IncrementalRelativeFileSetsTest {
             zffooz.add("f1z", new ByteArrayInputStream(new byte[0]));
         }
 
-        cache.add(foo);
+        cache.takeSnapshotOfZip(foo);
         FileUtils.delete(foo);
 
         Set<Runnable> updates = new HashSet<>();
-        Map<RelativeFile, FileStatus> m =
-                IncrementalRelativeFileSets.fromZip(new ZipCentralDirectory(foo), cache, updates);
+        Map<RelativeFile, FileStatus> m = IncrementalRelativeFileSets.fromZip(foo, cache, updates);
         assertEquals(2, m.size());
 
         RelativeFile f0z = new RelativeFile(foo, "f0z");
@@ -218,14 +215,14 @@ public class IncrementalRelativeFileSetsTest {
         assertEquals(m.get(f1z), FileStatus.REMOVED);
 
         updates.forEach(Runnable::run);
-        m = IncrementalRelativeFileSets.fromZip(new ZipCentralDirectory(foo), cache, updates);
+        m = IncrementalRelativeFileSets.fromZip(foo, cache, updates);
         assertEquals(0, m.size());
     }
 
     @Test
     public void makingFromCacheUpdatedZip() throws Exception {
         File cacheDir = temporaryFolder.newFolder();
-        KeyedFileCache cache = new KeyedFileCache(cacheDir, KeyedFileCache::fileNameKey);
+        ZipSnapshotRepository cache = new ZipSnapshotRepository(cacheDir);
 
         File foo = new File(temporaryFolder.getRoot(), "foo");
         try (ZFile zffooz = ZFile.openReadWrite(foo)) {
@@ -233,15 +230,14 @@ public class IncrementalRelativeFileSetsTest {
             zffooz.add("f0z/a", new ByteArrayInputStream(new byte[0]));
             zffooz.add("f1z", new ByteArrayInputStream(new byte[0]));
         }
-        cache.add(new ZipCentralDirectory(foo));
+        cache.takeSnapshotOfZip(foo);
 
         try (ZFile zffooz = ZFile.openReadWrite(foo)) {
             zffooz.add("f0z/a", new ByteArrayInputStream(new byte[] {1, 2, 3}));
         }
 
         Set<Runnable> updates = new HashSet<>();
-        Map<RelativeFile, FileStatus> m =
-                IncrementalRelativeFileSets.fromZip(new ZipCentralDirectory(foo), cache, updates);
+        Map<RelativeFile, FileStatus> m = IncrementalRelativeFileSets.fromZip(foo, cache, updates);
         Truth.assertThat(m).hasSize(1);
 
         RelativeFile f0z = new RelativeFile(foo, "f0z/a");
@@ -249,7 +245,7 @@ public class IncrementalRelativeFileSetsTest {
         assertEquals(m.get(f0z), FileStatus.CHANGED);
 
         updates.forEach(Runnable::run);
-        m = IncrementalRelativeFileSets.fromZip(new ZipCentralDirectory(foo), cache, updates);
+        m = IncrementalRelativeFileSets.fromZip(foo, cache, updates);
         Truth.assertThat(m).hasSize(0);
     }
 

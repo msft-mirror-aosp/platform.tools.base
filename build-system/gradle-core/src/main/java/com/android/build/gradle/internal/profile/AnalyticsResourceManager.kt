@@ -31,7 +31,6 @@ import com.android.builder.profile.ThreadRecorder
 import com.android.tools.analytics.Anonymizer
 import com.android.tools.analytics.CommonMetricsData
 import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType
-import com.google.common.annotations.VisibleForTesting
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.GradleBuildMemorySample
 import com.google.wireless.android.sdk.stats.GradleBuildProfile
@@ -50,9 +49,7 @@ import com.google.wireless.android.sdk.stats.GradleTaskExecution.TaskState.UP_TO
 import com.google.wireless.android.sdk.stats.GradleTransformExecution
 import org.gradle.api.Project
 import org.gradle.api.execution.TaskExecutionGraph
-import org.gradle.api.invocation.Gradle
 import org.gradle.api.provider.Provider
-import org.gradle.api.provider.SetProperty
 import org.gradle.tooling.events.FinishEvent
 import org.gradle.tooling.events.task.TaskFailureResult
 import org.gradle.tooling.events.task.TaskFinishEvent
@@ -81,13 +78,12 @@ class AnalyticsResourceManager constructor(
     private var profileDir: File?,
     private val taskMetadata: ConcurrentHashMap<String, TaskMetadata>,
     private var rootProjectPath: String?,
-    private var applicationIds: SetProperty<String>?,
+    private var applicationIds: MutableSet<String>,
     private val nameAnonymizer: NameAnonymizer = NameAnonymizer(),
 ) {
     var initialMemorySample = createMemorySample()
     val configurationSpans = ConcurrentLinkedQueue<GradleBuildProfileSpan>()
 
-    @VisibleForTesting
     val executionSpans = ConcurrentLinkedQueue<GradleBuildProfileSpan>()
 
     private var lastRecordId: AtomicLong? = null
@@ -293,7 +289,7 @@ class AnalyticsResourceManager constructor(
         params.profileDir.set(profileDir)
         params.taskMetadata.set(taskMetadata)
         params.rootProjectPath.set(rootProjectPath)
-        params.applicationId.set(applicationIds)
+        params.applicationId.addAll(applicationIds)
     }
 
     fun recordGlobalProperties(
@@ -344,7 +340,7 @@ class AnalyticsResourceManager constructor(
     }
 
     fun recordApplicationId(applicationId: Provider<String>) {
-        applicationIds?.add(applicationId)
+        applicationIds.add(applicationId.get())
     }
 
     private fun getProjectId(projectPath: String) : Long {
@@ -445,9 +441,9 @@ class AnalyticsResourceManager constructor(
 
         val anonymizedProjectId = Anonymizer.anonymize(rootProjectPath) ?: "*ANONYMIZATION_ERROR*"
 
-        applicationIds?.let {
-            profileBuilder.addAllRawProjectId(it.get().sorted())
-        }
+        profileBuilder.addAllRawProjectId(
+            applicationIds.sorted()
+        )
         profileBuilder.projectId = anonymizedProjectId
 
         return profileBuilder.build()

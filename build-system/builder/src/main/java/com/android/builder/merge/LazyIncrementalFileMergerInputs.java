@@ -17,19 +17,17 @@
 package com.android.builder.merge;
 
 import com.android.annotations.NonNull;
-import com.android.builder.files.IncrementalRelativeFileSets;
-import com.android.builder.files.KeyedFileCache;
 import com.android.builder.files.RelativeFile;
 import com.android.builder.files.RelativeFiles;
-import com.android.builder.files.ZipCentralDirectory;
 import com.android.ide.common.resources.FileStatus;
 import com.android.tools.build.apkzlib.utils.CachedSupplier;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -87,7 +85,7 @@ public final class LazyIncrementalFileMergerInputs {
             Set<RelativeFile> files;
             if (b.isFile()) {
                 try {
-                    files = RelativeFiles.fromZip(new ZipCentralDirectory(b));
+                    files = RelativeFiles.fromZip(b);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }

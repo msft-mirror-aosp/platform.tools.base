@@ -15,10 +15,15 @@
  */
 package com.android.tools.deploy.liveedit
 
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.RestrictsSuspension
 
 suspend fun doSomethingUsefulOne(): Int {
     delay(200L) // pretend we are doing something useful here
@@ -35,6 +40,17 @@ fun simple(): Sequence<Int> = sequence {
         yield(i)
     }
 }
+
+fun suspends(block: suspend () -> Int) = block
+
+fun returnSuspendLambda() = suspends({ 100 })
+
+@RestrictsSuspension
+class Restricts {
+    fun restrict(block: suspend Restricts.() -> Int) = block
+}
+
+fun returnRestrictedSuspendLambda() = Restricts().restrict({ 100 })
 
 fun testRestrictedSuspend() : Int {
     var result = 0
@@ -72,6 +88,16 @@ fun testLaunchJoin() = runBlocking<Int> {
     value
 }
 
+fun testProperThreading() = runBlocking {
+    val threads = Array(3) { "" }
+    threads[0] = Thread.currentThread().name
+    withContext(Dispatchers.IO) {
+        threads[1] = Thread.currentThread().name
+    }
+    threads[2] = Thread.currentThread().name
+    threads
+}
+
 fun referenceThis(): Int {
   return 100
 }
@@ -81,9 +107,17 @@ fun testFunctionReference(): Int {
   return ref.invoke()
 }
 
+fun returnFunctionReference(): () -> Int {
+    return ::referenceThis
+}
+
 fun adaptThis(x: Int = 100): Int = x
 
 fun testAdaptedReference(): Int {
     fun inner(f: () -> Int) = f()
     return inner(::adaptThis)
+}
+
+fun returnAdaptedReference(): () -> Int {
+    return ::adaptThis
 }

@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.runBlocking
 import org.w3c.dom.ls.LSResourceResolver
+import kotlin.time.Duration
 
 /**
  * Primary interface for interacting with repository packages.
@@ -195,6 +196,18 @@ abstract class RepoManager {
     )
     return result.get()
   }
+
+  abstract suspend fun loadLocalPackages(
+    indicator: ProgressIndicator,
+    cacheExpiration: Duration,
+  ): List<LocalPackage>
+
+  abstract suspend fun loadRemotePackages(
+    indicator: ProgressIndicator,
+    cacheExpiration: Duration,
+    downloader: Downloader,
+    settings: SettingsController?,
+  ): List<RemotePackage>
 
   /**
    * Causes cached results to be considered expired. The next time [load] is called, a complete load

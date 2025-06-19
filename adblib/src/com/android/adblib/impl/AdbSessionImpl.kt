@@ -46,7 +46,7 @@ internal class AdbSessionImpl(
     private var closed = false
 
     private val description = when (parentSession) {
-        null -> "${AdbSession::class.simpleName}('ROOT')"
+        null -> "${AdbSession::class.simpleName}(id=$id, 'ROOT')"
         else -> "${AdbSession::class.simpleName}(id=$id, parent=$parentSession)"
     }
 

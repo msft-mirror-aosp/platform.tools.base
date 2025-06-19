@@ -206,6 +206,13 @@ fun <T: Any> AdbSession.property(property: AdbSessionHost.Property<T>): T {
 }
 
 /**
+ * See [AdbSessionHost.generateUniqueUUID]
+ */
+fun AdbSession.generateUniqueUUID(): String {
+    return host.generateUniqueUUID()
+}
+
+/**
  * Exception thrown when accessing services of an [AdbSession] that has been closed.
  */
 class ClosedSessionException(message: String) : CancellationException(message)

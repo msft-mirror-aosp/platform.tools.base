@@ -18,6 +18,8 @@ package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationProductFlavor
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.TargetSdkSpec
 
 /**
  * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
@@ -53,6 +55,10 @@ class UnusableApplicationProductFlavorProxy(
             throwUnusableError("ApplicationProductFlavor.targetSdk")
         }
 
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        throwUnusableError("ApplicationProductFlavor.targetSdk")
+    }
+
     override fun targetSdkVersion(targetSdkVersion: Int) {
         throwUnusableError("ApplicationProductFlavor.targetSdkVersion")
     }
@@ -76,6 +82,10 @@ class UnusableApplicationProductFlavorProxy(
         set(value) {
             throwUnusableError("ApplicationProductFlavor.maxSdk")
         }
+
+    override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
+        throwUnusableError("ApplicationProductFlavor.maxSdk")
+    }
 
     override fun maxSdkVersion(maxSdkVersion: Int) {
         throwUnusableError("ApplicationProductFlavor.maxSdkVersion")

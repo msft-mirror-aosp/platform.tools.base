@@ -37,10 +37,12 @@ import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestFixtures
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.ManifestFilesImpl
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.VariantDimensionData
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
+import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.attributes.VariantAttr
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
@@ -116,6 +118,9 @@ import com.android.builder.model.v2.models.BasicAndroidProject
 import com.android.builder.model.v2.models.ModelBuilderParameter
 import com.android.builder.model.v2.models.ProjectGraph
 import com.android.builder.model.v2.models.ProjectSyncIssues
+import com.android.builder.model.v2.models.TestSuiteDependencies
+import com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList
+import com.android.builder.model.v2.models.TestSuiteSource
 import com.android.builder.model.v2.models.VariantDependencies
 import com.android.builder.model.v2.models.VariantDependenciesAdjacencyList
 import com.android.builder.model.v2.models.VariantDependenciesFlatList
@@ -370,11 +375,38 @@ class ModelBuilder<
 
         // gather product flavors
         val productFlavors = mutableListOf<SourceSetContainer>()
-        for (flavor in variantInputs.productFlavors.values) {
+        for (flavor: ProductFlavorData<InternalFlavor> in variantInputs.productFlavors.values) {
             val flavorDimensionName = flavor.productFlavor.dimension to flavor.productFlavor.name
             if (variantDimensionInfo.flavors.contains(flavorDimensionName)) {
                 productFlavors.add(FlavorSourceSetContainerBuilder(flavor).build())
             }
+        }
+
+        // gather test suites
+        val testSuites = variantModel.testSuites
+            .distinctBy { it.name }
+            .map { testSuiteCreationConfig ->
+            BasicTestSuiteImpl(
+                name = testSuiteCreationConfig.name,
+                sources = testSuiteCreationConfig.sources.map { sourceContainer: TestSuiteSourceContainer ->
+                    when (val sourceSet = sourceContainer.source) {
+                        is TestSuiteSourceSet.Assets ->
+                            TestSuiteSourceImpl.assets(
+                                sourceContainer.name,
+                                sourceSet.get().all.get().map { it.asFile }
+                            )
+
+                        is TestSuiteSourceSet.HostJar ->
+                            TestSuiteSourceImpl.hostJar(
+                                sourceContainer.name,
+                                sourceSet.get().all.get().map { it.asFile }
+                            )
+
+                        is TestSuiteSourceSet.TestApk ->
+                            throw RuntimeException("Not Implemented")
+                    }
+                }
+            )
         }
 
         // gather variants
@@ -389,9 +421,8 @@ class ModelBuilder<
             mainSourceSet = defaultConfig,
             buildTypeSourceSets = buildTypes,
             productFlavorSourceSets = productFlavors,
-
+            testSuites = testSuites,
             variants = variantList,
-
             bootClasspath = bootClasspath,
         )
     }
@@ -588,11 +619,21 @@ class ModelBuilder<
         else
             listOf()
 
+        val suites = variantModel.testSuites.map {
+            TestSuiteImpl(
+                it.name,
+                junitEngineInfo = JUnitEngineInfoImpl(
+                    it.junitEngineSpec.includeEngines
+                )
+            )
+        }
+
         return AndroidProjectImpl(
             namespace = namespace ?: "",
             androidTestNamespace = androidTestNamespace,
             testFixturesNamespace = testFixturesNamespace,
             variants = variantList,
+            testSuites = suites,
             javaCompileOptions = extension.compileOptions.convert(),
             resourcePrefix = extension.resourcePrefix,
             dynamicFeatures = (extension as? ApplicationExtension)?.dynamicFeatures?.toImmutableSet(),
@@ -822,7 +863,7 @@ class ModelBuilder<
                     )
             }
 
-            val testSuiteArtifacts = mutableMapOf<String, ArtifactDependenciesAdjacencyList>()
+            val testSuiteArtifacts = mutableMapOf<String, TestSuiteDependenciesAdjacencyList>()
             (variant as? HasTestSuitesCreationConfig)?.suites?.values?.forEach { testSuite ->
                 testSuiteArtifacts[testSuite.name] =
                     createDependenciesWithAdjacencyList(
@@ -844,6 +885,7 @@ class ModelBuilder<
                     ),
                     deviceTestArtifacts = deviceTestArtifacts,
                     hostTestArtifacts = hostTestArtifacts,
+                    testSuiteArtifacts = testSuiteArtifacts,
                     testFixturesArtifact = (variant as? HasTestFixtures)?.testFixtures?.let {
                         createDependenciesWithAdjacencyList(
                             it,
@@ -876,7 +918,7 @@ class ModelBuilder<
                 )
             }
 
-            val testSuiteArtifacts = mutableMapOf<String, ArtifactDependencies>()
+            val testSuiteArtifacts = mutableMapOf<String, TestSuiteDependencies>()
             (variant as? HasTestSuitesCreationConfig)?.suites?.values?.forEach { testSuite ->
                 testSuiteArtifacts[testSuite.name] =
                     createDependencies(
@@ -926,8 +968,9 @@ class ModelBuilder<
         val testSuiteArtifacts = mutableMapOf<String, BasicTestSuiteArtifact>()
         (variant as? HasTestSuitesCreationConfig)?.suites?.values?.forEach { testSuite ->
             testSuiteArtifacts[testSuite.name] =
+                // reconcile with reworked model.
                 BasicTestSuiteArtifactImpl(
-                    testSuite.sources.all().get().map { it.asFile }.toSet()
+                    testSuite.name,
                 )
         }
         return BasicVariantImpl(
@@ -1250,7 +1293,16 @@ class ModelBuilder<
     private fun createDependencies(
         testSuite: TestSuiteCreationConfig,
         libraryServices: LibraryService,
-    ) = getGraphBuilder(testSuite, libraryServices).build()
+    ) = TestSuiteDependenciesImpl(
+        testSuite.sources.map { testSuiteSourceContainer ->
+                    TestSuiteSourceDependenciesImpl(
+                        testSuiteSourceContainer.name,
+                        testSuiteSourceContainer.source.type,
+                        getGraphBuilder(testSuiteSourceContainer, libraryServices).build()
+                    )
+                }
+        )
+
 
     private fun createDependenciesWithAdjacencyList(
         component: ComponentCreationConfig,
@@ -1267,15 +1319,22 @@ class ModelBuilder<
     ).buildWithAdjacencyList()
 
     private fun createDependenciesWithAdjacencyList(
-        component: TestSuiteCreationConfig,
+        testSuite: TestSuiteCreationConfig,
         libraryService: LibraryService,
         graphEdgeCache: GraphEdgeCache,
         dontBuildRuntimeClasspath: Boolean
-    ): ArtifactDependenciesAdjacencyList = getGraphBuilder(
-        component,
-        libraryService,
-        graphEdgeCache
-    ).buildWithAdjacencyList()
+    ) = TestSuiteDependenciesAdjacencyListImpl(
+            testSuite.sources.map { testSuiteSourceContainer ->
+                TestSuiteSourceDependenciesAdjacencyListImpl(
+                    testSuiteSourceContainer.name,
+                    testSuiteSourceContainer.source.type,
+                    getGraphBuilder(
+                        testSuiteSourceContainer,
+                        libraryService,
+                        graphEdgeCache).buildWithAdjacencyList()
+                )
+            }
+        )
 
     private fun getGraphBuilder(
         dontBuildRuntimeClasspath: Boolean,
@@ -1294,13 +1353,14 @@ class ModelBuilder<
     )
 
     private fun getGraphBuilder(
-        testSuite: TestSuiteCreationConfig,
+        testSuiteSourceContainer: TestSuiteSourceContainer,
         libraryService: LibraryService,
         graphEdgeCache: GraphEdgeCache? = null,
     ) = FullDependencyGraphBuilder(
-        artifactsProvider = { configType, root -> getArtifactsForModelBuilder(testSuite, configType) },
+        artifactsProvider = { configType, root -> getArtifactsForModelBuilder(testSuiteSourceContainer, configType) },
         projectPath = project.path,
-        resolutionResultProvider = testSuite.testSuiteClasspath,
+
+        resolutionResultProvider = testSuiteSourceContainer.dependencies,
         libraryService = libraryService,
         graphEdgeCache = graphEdgeCache,
         addAdditionalArtifactsInModel = false,

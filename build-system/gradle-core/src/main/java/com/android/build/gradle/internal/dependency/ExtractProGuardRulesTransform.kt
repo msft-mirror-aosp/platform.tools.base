@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.internal.dependency
 
-import com.android.build.gradle.internal.r8.TargetedShrinkRules
-import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter
-import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter.createJarContents
+import com.android.build.gradle.internal.r8.TargetedR8Rules
+import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter
+import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter.createJarContents
 import com.android.utils.FileUtils
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
@@ -38,14 +38,14 @@ abstract class ExtractProGuardRulesTransform @Inject constructor() :
     abstract val inputArtifact: Provider<FileSystemLocation>
 
     override fun transform(transformOutputs: TransformOutputs) {
-        val targetedShrinkRules = TargetedShrinkRulesReadWriter.readFromJar(inputArtifact.get().asFile)
-        writeTargetedShrinkRules(targetedShrinkRules, transformOutputs)
+        val targetedR8Rules = TargetedR8RulesReadWriter.readFromJar(inputArtifact.get().asFile)
+        writeTargetedR8Rules(targetedR8Rules, transformOutputs)
     }
 
     companion object {
 
-        fun writeTargetedShrinkRules(
-            targetedShrinkRules: TargetedShrinkRules,
+        fun writeTargetedR8Rules(
+            targetedR8Rules: TargetedR8Rules,
             transformOutputs: TransformOutputs,
             isClassesJarInAar: Boolean = false
         ) {
@@ -53,7 +53,7 @@ abstract class ExtractProGuardRulesTransform @Inject constructor() :
             val outputDirectory = transformOutputs.dir("shrink-rules").resolve("lib")
             FileUtils.mkdirs(outputDirectory)
 
-            targetedShrinkRules.createJarContents(isClassesJarInAar = isClassesJarInAar).forEach { (relativePath, contents) ->
+            targetedR8Rules.createJarContents(isClassesJarInAar = isClassesJarInAar).forEach { (relativePath, contents) ->
                 outputDirectory.resolve(relativePath).run {
                     FileUtils.mkdirs(parentFile)
                     writeBytes(contents)

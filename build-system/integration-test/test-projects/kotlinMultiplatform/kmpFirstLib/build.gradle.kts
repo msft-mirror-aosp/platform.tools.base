@@ -8,9 +8,14 @@ plugins {
 kotlin {
   android {
     withJava()
-    withHostTestBuilder {}.configure { isIncludeAndroidResources = true }
+    withHostTestBuilder {}.configure {
+        isIncludeAndroidResources = true
+        targetSdk { version = release(libs.versions.latestCompileSdk.get().toInt()) }
+    }
 
-    withDeviceTest {}
+    withDeviceTestBuilder {}.configure {
+        targetSdk { version = release(libs.versions.latestCompileSdk.get().toInt()) }
+    }
 
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -81,7 +86,7 @@ androidComponents {
         extension.minSdk = 22
     }
     onVariants { variant ->
-        if (variant.name == null || variant.name.isEmpty()) {
+        if (variant.name.isEmpty()) {
             throw IllegalArgumentException("must have variant name")
         }
     }

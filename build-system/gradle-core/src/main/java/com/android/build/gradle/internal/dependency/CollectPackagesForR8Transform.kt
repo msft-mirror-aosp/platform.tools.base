@@ -24,7 +24,7 @@ import com.android.SdkConstants.FN_CLASSES_JAR
 import com.android.SdkConstants.FN_PACKAGE_LIST
 import com.android.SdkConstants.FN_PROGUARD_TXT
 import com.android.SdkConstants.LIBS_FOLDER
-import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter
+import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter
 import com.android.ide.common.xml.AndroidManifestParser
 import com.android.utils.PathUtils
 import org.gradle.api.artifacts.transform.InputArtifact
@@ -35,9 +35,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
-import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
-import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 /**
@@ -109,10 +107,8 @@ abstract class CollectPackagesForR8Transform : TransformAction<GenericTransformP
     }
 
     private fun containsConsumerProguardRules(jarFile: File, isClassesJarInAar: Boolean = false): Boolean {
-        val targetedShrinkRules = TargetedShrinkRulesReadWriter.readFromJar(jarFile, isClassesJarInAar)
-        return targetedShrinkRules.run {
-            r8Rules.isNotEmpty() || proguardRules.isNotEmpty() || legacyProguardRules.isNotEmpty()
-        }
+        val targetedR8Rules = TargetedR8RulesReadWriter.readFromJar(jarFile, isClassesJarInAar)
+        return targetedR8Rules.r8Rules.isNotEmpty() || targetedR8Rules.legacyProguardRules.isNotEmpty()
     }
 
     private fun getPackageNamesFromJar(jar: File): Collection<String> {

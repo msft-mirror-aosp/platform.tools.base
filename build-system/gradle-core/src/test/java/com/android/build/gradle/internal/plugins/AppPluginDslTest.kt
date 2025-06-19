@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.build.gradle.AppExtension
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.fixture.VariantChecker
@@ -23,6 +24,7 @@ import com.android.build.gradle.internal.fixture.VariantCheckers
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
 import com.android.build.gradle.tasks.MergeResources
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import groovy.util.Eval
 import org.gradle.api.Project
 import org.junit.Before
@@ -323,6 +325,107 @@ project.android {
         Truth.assertThat(android.defaultConfig.minSdkVersion?.apiString)
             .named("android.defaultConfig.minSdkVersion.apiLevel")
             .isEqualTo("P")
+    }
+
+    @Test
+    fun testGroovySupportForSdkVersions() {
+        // sanity check for groovy support
+        // todo: replace it with new test fixture once b/417470034 is done
+        Eval.me(
+            "project",
+            project,
+            """
+                project.android {
+                    compileSdk 33
+                    compileSdk { version = release(33) }
+                    compileSdk { version = release(33) {} }
+                    compileSdk { version = preview('S') }
+                }
+
+                project.android.defaultConfig {
+                    targetSdk 33
+                    targetSdk { version = release(33) }
+                    targetSdk { version = preview('S') }
+
+                    maxSdk 33
+                    maxSdk { version = release(33) }
+
+                    minSdk 33
+                    minSdk { version = release(33) }
+                }
+
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testLegacyTargetSdkVersion() {
+        val androidImpl = android as BaseAppModuleExtension
+
+        androidImpl.defaultConfig {
+            targetSdk = 33
+            targetSdk {
+                assertThat(version?.apiLevel).isEqualTo(33)
+            }
+
+            targetSdkVersion(20)
+            targetSdk {
+                assertThat(version?.apiLevel).isEqualTo(20)
+            }
+
+            targetSdkPreview = "S"
+            targetSdk {
+                assertThat(version?.apiLevel).isEqualTo(30)
+                assertThat(version?.codeName).isEqualTo("S")
+            }
+
+            targetSdkVersion("Tiramisu")
+            targetSdk {
+                assertThat(version?.apiLevel).isEqualTo(32)
+                assertThat(version?.codeName).isEqualTo("Tiramisu")
+            }
+        }
+    }
+
+    @Test
+    fun testTargetSdkVersion() {
+        android.defaultConfig.targetSdk {
+            version = release(34)
+        }
+        android.defaultConfig.targetSdk {
+            assertThat(version?.apiLevel).isEqualTo(34)
+        }
+
+        android.defaultConfig.targetSdk {
+            version = preview("S")
+            assertThat(version?.apiLevel).isEqualTo(30)
+            assertThat(version?.codeName).isEqualTo("S")
+        }
+    }
+
+    @Test
+    fun testLegacyMaxSdkVersion() {
+        val androidImpl = android as BaseAppModuleExtension
+
+        androidImpl.defaultConfig {
+            maxSdk = 34
+            maxSdk {
+                assertThat(version?.apiLevel).isEqualTo(34)
+            }
+
+            maxSdkVersion(33)
+            maxSdk {
+                assertThat(version?.apiLevel).isEqualTo(33)
+            }
+        }
+    }
+
+    @Test
+    fun testMaxSdkVersion() {
+        android.defaultConfig.maxSdk {
+            version = release(34)
+            assertThat(version?.apiLevel).isEqualTo(34)
+        }
     }
 
     @Test

@@ -96,8 +96,8 @@ sdk-impl-a/src/main/res/values/strings.xml:2: Warning: The resource R.string.str
         val baselineFile = sdkProject.resolve("lint-baseline.xml")
         assertThat(baselineFile).doesNotExist()
         executor().run(":privacy-sandbox-sdk:updateLintBaseline").apply {
-            assertTask(":android-lib:lintAnalyzeDebug").didWork()
-            assertTask(":sdk-impl-a:lintAnalyzeDebug").didWork()
+            assertTask(":android-lib:lintAnalyzeRelease").didWork()
+            assertTask(":sdk-impl-a:lintAnalyzeRelease").didWork()
             assertTask(":privacy-sandbox-sdk:updateLintBaseline").didWork()
         }
         assertThat(baselineFile).exists()
@@ -116,8 +116,8 @@ sdk-impl-a/src/main/res/values/strings.xml:2: Warning: The resource R.string.str
         val build = rule.build
 
         executor().run(":privacy-sandbox-sdk:assemble").apply {
-            assertTask(":android-lib:lintVitalAnalyzeDebug").didWork()
-            assertTask(":sdk-impl-a:lintVitalAnalyzeDebug").didWork()
+            assertTask(":android-lib:lintVitalAnalyzeRelease").didWork()
+            assertTask(":sdk-impl-a:lintVitalAnalyzeRelease").didWork()
             assertTask(":privacy-sandbox-sdk:lintVital").didWork()
         }
         val lintVitalReport = build

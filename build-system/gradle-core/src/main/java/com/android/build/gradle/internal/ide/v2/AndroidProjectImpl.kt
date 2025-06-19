@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags
 import com.android.builder.model.v2.ide.JavaCompileOptions
+import com.android.builder.model.v2.ide.TestSuite
 import com.android.builder.model.v2.ide.Variant
 import com.android.builder.model.v2.ide.ViewBindingOptions
 import com.android.builder.model.v2.models.AndroidProject
@@ -32,6 +33,7 @@ data class AndroidProjectImpl(
     override val androidTestNamespace: String?,
     override val testFixturesNamespace: String?,
     override val variants: Collection<Variant>,
+    override val testSuites: Collection<TestSuite>,
     override val javaCompileOptions: JavaCompileOptions?,
     override val resourcePrefix: String?,
     override val dynamicFeatures: Collection<String>?,

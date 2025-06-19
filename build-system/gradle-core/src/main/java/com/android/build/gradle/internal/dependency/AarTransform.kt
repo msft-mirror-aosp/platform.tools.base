@@ -40,7 +40,7 @@ import com.android.SdkConstants.FN_RESOURCE_STATIC_LIBRARY
 import com.android.SdkConstants.FN_RESOURCE_TEXT
 import com.android.SdkConstants.LIBS_FOLDER
 import com.android.build.gradle.internal.caching.DisabledCachingReason
-import com.android.build.gradle.internal.dependency.ExtractProGuardRulesTransform.Companion.writeTargetedShrinkRules
+import com.android.build.gradle.internal.dependency.ExtractProGuardRulesTransform.Companion.writeTargetedR8Rules
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.AAR_METADATA
@@ -72,7 +72,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.SHARED_JNI
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PATH_SHARED_LIBRARY_RESOURCES_APK
-import com.android.build.gradle.internal.r8.TargetedShrinkRulesReadWriter
+import com.android.build.gradle.internal.r8.TargetedR8RulesReadWriter
 import com.android.build.gradle.internal.tasks.AarMetadataTask
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -150,11 +150,11 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
             AIDL -> outputIfExists(FD_AIDL)
             RENDERSCRIPT -> outputIfExists(FD_RENDERSCRIPT)
             UNFILTERED_PROGUARD_RULES -> {
-                val targetedShrinkRules = TargetedShrinkRulesReadWriter.readFromJar(
+                val targetedR8Rules = TargetedR8RulesReadWriter.readFromJar(
                     extractedAarDir.resolve("$FD_JARS/$FN_CLASSES_JAR"), isClassesJarInAar = true
                 )
-                if (targetedShrinkRules.r8Rules.isNotEmpty() || targetedShrinkRules.proguardRules.isNotEmpty()) {
-                    writeTargetedShrinkRules(targetedShrinkRules, transformOutputs, isClassesJarInAar = true)
+                if (targetedR8Rules.r8Rules.isNotEmpty()) {
+                    writeTargetedR8Rules(targetedR8Rules, transformOutputs, isClassesJarInAar = true)
                 } else {
                     outputIfExists(FN_PROGUARD_TXT)
                 }

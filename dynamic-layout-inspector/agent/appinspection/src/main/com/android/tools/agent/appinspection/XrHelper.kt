@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package com.android.tools.agent.appinspection
 
-import android.util.Log
 import android.view.View
 import androidx.inspection.InspectorEnvironment
-import com.android.tools.agent.appinspection.xr.getXrViewsUsingReflection
+import com.android.tools.agent.appinspection.xr.getXrViews
 
 /**
  * Handle with care: this class is accessed through reflection by the compose inspector,
@@ -35,13 +34,6 @@ class XrHelper(private val environment: InspectorEnvironment) {
             return emptyList()
         }
 
-        val xrViews = runCatching { com.android.tools.agent.appinspection.xr.getXrViews(environment) }.getOrNull()
-        return if (xrViews.isNullOrEmpty()) {
-            Log.w(SPAM_LOG_TAG, "Getting XR views using reflection.")
-            runCatching { getXrViewsUsingReflection(environment) }.getOrNull() ?: emptyList()
-        }
-        else {
-            xrViews
-        }
+        return runCatching { getXrViews(environment) }.getOrNull() ?: emptyList()
     }
 }

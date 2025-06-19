@@ -6251,6 +6251,7 @@ val newAndroidOsBuildStub: TestFile =
       // HIDE-FROM-DOCUMENTATION
       package android.os;
 
+      @SuppressWarnings("InlinedApi")
       public class Build {
           public static class VERSION {
               public static int SDK_INT;

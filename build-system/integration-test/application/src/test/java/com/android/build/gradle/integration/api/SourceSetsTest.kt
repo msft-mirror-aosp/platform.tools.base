@@ -18,19 +18,27 @@ package com.android.build.gradle.integration.api
 
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.internal.utils.ApkSources
+import com.android.testutils.on
 import com.google.common.truth.Truth
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.TaskProvider
+import org.jetbrains.kotlin.gradle.utils.`is`
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
+import kotlin.io.path.exists
 import kotlin.io.path.readText
 
 class SourceSetsTest {
@@ -170,9 +178,60 @@ class SourceSetsTest {
 
         Truth.assertThat(content).contains("tmp_test")
     }
+
+    @Test
+    fun testSettingCustomOutputPath() {
+        val build = rule.build {
+            androidApplication {
+                // replace previous plugin
+                pluginCallbacks.clear()
+                pluginCallbacks.add(SettingOutputPathCallback::class.java)
+            }
+        }
+
+        val result = build.executor.run(":app:assembleDebug")
+        Truth.assertThat(result.failedTasks).isEmpty()
+
+        // check the custom dir was used.
+        Truth.assertThat(
+            build.androidApplication(":app")
+                .buildDir
+                .resolve("my/custom/path/some-res.bin")
+                .toFile()
+                .exists()
+        ).isTrue()
+        // check the file got packaged
+        result.assertTask(":app:debugReproTask").didWork()
+        build.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+            assets().resourceAsText("some-res.bin").isEqualTo("some res")
+        }
+    }
 }
 
-/** Task to  generate a placeholder JNI lib */
+class SettingOutputPathCallback: ApplicationComponentCallback {
+
+    override fun handleExtension(
+        project: Project,
+        androidComponents: ApplicationAndroidComponentsExtension
+    ) {
+        androidComponents.onVariants(
+            androidComponents.selector()
+                .withBuildType("debug")
+        ) { variant ->
+            val reproTask = project.tasks.register(
+                "${variant.name}ReproTask",
+                ReproducerTask::class.java
+            ) {
+                it.outputDirectory.set(
+                    project.layout.buildDirectory.dir("my/custom/path")
+                )
+            }
+            variant.sources.assets?.addGeneratedSourceDirectory(reproTask, ReproducerTask::outputDirectory)
+        }
+    }
+}
+
+/** Task to  generate a placeholder file*/
 abstract class ReproducerTask: DefaultTask() {
 
     @get:OutputDirectory
@@ -180,6 +239,7 @@ abstract class ReproducerTask: DefaultTask() {
 
     @TaskAction
     fun generate() {
-        System.out.println("ReproducerTask called !")
+        println("ReproducerTask called !")
+        outputDirectory.file("some-res.bin").get().asFile.writeText("some res")
     }
 }

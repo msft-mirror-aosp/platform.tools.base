@@ -20,16 +20,23 @@ import com.android.build.api.dsl.ApplicationBaseFlavor
 import com.android.build.api.dsl.BaseFlavor
 import com.android.build.api.dsl.DynamicFeatureBaseFlavor
 import com.android.build.api.dsl.LibraryBaseFlavor
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.MaxSdkVersion
+import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.dsl.Ndk
 import com.android.build.api.dsl.Shaders
+import com.android.build.api.dsl.TargetSdkSpec
+import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.api.dsl.TestBaseFlavor
 import com.android.build.api.variant.impl.ResValueKeyImpl
 import com.android.build.gradle.internal.services.DslServices
-import com.android.builder.core.apiVersionFromString
+import com.android.build.gradle.internal.utils.updateIfChanged
 import com.android.builder.core.AbstractProductFlavor
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.internal.ClassFieldImpl
+import com.android.builder.model.ApiVersion
 import com.android.builder.model.BaseConfig
 import com.android.builder.model.ProductFlavor
 import com.google.common.collect.Iterables
@@ -63,38 +70,132 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
             return this.externalNativeBuild
         }
     override var maxSdk: Int?
-        get() = maxSdkVersion
+        get() = _maxSdk?.apiLevel
         set(value) {
-            maxSdkVersion = value
+            maxSdk { version = value?.let { release(it) } }
+        }
+
+    override var maxSdkVersion: Int?
+        get() = _maxSdk?.apiLevel
+        set(value) {
+            maxSdk { version = value?.let { release(it) } }
         }
 
     @get:Restricted
     override var minSdk: Int?
-        get() = minSdkVersion?.apiLevel
+        get() = _minSdk?.apiLevel
         set(value) {
-            if (value == null) minSdkVersion = null
-            else setMinSdkVersion(value)
+            minSdk { version = value?.let { release(value)} }
         }
+
+    override var minSdkVersion: ApiVersion?
+        get() = _minSdk?.let { DefaultApiVersion(it.apiLevel, it.codeName) }
+        set(value) {
+            if (value == null) {
+                _minSdk = null
+            } else {
+                val codeName = value.getCodename()
+                if (codeName != null) {
+                    minSdk { version = preview(codeName) }
+                } else {
+                    minSdk { version = release(value.apiLevel) }
+                }
+            }
+        }
+
+    protected abstract var _minSdk: MinSdkVersion?
+
+    override fun minSdk(action: MinSdkSpec.() -> Unit) {
+        createMinSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(_minSdk, it.version) {
+                _minSdk = it
+            }
+        }
+    }
+
+    open fun minSdk(action: Action<MinSdkSpec>) {
+        createMinSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(_minSdk, it.version) {
+                _minSdk = it
+            }
+        }
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `minSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("minSdk {}")
+    )
+    open fun minSdk(version: Int) {
+        setMinSdkVersion(version)
+    }
+
     override var minSdkPreview: String?
-        get() = minSdkVersion?.codename
+        get() = _minSdk?.codeName
         set(value) {
             setMinSdkVersion(value)
         }
 
-    override var targetSdk:Int?
-        get() = targetSdkVersion?.apiLevel
-        set(value) {
-            if (value == null) targetSdkVersion = null
-            else setTargetSdkVersion(value)
+    protected abstract var _targetSdk: TargetSdkVersion?
+
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        createTargetSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(_targetSdk, it.version ) {
+                _targetSdk = it
+            }
         }
+    }
+
+    open fun targetSdk(action: Action<TargetSdkSpec>) {
+        createTargetSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(_targetSdk, it.version ) {
+                _targetSdk = it
+            }
+        }
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `targetSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("targetSdk {}")
+    )
+    open fun targetSdk(version: Int) {
+        setTargetSdkVersion(version)
+    }
+
+    override var targetSdkVersion: ApiVersion?
+        get() = _targetSdk?.let { DefaultApiVersion(it.apiLevel, it.codeName) }
+        set(value) {
+            if (value == null) {
+                _targetSdk = null
+            } else {
+                val codeName = value.getCodename()
+                if (codeName != null) {
+                    targetSdk { version = preview(codeName) }
+                } else {
+                    targetSdk { version = release(value.apiLevel)}
+                }
+            }
+        }
+
+    override var targetSdk: Int?
+        get() = _targetSdk?.apiLevel
+        set(value) {
+            targetSdk { version = value?.let { release(it) } }
+        }
+
     override var targetSdkPreview: String?
-        get() = targetSdkVersion?.codename
+        get() = _targetSdk?.codeName
         set(value) {
             setTargetSdkVersion(value)
         }
 
     override fun setMinSdkVersion(minSdkVersion: Int) {
-        setMinSdkVersion(DefaultApiVersion(minSdkVersion))
+        minSdk { version = release(minSdkVersion) }
     }
 
     /**
@@ -107,7 +208,16 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
     }
 
     override fun setMinSdkVersion(minSdkVersion: String?) {
-        setMinSdkVersion(apiVersionFromString(minSdkVersion))
+        minSdk {
+            version = minSdkVersion?.let { minSdkVersion ->
+                val apiLevel = minSdkVersion.apiVersionToInt()
+                if (apiLevel != null) {
+                    release(apiLevel)
+                } else {
+                    preview(minSdkVersion)
+                }
+            }
+        }
     }
 
     /**
@@ -120,7 +230,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
     }
 
     fun setTargetSdkVersion(targetSdkVersion: Int): ProductFlavor {
-        setTargetSdkVersion(DefaultApiVersion(targetSdkVersion))
+        targetSdk { version = release(targetSdkVersion) }
         return this
     }
 
@@ -135,7 +245,16 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
     }
 
     override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        setTargetSdkVersion(apiVersionFromString(targetSdkVersion))
+        targetSdk {
+            version = targetSdkVersion?.let { targetSdkVersion ->
+                val apiLevel = targetSdkVersion.apiVersionToInt()
+                if (apiLevel != null) {
+                    release(apiLevel)
+                } else {
+                    preview(targetSdkVersion)
+                }
+            }
+        }
     }
 
     /**
@@ -155,7 +274,36 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
  * uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
      */
     override fun maxSdkVersion(maxSdkVersion: Int) {
-        setMaxSdkVersion(maxSdkVersion)
+        maxSdk { version = release(maxSdkVersion) }
+    }
+
+    protected abstract var _maxSdk: MaxSdkVersion?
+
+    override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
+        createMaxSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(_maxSdk, it.version) {
+                _maxSdk = it
+            }
+        }
+    }
+
+    open fun maxSdk(action: Action<MaxSdkSpec>) {
+        createMaxSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(_maxSdk, it.version) {
+                _maxSdk = it
+            }
+        }
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `maxSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("maxSdk {}")
+    )
+    open fun maxSdk(version: Int) {
+        maxSdkVersion(version)
     }
 
     /**
@@ -526,6 +674,39 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
      */
     open fun wearAppUnbundled(wearAppUnbundled: Boolean?) {
         this.wearAppUnbundled = wearAppUnbundled
+    }
+
+    /**
+     * Try to convert apiVersion from String to Int if the String is probably consisted with digits
+     *
+     * Return exception when converting fails. Returns null when this apiVersion should be codeName.
+     */
+    fun String.apiVersionToInt(): Int? {
+        return if (this[0].isDigit()) {
+            try {
+                this.toInt()
+            } catch (e: NumberFormatException) {
+                throw RuntimeException("'$this' is not a valid API level. ", e)
+            }
+        } else null
+    }
+
+    private fun createTargetSdkSpec(): TargetSdkSpecImpl {
+        return dslServices.newDecoratedInstance(TargetSdkSpecImpl::class.java, dslServices).also {
+            it.version = _targetSdk
+        }
+    }
+
+    private fun createMaxSdkSpec(): MaxSdkSpecImpl {
+        return dslServices.newDecoratedInstance(MaxSdkSpecImpl::class.java, dslServices).also {
+            it.version = _maxSdk
+        }
+    }
+
+    private fun createMinSdkSpec(): MinSdkSpecImpl {
+        return dslServices.newDecoratedInstance(MinSdkSpecImpl::class.java, dslServices).also {
+            it.version = _minSdk
+        }
     }
 
     override fun initWith(that: BaseFlavor) {

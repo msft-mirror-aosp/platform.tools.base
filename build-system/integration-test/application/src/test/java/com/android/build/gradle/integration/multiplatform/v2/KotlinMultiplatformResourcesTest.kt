@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.output.JarSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -45,15 +46,6 @@ class KotlinMultiplatformResourcesTest {
                         enable = true
                     }
                 }
-            """.trimIndent()
-        )
-
-        FileUtils.writeToFile(
-            project.getSubproject("kmpFirstLib").file("src/androidMain/res/values/strings.xml"),
-            """
-                <resources>
-                    <string name="kmp_lib_string">lib string</string>
-                </resources>
             """.trimIndent()
         )
 
@@ -89,6 +81,9 @@ class KotlinMultiplatformResourcesTest {
         project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             textSymbolFile().contains("int string kmp_lib_string 0x0")
 
+            androidResources().containsExactly(
+                listOf("drawable-nodpi-v4/image.png", "values/values.xml")
+            )
             androidResources().resourceAsText("values/values.xml").isEqualTo(
                 """
                     <?xml version="1.0" encoding="utf-8"?>
@@ -134,7 +129,8 @@ class KotlinMultiplatformResourcesTest {
                 "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
                 "com/example/kmpfirstlib/KmpAndroidActivity",
                 "com/example/kmpfirstlib/R",
-                "com/example/kmpfirstlib/R\$string"
+                "com/example/kmpfirstlib/R\$string",
+                "com/example/kmpfirstlib/R\$drawable"
             )
         }
     }
@@ -155,6 +151,15 @@ class KotlinMultiplatformResourcesTest {
             """.trimIndent()
         )
 
-        project.executor().run(":app:assembleDebug")
+        val result = project.executor().run(":app:assembleDebug")
+        project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+            androidResources().containsExactly(
+                "drawable-nodpi-v4/image.png"
+            )
+        }
+
+        Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
+            listOf(":kmpFirstLib:compileAndroidMainLibraryResources")
+        )
     }
 }

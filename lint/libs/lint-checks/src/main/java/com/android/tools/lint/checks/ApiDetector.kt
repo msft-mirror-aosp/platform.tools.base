@@ -3170,10 +3170,8 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         }
 
         // Merge in knowledge about SDK_INT from surrounding if-SDK_INT checks.
-        val outer =
-          VersionChecks.Companion.getOuterVersionCheckConstraint(context, binary)?.findSdk(sdkId)
-
-        if (outer != null) {
+        val outer = VersionChecks.getOuterVersionCheckConstraint(context, binary)?.findSdk(sdkId)
+        if (outer != null && outer.isNotEmpty()) {
           environmentConstraint = environmentConstraint and outer
         }
 

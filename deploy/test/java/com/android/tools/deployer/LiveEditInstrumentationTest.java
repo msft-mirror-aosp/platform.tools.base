@@ -17,11 +17,13 @@ package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.idea.protobuf.ByteString;
-import java.util.Collection;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.util.Collection;
 
 @RunWith(Parameterized.class)
 public class LiveEditInstrumentationTest extends LiveEditTestBase {
@@ -36,7 +38,7 @@ public class LiveEditInstrumentationTest extends LiveEditTestBase {
 
     @Test
     public void testTransformSucceeds() throws Exception {
-        android.loadDex(DEX_LOCATION);
+        android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);
         android.launchActivity(ACTIVITY_CLASS);
 
         Deploy.LiveEditClass clazz =
@@ -60,7 +62,7 @@ public class LiveEditInstrumentationTest extends LiveEditTestBase {
 
     @Test
     public void testAbstractTransformSucceeds() throws Exception {
-        android.loadDex(DEX_LOCATION);
+        android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);
         android.launchActivity(ACTIVITY_CLASS);
 
         Deploy.LiveEditClass clazz =

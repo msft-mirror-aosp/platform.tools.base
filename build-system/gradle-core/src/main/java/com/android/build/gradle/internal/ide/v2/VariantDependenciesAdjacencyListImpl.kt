@@ -19,6 +19,8 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.v2.ide.ArtifactDependenciesAdjacencyList
 import com.android.builder.model.v2.ide.Library
+import com.android.builder.model.v2.models.TestSuiteDependencies
+import com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList
 import com.android.builder.model.v2.models.VariantDependenciesAdjacencyList
 import java.io.Serializable
 
@@ -27,6 +29,7 @@ data class VariantDependenciesAdjacencyListImpl(
     override val mainArtifact: ArtifactDependenciesAdjacencyList,
     override val deviceTestArtifacts: Map<String, ArtifactDependenciesAdjacencyList>,
     override val hostTestArtifacts: Map<String, ArtifactDependenciesAdjacencyList>,
+    override val testSuiteArtifacts: Map<String, TestSuiteDependenciesAdjacencyList>,
     override val testFixturesArtifact: ArtifactDependenciesAdjacencyList?,
     override val libraries: Map<String, Library>
 ) : VariantDependenciesAdjacencyList, Serializable {

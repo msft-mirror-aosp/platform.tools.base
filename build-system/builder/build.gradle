@@ -27,6 +27,7 @@ dependencies {
     implementation libs.bouncycastle_prov
     implementation libs.javax_inject
     implementation libs.asm_commons
+    implementation libs.gson
 
     testImplementation libs.kotlin_test
     testImplementation libs.junit

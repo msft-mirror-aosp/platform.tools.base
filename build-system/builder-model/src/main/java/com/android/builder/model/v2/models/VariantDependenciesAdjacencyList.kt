@@ -34,6 +34,7 @@ interface VariantDependenciesAdjacencyList: AndroidModel {
     @Deprecated("Contained in deviceTestArtifacts")
     val androidTestArtifact: ArtifactDependenciesAdjacencyList?
     val hostTestArtifacts: Map<String, ArtifactDependenciesAdjacencyList>
+    val testSuiteArtifacts: Map<String, TestSuiteDependenciesAdjacencyList>
     @Deprecated("Contained in hostTestArtifacts")
     val unitTestArtifact: ArtifactDependenciesAdjacencyList?
     val testFixturesArtifact: ArtifactDependenciesAdjacencyList?

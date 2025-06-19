@@ -53,6 +53,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.FEATURE_SET_
 import com.android.build.gradle.internal.scope.InternalArtifactType.FULL_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.GLOBAL_SYNTHETICS_MERGED
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_RES
+import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_AND_LOCAL_JARS_JNI
 import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_JNI
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINT_MODEL_METADATA
@@ -358,6 +359,8 @@ class PublishingSpecs {
                 runtime(JAVA_RES, ArtifactType.JAVA_RES)
                 runtime(AAR_METADATA, ArtifactType.AAR_METADATA)
                 runtime(CONSUMER_PROGUARD_DIR, ArtifactType.UNFILTERED_PROGUARD_RULES)
+                runtime(LIBRARY_AND_LOCAL_JARS_JNI, ArtifactType.JNI)
+                runtime(COMPILED_LOCAL_RESOURCES, ArtifactType.COMPILED_DEPENDENCIES_RESOURCES)
 
                 // Publish lint artifacts to API_AND_RUNTIME_ELEMENTS to support compileOnly module
                 // dependencies.

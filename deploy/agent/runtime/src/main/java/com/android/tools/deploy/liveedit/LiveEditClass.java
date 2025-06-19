@@ -18,85 +18,61 @@ package com.android.tools.deploy.liveedit;
 
 import com.android.deploy.asm.Type;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class LiveEditClass {
     // The context this class is defined in.
     private final LiveEditContext context;
+    private final Type type;
+
     private Interpretable bytecode;
 
-    // Proxy class that can be instantiated to represent an instance of the class defined by the
-    // bytecode.
-    private Class<?> proxyClass;
+    // Whether Live Edit should create proxy objects when creating new instances of this class.
+    private boolean isProxyClass;
 
-    // Whether or not <clinit> has been interpreted and run for this class. Only meaningful if
-    // proxyClass is non-null.
+    private Class<?> superclass;
+    private final HashSet<Class<?>> interfaces;
+    private final HashSet<Class<?>> supertypes;
+
+    // Whether the static initializer has been interpreted and run for this class. This will only
+    // occur for proxy classes.
     private boolean isInitialized;
-
-    // Static fields of this class. Only populated and used if proxyClass is non-null.
     private final HashMap<String, Object> staticFields;
 
-    // Memoized reflected data so we can avoid repeated iteration over class methods/fields. Only
-    // populated and used if proxyClass is non-null.
-    private final HashSet<Type> castableTypes;
-    private final HashMap<String, Field> superReflectedFields;
-    private final HashMap<String, Method> superReflectedMethods;
-
-    public LiveEditClass(LiveEditContext context, Interpretable bytecode, boolean isProxyClass) {
+    public LiveEditClass(
+            LiveEditContext context, Type type, Interpretable bytecode, boolean isProxyClass) {
         this.context = context;
+        this.type = type;
+
+        this.interfaces = new HashSet<>();
         this.staticFields = new HashMap<>();
-        this.castableTypes = new HashSet<>();
-        this.superReflectedFields = new HashMap<>();
-        this.superReflectedMethods = new HashMap<>();
+        this.supertypes = new HashSet<>();
         updateBytecode(bytecode, isProxyClass);
     }
 
     public void updateBytecode(Interpretable bytecode, boolean isProxyClass) {
         if (isProxyClass) {
             try {
-                // Initializes proxyClass, castableTypes, superReflectedFields, and
-                // superReflectedMethods.
-                setUpProxyClass(bytecode);
+                computeProxyTypeInformation(bytecode);
             } catch (Exception e) {
-                throw new LiveEditException("Could not set up proxy class", e);
+                throw new LiveEditException("Error computing type information for proxy class", e);
             }
 
             isInitialized = false;
             staticFields.clear();
         }
+        this.isProxyClass = isProxyClass;
         this.bytecode = bytecode;
     }
 
     public boolean isProxyClass() {
-        return proxyClass != null;
-    }
-
-    public boolean declaresMethod(String methodName, String methodDesc) {
-        return bytecode.getMethod(methodName, methodDesc) != null;
-    }
-
-    public Method getSuperMethod(String methodName, String methodDesc) {
-        return superReflectedMethods.get(methodName + methodDesc);
-    }
-
-    public Field getSuperField(String fieldName) {
-        return superReflectedFields.get(fieldName);
-    }
-
-    public boolean isInstanceOf(Type type) {
-        return castableTypes.contains(type);
-    }
-
-    public ClassLoader getClassLoader() {
-        return context.getClassLoader();
+        return isProxyClass;
     }
 
     // Invoke the specified method with the specified receiver and arguments. The method must be
@@ -108,23 +84,39 @@ class LiveEditClass {
         return evaluator.eval(thisObject, bytecode.getInternalName(), arguments);
     }
 
-    // Returns a new proxy instance that implements all the proxied class' interfaces. Can only be
-    // called if the LiveEditClass represents a proxiable class.
-    public Object getProxy() {
-        InterpreterLogger.v("New proxy: " + getClassInternalName());
-        if (proxyClass == null) {
+    /**
+     * Creates an instance of a {@link Proxy} that implements the transitive closure of all
+     * interfaces in the inheritance hierarchy of this class. VM-generated proxies cannot extend
+     * superclasses, only implement interfaces, so the returned proxy will *not* have the exact same
+     * public interface as the original class.
+     *
+     * <p>For example, if class A extends class B, class A implements interface C, and class B
+     * implements interface D, the proxy for class A will implement interfaces C and D
+     *
+     * <p>For cases where the proxy *needs* to extend the superclass for correct functionality, such
+     * as with kotlin lambdas, the proxy interface returned by this method must be replaced with a
+     * pre-generated proxy class with the appropriate public interface/typing. This occurs during
+     * super-constructor invocation in {@link ProxyClassEval#invokeSpecial}.
+     */
+    public ProxyClass createProxyInstance() {
+        InterpreterLogger.v("New VM proxy interface created for: " + type);
+        if (!isProxyClass) {
             throw new LiveEditException(
-                    "Cannot create a proxy object for a non-proxy LiveEdit class");
+                    "Cannot create a proxy handler for a non-proxy LiveEdit class");
         }
-
-        ProxyClassHandler handler = new ProxyClassHandler(this, bytecode.getDefaultFieldValues());
-        try {
-            return proxyClass
-                    .getConstructor(new Class<?>[] {InvocationHandler.class})
-                    .newInstance(new Object[] {handler});
-        } catch (Exception e) {
-            throw new LiveEditException("Could not create proxy object", e);
-        }
+        ProxyClassHandler handler =
+                new ProxyClassHandler(
+                        context,
+                        type,
+                        superclass,
+                        interfaces,
+                        supertypes,
+                        bytecode.getDefaultFieldValues());
+        Class<?>[] interfaces =
+                Stream.concat(Stream.of(ProxyClass.class), supertypes.stream())
+                        .filter(Class::isInterface)
+                        .toArray(Class[]::new);
+        return (ProxyClass) Proxy.newProxyInstance(context.getClassLoader(), interfaces, handler);
     }
 
     public synchronized Object getStaticField(String fieldName) {
@@ -138,7 +130,7 @@ class LiveEditClass {
     }
 
     private synchronized void ensureClinit() {
-        if (proxyClass == null) {
+        if (!isProxyClass) {
             throw new LiveEditException("Cannot invoke <clinit> for non-proxy LiveEdit class");
         }
         if (!isInitialized) {
@@ -202,46 +194,24 @@ class LiveEditClass {
         return RiskyChange.NONE;
     }
 
-    private void setUpProxyClass(Interpretable bytecode)
+    private void computeProxyTypeInformation(Interpretable bytecode)
             throws ClassNotFoundException, SecurityException {
-        castableTypes.clear();
-        superReflectedFields.clear();
-        superReflectedMethods.clear();
+        interfaces.clear();
+        supertypes.clear();
 
-        HashSet<Class<?>> interfaceClasses = new HashSet<>();
-        interfaceClasses.add(ProxyClass.class);
-        interfaceClasses.add(SourceLocationAware.class);
-
-        LinkedList<Class<?>> queue = new LinkedList<>();
-        queue.add(classForName(bytecode.getSuperName()));
-        for (String proxyInterface : bytecode.getInterfaces()) {
-            queue.add(classForName(proxyInterface));
+        superclass = classForName(bytecode.getSuperName());
+        for (String inter : bytecode.getInterfaces()) {
+            interfaces.add(classForName(inter));
         }
 
-        // Make sure to add the proxied class itself as a castable type.
-        castableTypes.add(Type.getObjectType(bytecode.getInternalName()));
+        LinkedList<Class<?>> queue = new LinkedList<>();
+        queue.add(superclass);
+        queue.addAll(interfaces);
 
-        // Traverse the inheritance hierarchy of the class, keeping track of interfaces, methods,
-        // and fields.
-        while (queue.size() > 0) {
+        while (!queue.isEmpty()) {
             Class<?> clz = queue.remove();
 
-            if (clz.isInterface()) {
-                interfaceClasses.add(clz);
-            }
-
-            for (Field field : clz.getDeclaredFields()) {
-                field.setAccessible(true);
-                superReflectedFields.put(field.getName(), field);
-            }
-
-            for (Method method : clz.getDeclaredMethods()) {
-                method.setAccessible(true);
-                String key = method.getName() + Type.getMethodDescriptor(method);
-                superReflectedMethods.put(key, method);
-            }
-
-            castableTypes.add(Type.getType(clz));
+            supertypes.add(clz);
 
             Class<?> superclass = clz.getSuperclass();
             if (superclass != null) {
@@ -249,23 +219,15 @@ class LiveEditClass {
             }
             Class<?>[] interfaces = clz.getInterfaces();
             for (Class<?> inter : interfaces) {
-                if (!interfaceClasses.contains(inter)) {
+                if (!supertypes.contains(inter)) {
                     queue.add(inter);
                 }
             }
         }
-        proxyClass =
-                Proxy.getProxyClass(
-                        context.getClassLoader(),
-                        interfaceClasses.stream().toArray(Class<?>[]::new));
     }
 
     private Class<?> classForName(String internalName) throws ClassNotFoundException {
         return Class.forName(internalName.replace('/', '.'), true, context.getClassLoader());
-    }
-
-    public String getClassInternalName() {
-        return bytecode.getInternalName();
     }
 
     public Interpretable getBytecode() {

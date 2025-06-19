@@ -54,6 +54,11 @@ interface BasicAndroidProject: AndroidModel {
     val productFlavorSourceSets: Collection<SourceSetContainer>
 
     /**
+     * The test suites defined on this project
+     */
+    val testSuites: Collection<BasicTestSuite>
+
+    /**
      * The list of all the variants.
      *
      * This does not include test variant. Test variants are additional artifacts in their

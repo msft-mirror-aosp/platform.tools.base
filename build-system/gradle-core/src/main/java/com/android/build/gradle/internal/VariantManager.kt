@@ -50,11 +50,11 @@ import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.InternalVariantBuilder
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
-import com.android.build.gradle.internal.api.SingleTestSuiteSourceSet
 import com.android.build.gradle.internal.api.VariantFilter
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -63,6 +63,7 @@ import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.AndroidTestComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
@@ -100,6 +101,7 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
 import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
 import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
+import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.DimensionCombination
@@ -178,6 +180,8 @@ class VariantManager<
      */
     val testComponents: MutableList<TestComponentCreationConfig> =
             Lists.newArrayList()
+
+    val testSuites: MutableList<TestSuiteCreationConfig> = mutableListOf()
 
     /**
      * Returns a list of all test fixtures components.
@@ -966,31 +970,43 @@ class VariantManager<
                     val componentName = "${testSuiteBuilder.name}${variantInfo.variant.name
                         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
                     }"
+
+                    testSuiteBuilder as TestSuiteBuilderImpl
+                    val testSuiteSources = testSuiteBuilder.getSources().map {
+                        testSuiteSource: TestSuiteSourceCreationConfig ->
+                            TestSuiteSourceContainer(
+                                testSuiteSource.name,
+                                testSuiteSource.createTestSuiteSourceSet(variantServices),
+                                TestSuiteDependenciesBuilder(
+                                    project,
+                                    dslServices.projectOptions,
+                                    projectServices.issueReporter,
+                                    testSuiteBuilder,
+                                    testSuiteSource.dependencies,
+                                    variantInfo.variant,
+                                    getFlavorSelection(variantInfo.variantDslInfo),
+                                    variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
+                                ).build()
+                            )
+                    }
+
+
+                    val testSuite = TestSuiteImpl(
+                        testSuiteBuilder,
+                        testSuiteSources,
+                        variantInfo.variant,
+                        globalTaskCreationConfig,
+                        variantServices,
+                        taskCreationServices,
+                        ArtifactsImpl(project, componentName),
+                        computeTaskName(variantBuilder.name, "test${testSuiteBuilder.name.toCamelCase()}","TestSuite" )
+                    )
+
                     variant.addTestSuite(
                         testSuiteBuilder.name,
-                        TestSuiteImpl(
-                            testSuiteBuilder as TestSuiteBuilderImpl,
-                            SingleTestSuiteSourceSet(
-                                testSuiteBuilder.name,
-                                variantServices,
-                            ),
-                            TestSuiteDependenciesBuilder(
-                                project,
-                                dslServices.projectOptions,
-                                projectServices.issueReporter,
-                                testSuiteBuilder,
-                                variantInfo.variant,
-                                getFlavorSelection(variantInfo.variantDslInfo),
-                                variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
-                            ).build(),
-                            variantInfo.variant,
-                            globalTaskCreationConfig,
-                            variantServices,
-                            taskCreationServices,
-                            ArtifactsImpl(project, componentName),
-                            computeTaskName(variantBuilder.name, "test${testSuiteBuilder.name.toCamelCase()}","TestSuite" )
-                        )
+                        testSuite,
                     )
+                    testSuites.add(testSuite)
                 }
         }
 

@@ -2231,16 +2231,17 @@ public class ManifestMerger2 {
 
     private static class ManifestInfo {
 
-        private ManifestInfo(String name, File location, XmlDocument.Type type) {
+        private ManifestInfo(@Nullable String name, File location, XmlDocument.Type type) {
             mName = name;
             mLocation = location;
             mType = type;
         }
 
-        private final String mName;
+        private final @Nullable String mName;
         private final File mLocation;
         private final XmlDocument.Type mType;
 
+        @Nullable
         String getName() {
             return mName;
         }

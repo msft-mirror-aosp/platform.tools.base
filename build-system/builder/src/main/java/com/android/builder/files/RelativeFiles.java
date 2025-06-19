@@ -17,15 +17,21 @@
 package com.android.builder.files;
 
 import com.android.annotations.NonNull;
+import com.android.zipflinger.Entry;
+import com.android.zipflinger.ZipMap;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Verify;
 import com.google.common.collect.Sets;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Utilities to handle {@link RelativeFile}.
@@ -108,12 +114,29 @@ public final class RelativeFiles {
      * @throws IOException failed to read the zip file
      */
     @NonNull
-    public static Set<RelativeFile> fromZip(@NonNull ZipCentralDirectory zip) throws IOException {
-        Collection<DirectoryEntry> values = zip.getEntries().values();
+    public static Set<RelativeFile> fromZip(@NonNull File zip) throws IOException {
+        Collection<Entry> values =
+                ZipMap.from(zip.toPath()).getEntries().values().stream()
+                        .filter(item -> !item.isDirectory())
+                        .collect(Collectors.toList());
         Set<RelativeFile> files = Sets.newHashSetWithExpectedSize(values.size());
 
-        for (DirectoryEntry entry : values) {
-            files.add(new RelativeFile(zip.getFile(), entry.getName()));
+        for (Entry entry : values) {
+            files.add(new RelativeFile(zip, entry.getName()));
+        }
+
+        return Collections.unmodifiableSet(files);
+    }
+
+    public static Set<RelativeFile> fromZipSnapshot(@NonNull ZipSnapshot snapshot)
+            throws IOException {
+        Map<String, ZipEntry> entries = snapshot.getEntryList().getEntries();
+
+        Set<RelativeFile> files = Sets.newHashSetWithExpectedSize(entries.size());
+
+        for (Map.Entry<String, ZipEntry> e : entries.entrySet()) {
+            files.add(
+                    new RelativeFile(new File(snapshot.getOriginalPath()), e.getValue().getName()));
         }
 
         return Collections.unmodifiableSet(files);

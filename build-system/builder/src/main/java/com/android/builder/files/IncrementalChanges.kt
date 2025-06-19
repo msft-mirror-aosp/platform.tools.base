@@ -80,7 +80,7 @@ class SerializableFileChanges(
  */
 fun classpathToRelativeFileSet(
     changes: SerializableInputChanges,
-    cache: KeyedFileCache,
+    zipSnapshotRepository: ZipSnapshotRepository,
     cacheUpdates: MutableSet<Runnable>
 ): Map<RelativeFile, FileStatus> {
     return Collections.unmodifiableMap(HashMap<RelativeFile, FileStatus>().apply {
@@ -89,7 +89,7 @@ fun classpathToRelativeFileSet(
                 check(change.file.path.endsWith(".zip") || change.file.path.endsWith(".jar")) {
                     "Incremental input root file ${change.file.path} must end with '.zip' or '.jar'."
                 }
-                addZipChanges(change.file, cache, cacheUpdates)
+                addZipChanges(change.file, zipSnapshotRepository, cacheUpdates)
             } else {
                 addFileChange(change)
             }
@@ -100,10 +100,10 @@ fun classpathToRelativeFileSet(
 @Throws(Zip64NotSupportedException::class)
 fun MutableMap<RelativeFile, FileStatus>.addZipChanges(
     change: File,
-    cache: KeyedFileCache,
+    zipSnapshotRepository: ZipSnapshotRepository,
     cacheUpdates: MutableSet<Runnable>
 ) {
-    putAll(fromZip(ZipCentralDirectory(change), cache, cacheUpdates))
+    putAll(fromZip(change, zipSnapshotRepository, cacheUpdates))
 }
 
 fun MutableMap<RelativeFile, FileStatus>.addFileChange(

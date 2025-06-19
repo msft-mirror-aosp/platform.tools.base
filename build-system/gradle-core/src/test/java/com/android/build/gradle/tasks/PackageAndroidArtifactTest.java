@@ -29,7 +29,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.builder.files.IncrementalRelativeFileSets;
 import com.android.builder.files.RelativeFile;
 import com.android.ide.common.resources.FileStatus;
-import com.android.tools.build.apkzlib.zip.compress.Zip64NotSupportedException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -60,7 +59,7 @@ public class PackageAndroidArtifactTest {
 
         // exception should not be raised.
         ImmutableMap<RelativeFile, FileStatus> relativeFileFileStatus =
-                IncrementalRelativeFileSets.fromZip(zip);
+                IncrementalRelativeFileSets.fromZipSnapshot(zip, FileStatus.NEW);
         assertThat(relativeFileFileStatus).hasSize(64000);
         relativeFileFileStatus.forEach(
                 (relativeFile, fileStatus) -> assertThat(fileStatus).isEqualTo(FileStatus.NEW));
@@ -68,12 +67,11 @@ public class PackageAndroidArtifactTest {
 
     @Test
     public void testZip64File() throws IOException {
-        expectedException.expect(Zip64NotSupportedException.class);
         File zip64 = createZip64File(66000, 0);
 
-        // exception should be raised.
+        // exception should not be raised.
         ImmutableMap<RelativeFile, FileStatus> relativeFileFileStatus =
-                IncrementalRelativeFileSets.fromZip(zip64);
+                IncrementalRelativeFileSets.fromZipSnapshot(zip64, FileStatus.NEW);
         assertThat(relativeFileFileStatus).hasSize(66000);
         relativeFileFileStatus.forEach(
                 (relativeFile, fileStatus) -> assertThat(fileStatus).isEqualTo(FileStatus.NEW));
@@ -102,7 +100,7 @@ public class PackageAndroidArtifactTest {
         }
 
         ImmutableMap<RelativeFile, FileStatus> relativeFileFileStatus =
-                IncrementalRelativeFileSets.fromZip(copiedZip);
+                IncrementalRelativeFileSets.fromZipSnapshot(copiedZip, FileStatus.NEW);
         assertThat(relativeFileFileStatus).hasSize(2000);
         relativeFileFileStatus.forEach(
                 (relativeFile, fileStatus) -> {

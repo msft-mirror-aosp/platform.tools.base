@@ -20,7 +20,6 @@ import com.intellij.openapi.util.text.StringUtil
 fun journeyXml(name: String, description: String) =
   """
 <?xml version="1.0" encoding="utf-8"?>
-<!-- @formatter:off -->
 <journey name="${StringUtil.escapeXmlEntities(name)}">
     <description>${StringUtil.escapeXmlEntities(description)}</description>
     <actions>

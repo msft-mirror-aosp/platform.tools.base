@@ -179,8 +179,8 @@ class PrivacySandboxSdkPlugin @Inject constructor(
     }
 
     private fun applyPrivacySandboxConfigurations(project: Project) {
-        // so far by default, we consume and publish only 'debug' variant
-        val buildType: BuildTypeAttr = project.objects.named(BuildTypeAttr::class.java, "debug")
+        // so far by default, we consume and publish only 'release' variant
+        val buildType: BuildTypeAttr = project.objects.named(BuildTypeAttr::class.java, "release")
 
         val jvmEnvironment: TargetJvmEnvironment =
             project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.ANDROID)

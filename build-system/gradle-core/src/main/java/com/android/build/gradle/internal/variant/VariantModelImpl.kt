@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.variant
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.DefaultConfig
@@ -44,6 +45,7 @@ class VariantModelImpl(
     private val testBuilderTypeProvider: () -> String?,
     private val variantProvider: () -> List<VariantCreationConfig>,
     private val testComponentProvider: () -> List<TestComponentCreationConfig>,
+    private val testSuitesProvider: () -> List<TestSuiteCreationConfig>,
     private val buildFeaturesProvider: () -> BuildFeatureValues,
     override val projectTypeV1: Int,
     override val projectType: ProjectType,
@@ -61,6 +63,9 @@ class VariantModelImpl(
 
     override val testComponents: List<TestComponentCreationConfig>
         get() = testComponentProvider()
+
+    override val testSuites: List<TestSuiteCreationConfig>
+        get() = testSuitesProvider()
 
     override val defaultVariant: String?
         get() = computeDefaultVariant()

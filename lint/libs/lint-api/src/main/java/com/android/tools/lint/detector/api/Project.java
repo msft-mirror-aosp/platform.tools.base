@@ -56,6 +56,7 @@ import com.android.ide.common.repository.AgpVersion;
 import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
@@ -85,6 +86,8 @@ import com.google.common.io.Closeables;
 import com.intellij.core.CoreApplicationEnvironment;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.PsiClass;
+
+import kotlin.text.StringsKt;
 
 import org.jetbrains.kotlin.config.LanguageVersionSettings;
 import org.w3c.dom.Document;
@@ -116,6 +119,7 @@ public class Project {
     protected String pkg;
     protected Document dom;
     protected int buildSdk = -1;
+    protected AndroidApiLevel buildSdkLevel = null;
     protected String buildTargetHash;
     protected IAndroidTarget target;
 
@@ -961,6 +965,15 @@ public class Project {
         return buildSdk;
     }
 
+    /** Returns the compile SDK version used to build the project, or null if unknown */
+    @Nullable
+    public AndroidApiLevel getBuildSdkLevel() {
+        if (buildSdkLevel == null && buildSdk != -1) {
+            return new AndroidApiLevel(buildSdk, 0);
+        }
+        return buildSdkLevel;
+    }
+
     /**
      * Returns the target API used to build the project, or null if not known. Note that this is
      * returning a String rather than a {@link AndroidVersion} since it may refer to either a {@link
@@ -986,6 +999,7 @@ public class Project {
         AndroidVersion version = AndroidTargetHash.getPlatformVersion(buildTargetHash);
         if (version != null) {
             buildSdk = version.getFeatureLevel();
+            buildSdkLevel = version.getAndroidApiLevel();
         } else {
             // The platform sometimes passes in the wrong target hash; try to account for that
             if (buildTargetHash.indexOf('-') == -1) {
@@ -993,12 +1007,22 @@ public class Project {
                         AndroidTargetHash.getPlatformVersion(
                                 PLATFORM_HASH_PREFIX + buildTargetHash);
             }
-            if (version == null) {
-                client.log(
-                        Severity.WARNING,
-                        null,
-                        "Unexpected build target format: %1$s",
-                        buildTargetHash);
+            if (version != null) {
+                buildSdk = version.getFeatureLevel();
+                buildSdkLevel = version.getAndroidApiLevel();
+            } else {
+                buildSdkLevel =
+                        AndroidApiLevel.fromString(
+                                StringsKt.removePrefix(buildTargetHash, PLATFORM_HASH_PREFIX));
+                if (buildSdkLevel != null) {
+                    buildSdk = buildSdkLevel.getMajorVersion();
+                } else {
+                    client.log(
+                            Severity.WARNING,
+                            null,
+                            "Unexpected build target format: %1$s",
+                            buildTargetHash);
+                }
             }
         }
     }

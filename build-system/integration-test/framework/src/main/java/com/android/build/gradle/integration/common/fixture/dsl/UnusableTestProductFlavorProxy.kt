@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.ApkSigningConfig
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TestProductFlavor
 
 class UnusableTestProductFlavorProxy(
@@ -42,6 +44,10 @@ class UnusableTestProductFlavorProxy(
             throwUnusableError("TestProductFlavor.targetSdkPreview")
         }
 
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        throwUnusableError("TestProductFlavor.targetSdk")
+    }
+
     override fun setTargetSdkVersion(targetSdkVersion: String?) {
         throwUnusableError("TestProductFlavor.setTargetSdkVersion")
     }
@@ -51,6 +57,10 @@ class UnusableTestProductFlavorProxy(
         set(value) {
             throwUnusableError("TestProductFlavor.maxSdk")
         }
+
+    override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
+        throwUnusableError("TestProductFlavor.maxSdk")
+    }
 
     override fun maxSdkVersion(maxSdkVersion: Int) {
         throwUnusableError("TestProductFlavor.maxSdkVersion")

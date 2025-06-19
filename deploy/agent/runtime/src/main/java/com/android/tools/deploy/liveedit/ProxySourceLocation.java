@@ -62,8 +62,7 @@ class ProxySourceLocation {
     }
 
     @Nullable
-    static ProxySourceLocation findSourceLocation(@NonNull LiveEditClass clazz) {
-        Interpretable bytecode = clazz.getBytecode();
+    static ProxySourceLocation findSourceLocation(@NonNull Interpretable bytecode) {
         String internalName = bytecode.getInternalName().replace('/', '.');
         String fileName = bytecode.getFilename();
         int startLine = Integer.MAX_VALUE;

@@ -469,13 +469,13 @@ enum class BooleanOption(
     ),
 
     /**
-     * When enabled, R8 will perform both code and resource shrinking in a more optimal way.
+     * When enabled, R8 will perform resource shrinking in a more optimal way.
      *
      * Note: This flag takes effect only if resource shrinking is enabled AND
      * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
      */
-    R8_OPTIMIZED_SHRINKING(
-        "android.r8.optimizedShrinking",
+    R8_OPTIMIZED_RESOURCE_SHRINKING(
+        "android.r8.optimizedResourceShrinking",
         false,
         FeatureStage.Experimental
     ),
@@ -1106,6 +1106,15 @@ enum class BooleanOption(
 
     @Suppress("unused")
     ADDITIONAL_ARTIFACTS_IN_MODEL("android.experimental.additionalArtifactsInModel", false, FeatureStage.Removed(Version.VERSION_8_11, "Android Studio is responsible for managing multi-variant Javadoc/source support.")),
+
+    /**
+     * Note: Use [R8_OPTIMIZED_RESOURCE_SHRINKING] instead.
+     */
+    R8_OPTIMIZED_SHRINKING(
+        "android.r8.optimizedShrinking",
+        false,
+        FeatureStage.Removed(Version.VERSION_8_11)
+    ),
     ; // end of enums
 
     override val status = stage.status

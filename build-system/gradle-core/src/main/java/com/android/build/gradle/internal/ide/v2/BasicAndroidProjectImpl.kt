@@ -21,6 +21,7 @@ import com.android.builder.model.v2.ide.ProjectType
 import com.android.builder.model.v2.ide.SourceSetContainer
 import com.android.builder.model.v2.models.AndroidProject
 import com.android.builder.model.v2.models.BasicAndroidProject
+import com.android.builder.model.v2.models.BasicTestSuite
 import java.io.File
 import java.io.Serializable
 
@@ -33,6 +34,7 @@ data class BasicAndroidProjectImpl(
     override val mainSourceSet: SourceSetContainer?,
     override val buildTypeSourceSets: Collection<SourceSetContainer>,
     override val productFlavorSourceSets: Collection<SourceSetContainer>,
+    override val testSuites: Collection<BasicTestSuite>,
     override val variants: Collection<BasicVariant>,
     override val bootClasspath: Collection<File>,
     override val buildFolder: File,

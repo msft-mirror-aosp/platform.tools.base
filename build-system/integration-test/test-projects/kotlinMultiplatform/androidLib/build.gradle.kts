@@ -8,6 +8,9 @@ android {
 
   defaultConfig {
     minSdk = 21
+  }
+
+  testOptions {
     targetSdk = libs.versions.latestCompileSdk.get().toInt()
   }
 

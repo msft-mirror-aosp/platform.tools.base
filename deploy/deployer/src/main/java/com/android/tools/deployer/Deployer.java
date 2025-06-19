@@ -22,6 +22,7 @@ import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.App;
+import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.deployer.model.FileDiff;
 import com.android.tools.deployer.tasks.Canceller;
 import com.android.tools.deployer.tasks.Task;
@@ -139,11 +140,11 @@ public class Deployer {
 
     private static class InstallInfo {
         public final boolean skippedInstall;
-        public final List<Apk> apks;
+        public final App app;
 
-        public InstallInfo(boolean skippedInstall, List<Apk> apks) {
+        public InstallInfo(boolean skippedInstall, App app) {
             this.skippedInstall = skippedInstall;
-            this.apks = apks;
+            this.app = app;
         }
     }
 
@@ -176,11 +177,26 @@ public class Deployer {
 
             InstallInfo info;
             if (deployOptions.useRootPushInstall) {
-                info = rootPushInstall(sessionUID, app, installOptions, installMode);
+                info =
+                        rootPushInstall(
+                                sessionUID,
+                                new DeploymentPlan(adb.getDevice(), app),
+                                installOptions,
+                                installMode);
             } else if (supportsNewPipeline()) {
-                info = optimisticInstall(sessionUID, app, installOptions, installMode);
+                info =
+                        optimisticInstall(
+                                sessionUID,
+                                new DeploymentPlan(adb.getDevice(), app),
+                                installOptions,
+                                installMode);
             } else {
-                info = packageManagerInstall(sessionUID, app, installOptions, installMode);
+                info =
+                        packageManagerInstall(
+                                sessionUID,
+                                new DeploymentPlan(adb.getDevice(), app),
+                                installOptions,
+                                installMode);
             }
 
             if (deployOptions.skipPostInstallTasks) {
@@ -188,7 +204,7 @@ public class Deployer {
             }
 
             Task<Boolean> installCoroutineDebugger = null;
-            Task<List<Apk>> parsedApksTask = runner.create(info.apks);
+            Task<List<Apk>> parsedApksTask = runner.create(info.app.getApks());
             if (useCoroutineDebugger()) {
                 installCoroutineDebugger =
                         runner.create(
@@ -212,7 +228,7 @@ public class Deployer {
 
     private InstallInfo packageManagerInstall(
             String deploySessionUID,
-            @NonNull App app,
+            @NonNull DeploymentPlan plan,
             InstallOptions installOptions,
             InstallMode installMode)
             throws DeployerException {
@@ -220,17 +236,17 @@ public class Deployer {
         ApkInstaller apkInstaller = new ApkInstaller(adb, service, installer, logger);
         boolean skippedInstall =
                 !apkInstaller.install(
-                        app,
+                        plan,
                         deployOptions,
                         installOptions,
                         installMode,
                         metrics.getDeployMetrics());
-        return new InstallInfo(skippedInstall, app.getApks());
+        return new InstallInfo(skippedInstall, plan.getApp());
     }
 
     private InstallInfo rootPushInstall(
             String deploySessionUID,
-            @NonNull App app,
+            @NonNull DeploymentPlan plan,
             InstallOptions installOptions,
             InstallMode installMode)
             throws DeployerException {
@@ -241,7 +257,7 @@ public class Deployer {
                 runner.create(
                         Tasks.ROOT_PUSH_INSTALL,
                         new RootPushApkInstaller(adb, installer, logger)::install,
-                        runner.create(app));
+                        runner.create(plan.getApp()));
 
         TaskResult result = runner.run(canceller);
         result.getMetrics().forEach(metrics::add);
@@ -252,18 +268,18 @@ public class Deployer {
             ApkInstaller apkInstaller = new ApkInstaller(adb, service, installer, logger);
             skippedInstall =
                     !apkInstaller.install(
-                            app,
+                            plan,
                             deployOptions,
                             installOptions,
                             installMode,
                             metrics.getDeployMetrics());
         }
-        return new InstallInfo(skippedInstall, app.getApks());
+        return new InstallInfo(skippedInstall, plan.getApp());
     }
 
     private InstallInfo optimisticInstall(
             String deploySessionUID,
-            @NonNull App app,
+            @NonNull DeploymentPlan plan,
             InstallOptions installOptions,
             InstallMode installMode)
             throws DeployerException {
@@ -272,6 +288,7 @@ public class Deployer {
         // Do not skip installs; we need to ensure overlays are properly cleared.
         installMode = installMode == InstallMode.DELTA ? InstallMode.DELTA_NO_SKIP : installMode;
 
+        App app = plan.getApp();
         Task<App> taskApp = runner.create(app);
         Task<String> deviceSerial = runner.create(adb.getSerial());
         Task<String> packageName = runner.create(app.getAppId());
@@ -311,7 +328,7 @@ public class Deployer {
             ApkInstaller apkInstaller = new ApkInstaller(adb, service, installer, logger);
             skippedInstall =
                     !apkInstaller.install(
-                            app,
+                            plan,
                             deployOptions,
                             installOptions,
                             installMode,
@@ -321,7 +338,7 @@ public class Deployer {
         }
 
         runner.runAsync(canceller);
-        return new InstallInfo(skippedInstall, app.getApks());
+        return new InstallInfo(skippedInstall, app);
     }
 
     public Result codeSwap(

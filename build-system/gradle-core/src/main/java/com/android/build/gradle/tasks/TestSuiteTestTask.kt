@@ -16,12 +16,12 @@
 
 package com.android.build.gradle.tasks
 
-import android.databinding.tool.ext.toCamelCase
 import com.android.build.api.artifact.SingleArtifact
-import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.BuildToolsExecutableInput
+import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
@@ -192,7 +192,9 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             }
             task.classpath = creationConfig.services.fileCollection().also {
                 it.from(classesDir)
-                it.from(creationConfig.testSuiteClasspath.runtimeClasspath)
+                creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
+                    it.from(sourceContainer.dependencies.runtimeClasspath)
+                }
             }
 
             val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
@@ -249,9 +251,17 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 testFramework.includeEngines(*creationConfig.junitEngineSpec.includeEngines.toTypedArray())
                 testFramework.excludeEngines("junit-jupiter")
             }
-            task.sourceFolders.set(
-                creationConfig.sources.all()
-            )
+            creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
+                val sourceSet =  sourceContainer.source
+                when (sourceSet) {
+                    is TestSuiteSourceSet.Assets ->
+                        task.sourceFolders.addAll(sourceSet.get().all)
+                    is TestSuiteSourceSet.HostJar ->
+                        task.sourceFolders.addAll(sourceSet.get().all)
+                    is TestSuiteSourceSet.TestApk ->
+                        throw RuntimeException("Not implemented")
+                }
+            }
 
             task.engineInputParameters.disallowChanges()
             // TODO : Improve file handling by using Artifacts APIs.

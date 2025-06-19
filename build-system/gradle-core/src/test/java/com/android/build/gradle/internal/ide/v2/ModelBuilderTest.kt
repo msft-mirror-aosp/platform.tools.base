@@ -241,6 +241,7 @@ class ModelBuilderTest {
             { "debug" },
             { variantList },
             { testComponentList },
+            { listOf() },
             {
                 BuildFeatureValuesImpl(
                     dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java),

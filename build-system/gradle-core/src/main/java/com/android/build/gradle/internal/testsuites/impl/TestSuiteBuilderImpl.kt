@@ -19,13 +19,15 @@ package com.android.build.gradle.internal.testsuites.impl
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.JUnitEngineSpec
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
+import com.android.build.gradle.internal.dsl.TestSuiteAssetsSpecImpl
 import com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl
 import com.android.build.gradle.internal.services.BaseServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
-import com.android.build.gradle.internal.testsuites.TestSuiteDependencies
 import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
+import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter
+import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
@@ -33,12 +35,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
-    objects: ObjectFactory,
+    private val objects: ObjectFactory,
     private val _name: String,
     override var enable: Boolean,
-    _junitEngineSpec: JUnitEngineSpecImpl,
-    internal val dslDeclaredDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies,
-    services: BaseServices,
+    private val dslDefinedTestSuite: AgpTestSuiteImpl,
+    private val services: BaseServices,
 ): TestSuiteBuilder {
 
     companion object {
@@ -74,7 +75,7 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
             }
 
             return dslDefinedTestSuiteDefinitions.associate { agpTestSuite ->
-                val junitTestEngine = agpTestSuite.getJunitEngineIfUsed()
+                agpTestSuite.getJunitEngineIfUsed()
                     ?: throw RuntimeException("Test suites must use junit engines for now")
                 agpTestSuite.name to
                         // TODO: lock JUnitEngineSpec instance.
@@ -82,8 +83,7 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
                             TestSuiteBuilderImpl::class.java,
                             agpTestSuite.name,
                             true,
-                            junitTestEngine,
-                            agpTestSuite.dependencies,
+                            agpTestSuite,
                             variantBuilderServices
                         )
             }
@@ -91,12 +91,20 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
     }
 
     override val junitEngineSpec: JUnitEngineSpec =
-        JUnitEngineSpecForVariantBuilder(objects, _junitEngineSpec)
+        JUnitEngineSpecForVariantBuilder(
+            objects,
+            dslDefinedTestSuite.useJunitEngine as JUnitEngineSpecImpl
+        )
 
     override fun getName(): String = _name
-
-    override val dependencies: TestSuiteDependencies =
-        services.newInstance(TestSuiteDependencies::class.java)
+    internal fun getSources(): Collection<TestSuiteSourceCreationConfig>
+    {
+        // if the user does not define a single source set, add an assets one by default.
+        if (dslDefinedTestSuite.getSourceContainers().isEmpty()) {
+            return listOf(TestSuiteAssetsSpecImpl(objects, _name,))
+        }
+        return dslDefinedTestSuite.getSourceContainers()
+    }
 }
 
 internal class JUnitEngineSpecForVariantBuilder(
@@ -127,4 +135,7 @@ internal class JUnitEngineSpecForVariantBuilder(
                 it.put(t, u)
             }
         }
+
+    override val enginesDependencies: DependencyCollector =
+        dslDefinedJUnitEngineSpec.enginesDependencies
 }

@@ -22,7 +22,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.builder.files.KeyedFileCache
 import com.android.builder.packaging.PackagingUtils
 import com.android.zipflinger.LargeFileSource
 import com.android.zipflinger.ZipArchive
@@ -58,7 +57,7 @@ import javax.inject.Inject
  * Task to compress assets before they're packaged in the APK.
  *
  * This task outputs a directory of single-entry jars (instead of a single jar) so that the
- * downstream packaging task doesn't have to manage its incremental state via a [KeyedFileCache].
+ * downstream packaging task doesn't have to manage its incremental state via a [com.android.builder.files.ZipSnapshotRepository].
  *
  * Each single-entry jar file's relative path in the output directory is equal to "assets/" + the
  * corresponding asset's relative path in the input directory + ".jar".

@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.dsl
 import com.android.build.api.dsl.BaseFlavor
 import com.android.build.api.dsl.ExternalNativeBuildFlags
 import com.android.build.api.dsl.JavaCompileOptions
+import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.Ndk
 import com.android.build.api.dsl.Optimization
 import com.android.build.api.dsl.ProductFlavor
@@ -72,6 +73,16 @@ open class ProductFlavorProxy(
         set(value) {
             dslRecorder.set("minSdk", value)
         }
+
+    override fun minSdk(action: MinSdkSpec.() -> Unit) {
+        dslRecorder.runNestedBlock(
+            name = "minSdk",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(MinSdkSpec::class.java, it) }
+        ) {
+            action(this)
+        }
+    }
 
     override fun setMinSdkVersion(minSdkVersion: Int) {
         dslRecorder.call("setMinSdkVersion", listOf(minSdkVersion), isVarArgs = false)

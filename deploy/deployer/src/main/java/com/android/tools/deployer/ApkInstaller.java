@@ -25,6 +25,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.App;
+import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.deployer.model.FileDiff;
 import com.android.utils.ILogger;
 
@@ -85,7 +86,7 @@ public class ApkInstaller {
      * @return true if installation happened. False if installation was skipped
      */
     public boolean install(
-            @NonNull App app,
+            @NonNull DeploymentPlan plan,
             DeployerOption deployOptions,
             InstallOptions installOptions,
             Deployer.InstallMode installMode,
@@ -99,7 +100,7 @@ public class ApkInstaller {
         long deltaInstallStart = System.nanoTime();
         try {
             deltaInstallResult =
-                    deltaInstall(app, deployOptions, installOptions, allowReinstall, installMode);
+                    deltaInstall(plan, deployOptions, installOptions, allowReinstall, installMode);
         } catch (DeployerException e) {
             logger.info("Unable to delta install: '%s'", e.getDetails());
         }
@@ -133,7 +134,7 @@ public class ApkInstaller {
                             result =
                                     invokeAdbInstall(
                                             adb,
-                                            app,
+                                            plan.getApp(),
                                             installOptions.getFlags(),
                                             allowReinstall,
                                             installOptions.getShouldUseAssumeVerified());
@@ -173,7 +174,7 @@ public class ApkInstaller {
                     result =
                             invokeAdbInstall(
                                     adb,
-                                    app,
+                                    plan.getApp(),
                                     installOptions.getFlags(),
                                     allowReinstall,
                                     installOptions.getShouldUseAssumeVerified());
@@ -190,11 +191,11 @@ public class ApkInstaller {
                     installMetric.finish(result.status.name(), metrics);
                     try {
                         adb.shell(
-                                new String[] {"am", "force-stop", app.getAppId()},
+                                new String[] {"am", "force-stop", plan.getApp().getAppId()},
                                 Timeouts.SHELL_AM_STOP);
                     } catch (IOException e) {
                         throw DeployerException.installFailed(
-                                SKIPPED_INSTALL, "Failure to kill " + app.getAppId());
+                                SKIPPED_INSTALL, "Failure to kill " + plan.getApp().getAppId());
                     }
                     break;
                 }
@@ -228,11 +229,11 @@ public class ApkInstaller {
                 sb.append("\n\nWARNING: Uninstalling will remove the application data!\n\n");
                 sb.append("Do you want to uninstall the existing application?");
                 if (service.prompt(sb.toString())) {
-                    adb.uninstall(app.getAppId());
+                    adb.uninstall(plan.getApp().getAppId());
                     result =
                             invokeAdbInstall(
                                     adb,
-                                    app,
+                                    plan.getApp(),
                                     installOptions.getFlags(),
                                     allowReinstall,
                                     installOptions.getShouldUseAssumeVerified());
@@ -249,8 +250,8 @@ public class ApkInstaller {
         } else if (result.status != OK) {
             StringBuilder messageBuilder = new StringBuilder(message);
             messageBuilder.append("\nList of apks:\n");
-            for (int i = 0; i < app.getApks().size(); i++) {
-                String apkPath = app.getApks().get(i).path;
+            for (int i = 0; i < plan.getApp().getApks().size(); i++) {
+                String apkPath = plan.getApp().getApks().get(i).path;
                 String line = String.format(Locale.ROOT, "[%d] '%s'\n", i, apkPath);
                 messageBuilder.append(line);
             }
@@ -260,7 +261,7 @@ public class ApkInstaller {
     }
 
     DeltaInstallResult deltaInstall(
-            @NonNull App app,
+            @NonNull DeploymentPlan plan,
             DeployerOption deployerOption,
             InstallOptions installOptions,
             boolean allowReinstall,
@@ -270,7 +271,9 @@ public class ApkInstaller {
             return new DeltaInstallResult(DeltaInstallStatus.DISABLED);
         }
 
-        if (!app.getBaselineProfile(adb.getDevice().getVersion().getApiLevel()).isEmpty()) {
+        if (!plan.getApp()
+                .getBaselineProfile(adb.getDevice().getVersion().getApiLevel())
+                .isEmpty()) {
             // Supporting baseline profile install via delta-push is a significant change.
             // The gain is not worth it in the context of a release apk (we only get baseline
             // profile in release mode if configured), given build system compile time (always full,
@@ -285,7 +288,7 @@ public class ApkInstaller {
             return new DeltaInstallResult(DeltaInstallStatus.API_NOT_SUPPORTED);
         }
 
-        List<Apk> localApks = app.getApks();
+        List<Apk> localApks = plan.getApp().getApks();
         ApplicationDumper.Dump dump;
         try {
             dump = new ApplicationDumper(installer).dump(localApks);
@@ -339,9 +342,9 @@ public class ApkInstaller {
 
         builder.setInherit(inherit);
         builder.addAllPatchInstructions(patches);
-        builder.setPackageName(app.getAppId());
+        builder.setPackageName(plan.getApp().getAppId());
         builder.setAssumeVerified(
-                app.isDebuggable() && installOptions.getShouldUseAssumeVerified());
+                plan.getApp().isDebuggable() && installOptions.getShouldUseAssumeVerified());
         Deploy.InstallInfo info = builder.build();
 
         int serializedSize = info.getSerializedSize();

@@ -16,8 +16,6 @@
 
 package com.android.build.api.variant
 
-import org.gradle.api.Incubating
-
 /**
  * Provides access to all source directories for a [Variant].
  */

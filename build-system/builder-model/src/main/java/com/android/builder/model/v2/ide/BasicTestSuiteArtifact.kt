@@ -20,17 +20,9 @@ import com.android.builder.model.v2.AndroidModel
 import java.io.File
 
 /**
- * Basic information about a test suite.
+ * Basic information about a test suite that is applied to a variant.
  */
 interface BasicTestSuiteArtifact: AndroidModel {
 
-    /**
-     * The test suite source file directories
-     *
-     * TODO: Clearly this single source directory will only work for simple test suites like unit
-     * tests and journeys test. However, for more complicated test suites like device tests, a
-     * SourceProvider will be more appropriate. We need to figure out how to model that but that's
-     * really starting from the DSL definition so I am not resolving this here for now.
-     */
-    val sources: Set<File>
+    val testSuiteName: String
 }

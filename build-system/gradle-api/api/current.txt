@@ -456,6 +456,7 @@ package com.android.build.api.dsl {
     method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getTargetSdkPreview();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getVersionCode();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getVersionName();
+    method public void maxSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MaxSdkSpec,kotlin.Unit> action);
     method @Deprecated public void maxSdkVersion(int maxSdkVersion);
     method public void setApplicationId(String?);
     method public void setMaxSdk(Integer?);
@@ -464,6 +465,7 @@ package com.android.build.api.dsl {
     method @Deprecated public void setTargetSdkVersion(String? targetSdkVersion);
     method public void setVersionCode(Integer?);
     method public void setVersionName(String?);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     method @Deprecated public void targetSdkVersion(int targetSdkVersion);
     method @Deprecated public void targetSdkVersion(String? targetSdkVersion);
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? applicationId;
@@ -603,7 +605,7 @@ package com.android.build.api.dsl {
 
   public interface BaseFlavor extends com.android.build.api.dsl.VariantDimension {
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getMinSdk();
-    method @org.gradle.declarative.dsl.model.annotations.Restricted public String? getMinSdkPreview();
+    method @Deprecated @org.gradle.declarative.dsl.model.annotations.Restricted public String? getMinSdkPreview();
     method public String getName();
     method public Boolean? getRenderscriptNdkModeEnabled();
     method public Boolean? getRenderscriptSupportModeBlasEnabled();
@@ -618,6 +620,7 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.VectorDrawables getVectorDrawables();
     method public Boolean? getWearAppUnbundled();
     method public void initWith(com.android.build.api.dsl.BaseFlavor that);
+    method public void minSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec,kotlin.Unit> action);
     method @Deprecated public void minSdkVersion(int minSdkVersion);
     method @Deprecated public void minSdkVersion(String? minSdkVersion);
     method public void missingDimensionStrategy(String dimension, String requestedValue);
@@ -627,7 +630,7 @@ package com.android.build.api.dsl {
     method @Deprecated public void resConfigs(java.lang.String... config);
     method @Deprecated public void resConfigs(java.util.Collection<java.lang.String> config);
     method public void setMinSdk(Integer?);
-    method public void setMinSdkPreview(String?);
+    method @Deprecated public void setMinSdkPreview(String?);
     method @Deprecated public void setMinSdkVersion(int minSdkVersion);
     method @Deprecated public void setMinSdkVersion(String? minSdkVersion);
     method public void setRenderscriptNdkModeEnabled(Boolean?);
@@ -646,7 +649,7 @@ package com.android.build.api.dsl {
     method @Deprecated public void testInstrumentationRunnerArguments(java.util.Map<java.lang.String,java.lang.String> args);
     method public void vectorDrawables(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.VectorDrawables,kotlin.Unit> action);
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? minSdk;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? minSdkPreview;
+    property @Deprecated @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? minSdkPreview;
     property public abstract Boolean? renderscriptNdkModeEnabled;
     property public abstract Boolean? renderscriptSupportModeBlasEnabled;
     property public abstract Boolean? renderscriptSupportModeEnabled;
@@ -892,6 +895,7 @@ package com.android.build.api.dsl {
     method @Deprecated public void buildToolsVersion(String buildToolsVersion);
     method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<BuildTypeT>,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
+    method public void compileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkSpec,kotlin.Unit> action);
     method public void compileSdkAddon(String vendor, String name, int version);
     method @Deprecated public void compileSdkVersion(int apiLevel);
     method @Deprecated public void compileSdkVersion(String version);
@@ -1014,6 +1018,40 @@ package com.android.build.api.dsl {
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean isCoreLibraryDesugaringEnabled;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract org.gradle.api.JavaVersion sourceCompatibility;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract org.gradle.api.JavaVersion targetCompatibility;
+  }
+
+  public interface CompileSdkReleaseSpec {
+    method public Integer? getMinorApiLevel();
+    method public Integer? getSdkExtension();
+    method public void setMinorApiLevel(Integer?);
+    method public void setSdkExtension(Integer?);
+    property public abstract Integer? minorApiLevel;
+    property public abstract Integer? sdkExtension;
+  }
+
+  public interface CompileSdkSpec {
+    method public com.android.build.api.dsl.CompileSdkVersion addon(String vendor, String name, int version);
+    method public com.android.build.api.dsl.CompileSdkVersion? getVersion();
+    method public com.android.build.api.dsl.CompileSdkVersion preview(String codeName);
+    method public com.android.build.api.dsl.CompileSdkVersion release(int version);
+    method public com.android.build.api.dsl.CompileSdkVersion release(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkReleaseSpec,kotlin.Unit> action);
+    method public void setVersion(com.android.build.api.dsl.CompileSdkVersion?);
+    property public abstract com.android.build.api.dsl.CompileSdkVersion? version;
+  }
+
+  public interface CompileSdkVersion {
+    method public String? getAddonName();
+    method public Integer? getApiLevel();
+    method public String? getCodeName();
+    method public Integer? getMinorApiLevel();
+    method public Integer? getSdkExtension();
+    method public String? getVendorName();
+    property public abstract String? addonName;
+    property public abstract Integer? apiLevel;
+    property public abstract String? codeName;
+    property public abstract Integer? minorApiLevel;
+    property public abstract Integer? sdkExtension;
+    property public abstract String? vendorName;
   }
 
   public interface ComposeOptions {
@@ -1308,6 +1346,7 @@ package com.android.build.api.dsl {
     method public void setHandleProfiling(Boolean?);
     method public void setInstrumentationRunner(String?);
     method public void signing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApkSigningConfig,kotlin.Unit> action);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     property public abstract boolean animationsDisabled;
     property public abstract String? applicationId;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
@@ -1333,6 +1372,7 @@ package com.android.build.api.dsl {
     method public void setEnableCoverage(boolean);
     method public void setIncludeAndroidResources(boolean);
     method public void setReturnDefaultValues(boolean);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     property public abstract boolean enableCoverage;
     property public abstract boolean isIncludeAndroidResources;
     property public abstract boolean isReturnDefaultValues;
@@ -1786,6 +1826,33 @@ package com.android.build.api.dsl {
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.ManagedVirtualDevice.PageAlignment FORCE_4KB_PAGES;
   }
 
+  public interface MaxSdkSpec {
+    method public com.android.build.api.dsl.MaxSdkVersion? getVersion();
+    method public com.android.build.api.dsl.MaxSdkVersion release(int version);
+    method public void setVersion(com.android.build.api.dsl.MaxSdkVersion?);
+    property public abstract com.android.build.api.dsl.MaxSdkVersion? version;
+  }
+
+  public interface MaxSdkVersion {
+    method public int getApiLevel();
+    property public abstract int apiLevel;
+  }
+
+  public interface MinSdkSpec {
+    method public com.android.build.api.dsl.MinSdkVersion? getVersion();
+    method public com.android.build.api.dsl.MinSdkVersion preview(String codeName);
+    method public com.android.build.api.dsl.MinSdkVersion release(int version);
+    method public void setVersion(com.android.build.api.dsl.MinSdkVersion?);
+    property public abstract com.android.build.api.dsl.MinSdkVersion? version;
+  }
+
+  public interface MinSdkVersion {
+    method public Integer? getApiLevel();
+    method public String? getCodeName();
+    property public abstract Integer? apiLevel;
+    property public abstract String? codeName;
+  }
+
   @org.gradle.api.Incubating public interface ModelDependency {
     method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getAiModelName();
     method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getAiModelPackageName();
@@ -2111,6 +2178,21 @@ package com.android.build.api.dsl {
     property public abstract java.util.Collection<java.lang.String> densityFilters;
   }
 
+  public interface TargetSdkSpec {
+    method public com.android.build.api.dsl.TargetSdkVersion? getVersion();
+    method public com.android.build.api.dsl.TargetSdkVersion preview(String codeName);
+    method public com.android.build.api.dsl.TargetSdkVersion release(int version);
+    method public void setVersion(com.android.build.api.dsl.TargetSdkVersion?);
+    property public abstract com.android.build.api.dsl.TargetSdkVersion? version;
+  }
+
+  public interface TargetSdkVersion {
+    method public Integer? getApiLevel();
+    method public String? getCodeName();
+    property public abstract Integer? apiLevel;
+    property public abstract String? codeName;
+  }
+
   public interface TestAndroidResources extends com.android.build.api.dsl.AndroidResources {
   }
 
@@ -2118,11 +2200,13 @@ package com.android.build.api.dsl {
     method public Integer? getMaxSdk();
     method public Integer? getTargetSdk();
     method public String? getTargetSdkPreview();
+    method public void maxSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MaxSdkSpec,kotlin.Unit> action);
     method @Deprecated public void maxSdkVersion(int maxSdkVersion);
     method public void setMaxSdk(Integer?);
     method public void setTargetSdk(Integer?);
     method public void setTargetSdkPreview(String?);
     method @Deprecated public void setTargetSdkVersion(String? targetSdkVersion);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     method @Deprecated public void targetSdkVersion(int targetSdkVersion);
     method @Deprecated public void targetSdkVersion(String? targetSdkVersion);
     property public abstract Integer? maxSdk;

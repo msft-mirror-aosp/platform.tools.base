@@ -46,6 +46,7 @@ sealed interface WellKnownMavenArtifactId {
         @JvmField val TFLITE_GPU: WellKnownMavenArtifactId = WellKnownTfliteArtifactId("tensorflow-lite-gpu")
         @JvmField val TFLITE_METADATA: WellKnownMavenArtifactId = WellKnownTfliteArtifactId("tensorflow-lite-metadata")
         @JvmField val TFLITE_SUPPORT: WellKnownMavenArtifactId = WellKnownTfliteArtifactId("tensorflow-lite-support")
+        @JvmField val GUAVA_GUAVA: WellKnownMavenArtifactId = WellKnownGuavaArtifactId("guava")
 
         @JvmStatic
         fun find(groupId: String, artifactId: String) =
@@ -70,6 +71,18 @@ private data class WellKnownTfliteArtifactId(
     override val artifactId: String
 ) : WellKnownMavenArtifactId {
     override val groupId = "org.tensorflow"
+
+    init {
+        WellKnownMavenArtifactId.IDS_BY_GROUP_ARTIFACT_PAIR[groupId to artifactId] = this
+    }
+
+    override fun toString() = displayName
+}
+
+private data class WellKnownGuavaArtifactId(
+    override val artifactId: String
+) : WellKnownMavenArtifactId {
+    override val groupId = "com.google.guava"
 
     init {
         WellKnownMavenArtifactId.IDS_BY_GROUP_ARTIFACT_PAIR[groupId to artifactId] = this

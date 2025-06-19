@@ -15,4 +15,9 @@
  */
 package com.android.tools.deploy.liveedit;
 
-public interface ProxyClass {}
+/** Interface implemented by all proxy classes */
+public interface ProxyClass {
+    ProxyClassHandler getHandler();
+
+    void setHandler(ProxyClassHandler handler);
+}

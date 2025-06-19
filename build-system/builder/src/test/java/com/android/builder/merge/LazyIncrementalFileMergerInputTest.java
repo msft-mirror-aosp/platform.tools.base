@@ -25,8 +25,6 @@ import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.files.IncrementalRelativeFileSets;
-import com.android.builder.files.KeyedFileCache;
 import com.android.ide.common.resources.FileStatus;
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;

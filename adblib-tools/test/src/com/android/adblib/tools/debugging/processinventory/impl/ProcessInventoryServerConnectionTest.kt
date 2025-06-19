@@ -18,6 +18,8 @@ package com.android.adblib.tools.debugging.processinventory.impl
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.InstructionSet
+import com.android.adblib.generateUniqueUUID
+import com.android.adblib.scope
 import com.android.adblib.serialNumber
 import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.testingutils.CoroutineTestUtils
@@ -29,18 +31,24 @@ import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessCommand
+import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessCommandReply
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
+import com.android.adblib.utils.createChildScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.launch
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -197,6 +205,56 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         assertNotNull(lastList.firstOrNull { it.pid == 10 })
         assertNotNull(lastList.firstOrNull { it.pid == 11 })
         assertNotNull(lastList.firstOrNull { it.pid == 12 })
+    }
+
+    @Test
+    fun testProcessTerminationResultsInProcessUpdate(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+        // Prepare
+        setHostPropertyValue(
+            session.host,
+            AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1,
+            findFreeTcpPort()
+        )
+        val serverConnection = createServerConnection(session)
+        val deviceState = addFakeDevice(fakeAdb, api = 32)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
+        val processListSnapshots = CopyOnWriteArrayList<List<JdwpProcessProperties>>()
+        val job = async {
+            serverConnection.withConnectionForDevice(device) {
+                processListStateFlow.collect {
+                    processListSnapshots.add(it)
+                }
+            }
+        }
+        val localProperties = JdwpProcessProperties(
+            pid = 10,
+            processName = OptionalValue.of("Foo"),
+            packageNames = OptionalValue.of(listOf("Bar")),
+            userId = OptionalValue.of(5),
+            vmIdentifier = OptionalValue.of("vm"),
+            instructionSet = OptionalValue.of(InstructionSet.X86),
+            jvmFlags = OptionalValue.of("flags"),
+            isNativeDebuggable = OptionalValue.of(true),
+            isWaitingForDebugger = OptionalValue.of(true),
+            features = OptionalValue.of(listOf("feat1", "feat2")),
+        )
+        serverConnection.withConnectionForDevice(device) {
+            sendProcessProperties(localProperties)
+        }
+
+        // Act: Send process exit notification
+        serverConnection.withConnectionForDevice(device) {
+            notifyProcessExit(localProperties.pid)
+        }
+
+        yieldUntil {
+            processListSnapshots.run { isNotEmpty() && last().isEmpty() }
+        }
+        job.cancel()
+
+        // Assert
+        val lastList = processListSnapshots.last()
+        assertEquals(0, lastList.size)
     }
 
     @Test
@@ -490,6 +548,150 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
             assertEquals(10, list.first().pid)
             assertEquals("Foo", list.first().processName.getOrNull())
             assertEquals("Bar", list.first().packageName.getOrNull())
+        }
+    }
+
+    @Test
+    fun testProcessCommandsAreDispatched(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+        // Prepare
+        setHostPropertyValue(
+            session.host,
+            AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1,
+            findFreeTcpPort()
+        )
+        val serverConnection = createServerConnection(session)
+        val deviceState = addFakeDevice(fakeAdb, api = 32)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
+        val processCommandHelper = ProcessCommandHelper(device, serverConnection).also {
+            it.awaitStarted()
+        }
+
+        // Act: send a few commands
+        serverConnection.withConnectionForDevice(device) {
+            sendProcessCommand(ProcessCommand.newBuilder()
+                                   .setCommandUuid(session.generateUniqueUUID())
+                                   .setPid(10)
+                                   .setResumeJdwpProcess(ProcessCommand.ResumeJdwpProcess.newBuilder().build())
+                                   .build())
+
+            sendProcessCommand(ProcessCommand.newBuilder()
+                                   .setCommandUuid(session.generateUniqueUUID())
+                                   .setPid(11)
+                                   .setResumeJdwpProcess(ProcessCommand.ResumeJdwpProcess.newBuilder().build())
+                                   .build())
+        }
+
+        yieldUntil { processCommandHelper.processCommands.size == 2 }
+
+        // Assert
+        assertEquals(2, processCommandHelper.processCommands.size)
+        assertEquals(10, processCommandHelper.processCommands[0].pid)
+        assertEquals(11, processCommandHelper.processCommands[1].pid)
+    }
+
+    @Test
+    fun testProcessCommandRepliesAreDispatched(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
+        // Prepare
+        setHostPropertyValue(
+            session.host,
+            AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1,
+            findFreeTcpPort()
+        )
+        val serverConnection = createServerConnection(session)
+        val deviceState = addFakeDevice(fakeAdb, api = 32)
+        val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
+        val processCommandHelper = ProcessCommandHelper(device, serverConnection).also {
+            it.awaitStarted()
+        }
+
+        // Act: send a few commands
+        serverConnection.withConnectionForDevice(device) {
+            sendProcessCommandReply(ProcessCommandReply.newBuilder()
+                                   .setCommandUuid(session.generateUniqueUUID())
+                                   .setPid(10)
+                                   .setCommandIgnored(true)
+                                   .build())
+
+            sendProcessCommandReply(ProcessCommandReply.newBuilder()
+                                        .setCommandUuid(session.generateUniqueUUID())
+                                        .setPid(10)
+                                        .setCommandExecutedOk(true)
+                                        .build())
+
+            sendProcessCommandReply(ProcessCommandReply.newBuilder()
+                                        .setCommandUuid(session.generateUniqueUUID())
+                                        .setPid(10)
+                                        .setCommandExecutedWithError("This is an error")
+                                        .build())
+        }
+
+        yieldUntil { processCommandHelper.processCommandReplies.size == 3 }
+
+        // Assert
+        assertEquals(3, processCommandHelper.processCommandReplies.size)
+        processCommandHelper.processCommandReplies[0].run {
+            assertEquals(10, pid)
+            assertTrue(commandIgnored)
+        }
+        processCommandHelper.processCommandReplies[1].run {
+            assertEquals(10, pid)
+            assertTrue(commandExecutedOk)
+        }
+        processCommandHelper.processCommandReplies[2].run {
+            assertEquals(10, pid)
+            assertEquals("This is an error", commandExecutedWithError)
+        }
+    }
+
+    private class ProcessCommandHelper(
+        private val device: ConnectedDevice,
+        private val serverConnection: ProcessInventoryServerConnection
+    ) {
+        private val scope = device.scope.createChildScope()
+        private val collectorFullyStarted = CompletableDeferred<Unit>()
+        private val commandCollectorStarted = CompletableDeferred<Unit>()
+        private val commandReplyCollectorStarted = CompletableDeferred<Unit>()
+
+        val processCommands = CopyOnWriteArrayList<ProcessCommand>()
+        val processCommandReplies = CopyOnWriteArrayList<ProcessCommandReply>()
+
+        init {
+            scope.launch(device.session.ioDispatcher) {
+                startCommandCollector()
+            }
+            scope.launch(device.session.ioDispatcher) {
+                startReplyCollector()
+            }
+            scope.launch(device.session.ioDispatcher) {
+                awaitAll(commandCollectorStarted)
+                awaitAll(commandReplyCollectorStarted)
+                collectorFullyStarted.complete(Unit)
+            }
+        }
+
+        suspend fun awaitStarted() {
+            collectorFullyStarted.await()
+        }
+
+        private suspend fun startCommandCollector() {
+            serverConnection.withConnectionForDevice(device) {
+                processCommandSharedFlow.onSubscription {
+                    delay(100)
+                    commandCollectorStarted.complete(Unit)
+                }.collect {
+                    processCommands.add(it)
+                }
+            }
+        }
+
+        private suspend fun startReplyCollector() {
+            serverConnection.withConnectionForDevice(device) {
+                processCommandReplySharedFlow.onSubscription {
+                    commandReplyCollectorStarted.complete(Unit)
+                }.collect {
+                    processCommandReplies.add(it)
+                }
+            }
         }
     }
 

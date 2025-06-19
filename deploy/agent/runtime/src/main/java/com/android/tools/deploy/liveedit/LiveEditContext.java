@@ -16,6 +16,11 @@
 package com.android.tools.deploy.liveedit;
 
 import com.android.annotations.VisibleForTesting;
+import com.android.deploy.asm.Type;
+
+import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -29,14 +34,25 @@ public class LiveEditContext {
     // Map of class name to class info for all classes for which we have interpretable bytcode.
     // Class names are expected in the java internal form with class elements separated by slashes.
     // For example, com/android/tools/deploy/liveedit/LiveEditContext.
-    private final ConcurrentHashMap<String, LiveEditClass> classes;
+    final ConcurrentHashMap<String, LiveEditClass> classes;
 
     // The class loader that should be used for class resolution and defining proxy classes.
-    private ClassLoader classLoader;
+    private final ClassLoader classLoader;
+
+    private final Method proxyClassLookup;
 
     public LiveEditContext(ClassLoader classLoader) {
         this.classes = new ConcurrentHashMap<>();
         this.classLoader = classLoader;
+
+        try {
+            Class<?> proxies =
+                    Class.forName("com.android.tools.deploy.liveedit.Proxies", true, classLoader);
+            this.proxyClassLookup = proxies.getDeclaredMethod("getProxyInterface", Set.class);
+            this.proxyClassLookup.setAccessible(true);
+        } catch (Exception e) {
+            throw new LiveEditException("Could not set up Live Edit proxies: ", e);
+        }
     }
 
     public ClassLoader getClassLoader() {
@@ -49,7 +65,8 @@ public class LiveEditContext {
 
     public LiveEditClass addClass(
             String internalName, Interpretable bytecode, boolean isProxyClass) {
-        LiveEditClass clazz = new LiveEditClass(this, bytecode, isProxyClass);
+        LiveEditClass clazz =
+                new LiveEditClass(this, Type.getObjectType(internalName), bytecode, isProxyClass);
         classes.put(internalName, clazz);
         return clazz;
     }
@@ -57,5 +74,17 @@ public class LiveEditContext {
     @VisibleForTesting
     public void removeClass(String name) {
         classes.remove(name);
+    }
+
+    public Class<?> getProxyType(Class<?> superclass, Set<Class<?>> interfaces) {
+        HashSet<Class<?>> superTypes = new HashSet<>();
+        superTypes.add(superclass);
+        superTypes.addAll(interfaces);
+
+        try {
+            return (Class<?>) proxyClassLookup.invoke(null, superTypes);
+        } catch (Exception e) {
+            throw new LiveEditException("Could not get proxy type: ", e);
+        }
     }
 }

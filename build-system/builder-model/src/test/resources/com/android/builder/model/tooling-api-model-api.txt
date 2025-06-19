@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-3934bf668e896e0255ed78d678095b68c846a1592d1822f984957eed12b26b31
+baec2c60c979caef52fef1be82df5aaabe32859e45132fab1b4c627d5d730060
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -633,7 +633,7 @@ com.android.builder.model.v2.ide.BasicArtifact
 com.android.builder.model.v2.ide.BasicArtifact.getMultiFlavorSourceProvider: com.android.builder.model.v2.ide.SourceProvider ()
 com.android.builder.model.v2.ide.BasicArtifact.getVariantSourceProvider: com.android.builder.model.v2.ide.SourceProvider ()
 com.android.builder.model.v2.ide.BasicTestSuiteArtifact implements com.android.builder.model.v2.AndroidModel
-com.android.builder.model.v2.ide.BasicTestSuiteArtifact.getSources: java.util.Set<java.io.File> ()
+com.android.builder.model.v2.ide.BasicTestSuiteArtifact.getTestSuiteName: java.lang.String ()
 com.android.builder.model.v2.ide.BasicVariant implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.BasicVariant$DefaultImpls
 com.android.builder.model.v2.ide.BasicVariant.getAndroidTestArtifact: com.android.builder.model.v2.ide.BasicArtifact ()
@@ -794,6 +794,9 @@ com.android.builder.model.v2.ide.TestInfo.getAdditionalRuntimeApks: java.util.Co
 com.android.builder.model.v2.ide.TestInfo.getAnimationsDisabled: boolean ()
 com.android.builder.model.v2.ide.TestInfo.getExecution: com.android.builder.model.v2.ide.TestInfo$Execution ()
 com.android.builder.model.v2.ide.TestInfo.getInstrumentedTestTaskName: java.lang.String ()
+com.android.builder.model.v2.ide.TestSuite implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.TestSuite.getJunitEngineInfo: com.android.builder.model.v2.ide.JUnitEngineInfo ()
+com.android.builder.model.v2.ide.TestSuite.getName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuiteArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestSuiteArtifact.getTestInfo: com.android.builder.model.v2.ide.TestSuiteTestInfo ()
 com.android.builder.model.v2.ide.TestSuiteTestInfo
@@ -850,8 +853,16 @@ com.android.builder.model.v2.models.AndroidProject.getLintJar: java.io.File ()
 com.android.builder.model.v2.models.AndroidProject.getNamespace: java.lang.String ()
 com.android.builder.model.v2.models.AndroidProject.getResourcePrefix: java.lang.String ()
 com.android.builder.model.v2.models.AndroidProject.getTestFixturesNamespace: java.lang.String ()
+com.android.builder.model.v2.models.AndroidProject.getTestSuites: java.util.Collection<com.android.builder.model.v2.ide.TestSuite> ()
 com.android.builder.model.v2.models.AndroidProject.getVariants: java.util.Collection<com.android.builder.model.v2.ide.Variant> ()
 com.android.builder.model.v2.models.AndroidProject.getViewBindingOptions: com.android.builder.model.v2.ide.ViewBindingOptions ()
+com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
+com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType extends java.lang.Enum
+com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType.getEntries: kotlin.enums.EnumEntries<com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType> ()
+com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType.valueOf: com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType (java.lang.String)
+com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType.values: com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType[] ()
+com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity.getName: java.lang.String ()
+com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity.getType: com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType ()
 com.android.builder.model.v2.models.BasicAndroidProject implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.models.BasicAndroidProject$DefaultImpls
 com.android.builder.model.v2.models.BasicAndroidProject.getBootClasspath: java.util.Collection<java.io.File> ()
@@ -862,7 +873,11 @@ com.android.builder.model.v2.models.BasicAndroidProject.getMainSourceSet: com.an
 com.android.builder.model.v2.models.BasicAndroidProject.getPath: java.lang.String ()
 com.android.builder.model.v2.models.BasicAndroidProject.getProductFlavorSourceSets: java.util.Collection<com.android.builder.model.v2.ide.SourceSetContainer> ()
 com.android.builder.model.v2.models.BasicAndroidProject.getProjectType: com.android.builder.model.v2.ide.ProjectType ()
+com.android.builder.model.v2.models.BasicAndroidProject.getTestSuites: java.util.Collection<com.android.builder.model.v2.models.BasicTestSuite> ()
 com.android.builder.model.v2.models.BasicAndroidProject.getVariants: java.util.Collection<com.android.builder.model.v2.ide.BasicVariant> ()
+com.android.builder.model.v2.models.BasicTestSuite
+com.android.builder.model.v2.models.BasicTestSuite.getName: java.lang.String ()
+com.android.builder.model.v2.models.BasicTestSuite.getSources: java.util.Collection<com.android.builder.model.v2.models.TestSuiteSource> ()
 com.android.builder.model.v2.models.ModelBuilderParameter
 com.android.builder.model.v2.models.ModelBuilderParameter.getAdditionalArtifactsInModel: boolean ()
 com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildAndroidTestRuntimeClasspath: boolean ()
@@ -886,6 +901,19 @@ com.android.builder.model.v2.models.ProjectGraph.getResolvedVariants: java.util.
 com.android.builder.model.v2.models.ProjectGraph.getResolvedVariantsWithProjectInfo: java.util.Map<com.android.builder.model.v2.ide.ProjectInfo, java.lang.String> ()
 com.android.builder.model.v2.models.ProjectSyncIssues implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.models.ProjectSyncIssues.getSyncIssues: java.util.Collection<com.android.builder.model.v2.ide.SyncIssue> ()
+com.android.builder.model.v2.models.TestSuiteDependencies
+com.android.builder.model.v2.models.TestSuiteDependencies.getSourcesDependencies: java.util.Collection<com.android.builder.model.v2.models.TestSuiteSourceDependencies> ()
+com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList
+com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList.getSourcesDependencies: java.util.Collection<com.android.builder.model.v2.models.TestSuiteSourceDependenciesAdjacencyList> ()
+com.android.builder.model.v2.models.TestSuiteSource implements java.io.Serializable
+com.android.builder.model.v2.models.TestSuiteSource.getFolders: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.models.TestSuiteSource.getName: java.lang.String ()
+com.android.builder.model.v2.models.TestSuiteSource.getSourceProvider: com.android.builder.model.v2.ide.SourceProvider ()
+com.android.builder.model.v2.models.TestSuiteSource.getType: com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity$SourceType ()
+com.android.builder.model.v2.models.TestSuiteSourceDependencies implements com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
+com.android.builder.model.v2.models.TestSuiteSourceDependencies.getArtifactDependencies: com.android.builder.model.v2.ide.ArtifactDependencies ()
+com.android.builder.model.v2.models.TestSuiteSourceDependenciesAdjacencyList implements com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
+com.android.builder.model.v2.models.TestSuiteSourceDependenciesAdjacencyList.getArtifactDependencies: com.android.builder.model.v2.ide.ArtifactDependenciesAdjacencyList ()
 com.android.builder.model.v2.models.VariantDependencies implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.models.VariantDependencies$DefaultImpls
 com.android.builder.model.v2.models.VariantDependencies.getAndroidTestArtifact: com.android.builder.model.v2.ide.ArtifactDependencies ()
@@ -895,7 +923,7 @@ com.android.builder.model.v2.models.VariantDependencies.getLibraries: java.util.
 com.android.builder.model.v2.models.VariantDependencies.getMainArtifact: com.android.builder.model.v2.ide.ArtifactDependencies ()
 com.android.builder.model.v2.models.VariantDependencies.getName: java.lang.String ()
 com.android.builder.model.v2.models.VariantDependencies.getTestFixturesArtifact: com.android.builder.model.v2.ide.ArtifactDependencies ()
-com.android.builder.model.v2.models.VariantDependencies.getTestSuiteArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.ArtifactDependencies> ()
+com.android.builder.model.v2.models.VariantDependencies.getTestSuiteArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.models.TestSuiteDependencies> ()
 com.android.builder.model.v2.models.VariantDependencies.getUnitTestArtifact: com.android.builder.model.v2.ide.ArtifactDependencies ()
 com.android.builder.model.v2.models.VariantDependenciesAdjacencyList implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.models.VariantDependenciesAdjacencyList$DefaultImpls
@@ -906,6 +934,7 @@ com.android.builder.model.v2.models.VariantDependenciesAdjacencyList.getLibrarie
 com.android.builder.model.v2.models.VariantDependenciesAdjacencyList.getMainArtifact: com.android.builder.model.v2.ide.ArtifactDependenciesAdjacencyList ()
 com.android.builder.model.v2.models.VariantDependenciesAdjacencyList.getName: java.lang.String ()
 com.android.builder.model.v2.models.VariantDependenciesAdjacencyList.getTestFixturesArtifact: com.android.builder.model.v2.ide.ArtifactDependenciesAdjacencyList ()
+com.android.builder.model.v2.models.VariantDependenciesAdjacencyList.getTestSuiteArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList> ()
 com.android.builder.model.v2.models.VariantDependenciesAdjacencyList.getUnitTestArtifact: com.android.builder.model.v2.ide.ArtifactDependenciesAdjacencyList ()
 com.android.builder.model.v2.models.VariantDependenciesFlatList implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.models.VariantDependenciesFlatList.getDeviceTestArtifacts: java.util.Map<java.lang.String, com.android.builder.model.v2.ide.ArtifactDependenciesFlatList> ()

@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 package com.android.tools.deployer.model
+
+import com.android.ddmlib.IDevice
+import com.android.tools.deployer.ApplicationDumper.Dump
+
 /**
  * ┌─────────────────┐                    ┌───────────────┐
  * │    Project      │                    │    Device     │
@@ -24,23 +28,23 @@ package com.android.tools.deployer.model
  *          ▼                                     ▼
  *    ┌───────────────────┐              ┌───────────────────┐
  *    │       App         │              │    App State      │
- *    │  ┌─────────────────────┐         │   (Dump Info)     │
- *    │  │ Deployment Strategy A│         └─────────┬─────────┘
- *    │  │  -APK               │                    │
- *    │  │  -APK               │                    │
- *    │  └─────────────────────┘                    │
- *    │  ┌─────────────────────┐                    │
- *    │  │ Deployment Strategy B│                    │
- *    │  │  -APK               │                    │
- *    │  └─────────────────────┘                    │
- *    └─────────┬─────────┘                         │
- *              │                                   │
- *              │                                   │
- *              ▼                                   ▼
+ *    │  ┌───────────────────────┐       │   (Dump Info)     │
+ *    │  │ Deployment Strategy A │       └─────────┬─────────┘
+ *    │  │  -APK                 │                 │
+ *    │  │  -APK                 │                 │
+ *    │  └───────────────────────┘                 │
+ *    │  ┌───────────────────────┐                 │
+ *    │  │ Deployment Strategy B │                 │
+ *    │  │  -APK                 │                 │
+ *    │  └───────────────────────┘                 │
+ *    └─────────┬─────────┘                        │
+ *              │                                  │
+ *              │                                  │
+ *              ▼                                  ▼
  *    ┌─────────────────────────────────────────────┐
  *    │           Deployment Plan                   │
- *    │              -App                          │
- *    │              -AppState                     │
+ *    │              -App                           │
+ *    │              -AppState                      │
  *    └─────────────────────────────────────────────┘
  *
  * How and what we deploy to the device depends on two inputs.
@@ -54,6 +58,8 @@ package com.android.tools.deployer.model
  *   2. App State
  *       - From the App model and the deployment strategy, the deployer will formulate a plan of
  *         action by choosing to fetch certain information from the device via DUMP.
+ *         (NOTE: We currently have not migrated all the DUMP into part of AppState)
+ *
  *       - It is important to note that App State should be completely fetched before the deployment
  *         plan is executed. That means the deployer will make (close to) zero queries to the
  *         device after deployment started. The absence of large number of round trips limits
@@ -85,6 +91,7 @@ class PackageManagerApk(apk: Apk, filters: Map<String, String> = emptyMap())
     : ApkArtifact(apk, filters) {
     override fun shouldSendToPackageManager() = true
 }
+
 class RootPushApk(apk: Apk, filters: Map<String, String> = emptyMap())
     : ApkArtifact(apk, filters) {
     override fun shouldRootPush() = true

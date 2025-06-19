@@ -1504,6 +1504,38 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 .expect(expected);
     }
 
+    public void test416719590() {
+        // Regression test for b/416719590
+        lint().files(
+                        manifest().minSdk(19),
+                        java(
+                                "package test.pkg;\n"
+                                    + "\n"
+                                    + "import static android.os.Build.VERSION.SDK_INT;\n"
+                                    + "\n"
+                                    + "import android.media.MediaCodecInfo;\n"
+                                    + "import android.os.Build;\n"
+                                    + "\n"
+                                    + "/** @noinspection unused*/\n"
+                                    + "public class SdkIntTest {\n"
+                                    + "    public MediaCodecInfo codecInfo;\n"
+                                    + "\n"
+                                    + "    public boolean test(String name) {\n"
+                                    + "        return (SDK_INT <= 25 &&"
+                                    + " \"OMX.rk.video_decoder.avc\".equals(name))\n"
+                                    + "                || (SDK_INT <= 29\n"
+                                    + "                &&"
+                                    + " (\"OMX.broadcom.video_decoder.tunnel\".equals(name)\n"
+                                    + "                ||"
+                                    + " \"OMX.bcm.vdec.hevc.tunnel.secure\".equals(name)))\n"
+                                    + "                || (\"Amazon\".equals(Build.MANUFACTURER) &&"
+                                    + " \"AFTS\".equals(Build.MODEL) && codecInfo.isAlias());\n"
+                                    + "    }\n"
+                                    + "}\n"))
+                .run()
+                .expectClean();
+    }
+
     public void testIOException() {
         // See https://issuetracker.google.com/36951557
         String expected =

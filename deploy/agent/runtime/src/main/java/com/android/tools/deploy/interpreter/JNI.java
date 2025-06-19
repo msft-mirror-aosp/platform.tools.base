@@ -33,6 +33,11 @@ public class JNI {
         return os.contains("win");
     }
 
+    static boolean isMac() {
+        String os = System.getProperty("os.name").toLowerCase();
+        return os.contains("mac");
+    }
+
     private static void loadLibrary() {
         // On Android the native methods are in the agent which is already loaded at this point.
         if (isAndroid()) {
@@ -48,6 +53,9 @@ public class JNI {
             String dso = "libjni_dispatch_dso.so";
             if (isWindows()) {
                 dso = "jni_dispatch_dso.dll";
+            }
+            if (isMac()) {
+                dso = "libjni_dispatch_dso.dylib";
             }
             Path p = Paths.get(path + "/" + dso);
             if (!Files.exists(p)) {

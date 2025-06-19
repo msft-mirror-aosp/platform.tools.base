@@ -20,11 +20,10 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants
 import com.android.builder.files.IncrementalRelativeFileSets
-import com.android.builder.files.KeyedFileCache
+import com.android.builder.files.ZipSnapshotRepository
 import com.android.builder.files.RelativeFile
 import com.android.builder.files.RelativeFiles
 import com.android.builder.files.SerializableInputChanges
-import com.android.builder.files.ZipCentralDirectory
 import com.android.builder.merge.IncrementalFileMergerInput
 import com.android.builder.merge.LazyIncrementalFileMergerInput
 import com.android.builder.merge.LazyIncrementalFileMergerInputs
@@ -55,24 +54,23 @@ fun toIncrementalInput(
     input: File,
     name: String,
     changedInputs: Map<File, FileStatus>,
-    zipCache: KeyedFileCache,
+    zipCache: ZipSnapshotRepository,
     cacheUpdates: MutableList<Runnable>
 ): IncrementalFileMergerInput {
     if (input.name.endsWith(SdkConstants.DOT_JAR)) {
-        val jarCDR = ZipCentralDirectory(input)
         if (changedInputs.containsKey(input)) {
             cacheUpdates.add(IOExceptionRunnable.asRunnable {
                 if (input.isFile) {
-                    zipCache.add(jarCDR)
+                    zipCache.takeSnapshotOfZip(input)
                 } else {
-                    zipCache.remove(input)
+                    zipCache.removeSnapshotOfZip(input)
                 }
             })
         }
         return LazyIncrementalFileMergerInput(
             name,
-            CachedSupplier { computeUpdatesFromJar(jarCDR, changedInputs, zipCache) },
-            CachedSupplier { computeFilesFromJar(jarCDR) }
+            CachedSupplier { computeUpdatesFromJar(input, changedInputs, zipCache) },
+            CachedSupplier { computeFilesFromJar(input) }
         )
     }
 
@@ -98,7 +96,7 @@ fun toIncrementalInput(
 fun toNonIncrementalInput(
     input: File,
     name: String,
-    zipCache: KeyedFileCache,
+    zipCache: ZipSnapshotRepository,
     cacheUpdates: MutableList<Runnable>
 ): IncrementalFileMergerInput? {
     if (!input.isFile && !input.isDirectory) {
@@ -106,7 +104,7 @@ fun toNonIncrementalInput(
     }
 
     if (input.isFile) {
-        cacheUpdates.add(IOExceptionRunnable.asRunnable {  zipCache.add(input) })
+        cacheUpdates.add(IOExceptionRunnable.asRunnable {  zipCache.takeSnapshotOfZip(input) })
     }
 
     return LazyIncrementalFileMergerInputs.fromNew(name, ImmutableSet.of(input))
@@ -121,21 +119,21 @@ fun toNonIncrementalInput(
  * @return a mapping from all files that have changed to the type of change
  */
 private fun computeUpdatesFromJar(
-    jar: ZipCentralDirectory,
+    jar: File,
     changedInputs: Map<File, FileStatus>,
-    zipCache: KeyedFileCache
+    zipCache: ZipSnapshotRepository
 ): Map<RelativeFile, FileStatus> {
-    if (jar.file in changedInputs) {
-        val fileStatus = changedInputs[jar.file]
+    if (jar in changedInputs) {
+        val fileStatus = changedInputs[jar]
         try {
             return when (fileStatus) {
-                FileStatus.NEW -> IncrementalRelativeFileSets.fromZip(jar, FileStatus.NEW)
+                FileStatus.NEW -> IncrementalRelativeFileSets.fromZipSnapshot(jar, FileStatus.NEW)
                 FileStatus.REMOVED -> {
-                    val cached = zipCache.get(jar.file) ?: throw RuntimeException(
+                    val cached = zipCache.getLastSnapshotOfZip(jar) ?: throw RuntimeException(
                         "File '$jar' was deleted, but previous version not found in cache"
                     )
 
-                    IncrementalRelativeFileSets.fromZip(cached, FileStatus.REMOVED)
+                    IncrementalRelativeFileSets.fromZipSnapshot(cached, FileStatus.REMOVED)
                 }
                 FileStatus.CHANGED -> IncrementalRelativeFileSets.fromZip(jar, zipCache, HashSet())
                 else -> throw AssertionError("Unexpected FileStatus: $fileStatus")
@@ -154,8 +152,8 @@ private fun computeUpdatesFromJar(
  * @param jar the jar input
  * @return all files in the jar file
  */
-private fun computeFilesFromJar(jar: ZipCentralDirectory): Set<RelativeFile> {
-    if (!jar.file.isFile) {
+private fun computeFilesFromJar(jar: File): Set<RelativeFile> {
+    if (!jar.isFile) {
         return ImmutableSet.of()
     }
     try {
@@ -224,7 +222,7 @@ internal data class InputData(
 internal fun toInputs(
     inputs: List<InputData>,
     changes: SerializableInputChanges?,
-    zipCache: KeyedFileCache,
+    zipCache: ZipSnapshotRepository,
     cacheUpdates: MutableList<Runnable>,
     full: Boolean,
 ): ImmutableMap<IncrementalFileMergerInput, JavaResMergingPriority> {

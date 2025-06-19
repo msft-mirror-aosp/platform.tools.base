@@ -45,7 +45,7 @@ internal class KmpDeviceTestOptionsDslInfoImpl(
     override val emulatorControl: EmulatorControl
         get() = testOnDeviceConfig.emulatorControl
     override val targetSdkVersion: AndroidVersion?
-        get() = extension.run { createTargetSdkVersion(compileSdk, compileSdkPreview) }
+        get() = testOnDeviceConfig.run { createTargetSdkVersion(_targetSdk?.apiLevel, _targetSdk?.codeName) }
     override val codeCoverageEnabled: Boolean
         get() = extension.androidTestOnJvmOptions!!.enableCoverage
 }

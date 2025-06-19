@@ -33,7 +33,10 @@ interface TestBaseFlavor :
      */
     var targetSdk: Int?
 
-    @Deprecated("Replaced by targetSdk property")
+    @Deprecated(
+        "Will be removed in AGP 10.0",
+        replaceWith = ReplaceWith("targetSdk { version = release(targetSdkVersion) }")
+    )
     fun targetSdkVersion(targetSdkVersion: Int)
 
     /**
@@ -45,10 +48,15 @@ interface TestBaseFlavor :
      */
     var targetSdkPreview: String?
 
-    @Deprecated("Replaced by targetSdkPreview property")
+    /**
+     * Configures all aspects regarding target sdk, see [TargetSdkSpec] for available options.
+     */
+    fun targetSdk(action: TargetSdkSpec.() -> Unit)
+
+    @Deprecated(message = "Will be removed in AGP 10.0, replaced with the targetSdk block")
     fun setTargetSdkVersion(targetSdkVersion: String?)
 
-    @Deprecated("Replaced by targetSdkPreview property")
+    @Deprecated(message = "Will be removed in AGP 10.0, replaced with the targetSdk block")
     fun targetSdkVersion(targetSdkVersion: String?)
 
     /**
@@ -59,6 +67,14 @@ interface TestBaseFlavor :
      */
     var maxSdk: Int?
 
-    @Deprecated("Replaced by maxSdk property")
+    /**
+     * Configures all aspects regarding maxSdk, see [MaxSdkSpec] for available options.
+     */
+    fun maxSdk(action: MaxSdkSpec.() -> Unit)
+
+    @Deprecated(
+        "Will be removed in AGP 10.0",
+        replaceWith = ReplaceWith("maxSdk { version = release(maxSdkVersion) }")
+    )
     fun maxSdkVersion(maxSdkVersion: Int)
 }

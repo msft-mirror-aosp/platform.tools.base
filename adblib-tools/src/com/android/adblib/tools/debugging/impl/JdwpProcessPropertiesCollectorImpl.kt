@@ -27,6 +27,7 @@ import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollectorFactoryList
+import com.android.adblib.tools.debugging.externalJdwpProcessCommandDispatcherList
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
@@ -56,7 +57,7 @@ internal class JdwpProcessPropertiesCollectorImpl(
     private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
     private val propertiesAtomicStateFlow =
-        AtomicStateFlow(MutableStateFlow(JdwpProcessProperties(pid, isWaitingForDebugger = OptionalValue.of(false))))
+        AtomicStateFlow(MutableStateFlow(JdwpProcessProperties(pid)))
 
     override val stateFlow: StateFlow<JdwpProcessProperties> =
         propertiesAtomicStateFlow.asStateFlow()
@@ -84,17 +85,30 @@ internal class JdwpProcessPropertiesCollectorImpl(
                 // is always the source of truth
                 return@launch
             }
+
             device.session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { factory ->
                 factory.create(process)
             }.forEach { externalCollector ->
-                runCatching {
-                    val handler = ExternalPropertiesCollectorHandler(
-                        externalCollector,
-                        propertiesAtomicStateFlow
-                    )
-                    handler.execute()
-                }.onFailure { throwable ->
-                    logger.logIOCompletionErrors(throwable)
+                launch {
+                    runCatching {
+                        val handler = ExternalPropertiesCollectorHandler(
+                            externalCollector,
+                            propertiesAtomicStateFlow
+                        )
+                        handler.execute()
+                    }.onFailure { throwable ->
+                        logger.logIOCompletionErrors(throwable)
+                    }
+                }
+            }
+
+            process.externalJdwpProcessCommandDispatcherList().forEach { externalDispatcher ->
+                launch {
+                    runCatching {
+                        externalDispatcher.start()
+                    }.onFailure { throwable ->
+                        logger.logIOCompletionErrors(throwable)
+                    }
                 }
             }
         }

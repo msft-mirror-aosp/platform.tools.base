@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.ApkSigningConfig
+import com.android.build.api.dsl.MaxSdkSpec
+import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TestProductFlavor
 
 /**
@@ -47,6 +49,16 @@ class TestProductFlavorProxy(
             this@TestProductFlavorProxy.dslRecorder.set("targetSdkPreview", value)
         }
 
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        dslRecorder.runNestedBlock(
+            name = "targetSdk",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(TargetSdkSpec::class.java, it) }
+        ) {
+            action(this)
+        }
+    }
+
     override fun setTargetSdkVersion(targetSdkVersion: String?) {
         this@TestProductFlavorProxy.dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
     }
@@ -56,6 +68,16 @@ class TestProductFlavorProxy(
         set(value) {
             this@TestProductFlavorProxy.dslRecorder.set("maxSdk", value)
         }
+
+    override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
+        dslRecorder.runNestedBlock(
+            name = "maxSdk",
+            parameters = listOf(),
+            instanceProvider = { DslProxy.createProxy(MaxSdkSpec::class.java, it) }
+        ) {
+            action(this)
+        }
+    }
 
     override fun maxSdkVersion(maxSdkVersion: Int) {
         this@TestProductFlavorProxy.dslRecorder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)

@@ -29,7 +29,7 @@ androidComponents {
         extension.compileSdk = libs.versions.latestCompileSdk.get().toInt()
     }
     onVariants { variant ->
-        if (variant.name == null || variant.name.isEmpty()) {
+        if (variant.name.isEmpty()) {
             throw IllegalArgumentException("must have variant name")
         }
     }

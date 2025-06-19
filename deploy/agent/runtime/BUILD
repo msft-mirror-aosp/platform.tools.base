@@ -1,7 +1,7 @@
-load("@rules_java//java:defs.bzl", "java_import")
+load("@rules_java//java:defs.bzl", "java_binary", "java_import")
 load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_library", "coverage_java_test")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 coverage_java_library(
@@ -63,9 +63,9 @@ coverage_java_library(
 
 coverage_java_library(
     name = "liveedit_lambdalib_java",
-    srcs = glob([
-        "src/main/java/com/android/tools/deploy/liveedit/superclasses/*.java",
-    ]),
+    srcs = [
+        ":lambda_proxy_java",
+    ],
     deps = [
         ":liveedit_java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
@@ -111,6 +111,7 @@ coverage_java_test(
         "//tools/base/deploy/proto:deploy_java_proto",
         "//tools/base/testutils:tools.testutils",
         "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 
@@ -143,4 +144,38 @@ genrule(
     cmd = "$(location //tools/base/bazel:unzipper) $(location :live_edit_app_jar) classes.dex:$(location :live_edit.dex)",
     tools = ["//tools/base/bazel:unzipper"],
     visibility = ["//tools/base/deploy:__subpackages__"],
+)
+
+genrule(
+    name = "lambda_proxy_java",
+    outs = [
+        "Proxies.java",
+    ],
+    cmd = "$(location //tools/base/deploy/agent/runtime:lambda_proxy_codegen_bin) $(location :Proxies.java)",
+    tools = ["//tools/base/deploy/agent/runtime:lambda_proxy_codegen_bin"],
+    visibility = ["//tools/base/deploy:__subpackages__"],
+)
+
+java_binary(
+    name = "lambda_proxy_codegen_bin",
+    main_class = "com.android.tools.deploy.codegen.LambdaGeneratorKt",
+    visibility = ["//tools/base/deploy:__subpackages__"],
+    runtime_deps = [
+        ":lambda_proxy_codegen",
+    ],
+)
+
+kotlin_library(
+    name = "lambda_proxy_codegen",
+    srcs = [
+        "src/main/java/com/android/tools/deploy/codegen/LambdaGenerator.kt",
+    ],
+    visibility = ["//tools/base/deploy:__subpackages__"],
+    deps = [
+        ":asm4",
+        ":liveedit_java",
+        "@maven//:com.squareup.javapoet",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
 )

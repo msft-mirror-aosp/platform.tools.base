@@ -40,7 +40,9 @@ data class SourceProviderImpl(
     override val mlModelsDirectories: Collection<File>?,
     override val customDirectories: Collection<CustomSourceDirectory>?,
 ) : SourceProvider, Serializable {
+
     companion object {
+
         @JvmStatic
         private val serialVersionUID: Long = 1L
     }

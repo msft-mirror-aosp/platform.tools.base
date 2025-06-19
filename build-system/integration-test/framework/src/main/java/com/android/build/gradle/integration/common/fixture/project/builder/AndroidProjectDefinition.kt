@@ -111,7 +111,9 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     protected open fun initDefaultValues(extension: ExtensionT) {
         if (extension is CommonExtension<*,*,*,*,*,*>) {
             extension.namespace = "pkg.name${path.replace(':', '.')}"
-            extension.compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+            extension.compileSdk {
+                version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
+            }
         } else {
             throw RuntimeException("Unsupported android extension type. Override initDefaultValues() in the specific AndroidProjectDefinition implementation!")
         }

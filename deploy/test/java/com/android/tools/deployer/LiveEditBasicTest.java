@@ -39,7 +39,7 @@ public class LiveEditBasicTest extends LiveEditTestBase {
 
     @Test
     public void testLiveEditSimple() throws IOException {
-        android.loadDex(DEX_LOCATION);
+        android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);
         android.launchActivity(ACTIVITY_CLASS);
 
         android.triggerMethod(ACTIVITY_CLASS, "invokeLiveEditSimple");

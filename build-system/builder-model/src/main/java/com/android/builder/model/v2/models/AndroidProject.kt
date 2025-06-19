@@ -19,6 +19,7 @@ import com.android.builder.model.v2.AndroidModel
 import com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags
 import com.android.builder.model.v2.ide.JavaCompileOptions
 import com.android.builder.model.v2.ide.ProjectType
+import com.android.builder.model.v2.ide.TestSuite
 import com.android.builder.model.v2.ide.Variant
 import com.android.builder.model.v2.ide.ViewBindingOptions
 import java.io.File
@@ -67,6 +68,13 @@ interface AndroidProject: AndroidModel {
      * @return a list of the variants.
      */
     val variants: Collection<Variant>
+
+    /**
+     * Returns the list of all the test suites.
+     *
+     * @return a list of [TestSuite]
+     */
+    val testSuites: Collection<TestSuite>
 
     /**
      * Returns the compile options for Java code.

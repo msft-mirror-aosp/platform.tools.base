@@ -404,3 +404,15 @@ suspend inline fun JdwpPacketReceiver.receiveUntil(
 ) {
     return receiveWhile { livePacket -> !predicate(livePacket) }
 }
+
+/**
+ * Sends a command [packet] to this [SharedJdwpSession] and waits for the corresponding
+ * reply packet
+ */
+suspend fun SharedJdwpSession.sendAndReceiveCommand(packet: JdwpPacketView): JdwpPacketView {
+    return newPacketReceiver().withActivation {
+        sendPacket(packet)
+    }.receiveFirst { replyPacket ->
+        replyPacket.isReply && replyPacket.id == packet.id
+    }
+}

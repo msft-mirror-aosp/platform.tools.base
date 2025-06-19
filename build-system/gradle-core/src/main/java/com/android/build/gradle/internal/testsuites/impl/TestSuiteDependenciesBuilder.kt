@@ -20,9 +20,10 @@ import com.android.Version
 import com.android.build.api.attributes.AgpVersionAttr
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.ProductFlavorAttr
+import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
-import com.android.build.gradle.internal.dependency.TestSuiteClasspath
+import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.internal.dependency.VariantAwareDependenciesBuilder
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
@@ -48,6 +49,7 @@ class TestSuiteDependenciesBuilder internal constructor(
     private val projectOptions: ProjectOptions,
     issueReporter: IssueReporter,
     private val testSuiteBuilder: TestSuiteBuilderImpl,
+    private val testSuiteDependencies: AgpTestSuiteDependencies?,
     private val testedVariant: VariantCreationConfig,
     private val flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>,
     dslInfo: MultiVariantComponentDslInfo,
@@ -62,15 +64,14 @@ class TestSuiteDependenciesBuilder internal constructor(
             org.gradle.api.attributes.Category::class.java, org.gradle.api.attributes.Category.LIBRARY
         )
     private val testSuiteName = testSuiteBuilder.name
-    private val dslDeclaredDependencies = testSuiteBuilder.dslDeclaredDependencies
-    private val variantDeclaredDependencies = testSuiteBuilder.dependencies
+    private val enginesDependencies = testSuiteBuilder.junitEngineSpec.enginesDependencies
 
     /**
      * Creates the configuration associated with a test suite.
      *
      * At this point, only compile and runtime classpath are available.
      */
-    fun build(): TestSuiteClasspath {
+    fun build(): TestSuiteSourceClasspath {
         val factory = project.objects
         val configurations = project.configurations
         val testedVariantName = testedVariant.name
@@ -78,18 +79,17 @@ class TestSuiteDependenciesBuilder internal constructor(
         // ----------- COMPILE CLASSPATH
         val compileClasspathName: String = testSuiteName + testedVariantName.capitalized() + "CompileClasspath"
         val compileClasspath: Configuration = configurations.maybeCreate(compileClasspathName)
-        compileClasspath.setVisible(false)
-        compileClasspath.setDescription(
+        compileClasspath.isVisible = false
+        compileClasspath.description =
             "Resolved configuration for compilation for test suite: $testSuiteName in $testedVariantName"
-        )
         populateClasspath(
             compileClasspath,
-            listOf(
-                dslDeclaredDependencies.compileOnly,
-                variantDeclaredDependencies.compileOnly,
-                dslDeclaredDependencies.implementation,
-                variantDeclaredDependencies.implementation
-            )
+            testSuiteDependencies?.let {
+                listOf(
+                    testSuiteDependencies.compileOnly,
+                    testSuiteDependencies.implementation
+                )
+            } ?: listOf()
         )
         compileClasspath.extendsFrom(
             testedVariant.variantDependencies.compileClasspath
@@ -99,24 +99,24 @@ class TestSuiteDependenciesBuilder internal constructor(
         // -------------- RUNTIME CLASSPATH
         val runtimeClasspathName: String = testSuiteName + testedVariantName.capitalized() + "RuntimeClasspath"
         val runtimeClasspath = configurations.maybeCreate(runtimeClasspathName)
-        runtimeClasspath.setDescription(
-            "Resolved configuration for runtime for tes suite: $testSuiteName in $testedVariantName"
-        )
+        runtimeClasspath.description =
+            "Resolved configuration for runtime for test suite: $testSuiteName in $testedVariantName"
         populateClasspath(
             runtimeClasspath,
-            listOf(
-                dslDeclaredDependencies.implementation,
-                variantDeclaredDependencies.implementation,
-                dslDeclaredDependencies.runtimeOnly,
-                variantDeclaredDependencies.runtimeOnly
-            )
+            testSuiteDependencies?.let {
+                listOf(
+                    testSuiteDependencies.implementation,
+                    testSuiteDependencies.runtimeOnly,
+                    enginesDependencies
+                )
+            } ?: listOf(enginesDependencies)
         )
         runtimeClasspath.extendsFrom(
             testedVariant.variantDependencies.runtimeClasspath
         )
         addAttributes(runtimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
 
-        return TestSuiteClasspath(
+        return TestSuiteSourceClasspath(
             compileClasspath = compileClasspath,
             runtimeClasspath = runtimeClasspath,
             objectFactory = project.objects

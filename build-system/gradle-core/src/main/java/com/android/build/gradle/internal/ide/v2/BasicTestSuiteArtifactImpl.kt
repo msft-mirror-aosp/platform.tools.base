@@ -21,7 +21,7 @@ import java.io.File
 import java.io.Serializable
 
 class BasicTestSuiteArtifactImpl(
-    override val sources: Set<File>
+    override val testSuiteName: String,
 ): BasicTestSuiteArtifact, Serializable {
     companion object {
         @JvmStatic

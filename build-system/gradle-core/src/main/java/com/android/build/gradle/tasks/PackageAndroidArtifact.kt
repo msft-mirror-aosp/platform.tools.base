@@ -504,16 +504,15 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                 addCacheKeys(cacheKeyMap, "assets", params.assetsFiles.get())
                 cacheKeyMap[params.androidResourcesFile.get().asFile] = "androidResources"
                 addCacheKeys(cacheKeyMap, "jniLibs", params.jniFiles.get())
-                val cache = KeyedFileCache(
-                        cacheDir) { file: File -> Objects.requireNonNull(cacheKeyMap[file]) }
+                val cache = ZipSnapshotRepository(
+                        cacheDir) { file: File -> Objects.requireNonNull(cacheKeyMap[file])!! }
                 val cacheUpdates = mutableSetOf<Runnable>()
                 val changedDexFiles = classpathToRelativeFileSet(
                         params.dexFiles.get(), cache, cacheUpdates)
                 val changedJavaResources = getChangedJavaResources(params, cacheKeyMap, cache, cacheUpdates)
                 val changedAndroidResources: Map<RelativeFile, FileStatus> = if (params.androidResourcesChanged.get()) {
                     IncrementalRelativeFileSets.fromZip(
-                            ZipCentralDirectory(
-                                    params.androidResourcesFile.get().asFile),
+                            params.androidResourcesFile.get().asFile,
                             cache,
                             cacheUpdates)
                 } else {
@@ -571,7 +570,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
             private fun getChangedJavaResources(
                     params: SplitterParams?,
                     cacheKeyMap: MutableMap<File, String?>,
-                    cache: KeyedFileCache,
+                    cache: ZipSnapshotRepository,
                     cacheUpdates: MutableSet<Runnable>): Map<RelativeFile, FileStatus> {
                 val changedJavaResources = mutableMapOf<RelativeFile, FileStatus>()
                 for (change in params!!.javaResourceFiles.get().changes) {
@@ -1015,7 +1014,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
         private fun doTask(
                 incrementalDirForSplit: File,
                 outputFile: File,
-                cache: KeyedFileCache,
+                cache: ZipSnapshotRepository,
                 manifestOutputs: BuiltArtifactsImpl,
                 changedDex: Map<RelativeFile, FileStatus>,
                 changedJavaResources: Map<RelativeFile, FileStatus>,
@@ -1130,7 +1129,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                     .distinct()
                     .forEach { f: File? ->
                         try {
-                            cache.add(f!!)
+                            cache.takeSnapshotOfZip(f!!)
                         } catch (e: IOException) {
                             throw IOExceptionWrapper(e)
                         }

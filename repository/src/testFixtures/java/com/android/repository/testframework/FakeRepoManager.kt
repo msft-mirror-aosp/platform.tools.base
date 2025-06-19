@@ -1,0 +1,124 @@
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.android.repository.testframework
+
+import com.android.repository.api.Downloader
+import com.android.repository.api.FallbackLocalRepoLoader
+import com.android.repository.api.FallbackRemoteRepoLoader
+import com.android.repository.api.LocalPackage
+import com.android.repository.api.PackageOperation
+import com.android.repository.api.ProgressIndicator
+import com.android.repository.api.ProgressRunner
+import com.android.repository.api.RemotePackage
+import com.android.repository.api.RepoManager
+import com.android.repository.api.RepoPackage
+import com.android.repository.api.RepositorySource
+import com.android.repository.api.RepositorySourceProvider
+import com.android.repository.api.SchemaModule
+import com.android.repository.api.SettingsController
+import com.android.repository.impl.meta.RepositoryPackages
+import java.nio.file.Path
+import kotlin.time.Duration
+import org.w3c.dom.ls.LSResourceResolver
+
+/** A fake [RepoManager], for use in unit tests. */
+class FakeRepoManager(override val localPath: Path?, override val packages: RepositoryPackages) :
+  RepoManager() {
+  constructor(packages: RepositoryPackages) : this(null, packages)
+
+  private val _schemaModules = mutableListOf(commonModule, genericModule)
+  override val schemaModules: List<SchemaModule<*>>
+    get() = _schemaModules
+
+  override fun registerSchemaModule(module: SchemaModule<*>) {
+    _schemaModules.add(module)
+  }
+
+  override fun setFallbackLocalRepoLoader(local: FallbackLocalRepoLoader?) {}
+
+  override fun registerSourceProvider(provider: RepositorySourceProvider) {}
+
+  override val sourceProviders: List<RepositorySourceProvider>
+    get() = emptyList()
+
+  override fun getSources(
+    downloader: Downloader?,
+    progress: ProgressIndicator,
+    forceRefresh: Boolean,
+  ): List<RepositorySource> = emptyList()
+
+  override fun setFallbackRemoteRepoLoader(remote: FallbackRemoteRepoLoader?) {}
+
+  override fun load(
+    cacheExpirationMs: Long,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
+    runner: ProgressRunner,
+    downloader: Downloader?,
+    settings: SettingsController?,
+  ) {
+    onLocalComplete?.loaded(this.packages)
+    onSuccess?.loaded(this.packages)
+  }
+
+  override fun loadSynchronously(
+    cacheExpirationMs: Long,
+    onLocalComplete: RepoLoadedListener?,
+    onSuccess: RepoLoadedListener?,
+    onError: Runnable?,
+    runner: ProgressRunner,
+    downloader: Downloader?,
+    settings: SettingsController?,
+  ) {
+    onLocalComplete?.loaded(this.packages)
+    onSuccess?.loaded(this.packages)
+  }
+
+  override suspend fun loadLocalPackages(
+    indicator: ProgressIndicator,
+    cacheExpiration: Duration,
+  ): List<LocalPackage> = emptyList()
+
+  override suspend fun loadRemotePackages(
+    indicator: ProgressIndicator,
+    cacheExpiration: Duration,
+    downloader: Downloader,
+    settings: SettingsController?,
+  ): List<RemotePackage> = emptyList()
+
+  override fun markInvalid() {}
+
+  override fun markLocalCacheInvalid() {}
+
+  override fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean = false
+
+  override fun getResourceResolver(progress: ProgressIndicator): LSResourceResolver? = null
+
+  override fun addLocalChangeListener(listener: RepoLoadedListener) {}
+
+  override fun removeLocalChangeListener(listener: RepoLoadedListener) {}
+
+  override fun addRemoteChangeListener(listener: RepoLoadedListener) {}
+
+  override fun removeRemoteChangeListener(listener: RepoLoadedListener) {}
+
+  override fun installBeginning(repoPackage: RepoPackage, installer: PackageOperation) {}
+
+  override fun installEnded(repoPackage: RepoPackage) {}
+
+  override fun getInProgressInstallOperation(remotePackage: RepoPackage): PackageOperation? = null
+}

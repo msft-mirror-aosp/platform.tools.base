@@ -27,9 +27,14 @@ import com.android.build.gradle.integration.common.utils.getDebugVariant
 import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperties
 import com.android.build.gradle.internal.testsuites.impl.TestEngineInputProperty
 import com.android.build.gradle.options.BooleanOption
+import com.android.builder.model.v2.ide.BasicVariant
 import com.android.builder.model.v2.ide.Library
 import com.android.builder.model.v2.ide.SyncIssue
+import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
+import com.android.builder.model.v2.models.BasicAndroidProject
+import com.android.builder.model.v2.models.BasicTestSuite
 import com.google.common.truth.Truth
+import junit.framework.AssertionFailedError
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -127,15 +132,19 @@ class TestEngineWiringTest(
                             includeEngines.add(
                                 "[engine:toy-junit-engine-for-tests]"
                             )
+                            enginesDependencies.add("org.junit.platform:junit-platform-launcher")
+                            enginesDependencies.add("com.test:toy-junit-engine:1.0")
+                            enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
                         }
-                        it.dependencies.implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-                        it.dependencies.implementation.add("com.google.code.gson:gson:2.11.0")
-                        it.dependencies.runtimeOnly.add("org.junit.platform:junit-platform-launcher")
-                        it.dependencies.runtimeOnly.add("com.test:toy-junit-engine:1.0")
-                        it.dependencies.runtimeOnly.add("org.junit.platform:junit-platform-engine:1.12.0")
+                        it.hostJar {
+                            dependencies.apply {
+                                implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
+                                implementation.add("com.google.code.gson:gson:2.11.0")
+                            }
+                        }
                     }
                 }
-                dependencies {
+                this.dependencies {
                     implementation("com.google.truth:truth:0.44")
                 }
             }
@@ -157,18 +166,29 @@ class TestEngineWiringTest(
         val result = project.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels()
         Truth.assertThat(result).isNotNull()
         val models = result.container.getProject(modulePath)
-        val testSuiteArtifacts = models.basicAndroidProject?.variants?.first { variant ->
-            variant.name == "debug"
-        }?.testSuiteArtifacts
 
-        Truth.assertThat(testSuiteArtifacts).isNotNull()
-        val firstTestSuite = testSuiteArtifacts?.get("first")
-        Truth.assertThat(firstTestSuite).isNotNull()
-        val sources = firstTestSuite!!.sources
-        Truth.assertThat(sources).hasSize(1)
-        Truth.assertThat(sources.single()).isEqualTo(
+        // verify the test suite model
+        val testSuites = models.basicAndroidProject?.testSuites
+            ?: throw AssertionFailedError("no test suites defined in the project")
+        Truth.assertThat(testSuites).hasSize(1)
+        val firstTestSuite: BasicTestSuite = testSuites.single()
+        Truth.assertThat(firstTestSuite.name).isEqualTo("first")
+        val firstTestSuiteSources = firstTestSuite.sources.single()
+        Truth.assertThat(firstTestSuiteSources.type).isEqualTo(
+            BaseTestSuiteSourceIdentity.SourceType.HOST_JAR
+        )
+        Truth.assertThat(firstTestSuiteSources.folders).containsExactly(
             project.subProject(modulePath).resolve("src/first").toFile()
         )
+
+        // verify the variant specific model
+        val variantTestSuites = getVariant(models.basicAndroidProject, "debug")
+            .testSuiteArtifacts
+
+        Truth.assertThat(variantTestSuites).hasSize(1)
+        val variantTestSuite = variantTestSuites.values.single()
+        Truth.assertThat(variantTestSuite.testSuiteName).isEqualTo("first")
+
     }
 
     @Test
@@ -190,7 +210,8 @@ class TestEngineWiringTest(
         Truth.assertThat(result).isNotNull()
         val models = result.container.getProject(modulePath)
         val libraries = models.variantDependencies?.libraries
-        val resolvedLibraries = models.variantDependencies?.testSuiteArtifacts["first"]?.compileDependencies?.map { graphItem ->
+        val resolvedLibraries = models.variantDependencies?.testSuiteArtifacts["first"]
+            ?.sourcesDependencies?.single()?.artifactDependencies?.compileDependencies?.map { graphItem ->
             libraries!![graphItem.key]
         }
         resolvedLibraries!!.forEach { library: Library? ->
@@ -202,5 +223,14 @@ class TestEngineWiringTest(
                 .filter { it!!.libraryInfo != null }
                 .map { it!!.libraryInfo!!.name }
         ).containsAtLeastElementsIn(listOf("truth", "gson", "kotlin-stdlib"))
+    }
+
+    private fun getVariant(basicAndroidProject: BasicAndroidProject?, variantName: String): BasicVariant {
+        if (basicAndroidProject == null)
+            throw AssertionFailedError("BasicAndroidProject is null")
+
+        return basicAndroidProject.variants.first { variant ->
+            variant.name == "debug"
+        }
     }
 }

@@ -132,7 +132,7 @@ class GradualR8Test {
                         fun methodToRemove() {}
                     }
                 """.trimIndent())
-                add("src/main/resources/META-INF/com.android.tools/proguard/proguard.ext", "# Proguard rules")
+                add("src/main/resources/META-INF/proguard/proguard.ext", "# Proguard rules")
             }
         }
     }
@@ -172,7 +172,7 @@ class GradualR8Test {
     private fun getExternalJavaLib(): MavenRepoGenerator.Library {
         val jar = jarWithClasses(listOf(ExternalJavaLibClass::class.java))
         val shrinkRules =
-            mapOf("META-INF/com.android.tools/proguard/proguard.ext" to "# Proguard rules")
+            mapOf("META-INF/proguard/proguard.ext" to "# Proguard rules")
         val updatedJar = addShrinkRulesToJar(jar, shrinkRules.mapValues { it.value.toByteArray() })
         return MavenRepoGenerator.Library(
             mavenCoordinate = "com.external.dependency:javalib:1.0",
@@ -199,6 +199,34 @@ class GradualR8Test {
             classes().containsAtLeast(
                 ExternalAndroidLib2Class::class.java.filePath(),
                 "com/example/androidlib2/ClassInAndroidLib2"
+            )
+        }
+    }
+
+    @Test
+    fun `test gradual r8 no optimization for application classes`() {
+        val build = rule.build
+        val app = build.androidApplication()
+        app.files.add(
+            "src/main/java/com/example/app/ClassInAndroidApp.kt",
+            //language=kotlin
+            """
+                        package com.example.app
+                        class ClassInAndroidApp {
+                            fun method1() {}
+                            fun method2() {}
+                        }
+                    """.trimIndent()
+        )
+
+        build.executor.with(BooleanOption.GRADUAL_R8_SHRINKING, true).run(":app:assembleRelease")
+
+        verifyPackagesTxt(app)
+
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().containsAtLeast(
+                ExternalAndroidLib2Class::class.java.filePath(),
+                "com/example/app/ClassInAndroidApp"
             )
         }
     }

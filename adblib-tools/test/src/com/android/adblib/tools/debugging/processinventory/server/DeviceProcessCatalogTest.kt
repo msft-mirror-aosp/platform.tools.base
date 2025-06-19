@@ -43,17 +43,17 @@ class DeviceProcessCatalogTest {
     private val catalog = DeviceProcessCatalog(fakeAdbSession, deviceId)
 
     @Test
-    fun trackProcessesInitiallyEmitsEmptyUpdateList(): Unit =
+    fun trackProcessUpdatesInitiallyEmitsEmptyUpdateList(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
-            val processUpdates = catalog.trackProcesses().first()
+            val processUpdates = catalog.trackProcessUpdates().first()
             assertTrue(processUpdates.processUpdateList.isEmpty())
         }
 
     @Test
-    fun trackProcessesEmitsUpdatedProcessValues(): Unit =
+    fun trackProcessUpdatesEmitsUpdatedProcessValues(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
             var collectedIndex = 0
-            catalog.trackProcesses().take(2).collect { processUpdates ->
+            catalog.trackProcessUpdates().take(2).collect { processUpdates ->
                 if (collectedIndex == 0) {
                     // Assert initial state: empty list
                     assertTrue(processUpdates.processUpdateList.isEmpty())
@@ -72,7 +72,7 @@ class DeviceProcessCatalogTest {
                         feature = "feat1"
                     )
                     val processUpdates = createProcessUpdates(process)
-                    catalog.updateProcessList(processUpdates)
+                    catalog.handleProcessUpdates(processUpdates)
                 } else if (collectedIndex == 1) {
                     // Assert updated process
                     assertEquals(1, processUpdates.processUpdateCount)
@@ -110,10 +110,10 @@ class DeviceProcessCatalogTest {
                 feature = "feat1"
             )
             val processUpdates = createProcessUpdates(process)
-            catalog.updateProcessList(processUpdates)
+            catalog.handleProcessUpdates(processUpdates)
 
             // Act / Assert
-            catalog.trackProcesses().take(2).collect { processUpdates ->
+            catalog.trackProcessUpdates().take(2).collect { processUpdates ->
                 if (collectedIndex == 0) {
                     // Assert original values
                     assertEquals(1, processUpdates.processUpdateCount)
@@ -143,7 +143,7 @@ class DeviceProcessCatalogTest {
                         feature = "feat2"
                     )
                     val processUpdates = createProcessUpdates(updatedProcess)
-                    catalog.updateProcessList(processUpdates)
+                    catalog.handleProcessUpdates(processUpdates)
                 } else if (collectedIndex == 1) {
                     // Assert updated process
                     assertEquals(1, processUpdates.processUpdateCount)
@@ -181,11 +181,11 @@ class DeviceProcessCatalogTest {
                 feature = "feat1"
             )
             val processUpdates = createProcessUpdates(process)
-            catalog.updateProcessList(processUpdates)
+            catalog.handleProcessUpdates(processUpdates)
 
             // Act / Assert
             val job = async {
-                catalog.trackProcesses().collect { processUpdates ->
+                catalog.trackProcessUpdates().collect { processUpdates ->
                     if (collectedIndex == 0) {
                         // Assert process values
                         assertEquals(1, processUpdates.processUpdateCount)
@@ -204,7 +204,7 @@ class DeviceProcessCatalogTest {
                         // After processing initial value try setting process values to `Empty`
                         val updatedProcess = createJdwpProcessInfo(pid = 100)
                         val processUpdates = createProcessUpdates(updatedProcess)
-                        catalog.updateProcessList(processUpdates)
+                        catalog.handleProcessUpdates(processUpdates)
                     } else if (collectedIndex == 1) {
                         fail("No collection should take place as empty values should not override existing values")
                     }

@@ -1,7 +1,6 @@
 load("@rules_java//java:defs.bzl", "java_library", "java_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:utils.bzl", "fileset")
-load("//tools/base/common:version.bzl", "BUILD_VERSION")
 
 fileset(
     name = "resources",
@@ -42,6 +41,7 @@ kotlin_library(
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/signflinger",
+        "@maven//:com.google.code.gson.gson",
         "@maven//:javax.inject.javax.inject",
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
         "@maven//:org.bouncycastle.bcprov-jdk18on",
@@ -104,6 +104,7 @@ kotlin_test(
         "//tools/base/zipflinger",
         "@maven//:com.android.tools.desugar_jdk_libs",
         "@maven//:com.android.tools.desugar_jdk_libs_configuration",
+        "@maven//:com.google.code.gson.gson",
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
@@ -111,6 +112,7 @@ kotlin_test(
         "@maven//:org.bouncycastle.bcpkix-jdk18on",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
+        "@maven//:org.jetbrains.kotlin.kotlin-test-junit",
         "@maven//:org.mockito.mockito-core",
         "@maven//:org.ow2.asm.asm",
     ],

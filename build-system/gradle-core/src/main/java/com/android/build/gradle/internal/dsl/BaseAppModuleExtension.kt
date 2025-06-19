@@ -127,4 +127,13 @@ open class BaseAppModuleExtension(
     override fun buildFeatures(action: ApplicationBuildFeatures.() -> Unit) {
         action.invoke(buildFeatures)
     }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("compileSdk {}")
+    )
+    open fun compileSdk(version: Int) {
+        compileSdk = version
+    }
 }

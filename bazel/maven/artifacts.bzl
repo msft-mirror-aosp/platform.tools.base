@@ -198,6 +198,8 @@ ARTIFACTS = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.6.4",
+    "org.jetbrains.kotlinx:kotlinx-io-bytestring-jvm:0.6.0",
+    "org.jetbrains.kotlinx:kotlinx-io-core-jvm:0.6.0",
     "org.jetbrains:markdown:pom:0.2.1",
     "org.jspecify:jspecify:0.2.0",
     "org.junit.platform:junit-platform-engine:1.12.0",

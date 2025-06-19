@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
-import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import com.android.build.gradle.integration.common.fixture.project.Substitution
 import com.android.build.gradle.integration.common.fixture.project.SubstitutionImpl
 import org.gradle.api.JavaVersion
@@ -94,6 +93,18 @@ interface BooleanNameHandler {
     fun toIsBooleanName(name: String): String
 }
 
+interface StringHandler {
+    fun quoteString(value: String): String
+    fun getIndentStringFragment(levelDelta: Int = 0): String
+}
+
+/**
+ * Interface for custom object values used in the DSL, that require custom toString
+ */
+interface CustomObjectInstance {
+    fun toString(handler: StringHandler): String
+}
+
 /**
  * A class that handles writing indented lines into a file.
  *
@@ -153,9 +164,10 @@ internal abstract class IndentHandler(protected val indentLevel: Int) {
  *
  * This is not meant to be used directly. see [KtsBuildWriter] or [GroovyBuildWriter].
  */
-internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentLevel), BuildWriter {
+internal abstract class BaseBuildWriter(
+    indentLevel: Int
+): IndentHandler(indentLevel), BuildWriter, StringHandler {
 
-    protected abstract fun quoteString(value: String): String
     protected abstract fun newBuilder(indentLevel: Int): BaseBuildWriter
     protected abstract fun Class<*>.toClassName(): String
 
@@ -188,8 +200,9 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
                     allItems
                 }
             }
-            is MethodReturnedFile -> {
-                "${methodName}(${quoteString(parameter)})"
+            // this needs to first as there are File instances also implementing this interface.
+            is CustomObjectInstance -> {
+                toString(this@BaseBuildWriter)
             }
             is File -> {
                 "file(${quoteString(toFormatted())})"
@@ -401,6 +414,16 @@ internal abstract class BaseBuildWriter(indentLevel: Int): IndentHandler(indentL
         is SubstitutionImpl.Project -> getDependencyNotationForProject(coordinate.projectDependency)
     }
 
+    /**
+     * Used by [CustomObjectInstance.toString] via [StringHandler]
+     */
+    override fun getIndentStringFragment(levelDelta: Int): String {
+        val indentBuffer = StringBuilder()
+        for (i in 1..(indentLevel + levelDelta * 2)) {
+            indentBuffer.append(' ')
+        }
+        return indentBuffer.toString()
+    }
 }
 
 internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
