@@ -1,6 +1,8 @@
 package com.android.build.gradle.integration.manageddevice.utils
 
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
@@ -27,15 +29,8 @@ fun GradleTestProject.addManagedDevice(deviceName: String) {
 fun GradleBuildDefinition.simpleGMDProject() {
     androidApplication {
         applyPlugin(PluginType.KOTLIN_ANDROID)
+        addManagedDevice("device1")
         android {
-            testOptions.managedDevices {
-                localDevices.create("device1") {
-                    it.device = "Pixel 2"
-                    it.sdkVersion = System.getProperty("sdk.repo.sysimage.apiLevel").toInt()
-                    it.systemImageSource = System.getProperty("sdk.repo.sysimage.source")
-                    it.require64Bit = true
-                }
-            }
             defaultConfig {
                 minSdk = 21
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -73,5 +68,18 @@ fun GradleBuildDefinition.simpleGMDProject() {
     }
     gradleProperties {
         add(BooleanOption.USE_ANDROID_X, true)
+    }
+}
+
+fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.addManagedDevice(deviceName: String) {
+    android {
+        testOptions.managedDevices {
+            localDevices.create(deviceName) {
+                it.device = "Pixel 2"
+                it.sdkVersion = System.getProperty("sdk.repo.sysimage.apiLevel").toInt()
+                it.systemImageSource = System.getProperty("sdk.repo.sysimage.source")
+                it.require64Bit = true
+            }
+        }
     }
 }

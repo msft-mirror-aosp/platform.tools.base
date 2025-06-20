@@ -20,6 +20,9 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule
+import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomAndroidSdk
+import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomSdkDir
+import com.android.build.gradle.integration.manageddevice.utils.addManagedDevice
 import com.android.build.gradle.integration.utp.UtpTestBase
 import org.junit.Rule
 
@@ -29,8 +32,10 @@ import org.junit.Rule
 class UtpManagedDeviceTest : UtpTestBase() {
 
     @get:Rule
-    val customAndroidSdkRule = CustomAndroidSdkRule().apply {
-        ruleBuilder.setCustomSdkDir()
+    val customAndroidSdkRule = CustomAndroidSdkRule()
+
+    init {
+        ruleBuilder.withCustomSdkDir(customAndroidSdkRule)
     }
 
     companion object {
@@ -54,25 +59,14 @@ class UtpManagedDeviceTest : UtpTestBase() {
     }
 
     override fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {
-        customAndroidSdkRule.run {
-            withCustomAndroidSdk()
-        }
+        withCustomAndroidSdk(customAndroidSdkRule)
         return this
     }
 
     override fun selectModule(moduleName: String, isDynamicFeature: Boolean) {
         rule.build.subProject(":$moduleName").reconfigure {
             this as AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>
-            android {
-                testOptions.managedDevices {
-                    localDevices.create(DSL_DEVICE_NAME) {
-                        it.device = "Pixel 2"
-                        it.sdkVersion = System.getProperty("sdk.repo.sysimage.apiLevel").toInt()
-                        it.systemImageSource = System.getProperty("sdk.repo.sysimage.source")
-                        it.require64Bit = true
-                    }
-                }
-            }
+            addManagedDevice(DSL_DEVICE_NAME)
         }
 
         testTaskName = ":${moduleName}:allDevicesCheck"

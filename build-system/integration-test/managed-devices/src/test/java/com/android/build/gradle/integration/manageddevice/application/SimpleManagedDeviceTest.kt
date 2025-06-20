@@ -4,6 +4,8 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule
+import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomAndroidSdk
+import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomSdkDir
 import com.android.build.gradle.integration.manageddevice.utils.simpleGMDProject
 import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.truth.PathSubject.assertThat
@@ -19,14 +21,12 @@ class SimpleManagedDeviceTest {
     val customAndroidSdkRule = CustomAndroidSdkRule()
 
     @get:Rule
-    val rule = GradleRule.configure().apply {
-        customAndroidSdkRule.run {
-            setCustomSdkDir()
-        }
-    }.from { simpleGMDProject() }
+    val rule = GradleRule.configure()
+        .withCustomSdkDir(customAndroidSdkRule)
+        .from { simpleGMDProject() }
 
     private val executor: GradleTaskExecutor
-        get() = customAndroidSdkRule.run { rule.build.executor.withCustomAndroidSdk() }
+        get() = rule.build.executor.withCustomAndroidSdk(customAndroidSdkRule)
 
     private fun assertTestReportExists() {
         val reportDir = FileUtils.join(
