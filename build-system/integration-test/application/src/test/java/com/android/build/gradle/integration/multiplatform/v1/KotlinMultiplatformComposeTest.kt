@@ -45,6 +45,7 @@ class KotlinMultiplatformComposeTest {
         }.from {
             androidLibrary {
                 applyPlugin(PluginType.KOTLIN_MPP, version = KOTLIN_VERSION_FOR_COMPOSE_TESTS)
+                applyPlugin(PluginType.COMPOSE_COMPILER_PLUGIN)
                 pluginCallbacks += Callback::class.java
                 android {
                     defaultConfig.minSdk = 24
@@ -57,7 +58,6 @@ class KotlinMultiplatformComposeTest {
                     }
                     composeOptions {
                         useLiveLiterals = false
-                        kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
                     }
                 }
                 dependencies {
@@ -65,7 +65,7 @@ class KotlinMultiplatformComposeTest {
                     implementation("androidx.compose.material:material:$COMPOSE_UI_VERSION")
                 }
                 files.add(
-                    "src/main/kotlin/com/Example.kt",
+                    "src/androidMain/kotlin/com/Example.kt",
                     //language=kotlin
                     """
                         package foo
