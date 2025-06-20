@@ -7,9 +7,15 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.options.BooleanOption
 
 fun GradleBuildDefinition.simpleGMDProject() {
+    simpleProject()
+    androidApplication {
+        addManagedDevice("device1")
+    }
+}
+
+fun GradleBuildDefinition.simpleProject() {
     androidApplication {
         applyPlugin(PluginType.KOTLIN_ANDROID)
-        addManagedDevice("device1")
         android {
             defaultConfig {
                 minSdk = 21
