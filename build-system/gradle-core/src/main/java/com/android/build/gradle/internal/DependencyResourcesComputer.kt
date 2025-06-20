@@ -98,6 +98,10 @@ abstract class DependencyResourcesComputer {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val extraGeneratedResFolders: ConfigurableFileCollection
 
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val staticResFolders: ConfigurableFileCollection
+
     @get:Input
     abstract val validateEnabled: Property<Boolean>
 
@@ -187,6 +191,16 @@ abstract class DependencyResourcesComputer {
             generatedResourceSet.addSources(generatedResFolders)
         }
 
+        val staticRes = mutableListOf<File>()
+        staticRes.addAll(staticResFolders.files)
+        if (staticRes.isNotEmpty() && sourceFolderSets.isNotEmpty()) {
+            val staticResourceSet = sourceFolderSets.find {
+                it.configName.equals("variant")
+            } ?: throw RuntimeException("Static resource set does not exist")
+
+            staticResourceSet.addSources(staticRes)
+        }
+
         return resourceSetList
     }
 
@@ -223,6 +237,24 @@ abstract class DependencyResourcesComputer {
                     !it.isUserAdded && !it.isGenerated
                 }
             ) { services.newInstance(ResourceSourceSetInput::class.java) }
+
+            // Add the user added static resource directories
+            resSources.getVariantSources().forEach { directoryEntries ->
+                directoryEntries.directoryEntries
+                    .filter {
+                        it.isUserAdded && !it.isGenerated
+                    }
+                    .forEach {
+                        staticResFolders.from(
+                            it.asFiles(
+                                creationConfig.services.provider {
+                                    creationConfig.services.projectInfo.projectDirectory
+                                }
+                            )
+                        )
+                    }
+            }
+            staticResFolders.disallowChanges()
 
             // Add the user added generated directories to the extraGeneratedResFolders.
             // this should be cleaned up once the old variant API is removed.
