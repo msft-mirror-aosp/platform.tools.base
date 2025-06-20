@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.connected.application
 
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
+import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.build.gradle.integration.connected.utils.getEmulator
@@ -61,10 +62,10 @@ class UtpConnectedTest : UtpTestBase() {
         private const val TEST_ADDITIONAL_OUTPUT = "build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/$DEVICE_NAME"
     }
 
-    override fun selectModule(moduleName: String, isDynamicFeature: Boolean) {
+    override fun selectModule(moduleName: String) {
         testTaskName = ":${moduleName}:connectedAndroidTest"
         testResultXmlPath = "${moduleName}/$TEST_RESULT_XML${moduleName}-.xml"
-        if (isDynamicFeature) {
+        if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
             testReportPath = "${moduleName}/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
             testLogcatPath = "${moduleName}/$LOGCAT_FOR_DYNAMIC_FEATURE"
         } else {
@@ -83,7 +84,7 @@ class UtpConnectedTest : UtpTestBase() {
     fun connectedAndroidTestWithUtpTestResultListener() {
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtpTestResultListener").setProject("Android Studio Gradle").build()
         val startTime: Long = System.currentTimeMillis()
-        selectModule("app", false)
+        selectModule("app")
         val initScriptPath = TestUtils.resolveWorkspacePath(
                 "tools/adt/idea/utp/addGradleAndroidTestListener.gradle")
 
@@ -134,7 +135,7 @@ class UtpConnectedTest : UtpTestBase() {
     fun connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled() {
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled").setProject("Android Studio Gradle").build()
         val startTime: Long = System.currentTimeMillis()
-        selectModule("app", false)
+        selectModule("app")
         val initScriptPath = TestUtils.resolveWorkspacePath(
                 "tools/adt/idea/utp/addGradleAndroidTestListener.gradle")
 
@@ -158,7 +159,7 @@ class UtpConnectedTest : UtpTestBase() {
 
     @Test
     fun connectedAndroidTestShouldUninstallAppsAfterTest() {
-        selectModule("lib", isDynamicFeature = false)
+        selectModule("lib")
 
         executor.run(testTaskName)
 
@@ -179,7 +180,7 @@ class UtpConnectedTest : UtpTestBase() {
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestUtpPerformance").setProject("Android Studio Gradle").build()
         val capturer = ProfileCapturer(rule.build.profileDirectory!!.toAbsolutePath(), ".trk") // captures AndroidStudioEvents
 
-        selectModule("app", false)
+        selectModule("app")
 
         val firstRunEvents = capturer.captureAndroidEvent {
             executor.run(testTaskName)

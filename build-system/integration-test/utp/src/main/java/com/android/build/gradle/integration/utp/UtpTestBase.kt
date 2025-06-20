@@ -331,7 +331,7 @@ abstract class UtpTestBase() {
         return this
     }
 
-    abstract fun selectModule(moduleName: String, isDynamicFeature: Boolean)
+    abstract fun selectModule(moduleName: String)
 
     companion object {
         const val ANDROIDX_TEST_VERSION = "1.5.0-alpha02"
@@ -395,7 +395,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithCodeCoverage() {
-        selectModule("app", false)
+        selectModule("app")
         rule.build.androidApplication().reconfigure { enableCodeCoverage() }
 
         executor.run(testTaskName)
@@ -414,7 +414,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithTestFailures() {
-        selectModule("app", false)
+        selectModule("app")
 
         rule.build.androidApplication().reconfigure {
             files {
@@ -453,7 +453,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithOrchestrator() {
-        selectModule("app", false)
+        selectModule("app")
 
         rule.build.androidApplication().reconfigure { enableAndroidTestOrchestrator() }
 
@@ -467,7 +467,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithOrchestratorAndCodeCoverage() {
-        selectModule("app", false)
+        selectModule("app")
 
         rule.build.androidApplication().reconfigure {
             enableAndroidTestOrchestrator()
@@ -490,7 +490,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestWithLogcat() {
-        selectModule("app", false)
+        selectModule("app")
 
         executor.run(testTaskName)
 
@@ -504,7 +504,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestFromTestOnlyModule() {
-        selectModule("test", false)
+        selectModule("test")
 
         executor.run(testTaskName)
 
@@ -515,7 +515,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun additionalTestOutputWithTestStorageService() {
-        selectModule("app", false)
+        selectModule("app")
 
         rule.build.androidApplication().reconfigure {
             enableTestStorageService()
@@ -572,7 +572,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun additionalTestOutputWithoutTestStorageService() {
-        selectModule("app", false)
+        selectModule("app")
 
         rule.build.androidApplication().reconfigure {
             files {
@@ -611,7 +611,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun additionalTestOutputWithBenchmarkFiles() {
-        selectModule("app", false)
+        selectModule("app")
 
         rule.build.androidApplication().reconfigure {
             files {
@@ -677,7 +677,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun additionalTestOutputWithBenchmarkV3Files() {
-        selectModule("app", false)
+        selectModule("app")
 
         rule.build.androidApplication().reconfigure {
             files {
@@ -746,7 +746,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithDynamicFeature() {
-        selectModule("feature", true)
+        selectModule("feature")
 
         rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
 
@@ -781,7 +781,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithOrchestratorWithDynamicFeature() {
-        selectModule("feature", true)
+        selectModule("feature")
 
         rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
         rule.build.androidFeature().reconfigure { enableAndroidTestOrchestrator() }
@@ -796,7 +796,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestWithLogcatWithDynamicFeature() {
-        selectModule("feature", true)
+        selectModule("feature")
 
         rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
 
@@ -812,7 +812,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature() {
-        selectModule("feature", true)
+        selectModule("feature")
 
         rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
         rule.build.androidFeature().reconfigure {
@@ -870,7 +870,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithForceCompilation() {
-        selectModule("app", false)
+        selectModule("app")
 
         rule.build.androidApplication().reconfigure { enableForceCompilation() }
 
@@ -891,7 +891,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature() {
-        selectModule("feature", true)
+        selectModule("feature")
 
         rule.build.androidApplication().reconfigure {
             enableAndroidTestOrchestrator()
@@ -919,7 +919,7 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithCodeCoverageWithDynamicFeature() {
-        selectModule("feature", true)
+        selectModule("feature")
 
         rule.build.androidApplication().reconfigure {
             enableDynamicFeature("feature")
