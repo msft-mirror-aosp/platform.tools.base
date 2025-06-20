@@ -5,6 +5,7 @@ import getpass
 import logging
 import os
 import subprocess
+import tempfile
 from typing import List
 
 
@@ -108,7 +109,10 @@ def make_build_env(
   build_number = os.environ.get("BUILD_NUMBER", "SNAPSHOT")
   build_target_name = os.environ.get("BUILD_TARGET_NAME", "")
   workspace_dir = os.environ.get("BUILD_WORKSPACE_DIRECTORY", "")
-  dist_dir = os.environ.get("DIST_DIR", "")
+  dist_dir = os.environ.get("DIST_DIR")
+  if dist_dir is None:
+    # If DIST_DIR does not exist, create one.
+    dist_dir = tempfile.mkdtemp('dist-dir')
   tmp_dir = os.environ.get("TMPDIR", "")
   bazel_path = os.path.normpath(bazel_path)
   if not bazel_version:
