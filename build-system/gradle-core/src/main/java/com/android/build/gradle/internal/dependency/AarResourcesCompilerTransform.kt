@@ -70,7 +70,8 @@ abstract class AarResourcesCompilerTransform :
                     CompileResourceRequest(
                         it,
                         outputDir,
-                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(
+                            "Relative path support to be added by I8e7aa064cf381314eff2a248ada2d8ecedbfb1a5")
                     )
                 )
             }

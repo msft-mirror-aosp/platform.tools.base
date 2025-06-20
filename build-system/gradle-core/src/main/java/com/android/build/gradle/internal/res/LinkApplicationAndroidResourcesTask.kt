@@ -39,9 +39,9 @@ import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.PROJECT
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.FEATURE_RESOURCE_PKG
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
@@ -649,9 +649,7 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
 
             val sourceSetMap =
                 creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
-            task.sourceSetMaps.fromDisallowChanges(
-                creationConfig.services.fileCollection(sourceSetMap)
-            )
+            task.sourceSetMaps.from(sourceSetMap)
             task.dependsOn(sourceSetMap)
 
             // Tests should not have feature dependencies, however because they include the
@@ -789,7 +787,7 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
                     .variantDependencies.getArtifactFileCollection(
                         RUNTIME_CLASSPATH,
                         ALL,
-                        AndroidArtifacts.ArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME
+                        ArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME
                     )
             )
             creationConfig.artifacts.setTaskInputToFinalProduct(
@@ -804,7 +802,7 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
             if (creationConfig.services.projectOptions[BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES]) {
                 task.sharedLibraryDependencies.fromDisallowChanges(
                     creationConfig.variantDependencies.getArtifactFileCollection(
-                        RUNTIME_CLASSPATH, ALL, AndroidArtifacts.ArtifactType.RES_SHARED_OEM_TOKEN_LIBRARY
+                        RUNTIME_CLASSPATH, ALL, ArtifactType.RES_SHARED_OEM_TOKEN_LIBRARY
                     )
                 )
             }
@@ -814,10 +812,18 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
                     creationConfig.variantDependencies.getArtifactFileCollection(
                         RUNTIME_CLASSPATH,
                         ALL,
-                        AndroidArtifacts.ArtifactType.COMPILED_DEPENDENCIES_RESOURCES
+                        ArtifactType.COMPILED_DEPENDENCIES_RESOURCES
                     ))
+                val dependencySourceMaps = creationConfig.variantDependencies.getArtifactFileCollection(
+                    RUNTIME_CLASSPATH,
+                    ALL,
+                    ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING,
+                )
+                task.sourceSetMaps.fromDisallowChanges(dependencySourceMaps)
+                task.dependsOn(dependencySourceMaps)
             } else {
                 task.compiledDependenciesResources.disallowChanges()
+                task.sourceSetMaps.disallowChanges()
             }
             task.namespaced.setDisallowChanges(false)
         }

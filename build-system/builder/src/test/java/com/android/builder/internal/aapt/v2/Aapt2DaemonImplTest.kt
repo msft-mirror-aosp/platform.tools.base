@@ -110,12 +110,12 @@ class Aapt2DaemonImplTest {
             CompileResourceRequest(
                 inputFile = valuesFile("strings", "<resources></resources>"),
                 outputDirectory = outDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             CompileResourceRequest(
                 inputFile = valuesFile("styles", "<resources></resources>"),
                 outputDirectory = outDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             )
         )
         val daemon = createDaemon()
@@ -136,13 +136,13 @@ class Aapt2DaemonImplTest {
                 inputFile = valuesFile("strings", "<resources></resources>"),
                 outputDirectory = outDir,
                 partialRFile = partialRvalue,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             CompileResourceRequest(
                 inputFile = resourceFile("raw", "my_raw_resource.txt", "Raw Content"),
                 outputDirectory = outDir,
                 partialRFile = partialRRaw,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             )
         )
         val daemon = createDaemon()
@@ -164,7 +164,7 @@ class Aapt2DaemonImplTest {
                 "<resources><string name=\"foo\">%s %d</string></resources>"
             ),
             outputDirectory = outDir,
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
         )
 
         val daemon = createDaemon()
@@ -188,7 +188,7 @@ class Aapt2DaemonImplTest {
                 CompileResourceRequest(
                     inputFile = inputFile,
                     outputDirectory = compiledDir,
-                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                 ),
                 logger
             )
@@ -209,7 +209,7 @@ class Aapt2DaemonImplTest {
             CompileResourceRequest(
                 inputFile = resourceFile("raw", "foo.txt", "content"),
                 outputDirectory = compiledDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             logger
         )
@@ -251,7 +251,7 @@ class Aapt2DaemonImplTest {
             CompileResourceRequest(
                 inputFile = resourceFile("raw", "foo.txt", "content"),
                 outputDirectory = compiledDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             logger
         )
@@ -304,7 +304,7 @@ class Aapt2DaemonImplTest {
             CompileResourceRequest(
                 inputFile = resourceFile("layout", "some.xml", "<x/>"),
                 outputDirectory = compiledDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             logger
         )
@@ -316,7 +316,7 @@ class Aapt2DaemonImplTest {
                     "<merge><a /><b attr=\"Hello\"/></merge>"
                 ),
                 outputDirectory = compiledDir,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             logger
         )
@@ -368,7 +368,7 @@ class Aapt2DaemonImplTest {
             AaptTestUtils.getTestPngWithLongFileName(temporaryFolder),
             AaptTestUtils.getOutputDir(temporaryFolder),
             "test",
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
         )
         daemon.compile(request, logger)
         val compiled =
@@ -390,7 +390,7 @@ class Aapt2DaemonImplTest {
                 outputDirectory = outDir,
                 isPseudoLocalize = false,
                 isPngCrunching = true,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             logger
         )
@@ -402,7 +402,7 @@ class Aapt2DaemonImplTest {
                 outputDirectory = outDir,
                 isPseudoLocalize = false,
                 isPngCrunching = false,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             logger
         )
@@ -424,7 +424,7 @@ class Aapt2DaemonImplTest {
                 outputDirectory = outDir,
                 isPseudoLocalize = false,
                 isPngCrunching = true,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             logger
         )
@@ -436,7 +436,7 @@ class Aapt2DaemonImplTest {
                 outputDirectory = outDir,
                 isPseudoLocalize = false,
                 isPngCrunching = false,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             ),
             logger
         )

@@ -47,6 +47,8 @@ import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.ide.common.resources.generateLocaleString
+import com.android.ide.common.resources.mergeIdentifiedSourceSetFiles
+import com.android.ide.common.resources.readFromSourceSetPathsFile
 import com.android.ide.common.resources.readSupportedLocales
 import com.android.ide.common.resources.writeLocaleConfig
 import com.android.utils.FileUtils
@@ -137,6 +139,11 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
     @get:Nested
     abstract val androidJarInput: AndroidJarInput
 
+    // No effect on task output, used for writing the relative resource source path of the
+    // generated local config field and resolving absolute paths for error messaging during link.
+    @get:Internal
+    abstract val resSourceSetMaps: RegularFileProperty
+
     public override fun doTaskAction() {
 
         workerExecutor.noIsolation().submit(GenerateLocaleWorkAction::class.java) {
@@ -154,6 +161,7 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             it.compileSdk.set(compileSdk)
             it.minSdk.set(minSdk)
             it.pseudoLocalesEnabled.set(pseudoLocalesEnabled)
+            it.resSourceSetsPathFiles.set(resSourceSetMaps)
         }
     }
 
@@ -173,6 +181,7 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
         abstract val compileSdk: Property<Int>
         abstract val minSdk: Property<Int>
         abstract val pseudoLocalesEnabled: Property<Boolean>
+        abstract val resSourceSetsPathFiles: RegularFileProperty
     }
 
     abstract class GenerateLocaleWorkAction: ProfileAwareWorkAction<GenerateLocaleWorkParameters>() {
@@ -297,10 +306,12 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             val tempStringFile = File(valuesFolder, "strings.xml")
             tempStringFile.createNewFile()
             tempStringFile.writeText(tempStringFileContent)
+            val resSourceSets =
+                readFromSourceSetPathsFile(parameters.resSourceSetsPathFiles.get().asFile)
             val request = CompileResourceRequest(
                 tempStringFile,
                 parameters.compiledResOutput.get().asFile,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.Relative(resSourceSets)
             )
             compilationService.submitCompile(request)
         }
@@ -321,6 +332,8 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             )
 
             val resApk = parameters.resApkDir.get().file("res.apk").asFile
+            val resSourceSetMap =
+                readFromSourceSetPathsFile(parameters.resSourceSetsPathFiles.get().asFile)
 
             val aaptPackageConfig = AaptPackageConfig.Builder()
                 .setManifestFile(manifest)
@@ -331,6 +344,7 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
                 .setResourceOutputApk(resApk)
                 .addResourceDir(parameters.compiledResOutput.get().asFile)
                 .setPseudoLocalesEnabled(parameters.pseudoLocalesEnabled.get())
+                .setIdentifiedSourceSetMap(resSourceSetMap)
                 .build()
 
             val logger = Logging.getLogger(GenerateLocaleConfigTask::class.java)
@@ -404,6 +418,11 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             creationConfig.androidResourcesCreationConfig?.let {
                 task.pseudoLocalesEnabled.set(it.pseudoLocalesEnabled)
             }
+
+            val sourceSetMap =
+                creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
+            task.resSourceSetMaps.set(sourceSetMap)
+            task.dependsOn(sourceSetMap)
             task.pseudoLocalesEnabled.disallowChanges()
         }
     }

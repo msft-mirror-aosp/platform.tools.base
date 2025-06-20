@@ -55,6 +55,7 @@ import com.android.build.gradle.tasks.ProcessLibraryArtProfileTask
 import com.android.build.gradle.tasks.BundleAar
 import com.android.build.gradle.tasks.CompileLibraryResourcesTask
 import com.android.build.gradle.tasks.ExtractAnnotations
+import com.android.build.gradle.tasks.MapSourceSetPathsTask
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import com.android.build.gradle.tasks.ProcessLibraryManifest
@@ -129,6 +130,8 @@ class KmpTaskManager(
         )
 
         if (variant.buildFeatures.androidResources) {
+            taskFactory.register(MapSourceSetPathsTask.CreateAction(variant, true))
+
             createPackageResourcesTask(
                 creationConfig = variant,
                 taskProviderCallback = object: TaskProviderCallback<MergeResources> {

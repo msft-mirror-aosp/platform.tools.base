@@ -60,7 +60,7 @@ class Aapt2DaemonTimeoutTest {
                     CompileResourceRequest(
                             inputFile = File("values/does_not_matter.xml"),
                             outputDirectory = compiledDir,
-                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                     ),
                     logger)
         }
@@ -80,7 +80,7 @@ class Aapt2DaemonTimeoutTest {
                 CompileResourceRequest(
                             inputFile = File("values/does_not_matter.xml"),
                             outputDirectory = compiledDir,
-                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                         ),
                     logger)
         }
@@ -146,7 +146,7 @@ class Aapt2DaemonTimeoutTest {
                 CompileResourceRequest(
                         inputFile = File("values/does_not_matter.xml"),
                         outputDirectory = compiledDir,
-                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                 ),
                 NoErrorsOrWarningsLogger())
         assertThat(daemon.state).isEqualTo(Aapt2Daemon.State.RUNNING)
