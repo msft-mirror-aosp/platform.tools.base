@@ -1,30 +1,10 @@
 package com.android.build.gradle.integration.manageddevice.utils
 
 import com.android.build.api.dsl.CommonExtension
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
-
-fun GradleTestProject.addManagedDevice(deviceName: String) {
-    buildFile.appendText("""
-        android {
-            testOptions {
-                managedDevices {
-                    localDevices {
-                        $deviceName {
-                            device = "Pixel 2"
-                            sdkVersion = ${System.getProperty("sdk.repo.sysimage.apiLevel")}
-                            systemImageSource = "${System.getProperty("sdk.repo.sysimage.source")}"
-                            require64Bit = true
-                        }
-                    }
-                }
-            }
-        }
-    """)
-}
 
 fun GradleBuildDefinition.simpleGMDProject() {
     androidApplication {
