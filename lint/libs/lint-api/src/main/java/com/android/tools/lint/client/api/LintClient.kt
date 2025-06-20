@@ -1237,40 +1237,36 @@ abstract class LintClient {
    * @return a list of rule jars (possibly empty).
    */
   open fun findRuleJars(project: Project): Iterable<File> {
-    if (project.isGradleProject) {
-      if (project.isLibrary && project.buildLibraryModel != null) {
-        val model = project.buildLibraryModel
-        if (model != null) {
-          val lintJar = model.lintJar
-          if (lintJar != null && lintJar.exists()) {
-            return listOf(lintJar)
-          }
-        }
-      } else if (project.subset != null) {
-        // Probably just analyzing a single file: we still want to look for custom
-        // rules applicable to the file
-        val variant = project.buildVariant
-        if (variant != null) {
-          val rules = ArrayList<File>(4)
-          addLintJarsFromDependencies(rules, variant.artifact.dependencies.getAll())
-          val model = variant.module
+    if (!project.isGradleProject) return emptyList()
 
-          // Locally packaged jars
-          rules.addAll(model.lintRuleJars.filter { it.exists() })
+    val rules = mutableListOf<File>()
 
-          if (rules.isNotEmpty()) {
-            return rules
-          }
-        }
-      } else if (project.dir.path.endsWith(DOT_AAR)) {
-        val lintJar = File(project.dir, "lint.jar")
-        if (lintJar.exists()) {
-          return listOf(lintJar)
+    if (project.isLibrary && project.buildLibraryModel != null) {
+      val model = project.buildLibraryModel
+      if (model != null) {
+        val lintJar = model.lintJar
+        if (lintJar != null && lintJar.exists()) {
+          rules.add(lintJar)
         }
       }
     }
 
-    return emptyList()
+    val variant = project.buildVariant
+    if (variant != null) {
+      addLintJarsFromDependencies(rules, variant.artifact.dependencies.getAll())
+      val model = variant.module
+      // Locally packaged jars.
+      rules.addAll(model.lintRuleJars.filter { it.exists() })
+    }
+
+    if (project.dir.path.endsWith(DOT_AAR)) {
+      val lintJar = File(project.dir, "lint.jar")
+      if (lintJar.exists()) {
+        rules.add(lintJar)
+      }
+    }
+
+    return rules
   }
 
   /**
