@@ -25,7 +25,7 @@ message LeakCanaryLogcatData {
 }
 
 /** LeakCanary event information */
-message LeakCanaryLogcatInfo {
+message LeakCanaryLogcatStatus {
   oneof union {
     LeakCanaryLogcatStarted logcat_started = 1;
     LeakCanaryLogcatEnded logcat_ended = 2;
