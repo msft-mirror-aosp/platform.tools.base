@@ -96,6 +96,7 @@ import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
+import org.jetbrains.kotlin.psi.psiUtil.isPrivate
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBinaryExpressionWithType
@@ -673,6 +674,9 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       if (source is KtAnnotationEntry) {
         val parameter = source.parent?.parent as? KtParameter ?: return
         if (!parameter.hasValOrVar()) {
+          return
+        }
+        if (parameter.isPrivate()) {
           return
         }
         val target = source.useSiteTarget?.getAnnotationUseSiteTarget()

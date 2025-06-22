@@ -1794,6 +1794,7 @@ class AnnotationDetectorTest : AbstractCheckTest() {
                     @get:VisibleForTesting val p3: String, // OK
                     @get:VisibleForTesting var p4: String, // OK
                     @get:[VisibleForTesting] val p5: String, // OK
+                    @param:VisibleForTesting private val p6: String, // OK
                 )
                 """
           )
