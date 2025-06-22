@@ -467,6 +467,7 @@ class TypoDetector : ResourceXmlDetector() {
         return true
       }
       when (word) {
+        "die", // German; b/425974265
         "that",
         "yadda",
         "bye",

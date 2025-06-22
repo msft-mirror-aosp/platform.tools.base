@@ -119,6 +119,8 @@ public class TypoDetectorTest extends AbstractCheckTest {
                                         + "    <string name=\"ignore1\">android/android/foo\"</string>\n"
                                         + "    <string name=\"ignore2\">%s/%s/%s</string>\n"
                                         + "    <string name=\"ignore3\">\"Dial (866) 555 0123\\\" \\n\\\"Dial 911, 811, ...\"</string>\n"
+                                        // b/425974265:
+                                        + " <string name=\"test\">Sie können ..., die die App erfolgreich ...</string>"
                                         + "</resources>\n"))
                 .run()
                 .expect(expected)
