@@ -952,7 +952,21 @@ public class PositionXmlParser {
                         Position attributePosition = new Position(line, column, offset + textIndex);
                         // Also set end range for retrieval in getLocation
                         if (end != -1) {
-                            attributePosition.setEnd(new Position(line, column, offset + end));
+                            int endLine = line;
+                            int endColumn = column;
+                            textLength = Math.min(text.length(), end);
+
+                            for (; textIndex < textLength; textIndex++) {
+                                char t = text.charAt(textIndex);
+                                if (t == '\n') {
+                                    endLine++;
+                                    endColumn = 0;
+                                } else {
+                                    endColumn++;
+                                }
+                            }
+
+                            attributePosition.setEnd(new Position(endLine, endColumn, offset + end));
                         } else {
                             // Search backwards for the last non-space character
                             for (int i = textLength - 1; i >= 0; i--) {

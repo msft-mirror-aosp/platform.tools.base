@@ -228,7 +228,7 @@ class TypoDetector : ResourceXmlDetector() {
       context.report(
         ISSUE,
         node,
-        context.getLocation(node, begin, index),
+        context.getLocation(node, begin, end),
         "Did you mean \"$intended\" instead of \"$actual\"?",
         fix,
       )
