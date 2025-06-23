@@ -15,10 +15,10 @@
  */
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,8 +33,8 @@ public class AndroidApplicationInfo {
     public static final AndroidApplicationInfo UNKNOWN =
             new AndroidApplicationInfo("unknown", "unknown", 0, false);
 
-    @NonNull public final String packageId;
-    @NonNull public final String versionName;
+    @NotNull public final String packageId;
+    @NotNull public final String versionName;
     public final long versionCode;
     public final Boolean extractNativeLibs;
     private final Map<String, String> usesFeature;
@@ -49,8 +49,8 @@ public class AndroidApplicationInfo {
     private final Set<String> permissions;
 
     public AndroidApplicationInfo(
-            @NonNull String packageId,
-            @NonNull String versionName,
+            @NotNull String packageId,
+            @NotNull String versionName,
             long versionCode,
             Boolean extractNativeLibs) {
         this.packageId = packageId;
@@ -63,8 +63,8 @@ public class AndroidApplicationInfo {
     }
 
     public AndroidApplicationInfo(
-            @NonNull String packageId,
-            @NonNull String versionName,
+            @NotNull String packageId,
+            @NotNull String versionName,
             long versionCode,
             Boolean extractNativeLibs,
             Map<String, String> usesFeature,
@@ -79,8 +79,8 @@ public class AndroidApplicationInfo {
         this.permissions = permissions;
     }
 
-    @NonNull
-    public static AndroidApplicationInfo parse(@NonNull List<String> output) {
+    @NotNull
+    public static AndroidApplicationInfo parse(@NotNull List<String> output) {
         String packageId = null;
         long versionCode = 0;
         String versionName = null;
@@ -147,8 +147,7 @@ public class AndroidApplicationInfo {
                 extractNativeLibs);
     }
 
-
-    public static AndroidApplicationInfo parseBadging(@NonNull List<String> output) {
+    public static AndroidApplicationInfo parseBadging(@NotNull List<String> output) {
         Builder builder = new Builder();
         for (String line : output) {
             line = line.trim();
@@ -206,11 +205,11 @@ public class AndroidApplicationInfo {
         private final Set<String> usesFeatureNotRequired = new HashSet<>();
         private final Set<String> permissions = new HashSet<>();
 
-        public void setPackageId(@NonNull String packageId) {
+        public void setPackageId(@NotNull String packageId) {
             this.packageId = packageId;
         }
 
-        public void setVersionName(@NonNull String versionName) {
+        public void setVersionName(@NotNull String versionName) {
             this.versionName = versionName;
         }
 
@@ -218,17 +217,17 @@ public class AndroidApplicationInfo {
             this.versionCode = versionCode;
         }
 
-        public void addFeature(@NonNull String name) {
+        public void addFeature(@NotNull String name) {
             if (!usesFeature.containsKey(name)) {
                 usesFeature.put(name, null);
             }
         }
 
-        public void addImpliedFeature(@NonNull String name, @NonNull String reason) {
+        public void addImpliedFeature(@NotNull String name, @NotNull String reason) {
             usesFeature.put(name, reason);
         }
 
-        public void addFeatureNotRequired(@NonNull String name) {
+        public void addFeatureNotRequired(@NotNull String name) {
             usesFeatureNotRequired.add(name);
         }
 

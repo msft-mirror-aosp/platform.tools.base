@@ -17,16 +17,20 @@ package com.android.tools.apk.analyzer;
 
 import static org.junit.Assert.assertNotNull;
 
-import com.android.annotations.NonNull;
 import com.android.testutils.TestResources;
 import com.android.tools.apk.analyzer.internal.ApkDiffEntry;
 import com.android.tools.apk.analyzer.internal.ApkEntry;
 import com.android.tools.apk.analyzer.internal.ApkFileByFileDiffParser;
+
+import junit.framework.TestCase;
+
+import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.nio.file.Path;
+
 import javax.swing.tree.DefaultMutableTreeNode;
-import junit.framework.TestCase;
-import org.junit.Test;
 
 public class ApkFileByFileDiffParserTest {
 
@@ -72,14 +76,14 @@ public class ApkFileByFileDiffParserTest {
         }
     }
 
-    private static String dumpTree(@NonNull DefaultMutableTreeNode treeNode) {
+    private static String dumpTree(@NotNull DefaultMutableTreeNode treeNode) {
         StringBuilder sb = new StringBuilder(30);
         dumpTree(sb, treeNode, 0);
         return sb.toString();
     }
 
     private static void dumpTree(
-            @NonNull StringBuilder sb, @NonNull DefaultMutableTreeNode treeNode, int depth) {
+            @NotNull StringBuilder sb, @NotNull DefaultMutableTreeNode treeNode, int depth) {
         for (int i = 0; i < depth; i++) {
             sb.append("  ");
         }

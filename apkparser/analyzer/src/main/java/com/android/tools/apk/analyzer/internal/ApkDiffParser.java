@@ -15,13 +15,14 @@
  */
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.ArchiveContext;
 import com.android.tools.apk.analyzer.ArchiveEntry;
 import com.android.tools.apk.analyzer.ArchiveNode;
 import com.android.tools.apk.analyzer.ArchiveTreeStructure;
 import com.android.tools.apk.analyzer.PathUtils;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,9 +31,9 @@ import java.util.HashSet;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 public class ApkDiffParser {
-    @NonNull
+    @NotNull
     public static DefaultMutableTreeNode createTreeNode(
-            @NonNull ArchiveContext oldFile, @NonNull ArchiveContext newFile) throws IOException {
+            @NotNull ArchiveContext oldFile, @NotNull ArchiveContext newFile) throws IOException {
         ArchiveNode oldRoot = ArchiveTreeStructure.create(oldFile);
         GzipSizeCalculator calculator = new GzipSizeCalculator();
         ArchiveTreeStructure.updateFileInfo(oldRoot, calculator);
@@ -41,7 +42,7 @@ public class ApkDiffParser {
         return createTreeNode(oldRoot, newRoot);
     }
 
-    @NonNull
+    @NotNull
     private static DefaultMutableTreeNode createTreeNode(
             @Nullable ArchiveNode oldFile, @Nullable ArchiveNode newFile) throws IOException {
         if (oldFile == null && newFile == null) {

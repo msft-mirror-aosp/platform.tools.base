@@ -16,28 +16,30 @@
 
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.Archive;
 import com.android.tools.apk.analyzer.ArchiveContext;
 import com.android.tools.apk.analyzer.ArchiveManager;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 
 public class ArchiveContextImpl implements ArchiveContext {
-    @NonNull private final ArchiveManager archiveManager;
-    @NonNull private final Archive archive;
+    @NotNull private final ArchiveManager archiveManager;
+    @NotNull private final Archive archive;
 
-    public ArchiveContextImpl(@NonNull ArchiveManager archiveManager, @NonNull Archive archive) {
+    public ArchiveContextImpl(@NotNull ArchiveManager archiveManager, @NotNull Archive archive) {
         this.archiveManager = archiveManager;
         this.archive = archive;
     }
 
     @Override
-    @NonNull
+    @NotNull
     public ArchiveManager getArchiveManager() {
         return archiveManager;
     }
 
-    @NonNull
+    @NotNull
     @Override
     public Archive getArchive() {
         return archive;

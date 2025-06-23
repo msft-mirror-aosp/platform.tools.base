@@ -15,9 +15,11 @@
  */
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.google.common.collect.Iterators;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -51,8 +53,8 @@ public class ProguardMappingFiles {
      * @param paths - it can be a folder or 1-3 files, no mixing of folders and files is allowed
      * @return
      */
-    @NonNull
-    public static ProguardMappingFiles from(@NonNull Path[] paths) throws IOException {
+    @NotNull
+    public static ProguardMappingFiles from(@NotNull Path[] paths) throws IOException {
         if (paths.length == 0) { // user canceled
             return new ProguardMappingFiles(null, null, null);
         }
@@ -61,7 +63,8 @@ public class ProguardMappingFiles {
             for (Path path : paths) {
                 if (Files.isDirectory(path)) {
                     throw new IllegalArgumentException(
-                            "Please select a folder or 1 to 3 files for loading Proguard mappings.");
+                            "Please select a folder or 1 to 3 files for loading Proguard"
+                                    + " mappings.");
                 }
             }
         }

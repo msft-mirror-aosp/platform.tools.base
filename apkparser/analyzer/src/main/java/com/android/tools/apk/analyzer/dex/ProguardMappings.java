@@ -15,10 +15,11 @@
  */
 package com.android.tools.apk.analyzer.dex;
 
-import com.android.annotations.Nullable;
 import com.android.tools.proguard.ProguardMap;
 import com.android.tools.proguard.ProguardSeedsMap;
 import com.android.tools.proguard.ProguardUsagesMap;
+
+import org.jetbrains.annotations.Nullable;
 
 public class ProguardMappings {
     @Nullable public final ProguardMap map;

@@ -19,13 +19,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.dex.tree.DexElementNode;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableTypeReference;
 import com.android.tools.smali.dexlib2.util.ReferenceUtil;
-import java.io.IOException;
+
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
+
+import java.io.IOException;
 
 public class DexReferencesTest {
     @Test
@@ -122,7 +124,7 @@ public class DexReferencesTest {
         assertTrue(DexReferences.isAlreadyLoaded(node));
     }
 
-    private static void dumpTree(StringBuffer sb, @NonNull DexElementNode node, int depth) {
+    private static void dumpTree(StringBuffer sb, @NotNull DexElementNode node, int depth) {
         for (int i = 0; i < depth * 2; i++) {
             sb.append(' ');
         }

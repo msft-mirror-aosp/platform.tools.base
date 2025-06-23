@@ -15,8 +15,6 @@
  */
 package com.android.tools.apk.analyzer.dex.tree;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.dex.PackageTreeCreator;
 import com.android.tools.apk.analyzer.internal.SigUtils;
 import com.android.tools.proguard.ProguardMap;
@@ -24,11 +22,14 @@ import com.android.tools.proguard.ProguardSeedsMap;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public class DexMethodNode extends DexElementNode {
     private long size;
 
     public DexMethodNode(
-            @NonNull String displayName, @Nullable ImmutableMethodReference reference) {
+            @NotNull String displayName, @Nullable ImmutableMethodReference reference) {
         super(displayName, false, reference);
     }
 

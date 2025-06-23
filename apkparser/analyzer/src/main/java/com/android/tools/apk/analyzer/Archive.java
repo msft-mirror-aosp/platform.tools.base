@@ -16,42 +16,43 @@
 
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.dex.ProguardMappings;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 public interface Archive extends AutoCloseable {
     /** Returns the {@link Path} of the archive in the local file system */
-    @NonNull
+    @NotNull
     Path getPath();
 
     /**
      * Returns the {@link Path} of the root entry in the <bold>archive</bold> file system, e.g. the
      * local file system or the a zip archive file system
      */
-    @NonNull
+    @NotNull
     Path getContentRoot();
 
     /**
      * Returns {@code true} if the entry at the given path in the archive file system is a Chunk
      * encoded XML file.
      */
-    boolean isBinaryXml(@NonNull Path p, @NonNull byte[] content);
+    boolean isBinaryXml(@NotNull Path p, @NotNull byte[] content);
 
     /**
      * Returns {@code true} if the entry at the given path in the archive file system is an XML file
      * represented as a resource protobuf.
      */
-    boolean isProtoXml(@NonNull Path p, @NonNull byte[] content);
+    boolean isProtoXml(@NotNull Path p, @NotNull byte[] content);
 
     /**
      * Returns {@code true} if the entry at the given path in the archive file system is a baseline
      * profile binary file.
      */
-    boolean isBaselineProfile(@NonNull Path p, @NonNull byte[] content);
+    boolean isBaselineProfile(@NotNull Path p, @NotNull byte[] content);
 
     /**
      * Loads a Proguard Mapping File

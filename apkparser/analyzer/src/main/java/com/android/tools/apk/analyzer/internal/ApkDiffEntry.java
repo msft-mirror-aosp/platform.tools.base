@@ -15,20 +15,22 @@
  */
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.ArchiveNode;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.nio.file.Path;
 
 public class ApkDiffEntry implements ApkEntry {
-    @NonNull private final String name;
+    @NotNull private final String name;
     @Nullable private final ArchiveNode oldFile;
     @Nullable private final ArchiveNode newFile;
     private final long oldSize;
     private final long newSize;
 
     ApkDiffEntry(
-            @NonNull String name,
+            @NotNull String name,
             @Nullable ArchiveNode oldFile,
             @Nullable ArchiveNode newFile,
             long oldSize,
@@ -44,13 +46,13 @@ public class ApkDiffEntry implements ApkEntry {
     }
 
     @Override
-    @NonNull
+    @NotNull
     public String getName() {
         return name;
     }
 
     @Override
-    @NonNull
+    @NotNull
     public Path getPath() {
         assert oldFile != null || newFile != null;
         return oldFile != null ? oldFile.getData().getPath() : newFile.getData().getPath();
@@ -69,14 +71,14 @@ public class ApkDiffEntry implements ApkEntry {
         return newSize;
     }
 
-    public static long getOldSize(@NonNull ApkEntry apkEntry) {
+    public static long getOldSize(@NotNull ApkEntry apkEntry) {
         if (apkEntry instanceof ApkDiffEntry) {
             return ((ApkDiffEntry) apkEntry).getOldSize();
         }
         return apkEntry.getSize();
     }
 
-    public static long getNewSize(@NonNull ApkEntry apkEntry) {
+    public static long getNewSize(@NotNull ApkEntry apkEntry) {
         if (apkEntry instanceof ApkDiffEntry) {
             return ((ApkDiffEntry) apkEntry).getNewSize();
         }

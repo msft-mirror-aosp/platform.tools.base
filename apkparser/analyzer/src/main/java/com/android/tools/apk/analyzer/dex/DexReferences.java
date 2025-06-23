@@ -15,9 +15,17 @@
  */
 package com.android.tools.apk.analyzer.dex;
 
-import com.android.annotations.NonNull;
-import com.android.tools.apk.analyzer.dex.tree.*;
-import com.android.tools.smali.dexlib2.dexbacked.*;
+import com.android.tools.apk.analyzer.dex.tree.DexClassNode;
+import com.android.tools.apk.analyzer.dex.tree.DexElementNode;
+import com.android.tools.apk.analyzer.dex.tree.DexElementNodeFactory;
+import com.android.tools.apk.analyzer.dex.tree.DexFieldNode;
+import com.android.tools.apk.analyzer.dex.tree.DexMethodNode;
+import com.android.tools.apk.analyzer.dex.tree.DexPackageNode;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedField;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedMethod;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedMethodImplementation;
 import com.android.tools.smali.dexlib2.dexbacked.reference.DexBackedFieldReference;
 import com.android.tools.smali.dexlib2.dexbacked.reference.DexBackedMethodReference;
 import com.android.tools.smali.dexlib2.dexbacked.reference.DexBackedTypeReference;
@@ -30,11 +38,25 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.iface.reference.Reference;
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference;
-import com.android.tools.smali.dexlib2.iface.value.*;
-import com.android.tools.smali.dexlib2.immutable.reference.*;
+import com.android.tools.smali.dexlib2.iface.value.AnnotationEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.ArrayEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.EncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.EnumEncodedValue;
+import com.android.tools.smali.dexlib2.iface.value.TypeEncodedValue;
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableReference;
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableReferenceFactory;
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableTypeReference;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import java.util.*;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class DexReferences {
 
@@ -51,7 +73,7 @@ public class DexReferences {
      *
      * @param files dex file
      */
-    private void gatherBackReferences(@NonNull DexBackedDexFile[] files) {
+    private void gatherBackReferences(@NotNull DexBackedDexFile[] files) {
 
         Map<Reference, ImmutableReference> immutableReferencesBin = new HashMap<>();
 
@@ -244,7 +266,7 @@ public class DexReferences {
      * @param referenced the dex element you wish to find references for
      * @return the root of the reference tree
      */
-    public DexElementNode getReferenceTreeFor(@NonNull Reference referenced) {
+    public DexElementNode getReferenceTreeFor(@NotNull Reference referenced) {
         return getReferenceTreeFor(referenced, false);
     }
 
@@ -263,7 +285,7 @@ public class DexReferences {
      * @param shallow false to to build the full tree, true to evaluate just the first level
      * @return the root of the reference tree
      */
-    public DexElementNode getReferenceTreeFor(@NonNull Reference referenced, boolean shallow) {
+    public DexElementNode getReferenceTreeFor(@NotNull Reference referenced, boolean shallow) {
         DexElementNode rootNode =
                 DexElementNodeFactory.from(ImmutableReferenceFactory.of(referenced));
         addReferencesForNode(rootNode, shallow);
@@ -280,7 +302,7 @@ public class DexReferences {
      * @param node the root node under which you wish to attach references
      * @param shallow false to to build the full tree, true to evaluate just the first level
      */
-    public void addReferencesForNode(@NonNull DexElementNode node, boolean shallow) {
+    public void addReferencesForNode(@NotNull DexElementNode node, boolean shallow) {
         Reference referenced = node.getReference();
         node.removeAllChildren();
         Collection<? extends ImmutableReference> references = referenceReferences.get(referenced);

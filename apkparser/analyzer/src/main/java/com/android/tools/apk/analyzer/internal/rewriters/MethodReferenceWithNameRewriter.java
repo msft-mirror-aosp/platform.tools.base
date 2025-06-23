@@ -16,20 +16,21 @@
 
 package com.android.tools.apk.analyzer.internal.rewriters;
 
-import com.android.annotations.NonNull;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.rewriter.MethodReferenceRewriter;
 import com.android.tools.smali.dexlib2.rewriter.Rewriters;
 
+import org.jetbrains.annotations.NotNull;
+
 public abstract class MethodReferenceWithNameRewriter extends MethodReferenceRewriter {
 
-    public MethodReferenceWithNameRewriter(@NonNull Rewriters rewriters) {
+    public MethodReferenceWithNameRewriter(@NotNull Rewriters rewriters) {
         super(rewriters);
     }
 
-    @NonNull
+    @NotNull
     @Override
-    public MethodReference rewrite(@NonNull MethodReference methodReference) {
+    public MethodReference rewrite(@NotNull MethodReference methodReference) {
         return new RewrittenMethodReferenceWithName(methodReference);
     }
 
@@ -37,12 +38,12 @@ public abstract class MethodReferenceWithNameRewriter extends MethodReferenceRew
 
     protected class RewrittenMethodReferenceWithName extends RewrittenMethodReference {
 
-        public RewrittenMethodReferenceWithName(@NonNull MethodReference methodReference) {
+        public RewrittenMethodReferenceWithName(@NotNull MethodReference methodReference) {
             super(methodReference);
         }
 
         @Override
-        @NonNull
+        @NotNull
         public String getName() {
             return rewriteName(methodReference);
         }

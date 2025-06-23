@@ -15,18 +15,19 @@
  */
 package com.android.tools.apk.analyzer.dex.tree;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.dex.PackageTreeCreator;
 import com.android.tools.proguard.ProguardMap;
 import com.android.tools.proguard.ProguardSeedsMap;
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public class DexFieldNode extends DexElementNode {
     private long size;
 
-    public DexFieldNode(@NonNull String displayName, @Nullable ImmutableFieldReference reference) {
+    public DexFieldNode(@NotNull String displayName, @Nullable ImmutableFieldReference reference) {
         super(displayName, false, reference);
     }
 

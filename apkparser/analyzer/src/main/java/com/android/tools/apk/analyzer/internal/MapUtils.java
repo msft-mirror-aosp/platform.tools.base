@@ -16,7 +16,8 @@
 
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Map;
 import java.util.function.Function;
 
@@ -26,7 +27,7 @@ public class MapUtils {
      * throw an {@link Exception}.
      */
     public static <K, V, E extends Throwable> V computeIfAbsent(
-            @NonNull Map<K, V> map, @NonNull K key, ThrowableFunction<K, V, E> supplier) throws E {
+            @NotNull Map<K, V> map, @NotNull K key, ThrowableFunction<K, V, E> supplier) throws E {
         V value = map.get(key);
         if (value == null) {
             value = supplier.apply(key);

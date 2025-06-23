@@ -16,14 +16,16 @@
 
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
+
 import javax.swing.tree.TreeNode;
 
 public interface ArchiveNode extends TreeNode {
     /** Return the list of child nodes */
-    @NonNull
+    @NotNull
     List<ArchiveNode> getChildren();
 
     /** Returns the parent of this node, null if this is the root */
@@ -32,6 +34,6 @@ public interface ArchiveNode extends TreeNode {
     ArchiveNode getParent();
 
     /** Returns the data associated to this node. */
-    @NonNull
+    @NotNull
     ArchiveEntry getData();
 }

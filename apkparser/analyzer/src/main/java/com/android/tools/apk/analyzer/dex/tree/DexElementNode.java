@@ -15,12 +15,13 @@
  */
 package com.android.tools.apk.analyzer.dex.tree;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.proguard.ProguardMap;
 import com.android.tools.proguard.ProguardSeedsMap;
 import com.android.tools.smali.dexlib2.iface.reference.Reference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableReference;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 import java.util.List;
@@ -29,25 +30,26 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 public abstract class DexElementNode extends DefaultMutableTreeNode {
 
-    @NonNull private final String name;
+    @NotNull private final String name;
     @Nullable private final ImmutableReference reference;
     private boolean defined;
     private boolean removed;
     private int methodReferencesCount;
     private int methodDefinitionsCount;
+    private boolean deobfuscated;
 
-    DexElementNode(@NonNull String name, boolean allowsChildren) {
+    DexElementNode(@NotNull String name, boolean allowsChildren) {
         this(name, allowsChildren, null);
     }
 
     DexElementNode(
-            @NonNull String name, boolean allowsChildren, @Nullable ImmutableReference reference) {
+            @NotNull String name, boolean allowsChildren, @Nullable ImmutableReference reference) {
         super(null, allowsChildren);
         this.name = name;
         this.reference = reference;
     }
 
-    @NonNull
+    @NotNull
     public String getName() {
         return name;
     }
@@ -79,7 +81,7 @@ public abstract class DexElementNode extends DefaultMutableTreeNode {
     }
 
     @Nullable
-    public <T extends DexElementNode> T getChildByType(@NonNull String name, Class<T> type) {
+    public <T extends DexElementNode> T getChildByType(@NotNull String name, Class<T> type) {
         for (int i = 0; i < getChildCount(); i++) {
             DexElementNode node = getChildAt(i);
             if (name.equals(node.getName()) && type.equals(node.getClass())) {
@@ -115,7 +117,7 @@ public abstract class DexElementNode extends DefaultMutableTreeNode {
         }
     }
 
-    protected static String combine(@NonNull String parentPackage, @NonNull String childName) {
+    protected static String combine(@NotNull String parentPackage, @NotNull String childName) {
         return parentPackage.isEmpty() ? childName : parentPackage + "." + childName;
     }
 

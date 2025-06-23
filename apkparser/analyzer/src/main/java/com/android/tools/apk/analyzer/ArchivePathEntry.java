@@ -17,7 +17,7 @@ package com.android.tools.apk.analyzer;
 
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_NONE;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +32,7 @@ public class ArchivePathEntry extends ArchiveEntry {
     private boolean isSelfOrChild16kbIncompatible = false;
 
     public ArchivePathEntry(
-            @NonNull Archive archive, @NonNull Path path, @NonNull String pathPrefix) {
+            @NotNull Archive archive, @NotNull Path path, @NotNull String pathPrefix) {
         super(archive, path, pathPrefix);
     }
 
@@ -107,7 +107,7 @@ public class ArchivePathEntry extends ArchiveEntry {
     }
 
     @Override
-    @NonNull
+    @NotNull
     public String getNodeDisplayString() {
         Path base = getPath().getFileName();
         String name = base == null ? "" : base.toString();
@@ -115,13 +115,13 @@ public class ArchivePathEntry extends ArchiveEntry {
     }
 
     @Override
-    @NonNull
+    @NotNull
     public String getSummaryDisplayString() {
         return getPathPrefix() + PathUtils.pathWithTrailingSeparator(getPath());
     }
 
-    @NonNull
-    private static String trimEnd(@NonNull String s, @NonNull String suffix) {
+    @NotNull
+    private static String trimEnd(@NotNull String s, @NotNull String suffix) {
         boolean endsWith = s.endsWith(suffix);
         if (endsWith) {
             return s.substring(0, s.length() - suffix.length());

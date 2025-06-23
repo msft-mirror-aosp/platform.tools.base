@@ -23,7 +23,6 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/common:studio.android.sdktools.common",
         "//prebuilts/tools/common/archive-patcher:explainer",
         "//prebuilts/tools/common/archive-patcher:generator",
@@ -44,7 +43,6 @@ coverage_java_library(
         "//prebuilts/tools/common/archive-patcher:explainer",
         "//prebuilts/tools/common/archive-patcher:generator",
         "//prebuilts/tools/common/archive-patcher:shared",
-        "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
@@ -53,6 +51,7 @@ coverage_java_library(
         "@maven//:com.android.tools.smali.smali-baksmali",
         "@maven//:com.android.tools.smali.smali-dexlib2",
         "@maven//:com.google.guava.guava",
+        "@maven//:org.jetbrains.annotations",
     ],
 )
 
@@ -71,7 +70,6 @@ maven_library(
     version = BASE_VERSION,
     visibility = ["//visibility:public"],
     deps = [
-        "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
@@ -90,7 +88,6 @@ coverage_java_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.analyzer",
-        "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/common:tools.common",
         "//tools/base/testutils:tools.testutils",
@@ -98,5 +95,6 @@ coverage_java_test(
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
+        "@maven//:org.jetbrains.annotations",
     ],
 )

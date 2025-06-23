@@ -18,13 +18,13 @@ package com.android.tools.apk.analyzer;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.android.annotations.NonNull;
 import com.android.testutils.TestResources;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
 import com.google.common.primitives.Longs;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -210,7 +210,7 @@ public class ArchiveTreeStructureTest {
     }
 
     private static String dumpTree(
-            @NonNull ArchiveNode root, @NonNull Function<ArchiveNode, String> mapper) {
+            @NotNull ArchiveNode root, @NotNull Function<ArchiveNode, String> mapper) {
         return ArchiveTreeStream.preOrderStream(root).map(mapper).collect(Collectors.joining("\n"));
     }
 

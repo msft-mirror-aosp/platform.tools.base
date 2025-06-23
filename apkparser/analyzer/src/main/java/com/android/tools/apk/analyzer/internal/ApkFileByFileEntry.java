@@ -15,14 +15,15 @@
  */
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.ArchiveNode;
+
+import org.jetbrains.annotations.NotNull;
 
 public class ApkFileByFileEntry extends ApkDiffEntry {
     private final long diffSize;
 
     public ApkFileByFileEntry(
-            @NonNull String name,
+            @NotNull String name,
             ArchiveNode oldFile,
             ArchiveNode newFile,
             long oldSize,

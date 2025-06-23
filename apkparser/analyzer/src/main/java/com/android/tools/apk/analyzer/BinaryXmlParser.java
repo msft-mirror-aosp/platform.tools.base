@@ -16,8 +16,6 @@
 package com.android.tools.apk.analyzer;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.xml.XmlBuilder;
 
 import com.google.common.collect.Lists;
@@ -33,6 +31,9 @@ import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceStartChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlResourceMapChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlStartElementChunk;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -43,9 +44,9 @@ import java.util.Locale;
 import java.util.Map;
 
 public class BinaryXmlParser {
-    @NonNull
+    @NotNull
     public static byte[] decodeXml(
-            @NonNull byte[] bytes, @NonNull ResourceIdResolver resIdResolver) {
+            @NotNull byte[] bytes, @NotNull ResourceIdResolver resIdResolver) {
         BinaryResourceFile file = new BinaryResourceFile(bytes);
         List<Chunk> chunks = file.getChunks();
         if (chunks.size() != 1) {
@@ -69,13 +70,13 @@ public class BinaryXmlParser {
         return reconstructedXml.getBytes(StandardCharsets.UTF_8);
     }
 
-    @NonNull
-    public static byte[] decodeXml(@NonNull byte[] bytes) {
+    @NotNull
+    public static byte[] decodeXml(@NotNull byte[] bytes) {
         return decodeXml(bytes, ResourceIdResolver.NO_RESOLUTION);
     }
 
     private static void visitChunks(
-            @NonNull Map<Integer, Chunk> chunks, @NonNull XmlChunkHandler handler) {
+            @NotNull Map<Integer, Chunk> chunks, @NotNull XmlChunkHandler handler) {
         // sort the chunks by their offset in the file in order to traverse them in the right order
         List<Chunk> contentChunks = sortByOffset(chunks);
 
@@ -98,7 +99,7 @@ public class BinaryXmlParser {
         }
     }
 
-    @NonNull
+    @NotNull
     private static List<Chunk> sortByOffset(Map<Integer, Chunk> contentChunks) {
         List<Integer> offsets = Lists.newArrayList(contentChunks.keySet());
         Collections.sort(offsets);
@@ -111,17 +112,17 @@ public class BinaryXmlParser {
     }
 
     private interface XmlChunkHandler {
-        default void stringPool(@NonNull StringPoolChunk chunk) {}
+        default void stringPool(@NotNull StringPoolChunk chunk) {}
 
-        default void xmlResourceMap(@NonNull XmlResourceMapChunk chunk) {}
+        default void xmlResourceMap(@NotNull XmlResourceMapChunk chunk) {}
 
-        default void startNamespace(@NonNull XmlNamespaceStartChunk chunk) {}
+        default void startNamespace(@NotNull XmlNamespaceStartChunk chunk) {}
 
-        default void endNamespace(@NonNull XmlNamespaceEndChunk chunk) {}
+        default void endNamespace(@NotNull XmlNamespaceEndChunk chunk) {}
 
-        default void startElement(@NonNull XmlStartElementChunk chunk) {}
+        default void startElement(@NotNull XmlStartElementChunk chunk) {}
 
-        default void endElement(@NonNull XmlEndElementChunk chunk) {}
+        default void endElement(@NotNull XmlEndElementChunk chunk) {}
     }
 
     private static class XmlPrinter implements XmlChunkHandler {
@@ -131,24 +132,24 @@ public class BinaryXmlParser {
         private StringPoolChunk stringPool;
         private final ResourceIdResolver resIdResolver;
 
-        public XmlPrinter(@NonNull ResourceIdResolver resourceIdResolver) {
+        public XmlPrinter(@NotNull ResourceIdResolver resourceIdResolver) {
             builder = new XmlBuilder();
             resIdResolver = resourceIdResolver;
         }
 
         @Override
-        public void stringPool(@NonNull StringPoolChunk chunk) {
+        public void stringPool(@NotNull StringPoolChunk chunk) {
             stringPool = chunk;
         }
 
         @Override
-        public void startNamespace(@NonNull XmlNamespaceStartChunk chunk) {
+        public void startNamespace(@NotNull XmlNamespaceStartChunk chunk) {
             // collect all the namespaces in use, and print them out later when we the first tag is seen
             namespaces.put(chunk.getUri(), chunk.getPrefix());
         }
 
         @Override
-        public void startElement(@NonNull XmlStartElementChunk chunk) {
+        public void startElement(@NotNull XmlStartElementChunk chunk) {
             builder.startTag(chunk.getName());
 
             // if this is the first tag, also print out the namespaces
@@ -170,17 +171,17 @@ public class BinaryXmlParser {
         }
 
         @Override
-        public void endElement(@NonNull XmlEndElementChunk chunk) {
+        public void endElement(@NotNull XmlEndElementChunk chunk) {
             builder.endTag(chunk.getName());
         }
 
-        @NonNull
+        @NotNull
         public String getReconstructedXml() {
             return builder.toString();
         }
 
-        @NonNull
-        private String getValue(@NonNull XmlAttribute attribute) {
+        @NotNull
+        private String getValue(@NotNull XmlAttribute attribute) {
             String rawValue = attribute.rawValue();
             if (!(rawValue == null || rawValue.isEmpty())) {
                 return rawValue;
@@ -192,9 +193,9 @@ public class BinaryXmlParser {
     }
 
     public static String formatValue(
-            @NonNull BinaryResourceValue resValue,
+            @NotNull BinaryResourceValue resValue,
             @Nullable StringPoolChunk stringPool,
-            @NonNull ResourceIdResolver resourceIdResolver) {
+            @NotNull ResourceIdResolver resourceIdResolver) {
         int data = resValue.data();
 
         switch (resValue.type()) {
@@ -239,7 +240,7 @@ public class BinaryXmlParser {
     }
 
     public static String formatValue(
-            @NonNull BinaryResourceValue resValue, @Nullable StringPoolChunk stringPool) {
+            @NotNull BinaryResourceValue resValue, @Nullable StringPoolChunk stringPool) {
         return formatValue(resValue, stringPool, ResourceIdResolver.NO_RESOLUTION);
     }
 

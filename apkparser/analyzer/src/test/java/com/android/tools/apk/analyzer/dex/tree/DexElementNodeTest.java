@@ -17,16 +17,16 @@ package com.android.tools.apk.analyzer.dex.tree;
 
 import static org.junit.Assert.assertEquals;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.Comparator;
-import javax.swing.*;
-import org.junit.Test;
 
 public class DexElementNodeTest {
 
     private static class ConcreteNode extends DexElementNode {
-        ConcreteNode(@NonNull String name, boolean allowsChildren) {
+        ConcreteNode(@NotNull String name, boolean allowsChildren) {
             super(name, allowsChildren);
         }
 
@@ -37,7 +37,7 @@ public class DexElementNodeTest {
     }
 
     private static class AnotherNode extends DexElementNode {
-        AnotherNode(@NonNull String name, boolean allowsChildren) {
+        AnotherNode(@NotNull String name, boolean allowsChildren) {
             super(name, allowsChildren);
         }
 

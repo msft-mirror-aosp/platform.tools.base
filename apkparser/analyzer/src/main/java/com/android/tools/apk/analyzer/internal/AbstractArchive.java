@@ -16,35 +16,37 @@
 
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.Archive;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.file.Path;
 
 public abstract class AbstractArchive implements Archive {
-    @NonNull private final Path path;
+    @NotNull private final Path path;
 
-    public AbstractArchive(@NonNull Path path) {
+    public AbstractArchive(@NotNull Path path) {
         this.path = path;
     }
 
-    @NonNull
+    @NotNull
     @Override
     public Path getPath() {
         return path;
     }
 
     @Override
-    public boolean isBinaryXml(@NonNull Path p, @NonNull byte[] content) {
+    public boolean isBinaryXml(@NotNull Path p, @NotNull byte[] content) {
         return false;
     }
 
     @Override
-    public boolean isProtoXml(@NonNull Path p, @NonNull byte[] content) {
+    public boolean isProtoXml(@NotNull Path p, @NotNull byte[] content) {
         return false;
     }
 
     @Override
-    public boolean isBaselineProfile(@NonNull Path p, @NonNull byte[] content) {
+    public boolean isBaselineProfile(@NotNull Path p, @NotNull byte[] content) {
         return false;
     }
 

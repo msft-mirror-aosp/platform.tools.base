@@ -16,8 +16,9 @@
 
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.internal.ArchiveTreeNode;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -34,16 +35,16 @@ import javax.swing.tree.MutableTreeNode;
 
 public class ArchiveTreeStructure {
 
-    @NonNull
-    public static ArchiveNode create(@NonNull ArchiveContext archiveContext) {
+    @NotNull
+    public static ArchiveNode create(@NotNull ArchiveContext archiveContext) {
         return createWorker(archiveContext.getArchiveManager(), archiveContext.getArchive(), "");
     }
 
-    @NonNull
+    @NotNull
     private static ArchiveNode createWorker(
-            @NonNull ArchiveManager archiveManager,
-            @NonNull Archive archive,
-            @NonNull String pathPrefix) {
+            @NotNull ArchiveManager archiveManager,
+            @NotNull Archive archive,
+            @NotNull String pathPrefix) {
         Path contentRoot = archive.getContentRoot();
         ArchiveTreeNode rootNode =
                 new ArchiveTreeNode(new ArchivePathEntry(archive, contentRoot, pathPrefix));
@@ -103,12 +104,12 @@ public class ArchiveTreeStructure {
         return rootNode;
     }
 
-    @NonNull
+    @NotNull
     private static ArchiveTreeNode createErrorNode(
-            @NonNull Archive archive,
-            @NonNull Path childPath,
-            @NonNull String pathPrefix,
-            @NonNull Throwable error) {
+            @NotNull Archive archive,
+            @NotNull Path childPath,
+            @NotNull String pathPrefix,
+            @NotNull Throwable error) {
         ArchiveTreeNode childNode =
                 new ArchiveTreeNode(new ArchivePathEntry(archive, childPath, pathPrefix));
         childNode.add(
@@ -117,7 +118,7 @@ public class ArchiveTreeStructure {
     }
 
     public static void updateFileInfo(
-            @NonNull ArchiveNode root, @NonNull ApkSizeCalculator calculator) {
+            @NotNull ArchiveNode root, @NotNull ApkSizeCalculator calculator) {
         Map<String, ZipEntryInfo> infos;
         if (root.getData() instanceof InnerArchiveEntry) {
             infos =
@@ -193,7 +194,7 @@ public class ArchiveTreeStructure {
     }
 
     public static void updateDownloadFileSizes(
-            @NonNull ArchiveNode root, @NonNull ApkSizeCalculator calculator) {
+            @NotNull ArchiveNode root, @NotNull ApkSizeCalculator calculator) {
         Map<String, Long> downloadFileSizes;
         if (root.getData() instanceof InnerArchiveEntry) {
             downloadFileSizes =
@@ -241,13 +242,13 @@ public class ArchiveTreeStructure {
     }
 
     public static void sort(
-            @NonNull ArchiveNode root, @NonNull Comparator<ArchiveNode> comparator) {
+            @NotNull ArchiveNode root, @NotNull Comparator<ArchiveNode> comparator) {
         assert root instanceof ArchiveTreeNode;
         sort((ArchiveTreeNode) root, comparator);
     }
 
     private static void sort(
-            @NonNull ArchiveTreeNode root, @NonNull Comparator<ArchiveNode> comparator) {
+            @NotNull ArchiveTreeNode root, @NotNull Comparator<ArchiveNode> comparator) {
         List<ArchiveNode> children = new ArrayList<>(root.getChildren());
         children.sort(comparator);
 

@@ -33,7 +33,6 @@ package com.android.tools.apk.analyzer.internal;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.ArchiveContext;
 import com.android.tools.apk.analyzer.ArchiveEntry;
 import com.android.tools.apk.analyzer.ArchiveNode;
@@ -45,6 +44,8 @@ import com.google.archivepatcher.explainer.PatchExplainer;
 import com.google.archivepatcher.generator.bsdiff.BsDiffDeltaGenerator;
 import com.google.archivepatcher.shared.DeflateCompressor;
 import com.google.common.annotations.VisibleForTesting;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,17 +60,17 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 public class ApkFileByFileDiffParser {
 
-    @NonNull
+    @NotNull
     public static DefaultMutableTreeNode createTreeNode(
-            @NonNull ArchiveContext oldFile, @NonNull ArchiveContext newFile)
+            @NotNull ArchiveContext oldFile, @NotNull ArchiveContext newFile)
             throws IOException, InterruptedException {
         return createTreeNode(oldFile, newFile, (count, size) -> {});
     }
 
-    @NonNull
+    @NotNull
     public static DefaultMutableTreeNode createTreeNode(
-            @NonNull ArchiveContext oldFile,
-            @NonNull ArchiveContext newFile,
+            @NotNull ArchiveContext oldFile,
+            @NotNull ArchiveContext newFile,
             OnProgressListener onProgressListener)
             throws IOException, InterruptedException {
         ArchiveNode oldRoot = ArchiveTreeStructure.create(oldFile);
@@ -89,7 +90,7 @@ public class ApkFileByFileDiffParser {
     }
 
     @VisibleForTesting
-    @NonNull
+    @NotNull
     static DefaultMutableTreeNode createTreeNode(
             ArchiveNode oldFile, ArchiveNode newFile, Map<String, Long> pathsToDiffSize)
             throws IOException {

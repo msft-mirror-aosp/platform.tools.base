@@ -17,21 +17,12 @@
 package com.android.tools.apk.analyzer;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocationsSingleton;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.utils.NullLogger;
+
 import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UncheckedIOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.BuiltinHelpFormatter;
 import joptsimple.NonOptionArgumentSpec;
@@ -41,6 +32,19 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpecBuilder;
 import joptsimple.internal.Rows;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ApkAnalyzerCli {
     private static final String TOOLSDIR = "com.android.sdklib.toolsdir";
@@ -114,7 +118,7 @@ public class ApkAnalyzerCli {
     }
 
     public ApkAnalyzerCli(
-            @NonNull PrintStream out, @NonNull PrintStream err, ApkAnalyzerImpl impl) {
+            @NotNull PrintStream out, @NotNull PrintStream err, ApkAnalyzerImpl impl) {
         this.out = out;
         this.err = err;
         this.impl = impl;
@@ -306,8 +310,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.apkSummary(opts.valueOf(getFileSpec()).toPath());
@@ -318,8 +322,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.apkRawSize(opts.valueOf(getFileSpec()).toPath());
@@ -333,8 +337,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionSet opts = parseOrPrintHelp(getParser(), err, args);
                 impl.apkDownloadSize(opts.valueOf(getFileSpec()).toPath());
             }
@@ -344,7 +348,7 @@ public class ApkAnalyzerCli {
             @Nullable public OptionSpecBuilder notRequiredSpec;
             @Nullable private OptionParser parser;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -360,8 +364,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.apkFeatures(opts.valueOf(getFileSpec()).toPath(), opts.has(notRequiredSpec));
@@ -374,7 +378,7 @@ public class ApkAnalyzerCli {
             @Nullable private OptionSpecBuilder patchSpec;
             @Nullable private OptionParser parser;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -382,7 +386,8 @@ public class ApkAnalyzerCli {
                     patchSpec =
                             parser.accepts(
                                     FLAG_PATCH_SIZE,
-                                    "Show an estimate of the file-by-file patch instead of raw difference.");
+                                    "Show an estimate of the file-by-file patch instead of raw"
+                                            + " difference.");
                     filesOnlySpec =
                             parser.accepts(
                                     FLAG_FILES_ONLY, "Don't print directory entries in output.");
@@ -398,8 +403,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 List<File> files = opts.valuesOf(getFileSpec());
@@ -422,7 +427,7 @@ public class ApkAnalyzerCli {
             @Nullable private OptionParser parser;
 
             @Override
-            @NonNull
+            @NotNull
             public OptionParser getParser() {
                 if (parser == null) {
                     parser = super.getParser();
@@ -441,8 +446,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.filesList(
@@ -456,7 +461,7 @@ public class ApkAnalyzerCli {
             @Nullable private ArgumentAcceptingOptionSpec<String> filePathSpec;
             @Nullable private OptionParser parser;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -473,8 +478,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 assert filePathSpec != null;
@@ -486,8 +491,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.manifestPrint(opts.valueOf(getFileSpec()).toPath());
@@ -500,8 +505,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.manifestAppId(opts.valueOf(getFileSpec()).toPath());
@@ -512,8 +517,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.manifestVersionName(opts.valueOf(getFileSpec()).toPath());
@@ -524,8 +529,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.manifestVersionCode(opts.valueOf(getFileSpec()).toPath());
@@ -536,8 +541,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.manifestMinSdk(opts.valueOf(getFileSpec()).toPath());
@@ -548,8 +553,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.manifestTargetSdk(opts.valueOf(getFileSpec()).toPath());
@@ -561,8 +566,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.manifestPermissions(opts.valueOf(getFileSpec()).toPath());
@@ -574,8 +579,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.manifestDebuggable(opts.valueOf(getFileSpec()).toPath());
@@ -586,8 +591,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.dexList(opts.valueOf(getFileSpec()).toPath());
@@ -599,7 +604,7 @@ public class ApkAnalyzerCli {
             @Nullable ArgumentAcceptingOptionSpec<String> filesSpec;
 
             @Override
-            @NonNull
+            @NotNull
             public OptionParser getParser() {
                 if (parser == null) {
                     parser = super.getParser();
@@ -617,8 +622,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 assert filesSpec != null;
@@ -641,7 +646,7 @@ public class ApkAnalyzerCli {
             public ArgumentAcceptingOptionSpec<File> pgFolderSpec;
             @Nullable OptionParser parser;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -686,8 +691,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.dexPackages(
@@ -711,7 +716,7 @@ public class ApkAnalyzerCli {
             public ArgumentAcceptingOptionSpec<String> methodSpec;
             @Nullable public OptionParser parser;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -724,7 +729,8 @@ public class ApkAnalyzerCli {
                     methodSpec =
                             parser.accepts(
                                             FLAG_METHOD,
-                                            "Method to decompile. Format: name(params)returnType, e.g. someMethod(Ljava/lang/String;I)V")
+                                            "Method to decompile. Format: name(params)returnType,"
+                                                    + " e.g. someMethod(Ljava/lang/String;I)V")
                                     .withRequiredArg()
                                     .ofType(String.class);
                     pgFolderSpec =
@@ -745,8 +751,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.dexCode(
@@ -772,7 +778,7 @@ public class ApkAnalyzerCli {
             public ArgumentAcceptingOptionSpec<File> pgFolderSpec;
 
             @Override
-            @NonNull
+            @NotNull
             public OptionParser getParser() {
                 if (parser == null) {
                     parser = super.getParser();
@@ -786,18 +792,20 @@ public class ApkAnalyzerCli {
                             parser.accepts(
                                             FLAG_REFERENCES_TO,
                                             "Class/constructor/method/field descriptor. Format:\n"
-                                                    + "  Class: class_name.\n"
-                                                    + "  Constructor: class_name constructor_name\n"
-                                                    + "  Method: class_name return_type method_name\n"
-                                                    + "  Field: class_name field_type filed_name\n"
-                                                    + "The descriptor can be copied from the output of\n"
-                                                    + " ./apkanalyzer dex packages\n")
+                                                + "  Class: class_name.\n"
+                                                + "  Constructor: class_name constructor_name\n"
+                                                + "  Method: class_name return_type method_name\n"
+                                                + "  Field: class_name field_type filed_name\n"
+                                                + "The descriptor can be copied from the output"
+                                                + " of\n"
+                                                + " ./apkanalyzer dex packages\n")
                                     .withRequiredArg()
                                     .ofType(String.class);
                     inputFileSpec =
                             parser.accepts(
                                             FLAG_INPUT_FILE,
-                                            "The file with a class, method or field to query in each line.")
+                                            "The file with a class, method or field to query in"
+                                                    + " each line.")
                                     .withRequiredArg()
                                     .ofType(File.class);
                     pgFolderSpec =
@@ -826,8 +834,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 if (!opts.has(inputFileSpec) && !opts.has(referencesOfSpec))
@@ -856,8 +864,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.resPackages(opts.valueOf(getFileSpec()).toPath());
@@ -869,7 +877,7 @@ public class ApkAnalyzerCli {
             public ArgumentAcceptingOptionSpec<String> typeSpec;
             @Nullable public OptionParser parser;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -891,8 +899,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
 
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
@@ -909,7 +917,7 @@ public class ApkAnalyzerCli {
             private ArgumentAcceptingOptionSpec<String> typeSpec;
             @Nullable public OptionParser parser;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -941,8 +949,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 impl.resValue(
@@ -960,7 +968,7 @@ public class ApkAnalyzerCli {
             @Nullable private ArgumentAcceptingOptionSpec<String> configSpec;
             @Nullable private ArgumentAcceptingOptionSpec<String> typeSpec;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -987,8 +995,8 @@ public class ApkAnalyzerCli {
             public void execute(
                     PrintStream out,
                     PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 assert typeSpec != null;
@@ -1006,7 +1014,7 @@ public class ApkAnalyzerCli {
             @Nullable public OptionParser parser;
             @Nullable private ArgumentAcceptingOptionSpec<String> filePathSpec;
 
-            @NonNull
+            @NotNull
             @Override
             public OptionParser getParser() {
                 if (parser == null) {
@@ -1021,9 +1029,11 @@ public class ApkAnalyzerCli {
             }
 
             @Override
-            public void execute(PrintStream out, PrintStream err,
-                    @NonNull ApkAnalyzerImpl impl,
-                    @NonNull String... args) {
+            public void execute(
+                    PrintStream out,
+                    PrintStream err,
+                    @NotNull ApkAnalyzerImpl impl,
+                    @NotNull String... args) {
                 OptionParser parser = getParser();
                 OptionSet opts = parseOrPrintHelp(parser, err, args);
                 assert filePathSpec != null;
@@ -1052,16 +1062,16 @@ public class ApkAnalyzerCli {
                     parser.nonOptions("apk").describedAs("APK file path").ofType(File.class);
         }
 
-        @NonNull
-        public OptionParser getParser(){
+        @NotNull
+        public OptionParser getParser() {
             if (parser == null){
                 initParser();
             }
             return parser;
         }
 
-        @NonNull
-        public NonOptionArgumentSpec<File> getFileSpec(){
+        @NotNull
+        public NonOptionArgumentSpec<File> getFileSpec() {
             if (parser == null){
                 initParser();
             }
@@ -1069,21 +1079,23 @@ public class ApkAnalyzerCli {
         }
 
         public abstract void execute(
-                PrintStream out, PrintStream err, @NonNull ApkAnalyzerImpl impl,
-                @NonNull String... args);
+                PrintStream out,
+                PrintStream err,
+                @NotNull ApkAnalyzerImpl impl,
+                @NotNull String... args);
 
-        @NonNull
+        @NotNull
         public String getVerb() {
             return verb;
         }
 
-        @NonNull
+        @NotNull
         public String getSubject() {
             return subject;
         }
 
-        @NonNull
-        public static List<Action> findActions(@NonNull String subject, @Nullable String verb) {
+        @NotNull
+        public static List<Action> findActions(@NotNull String subject, @Nullable String verb) {
             ArrayList<Action> actions = new ArrayList<>();
             for (Action action : Action.values()) {
                 if (subject.equals(action.subject) && (verb == null || verb.equals(action.verb))) {
@@ -1097,7 +1109,8 @@ public class ApkAnalyzerCli {
             return description;
         }
 
-        private static OptionSet parseOrPrintHelp(@NonNull OptionParser parser, @NonNull PrintStream err, String... args) {
+        private static OptionSet parseOrPrintHelp(
+                @NotNull OptionParser parser, @NotNull PrintStream err, String... args) {
             try {
                 OptionSet opts = parser.parse(args);
                 List<?> files = opts.nonOptionArguments();

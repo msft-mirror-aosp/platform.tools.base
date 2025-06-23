@@ -16,21 +16,25 @@
 
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.ArchiveEntry;
 import com.android.tools.apk.analyzer.ArchiveNode;
+
 import com.google.common.collect.ImmutableList;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
+
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 
 public class ArchiveTreeNode extends DefaultMutableTreeNode implements ArchiveNode {
-    public ArchiveTreeNode(@NonNull ArchiveEntry data) {
+    public ArchiveTreeNode(@NotNull ArchiveEntry data) {
         setUserObject(data);
     }
 
-    @NonNull
+    @NotNull
     @Override
     public List<ArchiveNode> getChildren() {
         //noinspection unchecked
@@ -51,7 +55,7 @@ public class ArchiveTreeNode extends DefaultMutableTreeNode implements ArchiveNo
         return (ArchiveTreeNode) super.getParent();
     }
 
-    @NonNull
+    @NotNull
     @Override
     public ArchiveEntry getData() {
         return (ArchiveEntry) getUserObject();
