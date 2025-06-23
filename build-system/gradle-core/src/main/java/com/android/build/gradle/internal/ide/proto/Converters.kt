@@ -98,6 +98,8 @@ internal fun com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.Bo
             AndroidGradlePluginProjectFlags.BooleanFlag.DATA_BINDING_ENABLED
         com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.GENERATE_MANIFEST_CLASS ->
             AndroidGradlePluginProjectFlags.BooleanFlag.GENERATE_MANIFEST_CLASS
+        com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.OLD_VARIANT_API_IN_USE ->
+            AndroidGradlePluginProjectFlags.BooleanFlag.OLD_VARIANT_API_IN_USE
     }
 
 internal fun com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.convert() =

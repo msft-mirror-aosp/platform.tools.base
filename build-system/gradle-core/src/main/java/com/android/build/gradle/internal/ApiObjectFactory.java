@@ -22,7 +22,7 @@ import com.android.build.api.variant.HostTestBuilder;
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig;
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig;
 import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.TestedAndroidConfig;
+import com.android.build.gradle.TestedExtension;
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
 import com.android.build.gradle.internal.api.BaseVariantImpl;
 import com.android.build.gradle.internal.api.LibraryVariantOutputImpl;
@@ -93,7 +93,7 @@ public class ApiObjectFactory {
                                 dslServices.domainObjectContainer(VariantOutput.class));
                 createVariantOutput(androidTestVariantProperties, androidTestVariant);
 
-                ((TestedAndroidConfig) extension).getTestVariants().add(androidTestVariant);
+                ((TestedExtension) extension).addTestVariant(androidTestVariant);
                 ((TestedVariant) variantApi).setTestVariant(androidTestVariant);
             }
 
@@ -119,7 +119,7 @@ public class ApiObjectFactory {
                                 readOnlyObjectProvider,
                                 dslServices.domainObjectContainer(VariantOutput.class));
 
-                ((TestedAndroidConfig) extension).getUnitTestVariants().add(unitTestVariant);
+                ((TestedExtension) extension).addUnitTestVariant(unitTestVariant);
                 ((TestedVariant) variantApi).setUnitTestVariant(unitTestVariant);
             }
         }

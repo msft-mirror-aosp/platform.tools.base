@@ -558,7 +558,7 @@ abstract class BasePlugin<
         val variantModel: VariantModel = createVariantModel(globalConfig)
         registry.register(
             com.android.build.gradle.internal.ide.v2.ModelBuilder(
-                project, variantModel, extensionData.newExtension
+                project, variantModel, extensionData.newExtension, extensionData.oldExtension
             )
         )
 

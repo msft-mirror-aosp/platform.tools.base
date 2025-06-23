@@ -107,6 +107,8 @@ abstract class BaseExtension protected constructor(
     private val stats: GradleBuildProject.Builder?
 ) : AndroidConfig, Lockable {
 
+    private var hasOldVariantApiUsage: Boolean = false
+
     private val _dexOptions = dslServices.newInstance(DexOptions::class.java)
 
     @Deprecated("Using dexOptions is obsolete.")
@@ -152,6 +154,11 @@ abstract class BaseExtension protected constructor(
 
     protected fun recordOldVariantApiUsage() {
         stats?.oldVariantApiInUse = true
+        hasOldVariantApiUsage = true
+    }
+
+    fun hasOldVariantApiUsage() : Boolean {
+        return hasOldVariantApiUsage
     }
 
     protected fun checkWritability() {

@@ -1,0 +1,4 @@
+- AndroidProject:
+   - flags:
+      * "OLD_VARIANT_API_IN_USE -> true"{ADDED}
+      * "OLD_VARIANT_API_IN_USE -> false"{REMOVED}

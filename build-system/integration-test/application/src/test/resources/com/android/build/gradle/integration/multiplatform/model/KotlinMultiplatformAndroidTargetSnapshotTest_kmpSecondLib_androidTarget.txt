@@ -119,6 +119,10 @@
           {
             "flag": "GENERATE_MANIFEST_CLASS",
             "value": false
+          },
+          {
+            "flag": "OLD_VARIANT_API_IN_USE",
+            "value": false
           }
         ]
       },

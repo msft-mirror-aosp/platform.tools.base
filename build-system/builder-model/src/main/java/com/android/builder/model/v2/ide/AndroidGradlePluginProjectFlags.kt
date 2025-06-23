@@ -104,6 +104,9 @@ interface AndroidGradlePluginProjectFlags {
 
         /** Whether to generate manifest classes */
         GENERATE_MANIFEST_CLASS(false),
+
+        /** Whether the legacy variant API is used in this project */
+        OLD_VARIANT_API_IN_USE(false),
         ;
 
         /**

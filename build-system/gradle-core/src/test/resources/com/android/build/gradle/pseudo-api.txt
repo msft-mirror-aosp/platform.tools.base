@@ -136,6 +136,7 @@ com.android.build.gradle.BaseExtension.getTransforms: java.util.List<com.android
 com.android.build.gradle.BaseExtension.getTransformsDependencies: java.util.List<java.util.List<java.lang.Object>> ()
 com.android.build.gradle.BaseExtension.getVariantFilter: org.gradle.api.Action<com.android.build.api.variant.VariantFilter> ()
 com.android.build.gradle.BaseExtension.getViewBinding: com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl ()
+com.android.build.gradle.BaseExtension.hasOldVariantApiUsage: boolean ()
 com.android.build.gradle.BaseExtension.jacoco: void (org.gradle.api.Action<com.android.build.gradle.internal.coverage.JacocoOptions>)
 com.android.build.gradle.BaseExtension.lintOptions: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.LintOptions>)
 com.android.build.gradle.BaseExtension.packagingOptions: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.PackagingOptions>)

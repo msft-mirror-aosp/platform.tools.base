@@ -167,7 +167,8 @@ object KotlinModelBuildingConfigurator {
                 .setFlags(
                     getAgpFlags(
                         variants = listOf(mainVariant),
-                        projectOptions = projectOptions
+                        projectOptions = projectOptions,
+                        oldVariantApiInUse = false
                     ).convert()
                 )
                 .addAllLintChecksJars(

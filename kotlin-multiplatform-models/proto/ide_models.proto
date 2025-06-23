@@ -110,6 +110,9 @@ message AndroidGradlePluginProjectFlags {
 
         // Whether to generate manifest classes
         GENERATE_MANIFEST_CLASS = 11;
+
+        // Whether the old variant API is used in this project
+        OLD_VARIANT_API_IN_USE = 12;
     }
 
     message BooleanFlagValue {

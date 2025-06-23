@@ -38,6 +38,7 @@ import com.android.build.api.variant.impl.HasTestFixtures
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.ManifestFilesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.VariantDimensionData
@@ -161,6 +162,7 @@ class ModelBuilder<
     private val project: Project,
     private val variantModel: VariantModel,
     private val extension: ExtensionT,
+    private val oldExtension: BaseExtension? = null,
 ) : ParameterizedToolingModelBuilder<ModelBuilderParameter> {
 
     override fun getParameterType(): Class<ModelBuilderParameter> {
@@ -693,6 +695,8 @@ class ModelBuilder<
             )
         }
 
+        val oldVariantApiInUse = oldExtension?.hasOldVariantApiUsage() ?: false
+
         return AndroidProjectImpl(
             namespace = namespace ?: "",
             androidTestNamespace = androidTestNamespace,
@@ -707,9 +711,9 @@ class ModelBuilder<
             ),
             flags = getAgpFlags(
                 variants = variantModel.variants,
-                projectOptions = variantModel.projectOptions
-
-            ),
+                projectOptions = variantModel.projectOptions,
+                oldVariantApiInUse = oldVariantApiInUse
+                ),
             lintChecksJars = getLocalCustomLintChecksForModel(project, variantModel.syncIssueReporter),
             desugarLibConfig = desugarLibConfig,
             // Using first as we are going to use the global artifacts anyway
@@ -1628,7 +1632,8 @@ class ModelBuilder<
     companion object {
         internal fun getAgpFlags(
             variants: List<VariantCreationConfig>,
-            projectOptions: ProjectOptions
+            projectOptions: ProjectOptions,
+            oldVariantApiInUse: Boolean
         ): AndroidGradlePluginProjectFlagsImpl {
             val flags =
                 ImmutableMap.builder<BooleanFlag, Boolean>()
@@ -1672,6 +1677,10 @@ class ModelBuilder<
             flags.put(
                 BooleanFlag.GENERATE_MANIFEST_CLASS,
                 projectOptions[BooleanOption.GENERATE_MANIFEST_CLASS]
+            )
+            flags.put(
+                BooleanFlag.OLD_VARIANT_API_IN_USE,
+                oldVariantApiInUse
             )
 
             return AndroidGradlePluginProjectFlagsImpl(flags.build())
