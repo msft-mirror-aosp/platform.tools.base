@@ -20,6 +20,7 @@ import com.android.ide.common.gradle.Dependency
 import com.android.ide.common.gradle.Module
 import com.android.ide.common.gradle.RichVersion
 import com.android.ide.common.gradle.Version
+import org.jetbrains.annotations.TestOnly
 
 sealed interface WellKnownMavenArtifactId {
     val groupId: String
@@ -28,6 +29,8 @@ sealed interface WellKnownMavenArtifactId {
     fun getModule(): Module =
         Module(groupId, artifactId)
 
+    @Suppress("DEPRECATION")
+    @TestOnly
     fun getCoordinate(revision: String): GradleCoordinate =
         GradleCoordinate(groupId, artifactId, revision)
 
