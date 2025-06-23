@@ -80,8 +80,8 @@ class JourneysTestEngine : TestEngine {
                 val outputPath =
                     Path(
                         JourneysTestEngineInput.resultsDir.absolutePath,
-                        JourneysTestEngineInput.testDeviceId.sanitizeForPath(),
-                        journeyFileName.removeSuffix(".xml").sanitizeForPath()
+                        JourneysTestEngineInput.testDeviceId,
+                        journeyFileName.removeSuffix(".xml")
                     )
                 outputPath.toFile().mkdirs()
 
@@ -105,14 +105,5 @@ class JourneysTestEngine : TestEngine {
                 listener.executionFinished(it, TestExecutionResult.failed(e))
             }
         }
-    }
-
-    private fun String.sanitizeForPath(): String {
-        return this.replace(SANITIZE_SPECIAL_CHARS_REGEX, "_")
-    }
-
-    companion object {
-
-        private val SANITIZE_SPECIAL_CHARS_REGEX = Regex("[^a-zA-Z0-9_]")
     }
 }
