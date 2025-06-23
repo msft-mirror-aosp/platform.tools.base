@@ -19,7 +19,7 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.ide.common.repository.GradleVersion
+import com.android.ide.common.gradle.Version
 import com.android.utils.FileUtils
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Internal
@@ -46,8 +46,8 @@ abstract class AppClasspathCheckTask : ClasspathComparisonTask() {
     ) {
 
         val suggestedVersion: String = try {
-            val runtime = GradleVersion.parse(runtimeVersion)
-            val compile = GradleVersion.parse(compileVersion)
+            val runtime = Version.parse(runtimeVersion)
+            val compile = Version.parse(compileVersion)
             if (runtime > compile) {
                 runtimeVersion
             } else {

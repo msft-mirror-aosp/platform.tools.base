@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.coverage;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.repository.GradleVersion;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 

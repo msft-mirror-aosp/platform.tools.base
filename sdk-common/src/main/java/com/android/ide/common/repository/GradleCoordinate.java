@@ -617,19 +617,6 @@ public final class GradleCoordinate {
         return Version.parse(getRevision());
     }
 
-    /**
-     * Returns the version of this coordinate
-     *
-     * @return the version
-     * @deprecated prefer {@link GradleCoordinate#getLowerBoundVersion()} if possible. See the
-     *     deprecation note on {@link GradleVersion} for alternatives.
-     */
-    @Deprecated
-    @Nullable
-    public GradleVersion getVersion() {
-        return GradleVersion.tryParse(getRevision());
-    }
-
     /** Returns the dependency version range of this coordinate */
     @NonNull
     public VersionRange getVersionRange() {
