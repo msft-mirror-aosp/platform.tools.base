@@ -39,7 +39,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
     public void test() throws IOException {
         TestIdeAndroidLibrary library =
                 createTestLibrary(
-                        "com.android.tools:test-library:1.0.0",
+                        "",
                         ""
                                 + "int dimen activity_horizontal_margin 0x7f030000\n"
                                 + "int dimen activity_vertical_margin 0x7f030001\n"
@@ -73,7 +73,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
     public void testAllPrivate() throws IOException {
         TestIdeAndroidLibrary library =
                 createTestLibrary(
-                        "com.android.tools:test-library:1.0.0",
+                        "",
                         ""
                                 + "int dimen activity_horizontal_margin 0x7f030000\n"
                                 + "int dimen activity_vertical_margin 0x7f030001\n"
@@ -100,7 +100,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
 
     public void testNotDeclared() throws IOException {
         TestIdeAndroidLibrary library =
-                createTestLibrary("com.android.tools:test-library:1.0.0", "", null);
+                createTestLibrary("", "", null);
 
         ResourceVisibilityLookup visibility =
                 ResourceVisibilityLookup.create(
@@ -118,7 +118,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
     public void testCombined() throws IOException {
         TestIdeAndroidLibrary library1 =
                 createTestLibrary(
-                        "com.android.tools:test-library:1.0.0",
+                        "",
                         ""
                                 + "int dimen activity_horizontal_margin 0x7f030000\n"
                                 + "int dimen activity_vertical_margin 0x7f030001\n"
@@ -131,7 +131,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
                         "string hello_world");
         TestIdeAndroidLibrary library2 =
                 createTestLibrary(
-                        "com.android.tools:test-library2:1.0.0",
+                        "2",
                         ""
                                 + "int layout foo 0x7f030001\n"
                                 + "int layout bar 0x7f060000\n"
@@ -157,7 +157,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
     public void testDependency() throws IOException {
         TestIdeAndroidLibrary library1 =
                 createTestLibrary(
-                        "com.android.tools:test-library:1.0.0",
+                        "",
                         ""
                                 + "int dimen activity_horizontal_margin 0x7f030000\n"
                                 + "int dimen activity_vertical_margin 0x7f030001\n"
@@ -170,7 +170,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
                         "");
         TestIdeAndroidLibrary library2 =
                 createTestLibrary(
-                        "com.android.tools:test-library2:1.0.0",
+                        "2",
                         "" + "int layout foo 0x7f030001\n" + "int layout bar 0x7f060000\n",
                         ""
                         + "layout foo\n" /*,
@@ -191,7 +191,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
     public void testManager() throws IOException {
         TestIdeAndroidLibrary library =
                 createTestLibrary(
-                        "com.android.tools:test-library:1.0.0",
+                        "",
                         ""
                                 + "int dimen activity_horizontal_margin 0x7f030000\n"
                                 + "int dimen activity_vertical_margin 0x7f030001\n"
@@ -220,7 +220,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
         // resource.
         TestIdeAndroidLibrary library1 =
                 createTestLibrary(
-                        "com.android.tools:test-library:1.0.0",
+                        "",
                         ""
                                 + "int dimen public_library1_resource1 0x7f030000\n"
                                 + "int dimen public_library1_resource2 0x7f030001\n"
@@ -231,7 +231,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
 
         TestIdeAndroidLibrary library2 =
                 createTestLibrary(
-                        "com.android.tools:test-library2:1.0.0",
+                        "2",
                         ""
                                 + "int dimen public_library2_resource1 0x7f030000\n"
                                 + "int dimen public_library2_resource2 0x7f030001\n",
@@ -239,7 +239,7 @@ public class ResourceVisibilityLookupTest extends TestCase {
                 );
         TestIdeAndroidLibrary library3 =
                 createTestLibrary(
-                        "com.android.tools:test-library3:1.0.0",
+                        "3",
                         ""
                                 + "int dimen public_library1_resource1 0x7f030000\n" // merged from
                                 // library1
@@ -328,8 +328,8 @@ public class ResourceVisibilityLookupTest extends TestCase {
         public @NonNull File publicResources;
     }
 
-    public static TestIdeAndroidLibrary createTestLibrary(
-            String name, String allResources, String publicResources) throws IOException {
+    static TestIdeAndroidLibrary createTestLibrary(
+            String idSuffix, String allResources, String publicResources) throws IOException {
         // Identical to PrivateResourceDetectorTest, but these are in test modules that
         // can't access each other
         final File tempDir = TestUtils.createTempDirDeletedOnExit().toFile();
@@ -340,11 +340,9 @@ public class ResourceVisibilityLookupTest extends TestCase {
         if (publicResources != null) {
             Files.asCharSink(publicTxtFile, StandardCharsets.UTF_8).write(publicResources);
         }
-        GradleCoordinate c = GradleCoordinate.parseCoordinateString(name);
-        assertNotNull(c);
 
         return new TestIdeAndroidLibrary(
-                c.getGroupId() + ":" + c.getArtifactId() + ":" + c.getRevision() + "@aar",
+                "com.android.tools:test-library" + idSuffix + ":1.0.0@aar",
                 rFile,
                 publicTxtFile
         );
