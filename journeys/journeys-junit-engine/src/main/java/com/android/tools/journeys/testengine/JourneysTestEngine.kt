@@ -16,12 +16,11 @@
 
 package com.android.tools.journeys.testengine
 
-import com.android.tools.journeys.testengine.resolver.JourneysFileSelectorResolver
 import androidx.test.tools.crawler.output.Crawl
 import com.android.tools.journeys.testengine.descriptor.JourneyFileDescriptor
-import org.junit.platform.engine.support.discovery.EngineDiscoveryRequestResolver
 import com.android.tools.journeys.testengine.output.CrawlProcessingState
 import com.android.tools.journeys.testengine.output.ProgressReporter
+import com.android.tools.journeys.testengine.resolver.JourneysFileSelectorResolver
 import com.android.tools.journeys.testengine.robo.Adb
 import com.android.tools.journeys.testengine.robo.Proxy
 import com.android.tools.journeys.testengine.robo.RoboConfigConstants
@@ -33,6 +32,7 @@ import org.junit.platform.engine.TestEngine
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
+import org.junit.platform.engine.support.discovery.EngineDiscoveryRequestResolver
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.Path
 import kotlin.io.path.outputStream
@@ -97,6 +97,7 @@ class JourneysTestEngine : TestEngine {
                 }
                 listener.executionStarted(it)
                 println("[additionalTestArtifacts]deviceId=${JourneysTestEngineInput.testDeviceId}")
+                println("[additionalTestArtifacts]deviceDisplayName=${JourneysTestEngineInput.testDeviceDisplayName}")
                 proxy.executeJourney(journeyPath, artifactProcessor)
                 reporter.reportSkippedPrompts()
                 listener.executionFinished(it, TestExecutionResult.successful())
@@ -111,6 +112,7 @@ class JourneysTestEngine : TestEngine {
     }
 
     companion object {
+
         private val SANITIZE_SPECIAL_CHARS_REGEX = Regex("[^a-zA-Z0-9_]")
     }
 }

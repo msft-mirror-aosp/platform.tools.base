@@ -129,12 +129,15 @@ abstract class JourneysValidationTask : Test() {
         (deviceProvider as? DeviceProvider)?.use {
             val deviceConnectors = getDevicesMethod.invoke(deviceProvider) as? List<DeviceConnector>
             // Use the first device if multiple devices are connected.
-            val connectedDeviceId = deviceConnectors?.firstOrNull()?.serialNumber
+            val device = deviceConnectors?.firstOrNull()
+            val connectedDeviceId = device?.serialNumber
+            val connectedDeviceName = device?.name
 
             if (connectedDeviceId != null) {
                 setTestEngineParam("journeysInputDir", journeysInputDir.get().asFile.absolutePath)
                 setTestEngineParam("resultsDir", resultsDir.get().asFile.absolutePath)
                 setTestEngineParam("testDeviceId", connectedDeviceId)
+                connectedDeviceName?.let { setTestEngineParam("testDeviceDisplayName", it) }
                 journeysFilter.orNull?.let {
                     setTestEngineParam(
                         "journeysFilter", it.split(",").map { it.trim() }.joinToString(",")
