@@ -34,15 +34,17 @@ import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.api.dsl.TestProductFlavor
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.CustomObjectInstance
 import com.android.build.gradle.integration.common.fixture.project.builder.StringHandler
+import org.gradle.api.DomainObjectSet
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.JavaVersion
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.artifacts.dsl.DependencyCollector
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
@@ -360,6 +362,9 @@ class DslProxy private constructor(
             MutableSet::class.java -> SetProxy<Any>(dslRecorder.createChainedRecorder(propName))
             MutableMap::class.java -> MapProxy<Any, Any>(dslRecorder.createChainedRecorder(propName))
             Property::class.java -> PropertyProxy<Any>(dslRecorder.createChainedRecorder(propName))
+            RegularFileProperty::class.java -> RegularFilePropertyProxy(dslRecorder.createChainedRecorder(propName))
+            MapProperty::class.java -> MapPropertyProxy<Any, Any>(dslRecorder.createChainedRecorder(propName))
+            DomainObjectSet::class.java -> DomainObjectSetProxy<Any>(dslRecorder.createChainedRecorder(propName))
             ListProperty::class.java -> ListPropertyProxy<Any>(dslRecorder.createChainedRecorder(propName))
             // custom implementation for String in order to intercept set/get to namespace
             java.lang.String::class.java -> {
