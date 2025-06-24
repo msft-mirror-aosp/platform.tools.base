@@ -88,14 +88,19 @@ gradle_connected_test(
     name = "FirebaseTestLabIntegrationTest",
     srcs = "src/test/java/com/android/build/gradle/integration/manageddevice/application/",
     avd = None,
-    data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/utp"],
+    data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS + [
         "//tools/base/firebase/testlab/testlab-gradle-plugin:maven_dependencies",
         "//tools/base/firebase/testlab/testlab-gradle-plugin:testlab-gradle-plugin",
     ],
     maven_repos = TEST_MAVEN_REPOS,
-    resources = [":integration-test-resources"],
-    deps = TEST_DEPS,
+    deps = TEST_DEPS + [
+        "//tools/base/firebase/testlab/testlab-gradle-plugin:testlab-gradle-plugin-build-service",
+        "//tools/base/firebase/testlab/testlab-gradle-plugin:testlab-gradle-plugin-dsl",
+        "@maven//:com.google.apis.google-api-services-storage",
+        "@maven//:com.google.apis.google-api-services-testing",
+        "@maven//:com.google.apis.google-api-services-toolresults",
+    ],
 )
 
 gradle_connected_test(
@@ -216,12 +221,4 @@ maven_repository(
         "@maven//:org.tensorflow.tensorflow-lite-support_0.2.0",
     ],
     visibility = ["__subpackages__"],
-)
-
-filegroup(
-    name = "integration-test-resources",
-    srcs = glob([
-        "src/test/resources/**",
-    ]),
-    visibility = ["//visibility:private"],
 )

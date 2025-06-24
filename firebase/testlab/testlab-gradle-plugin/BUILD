@@ -127,3 +127,28 @@ kotlin_library(
         "//tools/base/build-system/gradle-core",
     ],
 )
+
+kotlin_library(
+    name = "testlab-gradle-plugin-build-service",
+    srcs = glob([
+        "src/main/java/com/android/tools/firebase/testlab/gradle/**/*.kt",
+        "src/main/java/com/android/tools/firebase/testlab/gradle/**/*.java",
+    ]),
+    visibility = [
+        "//tools/base/build-system/integration-test:__subpackages__",
+    ],
+    deps = [
+        ":testlab-gradle-plugin-dsl",
+        "//prebuilts/tools/common/m2:utp-core-proto",
+        "//tools/base/build-system:gradle-api",
+        "//tools/base/build-system/builder-model",
+        "//tools/base/build-system/builder-test-api:tools.builder-test-api",
+        "//tools/base/build-system/gradle-core",
+        "//tools/base/utp/android-test-plugin-host-device-info-proto",
+        "@maven//:com.google.apis.google-api-services-storage",
+        "@maven//:com.google.apis.google-api-services-testing",
+        "@maven//:com.google.apis.google-api-services-toolresults",
+        "@maven//:com.google.http-client.google-http-client-jackson2",
+        "@maven//:com.google.protobuf.protobuf-java-util",
+    ],
+)
