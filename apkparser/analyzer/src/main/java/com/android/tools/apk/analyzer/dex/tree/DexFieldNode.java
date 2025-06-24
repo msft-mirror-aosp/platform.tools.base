@@ -33,8 +33,8 @@ public class DexFieldNode extends DexElementNode {
 
     @Nullable
     @Override
-    public FieldReference getReference() {
-        return (FieldReference) super.getReference();
+    public ImmutableFieldReference getReference() {
+        return (ImmutableFieldReference)super.getReference();
     }
 
     @Override

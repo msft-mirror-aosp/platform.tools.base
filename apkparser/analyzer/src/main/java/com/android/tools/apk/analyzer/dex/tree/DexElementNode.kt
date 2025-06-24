@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,157 +13,103 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.apk.analyzer.dex.tree;
+package com.android.tools.apk.analyzer.dex.tree
 
-import com.android.tools.proguard.ProguardMap;
-import com.android.tools.proguard.ProguardSeedsMap;
-import com.android.tools.smali.dexlib2.iface.reference.Reference;
-import com.android.tools.smali.dexlib2.immutable.reference.ImmutableReference;
+import com.android.tools.proguard.ProguardMap
+import com.android.tools.proguard.ProguardSeedsMap
+import com.android.tools.smali.dexlib2.immutable.reference.ImmutableReference
+import javax.swing.tree.DefaultMutableTreeNode
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+abstract class DexElementNode
+@JvmOverloads
+internal constructor(
+  val name: String,
+  allowsChildren: Boolean,
+  open val reference: ImmutableReference? = null,
+) : DefaultMutableTreeNode(null, allowsChildren) {
+  open var isDefined: Boolean = false
 
-import java.util.Comparator;
-import java.util.List;
+  var isRemoved: Boolean = false
 
-import javax.swing.tree.DefaultMutableTreeNode;
+  open var methodReferencesCount: Int = 0
+    protected set
 
-public abstract class DexElementNode extends DefaultMutableTreeNode {
+  open var methodDefinitionsCount: Int = 0
+    protected set
 
-    @NotNull private final String name;
-    @Nullable private final ImmutableReference reference;
-    private boolean defined;
-    private boolean removed;
-    private int methodReferencesCount;
-    private int methodDefinitionsCount;
-    private boolean deobfuscated;
+  override fun getChildAt(i: Int): DexElementNode {
+    return super.getChildAt(i) as DexElementNode
+  }
 
-    DexElementNode(@NotNull String name, boolean allowsChildren) {
-        this(name, allowsChildren, null);
+  fun getChildren(): Sequence<DexElementNode> =
+    children?.asSequence()?.map { it as DexElementNode } ?: emptySequence()
+
+  open fun sort(comparator: Comparator<DexElementNode>) {
+    getChildren().forEach { it.sort(comparator) }
+
+    if (children != null) {
+      children.sortWith(
+        Comparator { o1, o2 -> comparator.compare(o1 as DexElementNode, o2 as DexElementNode) }
+      )
     }
+  }
 
-    DexElementNode(
-            @NotNull String name, boolean allowsChildren, @Nullable ImmutableReference reference) {
-        super(null, allowsChildren);
-        this.name = name;
-        this.reference = reference;
-    }
+  @Deprecated("Use getChildByType(name: String)")
+  fun <T : DexElementNode> getChildByType(name: String, type: Class<T>): T? {
+    @Suppress("UNCHECKED_CAST")
+    return getChildren().find { name == it.name && it.javaClass == type } as? T
+  }
 
-    @NotNull
-    public String getName() {
-        return name;
-    }
+  inline fun <reified T : DexElementNode> getChildByType(name: String): T? {
+    return getChildren().filterIsInstance<T>().find { name == it.name }
+  }
 
-    @Nullable
-    public Reference getReference() {
-        return reference;
-    }
-
-    @Override
-    public DexElementNode getChildAt(int i) {
-        return (DexElementNode) super.getChildAt(i);
-    }
-
-    public void sort(Comparator<DexElementNode> comparator) {
-        for (int i = 0; i < getChildCount(); i++) {
-            DexElementNode node = getChildAt(i);
-            node.sort(comparator);
+  open fun isSeed(seedsMap: ProguardSeedsMap?, map: ProguardMap?, checkChildren: Boolean): Boolean {
+    if (seedsMap != null && checkChildren) {
+      var i = 0
+      val n = childCount
+      while (i < n) {
+        val node = getChildAt(i)
+        if (node.isSeed(seedsMap, map, true)) {
+          return true
         }
-        if (children != null) {
-            // As of JDK 11 DefaultMutableTreeNode.children has generic type Vector<TreeNode>
-            // so its value can't be assigned directly to a Vector<DexElementNode> variable.
-            // Instead here it is safely cast to raw superclass List and assigned unchecked
-            // to a List<DexElementNode> variable.
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            List<DexElementNode> childrenList = (List) children;
-            childrenList.sort(comparator);
-        }
+        i++
+      }
     }
+    return false
+  }
 
-    @Nullable
-    public <T extends DexElementNode> T getChildByType(@NotNull String name, Class<T> type) {
-        for (int i = 0; i < getChildCount(); i++) {
-            DexElementNode node = getChildAt(i);
-            if (name.equals(node.getName()) && type.equals(node.getClass())) {
-                return (T) node;
-            }
-        }
+  override fun getParent(): DexElementNode? {
+    return super.getParent() as DexElementNode?
+  }
 
-        return null;
+  open fun update() {
+    var i = 0
+    val n = childCount
+    while (i < n) {
+      val node = getChildAt(i)
+      node.update()
+      i++
     }
+  }
 
-    public boolean isSeed(
-            @Nullable ProguardSeedsMap seedsMap, @Nullable ProguardMap map, boolean checkChildren) {
-        if (seedsMap != null && checkChildren) {
-            for (int i = 0, n = getChildCount(); i < n; i++) {
-                DexElementNode node = getChildAt(i);
-                if (node.isSeed(seedsMap, map, checkChildren)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+  /**
+   * Returns the private size of this dex node, i.e. size that can not share with other nodes.
+   * Example of shared size that is not included in this value: strings in the string pool,
+   * annotation sets.
+   *
+   * @return private size of node in bytes
+   */
+  abstract val size: Long
+
+  override fun toString(): String {
+    return this.name
+  }
+
+  companion object {
+    @JvmStatic
+    protected fun combine(parentPackage: String, childName: String): String {
+      return if (parentPackage.isEmpty()) childName else "$parentPackage.$childName"
     }
-
-    @Override
-    public DexElementNode getParent() {
-        return (DexElementNode) super.getParent();
-    }
-
-    public void update() {
-        for (int i = 0, n = getChildCount(); i < n; i++) {
-            DexElementNode node = getChildAt(i);
-            node.update();
-        }
-    }
-
-    protected static String combine(@NotNull String parentPackage, @NotNull String childName) {
-        return parentPackage.isEmpty() ? childName : parentPackage + "." + childName;
-    }
-
-    public boolean isDefined() {
-        return defined;
-    }
-
-    public void setDefined(boolean defined) {
-        this.defined = defined;
-    }
-
-    public boolean isRemoved() {
-        return removed;
-    }
-
-    public void setRemoved(boolean removed) {
-        this.removed = removed;
-    }
-
-    public int getMethodReferencesCount() {
-        return methodReferencesCount;
-    }
-
-    protected void setMethodReferencesCount(int methodReferencesCount) {
-        this.methodReferencesCount = methodReferencesCount;
-    }
-
-    public int getMethodDefinitionsCount() {
-        return methodDefinitionsCount;
-    }
-
-    protected void setMethodDefinitionsCount(int methodDefinitionsCount) {
-        this.methodDefinitionsCount = methodDefinitionsCount;
-    }
-
-    /**
-     * Returns the private size of this dex node, i.e. size that can not shared with other nodes.
-     * Example of shared size that is not included in this value: strings in the string pool,
-     * annotation sets.
-     *
-     * @return private size of node in bytes
-     */
-    public abstract long getSize();
-
-    @Override
-    public String toString() {
-        return getName();
-    }
+  }
 }

@@ -67,8 +67,8 @@ public class DexClassNode extends DexElementNode {
 
     @Nullable
     @Override
-    public TypeReference getReference() {
-        return (TypeReference) super.getReference();
+    public ImmutableTypeReference getReference() {
+        return (ImmutableTypeReference)super.getReference();
     }
 
     @Nullable

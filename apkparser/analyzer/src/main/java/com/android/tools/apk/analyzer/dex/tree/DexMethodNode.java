@@ -35,8 +35,8 @@ public class DexMethodNode extends DexElementNode {
 
     @Nullable
     @Override
-    public MethodReference getReference() {
-        return (MethodReference) super.getReference();
+    public ImmutableMethodReference getReference() {
+        return (ImmutableMethodReference)super.getReference();
     }
 
     @Override

@@ -28,6 +28,8 @@ import com.android.utils.TraceUtils;
 
 import com.google.common.collect.ImmutableList;
 
+import java.util.Locale;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -195,7 +197,7 @@ public class ArchiveManagerImpl implements ArchiveManager {
             extension = "." + extension;
         }
         //noinspection StringToUpperCaseOrToLowerCaseWithoutLocale
-        return path.getFileName().toString().toLowerCase().endsWith(extension);
+        return path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(extension);
     }
 
     private static class ArchivePathComparator implements Comparator<Archive> {

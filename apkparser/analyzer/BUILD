@@ -1,5 +1,6 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:coverage.bzl", "coverage_java_library", "coverage_java_test")
+load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
 
@@ -8,7 +9,6 @@ iml_module(
     name = "studio.android.sdktools.analyzer",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.analyzer.iml"],
-    lint_baseline = "lint_baseline.xml",
     # do not sort: must match IML order
     test_deps = [
         "//tools/adt/idea/.idea/libraries:junit4",
@@ -35,9 +35,12 @@ iml_module(
     ],
 )
 
-coverage_java_library(
+kotlin_library(
     name = "tools.analyzer",
-    srcs = glob(["src/main/java/**"]),
+    srcs = glob([
+        "src/main/java/**/*.java",
+        "src/main/java/**/*.kt",
+    ]),
     visibility = ["//visibility:public"],
     deps = [
         "//prebuilts/tools/common/archive-patcher:explainer",
