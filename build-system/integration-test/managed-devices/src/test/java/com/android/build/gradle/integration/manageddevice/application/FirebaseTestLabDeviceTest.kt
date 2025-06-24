@@ -16,76 +16,112 @@
 
 package com.android.build.gradle.integration.manageddevice.application
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType.PluginTypeWithExtension
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import org.junit.Before
+import com.android.build.gradle.integration.manageddevice.utils.simpleProject
+import com.google.firebase.testlab.gradle.TestLabGradlePluginExtension
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 class FirebaseTestLabDeviceTest {
+
     @get:Rule
-    val project = GradleTestProjectBuilder()
-            .fromTestProject("utp")
-            .enableProfileOutput()
-            .create()
+    val rule: GradleRule = GradleRule.from {
+        simpleProject()
+        androidApplication {
+            applyPlugin(FirebaseTestLabPlugin) {
+                managedDevices.create("myFtlDevice1") {
+                    it.device = "Pixel2"
+                    it.apiLevel = 29
+                }
+                managedDevices.create("myFtlDevice2") {
+                    it.device = "Pixel3"
+                    it.apiLevel = 30
+                    it.orientation = "landscape"
+                    it.locale = "en-US"
+                }
+                managedDevices.create("myFtlDevice3") {
+                    it.device = "Pixel2"
+                    it.apiLevel = 29
+                }
+            }
+            pluginCallbacks += PrintDslValueCallback::class.java
+            pluginCallbacks += CreateGMDGroupCallback::class.java
+            pluginCallbacks += RemoveFTLDevice3Callback::class.java
+        }
+    }
+
+    private val project: AndroidApplicationProject
+        get() = rule.build.androidApplication()
 
     private val executor: GradleTaskExecutor
-        get() = project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        get() = rule.build.executor.withEnableInfoLogging(false)
 
-    @Before
-    fun setUp() {
-        project.rootProject.buildFile.appendText("""
-            buildscript {
-                dependencies {
-                    classpath "com.google.firebase.testlab:testlab-gradle-plugin:+"
+    object FirebaseTestLabPlugin: PluginTypeWithExtension<TestLabGradlePluginExtension>(
+        id = "com.google.firebase.testlab",
+        version = "+",
+        artifact = "com.google.firebase.testlab:testlab-gradle-plugin",
+        hasMarker = false,
+        extensionName = "firebaseTestLab",
+        extensionType = TestLabGradlePluginExtension::class.java)
+
+    class PrintDslValueCallback : GenericCallback {
+        override fun handleProject(project: Project) {
+            project.tasks.register("printDslProperties") {
+                it.notCompatibleWithConfigurationCache("test helper task")
+                it.doLast {
+                    val firebaseTestLab = project.extensions.getByName("firebaseTestLab") as TestLabGradlePluginExtension
+                    println("orientation = " + firebaseTestLab.managedDevices.getByName("myFtlDevice2").orientation)
+                    println("serviceAccountCredentials = " + firebaseTestLab.serviceAccountCredentials.asFile.orNull?.name)
+                    println("grantedPermissions = " + firebaseTestLab.testOptions.fixture.grantedPermissions)
+                    println("extraDeviceFiles = " + firebaseTestLab.testOptions.fixture.extraDeviceFiles.get())
+                    println("networkProfile = " + firebaseTestLab.testOptions.fixture.networkProfile)
+                    println("cloudStorageBucket = " + firebaseTestLab.testOptions.results.cloudStorageBucket)
+                    println("resultsHistoryName = " + firebaseTestLab.testOptions.results.resultsHistoryName)
+                    println("directoriesToPull = " + firebaseTestLab.testOptions.results.directoriesToPull.get())
                 }
             }
-        """.trimIndent())
+        }
+    }
 
-        val appBuildFileContent = project.getSubproject("app").buildFile.readText()
-        project.getSubproject("app").buildFile.writeText("""
-            apply plugin: 'com.google.firebase.testlab'
-        """.trimIndent()+"\n$appBuildFileContent")
-        project.getSubproject("app").buildFile.appendText("""
-            firebaseTestLab {
-                managedDevices {
-                    myFtlDevice1 {
-                        device = "Pixel2"
-                        apiLevel = 29
-                    }
-                    myFtlDevice2 {
-                        device = "Pixel3"
-                        apiLevel = 30
-                        orientation = "landscape"
-                        locale = "en-US"
-                    }
-                }
-            }
-        """)
-
-        val ktBuildFileContent = project.getSubproject("kotlinDslApp").ktsBuildFile.readText()
-        project.getSubproject("kotlinDslApp").ktsBuildFile.writeText(
-                ktBuildFileContent.replace(
-                        "plugins {",
-                        "plugins { id(\"com.google.firebase.testlab\")"))
-        project.getSubproject("kotlinDslApp").ktsBuildFile.appendText("""
-            firebaseTestLab {
-                managedDevices {
-                    create("myFtlDevice3") {
-                        device = "Pixel2"
-                        apiLevel = 29
-                    }
-                    create("myFtlDevice4") {
-                        device = "Pixel3"
-                        apiLevel = 30
-                        orientation = "landscape"
-                        locale = "en-US"
+    class CreateGMDGroupCallback : GenericCallback {
+        override fun handleProject(project: Project) {
+            project.plugins.withType(AppPlugin::class.java) {
+                val componentsExtension =
+                    project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
+                componentsExtension.finalizeDsl {
+                    it.testOptions.managedDevices {
+                        groups.create("ftlDevices") {
+                            it.targetDevices.add(allDevices.getByName("myFtlDevice1"))
+                            it.targetDevices.add(allDevices.getByName("myFtlDevice2"))
+                        }
                     }
                 }
             }
-        """)
+        }
+    }
+
+    class RemoveFTLDevice3Callback : GenericCallback {
+        override fun handleProject(project: Project) {
+            project.plugins.withType(AppPlugin::class.java) {
+                val componentsExtension =
+                    project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
+                val ftlExtension =
+                    project.extensions.getByType(TestLabGradlePluginExtension::class.java)
+                componentsExtension.finalizeDsl {
+                    ftlExtension.managedDevices.remove(
+                        ftlExtension.managedDevices.getByName("myFtlDevice3"))
+                }
+            }
+        }
     }
 
     @Test
@@ -96,61 +132,14 @@ class FirebaseTestLabDeviceTest {
             assertThat(it).contains("myFtlDevice1DebugAndroidTest")
             assertThat(it).contains("myFtlDevice2Check")
             assertThat(it).contains("myFtlDevice2DebugAndroidTest")
-            assertThat(it).contains("myFtlDevice3Check")
-            assertThat(it).contains("myFtlDevice3DebugAndroidTest")
-            assertThat(it).contains("myFtlDevice4Check")
-            assertThat(it).contains("myFtlDevice4DebugAndroidTest")
         }
     }
 
     @Test
     fun dsl() {
-        project.getSubproject("app").buildFile.appendText("""
-            firebaseTestLab {
-                serviceAccountCredentials = file("test.json")
-                testOptions {
-                    fixture {
-                        grantedPermissions = "none"
-                        extraDeviceFiles["/sdcard/Android/data/com.example.myapplication/myAdditionalText.txt"] = "app/myAdditionalText.txt"
-                        networkProfile = "LTE"
-                    }
-                    results {
-                        cloudStorageBucket = "my_example_custom_bucket"
-                        resultsHistoryName = "MyCustomHistoryName"
-                        directoriesToPull.addAll("/sdcard/Android/data/com.example.myapplication")
-                    }
-                }
-            }
-            task("printDslProperties") {
-                println("orientation = " + firebaseTestLab.managedDevices.getByName("myFtlDevice2").orientation)
-                println("serviceAccountCredentials = " + firebaseTestLab.serviceAccountCredentials.asFile.get().name)
-                println("grantedPermissions = " + firebaseTestLab.testOptions.fixture.grantedPermissions)
-                println("extraDeviceFiles = " + firebaseTestLab.testOptions.fixture.extraDeviceFiles.get())
-                println("networkProfile = " + firebaseTestLab.testOptions.fixture.networkProfile)
-                println("cloudStorageBucket = " + firebaseTestLab.testOptions.results.cloudStorageBucket)
-                println("resultsHistoryName = " + firebaseTestLab.testOptions.results.resultsHistoryName)
-                println("directoriesToPull = " + firebaseTestLab.testOptions.results.directoriesToPull.get())
-                doLast { /* no-op */ }
-            }
-        """)
-        val result = executor.run(":app:printDslProperties")
-        result.stdout.use {
-            assertThat(it).contains("orientation = LANDSCAPE")
-            assertThat(it).contains("serviceAccountCredentials = test.json")
-            assertThat(it).contains("grantedPermissions = NONE")
-            assertThat(it).contains("extraDeviceFiles = [/sdcard/Android/data/com.example.myapplication/myAdditionalText.txt:app/myAdditionalText.txt]")
-            assertThat(it).contains("networkProfile = LTE")
-            assertThat(it).contains("cloudStorageBucket = my_example_custom_bucket")
-            assertThat(it).contains("resultsHistoryName = MyCustomHistoryName")
-            assertThat(it).contains("directoriesToPull = [/sdcard/Android/data/com.example.myapplication]")
-        }
-    }
-
-    @Test
-    fun kotlinDsl() {
-        project.getSubproject("kotlinDslApp").ktsBuildFile.appendText("""
-            firebaseTestLab {
-                serviceAccountCredentials.set(file("test.json"))
+        project.reconfigure {
+            reconfigurePlugin(FirebaseTestLabPlugin) {
+                serviceAccountCredentials.set(File("test.json"))
                 testOptions {
                     fixture {
                         grantedPermissions = "none"
@@ -164,19 +153,9 @@ class FirebaseTestLabDeviceTest {
                     }
                 }
             }
-            task("printDslProperties") {
-                println("orientation = " + firebaseTestLab.managedDevices.getByName("myFtlDevice4").orientation)
-                println("serviceAccountCredentials = " + firebaseTestLab.serviceAccountCredentials.asFile.get().name)
-                println("grantedPermissions = " + firebaseTestLab.testOptions.fixture.grantedPermissions)
-                println("extraDeviceFiles = " + firebaseTestLab.testOptions.fixture.extraDeviceFiles.get())
-                println("networkProfile = " + firebaseTestLab.testOptions.fixture.networkProfile)
-                println("cloudStorageBucket = " + firebaseTestLab.testOptions.results.cloudStorageBucket)
-                println("resultsHistoryName = " + firebaseTestLab.testOptions.results.resultsHistoryName)
-                println("directoriesToPull = " + firebaseTestLab.testOptions.results.directoriesToPull.get())
-                doLast { /* no-op */ }
-            }
-        """)
-        val result = executor.run(":kotlinDslApp:printDslProperties")
+        }
+
+        val result = executor.run(":app:printDslProperties")
         result.stdout.use {
             assertThat(it).contains("orientation = LANDSCAPE")
             assertThat(it).contains("serviceAccountCredentials = test.json")
@@ -191,22 +170,6 @@ class FirebaseTestLabDeviceTest {
 
     @Test
     fun managedDevicesAddsAllDevices() {
-        project.getSubproject("app").buildFile.appendText("""
-            android {
-                testOptions {
-                    managedDevices {
-                        deviceGroups {
-                            ftlDevices {
-                                // devices added to firebaseTestLab.manageddevices
-                                // should be available through allDevices
-                                targetDevices.add(allDevices.myFtlDevice1)
-                                targetDevices.add(allDevices.myFtlDevice2)
-                            }
-                        }
-                    }
-                }
-            }
-        """.trimIndent())
         val result = executor.run("tasks")
         result.stdout.use {
             assertThat(it).contains("ftlDevicesGroupCheck")
@@ -216,28 +179,20 @@ class FirebaseTestLabDeviceTest {
 
     @Test
     fun managedDevicesRemovesAllDevices() {
-        project.getSubproject("app").buildFile.appendText("""
-            firebaseTestLab {
-                managedDevices.remove(managedDevices.myFtlDevice1)
-            }
-        """.trimIndent())
-
         val result = executor.run("tasks")
         // b/c stdout is a scanner, we have to start over every time we search for something
         // that does not exist.
         result.stdout.use {
-            assertThat(it).doesNotContain("myFtlDevice1Check")
+            assertThat(it).doesNotContain("myFtlDevice3Check")
         }
         result.stdout.use {
-            assertThat(it).doesNotContain("myFtlDevice1DebugAndroidTest")
+            assertThat(it).doesNotContain("myFtlDevice3DebugAndroidTest")
         }
         result.stdout.use {
+            assertThat(it).contains("myFtlDevice1Check")
+            assertThat(it).contains("myFtlDevice1DebugAndroidTest")
             assertThat(it).contains("myFtlDevice2Check")
             assertThat(it).contains("myFtlDevice2DebugAndroidTest")
-            assertThat(it).contains("myFtlDevice3Check")
-            assertThat(it).contains("myFtlDevice3DebugAndroidTest")
-            assertThat(it).contains("myFtlDevice4Check")
-            assertThat(it).contains("myFtlDevice4DebugAndroidTest")
         }
     }
 }

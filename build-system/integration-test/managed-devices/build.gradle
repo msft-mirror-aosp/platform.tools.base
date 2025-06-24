@@ -42,6 +42,7 @@ dependencies {
     testImplementation libs.com.android.tools.sdkCommon
     testImplementation libs.com.android.tools.testutils
     testImplementation project(':base:gradle-api')
+    testImplementation(project(':base:firebase:testlab:testlab-gradle-plugin'))
     testCompileOnly(project(':base:profile'))
 
     testImplementation libs.kotlin_stdlib

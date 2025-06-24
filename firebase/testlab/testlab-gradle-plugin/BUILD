@@ -1,4 +1,5 @@
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
 
@@ -110,4 +111,19 @@ gradle_test(
     tasks = [":base:firebase:testlab:testlab-gradle-plugin:test"],
     test_output_dir = "build/base/firebase/testlab/testlab-gradle-plugin/build/test-results/test",
     visibility = ["//visibility:public"],
+)
+
+kotlin_library(
+    name = "testlab-gradle-plugin-dsl",
+    srcs = glob([
+        "src/main/java/com/google/firebase/testlab/gradle/**/*.kt",
+        "src/main/java/com/google/firebase/testlab/gradle/**/*.java",
+    ]),
+    visibility = [
+        "//tools/base/build-system/integration-test:__subpackages__",
+    ],
+    deps = [
+        "//tools/base/build-system:gradle-api",
+        "//tools/base/build-system/gradle-core",
+    ],
 )
