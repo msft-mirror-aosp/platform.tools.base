@@ -26,7 +26,6 @@ import com.android.kotlin.multiplatform.ide.models.serialization.androidDependen
 import com.android.kotlin.multiplatform.models.DependencyInfo
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedArtifactResult
-import org.gradle.api.attributes.Attribute
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinDependency
 import org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinProjectArtifactDependency
@@ -106,7 +105,5 @@ internal class ProjectDependencyResolver(
         }.toSet()
     }
 
-    private fun isAndroidProject(artifact: ResolvedArtifactResult): Boolean {
-        return artifact.variant.attributes.contains(AgpVersionAttr.ATTRIBUTE) || artifact.variant.attributes.contains(Attribute.of("com.android.build.api.attributes.AgpVersionAttr", String::class.java))
-    }
+    private fun isAndroidProject(artifact: ResolvedArtifactResult): Boolean = artifact.variant.attributes.getAttribute(AgpVersionAttr.ATTRIBUTE) != null
 }
