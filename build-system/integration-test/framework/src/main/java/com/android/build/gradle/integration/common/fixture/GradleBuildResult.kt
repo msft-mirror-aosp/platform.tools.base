@@ -184,6 +184,35 @@ class GradleBuildResult(
         }
     }
 
+    /**
+     * Asserts that the stdout contains only the [expectedLines] that start with one of the
+     * [prefixes] and that these lines appear in the exact order specified in [expectedLines].
+     *
+     * This function filters lines from stdout that begin with any of the provided [prefixes].
+     * It then asserts that this filtered list of actual lines is exactly equal to the
+     * [expectedLines], which implicitly checks both content and order, and ensures no other
+     * prefixed lines are present.
+     *
+     * @param expectedLines A list of strings that are expected to be found in the stdout,
+     * in their exact order. Each string in this list must start with one
+     * of the provided [prefixes].
+     * @param prefixes A list of string prefixes. Only lines from stdout starting with one of
+     * these prefixes will be considered for the comparison.
+     */
+    @Suppress("DEPRECATION")
+    fun assertOutputContainsPrefixedLinesInOrder(expectedLines: List<String>, prefixes: List<String>) {
+        stdout.use { scanner ->
+            val actualLines = mutableListOf<String>()
+            while (scanner.hasNextLine()) {
+                val line = scanner.nextLine().trim()
+                if (prefixes.any { line.startsWith(it) }) {
+                    actualLines.add(line)
+                }
+            }
+            Truth.assertThat(actualLines).isEqualTo(expectedLines)
+        }
+    }
+
     @Suppress("DEPRECATION")
     fun assertErrorContains(text: String) {
         stderr.use {
