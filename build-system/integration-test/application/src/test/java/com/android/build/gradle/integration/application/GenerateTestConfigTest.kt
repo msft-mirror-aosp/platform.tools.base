@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryProject
 import com.android.build.gradle.integration.common.fixture.project.AndroidProject
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -39,6 +40,9 @@ class GenerateTestConfigTest {
             }
         }
 
+    private val executor: GradleTaskExecutor
+        get() = rule.build.executor.withEnableInfoLogging(false)
+
     // Regression test for b/293547829
     @Test
     fun testAbiSplitEnabledWithIncludeAndroidResource() {
@@ -53,7 +57,7 @@ class GenerateTestConfigTest {
                 }
             }
         }
-        rule.build.executor.run(":app:generateDebugUnitTestConfig")
+        executor.run(":app:generateDebugUnitTestConfig")
     }
 
     @Test
@@ -69,7 +73,7 @@ class GenerateTestConfigTest {
                 }
             }
         }
-        rule.build.executor.run(":app:generateDebugUnitTestConfig")
+        executor.run(":app:generateDebugUnitTestConfig")
     }
 
     // Regression test for b/293547829
@@ -86,7 +90,7 @@ class GenerateTestConfigTest {
                 }
             }
         }
-        rule.build.executor.run(":app:generateDebugUnitTestConfig")
+        executor.run(":app:generateDebugUnitTestConfig")
     }
 
     // Regression test for b/127986458
@@ -112,8 +116,10 @@ class GenerateTestConfigTest {
     }
 
     private fun verifyMergedManifest(path: String) {
-        rule.build.executor.withEnableInfoLogging(false)
-            .run("$path:generateDebugUnitTestConfig")
+        val result = executor.run("$path:generateDebugUnitTestConfig")
+
+        result.assertOutputDoesNotContain(
+            "Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported")
 
         val project = rule.build.subProject(path) as AndroidProject
         val testConfigFile = project.intermediatesDir.resolve(
@@ -173,6 +179,9 @@ class GenerateTestConfigTest {
                         android:name="meta_data_from_unit_test_debug_manifest"
                         android:value="value" />
                     <meta-data
+                        android:name="meta_data_value_override"
+                        android:value="value_from_test_debug" />
+                    <meta-data
                         android:name="meta_data_from_unit_test_manifest"
                         android:value="value" />
 
@@ -190,21 +199,21 @@ class GenerateTestConfigTest {
             """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:dist="http://schemas.android.com/apk/distribution"
                 package="pkg.name.app" >
 
                 <uses-sdk
                     android:minSdkVersion="1"
                     android:targetSdkVersion="1" />
 
-                <application
-                    android:debuggable="true"
-                    android:extractNativeLibs="true" >
-                    <meta-data
-                        android:name="meta_data_from_unit_test_manifest"
-                        android:value="value" />
+                <application android:debuggable="true" >
                     <meta-data
                         android:name="meta_data_from_unit_test_debug_manifest"
+                        android:value="value" />
+                    <meta-data
+                        android:name="meta_data_value_override"
+                        android:value="value_from_test_debug" />
+                    <meta-data
+                        android:name="meta_data_from_unit_test_manifest"
                         android:value="value" />
                     <meta-data
                         android:name="meta_data_from_debug_manifest"
@@ -229,6 +238,7 @@ class GenerateTestConfigTest {
                     xmlns:tools="http://schemas.android.com/tools">
                     <application>
                         <meta-data android:name="meta_data_from_debug_manifest" android:value="value" />
+                        <meta-data android:name="meta_data_value_override" android:value="value_from_debug" />
                     </application>
                 </manifest>
                 """.trimIndent()
@@ -242,6 +252,7 @@ class GenerateTestConfigTest {
                     xmlns:tools="http://schemas.android.com/tools">
                     <application>
                         <meta-data android:name="meta_data_from_unit_test_manifest" android:value="value" />
+                        <meta-data android:name="meta_data_value_override" android:value="value_from_test" tools:node="replace" />
                     </application>
                 </manifest>
                 """.trimIndent()
@@ -255,6 +266,7 @@ class GenerateTestConfigTest {
                     xmlns:tools="http://schemas.android.com/tools">
                     <application>
                         <meta-data android:name="meta_data_from_unit_test_debug_manifest" android:value="value" />
+                        <meta-data android:name="meta_data_value_override" android:value="value_from_test_debug" tools:node="replace" />
                     </application>
                 </manifest>
                 """.trimIndent()
