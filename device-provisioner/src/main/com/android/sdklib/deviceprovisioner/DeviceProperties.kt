@@ -241,9 +241,9 @@ interface DeviceProperties {
           characteristics.contains("watch") -> DeviceType.WEAR
           characteristics.contains("tv") -> DeviceType.TV
           characteristics.contains("automotive") -> DeviceType.AUTOMOTIVE
-          characteristics.contains("xr") -> DeviceType.XR
+          characteristics.contains("xr") -> DeviceType.XR_HEADSET
           // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains "xr".
-          properties["ro.build.product"]?.startsWith("xr") == true -> DeviceType.XR
+          properties["ro.build.product"]?.startsWith("xr") == true -> DeviceType.XR_HEADSET
           else -> DeviceType.HANDHELD
         }
       isVirtual = properties[RO_KERNEL_QEMU] == "1"
@@ -363,7 +363,8 @@ enum class DeviceType(val stringValue: String) {
   TV("TV"),
   AUTOMOTIVE("Automotive"),
   DESKTOP("Desktop"),
-  XR("XR");
+  XR_HEADSET("XR Headset"),
+  XR_GLASSES("XR Glasses");
 
   override fun toString() = stringValue
 }
@@ -380,13 +381,15 @@ data class DeviceIcons(
   val tv: Icon,
   val automotive: Icon,
   val headset: Icon,
+  val glasses: Icon,
 ) {
   fun iconForDeviceType(type: DeviceType?) =
     when (type) {
       DeviceType.TV -> tv
       DeviceType.AUTOMOTIVE -> automotive
       DeviceType.WEAR -> wear
-      DeviceType.XR -> headset
+      DeviceType.XR_HEADSET -> headset
+      DeviceType.XR_GLASSES -> glasses
       else -> handheld
     }
 }

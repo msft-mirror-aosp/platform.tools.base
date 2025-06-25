@@ -222,8 +222,8 @@ public class EmulatedProperties {
     }
 
     public static int defaultCpuCount(@NonNull Device device) {
-        int minCpuCount = Device.isXr(device) ? 4 : 2;
-        int idealCpuCount = Device.isXr(device) ? 8 : 4;
+        int minCpuCount = Device.isXrHeadset(device) ? 4 : 2;
+        int idealCpuCount = Device.isXrHeadset(device) ? 8 : 4;
         return max(minCpuCount, min(idealCpuCount, Runtime.getRuntime().availableProcessors() / 2));
     }
 }

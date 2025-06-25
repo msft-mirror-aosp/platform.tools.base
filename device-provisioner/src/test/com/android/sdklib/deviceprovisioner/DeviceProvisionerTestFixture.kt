@@ -33,6 +33,7 @@ abstract class DeviceProvisionerTestFixture {
       EmptyIcon.DEFAULT,
       EmptyIcon.DEFAULT,
       EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
     )
 
   protected object SerialNumbers {

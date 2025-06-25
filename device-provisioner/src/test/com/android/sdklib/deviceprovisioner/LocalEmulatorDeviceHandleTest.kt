@@ -119,6 +119,7 @@ private fun testContext(
       EmptyIcon.DEFAULT,
       EmptyIcon.DEFAULT,
       EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
     ),
     defaultPresentation = TestDefaultDeviceActionPresentation,
     avdManager = avdManager,

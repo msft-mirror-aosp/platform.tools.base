@@ -57,8 +57,12 @@ public class SystemImageTags {
             IdDisplay.create(
                     "android-automotive-distantdisplay", "Android Automotive Distant Display");
 
-    /** Tag to apply to system images for XR devices. */
-    public static final IdDisplay XR_TAG = IdDisplay.create("android-xr", "Android XR");
+    /** Tag to apply to system images for XR Headset devices. */
+    public static final IdDisplay XR_HEADSET_TAG = IdDisplay.create("android-xr", "Android XR");
+
+    /** Tag to apply to system images for XR Glasses devices. */
+    public static final IdDisplay XR_GLASSES_TAG =
+            IdDisplay.create("android-xr-glasses", "Android XR");
 
     /** Tag to apply to system images for Chrome OS device. */
     public static final IdDisplay CHROMEOS_TAG = IdDisplay.create("chromeos", "Chrome OS Device");
@@ -180,8 +184,12 @@ public class SystemImageTags {
                 || tags.contains(AUTOMOTIVE_DISTANT_DISPLAY_TAG);
     }
 
-    public static boolean isXrImage(Collection<IdDisplay> tags) {
-        return tags.contains(XR_TAG);
+    public static boolean isXrHeadsetImage(Collection<IdDisplay> tags) {
+        return tags.contains(XR_HEADSET_TAG);
+    }
+
+    public static boolean isXrGlassesImage(Collection<IdDisplay> tags) {
+        return tags.contains(XR_GLASSES_TAG);
     }
 
     /** Indicates if the image is for an automated test device. */

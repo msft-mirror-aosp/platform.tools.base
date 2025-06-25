@@ -163,7 +163,7 @@ public final class DeviceSystemImageMatcherTest {
         // Arrange
         Device device = mockDevice(null);
 
-        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.XR_TAG));
+        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.XR_HEADSET_TAG));
 
         // Act
         boolean matches = DeviceSystemImageMatcher.matches(device, image);
@@ -268,10 +268,23 @@ public final class DeviceSystemImageMatcherTest {
     }
 
     @Test
-    public void matchesDeviceTagIdEqualsXrTagIdAndImageIsXrImage() {
+    public void matchesDeviceTagIdEqualsXrHeadsetTagIdAndImageIsXrHeadsetImage() {
         // Arrange
-        Device device = mockDevice(SystemImageTags.XR_TAG.getId());
-        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.XR_TAG));
+        Device device = mockDevice(SystemImageTags.XR_HEADSET_TAG.getId());
+        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.XR_HEADSET_TAG));
+
+        // Act
+        boolean matches = DeviceSystemImageMatcher.matches(device, image);
+
+        // Assert
+        assertTrue(matches);
+    }
+
+    @Test
+    public void matchesDeviceTagIdEqualsXrGlassesTagIdAndImageIsXrGlassesImage() {
+        // Arrange
+        Device device = mockDevice(SystemImageTags.XR_GLASSES_TAG.getId());
+        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.XR_GLASSES_TAG));
 
         // Act
         boolean matches = DeviceSystemImageMatcher.matches(device, image);
@@ -283,7 +296,7 @@ public final class DeviceSystemImageMatcherTest {
     @Test
     public void matchesDeviceTagIdEqualsXrTvTagIdAndImageIsntXrImage() {
         // Arrange
-        Device device = mockDevice(SystemImageTags.XR_TAG.getId());
+        Device device = mockDevice(SystemImageTags.XR_HEADSET_TAG.getId());
         ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.GOOGLE_APIS_TAG));
 
         // Act

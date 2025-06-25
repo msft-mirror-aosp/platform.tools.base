@@ -16,6 +16,9 @@
 
 package com.android.sdklib.devices;
 
+import static com.android.sdklib.SystemImageTags.XR_GLASSES_TAG;
+import static com.android.sdklib.SystemImageTags.XR_HEADSET_TAG;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
@@ -698,7 +701,18 @@ public final class Device {
 
     /** Whether the given device is an XR device */
     public static boolean isXr(@Nullable Device device) {
-        return device != null && "android-xr".equals(device.getTagId());
+        String tagId = device != null ? device.getTagId() : null;
+        return tagId != null && tagId.startsWith("android-xr");
+    }
+
+    /** Whether the given device is an XR Headset device */
+    public static boolean isXrHeadset(@Nullable Device device) {
+        return XR_HEADSET_TAG.getId().equals(device != null ? device.getTagId() : null);
+    }
+
+    /** Whether the given device is an XR Glasses device */
+    public static boolean isXrGlasses(@Nullable Device device) {
+        return XR_GLASSES_TAG.getId().equals(device != null ? device.getTagId() : null);
     }
 
     /** Whether the given device appears to be a mobile device (e.g. not wear, tv, auto, etc) */

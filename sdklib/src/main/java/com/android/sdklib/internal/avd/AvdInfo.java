@@ -16,7 +16,8 @@
 
 package com.android.sdklib.internal.avd;
 
-import static com.android.sdklib.SystemImageTags.XR_TAG;
+import static com.android.sdklib.SystemImageTags.XR_GLASSES_TAG;
+import static com.android.sdklib.SystemImageTags.XR_HEADSET_TAG;
 import static com.android.sdklib.internal.avd.ConfigKey.TAG_IDS;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -455,7 +456,11 @@ public final class AvdInfo {
         return tags != null && StringHelper.asSeparatedListContains(tags, tag, ",");
     }
 
-    public boolean isXrDevice() {
-        return hasTag(XR_TAG.getId());
+    public boolean isXrHeadsetDevice() {
+        return hasTag(XR_HEADSET_TAG.getId());
+    }
+
+    public boolean isXrGlassesDevice() {
+        return hasTag(XR_GLASSES_TAG.getId());
     }
 }

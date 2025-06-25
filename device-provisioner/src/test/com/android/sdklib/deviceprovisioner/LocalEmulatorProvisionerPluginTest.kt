@@ -71,6 +71,7 @@ class LocalEmulatorProvisionerPluginTest {
       EmptyIcon.DEFAULT,
       EmptyIcon.DEFAULT,
       EmptyIcon.DEFAULT,
+      EmptyIcon.DEFAULT,
     )
 
   private lateinit var avdsPath: Path
@@ -418,17 +419,17 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun xrDeviceType() = runBlockingWithTimeout {
-    avdManager.createAvd(avdManager.makeAvdInfo(1, tag = SystemImageTags.XR_TAG))
+    avdManager.createAvd(avdManager.makeAvdInfo(1, tag = SystemImageTags.XR_HEADSET_TAG))
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
     val handle = provisioner.devices.value[0]
-    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR)
+    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR_HEADSET)
 
     handle.activationAction?.activate()
     handle.awaitReady()
 
-    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR)
+    assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR_HEADSET)
   }
 
   @Test
