@@ -291,25 +291,12 @@ class FusedLibraryPlugin @Inject constructor(
             )
         }
 
-        val consumptionBuildType: BuildTypeAttr =
-            project.objects.named(BuildTypeAttr::class.java, "release")
-        val jvmEnvironment: TargetJvmEnvironment =
-            project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.ANDROID)
-
         // 'include' is the configuration that users will use to indicate which dependencies should
         // be fused.
         val include = project.configurations.register(FusedLibraryConstants.INCLUDE_CONFIGURATION_NAME) { include ->
             include.description =
                 "Used for declaring dependencies that should be packaged in the fused artifact."
             include.isCanBeConsumed = false
-            include.attributes.attribute(
-                BuildTypeAttr.ATTRIBUTE,
-                consumptionBuildType,
-            )
-            include.attributes.attribute(
-                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                jvmEnvironment
-            )
         }
 
         // Platform dependencies must be resolved in a transitive configuration in order to
@@ -326,16 +313,8 @@ class FusedLibraryPlugin @Inject constructor(
                     includePlatform.isCanBeResolved = true
                     includePlatform.isTransitive = true
                     includePlatform.attributes.attribute(
-                        BuildTypeAttr.ATTRIBUTE,
-                        consumptionBuildType,
-                    )
-                    includePlatform.attributes.attribute(
                         Usage.USAGE_ATTRIBUTE,
                         project.objects.named(Usage::class.java, usage)
-                    )
-                    includePlatform.attributes.attribute(
-                        TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                        jvmEnvironment
                     )
                     includePlatform.extendsFrom(include.get())
                 }.get()
@@ -355,14 +334,6 @@ class FusedLibraryPlugin @Inject constructor(
                     Usage.USAGE_ATTRIBUTE,
                     project.objects.named(Usage::class.java, Usage.JAVA_API)
                 )
-                apiClasspath.attributes.attribute(
-                    BuildTypeAttr.ATTRIBUTE,
-                    consumptionBuildType,
-                )
-                apiClasspath.attributes.attribute(
-                    TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                    jvmEnvironment
-                )
                 apiClasspath.shouldResolveConsistentlyWith(includeTransitiveApiResolved)
                 apiClasspath.extendsFrom(include.get())
             }
@@ -379,17 +350,18 @@ class FusedLibraryPlugin @Inject constructor(
                     Usage.USAGE_ATTRIBUTE,
                     project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME)
                 )
-                runtimeClasspath.attributes.attribute(
-                    BuildTypeAttr.ATTRIBUTE,
-                    consumptionBuildType,
-                )
-                runtimeClasspath.attributes.attribute(
-                    TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
-                    jvmEnvironment
-                )
                 runtimeClasspath.shouldResolveConsistentlyWith(includeTransitiveRuntimeResolved)
                 runtimeClasspath.extendsFrom(include.get())
             }
+
+        val consumerConfigurations: List<Configuration> = listOf(
+            include.get(),
+            includeTransitiveApiResolved,
+            includeTransitiveRuntimeResolved,
+            fusedApi.get(),
+            fusedRuntime.get()
+        )
+        applyCommonConsumptionAttributes(project, consumerConfigurations)
 
         if (projectServices.projectOptions[BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE]) {
             val publicationOnlyModeWarning =
@@ -421,22 +393,6 @@ class FusedLibraryPlugin @Inject constructor(
             }
         }
 
-        project.dependencies.attributesSchema.attribute(
-            TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE).also {
-            it.compatibilityRules.add(FusedLibraryTargetJvmEnvironmentCompatibilityRule::class.java)
-        }
-
-        configureKotlinPlatformAttribute(
-            listOf(
-                include.get(),
-                fusedApi.get(),
-                fusedRuntime.get(),
-                includeTransitiveApiResolved,
-                includeTransitiveRuntimeResolved
-            ),
-            project
-        )
-
         val resolvableConfigurations = listOf(fusedApi.get(), fusedRuntime.get())
         variantScope.incomingConfigurations.addAll(resolvableConfigurations)
 
@@ -456,5 +412,31 @@ class FusedLibraryPlugin @Inject constructor(
             ScopedArtifact.CLASSES,
             variantScope.getLocalJars()
         )
+    }
+
+    private fun applyCommonConsumptionAttributes(
+        project: Project,
+        configurations: List<Configuration>
+    ) {
+        val consumptionBuildType: BuildTypeAttr =
+            project.objects.named(BuildTypeAttr::class.java, "release")
+        val jvmEnvironment: TargetJvmEnvironment =
+            project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.ANDROID)
+
+        configurations.forEach {
+            it.attributes.attribute(
+                BuildTypeAttr.ATTRIBUTE,
+                consumptionBuildType,
+            )
+            it.attributes.attribute(
+                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                jvmEnvironment
+            )
+        }
+        project.dependencies.attributesSchema.attribute(
+            TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE).also {
+            it.compatibilityRules.add(FusedLibraryTargetJvmEnvironmentCompatibilityRule::class.java)
+        }
+        configureKotlinPlatformAttribute(configurations, project)
     }
 }
