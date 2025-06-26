@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScopeImpl
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryTargetJvmEnvironmentCompatibilityRule
 import com.android.build.gradle.internal.fusedlibrary.configureElements
 import com.android.build.gradle.internal.fusedlibrary.configureTransformsForFusedLibrary
 import com.android.build.gradle.internal.fusedlibrary.createTasks
@@ -65,6 +66,7 @@ import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
+import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.provider.Provider
@@ -288,8 +290,11 @@ class FusedLibraryPlugin @Inject constructor(
                         "setting `${BooleanOption.FUSED_LIBRARY_SUPPORT.propertyName}=true` to gradle.properties"
             )
         }
+
         val consumptionBuildType: BuildTypeAttr =
             project.objects.named(BuildTypeAttr::class.java, "release")
+        val jvmEnvironment: TargetJvmEnvironment =
+            project.objects.named(TargetJvmEnvironment::class.java, TargetJvmEnvironment.ANDROID)
 
         // 'include' is the configuration that users will use to indicate which dependencies should
         // be fused.
@@ -300,6 +305,10 @@ class FusedLibraryPlugin @Inject constructor(
             include.attributes.attribute(
                 BuildTypeAttr.ATTRIBUTE,
                 consumptionBuildType,
+            )
+            include.attributes.attribute(
+                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                jvmEnvironment
             )
         }
 
@@ -324,6 +333,10 @@ class FusedLibraryPlugin @Inject constructor(
                         Usage.USAGE_ATTRIBUTE,
                         project.objects.named(Usage::class.java, usage)
                     )
+                    includePlatform.attributes.attribute(
+                        TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                        jvmEnvironment
+                    )
                     includePlatform.extendsFrom(include.get())
                 }.get()
 
@@ -346,6 +359,10 @@ class FusedLibraryPlugin @Inject constructor(
                     BuildTypeAttr.ATTRIBUTE,
                     consumptionBuildType,
                 )
+                apiClasspath.attributes.attribute(
+                    TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                    jvmEnvironment
+                )
                 apiClasspath.shouldResolveConsistentlyWith(includeTransitiveApiResolved)
                 apiClasspath.extendsFrom(include.get())
             }
@@ -365,6 +382,10 @@ class FusedLibraryPlugin @Inject constructor(
                 runtimeClasspath.attributes.attribute(
                     BuildTypeAttr.ATTRIBUTE,
                     consumptionBuildType,
+                )
+                runtimeClasspath.attributes.attribute(
+                    TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                    jvmEnvironment
                 )
                 runtimeClasspath.shouldResolveConsistentlyWith(includeTransitiveRuntimeResolved)
                 runtimeClasspath.extendsFrom(include.get())
@@ -398,6 +419,11 @@ class FusedLibraryPlugin @Inject constructor(
                 )
                 runtimeElements.extendsFrom(include.get())
             }
+        }
+
+        project.dependencies.attributesSchema.attribute(
+            TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE).also {
+            it.compatibilityRules.add(FusedLibraryTargetJvmEnvironmentCompatibilityRule::class.java)
         }
 
         configureKotlinPlatformAttribute(

@@ -683,6 +683,28 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         )
     }
 
+    // Test coverage for b/425861331
+    @Test
+    fun testDependencyWithAmbiguousJvmTargetEnvironmentAttribute() {
+        val build = rule.build {
+            androidLibrary {
+                dependencies {
+                    // Include a dependency that has multiple TargetJvmEnvironments
+                    implementation("com.google.guava:guava:33.3.1-android")
+                }
+            }
+            fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+                androidFusedLibrary {
+                    namespace = "com.example.fusedlib"
+                }
+                dependencies {
+                    include(project(":lib"))
+                }
+            }
+        }
+        build.executor.run("$FUSED_LIBRARY_PROJECT_NAME:assemble")
+    }
+
     private fun GradleBuild.checkFusedLibReportContents(
         include: List<String>,
         dependencies: List<String>
