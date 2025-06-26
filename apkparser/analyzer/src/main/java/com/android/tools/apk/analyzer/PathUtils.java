@@ -15,13 +15,14 @@
  */
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class PathUtils {
-    @NonNull
-    public static String pathWithTrailingSeparator(@NonNull Path path) {
+    @NotNull
+    public static String pathWithTrailingSeparator(@NotNull Path path) {
         String pathString = path.toString();
         if (Files.isDirectory(path)) {
             String separator = path.getFileSystem().getSeparator();
@@ -32,8 +33,8 @@ public class PathUtils {
         return pathString;
     }
 
-    @NonNull
-    public static String fileNameWithTrailingSeparator(@NonNull Path path) {
+    @NotNull
+    public static String fileNameWithTrailingSeparator(@NotNull Path path) {
         String pathString = path.getFileName().toString();
         if (Files.isDirectory(path)) {
             String separator = path.getFileSystem().getSeparator();

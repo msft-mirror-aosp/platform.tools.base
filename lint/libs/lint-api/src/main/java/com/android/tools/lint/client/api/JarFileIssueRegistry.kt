@@ -138,16 +138,7 @@ private constructor(
       driver: LintDriver? = null,
       skipVerification: Boolean = false,
     ): List<JarFileIssueRegistry> {
-      val registryMap =
-        try {
-          findRegistries(client, jarFiles)
-        } catch (e: IOException) {
-          if (logJarProblems()) {
-            client.log(e, "Could not load custom lint check jar files: ${e.message}")
-          }
-          return emptyList()
-        }
-
+      val registryMap = findRegistries(client, jarFiles)
       if (registryMap.isEmpty()) {
         return emptyList()
       }
@@ -586,63 +577,69 @@ private constructor(
     fun findRegistries(client: LintClient, jarFiles: Collection<File>): Map<String, List<File>> {
       val registryClassToJarFile = HashMap<String, TreeMap<Int, File>>()
       for (jarFile in jarFiles) {
-        JarFile(jarFile).use { file ->
-          val manifest = file.manifest
-          // Default revision number for Jars that do not have one.
-          var revision = -1
-          if (manifest != null) {
-            val attrs = manifest.mainAttributes
-            revision = attrs[Attributes.Name(MF_LINT_REVISION)]?.toString()?.toIntOrNull() ?: -1
+        try {
+          JarFile(jarFile).use { file ->
+            val manifest = file.manifest
+            // Default revision number for Jars that do not have one.
+            var revision = -1
+            if (manifest != null) {
+              val attrs = manifest.mainAttributes
+              revision = attrs[Attributes.Name(MF_LINT_REVISION)]?.toString()?.toIntOrNull() ?: -1
 
-            var attribute: Any? = attrs[Attributes.Name(MF_LINT_REGISTRY)]
-            if (attribute == null) {
-              attribute = attrs[Attributes.Name(MF_LINT_REGISTRY_OLD)]
-              if (attribute != null) {
-                // Default revision number for Legacy Jars.
-                revision = -2
+              var attribute: Any? = attrs[Attributes.Name(MF_LINT_REGISTRY)]
+              if (attribute == null) {
+                attribute = attrs[Attributes.Name(MF_LINT_REGISTRY_OLD)]
+                if (attribute != null) {
+                  // Default revision number for Legacy Jars.
+                  revision = -2
+                }
+              }
+              if (attribute is String) {
+                val className = attribute
+                registryClassToJarFile.getOrPut(className) { TreeMap() }[revision] = jarFile
+                return@use
               }
             }
-            if (attribute is String) {
-              val className = attribute
-              registryClassToJarFile.getOrPut(className) { TreeMap() }[revision] = jarFile
-              return@use
-            }
-          }
 
-          // Load service keys. We're reading it manually instead of using
-          // ServiceLoader because we don't want to put these jars into
-          // the class loaders yet (since there can be many duplicates
-          // when a library is available through multiple dependencies)
-          val services = file.getJarEntry(SERVICE_KEY)
-          if (services != null) {
-            file.getInputStream(services).use {
-              val reader = InputStreamReader(it, Charsets.UTF_8)
-              reader.useLines { lines ->
-                for (line in lines) {
-                  val comment = line.indexOf("#")
-                  val className =
-                    if (comment >= 0) {
-                      line.substring(0, comment).trim()
-                    } else {
-                      line.trim()
+            // Load service keys. We're reading it manually instead of using
+            // ServiceLoader because we don't want to put these jars into
+            // the class loaders yet (since there can be many duplicates
+            // when a library is available through multiple dependencies)
+            val services = file.getJarEntry(SERVICE_KEY)
+            if (services != null) {
+              file.getInputStream(services).use {
+                val reader = InputStreamReader(it, Charsets.UTF_8)
+                reader.useLines { lines ->
+                  for (line in lines) {
+                    val comment = line.indexOf("#")
+                    val className =
+                      if (comment >= 0) {
+                        line.substring(0, comment).trim()
+                      } else {
+                        line.trim()
+                      }
+                    if (className.isNotEmpty()) {
+                      registryClassToJarFile.getOrPut(className) { TreeMap() }[revision] = jarFile
                     }
-                  if (className.isNotEmpty()) {
-                    registryClassToJarFile.getOrPut(className) { TreeMap() }[revision] = jarFile
                   }
                 }
               }
+            } else if (logJarProblems() && jarFile.name == "lint.jar") {
+              client.log(
+                Severity.ERROR,
+                null,
+                "Custom lint rule jar %1\$s does not contain a valid " +
+                  "registry manifest key (%2\$s).\n" +
+                  "Either the custom jar is invalid, or it uses an outdated " +
+                  "API not supported this lint client",
+                jarFile.path,
+                MF_LINT_REGISTRY,
+              )
             }
-          } else if (logJarProblems() && jarFile.name == "lint.jar") {
-            client.log(
-              Severity.ERROR,
-              null,
-              "Custom lint rule jar %1\$s does not contain a valid " +
-                "registry manifest key (%2\$s).\n" +
-                "Either the custom jar is invalid, or it uses an outdated " +
-                "API not supported this lint client",
-              jarFile.path,
-              MF_LINT_REGISTRY,
-            )
+          }
+        } catch (e: IOException) {
+          if (logJarProblems()) {
+            client.log(e, "Could not load custom lint check jar file %1\$s", jarFile)
           }
         }
       }

@@ -18,6 +18,7 @@ package com.android.sdklib.devices;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -261,23 +262,32 @@ public final class Storage {
      * @see {@link #getLargestReasonableUnits()}
      */
     public String toUiString(int precision) {
+        return toUiString(Locale.getDefault(Locale.Category.FORMAT), precision);
+    }
+
+    /**
+     * Represents a {@link Storage} as a string suitable for displaying in the UI.
+     *
+     * @param locale The locale to use when formatting the string.
+     * @param precision The number of digits after decimal point to display.
+     * @see {@link #getLargestReasonableUnits()}
+     */
+    public String toUiString(Locale locale, int precision) {
         Unit reasonableUnit = getLargestReasonableUnits();
         if (reasonableUnit == Unit.B) {
             precision = 0; // It'd be silly to show decimal point in the number of bytes.
         }
 
         double sizeInReasonableUnits = getPreciseSizeAsUnit(reasonableUnit);
-        String format = String.format(Locale.ENGLISH, "%%.%df %%s", precision);
-        return String.format(format, sizeInReasonableUnits, reasonableUnit.getDisplayValue());
+        String format = "%." + precision + "f %s";
+        return String.format(
+                locale, format, sizeInReasonableUnits, reasonableUnit.getDisplayValue());
     }
 
-  /**
-   * Represents a {@link Storage} as a string suitable
-   * for use in an INI file.
-   */
-  @NonNull
-  public String toIniString() {
+    /** Represents a {@link Storage} as a string suitable for use in an INI file. */
+    @NonNull
+    public String toIniString() {
         Unit unit = getAppropriateUnits();
         return String.format("%d%c", getSizeAsUnit(unit), unit.getUnitChar());
-  }
+    }
 }

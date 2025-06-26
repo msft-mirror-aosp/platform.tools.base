@@ -109,7 +109,6 @@ _ARTIFACTS = [
 
 def studio_linux(build_env: bazel.BuildEnv) -> None:
   """Runs studio-linux target."""
-  setup_environment(build_env)
   test_tag_filters = '-noci:studio-linux,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2'
 
   flags = build_flags(
@@ -152,7 +151,6 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
 
 def studio_linux_large(build_env: bazel.BuildEnv) -> None:
   """Runs studio-linux-large target."""
-  setup_environment(build_env)
   flags = build_flags(
       build_env,
       test_tag_filters='ci:studio-linux-large',
@@ -166,7 +164,6 @@ def studio_linux_large(build_env: bazel.BuildEnv) -> None:
 
 def studio_linux_very_flaky(build_env: bazel.BuildEnv) -> None:
   """Runs studio-linux_very_flaky target."""
-  setup_environment(build_env)
   flags = build_flags(
       build_env,
       test_tag_filters='ci:studio-linux_very_flaky',
@@ -184,7 +181,6 @@ def studio_linux_k2(build_env: bazel.BuildEnv) -> None:
   """Runs studio-linux-k2 target."""
   # Despite its name, the studio-linux-k2 target now runs tests in K1 mode,
   # since Studio has switched to K2 mode by default (b/373746515).
-  setup_environment(build_env)
   flags = build_flags(
       build_env,
       test_tag_filters='-noci:studio-linux,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k1,-kotlin-plugin-k1',
@@ -199,13 +195,6 @@ def studio_linux_k2(build_env: bazel.BuildEnv) -> None:
     return
 
   raise studio.BazelTestError(exit_code=result.exit_code)
-
-
-def setup_environment(build_env: bazel.BuildEnv) -> None:
-  """Sets up the environment for the build."""
-  # If DIST_DIR does not exist, create one.
-  if not build_env.dist_dir:
-    build_env.dist_dir = tempfile.mkdtemp('dist-dir')
 
 
 def build_flags(

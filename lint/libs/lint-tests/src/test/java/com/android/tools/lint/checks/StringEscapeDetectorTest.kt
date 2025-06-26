@@ -27,22 +27,23 @@ class StringEscapeDetectorTest : AbstractCheckTest() {
     // 224150: Flag apostrophes escaping in XML string resources
     val expected =
       """
-            res/values/strings.xml:3: Error: Apostrophe not preceded by \ [StringEscaping]
-            <string name="some_string">'ERROR'</string>
-                                       ^
-            res/values/strings.xml:5: Error: Apostrophe not preceded by \ [StringEscaping]
-            <string name="some_string3">What's New</string>
-                                            ^
-            res/values/strings.xml:12: Error: Bad character in \u unicode escape sequence [StringEscaping]
-            <string name="some_string10">Unicode\u12.</string>
-                                                    ^
-            res/values/strings.xml:19: Error: Apostrophe not preceded by \ [StringEscaping]
-              <item>It's incorrect</item>
-                      ^
-            res/values/strings.xml:23: Error: Apostrophe not preceded by \ [StringEscaping]
-                <item quantity="few">%d piose'nki.</item>
-                                             ^
-            5 errors, 0 warnings"""
+      res/values/strings.xml:3: Error: Apostrophe not preceded by \ [StringEscaping]
+      <string name="some_string">'ERROR'</string>
+                                 ~~~~~~~
+      res/values/strings.xml:5: Error: Apostrophe not preceded by \ [StringEscaping]
+      <string name="some_string3">What's New</string>
+                                      ~~~~~~
+      res/values/strings.xml:12: Error: Bad character in \u unicode escape sequence [StringEscaping]
+      <string name="some_string10">Unicode\u12.</string>
+                                              ~
+      res/values/strings.xml:19: Error: Apostrophe not preceded by \ [StringEscaping]
+        <item>It's incorrect</item>
+                ~~~~~~~~~~~~
+      res/values/strings.xml:23: Error: Apostrophe not preceded by \ [StringEscaping]
+          <item quantity="few">%d piose'nki.</item>
+                                       ~~~~~
+      5 errors
+      """
     lint()
       .files(
         xml(

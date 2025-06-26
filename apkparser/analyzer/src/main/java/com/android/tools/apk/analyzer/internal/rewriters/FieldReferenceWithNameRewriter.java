@@ -15,22 +15,23 @@
  */
 package com.android.tools.apk.analyzer.internal.rewriters;
 
-import com.android.annotations.NonNull;
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.rewriter.FieldReferenceRewriter;
 import com.android.tools.smali.dexlib2.rewriter.Rewriters;
 
+import org.jetbrains.annotations.NotNull;
+
 public abstract class FieldReferenceWithNameRewriter extends FieldReferenceRewriter {
 
-    public FieldReferenceWithNameRewriter(@NonNull Rewriters rewriters) {
+    public FieldReferenceWithNameRewriter(@NotNull Rewriters rewriters) {
         super(rewriters);
     }
 
     public abstract String rewriteName(FieldReference fieldReference);
 
-    @NonNull
+    @NotNull
     @Override
-    public FieldReference rewrite(@NonNull FieldReference fieldReference) {
+    public FieldReference rewrite(@NotNull FieldReference fieldReference) {
         return new RewrittenFieldReferenceWithName(fieldReference);
     }
 
@@ -41,7 +42,7 @@ public abstract class FieldReferenceWithNameRewriter extends FieldReferenceRewri
         }
 
         @Override
-        @NonNull
+        @NotNull
         public String getName() {
             return rewriteName(fieldReference);
         }

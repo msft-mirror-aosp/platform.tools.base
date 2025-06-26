@@ -15,7 +15,6 @@
  */
 package com.android.tools.apk.analyzer.dex.tree;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.internal.SigUtils;
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
@@ -25,10 +24,12 @@ import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodRefere
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableTypeReference;
 
+import org.jetbrains.annotations.NotNull;
+
 public class DexElementNodeFactory {
 
-    @NonNull
-    public static DexElementNode from(@NonNull ImmutableReference ref) {
+    @NotNull
+    public static DexElementNode from(@NotNull ImmutableReference ref) {
         if (ref instanceof ImmutableTypeReference) {
             return new DexClassNode(
                     SigUtils.signatureToName(((TypeReference) ref).getType()),

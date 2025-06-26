@@ -430,7 +430,7 @@ class XmlReporterTest {
                     summary="Spelling error"
                     explanation="This check looks through the string definitions, and if it finds any words that look like likely misspellings, they are flagged."
                     errorLine1="    &lt;string name=&quot;message&quot;>%d unsed resources&lt;/string>"
-                    errorLine2="                              ^"
+                    errorLine2="                              ~~~~~"
                     quickfix="studio">
                     <fix
                         description="Replace with &quot;used&quot;"

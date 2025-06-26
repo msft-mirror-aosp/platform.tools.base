@@ -45,7 +45,7 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
     val client = createClient(loggedWarnings)
     getSingleRegistry(client, File("bogus"))
     assertThat(loggedWarnings.toString())
-      .contains("Could not load custom lint check jar files: bogus")
+      .contains("Could not load custom lint check jar file bogus")
   }
 
   fun testCached() {
@@ -354,15 +354,19 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
         "F4X+KCL7C83ZT94nKcBv//UvKv5RUPZX/Pmn3H8sLweVAaTaS0W3e7/dfb1f" +
         "GPd2/wEQZrQ94RIAAA=="
 
+    val invalidLintJar = "invalidLintJar"
+
     val targetDir = TestUtils.createTempDirDeletedOnExit().toFile()
     val file1 = base64gzip("lint1.jar", CustomRuleTest.LINT_JAR_BASE64_GZIP).createFile(targetDir)
     val file2 = base64gzip("lint2.jar", lintJarRevision1).createFile(targetDir)
     val file3 = base64gzip("lint3.jar", lintJarRevision2).createFile(targetDir)
     val file4 = base64gzip("lint4.jar", lintJarRevision3).createFile(targetDir)
+    val file5 = base64("lint5.jar", invalidLintJar).createFile(targetDir)
     assertTrue(file1.path, file1.exists())
     assertTrue(file2.path, file2.exists())
     assertTrue(file3.path, file3.exists())
     assertTrue(file4.path, file4.exists())
+    assertTrue(file5.path, file5.exists())
 
     val loggedWarnings = StringWriter()
     val client = createClient(loggedWarnings)
@@ -389,6 +393,12 @@ class JarFileIssueRegistryTest : AbstractCheckTest() {
       assertThat(registries.size).isEqualTo(1)
       // Prioritize lint jars that have revision numbers.
       assertThat(registries.first().jarFile).isEqualTo(file2)
+    }
+
+    JarFileIssueRegistry.get(client, listOf(file5, file1)).let { registries ->
+      assertThat(registries.size).isEqualTo(1)
+      // Invalid file does not break the process.
+      assertThat(registries.first().jarFile).isEqualTo(file1)
     }
   }
 

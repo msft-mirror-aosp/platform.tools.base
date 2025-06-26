@@ -1,5 +1,6 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
-load("//tools/base/bazel:coverage.bzl", "coverage_java_library", "coverage_java_test")
+load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
 
@@ -8,7 +9,6 @@ iml_module(
     name = "studio.android.sdktools.analyzer",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.analyzer.iml"],
-    lint_baseline = "lint_baseline.xml",
     # do not sort: must match IML order
     test_deps = [
         "//tools/adt/idea/.idea/libraries:junit4",
@@ -23,7 +23,6 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/common:studio.android.sdktools.common",
         "//prebuilts/tools/common/archive-patcher:explainer",
         "//prebuilts/tools/common/archive-patcher:generator",
@@ -36,15 +35,17 @@ iml_module(
     ],
 )
 
-coverage_java_library(
+kotlin_library(
     name = "tools.analyzer",
-    srcs = glob(["src/main/java/**"]),
+    srcs = glob([
+        "src/main/java/**/*.java",
+        "src/main/java/**/*.kt",
+    ]),
     visibility = ["//visibility:public"],
     deps = [
         "//prebuilts/tools/common/archive-patcher:explainer",
         "//prebuilts/tools/common/archive-patcher:generator",
         "//prebuilts/tools/common/archive-patcher:shared",
-        "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
@@ -53,6 +54,7 @@ coverage_java_library(
         "@maven//:com.android.tools.smali.smali-baksmali",
         "@maven//:com.android.tools.smali.smali-dexlib2",
         "@maven//:com.google.guava.guava",
+        "@maven//:org.jetbrains.annotations",
     ],
 )
 
@@ -71,7 +73,6 @@ maven_library(
     version = BASE_VERSION,
     visibility = ["//visibility:public"],
     deps = [
-        "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/common:tools.common",
         "//tools/base/sdk-common:tools.sdk-common",
@@ -90,7 +91,6 @@ coverage_java_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.analyzer",
-        "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/common:tools.common",
         "//tools/base/testutils:tools.testutils",
@@ -98,5 +98,6 @@ coverage_java_test(
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
+        "@maven//:org.jetbrains.annotations",
     ],
 )

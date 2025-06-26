@@ -24,17 +24,13 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.utils.SdkHelper
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxSdkRuntimeVersion
+import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxVersion
 import com.android.sdklib.BuildToolInfo
 import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 
-private val aidlPath = SdkHelper.getBuildTool(BuildToolInfo.PathId.AIDL).absolutePath
-        .replace("""\""", """\\""")
-const val androidxPrivacySandboxActivityVersion = "1.0.0-alpha01"
-const val androidxPrivacySandboxVersion = "1.0.0-alpha10"
-const val androidxPrivacySandboxSdkRuntimeVersion = "1.0.0-alpha13"
-const val androidxPrivacySandboxLibraryPluginVersion = "1.0.0-alpha02"
 
 fun GradleBuildDefinition.privacySandboxSdkLibraryProject(
     path: String,

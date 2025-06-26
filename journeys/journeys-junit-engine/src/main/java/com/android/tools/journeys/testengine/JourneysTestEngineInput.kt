@@ -21,6 +21,7 @@ import java.io.File
 object JourneysTestEngineInput {
     val journeysInputDir: File = getFileFromSystemProperty("journeysInputDir")
     val testDeviceId: String = getSystemProperty("testDeviceId")
+    val testDeviceDisplayName: String = getSystemProperty("testDeviceDisplayName")
     val journeysFilter: List<String> = getStringListFromSystemProperty("journeysFilter")
     val resultsDir: File = getFileFromSystemProperty("resultsDir")
 

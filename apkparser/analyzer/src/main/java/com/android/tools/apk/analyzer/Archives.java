@@ -17,28 +17,29 @@
 package com.android.tools.apk.analyzer;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.internal.ApkArchive;
 import com.android.tools.apk.analyzer.internal.AppBundleArchive;
 import com.android.tools.apk.analyzer.internal.ArchiveManagerImpl;
 import com.android.utils.ILogger;
 import com.android.utils.NullLogger;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Objects;
 
 public class Archives {
 
     /** Opens an archive file from the local file system */
-    @NonNull
-    public static ArchiveContext open(@NonNull Path path) throws IOException {
+    @NotNull
+    public static ArchiveContext open(@NotNull Path path) throws IOException {
         return open(path, NullLogger.getLogger());
     }
 
     /** Opens an archive file from the local file system */
-    @NonNull
-    public static ArchiveContext open(@NonNull Path path, @NonNull ILogger logger)
+    @NotNull
+    public static ArchiveContext open(@NotNull Path path, @NotNull ILogger logger)
             throws IOException {
         //noinspection resource,IOResourceOpenedButNotSafelyClosed
         ArchiveManagerImpl archiveManager = new ArchiveManagerImpl(logger);
@@ -50,7 +51,7 @@ public class Archives {
      * of the archive.
      */
     @Nullable
-    public static ArchiveEntry getFirstManifestArchiveEntry(@NonNull ArchiveNode input) {
+    public static ArchiveEntry getFirstManifestArchiveEntry(@NotNull ArchiveNode input) {
         // APK file has their manifest in the top level node
         if (input.getData().getArchive() instanceof ApkArchive) {
             Archive archive = input.getData().getArchive();
@@ -87,7 +88,7 @@ public class Archives {
     }
 
     @Nullable
-    private static ArchiveNode getChild(@NonNull ArchiveNode input, @NonNull Path path) {
+    private static ArchiveNode getChild(@NotNull ArchiveNode input, @NotNull Path path) {
         return input.getChildren()
                 .stream()
                 .filter(node -> node.getData().getPath().equals(path))
@@ -97,7 +98,7 @@ public class Archives {
 
     @Nullable
     private static ArchiveEntry getTopLevelManifestEntry(
-            @NonNull ArchiveNode input, Archive archive) {
+            @NotNull ArchiveNode input, Archive archive) {
         Path path = archive.getContentRoot().resolve(SdkConstants.FN_ANDROID_MANIFEST_XML);
         return input.getChildren()
                 .stream()

@@ -62,6 +62,18 @@ class WellKnownMavenArtifactIdTest {
     }
 
     @Test
+    fun testFindJunitArtifacts() {
+        assertThat(WellKnownMavenArtifactId.find("junit", "junit"))
+            .isEqualTo(WellKnownMavenArtifactId.JUNIT_JUNIT)
+    }
+
+    @Test
+    fun testDoesNotFindNonexistentJunitArtifact() {
+        assertThat(WellKnownMavenArtifactId.find("junit", "junit-nonexistent"))
+            .isNull()
+    }
+
+    @Test
     fun testFindGMavenArtifacts() {
         assertThat(WellKnownMavenArtifactId.find("com.android.support", "animated-vector-drawable"))
             .isEqualTo(GoogleMavenArtifactId.SUPPORT_ANIMATED_VECTOR_DRAWABLE)

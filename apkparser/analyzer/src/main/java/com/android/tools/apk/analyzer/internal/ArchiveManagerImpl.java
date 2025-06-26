@@ -19,8 +19,6 @@ package com.android.tools.apk.analyzer.internal;
 import static com.android.SdkConstants.EXT_ANDROID_PACKAGE;
 import static com.android.SdkConstants.EXT_APP_BUNDLE;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.Archive;
 import com.android.tools.apk.analyzer.ArchiveContext;
 import com.android.tools.apk.analyzer.ArchiveManager;
@@ -29,6 +27,11 @@ import com.android.utils.ILogger;
 import com.android.utils.TraceUtils;
 
 import com.google.common.collect.ImmutableList;
+
+import java.util.Locale;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -50,26 +53,26 @@ public class ArchiveManagerImpl implements ArchiveManager {
     private static final List<String> INNER_ZIP_EXTENSIONS =
             ImmutableList.of(".zip", ".apk", ".jar");
 
-    @NonNull private final ILogger logger;
-    @NonNull private final Map<Path, Archive> archives = new HashMap<>();
+    @NotNull private final ILogger logger;
+    @NotNull private final Map<Path, Archive> archives = new HashMap<>();
 
-    @NonNull
+    @NotNull
     private final Map<Archive, Path> tempDirectories = new TreeMap<>(new ArchivePathComparator());
 
-    public ArchiveManagerImpl(@NonNull ILogger logger) {
+    public ArchiveManagerImpl(@NotNull ILogger logger) {
         this.logger = logger;
     }
 
-    @NonNull
+    @NotNull
     @Override
-    public ArchiveContext openArchive(@NonNull Path path) throws IOException {
+    public ArchiveContext openArchive(@NotNull Path path) throws IOException {
         Archive archive = MapUtils.computeIfAbsent(archives, path, this::openArchiveWorker);
         return new ArchiveContextImpl(this, archive);
     }
 
     @Nullable
     @Override
-    public Archive openInnerArchive(@NonNull Archive archive, @NonNull Path childPath)
+    public Archive openInnerArchive(@NotNull Archive archive, @NotNull Path childPath)
             throws IOException {
         // Return null if extension is not supported
         String childFileName = childPath.getFileName().toString();
@@ -123,8 +126,8 @@ public class ArchiveManagerImpl implements ArchiveManager {
         tempDirectories.clear();
     }
 
-    @NonNull
-    private Path createTempDirectory(@NonNull Archive archive) throws IOException {
+    @NotNull
+    private Path createTempDirectory(@NotNull Archive archive) throws IOException {
         return MapUtils.computeIfAbsent(
                 tempDirectories,
                 archive,
@@ -139,8 +142,8 @@ public class ArchiveManagerImpl implements ArchiveManager {
                 });
     }
 
-    @NonNull
-    private Archive openArchiveWorker(@NonNull Path path) throws IOException {
+    @NotNull
+    private Archive openArchiveWorker(@NotNull Path path) throws IOException {
         logger.info(String.format("Opening archive \"%s\"", path));
         if (hasFileExtension(path, EXT_APP_BUNDLE)) {
             // Android App Bundle (.aab) archive
@@ -153,8 +156,8 @@ public class ArchiveManagerImpl implements ArchiveManager {
         }
     }
 
-    @NonNull
-    private static Archive openInnerArchiveWorker(@NonNull Path archive) throws IOException {
+    @NotNull
+    private static Archive openInnerArchiveWorker(@NotNull Path archive) throws IOException {
         if (hasFileExtension(archive, EXT_ANDROID_PACKAGE)) {
             return new ApkArchive(archive);
         } else {
@@ -171,7 +174,7 @@ public class ArchiveManagerImpl implements ArchiveManager {
      *
      * @param archive
      */
-    private static void validateZipFile(@NonNull Path archive) throws IOException {
+    private static void validateZipFile(@NotNull Path archive) throws IOException {
         try (FileInputStream fis = new FileInputStream(archive.toString());
                 ZipInputStream zis = new ZipInputStream(fis)) {
 
@@ -189,12 +192,12 @@ public class ArchiveManagerImpl implements ArchiveManager {
         }
     }
 
-    private static boolean hasFileExtension(@NonNull Path path, @NonNull String extension) {
+    private static boolean hasFileExtension(@NotNull Path path, @NotNull String extension) {
         if (!extension.startsWith(".")) {
             extension = "." + extension;
         }
         //noinspection StringToUpperCaseOrToLowerCaseWithoutLocale
-        return path.getFileName().toString().toLowerCase().endsWith(extension);
+        return path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(extension);
     }
 
     private static class ArchivePathComparator implements Comparator<Archive> {

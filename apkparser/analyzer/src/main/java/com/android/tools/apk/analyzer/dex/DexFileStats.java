@@ -15,10 +15,13 @@
  */
 package com.android.tools.apk.analyzer.dex;
 
-import com.android.annotations.NonNull;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+
 import com.google.common.collect.Iterables;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Collection;
 import java.util.Set;
 
@@ -33,8 +36,8 @@ public class DexFileStats {
         this.referencedMethodCount = referencedMethodCount;
     }
 
-    @NonNull
-    public static DexFileStats create(@NonNull Collection<DexBackedDexFile> dexFiles) {
+    @NotNull
+    public static DexFileStats create(@NotNull Collection<DexBackedDexFile> dexFiles) {
         int definedMethodCount = 0;
         int classesCount = 0;
         int methodCount = 0;

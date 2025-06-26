@@ -16,8 +16,6 @@
 package com.android.tools.apk.analyzer;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.xml.AndroidManifestParser;
 import com.android.ide.common.xml.ManifestData;
@@ -59,6 +57,8 @@ import com.google.devrel.gmscore.tools.apk.arsc.StringPoolChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.TypeChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.TypeSpecChunk;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 import java.io.BufferedInputStream;
@@ -177,17 +177,17 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    @NonNull private final PrintStream out;
-    @NonNull private final AaptInvoker aaptInvoker;
+    @NotNull private final PrintStream out;
+    @NotNull private final AaptInvoker aaptInvoker;
     private boolean humanReadableFlag;
 
     /** Constructs a new command-line processor. */
-    public ApkAnalyzerImpl(@NonNull PrintStream out, @NonNull AaptInvoker aaptInvoker) {
+    public ApkAnalyzerImpl(@NotNull PrintStream out, @NotNull AaptInvoker aaptInvoker) {
         this.out = out;
         this.aaptInvoker = aaptInvoker;
     }
 
-    public void resPackages(@NonNull Path apk) {
+    public void resPackages(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             byte[] resContents =
                     Files.readAllBytes(
@@ -211,7 +211,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void resXml(@NonNull Path apk, @NonNull String filePath) {
+    public void resXml(@NotNull Path apk, @NotNull String filePath) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             Path path = archiveContext.getArchive().getContentRoot().resolve(filePath);
             byte[] bytes = Files.readAllBytes(path);
@@ -225,9 +225,9 @@ public class ApkAnalyzerImpl {
     }
 
     public void resNames(
-            @NonNull Path apk,
-            @NonNull String type,
-            @NonNull String config,
+            @NotNull Path apk,
+            @NotNull String type,
+            @NotNull String config,
             @Nullable String packageName) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             byte[] resContents =
@@ -275,10 +275,10 @@ public class ApkAnalyzerImpl {
     }
 
     public void resValue(
-            @NonNull Path apk,
-            @NonNull String type,
-            @NonNull String config,
-            @NonNull String name,
+            @NotNull Path apk,
+            @NotNull String type,
+            @NotNull String config,
+            @NotNull String name,
             @Nullable String packageName) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             byte[] resContents =
@@ -347,7 +347,7 @@ public class ApkAnalyzerImpl {
                 String.format("Can't find specified resource configuration (%s)", config));
     }
 
-    public void resConfigs(@NonNull Path apk, @NonNull String type, @Nullable String packageName) {
+    public void resConfigs(@NotNull Path apk, @NotNull String type, @Nullable String packageName) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             byte[] resContents =
                     Files.readAllBytes(
@@ -387,8 +387,8 @@ public class ApkAnalyzerImpl {
     }
 
     public void dexCode(
-            @NonNull Path apk,
-            @NonNull String fqcn,
+            @NotNull Path apk,
+            @NotNull String fqcn,
             @Nullable String method,
             @Nullable Path proguardFolderPath,
             @Nullable Path proguardMapFilePath) {
@@ -443,7 +443,7 @@ public class ApkAnalyzerImpl {
     }
 
     public void dexPackages(
-            @NonNull Path apk,
+            @NotNull Path apk,
             @Nullable Path proguardFolderPath,
             @Nullable Path proguardMapFilePath,
             @Nullable Path proguardSeedsFilePath,
@@ -483,7 +483,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    @NonNull
+    @NotNull
     private static ProguardMappings getProguardMappings(
             @Nullable Path proguardFolderPath,
             @Nullable Path proguardMapFilePath,
@@ -566,8 +566,8 @@ public class ApkAnalyzerImpl {
     }
 
     private void dumpTree(
-            @NonNull TreeModel model,
-            @NonNull DexElementNode node,
+            @NotNull TreeModel model,
+            @NotNull DexElementNode node,
             ProguardSeedsMap seeds,
             ProguardMap map) {
         StringBuilder sb = new StringBuilder();
@@ -630,7 +630,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void dexReferences(@NonNull Path apk, @Nullable List<String> dexFilePaths) {
+    public void dexReferences(@NotNull Path apk, @Nullable List<String> dexFilePaths) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             Collection<Path> dexPaths = getSelectedDexFiles(dexFilePaths, archiveContext);
             for (Path dexPath : dexPaths) {
@@ -645,7 +645,7 @@ public class ApkAnalyzerImpl {
     }
 
     public void dexReferenceTree(
-            @NonNull Path apk,
+            @NotNull Path apk,
             @Nullable Path proguardFolderPath,
             @Nullable Path proguardMapFilePath,
             @Nullable Path proguardSeedsFilePath,
@@ -694,7 +694,7 @@ public class ApkAnalyzerImpl {
     }
 
     private static void loadDescriptorsFromFile(
-            @NonNull Path descriptorFilePath, @NonNull List<Descriptor> descriptors) {
+            @NotNull Path descriptorFilePath, @NotNull List<Descriptor> descriptors) {
         try {
             BufferedReader reader =
                     Files.newBufferedReader(descriptorFilePath, StandardCharsets.UTF_8);
@@ -710,7 +710,7 @@ public class ApkAnalyzerImpl {
     }
 
     private static void dumpReferenceTree(
-            PrintStream out, @NonNull DexElementNode node, int depth, ProguardMap map) {
+            PrintStream out, @NotNull DexElementNode node, int depth, ProguardMap map) {
         StringBuilder sb = new StringBuilder();
         Reference reference = node.getReference();
         for (int i = 0; i < depth; ++i) sb.append(' ');
@@ -741,9 +741,9 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    @NonNull
+    @NotNull
     private static Collection<Path> getSelectedDexFiles(
-            @Nullable List<String> dexFilePaths, @NonNull ArchiveContext archiveContext) {
+            @Nullable List<String> dexFilePaths, @NotNull ArchiveContext archiveContext) {
         if (dexFilePaths == null || dexFilePaths.isEmpty()) {
             return getDexFilesFrom(archiveContext.getArchive().getContentRoot());
         } else {
@@ -753,7 +753,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void dexList(@NonNull Path apk) {
+    public void dexList(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             getDexFilesFrom(archiveContext.getArchive().getContentRoot())
                     .stream()
@@ -764,15 +764,15 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    @NonNull
-    private ManifestData getManifestData(@NonNull Archive archive)
+    @NotNull
+    private ManifestData getManifestData(@NotNull Archive archive)
             throws IOException, ParserConfigurationException, SAXException {
         Path manifestPath = archive.getContentRoot().resolve(SdkConstants.ANDROID_MANIFEST_XML);
         byte[] manifestBytes = BinaryXmlParser.decodeXml(Files.readAllBytes(manifestPath));
         return AndroidManifestParser.parse(new ByteArrayInputStream(manifestBytes));
     }
 
-    public void manifestDebuggable(@NonNull Path apk) {
+    public void manifestDebuggable(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             ManifestData manifestData = getManifestData(archiveContext.getArchive());
             boolean debuggable =
@@ -785,7 +785,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void manifestPermissions(@NonNull Path apk) {
+    public void manifestPermissions(@NotNull Path apk) {
         List<String> output;
         try {
             output = aaptInvoker.dumpBadging(apk.toFile());
@@ -798,7 +798,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void manifestTargetSdk(@NonNull Path apk) {
+    public void manifestTargetSdk(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             ManifestData manifestData = getManifestData(archiveContext.getArchive());
             out.println(String.valueOf(manifestData.getTargetSdkVersion()));
@@ -809,7 +809,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void manifestMinSdk(@NonNull Path apk) {
+    public void manifestMinSdk(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             ManifestData manifestData = getManifestData(archiveContext.getArchive());
             out.println(
@@ -823,7 +823,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void manifestVersionCode(@NonNull Path apk) {
+    public void manifestVersionCode(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             ManifestData manifestData = getManifestData(archiveContext.getArchive());
             out.printf("%s", valueToDisplayString(manifestData.getVersionCode())).println();
@@ -834,7 +834,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void manifestVersionName(@NonNull Path apk) {
+    public void manifestVersionName(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             ManifestData manifestData = getManifestData(archiveContext.getArchive());
             out.printf("%s", valueToDisplayString(manifestData.getVersionName())).println();
@@ -845,7 +845,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void manifestAppId(@NonNull Path apk) {
+    public void manifestAppId(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             ManifestData manifestData = getManifestData(archiveContext.getArchive());
             out.println(manifestData.getPackage());
@@ -856,7 +856,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void manifestPrint(@NonNull Path apk) {
+    public void manifestPrint(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             Path path =
                     archiveContext
@@ -870,19 +870,19 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void apkDownloadSize(@NonNull Path apk) {
+    public void apkDownloadSize(@NotNull Path apk) {
         ApkSizeCalculator sizeCalculator = ApkSizeCalculator.getDefault();
         out.println(getSize(sizeCalculator.getFullApkDownloadSize(apk)));
     }
 
-    public void apkRawSize(@NonNull Path apk) {
+    public void apkRawSize(@NotNull Path apk) {
         ApkSizeCalculator sizeCalculator = ApkSizeCalculator.getDefault();
         out.println(getSize(sizeCalculator.getFullApkRawSize(apk)));
     }
 
     public void apkCompare(
-            @NonNull Path oldApkFile,
-            @NonNull Path newApkFile,
+            @NotNull Path oldApkFile,
+            @NotNull Path newApkFile,
             boolean patchSize,
             boolean showFilesOnly,
             boolean showDifferentOnly) {
@@ -903,8 +903,8 @@ public class ApkAnalyzerImpl {
     }
 
     private void dumpCompare(
-            @NonNull DefaultMutableTreeNode node,
-            @NonNull String path,
+            @NotNull DefaultMutableTreeNode node,
+            @NotNull String path,
             boolean showDirs,
             boolean diffOnly) {
         Object entry = node.getUserObject();
@@ -935,7 +935,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void apkFeatures(@NonNull Path apk, boolean showNotRequired) {
+    public void apkFeatures(@NotNull Path apk, boolean showNotRequired) {
         List<String> output;
         try {
             output = aaptInvoker.dumpBadging(apk.toFile());
@@ -959,7 +959,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void filesCat(@NonNull Path apk, @NonNull String filePath) {
+    public void filesCat(@NotNull Path apk, @NotNull String filePath) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             Path path = archiveContext.getArchive().getContentRoot().resolve(filePath);
             try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
@@ -971,7 +971,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    public void apkSummary(@NonNull Path apk) {
+    public void apkSummary(@NotNull Path apk) {
         try (ArchiveContext archiveContext = Archives.open(apk)) {
             ManifestData manifestData = getManifestData(archiveContext.getArchive());
             out.printf(
@@ -988,7 +988,7 @@ public class ApkAnalyzerImpl {
     }
 
     public void filesList(
-            @NonNull Path apk,
+            @NotNull Path apk,
             boolean showRawSize,
             boolean showDownloadSize,
             boolean showFilesOnly) {
@@ -1026,7 +1026,7 @@ public class ApkAnalyzerImpl {
         return humanReadableFlag ? getHumanizedSize(bytes) : String.valueOf(bytes);
     }
 
-    @NonNull
+    @NotNull
     private static String getHumanizedSize(long sizeInBytes) {
         long kilo = 1024;
         long mega = kilo * kilo;
@@ -1043,9 +1043,9 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    @NonNull
+    @NotNull
     private static String formatValue(
-            @NonNull BinaryResourceValue value, @NonNull StringPoolChunk stringPoolChunk) {
+            @NotNull BinaryResourceValue value, @NotNull StringPoolChunk stringPoolChunk) {
         if (value.type() == BinaryResourceValue.Type.STRING) {
             return stringPoolChunk.getString(value.data());
         }
@@ -1056,7 +1056,7 @@ public class ApkAnalyzerImpl {
         this.humanReadableFlag = humanReadableFlag;
     }
 
-    @NonNull
+    @NotNull
     private static List<Path> getDexFilesFrom(Path dir) {
         try (Stream<Path> stream = Files.list(dir)) {
             return stream.filter(
@@ -1071,7 +1071,7 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    @NonNull
+    @NotNull
     private String valueToDisplayString(Object value) {
         return value == null ? "UNKNOWN" : value.toString();
     }

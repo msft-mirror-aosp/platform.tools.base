@@ -15,17 +15,16 @@
  */
 package com.android.tools.apk.analyzer.dex.tree;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableTypeReference;
 
-import javax.swing.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class DexPackageNode extends DexElementNode {
     @Nullable private final String packageName;
 
-    public DexPackageNode(@NonNull String name, @Nullable String packageName) {
+    public DexPackageNode(@NotNull String name, @Nullable String packageName) {
         super(name, true);
         this.packageName = packageName;
     }
@@ -40,10 +39,10 @@ public class DexPackageNode extends DexElementNode {
         return size;
     }
 
-    @NonNull
+    @NotNull
     public DexClassNode getOrCreateClass(
-            @NonNull String parentPackage,
-            @NonNull String qualifiedClassName,
+            @NotNull String parentPackage,
+            @NotNull String qualifiedClassName,
             @Nullable TypeReference typeReference) {
         int i = qualifiedClassName.indexOf('.');
         if (i < 0) {
@@ -73,7 +72,7 @@ public class DexPackageNode extends DexElementNode {
 
     @Nullable
     public DexClassNode getClass(
-            @NonNull String parentPackage, @NonNull String qualifiedClassName) {
+            @NotNull String parentPackage, @NotNull String qualifiedClassName) {
         int i = qualifiedClassName.indexOf('.');
         if (i < 0) {
             return getChildByType(qualifiedClassName, DexClassNode.class);

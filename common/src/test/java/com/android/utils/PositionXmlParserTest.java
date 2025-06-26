@@ -165,7 +165,7 @@ public class PositionXmlParserTest {
         SourcePosition start = PositionXmlParser.getPosition(text);
         assertEquals(11, start.getStartLine());
         assertEquals(10, start.getStartColumn());
-        assertEquals(xml.indexOf("some text"), start.getStartOffset());
+        assertEquals(xml.indexOf("some text\ndone"), start.getStartOffset());
 
         assertEquals(12, start.getEndLine());
         assertEquals(4, start.getEndColumn());
@@ -175,6 +175,15 @@ public class PositionXmlParserTest {
         start = PositionXmlParser.getPosition(text, 13, 15);
         assertEquals(11, start.getStartLine());
         assertEquals(12, start.getStartColumn());
+        assertEquals(11, start.getEndLine());
+        assertEquals(14, start.getEndColumn());
+        assertEquals(xml.indexOf("me"), start.getStartOffset());
+
+        start = PositionXmlParser.getPosition(text, 13, 23);
+        assertEquals(11, start.getStartLine());
+        assertEquals(12, start.getStartColumn());
+        assertEquals(12, start.getEndLine());
+        assertEquals(2, start.getEndColumn());
         assertEquals(xml.indexOf("me"), start.getStartOffset());
     }
 

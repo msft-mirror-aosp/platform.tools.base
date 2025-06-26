@@ -22,7 +22,6 @@ import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_16
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_4K;
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_NONE;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.ApkSizeCalculator;
 import com.android.tools.apk.analyzer.ZipEntryInfo;
 import com.android.zipflinger.Entry;
@@ -31,6 +30,8 @@ import com.android.zipflinger.ZipRepo;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CountingOutputStream;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,7 +59,7 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
 
     public GzipSizeCalculator() {}
 
-    private static void verify(@NonNull Path apk) {
+    private static void verify(@NotNull Path apk) {
         //noinspection EmptyTryBlock,unused
         try (ZipRepo zip = new ZipRepo(apk)) {
         } catch (IOException e) {
@@ -70,7 +71,7 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
     }
 
     @Override
-    public long getFullApkDownloadSize(@NonNull Path apk) {
+    public long getFullApkDownloadSize(@NotNull Path apk) {
         verify(apk);
         // There is a difference between uncompressing the apk, and then compressing again using
         // "gzip -9", versus just compressing the apk itself using "gzip -9". But the difference
@@ -87,7 +88,7 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
     }
 
     @Override
-    public long getFullApkRawSize(@NonNull Path apk) {
+    public long getFullApkRawSize(@NotNull Path apk) {
         verify(apk);
         try {
             return Files.size(apk);
@@ -98,9 +99,9 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
         }
     }
 
-    @NonNull
+    @NotNull
     @Override
-    public Map<String, Long> getDownloadSizePerFile(@NonNull Path apk) {
+    public Map<String, Long> getDownloadSizePerFile(@NotNull Path apk) {
         verify(apk);
         try (ZipRepo zipRepo = new ZipRepo(apk)) {
             ImmutableMap.Builder<String, Long> sizes = new ImmutableMap.Builder<>();
@@ -129,9 +130,9 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
         }
     }
 
-    @NonNull
+    @NotNull
     @Override
-    public Map<String, ZipEntryInfo> getInfoPerFile(@NonNull Path apk) {
+    public Map<String, ZipEntryInfo> getInfoPerFile(@NotNull Path apk) {
         verify(apk);
         ImmutableMap.Builder<String, ZipEntryInfo> sizes = new ImmutableMap.Builder<>();
 

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Empty public resource to ensure that AGP generates a public.txt file. -->
+    <public />
+</resources>

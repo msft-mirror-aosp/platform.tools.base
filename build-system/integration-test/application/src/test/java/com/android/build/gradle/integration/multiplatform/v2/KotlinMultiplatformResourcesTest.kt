@@ -63,8 +63,8 @@ class KotlinMultiplatformResourcesTest {
     }
 
     @Test
-    fun testKmpLibraryResourceTasksExecuted() {
-        val result = project.executor().run(":kmpFirstLib:assemble")
+    fun testKmpLibraryAarContents() {
+        val result = project.executor().run(":kmpFirstLib:bundleAndroidMainAar")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(
                 ":kmpFirstLib:packageAndroidMainResources",
@@ -72,14 +72,10 @@ class KotlinMultiplatformResourcesTest {
                 ":kmpFirstLib:generateAndroidMainRFile"
             )
         )
-    }
-
-    @Test
-    fun testLibraryAarContents() {
-        project.executor().run(":kmpFirstLib:assemble")
 
         project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             textSymbolFile().contains("int string kmp_lib_string 0x0")
+            publicResFile().isEmpty() // just testing its existance in the AAR
 
             androidResources().containsExactly(
                 listOf("drawable-nodpi-v4/image.png", "values/values.xml")

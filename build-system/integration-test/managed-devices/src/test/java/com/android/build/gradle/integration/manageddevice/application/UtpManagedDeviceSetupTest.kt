@@ -17,10 +17,12 @@
 package com.android.build.gradle.integration.manageddevice.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule
-import com.android.build.gradle.integration.manageddevice.utils.addManagedDevice
+import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomAndroidSdk
+import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomSdkDir
+import com.android.build.gradle.integration.manageddevice.utils.simpleGMDProject
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,25 +32,20 @@ class UtpManagedDeviceSetupTest {
     val customAndroidSdkRule = CustomAndroidSdkRule()
 
     @get:Rule
-    val project1 = GradleTestProjectBuilder()
-            .fromTestProject("utp")
-            .withName("utpProject1")
-            .create()
+    val project1 = GradleRule.configure()
+        .withCustomSdkDir(customAndroidSdkRule)
+        .from(folderName = "project1") { simpleGMDProject() }
 
     @get:Rule
-    val project2 = GradleTestProjectBuilder()
-            .fromTestProject("utp")
-            .withName("utpProject2")
-            .create()
+    val project2 = GradleRule.configure()
+        .withCustomSdkDir(customAndroidSdkRule)
+        .from(folderName = "project2") { simpleGMDProject() }
 
     private val executors: List<GradleTaskExecutor> by lazy {
-        listOf(setupProject(project1), setupProject(project2))
-    }
-
-    private fun setupProject(project: GradleTestProject): GradleTaskExecutor {
-        project.getSubproject("app").addManagedDevice("device1")
-
-        return customAndroidSdkRule.run { project.executorWithCustomAndroidSdk() }
+        listOf(
+            project1.build.executor.withCustomAndroidSdk(customAndroidSdkRule),
+            project2.build.executor.withCustomAndroidSdk(customAndroidSdkRule),
+        )
     }
 
     @Test
@@ -59,6 +56,10 @@ class UtpManagedDeviceSetupTest {
 
     @Test
     fun setupTwoIdenticalManagedDeviceInParallel() {
+        assertThat(executors).hasSize(2)
+        assertThat(project1.getMainBuildDirectory().toString())
+            .isNotEqualTo(project2.getMainBuildDirectory().toString())
+
         executors.parallelStream().forEach {
             it.run(":app:cleanManagedDevices")
         }

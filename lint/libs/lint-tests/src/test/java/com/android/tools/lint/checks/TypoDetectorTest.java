@@ -31,26 +31,26 @@ public class TypoDetectorTest extends AbstractCheckTest {
                 ""
                         + "res/values/strings.xml:6: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\"? [Typos]\n"
                         + "    <string name=\"s2\">Andriod activites!</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~~~\n"
                         + "res/values/strings.xml:6: Warning: \"activites\" is a common misspelling; did you mean \"activities\"? [Typos]\n"
                         + "    <string name=\"s2\">Andriod activites!</string>\n"
-                        + "                              ^\n"
+                        + "                              ~~~~~~~~~\n"
                         + "res/values/strings.xml:8: Warning: \"Cmoputer\" is a common misspelling; did you mean \"Computer\"? [Typos]\n"
                         + "    <string name=\"s3\"> (Cmoputer </string>\n"
-                        + "                        ^\n"
+                        + "                        ~~~~~~~~\n"
                         + "res/values/strings.xml:10: Warning: \"throught\" is a common misspelling; did you mean \"thought\" or \"through\" or \"throughout\"? [Typos]\n"
                         + "    <string name=\"s4\"><b>throught</b></string>\n"
-                        + "                         ^\n"
+                        + "                         ~~~~~~~~\n"
                         + "res/values/strings.xml:12: Warning: \"Seach\" is a common misspelling; did you mean \"Search\"? [Typos]\n"
                         + "    <string name=\"s5\">Seach</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~\n"
                         + "res/values/strings.xml:16: Warning: \"Tuscon\" is a common misspelling; did you mean \"Tucson\"? [Typos]\n"
                         + "    <string name=\"s7\">Tuscon tuscon</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~~\n"
                         + "res/values/strings.xml:20: Warning: \"Ok\" is usually capitalized as \"OK\" [Typos]\n"
                         + "    <string name=\"dlg_button_ok\">Ok</string>\n"
-                        + "                                 ^\n"
-                        + "0 errors, 7 warnings\n";
+                        + "                                 ~~\n"
+                        + "0 errors, 7 warnings";
         lint().files(typos1)
                 .run()
                 .expect(expected)
@@ -99,11 +99,11 @@ public class TypoDetectorTest extends AbstractCheckTest {
                 ""
                         + "res/values/strings.xml:5: Warning: Repeated word \"to\" in message: possible typo [Typos]\n"
                         + "     extra location provider commands.  This may allow the app to to interfere\n"
-                        + "                                                               ^\n"
+                        + "                                                               ~~~~~\n"
                         + "res/values/strings.xml:7: Warning: Repeated word \"zü\" in message: possible typo [Typos]\n"
                         + "    <string name=\"other\">\"ü test\\n zü zü\"</string>\n"
-                        + "                                   ^\n"
-                        + "0 errors, 2 warnings\n";
+                        + "                                   ~~~~~\n"
+                        + "0 errors, 2 warnings";
         //noinspection all // Sample code
         lint().files(
                         xml(
@@ -119,6 +119,8 @@ public class TypoDetectorTest extends AbstractCheckTest {
                                         + "    <string name=\"ignore1\">android/android/foo\"</string>\n"
                                         + "    <string name=\"ignore2\">%s/%s/%s</string>\n"
                                         + "    <string name=\"ignore3\">\"Dial (866) 555 0123\\\" \\n\\\"Dial 911, 811, ...\"</string>\n"
+                                        // b/425974265:
+                                        + " <string name=\"test\">Sie können ..., die die App erfolgreich ...</string>"
                                         + "</resources>\n"))
                 .run()
                 .expect(expected)
@@ -139,26 +141,26 @@ public class TypoDetectorTest extends AbstractCheckTest {
                 ""
                         + "res/values-en-rUS/strings-en.xml:6: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\"? [Typos]\n"
                         + "    <string name=\"s2\">Andriod activites!</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~~~\n"
                         + "res/values-en-rUS/strings-en.xml:6: Warning: \"activites\" is a common misspelling; did you mean \"activities\"? [Typos]\n"
                         + "    <string name=\"s2\">Andriod activites!</string>\n"
-                        + "                              ^\n"
+                        + "                              ~~~~~~~~~\n"
                         + "res/values-en-rUS/strings-en.xml:8: Warning: \"Cmoputer\" is a common misspelling; did you mean \"Computer\"? [Typos]\n"
                         + "    <string name=\"s3\"> (Cmoputer </string>\n"
-                        + "                        ^\n"
+                        + "                        ~~~~~~~~\n"
                         + "res/values-en-rUS/strings-en.xml:10: Warning: \"throught\" is a common misspelling; did you mean \"thought\" or \"through\" or \"throughout\"? [Typos]\n"
                         + "    <string name=\"s4\"><b>throught</b></string>\n"
-                        + "                         ^\n"
+                        + "                         ~~~~~~~~\n"
                         + "res/values-en-rUS/strings-en.xml:12: Warning: \"Seach\" is a common misspelling; did you mean \"Search\"? [Typos]\n"
                         + "    <string name=\"s5\">Seach</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~\n"
                         + "res/values-en-rUS/strings-en.xml:16: Warning: \"Tuscon\" is a common misspelling; did you mean \"Tucson\"? [Typos]\n"
                         + "    <string name=\"s7\">Tuscon tuscon</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~~\n"
                         + "res/values-en-rUS/strings-en.xml:20: Warning: \"Ok\" is usually capitalized as \"OK\" [Typos]\n"
                         + "    <string name=\"dlg_button_ok\">Ok</string>\n"
-                        + "                                 ^\n"
-                        + "0 errors, 7 warnings\n";
+                        + "                                 ~~\n"
+                        + "0 errors, 7 warnings";
         lint().files(typos2).run().expect(expected);
     }
 
@@ -168,26 +170,26 @@ public class TypoDetectorTest extends AbstractCheckTest {
                 ""
                         + "res/values-b+en+USA/strings-en.xml:6: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\"? [Typos]\n"
                         + "    <string name=\"s2\">Andriod activites!</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~~~\n"
                         + "res/values-b+en+USA/strings-en.xml:6: Warning: \"activites\" is a common misspelling; did you mean \"activities\"? [Typos]\n"
                         + "    <string name=\"s2\">Andriod activites!</string>\n"
-                        + "                              ^\n"
+                        + "                              ~~~~~~~~~\n"
                         + "res/values-b+en+USA/strings-en.xml:8: Warning: \"Cmoputer\" is a common misspelling; did you mean \"Computer\"? [Typos]\n"
                         + "    <string name=\"s3\"> (Cmoputer </string>\n"
-                        + "                        ^\n"
+                        + "                        ~~~~~~~~\n"
                         + "res/values-b+en+USA/strings-en.xml:10: Warning: \"throught\" is a common misspelling; did you mean \"thought\" or \"through\" or \"throughout\"? [Typos]\n"
                         + "    <string name=\"s4\"><b>throught</b></string>\n"
-                        + "                         ^\n"
+                        + "                         ~~~~~~~~\n"
                         + "res/values-b+en+USA/strings-en.xml:12: Warning: \"Seach\" is a common misspelling; did you mean \"Search\"? [Typos]\n"
                         + "    <string name=\"s5\">Seach</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~\n"
                         + "res/values-b+en+USA/strings-en.xml:16: Warning: \"Tuscon\" is a common misspelling; did you mean \"Tucson\"? [Typos]\n"
                         + "    <string name=\"s7\">Tuscon tuscon</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~~\n"
                         + "res/values-b+en+USA/strings-en.xml:20: Warning: \"Ok\" is usually capitalized as \"OK\" [Typos]\n"
                         + "    <string name=\"dlg_button_ok\">Ok</string>\n"
-                        + "                                 ^\n"
-                        + "0 errors, 7 warnings\n";
+                        + "                                 ~~\n"
+                        + "0 errors, 7 warnings";
         lint().files(typos3).run().expect(expected);
     }
 
@@ -197,23 +199,23 @@ public class TypoDetectorTest extends AbstractCheckTest {
                 ""
                         + "res/values-nb/typos.xml:6: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\"? [Typos]\n"
                         + "    <string name=\"s2\">Mer morro med Andriod</string>\n"
-                        + "                                    ^\n"
+                        + "                                    ~~~~~~~\n"
                         + "res/values-nb/typos.xml:6: Warning: \"morro\" is a common misspelling; did you mean \"moro\"? [Typos]\n"
                         + "    <string name=\"s2\">Mer morro med Andriod</string>\n"
-                        + "                          ^\n"
+                        + "                          ~~~~~\n"
                         + "res/values-nb/typos.xml:8: Warning: \"Parallel\" is a common misspelling; did you mean \"Parallell\"? [Typos]\n"
                         + "    <string name=\"s3\"> Parallel </string>\n"
-                        + "                       ^\n"
+                        + "                       ~~~~~~~~\n"
                         + "res/values-nb/typos.xml:10: Warning: \"altid\" is a common misspelling; did you mean \"alltid\"? [Typos]\n"
                         + "    <string name=\"s4\"><b>altid</b></string>\n"
-                        + "                         ^\n"
+                        + "                         ~~~~~\n"
                         + "res/values-nb/typos.xml:12: Warning: \"Altid\" is a common misspelling; did you mean \"Alltid\"? [Typos]\n"
                         + "    <string name=\"s5\">Altid</string>\n"
-                        + "                      ^\n"
+                        + "                      ~~~~~\n"
                         + "res/values-nb/typos.xml:18: Warning: \"karriære\" is a common misspelling; did you mean \"karrière\"? [Typos]\n"
                         + "    <string name=\"s7\">Koding er en spennende karriære</string>\n"
-                        + "                                             ^\n"
-                        + "0 errors, 6 warnings\n";
+                        + "                                             ~~~~~~~~\n"
+                        + "0 errors, 6 warnings";
         //noinspection all // Sample code
         lint().files(
                         xml(
@@ -261,8 +263,8 @@ public class TypoDetectorTest extends AbstractCheckTest {
                         ""
                                 + "res/values-nb/typos.xml:3: Warning: \"Altid\" is a common misspelling; did you mean \"Alltid\"? [Typos]\n"
                                 + "    <string name=\"s5\"><![CDATA[ Altid ]]></string>\n"
-                                + "                                ^\n"
-                                + "0 errors, 1 warnings");
+                                + "                                ~~~~~\n"
+                                + "0 errors, 1 warning");
     }
 
     public void testGerman() {
@@ -271,14 +273,14 @@ public class TypoDetectorTest extends AbstractCheckTest {
                 ""
                         + "res/values-de/typos.xml:6: Warning: \"befindet eine\" is a common misspelling; did you mean \"befindet sich eine\"? [Typos]\n"
                         + "           wo befindet eine ip\n"
-                        + "              ^\n"
+                        + "              ~~~~~~~~~~~~~\n"
                         + "res/values-de/typos.xml:9: Warning: \"Authorisierungscode\" is a common misspelling; did you mean \"Autorisierungscode\"? [Typos]\n"
                         + "    <string name=\"s2\">(Authorisierungscode!)</string>\n"
-                        + "                       ^\n"
+                        + "                       ~~~~~~~~~~~~~~~~~~~\n"
                         + "res/values-de/typos.xml:10: Warning: \"zurück gefoobaren\" is a common misspelling; did you mean \"zurückgefoobaren\"? [Typos]\n"
                         + "    <string name=\"s3\">   zurück gefoobaren!</string>\n"
-                        + "                         ^\n"
-                        + "0 errors, 3 warnings\n";
+                        + "                         ~~~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 3 warnings";
         //noinspection all // Sample code
         lint().files(
                         xml(
@@ -319,8 +321,8 @@ public class TypoDetectorTest extends AbstractCheckTest {
                         ""
                                 + "res/values-en/typos.xml:2: Warning: \"throught\" is a common misspelling; did you mean \"thought\" or \"through\" or \"throughout\"? [Typos]\n"
                                 + "    <string name=\"s1\">throught</string>\n"
-                                + "                      ^\n"
-                                + "0 errors, 1 warnings\n")
+                                + "                      ~~~~~~~~\n"
+                                + "0 errors, 1 warning")
                 .expectFixDiffs(
                         ""
                                 + "Fix for res/values-en/typos.xml line 1: Replace with \"thought\":\n"
@@ -342,11 +344,11 @@ public class TypoDetectorTest extends AbstractCheckTest {
                 ""
                         + "res/values/typos.xml:5: Warning: \"altid\" is a common misspelling; did you mean \"alltid\"? [Typos]\n"
                         + "    <string name=\"s4\"><b>altid</b></string>\n"
-                        + "                         ^\n"
+                        + "                         ~~~~~\n"
                         + "res/values/typos.xml:7: Warning: \"Altid\" is a common misspelling; did you mean \"Alltid\"? [Typos]\n"
                         + "    <string name=\"s5\">Altid</string>\n"
-                        + "                      ^\n"
-                        + "0 errors, 2 warnings\n";
+                        + "                      ~~~~~\n"
+                        + "0 errors, 2 warnings";
         //noinspection all // Sample code
         lint().files(
                         xml(
@@ -381,11 +383,11 @@ public class TypoDetectorTest extends AbstractCheckTest {
                 ""
                         + "res/values/plurals_typography.xml:8: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\"? [Typos]\n"
                         + "        <item quantity=\"other\">Andriod</item>\n"
-                        + "                               ^\n"
+                        + "                               ~~~~~~~\n"
                         + "res/values/plurals_typography.xml:13: Warning: \"Seach\" is a common misspelling; did you mean \"Search\"? [Typos]\n"
                         + "        <item>Seach</item>\n"
-                        + "              ^\n"
-                        + "0 errors, 2 warnings\n";
+                        + "              ~~~~~\n"
+                        + "0 errors, 2 warnings";
         lint().files(
                         xml(
                                 "res/values/plurals_typography.xml",
@@ -464,10 +466,10 @@ public class TypoDetectorTest extends AbstractCheckTest {
                         ""
                                 + "res/values/strings.xml:3: Warning: Did you mean \"test!\" instead of \"test1\"? [Typos]\n"
                                 + "    This is a test1\n"
-                                + "              ^\n"
+                                + "              ~~~~~\n"
                                 + "res/values/strings.xml:4: Warning: Did you mean \"this!!!!!\" instead of \"this!!111\"? [Typos]\n"
                                 + "    and so is this!!111\n"
-                                + "              ^\n"
+                                + "              ~~~~~~~~~\n"
                                 + "0 errors, 2 warnings")
                 .expectFixDiffs(
                         ""

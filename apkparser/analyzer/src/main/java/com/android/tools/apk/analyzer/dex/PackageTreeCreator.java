@@ -15,9 +15,12 @@
  */
 package com.android.tools.apk.analyzer.dex;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.tools.apk.analyzer.dex.tree.*;
+import com.android.tools.apk.analyzer.dex.tree.DexClassNode;
+import com.android.tools.apk.analyzer.dex.tree.DexElementNode;
+import com.android.tools.apk.analyzer.dex.tree.DexFieldNode;
+import com.android.tools.apk.analyzer.dex.tree.DexMethodNode;
+import com.android.tools.apk.analyzer.dex.tree.DexPackageNode;
+import com.android.tools.apk.analyzer.dex.tree.DexReferencesNode;
 import com.android.tools.apk.analyzer.internal.SigUtils;
 import com.android.tools.proguard.ProguardMap;
 import com.android.tools.proguard.ProguardUsagesMap;
@@ -34,8 +37,13 @@ import com.android.tools.smali.dexlib2.iface.reference.TypeReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableFieldReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableMethodReference;
 import com.android.tools.smali.dexlib2.util.ReferenceUtil;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -65,9 +73,9 @@ public class PackageTreeCreator {
         this.addReferencesNode = addReferencesNode;
     }
 
-    @NonNull
+    @NotNull
     private static Multimap<String, MethodReference> getAllMethodReferencesByClassName(
-            @NonNull DexBackedDexFile dexFile) {
+            @NotNull DexBackedDexFile dexFile) {
         Multimap<String, MethodReference> methodsByClass = ArrayListMultimap.create();
         for (int i = 0, m = dexFile.getMethodSection().size(); i < m; i++) {
             MethodReference methodRef = new DexBackedMethodReference(dexFile, i);
@@ -77,9 +85,9 @@ public class PackageTreeCreator {
         return methodsByClass;
     }
 
-    @NonNull
+    @NotNull
     private static Multimap<String, FieldReference> getAllFieldReferencesByClassName(
-            @NonNull DexBackedDexFile dexFile) {
+            @NotNull DexBackedDexFile dexFile) {
         Multimap<String, FieldReference> fieldsByClass = ArrayListMultimap.create();
         for (int i = 0, m = dexFile.getFieldSection().size(); i < m; i++) {
             FieldReference fieldRef = new DexBackedFieldReference(dexFile, i);
@@ -89,9 +97,9 @@ public class PackageTreeCreator {
         return fieldsByClass;
     }
 
-    @NonNull
+    @NotNull
     private static Map<String, TypeReference> getAllTypeReferencesByClassName(
-            @NonNull DexBackedDexFile dexFile) {
+            @NotNull DexBackedDexFile dexFile) {
         HashMap<String, TypeReference> typesByName = new HashMap<>();
         for (int i = 0, m = dexFile.getTypeSection().size(); i < m; i++) {
             TypeReference typeRef = new DexBackedTypeReference(dexFile, i);
@@ -101,8 +109,8 @@ public class PackageTreeCreator {
         return typesByName;
     }
 
-    @NonNull
-    public DexPackageNode constructPackageTree(@NonNull Map<Path, DexBackedDexFile> dexFiles) {
+    @NotNull
+    public DexPackageNode constructPackageTree(@NotNull Map<Path, DexBackedDexFile> dexFiles) {
         DexPackageNode root = new DexPackageNode("root", null);
         for (Map.Entry<Path, DexBackedDexFile> dexFile : dexFiles.entrySet()) {
             constructPackageTree(root, dexFile.getKey(), dexFile.getValue());
@@ -110,17 +118,17 @@ public class PackageTreeCreator {
         return root;
     }
 
-    @NonNull
-    public DexPackageNode constructPackageTree(@NonNull DexBackedDexFile dexFile) {
+    @NotNull
+    public DexPackageNode constructPackageTree(@NotNull DexBackedDexFile dexFile) {
         DexPackageNode root = new DexPackageNode("root", null);
         constructPackageTree(root, null, dexFile);
         return root;
     }
 
     public void constructPackageTree(
-            @NonNull DexPackageNode root,
+            @NotNull DexPackageNode root,
             @Nullable Path dexFilePath,
-            @NonNull DexBackedDexFile dexFile) {
+            @NotNull DexBackedDexFile dexFile) {
         //get all methods, fields and types referenced in this dex (includes defined)
         Multimap<String, MethodReference> methodRefsByClassName =
                 getAllMethodReferencesByClassName(dexFile);
@@ -200,8 +208,8 @@ public class PackageTreeCreator {
     }
 
     private void addMethods(
-            @NonNull DexClassNode classNode,
-            @NonNull Iterable<? extends MethodReference> methodRefs,
+            @NotNull DexClassNode classNode,
+            @NotNull Iterable<? extends MethodReference> methodRefs,
             Path dexFilePath) {
         for (MethodReference methodRef : methodRefs) {
             String methodName = decodeMethodName(methodRef, proguardMap);
@@ -232,8 +240,8 @@ public class PackageTreeCreator {
     }
 
     private void addFields(
-            @NonNull DexClassNode classNode,
-            @NonNull Iterable<? extends FieldReference> fieldRefs,
+            @NotNull DexClassNode classNode,
+            @NotNull Iterable<? extends FieldReference> fieldRefs,
             Path dexFilePath) {
         for (FieldReference fieldRef : fieldRefs) {
             String fieldName = decodeFieldName(fieldRef, proguardMap);
@@ -260,7 +268,7 @@ public class PackageTreeCreator {
     }
 
     public static String decodeFieldName(
-            @NonNull FieldReference fieldRef, @Nullable ProguardMap proguardMap) {
+            @NotNull FieldReference fieldRef, @Nullable ProguardMap proguardMap) {
         String fieldName = fieldRef.getName();
         if (proguardMap != null) {
             String className = decodeClassName(fieldRef.getDefiningClass(), proguardMap);
@@ -270,7 +278,7 @@ public class PackageTreeCreator {
     }
 
     public static String decodeMethodParams(
-            @NonNull MethodReference methodRef, @Nullable ProguardMap proguardMap) {
+            @NotNull MethodReference methodRef, @Nullable ProguardMap proguardMap) {
         Stream<String> params =
                 methodRef
                         .getParameterTypes()
@@ -284,7 +292,7 @@ public class PackageTreeCreator {
     }
 
     public static String decodeMethodName(
-            @NonNull MethodReference methodRef, @Nullable ProguardMap proguardMap) {
+            @NotNull MethodReference methodRef, @Nullable ProguardMap proguardMap) {
         if (proguardMap != null) {
             String className =
                     proguardMap.getClassName(
@@ -311,7 +319,7 @@ public class PackageTreeCreator {
      * @return fully qualified java class name
      */
     public static String decodeClassName(
-            @NonNull String className, @Nullable ProguardMap proguardMap) {
+            @NotNull String className, @Nullable ProguardMap proguardMap) {
         className = SigUtils.signatureToName(className);
         if (proguardMap != null) {
             className = proguardMap.getClassName(className);

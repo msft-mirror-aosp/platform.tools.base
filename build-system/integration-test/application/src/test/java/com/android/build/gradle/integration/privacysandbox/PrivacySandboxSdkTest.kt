@@ -17,28 +17,28 @@
 package com.android.build.gradle.integration.privacysandbox
 
 import com.android.SdkConstants
+import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
-import com.android.build.gradle.integration.common.output.AarMetadataSubject
 import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
-import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.signing.KeystoreHelper
 import com.android.testutils.apk.Dex
 import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
-import com.android.testutils.truth.ZipFileSubject
-import com.android.tools.build.gradle.internal.profile.StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
-import java.util.Objects
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
-import kotlin.io.path.readText
 
 /** Integration tests for the privacy sandbox SDK */
 class PrivacySandboxSdkTest {
@@ -107,6 +107,10 @@ class PrivacySandboxSdkTest {
                     experimentalProperties["android.experimental.privacysandboxsdk.optimize"] = true
                     optimization.keepRules.files.add(projectDotFile("proguard-rules.pro"))
                 }
+                files.add(
+                    "proguard-rules.pro",
+                    """-keep class com.example.androidlib.Example { *; }
+                """.trimMargin())
             }
         }
 
@@ -142,6 +146,207 @@ class PrivacySandboxSdkTest {
             assertThat(dex.classes["Lcom/example/androidlib/Example;"]!!.methods.map { it.name }).contains(
                 "g")
         }
+    }
+
+    /** Regression test for b/389890488
+     * Checks that there is no R8 warning when there is an SDK (privacy-sandbox-sdk) has a library
+     * dependency (android-lib) that defines donotwarn consumer proguard rules on a library missing
+     * classes at runtime with a compileOnly dependency (stub).
+     */
+    @Test
+    fun testAndroidLibraryKeepRuleConsumption() {
+        val build = rule.build {
+            privacySandboxSdk(":privacy-sandbox-sdk") {
+                android {
+                    experimentalProperties["android.experimental.privacysandboxsdk.optimize"] =
+                        false
+                }
+            }
+            androidLibrary(":android-lib") {
+                android {
+                    buildTypes {
+                        named("debug") {
+                            it.consumerProguardFiles("proguard-rules.pro")
+                        }
+                        named("release") {
+                            it.consumerProguardFiles("proguard-rules.pro")
+                        }
+                    }
+                }
+                files.add(
+                    "proguard-rules.pro",
+                    """
+                        |-dontwarn some.clazz.that.doesnt.Exist
+                        |-keep class com.example.androidlib.UnusedClass { *; }
+                """.trimMargin()
+                )
+                files.add(
+                    "src/main/java/com/example/androidlib/UnusedClass.java",
+                    // language=java
+                    """
+                package com.example.androidlib;
+
+                import some.clazz.that.doesnt.Exist;
+
+                public class UnusedClass {
+
+                    public UnusedClass() {}
+
+                    public void unusedMethod() {
+                        new Exist();
+                    }
+                }
+            """.trimIndent()
+                )
+                dependencies {
+                    compileOnly(project(":stub"))
+                }
+            }
+            androidLibrary(":stub") {
+                pluginCallbacks += DisableDebugVariantsCallback::class.java
+                android {
+                    namespace = "some.clazz.that.doesnt"
+                    defaultConfig.minSdk = 23
+                }
+                files {
+                    add(
+                        "src/main/java/some/clazz/that/doesnt/Exist.java",
+                        """
+                            package some.clazz.that.doesnt;
+
+                            public class Exist {
+
+                                public Exist() {}
+                        }
+                        """.trimIndent()
+                    )
+                }
+            }
+        }
+
+        val dexLocation = build.privacySandboxSdk(":privacy-sandbox-sdk")
+            .intermediatesDir
+            .resolve("dex/single/minifyBundleWithR8/classes.dex")
+
+        var run = build.configuredExecutor().withArgument("--rerun-tasks")
+            .run(":privacy-sandbox-sdk:minifyBundleWithR8")
+
+        run.assertOutputDoesNotContain("R8: Missing class some.clazz.that.doesnt.Exist")
+        Dex(dexLocation).also { dex ->
+            assertThat(dex.classes.keys).contains(
+                "Lcom/example/androidlib/UnusedClass;",
+            )
+            assertThat(dex.classes["Lcom/example/androidlib/UnusedClass;"]!!.methods.map { it.name }).contains(
+                "unusedMethod"
+            )
+        }
+
+        build.androidLibrary(":android-lib").files.remove("proguard-rules.pro")
+        run = build.configuredExecutor().withArgument("--rerun-tasks")
+            .run(":privacy-sandbox-sdk:minifyBundleWithR8")
+        run.assertOutputContains("R8: Missing class some.clazz.that.doesnt.Exist")
+    }
+
+    // Regression test for b/389890488
+    @Test
+    fun testKmpProguardConsumptionWithPrivacySandbox() {
+        val build = rule.build {
+            privacySandboxSdk(":sandbox-sdk") {
+                android {
+                    minSdk = 24
+                    bundle {
+                        applicationId = "com.example.sandboxsdk"
+                        sdkProviderClassName = "Test"
+                        compatSdkProviderClassName = "Test"
+                        setVersion(1, 2, 3)
+                    }
+                    experimentalProperties["android.experimental.privacysandboxsdk.optimize"] =
+                        false
+                }
+                dependencies {
+                    include(project(":kmplib"))
+                }
+            }
+            androidLibrary(":kmplib") {
+                applyPlugin(PluginType.KOTLIN_MPP)
+                pluginCallbacks += ConfigureKmpCallback::class.java
+                android {
+                    defaultConfig {
+                        minSdk = 24
+                    }
+                    buildTypes {
+                        named("debug") {
+                            it.consumerProguardFiles("proguard-rules.pro")
+                        }
+                        named("release") {
+                            it.consumerProguardFiles("proguard-rules.pro")
+                        }
+                    }
+                }
+                files.add(
+                    "proguard-rules.pro",
+                    """
+                        |-dontwarn some.clazz.that.doesnt.Exist
+                        |-keep class pkg.name.kmplib.UnusedClass { *; }
+                """.trimMargin()
+                )
+                files.add(
+                    "src/androidMain/kotlin/pkg/name/kmplib/UnusedClass.kt",
+                    // language=kotlin
+                    """
+                package pkg.name.kmplib
+
+                import some.clazz.that.doesnt.Exist
+
+                class UnusedClass {
+                    fun unusedMethod() {
+                        Exist()
+                    }
+                }
+            """.trimIndent()
+                )
+                // KMP source-set dependencies set in the callback.
+            }
+            androidLibrary(":stub") {
+                pluginCallbacks += DisableDebugVariantsCallback::class.java
+                android {
+                    namespace = "some.clazz.that.doesnt"
+                    defaultConfig.minSdk = 23
+                }
+                files {
+                    add(
+                        "src/main/java/some/clazz/that/doesnt/Exist.java",
+                        """
+                            package some.clazz.that.doesnt;
+
+                            public class Exist {
+
+                                public Exist() {}
+                        }
+                        """.trimIndent()
+                    )
+                }
+            }
+        }
+
+        val dexLocation = build.privacySandboxSdk(":sandbox-sdk")
+            .intermediatesDir
+            .resolve("dex/single/minifyBundleWithR8/classes.dex")
+
+        var run = build.configuredExecutor().withArgument("--rerun-tasks")
+            .run(":sandbox-sdk:minifyBundleWithR8")
+
+        run.assertOutputDoesNotContain("R8: Missing class some.clazz.that.doesnt.Exist")
+        Dex(dexLocation).also { dex ->
+            assertThat(dex.classes.keys).contains(
+                "Lpkg/name/kmplib/UnusedClass;",
+            )
+        }
+
+        build.androidLibrary(":kmplib").files.remove("proguard-rules.pro")
+        run = build.configuredExecutor().withArgument("--rerun-tasks")
+            .run(":sandbox-sdk:minifyBundleWithR8")
+        run.assertOutputContains("R8: Missing class some.clazz.that.doesnt.Exist")
     }
 
     @Test
@@ -188,6 +393,9 @@ class PrivacySandboxSdkTest {
                             android:name="androidx.startup.InitializationProvider"
                             android:authorities="com.example.privacysandboxsdk.androidx-startup"
                             android:exported="false" >
+                            <meta-data
+                                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+                                android:value="androidx.startup" />
                             <meta-data
                                 android:name="androidx.profileinstaller.ProfileInstallerInitializer"
                                 android:value="androidx.startup" />
@@ -368,7 +576,6 @@ class PrivacySandboxSdkTest {
                     targetSdk = 34
                 }
             }
-
         }
 
         build.configuredExecutor().run(":privacy-sandbox-sdk:assemble")
@@ -416,5 +623,36 @@ class PrivacySandboxSdkTest {
             .expectFailure()
             .run(":privacy-sandbox-sdk:assemble")
             .assertErrorContains("Could not find com.not:existing-dependency:1.0.")
+    }
+
+    // Used to simulate Androidx behavior of not publishing 'debug' build variants
+    private class DisableDebugVariantsCallback : GenericCallback {
+
+        override fun handleProject(project: Project) {
+            val libraryAndroidComponentsExtension =
+                project.extensions.findByType(LibraryAndroidComponentsExtension::class.java)
+                    ?: error("Cannot find LibraryAndroidComponentsExtension")
+            libraryAndroidComponentsExtension.apply {
+                beforeVariants(selector().withBuildType("debug")) { variant ->
+                    variant.enable = false
+                }
+            }
+        }
+    }
+
+    private class ConfigureKmpCallback: GenericCallback {
+        override fun handleProject(project: Project) {
+            val kotlin = project.extensions.findByType(KotlinMultiplatformExtension::class.java)
+                ?: error("Cannot find KotlinMultiplatformExtension")
+            kotlin.apply {
+                androidTarget()
+                sourceSets.maybeCreate("androidMain")
+                sourceSets.getByName("androidMain") {
+                    it.dependencies {
+                        compileOnly(project(":stub"))
+                    }
+                }
+            }
+        }
     }
 }

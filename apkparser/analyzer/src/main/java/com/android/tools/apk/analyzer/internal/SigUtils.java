@@ -16,7 +16,7 @@
 
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class SigUtils {
     private static class SigReader {
@@ -133,8 +133,8 @@ public abstract class SigUtils {
      * @param fqcn dot-separated fully qualified class name or simple type
      * @return JVM type signature
      */
-    @NonNull
-    public static String typeToSignature(@NonNull String fqcn) {
+    @NotNull
+    public static String typeToSignature(@NotNull String fqcn) {
         StringBuilder sb = new StringBuilder(fqcn.length() + 2);
         while (fqcn.endsWith("[]")) {
             fqcn = fqcn.substring(0, fqcn.length() - "[]".length());

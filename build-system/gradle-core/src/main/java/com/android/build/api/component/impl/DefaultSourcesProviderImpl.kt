@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.builder.compiling.BuildConfigType
+import com.android.builder.core.BuilderConstants
 import java.io.File
 import java.util.Collections
 
@@ -205,7 +206,7 @@ class DefaultSourcesProviderImpl(
             )
         }
 
-        sourceDirectories.add(DirectoryEntries("generated", generatedFolders))
+        sourceDirectories.add(DirectoryEntries(BuilderConstants.GENERATED, generatedFolders))
 
         return Collections.unmodifiableList(sourceDirectories)
     }

@@ -15,20 +15,21 @@
  */
 package com.android.tools.apk.analyzer.dex.tree;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.dex.PackageTreeCreator;
 import com.android.tools.proguard.ProguardMap;
 import com.android.tools.proguard.ProguardSeedsMap;
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableTypeReference;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Comparator;
 
 public class DexClassNode extends DexElementNode {
     private long size = 0;
 
-    public DexClassNode(@NonNull String displayName, @Nullable ImmutableTypeReference reference) {
+    public DexClassNode(@NotNull String displayName, @Nullable ImmutableTypeReference reference) {
         super(displayName, true, reference);
     }
 
@@ -66,17 +67,17 @@ public class DexClassNode extends DexElementNode {
 
     @Nullable
     @Override
-    public TypeReference getReference() {
-        return (TypeReference) super.getReference();
+    public ImmutableTypeReference getReference() {
+        return (ImmutableTypeReference)super.getReference();
     }
 
     @Nullable
-    public DexMethodNode getMethod(@NonNull String qualifiedMethodName) {
+    public DexMethodNode getMethod(@NotNull String qualifiedMethodName) {
         return getChildByType(qualifiedMethodName, DexMethodNode.class);
     }
 
     @Nullable
-    public DexFieldNode getField(@NonNull String qualifiedFieldName) {
+    public DexFieldNode getField(@NotNull String qualifiedFieldName) {
         return getChildByType(qualifiedFieldName, DexFieldNode.class);
     }
 

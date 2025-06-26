@@ -18,28 +18,30 @@ package com.android.tools.apk.analyzer;
 
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_NONE;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 
 public abstract class ArchiveEntry {
     /** The archive containing this entry. */
-    @NonNull private final Archive archive;
+    @NotNull private final Archive archive;
+
     /**
      * This is the relative path in the archive. For inner archive root nodes, it's the relative
      * path in the outer archive. For inner archive non-root nodes, it's the relative path in the
      * inner archive.
      */
-    @NonNull private final Path path;
+    @NotNull private final Path path;
+
     /**
      * This is an arbitrary path prefix string used to build the display path returned by the {@link
      * #getSummaryDisplayString()} method. The string can be empty, in which case {@link
      * #getSummaryDisplayString()} returns the same string as <code>{@link #getPath()}.toString()
      * </code>.
      */
-    @NonNull private final String pathPrefix;
+    @NotNull private final String pathPrefix;
 
-    public ArchiveEntry(@NonNull Archive archive, @NonNull Path path, @NonNull String pathPrefix) {
+    public ArchiveEntry(@NotNull Archive archive, @NotNull Path path, @NotNull String pathPrefix) {
         assert archive.getContentRoot().getFileSystem() == path.getFileSystem();
 
         this.archive = archive;
@@ -95,17 +97,17 @@ public abstract class ArchiveEntry {
         return 0;
     }
 
-    @NonNull
+    @NotNull
     public Path getPath() {
         return path;
     }
 
-    @NonNull
+    @NotNull
     public String getPathPrefix() {
         return pathPrefix;
     }
 
-    @NonNull
+    @NotNull
     public Archive getArchive() {
         return archive;
     }
@@ -115,14 +117,14 @@ public abstract class ArchiveEntry {
      * of its parent entry, for example the filename, without the parent path, for an entry
      * corresponding to a file.
      */
-    @NonNull
+    @NotNull
     public abstract String getNodeDisplayString();
 
     /**
      * Returns a description string that summarizes the content of this entry and its parent(s), for
      * example a full path if the entry corresponding to a file.
      */
-    @NonNull
+    @NotNull
     public abstract String getSummaryDisplayString();
 
     @Override

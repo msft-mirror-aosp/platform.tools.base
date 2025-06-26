@@ -16,14 +16,14 @@
 
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.stream.Stream;
 
 public class ArchiveTreeStream {
-    @NonNull
+    @NotNull
     public static Stream<ArchiveNode> preOrderStreamNoInnerArchiveExpansion(
-            @NonNull ArchiveNode node) {
+            @NotNull ArchiveNode node) {
         return Stream.concat(
                 Stream.of(node),
                 node.getChildren().stream()
@@ -37,15 +37,15 @@ public class ArchiveTreeStream {
                                 }));
     }
 
-    @NonNull
-    public static Stream<ArchiveNode> preOrderStream(@NonNull ArchiveNode node) {
+    @NotNull
+    public static Stream<ArchiveNode> preOrderStream(@NotNull ArchiveNode node) {
         return Stream.concat(
                 Stream.of(node),
                 node.getChildren().stream().flatMap(ArchiveTreeStream::preOrderStream));
     }
 
-    @NonNull
-    public static <T> Stream<ArchiveNode> postOrderStream(@NonNull ArchiveNode node) {
+    @NotNull
+    public static <T> Stream<ArchiveNode> postOrderStream(@NotNull ArchiveNode node) {
         return Stream.concat(
                 node.getChildren().stream().flatMap(ArchiveTreeStream::postOrderStream),
                 Stream.of(node));

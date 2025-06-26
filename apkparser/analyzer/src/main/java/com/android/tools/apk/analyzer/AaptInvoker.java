@@ -16,7 +16,6 @@
 package com.android.tools.apk.analyzer;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
 import com.android.ide.common.process.BaseProcessOutputHandler;
 import com.android.ide.common.process.CachedProcessOutputHandler;
 import com.android.ide.common.process.DefaultProcessExecutor;
@@ -28,21 +27,24 @@ import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.LoggerProgressIndicatorWrapper;
 import com.android.utils.ILogger;
 import com.android.utils.LineCollector;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
 public class AaptInvoker {
-    @NonNull private final Path aapt;
-    @NonNull private final DefaultProcessExecutor processExecutor;
+    @NotNull private final Path aapt;
+    @NotNull private final DefaultProcessExecutor processExecutor;
 
-    public AaptInvoker(@NonNull Path aaptPath, @NonNull ILogger logger) {
+    public AaptInvoker(@NotNull Path aaptPath, @NotNull ILogger logger) {
         aapt = aaptPath;
         processExecutor = new DefaultProcessExecutor(logger);
     }
 
-    public AaptInvoker(@NonNull AndroidSdkHandler sdkHandler, @NonNull ILogger logger) {
+    public AaptInvoker(@NotNull AndroidSdkHandler sdkHandler, @NotNull ILogger logger) {
         this(getPathToAapt(sdkHandler, logger), logger);
     }
 
@@ -50,9 +52,9 @@ public class AaptInvoker {
         return aapt.endsWith("aapt2") || aapt.endsWith("aapt2.exe");
     }
 
-    @NonNull
+    @NotNull
     private List<String> invokeAaptWithParameters(
-            @NonNull File apkFile, @NonNull String resource, @NonNull String... parameters)
+            @NotNull File apkFile, @NotNull String resource, @NotNull String... parameters)
             throws ProcessException {
         String[] params = Arrays.copyOf(parameters, parameters.length + 2);
         params[params.length - 2] = apkFile.getPath();
@@ -60,8 +62,8 @@ public class AaptInvoker {
         return invokeAaptWithParameters(params);
     }
 
-    @NonNull
-    private List<String> invokeAaptWithParameters(@NonNull String... parameters)
+    @NotNull
+    private List<String> invokeAaptWithParameters(@NotNull String... parameters)
             throws ProcessException {
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
 
@@ -83,8 +85,8 @@ public class AaptInvoker {
         return lineCollector.getResult();
     }
 
-    @NonNull
-    public List<String> getXmlStrings(@NonNull File apk, @NonNull String xmlResourcePath)
+    @NotNull
+    public List<String> getXmlStrings(@NotNull File apk, @NotNull String xmlResourcePath)
             throws ProcessException {
         if (isAapt2()) {
             return invokeAaptWithParameters(
@@ -94,8 +96,8 @@ public class AaptInvoker {
                 "dump", "xmlstrings", apk.getPath(), xmlResourcePath);
     }
 
-    @NonNull
-    public List<String> getXmlTree(@NonNull File apk, @NonNull String xmlResourcePath)
+    @NotNull
+    public List<String> getXmlTree(@NotNull File apk, @NotNull String xmlResourcePath)
             throws ProcessException {
         if (isAapt2()) {
             return invokeAaptWithParameters(
@@ -105,12 +107,12 @@ public class AaptInvoker {
                 apk, xmlResourcePath, "dump", "xmltree");
     }
 
-    @NonNull
-    public List<String> dumpBadging(@NonNull File apk) throws ProcessException {
+    @NotNull
+    public List<String> dumpBadging(@NotNull File apk) throws ProcessException {
         return invokeAaptWithParameters("dump", "badging", apk.toString());
     }
 
-    public List<String> dumpResources(@NonNull File apk) throws ProcessException {
+    public List<String> dumpResources(@NotNull File apk) throws ProcessException {
         return invokeAaptWithParameters("dump", "resources", apk.getPath());
     }
 
@@ -119,8 +121,8 @@ public class AaptInvoker {
      *     there are no build tools
      * @param sdkHandler pass in a configured sdkHandler to locate aapt
      */
-    @NonNull
-    public static Path getPathToAapt(@NonNull AndroidSdkHandler sdkHandler, ILogger logger) {
+    @NotNull
+    public static Path getPathToAapt(@NotNull AndroidSdkHandler sdkHandler, ILogger logger) {
         BuildToolInfo latestBuildTool =
                 sdkHandler.getLatestBuildTool(new LoggerProgressIndicatorWrapper(logger), true);
         if (latestBuildTool == null) {

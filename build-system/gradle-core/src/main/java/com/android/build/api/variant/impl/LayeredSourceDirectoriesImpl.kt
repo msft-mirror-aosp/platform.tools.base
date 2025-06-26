@@ -164,7 +164,7 @@ open class LayeredSourceDirectoriesImpl(
                     currentZippedValue = if (currentZippedValue == null) {
                         it.asFiles(projectDir)
                     } else {
-                        currentZippedValue!!.zip(it.asFiles(projectDir)) {
+                        currentZippedValue.zip(it.asFiles(projectDir)) {
                                 d1: Collection<Directory>, d2: Collection<Directory> ->
                             mutableListOf<Directory>().also { result ->
                                 result.addAll(d1)

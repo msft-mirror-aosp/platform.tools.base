@@ -15,30 +15,31 @@
  */
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.file.Path;
 
 public class ArchiveErrorEntry extends ArchiveEntry {
-    @NonNull private final Throwable myError;
+    @NotNull private final Throwable myError;
 
     public ArchiveErrorEntry(
-            @NonNull Archive archive,
-            @NonNull Path path,
-            @NonNull String pathPrefix,
-            @NonNull Throwable error) {
+            @NotNull Archive archive,
+            @NotNull Path path,
+            @NotNull String pathPrefix,
+            @NotNull Throwable error) {
         super(archive, path, pathPrefix);
         myError = error;
     }
 
     @Override
-    @NonNull
+    @NotNull
     public String getNodeDisplayString() {
         String errorMessage = myError.toString();
         return errorMessage == null ? "ERROR" : errorMessage;
     }
 
     @Override
-    @NonNull
+    @NotNull
     public String getSummaryDisplayString() {
         return getPathPrefix()
                 + getPath().toString()

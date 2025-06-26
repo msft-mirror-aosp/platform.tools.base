@@ -789,6 +789,10 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           Incident(OBSOLETE_SDK, message, context.getLocation(annotation), annotation, fix)
         )
       } else {
+        if (element is UAnnotation && element.qualifiedName == ROBO_ELECTRIC_CONFIG_ANNOTATION) {
+          // Don't flag minSdk in Robolectric annotations
+          return
+        }
         val message = "Unnecessary; `SDK_INT` is always >= ${api.minString()}"
         context.report(
           Incident(OBSOLETE_SDK, message, context.getLocation(annotation), annotation, fix),

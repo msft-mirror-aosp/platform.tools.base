@@ -22,4 +22,9 @@ object PrivacySandboxSdkConstants {
      * name to be provided. In this case, we have a default name to be used when this is required.
      */
     const val DEFAULT_VARIANT_NAME = "main"
+    const val androidxPrivacySandboxActivityVersion = "1.0.0-alpha02"
+    const val androidxPrivacySandboxVersion = "1.0.0-alpha13"
+    const val androidxPrivacySandboxSdkRuntimeVersion = "1.0.0-alpha17"
+    const val androidxPrivacySandboxSdkUiVersion = "1.0.0-alpha16"
+    const val androidxPrivacySandboxLibraryPluginVersion = "1.0.0-alpha02"
 }

@@ -1,4 +1,5 @@
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
 
@@ -110,4 +111,44 @@ gradle_test(
     tasks = [":base:firebase:testlab:testlab-gradle-plugin:test"],
     test_output_dir = "build/base/firebase/testlab/testlab-gradle-plugin/build/test-results/test",
     visibility = ["//visibility:public"],
+)
+
+kotlin_library(
+    name = "testlab-gradle-plugin-dsl",
+    srcs = glob([
+        "src/main/java/com/google/firebase/testlab/gradle/**/*.kt",
+        "src/main/java/com/google/firebase/testlab/gradle/**/*.java",
+    ]),
+    visibility = [
+        "//tools/base/build-system/integration-test:__subpackages__",
+    ],
+    deps = [
+        "//tools/base/build-system:gradle-api",
+        "//tools/base/build-system/gradle-core",
+    ],
+)
+
+kotlin_library(
+    name = "testlab-gradle-plugin-build-service",
+    srcs = glob([
+        "src/main/java/com/android/tools/firebase/testlab/gradle/**/*.kt",
+        "src/main/java/com/android/tools/firebase/testlab/gradle/**/*.java",
+    ]),
+    visibility = [
+        "//tools/base/build-system/integration-test:__subpackages__",
+    ],
+    deps = [
+        ":testlab-gradle-plugin-dsl",
+        "//prebuilts/tools/common/m2:utp-core-proto",
+        "//tools/base/build-system:gradle-api",
+        "//tools/base/build-system/builder-model",
+        "//tools/base/build-system/builder-test-api:tools.builder-test-api",
+        "//tools/base/build-system/gradle-core",
+        "//tools/base/utp/android-test-plugin-host-device-info-proto",
+        "@maven//:com.google.apis.google-api-services-storage",
+        "@maven//:com.google.apis.google-api-services-testing",
+        "@maven//:com.google.apis.google-api-services-toolresults",
+        "@maven//:com.google.http-client.google-http-client-jackson2",
+        "@maven//:com.google.protobuf.protobuf-java-util",
+    ],
 )

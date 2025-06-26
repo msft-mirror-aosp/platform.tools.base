@@ -17,6 +17,7 @@
 package com.android.sdklib.devices
 
 import com.google.common.truth.Truth.assertThat
+import java.util.Locale
 import org.junit.Test
 
 class StorageTest {
@@ -79,6 +80,7 @@ class StorageTest {
     assertThat(medium.lessThan(small)).isFalse()
     assertThat(large.lessThan(medium)).isFalse()
   }
+
   @Test
   fun getStorageFromString() {
     assertThat(Storage.getStorageFromString("4")).isEqualTo(Storage(4, Storage.Unit.MiB))
@@ -122,6 +124,7 @@ class StorageTest {
     assertThat(Storage(2200, Storage.Unit.MiB).toUiString()).isEqualTo("2.1 GB") // 2200 * 10^6 < 2.2 * 2^30
     assertThat(Storage(2048 * 1024L, Storage.Unit.MiB).toUiString()).isEqualTo("2.0 TB")
     assertThat(Storage(2048 * 1024L, Storage.Unit.MiB).toUiString(2)).isEqualTo("2.00 TB")
+    assertThat(Storage(2049, Storage.Unit.KiB).toUiString(Locale.FRENCH, 1)).isEqualTo("2,0 MB")
   }
 
   @Test

@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
+import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.build.gradle.integration.connected.utils.getEmulator
@@ -29,12 +29,10 @@ import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.DeviceTestSpanProfile
-import com.google.wireless.android.sdk.stats.TestRun;
-import org.junit.Before
+import com.google.wireless.android.sdk.stats.TestRun
 import org.junit.ClassRule
 import org.junit.Test
 import java.io.Closeable
-import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -64,20 +62,10 @@ class UtpConnectedTest : UtpTestBase() {
         private const val TEST_ADDITIONAL_OUTPUT = "build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/$DEVICE_NAME"
     }
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        // fail fast if no response
-        project.addAdbTimeout();
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        executor().run("uninstallAll")
-    }
-
-    override fun selectModule(moduleName: String, isDynamicFeature: Boolean) {
+    override fun selectModule(moduleName: String) {
         testTaskName = ":${moduleName}:connectedAndroidTest"
         testResultXmlPath = "${moduleName}/$TEST_RESULT_XML${moduleName}-.xml"
-        if (isDynamicFeature) {
+        if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
             testReportPath = "${moduleName}/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
             testLogcatPath = "${moduleName}/$LOGCAT_FOR_DYNAMIC_FEATURE"
         } else {
@@ -96,12 +84,12 @@ class UtpConnectedTest : UtpTestBase() {
     fun connectedAndroidTestWithUtpTestResultListener() {
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtpTestResultListener").setProject("Android Studio Gradle").build()
         val startTime: Long = System.currentTimeMillis()
-        selectModule("app", false)
+        selectModule("app")
         val initScriptPath = TestUtils.resolveWorkspacePath(
                 "tools/adt/idea/utp/addGradleAndroidTestListener.gradle")
 
         var testExecutionStartTime: Long = System.currentTimeMillis()
-        val result = executor()
+        val result = executor
                 .withArgument("--init-script")
                 .withArgument(initScriptPath.toString())
                 .withArgument("-P${ENABLE_UTP_TEST_REPORT_PROPERTY}=true")
@@ -113,18 +101,18 @@ class UtpConnectedTest : UtpTestBase() {
             assertThat(it).contains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
             assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
         }
-        assertThat(project.file(testReportPath)).exists()
-        assertThat(project.file(testResultPbPath)).exists()
+        assertThat(project.resolve(testReportPath)).exists()
+        assertThat(project.resolve(testResultPbPath)).exists()
 
         // Run the task again after clean. This time the task configuration is
         // restored from the configuration cache. We expect no crashes.
-        executor().run("clean")
+        executor.run("clean")
 
-        assertThat(project.file(testReportPath)).doesNotExist()
-        assertThat(project.file(testResultPbPath)).doesNotExist()
+        assertThat(project.resolve(testReportPath)).doesNotExist()
+        assertThat(project.resolve(testResultPbPath)).doesNotExist()
 
         testExecutionStartTime = System.currentTimeMillis()
-        val resultWithConfigCache = executor()
+        val resultWithConfigCache = executor
                 .withArgument("--init-script")
                 .withArgument(initScriptPath.toString())
                 .withArgument("-P${ENABLE_UTP_TEST_REPORT_PROPERTY}=true")
@@ -136,8 +124,8 @@ class UtpConnectedTest : UtpTestBase() {
             assertThat(it).contains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
             assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
         }
-        assertThat(project.file(testReportPath)).exists()
-        assertThat(project.file(testResultPbPath)).exists()
+        assertThat(project.resolve(testReportPath)).exists()
+        assertThat(project.resolve(testResultPbPath)).exists()
         val timeTaken = System.currentTimeMillis() - startTime
         benchmark.log("connectedAndroidTestWithUtpTestResultListener_time", timeTaken)
     }
@@ -147,12 +135,12 @@ class UtpConnectedTest : UtpTestBase() {
     fun connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled() {
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled").setProject("Android Studio Gradle").build()
         val startTime: Long = System.currentTimeMillis()
-        selectModule("app", false)
+        selectModule("app")
         val initScriptPath = TestUtils.resolveWorkspacePath(
                 "tools/adt/idea/utp/addGradleAndroidTestListener.gradle")
 
         val testExecutionStartTime: Long = System.currentTimeMillis()
-        val result = executor()
+        val result = executor
                 .withArgument("--init-script")
                 .withArgument(initScriptPath.toString())
                 .run(testTaskName)
@@ -163,23 +151,23 @@ class UtpConnectedTest : UtpTestBase() {
             assertThat(it).doesNotContain("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
             assertThat(it).doesNotContain("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
         }
-        assertThat(project.file(testReportPath)).exists()
-        assertThat(project.file(testResultPbPath)).exists()
+        assertThat(project.resolve(testReportPath)).exists()
+        assertThat(project.resolve(testResultPbPath)).exists()
         val timeTaken = System.currentTimeMillis() - startTime
         benchmark.log("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled_time", timeTaken)
     }
 
     @Test
     fun connectedAndroidTestShouldUninstallAppsAfterTest() {
-        selectModule("library", isDynamicFeature = false)
+        selectModule("lib")
 
-        executor().run(testTaskName)
+        executor.run(testTaskName)
 
-        val utpLogFile = project.file("library/$UTP_LOG")
+        val utpLogFile = project.resolve("lib/$UTP_LOG")
         assertThat(utpLogFile).exists()
         assertThat(utpLogFile).contains("Uninstalling com.example.android.kotlin.library.test")
 
-        executor()
+        executor
             .with(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN, true)
             .run(testTaskName)
 
@@ -190,20 +178,17 @@ class UtpConnectedTest : UtpTestBase() {
     @Test
     fun connectedAndroidTestUtpPerformance() {
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestUtpPerformance").setProject("Android Studio Gradle").build()
-        val capturer = ProfileCapturer(project, ".trk") // captures AndroidStudioEvents
+        val capturer = ProfileCapturer(rule.build.profileDirectory!!.toAbsolutePath(), ".trk") // captures AndroidStudioEvents
 
-        selectModule("app", false)
+        selectModule("app")
 
-        var testExecutionStartTime: Long = System.currentTimeMillis()
         val firstRunEvents = capturer.captureAndroidEvent {
-            executor().run(testTaskName)
+            executor.run(testTaskName)
         }
         logTestRun("firstRun", firstRunEvents, benchmark)
 
-
-
         val secondRunEvents = capturer.captureAndroidEvent {
-            executor().run(testTaskName)
+            executor.run(testTaskName)
         }
         logTestRun("secondRun", secondRunEvents, benchmark)
     }
@@ -254,10 +239,6 @@ class UtpConnectedTest : UtpTestBase() {
         }
     }
 
-    private fun executor(): GradleTaskExecutor {
-        return project.executor()
-    }
-
     /**
      * Creates a secondary user on device and makes it a current user.
      * After closing this class, it deletes the secondary user and makes the primary user to the
@@ -271,14 +252,17 @@ class UtpConnectedTest : UtpTestBase() {
                     "shell", "pm", "create-user", "utpTestUser", "--ephemeral").start()
                 assertThat(process.waitFor(1, TimeUnit.MINUTES)).isTrue()
                 val processOutput = process.inputStream.bufferedReader().use { it.readText() }
+                val processError = process.errorStream.bufferedReader().use { it.readText() }
                 val regexToExtractUserId = Regex(pattern = "Success: created user id (?<userId>\\d+)")
-                return requireNotNull(regexToExtractUserId.find(processOutput)?.groups?.get("userId")?.value?.toInt())
+                return requireNotNull(regexToExtractUserId.find(processOutput)?.groups?.get("userId")?.value?.toInt()) {
+                    "Failed to create secondary user. pm create-user command failed with the output message: $processError"
+                }
             }
 
             private fun switchCurrentUser(userId: Int) {
                 val process = ProcessBuilder(
                     SdkHelper.getAdb().absolutePath, "-s", "emulator-5554",
-                    "shell", "am", "switch-user", userId.toString()).start()
+                    "shell", "am", "switch-user", "-w", userId.toString()).start()
                 assertThat(process.waitFor(1, TimeUnit.MINUTES)).isTrue()
             }
 

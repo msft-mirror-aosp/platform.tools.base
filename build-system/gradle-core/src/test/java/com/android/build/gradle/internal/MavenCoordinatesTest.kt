@@ -25,15 +25,15 @@ class MavenCoordinatesTest {
     fun mavenCoordinateFormatsCorrectlyAsAString() {
         assertEquals(
             MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_TOOLS_TOOLS_APIGENERATOR.toString(),
-            "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha10"
+            "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha13"
         )
     }
 
     @Test
     fun mavenCoordinateFormatsCorrectlyWithVersioning() {
         assertEquals(
-            MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_TOOLS_TOOLS_APIGENERATOR.withVersion("1.0.0-alpha10"),
-            "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha10"
+            MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_TOOLS_TOOLS_APIGENERATOR.withVersion("1.0.0-alpha13"),
+            "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha13"
         )
     }
 

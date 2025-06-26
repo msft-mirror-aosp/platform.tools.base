@@ -15,12 +15,14 @@
  */
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import javax.swing.tree.DefaultMutableTreeNode;
 
 public interface ApkEntry {
@@ -39,7 +41,7 @@ public interface ApkEntry {
         return (ApkEntry) userObject;
     }
 
-    static void sort(@NonNull DefaultMutableTreeNode node) {
+    static void sort(@NotNull DefaultMutableTreeNode node) {
         if (node.getChildCount() == 0) {
             return;
         }
@@ -66,10 +68,10 @@ public interface ApkEntry {
         }
     }
 
-    @NonNull
+    @NotNull
     String getName();
 
-    @NonNull
+    @NotNull
     Path getPath();
 
     long getSize();

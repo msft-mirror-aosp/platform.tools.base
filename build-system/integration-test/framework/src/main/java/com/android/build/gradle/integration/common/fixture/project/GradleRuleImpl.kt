@@ -228,6 +228,11 @@ internal class GradleRuleImpl internal constructor(
                     definition,
                 )
 
+                is JavaLibraryProjectDefinition -> JavaLibraryProjectImpl(
+                    subProjectLocation,
+                    definition
+                )
+
                 is KotlinMultiplatformDefinitionImpl -> KotlinMultiplatformProjectImpl(
                     subProjectLocation,
                     definition

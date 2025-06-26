@@ -15,15 +15,16 @@
  */
 package com.android.ide.common.repository
 
+import com.android.ide.common.gradle.Version
 import com.google.common.base.Objects
 import java.util.Locale
 
 /**
- * This class is deliberately non-comparable with [GradleVersion], for two reasons: firstly,
+ * This class is deliberately non-comparable with [Version], for two reasons: firstly,
  * the ordering semantics we depend on for `-dev` versions are incompatible with the specified
  * ordering of Gradle version specifiers; secondly, we use Android Gradle Plugin versions as version
  * identifiers in various places in the IDE (particularly in sync-related areas) and it would be a
- * semantic error to compare such a version with a generic Gradle version.
+ * semantic error to compare such a version with a version of a generic (Gradle) artifact.
  */
 class AgpVersion private constructor(
     val major: Int,

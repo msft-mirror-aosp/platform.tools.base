@@ -16,7 +16,8 @@
 
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 
 /**
@@ -26,11 +27,11 @@ import java.io.IOException;
  */
 public interface ArchiveContext extends AutoCloseable {
     /** The main (or "outer") archive */
-    @NonNull
+    @NotNull
     Archive getArchive();
 
     /** The {@lin ArchiveManager} responsible for keeping track of inner archive resources */
-    @NonNull
+    @NotNull
     ArchiveManager getArchiveManager();
 
     /**

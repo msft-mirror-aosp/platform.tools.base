@@ -16,8 +16,13 @@
 
 package com.android.build.gradle.integration.manageddevice.application
 
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
+import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureProject
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule
+import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomAndroidSdk
+import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomSdkDir
 import com.android.build.gradle.integration.manageddevice.utils.addManagedDevice
 import com.android.build.gradle.integration.utp.UtpTestBase
 import org.junit.Rule
@@ -29,6 +34,10 @@ class UtpManagedDeviceTest : UtpTestBase() {
 
     @get:Rule
     val customAndroidSdkRule = CustomAndroidSdkRule()
+
+    init {
+        ruleBuilder.withCustomSdkDir(customAndroidSdkRule)
+    }
 
     companion object {
         private const val DSL_DEVICE_NAME = "device1"
@@ -50,14 +59,20 @@ class UtpManagedDeviceTest : UtpTestBase() {
         private const val TEST_COV_XML = "$REPORTS/coverage/androidTest/debug/managedDevice/report.xml"
     }
 
-    override val executor: GradleTaskExecutor
-        get() = customAndroidSdkRule.run { project.executorWithCustomAndroidSdk() }
+    override fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {
+        withCustomAndroidSdk(customAndroidSdkRule)
+        return this
+    }
 
-    override fun selectModule(moduleName: String, isDynamicFeature: Boolean) {
-        project.getSubproject(moduleName).addManagedDevice(DSL_DEVICE_NAME)
+    override fun selectModule(moduleName: String) {
+        rule.build.subProject(":$moduleName").reconfigure {
+            this as AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>
+            addManagedDevice(DSL_DEVICE_NAME)
+        }
+
         testTaskName = ":${moduleName}:allDevicesCheck"
         testResultXmlPath = "${moduleName}/$TEST_RESULT_XML$moduleName-.xml"
-        if (isDynamicFeature) {
+        if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
             testReportPath = "${moduleName}/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
             testLogcatPath = "${moduleName}/$LOGCAT_FOR_DYNAMIC_FEATURE"
         } else {

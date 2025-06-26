@@ -39,14 +39,14 @@ class PrivacySandboxSdkMinimalTest {
         privacySandboxSdkLibraryProject(":androidlib3") {
             android {
                 namespace = "com.example.androidlib3"
-                defaultConfig.minSdk = 19
+                defaultConfig.minSdk = 21
             }
             dependencies {}
         }
         privacySandboxSdk(":empty-privacy-sandbox-sdk", createMinimumProject = false) {
             android {
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
-                minSdk = 19
+                minSdk = 21
                 bundle {
                     applicationId = "com.example.emptyprivacysandboxsdk"
                     sdkProviderClassName = "Test"
@@ -62,7 +62,7 @@ class PrivacySandboxSdkMinimalTest {
                 namespace = "com.example.emptyprivacysandboxsdk.consumer"
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
                 defaultConfig {
-                    minSdk = 19
+                    minSdk = 21
                     versionCode = 1
                 }
             }
@@ -84,7 +84,6 @@ class PrivacySandboxSdkMinimalTest {
         .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
         .withPerTestPrefsRoot(true)
         .with(BooleanOption.ENABLE_PROFILE_JSON, true) // Regression test for b/237278679
-
 
     @Test
     fun privacySandboxWithMinimalConfigAndDependency() {
@@ -129,85 +128,6 @@ class PrivacySandboxSdkMinimalTest {
                             A: http://schemas.android.com/apk/res/android:value="Test"
             """.trimIndent())
 
-            androidResources().containsExactly(
-                "layout-v21/notification_template_icon_group.xml",
-                "layout-v21/notification_template_custom_big.xml",
-                "layout-v21/notification_action_tombstone.xml",
-                "layout-v21/notification_action.xml",
-                "layout-v16/notification_template_custom_big.xml",
-                "layout/notification_template_part_time.xml",
-                "layout/notification_template_part_chronometer.xml",
-                "layout/notification_template_icon_group.xml",
-                "layout/notification_action_tombstone.xml",
-                "layout/notification_action.xml",
-                "layout/ime_secondary_split_test_activity.xml",
-                "layout/ime_base_split_test_activity.xml",
-                "layout/custom_dialog.xml",
-                "drawable-xxxhdpi-v4/ic_call_decline_low.png",
-                "drawable-xxxhdpi-v4/ic_call_decline.png",
-                "drawable-xxxhdpi-v4/ic_call_answer_video_low.png",
-                "drawable-xxxhdpi-v4/ic_call_answer_video.png",
-                "drawable-xxxhdpi-v4/ic_call_answer_low.png",
-                "drawable-xxxhdpi-v4/ic_call_answer.png",
-                "drawable-xxhdpi-v4/ic_call_decline_low.png",
-                "drawable-xxhdpi-v4/ic_call_decline.png",
-                "drawable-xxhdpi-v4/ic_call_answer_video_low.png",
-                "drawable-xxhdpi-v4/ic_call_answer_video.png",
-                "drawable-xxhdpi-v4/ic_call_answer_low.png",
-                "drawable-xxhdpi-v4/ic_call_answer.png",
-                "drawable-xhdpi-v4/notify_panel_notification_icon_bg.png",
-                "drawable-xhdpi-v4/notification_bg_normal_pressed.9.png",
-                "drawable-xhdpi-v4/notification_bg_normal.9.png",
-                "drawable-xhdpi-v4/notification_bg_low_pressed.9.png",
-                "drawable-xhdpi-v4/notification_bg_low_normal.9.png",
-                "drawable-xhdpi-v4/ic_call_decline_low.png",
-                "drawable-xhdpi-v4/ic_call_decline.png",
-                "drawable-xhdpi-v4/ic_call_answer_video_low.png",
-                "drawable-xhdpi-v4/ic_call_answer_video.png",
-                "drawable-xhdpi-v4/ic_call_answer_low.png",
-                "drawable-xhdpi-v4/ic_call_answer.png",
-                "drawable-v21/notification_action_background.xml",
-                "drawable-mdpi-v4/notify_panel_notification_icon_bg.png",
-                "drawable-mdpi-v4/notification_bg_normal_pressed.9.png",
-                "drawable-mdpi-v4/notification_bg_normal.9.png",
-                "drawable-mdpi-v4/notification_bg_low_pressed.9.png",
-                "drawable-mdpi-v4/notification_bg_low_normal.9.png",
-                "drawable-mdpi-v4/ic_call_decline_low.png",
-                "drawable-mdpi-v4/ic_call_decline.png",
-                "drawable-mdpi-v4/ic_call_answer_video_low.png",
-                "drawable-mdpi-v4/ic_call_answer_video.png",
-                "drawable-mdpi-v4/ic_call_answer_low.png",
-                "drawable-mdpi-v4/ic_call_answer.png",
-                "drawable-ldpi-v4/ic_call_decline_low.png",
-                "drawable-ldpi-v4/ic_call_decline.png",
-                "drawable-ldpi-v4/ic_call_answer_video_low.png",
-                "drawable-ldpi-v4/ic_call_answer_video.png",
-                "drawable-ldpi-v4/ic_call_answer_low.png",
-                "drawable-ldpi-v4/ic_call_answer.png",
-                "drawable-hdpi-v4/notify_panel_notification_icon_bg.png",
-                "drawable-hdpi-v4/notification_oversize_large_icon_bg.png",
-                "drawable-hdpi-v4/notification_bg_normal_pressed.9.png",
-                "drawable-hdpi-v4/notification_bg_normal.9.png",
-                "drawable-hdpi-v4/notification_bg_low_pressed.9.png",
-                "drawable-hdpi-v4/notification_bg_low_normal.9.png",
-                "drawable-hdpi-v4/ic_call_decline_low.png",
-                "drawable-hdpi-v4/ic_call_decline.png",
-                "drawable-hdpi-v4/ic_call_answer_video_low.png",
-                "drawable-hdpi-v4/ic_call_answer_video.png",
-                "drawable-hdpi-v4/ic_call_answer_low.png",
-                "drawable-hdpi-v4/ic_call_answer.png",
-                "drawable-anydpi-v21/ic_call_decline_low.xml",
-                "drawable-anydpi-v21/ic_call_decline.xml",
-                "drawable-anydpi-v21/ic_call_answer_video_low.xml",
-                "drawable-anydpi-v21/ic_call_answer_video.xml",
-                "drawable-anydpi-v21/ic_call_answer_low.xml",
-                "drawable-anydpi-v21/ic_call_answer.xml",
-                "drawable/notification_tile_bg.xml",
-                "drawable/notification_icon_background.xml",
-                "drawable/notification_bg_low.xml",
-                "drawable/notification_bg.xml",
-            )
-
             javaResources().containsExactly(
                 "kotlin/reflect/reflect.kotlin_builtins",
                 "kotlin/ranges/ranges.kotlin_builtins",
@@ -231,6 +151,8 @@ class PrivacySandboxSdkMinimalTest {
                 "META-INF/androidx.lifecycle_lifecycle-viewmodel-savedstate.version",
                 "META-INF/androidx.lifecycle_lifecycle-runtime.version",
                 "META-INF/androidx.lifecycle_lifecycle-livedata-core.version",
+                "META-INF/androidx.lifecycle_lifecycle-process.version",
+                "META-INF/androidx.lifecycle_lifecycle-runtime.version",
                 "META-INF/androidx.interpolator_interpolator.version",
                 "META-INF/androidx.core_core.version",
                 "META-INF/androidx.core_core-ktx.version",

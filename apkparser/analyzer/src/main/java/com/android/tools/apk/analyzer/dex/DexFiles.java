@@ -15,11 +15,13 @@
  */
 package com.android.tools.apk.analyzer.dex;
 
-import com.android.annotations.NonNull;
 import com.android.tools.smali.dexlib2.Opcodes;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
 import com.android.tools.smali.dexlib2.dexbacked.raw.HeaderItem;
 import com.android.tools.smali.dexlib2.util.DexUtil;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,13 +33,13 @@ public final class DexFiles {
 
     private DexFiles() {}
 
-    @NonNull
-    public static DexBackedDexFile getDexFile(@NonNull Path p) throws IOException {
+    @NotNull
+    public static DexBackedDexFile getDexFile(@NotNull Path p) throws IOException {
         return getDexFile(Files.readAllBytes(p));
     }
 
-    @NonNull
-    public static DexBackedDexFile getDexFile(@NonNull byte[] contents) {
+    @NotNull
+    public static DexBackedDexFile getDexFile(@NotNull byte[] contents) {
         try {
             return new DexBackedDexFile(DEFAULT_OPCODES, contents);
         } catch (DexUtil.UnsupportedFile e) {

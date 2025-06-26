@@ -16,8 +16,9 @@
 
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,13 +33,13 @@ public interface ArchiveManager extends Closeable {
      * Opens a {@link ArchiveContext} given a {@link Path}. The returned archive is valid until the
      * {@link #close()} method is called.
      */
-    @NonNull
-    ArchiveContext openArchive(@NonNull Path path) throws IOException;
+    @NotNull
+    ArchiveContext openArchive(@NotNull Path path) throws IOException;
 
     /**
      * Opens the inner {@link Archive} corresponding to the child {@link Path} of a given parent
      * {@link Archive}. Returns {@code null} if the path is not an {@link Archive}.
      */
     @Nullable
-    Archive openInnerArchive(@NonNull Archive archive, @NonNull Path childPath) throws IOException;
+    Archive openInnerArchive(@NotNull Archive archive, @NotNull Path childPath) throws IOException;
 }

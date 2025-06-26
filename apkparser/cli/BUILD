@@ -34,7 +34,6 @@ coverage_java_library(
     srcs = glob(["src/main/java/**"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//tools/base/annotations",
         "//tools/base/apkparser:tools.binary-resources",
         "//tools/base/apkparser/analyzer:tools.analyzer",
         "//tools/base/common:tools.common",
@@ -43,6 +42,7 @@ coverage_java_library(
         "//tools/base/sdklib:tools.sdklib",
         "@maven//:com.android.tools.smali.smali-dexlib2",
         "@maven//:net.sf.jopt-simple.jopt-simple",
+        "@maven//:org.jetbrains.annotations",
     ],
 )
 

@@ -15,6 +15,8 @@
  */
 package com.android.tools.apk.analyzer.dex;
 
+import java.util.Locale;
+
 public class KeepRuleBuilder {
 
     public static final String KEEP_PREAMBLE =
@@ -72,7 +74,7 @@ public class KeepRuleBuilder {
         }
         StringBuilder sb = new StringBuilder();
         sb.append("-");
-        sb.append(keepType.toString().toLowerCase());
+        sb.append(keepType.toString().toLowerCase(Locale.ROOT));
         sb.append(" class ");
 
         if (!packageName.isEmpty()) {

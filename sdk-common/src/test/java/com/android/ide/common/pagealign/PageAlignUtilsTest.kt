@@ -106,6 +106,23 @@ class PageAlignUtilsTest {
     }
 
     @Test
+    fun `Repro 425337033 - corrupted APK`() {
+        val zipBytes = ZipBuilder()
+                        .addFile("lib/arm64-v8a/elf.so", SO_FILE_16K_ALIGNED, AlignedUncompressed)
+                        .toByteArray()
+        // Set each byte to zero and try findElfFile16kAlignmentInfo
+        // Before the fix, this would throw ZipException or IOException depending on where in the
+        // zip body the zero was injected.
+        for (i in zipBytes.indices) {
+            val save = zipBytes[i]
+            zipBytes[i] = 0
+            findElfFile16kAlignmentInfo(ZipArchiveInputStream(ByteArrayInputStream(zipBytes)))
+            zipBytes[i] = save
+        }
+
+    }
+
+    @Test
     fun `APK with so file that is 16 KB aligned LOAD sections`() {
         // .so file is compressed and not 16k aligned
         assertThat(checkZipPageAlign(SO_FILE_16K_ALIGNED, UnalignedCompressed))

@@ -25,39 +25,6 @@
 
     <issue
         id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="                return String.format("
-        errorLine2="                       ^">
-        <location
-            file="src/test/java/com/android/ide/common/repository/GradleVersionTest.java"
-            line="698"
-            column="24"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="                return String.format("
-        errorLine2="                       ^">
-        <location
-            file="src/test/java/com/android/ide/common/repository/GradleVersionTest.java"
-            line="706"
-            column="24"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="            return String.format("
-        errorLine2="                   ^">
-        <location
-            file="src/test/java/com/android/ide/common/repository/GradleVersionTest.java"
-            line="710"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
         message="Implicitly using the default locale is a common source of bugs: Use `toLowerCase(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
         errorLine1="                Arrays.asList(keyAlias1.toLowerCase(), keyAlias2.toLowerCase()),"
         errorLine2="                                        ~~~~~~~~~~~">

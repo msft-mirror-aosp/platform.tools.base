@@ -429,7 +429,6 @@ com.android.tools.apkparser:apkanalyzer
   pomName=Apk Analyzer library
   description=Library for parsing and analyzing information from APK files
   dependencies:
-    com.android.tools:annotations (runtime)
     com.android.tools.apkparser:binary-resources (runtime)
     com.android.tools:common (runtime)
     com.android.tools:sdk-common (runtime)

@@ -15,16 +15,18 @@
  */
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Locale;
 import java.util.function.Predicate;
+
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 
 public class FilteredTreeModel<T> extends DefaultTreeModel {
     private final Predicate<T> predicate;
 
-    public FilteredTreeModel(@NonNull TreeNode treeNode, @NonNull Predicate<T> predicate) {
+    public FilteredTreeModel(@NotNull TreeNode treeNode, @NotNull Predicate<T> predicate) {
         super(treeNode);
         this.predicate = predicate;
     }

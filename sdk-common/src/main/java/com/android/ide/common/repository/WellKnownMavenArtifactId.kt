@@ -20,6 +20,7 @@ import com.android.ide.common.gradle.Dependency
 import com.android.ide.common.gradle.Module
 import com.android.ide.common.gradle.RichVersion
 import com.android.ide.common.gradle.Version
+import org.jetbrains.annotations.TestOnly
 
 sealed interface WellKnownMavenArtifactId {
     val groupId: String
@@ -28,6 +29,8 @@ sealed interface WellKnownMavenArtifactId {
     fun getModule(): Module =
         Module(groupId, artifactId)
 
+    @Suppress("DEPRECATION")
+    @TestOnly
     fun getCoordinate(revision: String): GradleCoordinate =
         GradleCoordinate(groupId, artifactId, revision)
 
@@ -47,6 +50,7 @@ sealed interface WellKnownMavenArtifactId {
         @JvmField val TFLITE_METADATA: WellKnownMavenArtifactId = WellKnownTfliteArtifactId("tensorflow-lite-metadata")
         @JvmField val TFLITE_SUPPORT: WellKnownMavenArtifactId = WellKnownTfliteArtifactId("tensorflow-lite-support")
         @JvmField val GUAVA_GUAVA: WellKnownMavenArtifactId = WellKnownGuavaArtifactId("guava")
+        @JvmField val JUNIT_JUNIT: WellKnownMavenArtifactId = WellKnownJUnitArtifactId("junit")
 
         @JvmStatic
         fun find(groupId: String, artifactId: String) =
@@ -89,4 +93,14 @@ private data class WellKnownGuavaArtifactId(
     }
 
     override fun toString() = displayName
+}
+
+private data class WellKnownJUnitArtifactId(
+    override val artifactId: String
+): WellKnownMavenArtifactId {
+    override val groupId = "junit"
+
+    init {
+        WellKnownMavenArtifactId.IDS_BY_GROUP_ARTIFACT_PAIR[groupId to artifactId] = this
+    }
 }

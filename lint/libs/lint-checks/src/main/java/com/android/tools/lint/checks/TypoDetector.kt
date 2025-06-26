@@ -228,7 +228,7 @@ class TypoDetector : ResourceXmlDetector() {
       context.report(
         ISSUE,
         node,
-        context.getLocation(node, begin, index),
+        context.getLocation(node, begin, end),
         "Did you mean \"$intended\" instead of \"$actual\"?",
         fix,
       )
@@ -467,6 +467,7 @@ class TypoDetector : ResourceXmlDetector() {
         return true
       }
       when (word) {
+        "die", // German; b/425974265
         "that",
         "yadda",
         "bye",

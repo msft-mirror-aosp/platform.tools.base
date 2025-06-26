@@ -17,9 +17,12 @@
 package com.android.tools.apk.analyzer.internal;
 
 import com.android.SdkConstants;
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.Archive;
+
 import com.google.common.primitives.Shorts;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -44,12 +47,12 @@ public class ApkArchive extends ZipArchive {
                     SdkConstants.FN_BINART_ART_PROFILE_FOLDER_IN_APK,
                     SdkConstants.FN_BINARY_ART_PROFILE_METADATA);
 
-    public ApkArchive(@NonNull Path artifact) throws IOException {
+    public ApkArchive(@NotNull Path artifact) throws IOException {
         super(artifact);
     }
 
     @Override
-    public boolean isBinaryXml(@NonNull Path p, @NonNull byte[] content) {
+    public boolean isBinaryXml(@NotNull Path p, @NotNull byte[] content) {
         if (!p.toString().endsWith(SdkConstants.DOT_XML)) {
             return false;
         }
@@ -75,7 +78,7 @@ public class ApkArchive extends ZipArchive {
     }
 
     @Override
-    public boolean isBaselineProfile(@NonNull Path p, @NonNull byte[] content) {
+    public boolean isBaselineProfile(@NotNull Path p, @NotNull byte[] content) {
         String path = p.toString();
 
         return path.equals(APK_BASELINE_PROFILE_PATH)

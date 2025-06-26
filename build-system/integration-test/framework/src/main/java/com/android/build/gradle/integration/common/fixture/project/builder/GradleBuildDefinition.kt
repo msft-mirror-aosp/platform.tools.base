@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.fixture.project.AssetPackDefi
 import com.android.build.gradle.integration.common.fixture.project.DependencySubstitutionsBuilder
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
@@ -222,6 +223,14 @@ interface GradleBuildDefinition {
         createMinimumProject: Boolean = true,
         action: FusedLibraryDefinition.() -> Unit
     ): FusedLibraryDefinition
+
+    /**
+     * Configures a subproject with the Java Library plugin, creating it if needed.
+     */
+    fun javaLibrary(
+        path: String,
+        action: JavaLibraryProjectDefinition.() -> Unit
+    ): JavaLibraryProjectDefinition
 
     /**
      * Configures a subProject with the Kotlin multiplatform plugin, configured with the Android

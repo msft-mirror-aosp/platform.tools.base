@@ -258,6 +258,7 @@ com/android/tools/apkdeployer/apkdeployer
 com/android/tools/apkparser/apkanalyzer
   META-INF/
   META-INF/MANIFEST.MF
+  META-INF/unnamed.kotlin_module
   NOTICE
   com/
   com/android/

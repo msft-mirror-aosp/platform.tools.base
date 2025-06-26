@@ -15,8 +15,6 @@
  */
 package com.android.tools.apk.analyzer.dex;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.apk.analyzer.internal.SigUtils;
 import com.android.tools.apk.analyzer.internal.rewriters.FieldReferenceWithNameRewriter;
 import com.android.tools.apk.analyzer.internal.rewriters.MethodReferenceWithNameRewriter;
@@ -39,22 +37,26 @@ import com.android.tools.smali.dexlib2.rewriter.Rewriters;
 import com.android.tools.smali.dexlib2.rewriter.TypeRewriter;
 import com.android.tools.smali.dexlib2.util.ReferenceUtil;
 import com.android.tools.smali.util.IndentingWriter;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 public class DexDisassembler {
-    @NonNull private final DexFile dexFile;
+    @NotNull private final DexFile dexFile;
     @Nullable private final ProguardMap proguardMap;
 
-    public DexDisassembler(@NonNull DexBackedDexFile dexFile, @Nullable ProguardMap proguardMap) {
+    public DexDisassembler(@NotNull DexBackedDexFile dexFile, @Nullable ProguardMap proguardMap) {
         this.dexFile = proguardMap == null ? dexFile : rewriteDexFile(dexFile, proguardMap);
         this.proguardMap = proguardMap;
     }
 
-    @NonNull
-    public String disassembleMethod(@NonNull String fqcn, @NonNull String methodDescriptor)
+    @NotNull
+    public String disassembleMethod(@NotNull String fqcn, @NotNull String methodDescriptor)
             throws IOException {
         fqcn = PackageTreeCreator.decodeClassName(SigUtils.typeToSignature(fqcn), proguardMap);
         Optional<? extends ClassDef> classDef = getClassDef(fqcn);
@@ -75,8 +77,8 @@ public class DexDisassembler {
         return getMethodDexCode(classDef.get(), method.get());
     }
 
-    @NonNull
-    public String disassembleMethod(@NonNull String fqcn, @NonNull MethodReference methodRef)
+    @NotNull
+    public String disassembleMethod(@NotNull String fqcn, @NotNull MethodReference methodRef)
             throws IOException {
         fqcn = PackageTreeCreator.decodeClassName(SigUtils.typeToSignature(fqcn), proguardMap);
         Optional<? extends ClassDef> classDef = getClassDef(fqcn);
@@ -101,7 +103,7 @@ public class DexDisassembler {
         return getMethodDexCode(classDef.get(), method.get());
     }
 
-    @NonNull
+    @NotNull
     private static String getMethodDexCode(ClassDef classDef, Method method) throws IOException {
         BaksmaliOptions options = new BaksmaliOptions();
         ClassDefinition classDefinition = new ClassDefinition(options, classDef);
@@ -122,8 +124,8 @@ public class DexDisassembler {
         return writer.toString().replace("\r", "");
     }
 
-    @NonNull
-    public String disassembleClass(@NonNull String fqcn) throws IOException {
+    @NotNull
+    public String disassembleClass(@NotNull String fqcn) throws IOException {
         fqcn = PackageTreeCreator.decodeClassName(SigUtils.typeToSignature(fqcn), proguardMap);
         Optional<? extends ClassDef> classDef = getClassDef(fqcn);
         if (!classDef.isPresent()) {
@@ -140,32 +142,32 @@ public class DexDisassembler {
         return writer.toString().replace("\r", "");
     }
 
-    private static DexFile rewriteDexFile(@NonNull DexFile dexFile, @NonNull ProguardMap map) {
+    private static DexFile rewriteDexFile(@NotNull DexFile dexFile, @NotNull ProguardMap map) {
         DexRewriter rewriter = getRewriter(map);
         return rewriter.getDexFileRewriter().rewrite(dexFile);
     }
 
-    @NonNull
-    private static DexRewriter getRewriter(@NonNull ProguardMap map) {
+    @NotNull
+    private static DexRewriter getRewriter(@NotNull ProguardMap map) {
         return new DexRewriter(
                 new RewriterModule() {
-                    @NonNull
+                    @NotNull
                     @Override
-                    public Rewriter<String> getTypeRewriter(@NonNull Rewriters rewriters) {
+                    public Rewriter<String> getTypeRewriter(@NotNull Rewriters rewriters) {
                         return new TypeRewriter() {
-                            @NonNull
+                            @NotNull
                             @Override
-                            public String rewrite(@NonNull String typeName) {
+                            public String rewrite(@NotNull String typeName) {
                                 return SigUtils.typeToSignature(
                                         PackageTreeCreator.decodeClassName(typeName, map));
                             }
                         };
                     }
 
-                    @NonNull
+                    @NotNull
                     @Override
                     public Rewriter<FieldReference> getFieldReferenceRewriter(
-                            @NonNull Rewriters rewriters) {
+                            @NotNull Rewriters rewriters) {
                         return new FieldReferenceWithNameRewriter(rewriters) {
                             @Override
                             public String rewriteName(FieldReference fieldReference) {
@@ -174,10 +176,10 @@ public class DexDisassembler {
                         };
                     }
 
-                    @NonNull
+                    @NotNull
                     @Override
                     public Rewriter<MethodReference> getMethodReferenceRewriter(
-                            @NonNull Rewriters rewriters) {
+                            @NotNull Rewriters rewriters) {
                         return new MethodReferenceWithNameRewriter(rewriters) {
                             @Override
                             public String rewriteName(MethodReference methodReference) {
@@ -188,8 +190,8 @@ public class DexDisassembler {
                 });
     }
 
-    @NonNull
-    private Optional<? extends ClassDef> getClassDef(@NonNull String fqcn) {
+    @NotNull
+    private Optional<? extends ClassDef> getClassDef(@NotNull String fqcn) {
         return dexFile.getClasses()
                 .stream()
                 .filter(c -> fqcn.equals(SigUtils.signatureToName(c.getType())))

@@ -16,9 +16,9 @@
 package com.android.tools.apk.analyzer.dex;
 
 import static com.android.tools.apk.analyzer.dex.DexFiles.getDexFile;
+
 import static org.junit.Assert.assertEquals;
 
-import com.android.annotations.NonNull;
 import com.android.testutils.TestResources;
 import com.android.tools.apk.analyzer.dex.tree.DexElementNode;
 import com.android.tools.apk.analyzer.dex.tree.DexPackageNode;
@@ -26,6 +26,10 @@ import com.android.tools.proguard.ProguardMap;
 import com.android.tools.proguard.ProguardSeedsMap;
 import com.android.tools.proguard.ProguardUsagesMap;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+
+import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +37,6 @@ import java.text.ParseException;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
-import org.junit.Test;
 
 public class PackageTreeCreatorTest {
     @Test
@@ -361,14 +364,14 @@ public class PackageTreeCreatorTest {
                 sb.toString());
     }
 
-    @NonNull
-    public static DexBackedDexFile getTestDexFile(@NonNull Path dexPath) throws IOException {
+    @NotNull
+    public static DexBackedDexFile getTestDexFile(@NotNull Path dexPath) throws IOException {
         return getDexFile(Files.readAllBytes(dexPath));
     }
 
     private static void dumpTree(
             StringBuffer sb,
-            @NonNull DexElementNode node,
+            @NotNull DexElementNode node,
             int depth,
             ProguardSeedsMap seeds,
             ProguardMap map) {

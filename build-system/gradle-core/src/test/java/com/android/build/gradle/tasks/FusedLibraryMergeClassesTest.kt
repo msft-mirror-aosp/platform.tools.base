@@ -83,6 +83,7 @@ internal class FusedLibraryMergeClassesTest {
         task.incoming.from(jar1, jar2)
         task.outputDirectory.set(build)
         task.analyticsService.set(FakeNoOpAnalyticsService())
+        task.includeManifest.set(false)
 
         action(jar1, jar2, task)
     }

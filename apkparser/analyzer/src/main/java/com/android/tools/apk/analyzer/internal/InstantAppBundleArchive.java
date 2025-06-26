@@ -16,9 +16,11 @@
 
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.Archive;
 import com.android.utils.FileUtils;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileVisitResult;
@@ -34,9 +36,9 @@ import java.nio.file.attribute.BasicFileAttributes;
  * temporary directory. The {@link #close()} method deletes this temporary directory.
  */
 public class InstantAppBundleArchive extends AbstractArchive {
-    @NonNull private final Path extractedFilesPath;
+    @NotNull private final Path extractedFilesPath;
 
-    private InstantAppBundleArchive(@NonNull Path path) throws IOException {
+    private InstantAppBundleArchive(@NotNull Path path) throws IOException {
         super(path);
         this.extractedFilesPath = Files.createTempDirectory(path.getFileName().toString());
 
@@ -45,7 +47,7 @@ public class InstantAppBundleArchive extends AbstractArchive {
         extractArchiveContents(path);
     }
 
-    private void extractArchiveContents(@NonNull Path artifact) throws IOException {
+    private void extractArchiveContents(@NotNull Path artifact) throws IOException {
         try (FileSystem fileSystem = FileUtils.createZipFilesystem(artifact)) {
             Files.walkFileTree(
                     fileSystem.getPath("/"),
@@ -54,7 +56,7 @@ public class InstantAppBundleArchive extends AbstractArchive {
     }
 
     @Override
-    @NonNull
+    @NotNull
     public Path getContentRoot() {
         return extractedFilesPath;
     }
@@ -68,7 +70,7 @@ public class InstantAppBundleArchive extends AbstractArchive {
         private final Path source;
         private final Path destination;
 
-        public CopyPathFileVisitor(@NonNull FileSystem source, @NonNull Path destination) {
+        public CopyPathFileVisitor(@NotNull FileSystem source, @NotNull Path destination) {
             this.source = source.getPath("/");
             this.destination = destination;
         }

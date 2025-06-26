@@ -124,6 +124,12 @@ maven_repository(
 )
 
 filegroup(
+    name = "gradle-distrib-8.13",
+    srcs = ["//tools/external/gradle:gradle-distrib-8.13"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "gradle-distrib-8.11.1",
     srcs = ["//tools/external/gradle:gradle-distrib-8.11.1"],
     visibility = ["//visibility:public"],
@@ -571,7 +577,7 @@ maven_repository(
         "//tools/data-binding:tools.baseLibrarySupport",
         "//tools/data-binding:tools.compiler",
         "//tools/data-binding:tools.compilerCommon",
-        "@maven//:androidx.privacysandbox.tools.tools-apigenerator_1.0.0-alpha10",
+        "@maven//:androidx.privacysandbox.tools.tools-apigenerator_1.0.0-alpha13",
         "@maven//:com.android.tools.build.bundletool",
         "@maven//:com.android.tools.build.jetifier.jetifier-processor",
         "@maven//:com.android.tools.build.transform-api",

@@ -16,22 +16,23 @@
 
 package com.android.tools.apk.analyzer;
 
-import com.android.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.file.Path;
 
 public class InnerArchiveEntry extends ArchivePathEntry {
-    @NonNull private final Archive innerArchive;
+    @NotNull private final Archive innerArchive;
 
     public InnerArchiveEntry(
-            @NonNull Archive archive,
-            @NonNull Path path,
-            @NonNull String pathPrefix,
-            @NonNull Archive innerArchive) {
+            @NotNull Archive archive,
+            @NotNull Path path,
+            @NotNull String pathPrefix,
+            @NotNull Archive innerArchive) {
         super(archive, path, pathPrefix);
         this.innerArchive = innerArchive;
     }
 
-    @NonNull
+    @NotNull
     public ArchiveEntry asArchiveEntry() {
         return new ArchivePathEntry(innerArchive, innerArchive.getContentRoot(), getPathPrefix());
     }

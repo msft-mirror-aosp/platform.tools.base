@@ -16,9 +16,11 @@
 
 package com.android.tools.apk.analyzer.internal;
 
-import com.android.annotations.NonNull;
 import com.android.tools.apk.analyzer.Archive;
 import com.android.utils.FileUtils;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -30,15 +32,15 @@ import java.nio.file.Path;
  * method is called.
  */
 public class ZipArchive extends AbstractArchive {
-    @NonNull private final FileSystem zipFileSystem;
+    @NotNull private final FileSystem zipFileSystem;
 
-    public ZipArchive(@NonNull Path path) throws IOException {
+    public ZipArchive(@NotNull Path path) throws IOException {
         super(path);
         this.zipFileSystem = FileUtils.createZipFilesystem(path);
     }
 
     @Override
-    @NonNull
+    @NotNull
     public Path getContentRoot() {
         return zipFileSystem.getPath("/");
     }

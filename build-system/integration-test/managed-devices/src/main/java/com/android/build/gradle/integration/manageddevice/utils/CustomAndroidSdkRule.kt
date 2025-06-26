@@ -16,12 +16,9 @@
 
 package com.android.build.gradle.integration.manageddevice.utils
 
-import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.GradleRuleBuilder
 import com.android.build.gradle.integration.common.utils.SdkHelper
-import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.StringOption
@@ -60,79 +57,54 @@ class CustomAndroidSdkRule : ExternalResource() {
     }
     private val systemImageRemotePackage by lazy { System.getProperty("sdk.repo.sysimage.remotePackage") }
     private val systemImageDisplayName by lazy { System.getProperty("sdk.repo.sysimage.displayName") }
-    val systemImageApiLevel: String by lazy { System.getProperty("sdk.repo.sysimage.apiLevel") }
-    val systemImageSource: String by lazy { System.getProperty("sdk.repo.sysimage.source") }
+    private val systemImageApiLevel: String by lazy { System.getProperty("sdk.repo.sysimage.apiLevel") }
 
     private val emulatorZip by lazy { File(System.getProperty("sdk.repo.emulator.zip")) }
+
+    companion object {
+        fun GradleRuleBuilder.withCustomSdkDir(rule: CustomAndroidSdkRule): GradleRuleBuilder {
+            withSdk {
+                sdkDir(rule.customSdkDir.toPath())
+            }
+            return this
+        }
+
+        /**
+         * Returns a valid executor for running managed device tasks.
+         *
+         * Running managed devices require a custom location for the avds to be created. Needs to be
+         * able to download the system-image from a local repo dir. Runs on the canary channel. Runs the
+         * emulator in software-rendering mode.
+         */
+        fun GradleTaskExecutor.withCustomAndroidSdk(rule: CustomAndroidSdkRule): GradleTaskExecutor {
+            if (!rule.customUserHomeDir.exists()) {
+                FileUtils.mkdirs(rule.customUserHomeDir)
+            }
+            if (!rule.customAndroidPrefDir.exists()) {
+                FileUtils.mkdirs(rule.customAndroidPrefDir)
+            }
+
+            withLocalPrefsRoot()
+            withEnvironmentVariables(mapOf(
+                "HOME" to rule.customUserHomeDir.absolutePath,
+                "ANDROID_USER_HOME" to rule.customAndroidPrefDir.absolutePath
+            ))
+            withoutOfflineFlag()
+            withSdkAutoDownload()
+            with(IntegerOption.ANDROID_SDK_CHANNEL, 3)
+            with(StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE, "swiftshader_indirect")
+            with(BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING, true)
+            with(IntegerOption.GRADLE_MANAGED_DEVICE_SETUP_TIMEOUT_MINUTES, 2)
+            if (TestUtils.runningFromBazel()) {
+                withArgument("-D${AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}=file:///${rule.customSdkRepo.absolutePath}/")
+            }
+            return this
+        }
+    }
 
     override fun before() {
         setupSdk()
         setupSdkRepo()
-    }
-
-    /**
-     * Returns a valid executor for running managed device tasks.
-     *
-     * Running managed devices require a custom location for the avds to be created. Needs to be
-     * able to download the system-image from a local repo dir. Runs on the canary channel. Runs the
-     * emulator in software-rendering mode.
-     */
-    fun GradleTestProject.executorWithCustomAndroidSdk(): GradleTaskExecutor {
-        val sdkDirProp = "${SdkConstants.SDK_DIR_PROPERTY} = ${customSdkDir.absolutePath.replace("\\", "\\\\")}"
-        if (!localProp.readText().contains(sdkDirProp)) {
-            TestFileUtils.appendToFile(localProp, System.lineSeparator() + sdkDirProp)
-        }
-        if (!customUserHomeDir.exists()) {
-            FileUtils.mkdirs(customUserHomeDir)
-        }
-        if (!customAndroidPrefDir.exists()) {
-            FileUtils.mkdirs(customAndroidPrefDir)
-        }
-        return executor()
-            .withLocalPrefsRoot()
-            .withEnvironmentVariables(mapOf(
-                "HOME" to customUserHomeDir.absolutePath,
-                "ANDROID_USER_HOME" to customAndroidPrefDir.absolutePath
-            ))
-            .withoutOfflineFlag()
-            .withSdkAutoDownload()
-            .with(IntegerOption.ANDROID_SDK_CHANNEL, 3)
-            .with(StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE, "swiftshader_indirect")
-            .with(BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING, true)
-            .with(IntegerOption.GRADLE_MANAGED_DEVICE_SETUP_TIMEOUT_MINUTES, 2)
-            .apply {
-                if (TestUtils.runningFromBazel()) {
-                    withArgument("-D${AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}=file:///${customSdkRepo.absolutePath}/")
-                }
-            }
-    }
-
-    fun GradleRule.executorWithCustomAndroidSdk(): GradleTaskExecutor {
-        if (!customUserHomeDir.exists()) {
-            FileUtils.mkdirs(customUserHomeDir)
-        }
-        if (!customAndroidPrefDir.exists()) {
-            FileUtils.mkdirs(customAndroidPrefDir)
-        }
-        return configure().withSdk {
-            sdkDir(customSdkDir.toPath())
-        }.build.executor
-            .withLocalPrefsRoot()
-            .withEnvironmentVariables(mapOf(
-                "HOME" to customUserHomeDir.absolutePath,
-                "ANDROID_USER_HOME" to customAndroidPrefDir.absolutePath
-            ))
-            .withoutOfflineFlag()
-            .withSdkAutoDownload()
-            .with(IntegerOption.ANDROID_SDK_CHANNEL, 3)
-            .with(StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE, "swiftshader_indirect")
-            .with(BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING, true)
-            .with(IntegerOption.GRADLE_MANAGED_DEVICE_SETUP_TIMEOUT_MINUTES, 2)
-            .apply {
-                if (TestUtils.runningFromBazel()) {
-                    withArgument("-D${AndroidSdkHandler.SDK_TEST_BASE_URL_PROPERTY}=file:///${customSdkRepo.absolutePath}/")
-                }
-            }
     }
 
     /**

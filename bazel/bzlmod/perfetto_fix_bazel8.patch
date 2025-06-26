@@ -50,3 +50,35 @@ index c53602ede1..abbf89c4a1 100755
    headers: Dict[str, Header] = {}
    for table in parse_tables_from_modules(modules):
      input_path = get_relin_path_from_module_path(table.table.python_module)
+diff --git a/include/perfetto/trace_processor/read_trace.h b/include/perfetto/trace_processor/read_trace.h
+index 415d7d2ded..0935f7ecff 100644
+--- a/include/perfetto/trace_processor/read_trace.h
++++ b/include/perfetto/trace_processor/read_trace.h
+@@ -32,7 +32,8 @@ class TraceProcessor;
+ util::Status PERFETTO_EXPORT_COMPONENT ReadTrace(
+     TraceProcessor* tp,
+     const char* filename,
+-    const std::function<void(uint64_t parsed_size)>& progress_callback = {});
++    const std::function<void(uint64_t parsed_size)>& progress_callback = {},
++    bool call_notify_end_of_file = true);
+
+ util::Status PERFETTO_EXPORT_COMPONENT
+ DecompressTrace(const uint8_t* data, size_t size, std::vector<uint8_t>* output);
+diff --git a/src/trace_processor/read_trace.cc b/src/trace_processor/read_trace.cc
+index 9d5a1f7ea0..b618c14f33 100644
+--- a/src/trace_processor/read_trace.cc
++++ b/src/trace_processor/read_trace.cc
+@@ -75,9 +75,11 @@ class SerializingProtoTraceReader : public ChunkedTraceReader {
+ util::Status ReadTrace(
+     TraceProcessor* tp,
+     const char* filename,
+-    const std::function<void(uint64_t parsed_size)>& progress_callback) {
++    const std::function<void(uint64_t parsed_size)>& progress_callback,
++    bool call_notify_end_of_file) {
+   ReadTraceUnfinalized(tp, filename, progress_callback);
+-  tp->NotifyEndOfFile();
++  if (call_notify_end_of_file)
++    tp->NotifyEndOfFile();
+   return util::OkStatus();
+ }
+ 
