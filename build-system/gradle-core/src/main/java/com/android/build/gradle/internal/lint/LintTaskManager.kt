@@ -16,7 +16,6 @@ import com.android.build.gradle.internal.tasks.LintModelMetadataTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskFactory
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
-import com.android.build.gradle.internal.variant.VariantModel
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
@@ -29,7 +28,7 @@ import java.io.File
 import java.util.Locale
 
 /** Factory for the LintModel based lint tasks */
-class LintTaskManager constructor(
+class LintTaskManager(
     private val globalTaskCreationConfig: GlobalTaskCreationConfig,
     private val taskFactory: TaskFactory,
     private val project: Project
@@ -51,29 +50,13 @@ class LintTaskManager constructor(
 
     fun createLintTasks(
         componentType: ComponentType,
-        variantModel: VariantModel,
-        variantPropertiesList: List<VariantCreationConfig>,
-        testComponentPropertiesList: Collection<TestComponentCreationConfig>,
-        isPerComponent: Boolean
-    ) {
-        return createLintTasks(
-            componentType,
-            defaultVariant = variantModel.defaultVariant,
-            variantPropertiesList,
-            testComponentPropertiesList,
-            isPerComponent
-        )
-    }
-
-
-    fun createLintTasks(
-        componentType: ComponentType,
         defaultVariant: String?,
         variantPropertiesList: List<VariantCreationConfig>,
         testComponentPropertiesList: Collection<TestComponentCreationConfig>,
-        isPerComponent: Boolean
+        isPerComponent: Boolean,
     ) {
-        runConfigurationValidation(componentType, variantPropertiesList)
+        val lintOptions = globalTaskCreationConfig.lintOptions
+        runConfigurationValidation(componentType, variantPropertiesList, lintOptions)
 
         if (componentType.isForTesting) {
             return // Don't  create lint tasks in test-only projects
@@ -81,12 +64,12 @@ class LintTaskManager constructor(
 
         val variantsWithTests = attachTestsToVariants(
             variantPropertiesList = variantPropertiesList,
-            testComponentPropertiesList = if (globalTaskCreationConfig.lintOptions.ignoreTestSources) {
+            testComponentPropertiesList = if (lintOptions.ignoreTestSources) {
                 listOf()
             } else {
                 testComponentPropertiesList
             },
-            ignoreTestFixturesSources = globalTaskCreationConfig.lintOptions.ignoreTestFixturesSources
+            ignoreTestFixturesSources = lintOptions.ignoreTestFixturesSources
         )
 
         // Map of task path to the providers for tasks that that task subsumes,
@@ -94,7 +77,7 @@ class LintTaskManager constructor(
         // e.g. Running `lintRelease` should cause `lintVitalRelease` to be skipped,
         val variantLintTaskToLintVitalTask = mutableMapOf<String, TaskProvider<out Task>>()
 
-        val needsCopyReportTask = needsCopyReportTask(globalTaskCreationConfig.lintOptions)
+        val needsCopyReportTask = needsCopyReportTask(lintOptions)
 
         for (variantWithTests in variantsWithTests.values) {
             val mainVariant = variantWithTests.main
@@ -373,8 +356,12 @@ class LintTaskManager constructor(
 
     private fun getTaskPath(taskName: String) = TaskManager.getTaskPath(project, taskName)
 
-    private fun runConfigurationValidation(componentType: ComponentType, variantPropertiesList: List<VariantCreationConfig>) {
-        val targetSdkVersion = globalTaskCreationConfig.lintOptions.run { createTargetSdkVersion(targetSdk,targetSdkPreview) }
+    private fun runConfigurationValidation(
+        componentType: ComponentType,
+        variantPropertiesList: List<VariantCreationConfig>,
+        lintOptions: Lint,
+    ) {
+        val targetSdkVersion = lintOptions.run { createTargetSdkVersion(targetSdk,targetSdkPreview) }
         if (targetSdkVersion != null && !componentType.isAar) {
             val versionToName = mutableMapOf<Int, MutableList<String>>()
             for (variant in variantPropertiesList) {

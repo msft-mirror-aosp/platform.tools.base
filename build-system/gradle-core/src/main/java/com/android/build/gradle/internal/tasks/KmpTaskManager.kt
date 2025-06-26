@@ -266,13 +266,15 @@ class KmpTaskManager(
         // Create lint tasks here only if the lint standalone plugin is applied (to avoid
         // Android-specific behavior)
         if (project.plugins.hasPlugin(LINT_PLUGIN_ID)) {
-            lintTaskManager.createLintTasks(
-                ComponentTypeImpl.KMP_ANDROID,
-                variant.name,
-                listOf(variant),
-                testComponentPropertiesList = emptyList(),
-                isPerComponent = true
-            )
+            globalConfig.lintOptions?.let { lintOptions ->
+                lintTaskManager.createLintTasks(
+                    ComponentTypeImpl.KMP_ANDROID,
+                    variant.name,
+                    listOf(variant),
+                    testComponentPropertiesList = emptyList(),
+                    isPerComponent = true,
+                )
+            }
         }
 
         project.tasks.registerTask(BundleAar.KotlinMultiplatformLocalLintCreationAction(variant))
