@@ -5,6 +5,7 @@ TEST_DEPS = [
     "//tools/base/build-system/integration-test/framework",
     "//tools/base/annotations",
     "//tools/base/build-system:gradle-api",
+    "//tools/base/build-system/gradle-common-api",
     "//tools/base/common:tools.common",
     "//tools/base/testutils:tools.testutils",
     "@maven//:com.google.guava.guava",

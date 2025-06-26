@@ -683,6 +683,17 @@ com/android/tools/build/gradle-api
   com/android/build/gradle/
   com/android/build/gradle/api/
 
+com/android/tools/build/gradle-common-api
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/gradle-common-api.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/build/
+  com/android/build/api/
+  com/android/build/api/dsl/
+
 com/android/tools/build/gradle-kotlin
   META-INF/
   META-INF/MANIFEST.MF

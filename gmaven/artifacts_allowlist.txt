@@ -49,6 +49,7 @@
   com/android/tools/build:builder-test-api
   com/android/tools/build:gradle
   com/android/tools/build:gradle-api
+  com/android/tools/build:gradle-common-api
   com/android/tools/build:gradle-kotlin
   com/android/tools/build:gradle-settings
   com/android/tools/build:gradle-settings-api

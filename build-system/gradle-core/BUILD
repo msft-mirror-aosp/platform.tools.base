@@ -225,6 +225,7 @@ kotlin_test(
         "//tools/base/build-system/builder-r8",
         "//tools/base/build-system/builder-test-api:tools.builder-test-api",
         "//tools/base/build-system/gradle-api",
+        "//tools/base/build-system/gradle-common-api",
         "//tools/base/build-system/shrinker",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",

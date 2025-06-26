@@ -10,6 +10,7 @@ configurations {
 }
 
 dependencies {
+    api project(':base:build-system:gradle-common-api')
     implementation project(':base:builder-test-api')
     implementation libs.guava
     implementation libs.kotlin_stdlib

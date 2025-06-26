@@ -584,9 +584,16 @@ com.android.tools.build:gradle-api
   pomName=com.android.tools.build.gradle-api
   description=APIs to customize Android Gradle Builds
   dependencies:
+    com.android.tools.build:gradle-common-api (compile)
     org.ow2.asm:asm (compile)
     com.android.tools.build:builder-test-api (runtime)
     com.google.guava:guava (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+
+com.android.tools.build:gradle-common-api
+  pomName=com.android.tools.build.gradle-common-api
+  description=Common APIs for Android Gradle tools.
+  dependencies:
     org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.build:gradle-kotlin
@@ -607,6 +614,7 @@ com.android.tools.build:gradle-settings-api
   pomName=com.android.tools.build.gradle-settings-api
   description=Gradle Settings API to build Android applications.
   dependencies:
+    com.android.tools.build:gradle-common-api (compile)
     org.jetbrains.kotlin:kotlin-stdlib (runtime)
 
 com.android.tools.build:manifest-merger
