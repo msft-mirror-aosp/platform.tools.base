@@ -163,7 +163,8 @@ abstract class BuildAnalyzerService : BuildService<BuildAnalyzerService.Paramete
         project: Project,
         private val attributionFileLocation: String,
         private val listenersRegistry: BuildEventsListenerRegistry,
-        private val buildAnalyzerConfiguratorService: BuildAnalyzerConfiguratorService
+        private val buildAnalyzerConfiguratorService: BuildAnalyzerConfiguratorService,
+        private val isConfigurationCacheActive: Boolean
     ) : ServiceRegistrationAction<BuildAnalyzerService, Parameters>(
         project,
         BuildAnalyzerService::class.java
@@ -173,7 +174,8 @@ abstract class BuildAnalyzerService : BuildService<BuildAnalyzerService.Paramete
             buildAnalyzerConfiguratorService.initBuildAnalyzerService(
                 project,
                 attributionFileLocation,
-                parameters
+                parameters,
+                isConfigurationCacheActive
             )
         }
 

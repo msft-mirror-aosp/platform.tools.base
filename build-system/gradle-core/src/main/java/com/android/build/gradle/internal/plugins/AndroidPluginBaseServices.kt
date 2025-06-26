@@ -196,7 +196,8 @@ abstract class AndroidPluginBaseServices(
                 listenerRegistry,
                 BuildAnalyzerConfiguratorService.RegistrationAction(
                     project
-                ).execute().get()
+                ).execute().get(),
+                buildFeatures.configurationCache.active.get()
             ).execute()
         }
         configuratorService.getProjectBuilder(project.path)?.let {
