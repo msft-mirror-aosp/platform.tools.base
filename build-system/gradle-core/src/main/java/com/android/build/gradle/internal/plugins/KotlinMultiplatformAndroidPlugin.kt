@@ -435,26 +435,8 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         )
 
         updateTestComponentFriendPaths(listOfNotNull(unitTest, androidTest))
-        wireJvmToolchain(listOfNotNull(mainVariant, unitTest, androidTest), project)
         finalizeAllComponents(listOfNotNull(mainVariant, unitTest, androidTest))
         kotlinMultiplatformHandler.finalize(mainVariant)
-    }
-
-    private fun wireJvmToolchain(components: List<KmpComponentImpl<out KmpComponentDslInfo>>, project: Project) {
-        // Configure kotlin compiler with the jvm toolchain, similar to the JavaBasePlugin
-        // (https://github.com/gradle/gradle/blob/66010b2/subprojects/plugins/src/main/java/org/gradle/api/plugins/JavaBasePlugin.java#L204)
-        val toolchain = project.extensions.getByType(JavaPluginExtension::class.java).toolchain
-        val service = project.extensions.getByType(JavaToolchainService::class.java)
-        val javaLauncher = service.launcherFor(toolchain)
-        if (toolchain.languageVersion.isPresent) {
-            components.forEach {
-                it.androidKotlinCompilation.compileTaskProvider.configure { task ->
-                    (task as KotlinJvmCompile).kotlinJavaToolchain.toolchain.use(
-                        javaLauncher
-                    )
-                }
-            }
-        }
     }
 
     private fun updateTestComponentFriendPaths(components: List<KmpComponentImpl<out KmpComponentDslInfo>>) {
