@@ -21,7 +21,7 @@ import com.android.tools.lint.detector.api.TextFormat
 import com.android.tools.lint.useFirUast
 
 class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
-  override fun getDetector(): Detector? {
+  override fun getDetector(): Detector {
     return MemberExtensionConflictDetector()
   }
 
@@ -338,6 +338,162 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
                 sb.append(item)
               }
               return sb.toString()
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testUserLib_implicitImport() {
+    // Collecting multiple applicable candidates only work for K2 AA
+    if (!useFirUast()) {
+      return
+    }
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            "src/my/cool/lib/MyList.kt",
+            """
+            package my.cool.lib
+
+            interface MyList {
+              val magicCount: Int
+              fun removeMiddle()
+            }
+          """,
+          )
+          .indented(),
+        kotlin(
+            "src/my/cool/lib/Utils.kt",
+            """
+            package my.cool.lib
+
+            fun MyList.removeMiddle() {}
+          """,
+          )
+          .indented(),
+        kotlin(
+            "src/my/cool/lib/test.kt",
+            """
+            package my.cool.lib
+            // same package, hence implicitly imported
+
+            private fun test(l: MyList) {
+              l.removeMiddle() // WARNING
+            }
+          """,
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+src/my/cool/lib/test.kt:5: Warning: removeMiddle is defined both as a member in class my.cool.lib.MyList and an extension in package my.cool.lib. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
+  l.removeMiddle() // WARNING
+  ~~~~~~~~~~~~~~~~
+0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testKotlinCollection_implicitImport() {
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            """
+            fun test() {
+              val set = mutableSetOf<String>()
+              set.add("hi")
+              set.remove("hi") // Member
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testKotlinCollection_randomImport() {
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            """
+            package another.pkg
+
+            class Foo
+
+            fun Foo?.bar() { this?.baz() }
+          """
+          )
+          .indented(),
+        kotlin(
+            """
+            import another.pkg.bar // random import
+
+            fun test() {
+              val set = mutableSetOf<String>()
+              set.add("hi")
+              set.remove("hi") // Member
+            }
+          """
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testKotlinCollection_explicitImport() {
+    // Collecting multiple applicable candidates only work for K2 AA
+    if (!useFirUast()) {
+      return
+    }
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            """
+            import kotlin.collections.remove // technically unused yet explicit import
+
+            fun test() {
+              val set = mutableSetOf<String>()
+              set.add("hi")
+              set.remove("hi") // Member
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+src/test.kt:6: Warning: remove is defined both as a member in class kotlin.collections.MutableSet and an extension in package kotlin.collections. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
+  set.remove("hi") // Member
+  ~~~~~~~~~~~~~~~~
+0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testKotlinCollection_explicitImportAlias() {
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            """
+            import kotlin.collections.remove as extRemove
+
+            fun test() {
+              val set = mutableSetOf<String>()
+              set.add("hi")
+              set.extRemove("hi") // Extension
             }
           """
           )
