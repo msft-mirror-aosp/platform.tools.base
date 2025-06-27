@@ -1,0 +1,798 @@
+# Stripped down proto from b/416457494 removing fields:
+# - external_messages
+# - screen_states
+# - candidate_details, node_additions, edge_additions and state_equivalences from actions.
+# - artifacts from model_details.
+# Also, replaces large screenshot values in display_state with a smaller one.
+# Original proto: http://shortn/_UeHRAWblun.
+actions: {
+  action_seq: 0
+  screen_state_id    : 0
+  start_time: {
+    seconds: 1746708001
+    nanos  : 412000000
+  }
+  end_time: {
+    seconds: 1746708006
+    nanos  : 635000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    launch_action: {
+      app_package_name: "com.google.samples.apps.nowinandroid.demo.debug"
+      starting_intent: {
+        type  : MAIN_ACTIVITY
+      }
+    }
+  }
+  result_details: {
+    launch_result: {
+      result_detail: {
+      }
+    }
+  }
+  display_state_id   : 0
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 1
+  screen_state_id    : 1
+  start_time: {
+    seconds: 1746708006
+    nanos  : 943000000
+  }
+  end_time: {
+    seconds: 1746708009
+    nanos  : 255000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    target_action: {
+      screen_element_id: "0.0.0.0.0.0.1.0"
+      action_type      : CLICK
+    }
+  }
+  robo_script_details: {
+    action_index : -1
+    contextual_robo_script_triggered    : true
+    triggering_contextual_robo_script_id: 35
+    model_details: {
+      id: 1
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_button\"}],\"optional\":true}"
+    model_details: {
+      id: 2
+    }
+    active_robo_script_id  : 35
+  }
+  display_state_id   : 1
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 2
+  screen_state_id    : 2
+  start_time: {
+    seconds: 1746708010
+    nanos  : 428000000
+  }
+  end_time: {
+    seconds: 1746708011
+    nanos  : 455000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    target_action: {
+      screen_element_id: "0.0.0.0.0.0.0.0.1.0.2"
+      action_type      : CLICK
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 2
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 3
+  screen_state_id    : 3
+  start_time: {
+    seconds: 1746708012
+    nanos  : 927000000
+  }
+  end_time: {
+    seconds: 1746708018
+    nanos  : 611000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 75 148"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    action_index : -1
+    contextual_robo_script_triggered    : true
+    model_details: {
+      id: 1
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose'\"}"
+    model_details: {
+      id: 2
+      description : "Tap on the search icon to open the search bar."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The goal is to tap on the search icon and enter 'Compose'. The search icon is available on the screen, so I should tap on it."
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 3
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 4
+  screen_state_id    : 4
+  start_time: {
+    seconds: 1746708019
+    nanos  : 925000000
+  }
+  end_time: {
+    seconds: 1746708021
+    nanos  : 821000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 603 178"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose'\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 3
+      description : "Enter 'Compose' into the search bar."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The goal is to tap on the search icon and enter 'Compose'. I have already tapped on the search icon. Now I need to enter 'Compose' into the search bar."
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 4
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 5
+  screen_state_id    : 5
+  start_time: {
+    seconds: 1746708022
+    nanos  : 798000000
+  }
+  end_time: {
+    seconds: 1746708023
+    nanos  : 816000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input text Compose"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose'\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 3
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 5
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 6
+  screen_state_id    : 6
+  start_time: {
+    seconds: 1746708024
+    nanos  : 787000000
+  }
+  end_time: {
+    seconds: 1746708025
+    nanos  : 668000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input keyevent ENTER"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose'\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 3
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 6
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 7
+  screen_state_id    : 7
+  start_time: {
+    seconds: 1746708026
+    nanos  : 39000000
+  }
+  end_time: {
+    seconds: 1746708029
+    nanos  : 515000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 346 824"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose'\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 4
+      description : "Goal Complete"
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "I have already tapped on the search icon and entered 'Compose' into the search bar. The screen now shows the search results for 'Compose'."
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the 'Compose' topic\"}"
+    model_details: {
+      id: 5
+      description : "Tap on the 'Compose' topic."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The current goal is to tap on the 'Compose' topic. The 'Compose' topic is visible on the screen, so I should tap on it."
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 7
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 8
+  screen_state_id    : 8
+  start_time: {
+    seconds: 1746708030
+    nanos  : 312000000
+  }
+  end_time: {
+    seconds: 1746708033
+    nanos  : 872000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 913 1955"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the 'Compose' topic\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 6
+      description : "Goal Complete"
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The current goal is to tap on the 'Compose' topic. I have already tapped on the 'Compose' topic, so the goal is complete."
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 2
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Save the first post\"}"
+    model_details: {
+      id: 7
+      description : "Tap on the bookmark icon to save the first post."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The goal is to save the first post. The bookmark icon is the way to save the post."
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 8
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 9
+  screen_state_id    : 9
+  start_time: {
+    seconds: 1746708034
+    nanos  : 536000000
+  }
+  end_time: {
+    seconds: 1746708040
+    nanos  : 649000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 540 2232"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    action_index : 2
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Save the first post\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 8
+      description : "Goal Complete"
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The bookmark icon was tapped, and the goal is to save the first post."
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 3
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Go to saved posts\"}"
+    model_details: {
+      id: 9
+      description : "Tap on the 'Saved' tab to go to saved posts."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The current goal is to go to saved posts. The 'Saved' tab is visible at the bottom of the screen, so I should tap on it."
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 9
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 10
+  screen_state_id    : 10
+  start_time: {
+    seconds: 1746708042
+    nanos  : 678000000
+  }
+  end_time: {
+    seconds: 1746708047
+    nanos  : 226000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    wait_action: {
+      wait_duration: {
+        seconds: 2
+      }
+    }
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 10
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+actions: {
+  action_seq: 11
+  screen_state_id    : 11
+  start_time: {
+    seconds: 1746708049
+    nanos  : 46000000
+  }
+  end_time: {
+    seconds: 1746708049
+    nanos  : 46000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    terminate_crawl_action: {
+    }
+  }
+  robo_script_details: {
+    action_index : 3
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Go to saved posts\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 10
+      description : "Goal Failed"
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The 'Saved' tab should have navigated to the saved posts within the app. Since a browser window opened instead, something went wrong, and the goal cannot be completed."
+      }
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The 'Saved' tab should have navigated to the saved posts within the app. Since a browser window opened instead, something went wrong, and the goal cannot be completed."
+      }
+    }
+    termination_cause      : PROMPT_EVALUATION_FAILED
+  }
+  robo_script_details: {
+    action_index : 1
+    robo_script_action_json: "{\"eventType\":\"VIEW_CLICKED\",\"elementDescriptors\":[{\"resourceId\":\"com.android.permissioncontroller:id/permission_allow_one_time_button\"}],\"optional\":true}"
+    model_details: {
+      id: 3
+    }
+    active_robo_script_id  : 35
+    termination_cause      : END_OF_SCRIPT
+  }
+  display_state_id   : 11
+  stage: {
+    intent: {
+      index: 0
+    }
+    timeout: {
+      seconds: 3600
+    }
+  }
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 0
+  start_time: {
+    seconds: 1746708000
+    nanos  : 654000000
+  }
+  end_time: {
+    seconds: 1746708001
+    nanos  : 412000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 1
+  start_time: {
+    seconds: 1746708006
+    nanos  : 791000000
+  }
+  end_time: {
+    seconds: 1746708006
+    nanos  : 943000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: ""
+  display_state_id : 2
+  start_time: {
+    seconds: 1746708010
+    nanos  : 140000000
+  }
+  end_time: {
+    seconds: 1746708010
+    nanos  : 428000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 3
+  start_time: {
+    seconds: 1746708012
+    nanos  : 595000000
+  }
+  end_time: {
+    seconds: 1746708012
+    nanos  : 927000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 4
+  start_time: {
+    seconds: 1746708019
+    nanos  : 734000000
+  }
+  end_time: {
+    seconds: 1746708019
+    nanos  : 925000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 5
+  start_time: {
+    seconds: 1746708022
+    nanos  : 595000000
+  }
+  end_time: {
+    seconds: 1746708022
+    nanos  : 798000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 6
+  start_time: {
+    seconds: 1746708024
+    nanos  : 607000000
+  }
+  end_time: {
+    seconds: 1746708024
+    nanos  : 787000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 7
+  start_time: {
+    seconds: 1746708025
+    nanos  : 814000000
+  }
+  end_time: {
+    seconds: 1746708026
+    nanos  : 39000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 8
+  start_time: {
+    seconds: 1746708030
+    nanos  : 4000000
+  }
+  end_time: {
+    seconds: 1746708030
+    nanos  : 312000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 9
+  start_time: {
+    seconds: 1746708034
+    nanos  : 240000000
+  }
+  end_time: {
+    seconds: 1746708034
+    nanos  : 536000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 10
+  start_time: {
+    seconds: 1746708041
+    nanos  : 834000000
+  }
+  end_time: {
+    seconds: 1746708042
+    nanos  : 678000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 11
+  start_time: {
+    seconds: 1746708048
+    nanos  : 174000000
+  }
+  end_time: {
+    seconds: 1746708049
+    nanos  : 46000000
+  }
+  width   : 1080
+  height  : 2400
+}
+crawl_identifier  : "83262f97-442a-4bf1-988e-98d5ab1a09aa"
+app_package_id    : "com.google.samples.apps.nowinandroid.demo.debug"
+crawl_result      : COMPLETED
+enabled_modes     : [ EVO ]
+num_actions       : 12
+num_screen_states : 12
+num_display_states: 12
+stages: {
+  intent: {
+    index: 0
+  }
+  timeout: {
+    seconds: 3600
+  }
+}

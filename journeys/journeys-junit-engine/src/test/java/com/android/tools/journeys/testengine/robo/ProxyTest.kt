@@ -16,6 +16,11 @@
 
 package com.android.tools.journeys.testengine.robo
 
+import com.google.appcrawler.platform.client.GrpcClient
+import com.google.auth.oauth2.ImpersonatedCredentials
+import io.grpc.ClientInterceptor
+import io.grpc.ManagedChannel
+import io.grpc.netty.NettyChannelBuilder
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
@@ -338,6 +343,69 @@ class ProxyTest {
             assertEquals(JourneyFailureReason.AUTHENTICATION_FAILED, reason)
             assertContains(message!!, "Failed to obtain credentials")
         }
+    }
+
+    @Test
+    fun testExecuteJourney_cleanupCalledOnSuccess() {
+        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyMap())).thenReturn(mockProcess)
+        `when`(mockAdb.dumpsys(anyString(), anyLong())).thenReturn("port_is_bound 12345")
+        `when`(mockAdb.forward(anyInt(), anyInt())).thenAnswer { }
+
+        val fakeTokenFile = tempFolder.newFile("fake_token.json")
+        fakeTokenFile.writeText("""
+              {
+                "access_token": "fake_token",
+                "expires_in": 3600
+              }
+            """.trimIndent()
+        )
+
+        val proxyWithFakeToken = Proxy(
+            adb = mockAdb,
+            crawlerAppApkPath = "crawler.apk",
+            applicationId = "com.example.app",
+            appApkPath = "app.apk",
+            accessTokenPath = fakeTokenFile.absolutePath
+        )
+
+        mockStatic(ImpersonatedCredentials::class.java).use { mockedImpersonatedCredentials ->
+            val mockBuilder = mock(ImpersonatedCredentials.Builder::class.java, RETURNS_DEEP_STUBS)
+            mockedImpersonatedCredentials.`when`<Any> { ImpersonatedCredentials.newBuilder() }
+                .thenReturn(mockBuilder)
+
+            mockStatic(NettyChannelBuilder::class.java).use { mockedNettyChannelBuilder ->
+                val mockChannelBuilder = mock(NettyChannelBuilder::class.java)
+                `when`(mockChannelBuilder.intercept(any<ClientInterceptor>())).thenReturn(mockChannelBuilder)
+                `when`(mockChannelBuilder.build()).thenReturn(mock(ManagedChannel::class.java))
+
+                mockedNettyChannelBuilder.`when`<Any> { NettyChannelBuilder.forTarget(anyString()) }
+                    .thenReturn(mockChannelBuilder)
+
+                mockConstruction(
+                    GrpcClient::class.java
+                ) { mockGrpcClient, context ->
+                    val mockResult = mock(GrpcClient.Result::class.java)
+                    `when`(mockResult.outcome()).thenReturn(GrpcClient.Result.Outcome.SUCCESS)
+                    `when`(
+                        mockGrpcClient.startForward(
+                            any(),
+                            any(),
+                            any(),
+                            any(),
+                            any()
+                        )
+                    ).thenReturn(mockResult)
+                }.use {
+                    proxyWithFakeToken.executeJourney(validJourneyPath) {}
+                }
+            }
+        }
+
+        verify(mockAdb).removeForward(anyInt())
+        verify(mockAdb).uninstall("com.example.app")
+        verify(mockAdb).uninstall(RoboConfigConstants.CRAWLER_PACKAGE_ID)
     }
 
     @Test

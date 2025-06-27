@@ -16,7 +16,7 @@
 package com.android.tools.journeys
 
 import com.android.build.api.AndroidPluginVersion
-import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.AppPlugin
 import com.google.common.truth.Truth.assertThat
@@ -35,6 +35,7 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
 
 /**
  * Unit tests for [JourneysGradlePlugin]
@@ -51,15 +52,12 @@ class JourneysGradlePluginTest {
     lateinit var mockAndroidPlugin: ApplicationAndroidComponentsExtension
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    lateinit var mockCommonExtension: CommonExtension<*, *, *, *, *, *>
+    lateinit var mockApplicationExtension: ApplicationExtension
 
     @Before
     fun setupMocks() {
         `when`(mockProject.extensions.getByType(eq(ApplicationAndroidComponentsExtension::class.java))).thenReturn(
             mockAndroidPlugin
-        )
-        `when`(mockProject.extensions.getByType(eq(CommonExtension::class.java))).thenReturn(
-            mockCommonExtension
         )
     }
 
@@ -74,6 +72,10 @@ class JourneysGradlePluginTest {
         verify(mockProject.plugins, atLeastOnce())
             .withType(eq(AppPlugin::class.java), captor.capture())
         captor.firstValue.execute(AppPlugin())
+
+        val finalizeDslCaptor = argumentCaptor<(ApplicationExtension) -> Unit>()
+        verify(mockAndroidPlugin, atLeastOnce()).finalizeDsl(finalizeDslCaptor.capture())
+        finalizeDslCaptor.firstValue.invoke(mockApplicationExtension)
     }
 
     @Test
@@ -119,5 +121,19 @@ class JourneysGradlePluginTest {
         supportedVersions.forEach {
             applyJourneysPlugin(it)
         }
+    }
+
+    @Test
+    fun testUniversalApkEnabledWhenAbiSplitsEnabled() {
+        `when`(mockApplicationExtension.splits.abi.isEnable).thenReturn(true)
+        applyJourneysPlugin()
+        verify(mockApplicationExtension.splits.abi, atLeastOnce()).isUniversalApk = true
+    }
+
+    @Test
+    fun testUniversalApkNotEnabledWhenAbiSplitsDisabled() {
+        `when`(mockApplicationExtension.splits.abi.isEnable).thenReturn(false)
+        applyJourneysPlugin()
+        verify(mockApplicationExtension.splits.abi, never()).isUniversalApk = true
     }
 }

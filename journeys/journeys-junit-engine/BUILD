@@ -22,6 +22,7 @@ filegroup(
     name = "gradle_test_files",
     srcs = glob([
         "src/test/**/*.kt",
+        "src/test/resources/**",
     ]) + [
         "build.gradle",
     ],

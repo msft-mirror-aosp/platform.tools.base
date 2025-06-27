@@ -1,0 +1,526 @@
+# Stripped down proto from b/416478124 removing fields:
+# - external_messages
+# - screen_states
+# - candidate_details, node_additions, edge_additions and state_equivalences from actions.
+# - artifacts from model_details.
+# Also, replaces large screenshot values in display_state with a smaller one.
+# Original proto: http://shortn/_KM5MpGw14E.
+actions: {
+  action_seq: 0
+  screen_state_id    : 0
+  start_time: {
+    seconds: 1746715525
+    nanos  : 770000000
+  }
+  end_time: {
+    seconds: 1746715531
+    nanos  : 679000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    launch_action: {
+      app_package_name: "com.google.samples.apps.nowinandroid.demo.debug"
+      starting_intent: {
+        type  : MAIN_ACTIVITY
+      }
+    }
+  }
+  result_details: {
+    launch_result: {
+      result_detail: {
+      }
+    }
+  }
+  display_state_id   : 0
+}
+actions: {
+  action_seq: 1
+  screen_state_id    : 1
+  start_time: {
+    seconds: 1746715532
+    nanos  : 549000000
+  }
+  end_time: {
+    seconds: 1746715539
+    nanos  : 289000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 75 148"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    action_index : -1
+    contextual_robo_script_triggered    : true
+    model_details: {
+      id: 1
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\"}"
+    model_details: {
+      id: 2
+      description : "Tap on the search icon to open the search bar."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The current goal is to tap on the search icon and enter 'Compose' into the search bar. The search bar is not currently open, so I need to tap on the search icon first."
+      }
+    }
+  }
+  display_state_id   : 1
+}
+actions: {
+  action_seq: 2
+  screen_state_id    : 2
+  start_time: {
+    seconds: 1746715540
+    nanos  : 210000000
+  }
+  end_time: {
+    seconds: 1746715543
+    nanos  : 469000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 603 178"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 3
+      description : "Enter 'Compose' into the search bar at the top of the screen."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The current goal is to enter 'Compose' into the search bar. The search bar is currently open and focused, so I need to enter the text."
+      }
+    }
+  }
+  display_state_id   : 2
+}
+actions: {
+  action_seq: 3
+  screen_state_id    : 3
+  start_time: {
+    seconds: 1746715543
+    nanos  : 771000000
+  }
+  end_time: {
+    seconds: 1746715544
+    nanos  : 429000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input text Compose"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 3
+    }
+  }
+  display_state_id   : 3
+}
+actions: {
+  action_seq: 4
+  screen_state_id    : 4
+  start_time: {
+    seconds: 1746715544
+    nanos  : 764000000
+  }
+  end_time: {
+    seconds: 1746715544
+    nanos  : 848000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input keyevent ENTER"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 3
+    }
+  }
+}
+actions: {
+  action_seq: 5
+  screen_state_id    : 5
+  start_time: {
+    seconds: 1746715545
+    nanos  : 151000000
+  }
+  end_time: {
+    seconds: 1746715549
+    nanos  : 20000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 859 2211"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 4
+      description : "Tap on the 'Next' button to accept the stylus input."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The current goal is to enter 'Compose' into the search bar. The stylus input is currently active, and the text 'Compose' has been written. I need to tap the 'Next' button to accept the stylus input and enter the text into the search bar."
+      }
+    }
+  }
+  display_state_id   : 5
+}
+actions: {
+  action_seq: 6
+  screen_state_id    : 6
+  start_time: {
+    seconds: 1746715549
+    nanos  : 505000000
+  }
+  end_time: {
+    seconds: 1746715553
+    nanos  : 489000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 599 2211"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 5
+      description : "Tap on the 'Cancel' button to dismiss the stylus input."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The current goal is to enter 'Compose' into the search bar. The stylus input is currently active, but the text is not correct. I need to tap the 'Cancel' button to dismiss the stylus input and try again."
+      }
+    }
+  }
+  display_state_id   : 6
+}
+actions: {
+  action_seq: 7
+  screen_state_id    : 7
+  start_time: {
+    seconds: 1746715553
+    nanos  : 734000000
+  }
+  end_time: {
+    seconds: 1746715556
+    nanos  : 857000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input tap 603 178"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 6
+      description : "Enter 'Compose' into the search bar at the top of the screen."
+      interactions: {
+        model   : "prt_poc"
+        request : "gemini_pick_action_request"
+        response: "The current goal is to enter 'Compose' into the search bar. The search bar is currently open and focused, but the previous attempt to enter the text was interrupted by the stylus input. I need to enter the text again."
+      }
+    }
+  }
+  display_state_id   : 7
+}
+actions: {
+  action_seq: 8
+  screen_state_id    : 8
+  start_time: {
+    seconds: 1746715557
+    nanos  : 118000000
+  }
+  end_time: {
+    seconds: 1746715557
+    nanos  : 443000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input text Compose"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 6
+    }
+  }
+  display_state_id   : 8
+}
+actions: {
+  action_seq: 9
+  screen_state_id    : 9
+  start_time: {
+    seconds: 1746715558
+    nanos  : 65000000
+  }
+  end_time: {
+    seconds: 1746715558
+    nanos  : 157000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    adb_command_action: {
+      command: "input keyevent ENTER"
+    }
+  }
+  result_details: {
+    adb_command_result: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 6
+    }
+  }
+  display_state_id   : 9
+}
+actions: {
+  action_seq: 10
+  screen_state_id    : 10
+  start_time: {
+    seconds: 1746715559
+    nanos  : 148000000
+  }
+  end_time: {
+    seconds: 1746715559
+    nanos  : 148000000
+  }
+  execution_result   : ACTION_SUCCESS
+  details: {
+    terminate_crawl_action: {
+    }
+  }
+  robo_script_details: {
+    robo_script_action_json: "{\"eventType\":\"PROMPT\",\"prompt\":\"Tap on the search icon and enter 'Compose' into the search bar at the top of the screen\",\"maxNumberOfRuns\":5}"
+    model_details: {
+      id: 7
+    }
+    termination_cause      : PROMPT_EVALUATION_LIMIT_REACHED
+  }
+  display_state_id   : 10
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 0
+  start_time: {
+    seconds: 1746715525
+    nanos  : 445000000
+  }
+  end_time: {
+    seconds: 1746715525
+    nanos  : 770000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9c\x80\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 1
+  start_time: {
+    seconds: 1746715532
+    nanos  : 322000000
+  }
+  end_time: {
+    seconds: 1746715532
+    nanos  : 549000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 2
+  start_time: {
+    seconds: 1746715539
+    nanos  : 590000000
+  }
+  end_time: {
+    seconds: 1746715540
+    nanos  : 210000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 3
+  start_time: {
+    seconds: 1746715543
+    nanos  : 599000000
+  }
+  end_time: {
+    seconds: 1746715543
+    nanos  : 771000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 4
+  start_time: {
+    seconds: 1746715544
+    nanos  : 558000000
+  }
+  end_time: {
+    seconds: 1746715544
+    nanos  : 764000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9c\x80\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 5
+  start_time: {
+    seconds: 1746715544
+    nanos  : 955000000
+  }
+  end_time: {
+    seconds: 1746715545
+    nanos  : 151000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9c\x80\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 6
+  start_time: {
+    seconds: 1746715549
+    nanos  : 327000000
+  }
+  end_time: {
+    seconds: 1746715549
+    nanos  : 505000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9c\x80\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 7
+  start_time: {
+    seconds: 1746715553
+    nanos  : 598000000
+  }
+  end_time: {
+    seconds: 1746715553
+    nanos  : 734000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9c\x80\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 8
+  start_time: {
+    seconds: 1746715556
+    nanos  : 983000000
+  }
+  end_time: {
+    seconds: 1746715557
+    nanos  : 118000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 9
+  start_time: {
+    seconds: 1746715557
+    nanos  : 805000000
+  }
+  end_time: {
+    seconds: 1746715558
+    nanos  : 65000000
+  }
+  width   : 1080
+  height  : 2400
+}
+display_states: {
+  screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9c\x80\x00\x00\x00\x00IEND\xaeB`\x82"
+  display_state_id : 10
+  start_time: {
+    seconds: 1746715558
+    nanos  : 963000000
+  }
+  end_time: {
+    seconds: 1746715559
+    nanos  : 148000000
+  }
+  width   : 1080
+  height  : 2400
+}
+crawl_identifier  : "eb0d57fe-5495-4ec0-82d7-58f4d15d992a"
+app_package_id    : "com.google.samples.apps.nowinandroid.demo.debug"
+crawl_result      : COMPLETED
+enabled_modes     : [ EVO ]
+num_actions       : 11
+num_screen_states : 11
+num_display_states: 11
+stages: {
+  intent: {
+    index: 0
+  }
+  timeout: {
+    seconds: 3600
+  }
+}
