@@ -36,7 +36,6 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
-import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -81,7 +80,7 @@ class AnalyticsResourceManagerTest {
             profileDir,
             getTaskMetaData(),
             null,
-            Collections.synchronizedSet(mutableSetOf()),
+            null,
         )
     }
 

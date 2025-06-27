@@ -31,7 +31,6 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.build.event.BuildEventsListenerRegistry
-import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
@@ -53,7 +52,7 @@ abstract class AnalyticsConfiguratorService : BuildService<AnalyticsConfigurator
         null,
         ConcurrentHashMap(),
         null,
-        ConcurrentHashMap.newKeySet(),
+        objectFactory.setProperty(String::class.java),
     )
 
     private enum class State {
