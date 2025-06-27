@@ -43,6 +43,7 @@ import org.jetbrains.kotlin.library.KotlinLibrary
 import org.jetbrains.kotlin.platform.CommonPlatforms
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.platform.js.JsPlatforms
+import org.jetbrains.kotlin.platform.jvm.JvmPlatform
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.platform.konan.NativePlatforms
 import org.jetbrains.kotlin.platform.wasm.WasmPlatforms
@@ -111,9 +112,12 @@ interface UastEnvironment {
 
       internal val Configuration.isKMP: Boolean
         get() {
-          // If any of modules has a `dependOn` dependency
+          // True if any module supports a non-JVM platform, or has a `dependOn` dependency.
+          // isKMP being true enables support for light classes in non-JVM modules and support for
+          // expect/actual (and maybe more).
           return modules.any { module ->
-            module.directDependencies.any { (_, kind) -> kind == DependencyKind.DependsOn }
+            module.platforms.componentPlatforms.any { it !is JvmPlatform } ||
+              module.directDependencies.any { (_, kind) -> kind == DependencyKind.DependsOn }
           }
         }
     }
