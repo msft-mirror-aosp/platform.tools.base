@@ -21,6 +21,10 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
   )
   targets = [
       '//tools/...',
+      '//tools/adt/idea/studio:android-studio.linux.zip',
+      '//tools/adt/idea/studio:android-studio.mac.zip',
+      '//tools/adt/idea/studio:android-studio.mac_arm.zip',
+      '//tools/adt/idea/studio:android-studio.win.zip',
       '-//tools/idea/...',
       '-//tools/vendor/google/aswb/...',
       '-//tools/vendor/google3/aswb/...',

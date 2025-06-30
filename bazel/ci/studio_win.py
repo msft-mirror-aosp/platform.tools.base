@@ -27,7 +27,10 @@ def studio_win(build_env: bazel.BuildEnv):
   ]
   extra_targets = [
       '//tools/base/profiler/native/trace_processor_daemon',
-      '//tools/adt/idea/studio:android-studio',
+      '//tools/adt/idea/studio:android-studio.linux.zip',
+      '//tools/adt/idea/studio:android-studio.mac.zip',
+      '//tools/adt/idea/studio:android-studio.mac_arm.zip',
+      '//tools/adt/idea/studio:android-studio.win.zip',
       '//tools/vendor/google/skia:skiaparser.zip',
       '//tools/vendor/google/skia:skia_test_support.zip',
   ]

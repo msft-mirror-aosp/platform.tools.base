@@ -22,7 +22,10 @@ _BASE_TARGETS = [
 
 
 _EXTRA_TARGETS = [
-    '//tools/adt/idea/studio:android-studio',
+    '//tools/adt/idea/studio:android-studio.linux.zip',
+    '//tools/adt/idea/studio:android-studio.mac.zip',
+    '//tools/adt/idea/studio:android-studio.mac_arm.zip',
+    '//tools/adt/idea/studio:android-studio.win.zip',
     '//tools/adt/idea/studio:updater_deploy.jar',
     '//tools/vendor/google/aswb:aswb.linux.zip',
     '//tools/vendor/google/aswb:aswb.mac.zip',
