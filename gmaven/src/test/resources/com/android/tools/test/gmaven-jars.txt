@@ -693,8 +693,6 @@ com/android/tools/build/gradle-kotlin
   com/android/
   com/android/build/
   com/android/build/gradle/
-  com/android/build/gradle/internal/
-  com/android/build/gradle/internal/plugins/
 
 com/android/tools/build/gradle-kotlin:api
   META-INF/

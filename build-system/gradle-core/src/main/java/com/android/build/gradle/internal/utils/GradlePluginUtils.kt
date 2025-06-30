@@ -31,6 +31,43 @@ import org.gradle.api.initialization.dsl.ScriptHandler.CLASSPATH_CONFIGURATION
 import java.net.JarURLConnection
 import java.util.regex.Pattern
 
+/**
+ * Fails the build if the given [requiredPlugin] has not been applied after this project's
+ * evaluation.
+ *
+ * [mainPlugin] is the plugin that requires the [requiredPlugin].
+ */
+internal fun Project.requirePlugin(mainPlugin: String, requiredPlugin: String) {
+    afterEvaluate {
+        check(pluginManager.hasPlugin(requiredPlugin)) {
+            """
+            The '$mainPlugin' plugin requires the '$requiredPlugin' plugin to be applied.
+            Apply the '$requiredPlugin' plugin in this project's build file: $buildFile.
+            """.trimIndent()
+        }
+    }
+}
+
+/**
+ * Fails the build if the given [incompatiblePlugin] has been applied.
+ *
+ * If the [incompatiblePlugin] has not been applied but will be applied later, then this will make
+ * the build fail later at the point when the [incompatiblePlugin] has been applied (unless that
+ * plugin fails the build before that point -- see b/397373580).
+ *
+ * [mainPlugin] is the plugin that the [incompatiblePlugin] is incompatible with.
+ */
+internal fun Project.disallowPlugin(mainPlugin: String, incompatiblePlugin: String) {
+    pluginManager.withPlugin(incompatiblePlugin) {
+        error(
+            """
+            The '$incompatiblePlugin' plugin is not compatible with the '$mainPlugin' plugin.
+            Remove the '$incompatiblePlugin' plugin from this project's build file: $buildFile.
+            """.trimIndent()
+        )
+    }
+}
+
 /** Lists all module dependencies resolved for buildscript classpath. */
 fun getBuildscriptDependencies(project: Project): List<ModuleComponentIdentifier> {
     val buildScriptClasspath = project.buildscript.configurations.getByName(CLASSPATH_CONFIGURATION)

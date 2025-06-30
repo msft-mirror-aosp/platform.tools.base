@@ -16,7 +16,6 @@
 
 package com.android.build.gradle
 
-import com.android.build.gradle.internal.plugins.AndroidKotlinPlugin as InternalAndroidKotlinPlugin
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -24,7 +23,11 @@ import org.gradle.api.Project
 class AndroidKotlinPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
-        project.plugins.apply(InternalAndroidKotlinPlugin::class.java)
+        // Nothing to do here.
+        // This plugin only serves as an indication of whether the user wants to have built-in
+        // Kotlin support.
+        // The handling of built-in Kotlin support is done in the main Android Gradle plugin
+        // (see BuiltInKotlinServicesKt.initBuiltInKotlinSupportIfRequired).
     }
 }
 

@@ -33,8 +33,14 @@ import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
+import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
+import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
+import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
+import com.android.build.gradle.internal.utils.disallowPlugin
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
+import com.android.build.gradle.internal.utils.requirePlugin
 import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.gradle.Version
 import org.gradle.api.NamedDomainObjectContainer
@@ -188,6 +194,65 @@ sealed class BuiltInKaptSupportMode {
         /** Built-in Kapt support is not available because the KMP plugin is applied. */
         object KmpPluginApplied : NotSupported()
     }
+}
+
+/** Performs preliminary actions required for built-in Kotlin support. */
+fun initBuiltInKotlinSupportIfRequired(project: Project) {
+    project.pluginManager.withPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) {
+        initBuiltInKotlinSupport(project)
+    }
+    project.pluginManager.withPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID) {
+        project.requirePlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID, ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
+    }
+}
+
+private fun initBuiltInKotlinSupport(project: Project) {
+    project.disallowPlugin(
+        mainPlugin = ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID,
+        incompatiblePlugin = KOTLIN_ANDROID_PLUGIN_ID
+    )
+
+    // Apply KotlinBaseApiPlugin
+    val kotlinBaseApiPlugin = project.plugins.apply(KotlinBaseApiPlugin::class.java)
+
+    // Add the `kotlin` extension
+    val kotlinAndroidExtension = kotlinBaseApiPlugin.createKotlinAndroidExtension() as KotlinAndroidProjectExtension
+    kotlinAndroidExtension.setDefaults(project.name, kotlinBaseApiPlugin.pluginVersion)
+    project.extensions.add("kotlin", kotlinAndroidExtension)
+
+    // Also provide built-in Kapt support
+    initBuiltInKaptSupportIfRequired(project)
+}
+
+private fun KotlinAndroidProjectExtension.setDefaults(
+    projectName: String,
+    kotlinBaseApiPluginVersion: String
+) {
+    // Kotlin Gradle plugin requires `coreLibrariesVersion` to be set
+    coreLibrariesVersion = kotlinBaseApiPluginVersion
+
+    // KotlinCompile task requires `moduleName` to be set
+    compilerOptions.moduleName.convention(projectName)
+}
+
+/** Performs preliminary actions required for built-in Kapt support. */
+fun initBuiltInKaptSupportIfRequired(project: Project) {
+    project.pluginManager.withPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID) {
+        initBuiltInKaptSupport(project)
+    }
+}
+
+private fun initBuiltInKaptSupport(project: Project) {
+    project.disallowPlugin(
+        mainPlugin = ANDROID_BUILT_IN_KAPT_PLUGIN_ID,
+        incompatiblePlugin = KOTLIN_KAPT_PLUGIN_ID
+    )
+
+    // Get KotlinBaseApiPlugin
+    val kotlinBaseApiPlugin = project.plugins.getPlugin(KotlinBaseApiPlugin::class.java)
+
+    // Add the `kapt` extension
+    project.extensions.add("kapt", kotlinBaseApiPlugin.kaptExtension)
 }
 
 internal fun ComponentCreationConfig.createKotlinCompilation(
