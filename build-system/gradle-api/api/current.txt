@@ -1129,6 +1129,12 @@ package com.android.build.api.dsl {
     property public abstract boolean includeInBundle;
   }
 
+  public interface DependencySelection {
+    method public org.gradle.api.provider.ListProperty<java.lang.String> getSelectBuildTypeFrom();
+    method public void productFlavorDimension(String dimension, org.gradle.api.Action<com.android.build.api.dsl.ProductFlavorDimensionSpec> action);
+    property public abstract org.gradle.api.provider.ListProperty<java.lang.String> selectBuildTypeFrom;
+  }
+
   @Deprecated @org.gradle.api.Incubating public interface DependencyVariantSelection {
     method @Deprecated @org.gradle.api.Incubating public org.gradle.api.provider.ListProperty<java.lang.String> getBuildTypes();
     method @Deprecated @org.gradle.api.Incubating public org.gradle.api.provider.MapProperty<java.lang.String,java.util.List<java.lang.String>> getProductFlavors();
@@ -1395,7 +1401,7 @@ package com.android.build.api.dsl {
     method public boolean getEnableCoreLibraryDesugaring();
     method public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
     method public com.android.build.api.dsl.Lint getLint();
-    method public com.android.build.api.dsl.LocalDependencySelection getLocalDependencySelection();
+    method public com.android.build.api.dsl.DependencySelection getLocalDependencySelection();
     method public Integer? getMinSdk();
     method public String? getMinSdkPreview();
     method public String? getNamespace();
@@ -1404,7 +1410,7 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.TestCoverage getTestCoverage();
     method public String? getTestNamespace();
     method public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
-    method public void localDependencySelection(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LocalDependencySelection,kotlin.Unit> action);
+    method public void localDependencySelection(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencySelection,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization,kotlin.Unit> action);
     method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method public void setBuildToolsVersion(String);
@@ -1436,7 +1442,7 @@ package com.android.build.api.dsl {
     property public abstract boolean enableCoreLibraryDesugaring;
     property public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
     property public abstract com.android.build.api.dsl.Lint lint;
-    property public abstract com.android.build.api.dsl.LocalDependencySelection localDependencySelection;
+    property public abstract com.android.build.api.dsl.DependencySelection localDependencySelection;
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;
     property public abstract String? namespace;
@@ -1768,12 +1774,6 @@ package com.android.build.api.dsl {
     property @Deprecated @org.gradle.api.Incubating public abstract boolean textReport;
     property @Deprecated @org.gradle.api.Incubating public abstract java.io.File? xmlOutput;
     property @Deprecated @org.gradle.api.Incubating public abstract boolean xmlReport;
-  }
-
-  public interface LocalDependencySelection {
-    method public org.gradle.api.provider.ListProperty<java.lang.String> getSelectBuildTypeFrom();
-    method public void productFlavorDimension(String dimension, org.gradle.api.Action<com.android.build.api.dsl.ProductFlavorDimensionSpec> action);
-    property public abstract org.gradle.api.provider.ListProperty<java.lang.String> selectBuildTypeFrom;
   }
 
   public interface ManagedDevices {

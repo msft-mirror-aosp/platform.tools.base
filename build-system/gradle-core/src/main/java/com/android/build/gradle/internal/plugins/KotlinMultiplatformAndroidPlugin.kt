@@ -60,7 +60,7 @@ import com.android.build.gradle.internal.dependency.SingleVariantBuildTypeRule
 import com.android.build.gradle.internal.dependency.SingleVariantProductFlavorRule
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
-import com.android.build.gradle.internal.dsl.LocalDependencySelectionImpl
+import com.android.build.gradle.internal.dsl.DependencySelectionImpl
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl
 import com.android.build.gradle.internal.ide.dependencies.LibraryDependencyCacheBuildService
@@ -696,7 +696,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
                     config.setParams(buildTypesToMatch)
                 }
 
-            (androidExtension.localDependencySelection as LocalDependencySelectionImpl).getDimensions().forEach { (dimension, fallbacks) ->
+            (androidExtension.localDependencySelection as DependencySelectionImpl).getDimensions().forEach { (dimension, fallbacks) ->
                 schema.attribute(ProductFlavorAttr.of(dimension))
                     .disambiguationRules
                     .add(SingleVariantProductFlavorRule::class.java) { config ->

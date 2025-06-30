@@ -23,7 +23,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
 import com.android.build.api.dsl.LibraryAndroidResources
-import com.android.build.api.dsl.LocalDependencySelection
+import com.android.build.api.dsl.DependencySelection
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.internal.coverage.JacocoOptions
@@ -58,11 +58,11 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         ).copyToSigningConfig(signingConfig)
     }
 
-    final override val localDependencySelection: LocalDependencySelection = dslServices.newDecoratedInstance(
-        LocalDependencySelectionImpl::class.java, dslServices, objectFactory
+    final override val localDependencySelection: DependencySelection = dslServices.newDecoratedInstance(
+        DependencySelectionImpl::class.java, dslServices, objectFactory
     )
 
-    override fun localDependencySelection(action: LocalDependencySelection.() -> Unit) {
+    override fun localDependencySelection(action: DependencySelection.() -> Unit) {
         action.invoke(localDependencySelection)
     }
 

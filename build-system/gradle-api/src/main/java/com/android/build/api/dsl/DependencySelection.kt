@@ -17,18 +17,13 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Action
-import org.gradle.api.Incubating
 import org.gradle.api.provider.ListProperty
 
 /**
  * Specifies options for doing Gradle variant selection for external Android dependencies
  * based on build types and product flavors.
- *
- * Note that this only affects dependency selection within this
- * gradle project and does not affect the resolution of dependencies in other Gradle
- * projects that depend on this project or the artifacts published from this project
  */
-interface LocalDependencySelection {
+interface DependencySelection {
     /**
      * Specifies a list of build types that the plugin should try to use when a
      * direct variant match with a dependency is not possible.
@@ -51,6 +46,3 @@ interface LocalDependencySelection {
 interface ProductFlavorDimensionSpec {
     val selectFrom: ListProperty<String>
 }
-
-
-
