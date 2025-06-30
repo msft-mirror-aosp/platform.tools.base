@@ -161,7 +161,7 @@ class NamespaceRewriterTest {
                 secondDependencyTable,
                 thirdDependencyTable
             ),
-            logger
+            logger = logger
         )
             .rewriteClass(testClass.toPath(), testClass.toPath())
 
@@ -1014,7 +1014,7 @@ class NamespaceRewriterTest {
 
         val namespaceRewriter =
                 NamespaceRewriter(
-                        ImmutableList.of(moduleTable, depOneTable, depTwoTable,depThreeTable))
+                    ImmutableList.of(moduleTable, depOneTable, depTwoTable,depThreeTable))
 
         checkAarRewrite(namespaceRewriter, "drawable/test.xml", original, namespaced)
     }
@@ -1081,8 +1081,8 @@ class NamespaceRewriterTest {
 
         val namespaceRewriter =
                 NamespaceRewriter(
-                        ImmutableList.of(
-                                local, moduleTable, depA, depB, depC, unused1, unused2, unused3))
+                    ImmutableList.of(
+                            local, moduleTable, depA, depB, depC, unused1, unused2, unused3))
 
         checkAarRewrite(namespaceRewriter, "drawable/test.xml", original, rewritten)
     }

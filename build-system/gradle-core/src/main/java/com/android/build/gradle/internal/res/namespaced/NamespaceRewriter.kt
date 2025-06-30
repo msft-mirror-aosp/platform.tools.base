@@ -62,10 +62,15 @@ import java.util.zip.ZipOutputStream
  * @param symbolTables a list of symbol tables for the current module and its' dependencies. The
  *      order matters, the closest modules are at the front, the furthest are at the end. The first
  *      symbol table should be for the module from which the transformed classes come from.
+ * @param onlyRewriteReferencesInFirstSymbolTable When enabled. if the first symbol table does not contain a
+ *      resource, then its reference will not be re-written to the tablePackage of the first
+ *      symbol table. This is a requirement for Fused Library see b/426351548.
  */
 class NamespaceRewriter(
     private val symbolTables: ImmutableList<SymbolTable>,
-    private val logger: Logger = Logging.getLogger(NamespaceRewriter::class.java)) {
+    private val onlyRewriteReferencesInFirstSymbolTable: Boolean = false,
+    private val logger: Logger = Logging.getLogger(NamespaceRewriter::class.java)
+) {
 
     private val localPackage = symbolTables.firstOrNull()?.tablePackage ?: ""
     private val referenceRewriter =
@@ -537,7 +542,7 @@ class NamespaceRewriter(
             } else {
                 val newChildren = ImmutableList.builder<String>()
                 symbol.children.forEach {
-                    if (it.contains(":")) {
+                    if (it.contains(":") || it.contains("android_")) {
                         // If the attribute is already namespaced we don't need to do anything, e.g.
                         // "android:color".
                         newChildren.add(it)
@@ -645,15 +650,19 @@ class NamespaceRewriter(
     /**
      * Rewrites field instructions to reference namespaced resources instead of the local R.
      */
-    private class MethodReWriter(
+    private inner class MethodReWriter(
         api: Int,
         mv: MethodVisitor?,
         private val crw: ClassReWriter
     ) : MethodVisitor(api, mv) {
 
         override fun visitFieldInsn(opcode: Int, owner: String, name: String, desc: String?) {
-            if (owner.contains("/R$")) {
-                val type = owner.substringAfterLast('$')
+            val type = owner.substringAfterLast('$')
+            val isRClassRef = owner.contains("/R$")
+            val rewriteReference =
+                isRClassRef && (!onlyRewriteReferencesInFirstSymbolTable || symbolTables.first()
+                    .containsSymbol(getResourceType(type), name))
+            if (rewriteReference) {
                 if (type == "styleable" && desc == "I") {
                     visitFieldInsnForStyleable(opcode, owner, name)
                 } else {

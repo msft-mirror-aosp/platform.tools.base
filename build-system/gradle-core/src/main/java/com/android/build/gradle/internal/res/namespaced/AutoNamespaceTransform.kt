@@ -166,7 +166,8 @@ abstract class AutoNamespaceTransform : TransformAction<AutoNamespaceParameters>
         }.build()
 
         val rewriter =
-            NamespaceRewriter(symbolTables, Logging.getLogger(AutoNamespaceTransform::class.java))
+            NamespaceRewriter(
+                symbolTables, logger = Logging.getLogger(AutoNamespaceTransform::class.java))
 
         for (entry in inputAar.entries()) {
             when {

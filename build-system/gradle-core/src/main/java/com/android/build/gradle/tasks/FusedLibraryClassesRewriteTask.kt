@@ -17,7 +17,6 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -86,7 +85,10 @@ abstract class FusedLibraryClassesRewriteTask : NonIncrementalGlobalTask() {
             .filterNot { it.symbols.isEmpty }
         val fusedLibSymbolTable = getFusedSymbolTable(fusedLibraryNamespace.get(), dependencyTables)
         val namespaceRewriter =
-            NamespaceRewriter(listOf(fusedLibSymbolTable).plus(dependencyTables).toImmutableList())
+            NamespaceRewriter(
+                listOf(fusedLibSymbolTable).plus(dependencyTables).toImmutableList(),
+                onlyRewriteReferencesInFirstSymbolTable = true
+            )
         namespaceRewriter.writeRClass(fusedLibraryRClass.get().asFile.toPath())
         rewriteRClassReferencesToFusedLibraryNamespace(
             mergedClasses.asFileTree.files,

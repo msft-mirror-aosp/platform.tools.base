@@ -119,7 +119,20 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
                 android {
                     namespace = "com.example.androidLib2"
                 }
-                files.add(
+                files {
+                    add(
+                        "src/main/res/values/values.xml",
+                        """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <resources>
+                            <declare-styleable name="ActionBarLayout">
+                                <attr name="android:layout_gravity"/>
+                            </declare-styleable>
+                            <attr format="reference" name="editTextStyle"/>
+                        </resources>
+                    """.trimIndent()
+                    )
+                add(
                     "src/main/res/values/strings.xml",
                     //language=xml
                     """
@@ -128,6 +141,7 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
                             <string name="string_overridden">androidLib2</string>
                         </resources>
                     """.trimIndent())
+                }
             }
             fusedLibrary(":fusedLib1") {
                 pluginCallbacks += FusedLibraryConfigureMavenPublishCallback::class.java
@@ -191,10 +205,14 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
                     """
                     <?xml version="1.0" encoding="utf-8"?>
                     <resources>
+                        <attr format="reference" name="editTextStyle"/>
                         <string name="string_from_android_lib_2">androidLib2</string>
                         <string name="string_from_android_lib_3">androidLib3</string>
                         <string name="string_from_remote_lib">Remote String</string>
                         <string name="string_overridden">androidLib2</string>
+                        <declare-styleable name="ActionBarLayout">
+                            <attr name="android:layout_gravity"/>
+                        </declare-styleable>
                     </resources>
                 """.trimIndent()
                 )
@@ -252,11 +270,15 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
         ).containsExactly(
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>",
             "<resources>",
-            "<string name=\"string_from_android_lib_2\">androidLib2</string>",
-            "<string name=\"string_from_android_lib_3\">androidLib3</string>",
-            "<string name=\"string_from_app\">app</string>",
-            "<string name=\"string_from_remote_lib\">Remote String</string>",
-            "<string name=\"string_overridden\">app</string>",
+                "<attr format=\"reference\" name=\"editTextStyle\"/>",
+                "<string name=\"string_from_android_lib_2\">androidLib2</string>",
+                "<string name=\"string_from_android_lib_3\">androidLib3</string>",
+                "<string name=\"string_from_app\">app</string>",
+                "<string name=\"string_from_remote_lib\">Remote String</string>",
+                "<string name=\"string_overridden\">app</string>",
+                "<declare-styleable name=\"ActionBarLayout\">",
+                    "<attr name=\"android:layout_gravity\"/>",
+                "</declare-styleable>",
             "</resources>"
         )
     }
@@ -282,12 +304,15 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
         build.fusedLibrary(":fusedLib1").assertAar(AarSelector.NO_BUILD_TYPE) {
             textSymbolFile().isEqualTo(
                 """
+                    int attr editTextStyle 0x0
                     int id androidlib3_textview 0x0
                     int id string_from_android_lib_1 0x0
                     int layout layout 0x0
                     int string string_from_android_lib_2 0x0
                     int string string_from_android_lib_3 0x0
                     int string string_overridden 0x0
+                    int[] styleable ActionBarLayout { 0x0 }
+                    int styleable ActionBarLayout_android_layout_gravity 0
                 """.trimIndent())
         }
 
@@ -327,12 +352,15 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
 
         assertThat(rTxtFile.readText()).isEqualTo(
             """
+                    int attr editTextStyle 0x0
                     int id androidlib3_textview 0x0
                     int id string_from_android_lib_1 0x0
                     int layout layout 0x0
                     int string string_from_android_lib_2 0x0
                     int string string_from_android_lib_3 0x0
                     int string string_overridden 0x0
+                    int[] styleable ActionBarLayout { 0x0 }
+                    int styleable ActionBarLayout_android_layout_gravity 0
 
                     """.trimIndent()
         )
