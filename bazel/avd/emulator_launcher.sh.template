@@ -2,12 +2,24 @@
 
 # This template is used to generate a script that can be used to launch or kill
 # an emulator:
-#   <target_name> [kill] port
+#   <target_name> [kill | create-snapshot] port
 # Where port is the ADB port to open and kill is supplied to kill the emulator
 # on the supplied port.
 
 # The path to the source.properties inside the system image.
-source_properties_path="%source_properties_path%"
+if [ -f "%source_properties_short_path%" ]; then
+    source_properties_path="%source_properties_short_path%"
+elif [ -f "%source_properties_path%" ]; then
+    source_properties_path="%source_properties_path%"
+else
+  echo "No system image directory found"
+  exit 1
+fi
+
+emulator_path="%emulator_path%"
+
+snapshot_dir_path="%snapshot_dir_path%"
+snapshot_dir_short_path="%snapshot_dir_short_path%"
 
 # Boot time might vary depending on API level. The value below was tested
 # with API level 33 (TiramisuPrivacySandbox). 200 is default unless the
@@ -31,13 +43,16 @@ fi
 # Set environment variables.
 export HOME=$(pwd)
 export ANDROID_PREFS_ROOT=$HOME
-export ANDROID_SDK_ROOT=$HOME/prebuilts/studio/sdk/$OS_DIR_NAME
-export ANDROID_EMULATOR_HOME=$HOME/.android
+export ANDROID_HOME=$HOME/prebuilts/studio/sdk/$OS_DIR_NAME
+export ANDROID_USER_HOME=$HOME/.android
+export ANDROID_EMULATOR_HOME=$ANDROID_USER_HOME
 export ANDROID_AVD_HOME=$ANDROID_EMULATOR_HOME/avd
 
 # Relevant binaries.
-emulator=$1
+emulator="$emulator_path"
 adb=prebuilts/studio/sdk/$OS_DIR_NAME/platform-tools/adb
+
+additional_emulator_args=()
 
 # Kill the emulator if requested. This is needed to kill the emulator for
 # local development.
@@ -59,7 +74,6 @@ if [ "$2" = "kill" ]; then
   done
   exit $?
 fi
-port=$2
 
 # Clear emulator files.
 rm -rf .android 2> /dev/null
@@ -121,6 +135,24 @@ hw.trackBall=no
 image.sysdir.1=$system_image_dir
 EOF
 
+if [ "$2" = "create-snapshot" ]; then
+  port=$3
+  echo "Create snapshot image to $(pwd)/$snapshot_dir_path"
+else
+  port=$2
+  additional_emulator_args+=("-read-only" "-no-snapshot-save" "-force-snapshot-load")
+
+  # Copy snapshot image if exists.
+  if [ -d "$snapshot_dir_short_path" ]; then
+      echo "Copying snapshot to $ANDROID_AVD_HOME/emu.avd"
+      rm -r "$ANDROID_AVD_HOME/emu.avd"
+      cp -RL "$snapshot_dir_short_path/emu.avd" "$ANDROID_AVD_HOME/emu.avd"
+      chmod -R +w "$ANDROID_AVD_HOME/emu.avd"
+      grep -rl "__PLACEHOLDER_EXTERNAL__" "$ANDROID_AVD_HOME/emu.avd" | xargs sed -i "s#__PLACEHOLDER_EXTERNAL__#$HOME/..#g"
+      grep -rl "__PLACEHOLDER_HOME__" "$ANDROID_AVD_HOME/emu.avd" | xargs sed -i "s#__PLACEHOLDER_HOME__#$HOME#g"
+  fi
+fi
+
 # Launch the emulator.
 echo "Launching emulator-$port"
 boot_complete=false
@@ -134,16 +166,19 @@ do
     -port $port\
     -grpc $emulator_grpc_port\
     -delay-adb\
-    -no-snapshot\
     -no-window\
-    -verbose\
+    -gpu swiftshader_indirect\
     -feature -ModemSimulator\
-    -feature -MultiDisplay 2>&1 &
+    -feature -MultiDisplay\
+    "${additional_emulator_args[@]}" \
+    2>&1 &
   emu_pid=$!
 
   # Wait for the emulator to boot.
   echo "Waiting for emulator to boot"
-  while true; do
+
+  # kill -0 $emu_pid doesn't send any signal but it checks if the process is still alive.
+  while kill -0 $emu_pid 2>/dev/null; do
     output=$($adb -s emulator-$port shell getprop sys.boot_completed 2>&1)
     if [[ $output == *"unauthorized"* ]]; then
         echo "Emulator requires authentication"
@@ -168,6 +203,18 @@ do
 done
 if [ "$boot_complete" = true ]; then
   echo "Emulator boot complete"
+
+  if [ "$2" = "create-snapshot" ]; then
+      $adb -s emulator-$port emu kill
+      wait $emu_pid
+      echo "Emulator process finished"
+      snapshot_from="$ANDROID_AVD_HOME/emu.avd"
+      echo "Copying snapshot to $snapshot_dir_path"
+      mkdir -p "$snapshot_dir_path"
+      mv "$snapshot_from" "$snapshot_dir_path"
+      grep -rl "$HOME/external" --include="*.ini" "$snapshot_dir_path" | xargs sed -i "s#$HOME/external#__PLACEHOLDER_EXTERNAL__#g"
+      grep -rl "$HOME" --include="*.ini" "$snapshot_dir_path" | xargs sed -i "s#$HOME#__PLACEHOLDER_HOME__#g"
+  fi
 else
   echo "Emulator boot failed"
   exit 1
