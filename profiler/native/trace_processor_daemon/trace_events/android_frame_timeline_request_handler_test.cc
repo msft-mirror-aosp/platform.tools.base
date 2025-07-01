@@ -106,14 +106,14 @@ TEST(AndroidFrameTimelineRequestHandlerTest,
   EXPECT_EQ(expected_slice.timestamp_nanoseconds(), 3624916605556L);
   EXPECT_EQ(expected_slice.duration_nanoseconds(), 10500051L);
   EXPECT_EQ(expected_slice.display_frame_token(), 274349L);
-  EXPECT_EQ(expected_slice.surface_frame_token(), 0L);
+  EXPECT_EQ(expected_slice.surface_frame_token(), 274349L);
   EXPECT_EQ(expected_slice.layer_name(), "");
 
   auto actual_slice = result.actual_slice(0);
   EXPECT_EQ(actual_slice.timestamp_nanoseconds(), 3624918340169L);
   EXPECT_EQ(actual_slice.duration_nanoseconds(), 8737031L);
   EXPECT_EQ(actual_slice.display_frame_token(), 274349L);
-  EXPECT_EQ(actual_slice.surface_frame_token(), 0L);
+  EXPECT_EQ(actual_slice.surface_frame_token(), 274349L);
   EXPECT_EQ(actual_slice.layer_name(), "");
   EXPECT_EQ(actual_slice.present_type(), "On-time Present");
   EXPECT_EQ(actual_slice.jank_type(), "None");

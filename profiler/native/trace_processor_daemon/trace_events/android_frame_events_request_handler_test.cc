@@ -65,16 +65,17 @@ TEST(AndroidFrameEventsRequestHandlerTest, PopulateEventsByLayerName) {
   EXPECT_EQ(layer.phase_size(), 4);
 
   // The following checks are equivalent to
-  //    `SELECT id, ts, dur, cast(name AS INT) AS frame_number, depth,
-  //         layout_depth
-  //    FROM experimental_slice_layout WHERE filter_track_ids =
-  //      (SELECT group_concat(track_id) FROM
-  //        (SELECT name, track_id FROM gpu_track INNER JOIN
+  //    `SELECT f.id, f.ts, f.dur, cast(f.name AS INT) AS frame_number,
+  //         f.depth, l.layout_depth
+  //    FROM experimental_slice_layout((
+  //      SELECT group_concat(track_id) FROM
+  //        (SELECT name, track_id FROM track INNER JOIN
   //          (SELECT DISTINCT track_id FROM frame_slice
   //           WHERE layer_name LIKE
   //           'android.com.java.profilertester/android.com.java.profilertester.MainActivity#0')
-  //           t ON gpu_track.id = t.track_id)
-  //         WHERE name GLOB 'SF_*') ORDER BY ts`
+  //           t ON track.id = t.track_id)
+  //         WHERE name GLOB 'SF_*')) l
+  //    JOIN frame_slice f ON f.id = l.id ORDER BY f.ts`
   auto display_phase = layer.phase(0);
   EXPECT_EQ(display_phase.phase_name(), "Display");
   EXPECT_EQ(display_phase.frame_event_size(), 429);
@@ -85,7 +86,7 @@ TEST(AndroidFrameEventsRequestHandlerTest, PopulateEventsByLayerName) {
   EXPECT_EQ(display_event.frame_number(), 4);
   EXPECT_EQ(display_event.depth(), 0);
   display_event = display_phase.frame_event(428);
-  EXPECT_EQ(display_event.id(), 123085);
+  EXPECT_EQ(display_event.id(), 123087);
   EXPECT_EQ(display_event.timestamp_nanoseconds(), 2671665780586815L);
   EXPECT_EQ(display_event.duration_nanoseconds(), -1L);
   EXPECT_EQ(display_event.frame_number(), 432);
@@ -101,23 +102,23 @@ TEST(AndroidFrameEventsRequestHandlerTest, PopulateEventsByLayerName) {
   EXPECT_EQ(app_event.frame_number(), 4);
   EXPECT_EQ(app_event.depth(), 0);
   app_event = app_phase.frame_event(429);
-  EXPECT_EQ(app_event.id(), 123169);
+  EXPECT_EQ(app_event.id(), 123171);
   EXPECT_EQ(app_event.timestamp_nanoseconds(), 2671665783520253L);
   EXPECT_EQ(app_event.duration_nanoseconds(), 1468542L);
   EXPECT_EQ(app_event.frame_number(), 433);
-  EXPECT_EQ(app_event.depth(), 3);
+  EXPECT_EQ(app_event.depth(), 1);
 
   auto gpu_phase = layer.phase(2);
   EXPECT_EQ(gpu_phase.phase_name(), "GPU");
-  EXPECT_EQ(gpu_phase.frame_event_size(), 429);
+  EXPECT_EQ(gpu_phase.frame_event_size(), 431);
   auto gpu_event = gpu_phase.frame_event(0);
   EXPECT_EQ(gpu_event.id(), 704);
   EXPECT_EQ(gpu_event.timestamp_nanoseconds(), 2671654862305884L);
   EXPECT_EQ(gpu_event.duration_nanoseconds(), 1130885L);
   EXPECT_EQ(gpu_event.frame_number(), 4);
   EXPECT_EQ(gpu_event.depth(), 0);
-  gpu_event = gpu_phase.frame_event(428);
-  EXPECT_EQ(gpu_event.id(), 123252);
+  gpu_event = gpu_phase.frame_event(430);
+  EXPECT_EQ(gpu_event.id(), 123254);
   EXPECT_EQ(gpu_event.timestamp_nanoseconds(), 2671665784988795L);
   EXPECT_EQ(gpu_event.duration_nanoseconds(), 1126979L);
   EXPECT_EQ(gpu_event.frame_number(), 433);
@@ -133,7 +134,7 @@ TEST(AndroidFrameEventsRequestHandlerTest, PopulateEventsByLayerName) {
   EXPECT_EQ(composition_event.frame_number(), 4);
   EXPECT_EQ(composition_event.depth(), 0);
   composition_event = composition_phase.frame_event(428);
-  EXPECT_EQ(composition_event.id(), 122872);
+  EXPECT_EQ(composition_event.id(), 122874);
   EXPECT_EQ(composition_event.timestamp_nanoseconds(), 2671665770393272L);
   EXPECT_EQ(composition_event.duration_nanoseconds(), 10193543L);
   EXPECT_EQ(composition_event.frame_number(), 432);

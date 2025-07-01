@@ -1,3 +1,7 @@
+"""
+Bazel repository definitions.
+"""
+
 def _impl(repository_ctx):
     s = "bazel_version = \"" + native.bazel_version + "\""
     repository_ctx.file("bazel_version.bzl", s)
@@ -128,9 +132,9 @@ vendor_repository = repository_rule(
     },
 )
 
-def setup_external_repositories(prefix = ""):
+def setup_external_repositories(name = "", prefix = ""):
     _setup_git_repos(_git, prefix)
-    _setup_archive_repos(prefix)
+    _setup_archive_repos()
 
 def _setup_git_repos(repos, prefix = ""):
     for _repo in repos:
@@ -144,7 +148,7 @@ def _setup_git_repos(repos, prefix = ""):
         else:
             native.local_repository(**repo)
 
-def _setup_archive_repos(prefix = ""):
+def _setup_archive_repos():
     for _repo in _archives:
         repo = dict(_repo)
         local_archive(**repo)

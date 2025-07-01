@@ -58,22 +58,25 @@ void AndroidFrameEventsRequestHandler::PopulateFrameEventsByPhase(
     const std::string& layer_name, const std::string& phase_name_hint,
     const std::string& phase_name,
     proto::AndroidFrameEventsResult::Phase* phase_proto) {
-  // Instead of frame_slice, query from experimiental_slice_layout, a SQL
-  // function that condenses the slice table to minimize its vertical depth.
-  // See
+  // Instead of frame_slice, query layout_depth from experimiental_slice_layout,
+  // a SQL function that condenses the slice table to minimize its vertical
+  // depth. See
   // https://github.com/google/perfetto/blob/master/src/trace_processor/dynamic/experimental_slice_layout_generator.cc
   auto frame_events = tp_->ExecuteQuery(
-      "SELECT id, ts, dur, cast(name AS INT) AS frame_number, "
-      "  depth, layout_depth "
-      "FROM experimental_slice_layout WHERE filter_track_ids = "
-      "  (SELECT group_concat(track_id) FROM "
-      "    (SELECT name, track_id FROM gpu_track INNER JOIN "
+      "SELECT f.id, f.ts, f.dur, cast(f.name AS INT) AS frame_number, "
+      "  f.depth, l.layout_depth "
+      "FROM experimental_slice_layout(("
+      "  SELECT group_concat(track_id) FROM "
+      "    (SELECT name, track_id FROM track INNER JOIN "
       "      (SELECT DISTINCT track_id FROM frame_slice "
       "       WHERE layer_name LIKE '" +
       layer_name +
-      "') t ON gpu_track.id = t.track_id) "
+      "') t ON track.id = t.track_id) "
       "     WHERE name GLOB '" +
-      phase_name_hint + "') ORDER BY ts");
+      phase_name_hint +
+      "')) l "
+      "JOIN frame_slice f ON f.id = l.id "
+      "ORDER BY f.ts");
   while (frame_events.Next()) {
     auto frame_event_proto = phase_proto->add_frame_event();
     frame_event_proto->set_id(frame_events.Get(0).long_value);

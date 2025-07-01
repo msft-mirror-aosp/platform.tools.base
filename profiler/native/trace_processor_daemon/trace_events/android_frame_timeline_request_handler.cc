@@ -61,13 +61,11 @@ void AndroidFrameTimelineRequestHandler::PopulateFrameTimeline(
       "       s.layer_name, s.present_type, s.jank_type, s.on_time_finish, "
       "       s.gpu_composition, s.id, esl.layout_depth  "
       "FROM actual_frame_timeline_slice s "
-      "JOIN experimental_slice_layout esl USING(id) "
-      "WHERE esl.filter_track_ids = ( "
-      "  SELECT group_concat(distinct t.id) "
-      "  FROM process_track t "
-      "  JOIN process p USING(upid) "
-      "  WHERE t.name = 'Actual Timeline' AND p.pid = " +
-      std::to_string(params.process_id()) + ") ORDER BY s.ts");
+      "JOIN experimental_slice_layout(("
+      "  SELECT group_concat(distinct t.id) FROM process_track t "
+      "  JOIN process p USING(upid) WHERE t.name = 'Actual Timeline' AND p.pid "
+      "= " +
+      std::to_string(params.process_id()) + ")) esl USING(id) ORDER BY s.ts");
   while (actual_timeline.Next()) {
     auto actual_slice = result->add_actual_slice();
     actual_slice->set_timestamp_nanoseconds(actual_timeline.Get(0).long_value);

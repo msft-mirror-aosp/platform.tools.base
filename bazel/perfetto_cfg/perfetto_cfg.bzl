@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# See external/perfetto/bazel/standalone/README.md for more info on this file.
-# This is a fork of external/perfetto/bazel/standalone/perfetto_cfg.bzl to configure
-# Perfetto build to be integrated in Studio's bazel build, by:
-# * Configuring deps to the ones set on tools/base/bazel/repositories.bzl
-# * Change proto_library_visibility to public so we can consume the proto artifacts.
-# * Enable java proto generation by removing the noop override of java_proto_library.
+"""
+See external/perfetto/bazel/standalone/README.md for more info on this file.
+This is a fork of external/perfetto/bazel/standalone/perfetto_cfg.bzl to configure
+Perfetto build to be integrated in Studio's bazel build, by:
+* Configuring deps to the ones set on tools/base/bazel/repositories.bzl
+* Change proto_library_visibility to public so we can consume the proto artifacts.
+* Enable java proto generation by removing the noop override of java_proto_library.
+"""
 
 # Noop function used to override rules we don't want to support in standalone.
-def _noop_override(**kwargs):
-    pass
+# def _noop_override(**kwargs):
+#     pass
 
 PERFETTO_CONFIG = struct(
     # This is used to refer to deps within perfetto's BUILD files.
@@ -60,6 +62,7 @@ PERFETTO_CONFIG = struct(
         protobuf_lite = ["@com_google_protobuf//:protobuf_lite"],
         protobuf_full = ["@com_google_protobuf//:protobuf"],
         protobuf_descriptor_proto = ["@com_google_protobuf//:descriptor_proto"],
+        android_test_common = [],
 
         # The Python targets are empty on the standalone build because we assume
         # any relevant deps are installed on the system or are not applicable.
@@ -133,10 +136,17 @@ PERFETTO_CONFIG = struct(
         py_proto_library = None,
         go_proto_library = None,
         jspb_proto_library = None,
+        android_binary = None,
+        android_library = None,
+        android_jni_library = None,
+        android_instrumentation_test = None,
     ),
 
-    # The default copts which we use to compile C++ code.
-    default_copts = [
+    # The default opts which we use to compile C/C++ code.
+    default_copts = [],
+
+    # The default opts which we use to compile C++ code.
+    default_cxxopts = [
         "-std=c++17",
     ],
 )

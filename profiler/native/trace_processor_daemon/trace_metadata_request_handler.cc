@@ -29,15 +29,14 @@ void TraceMetadataRequestHandler::PopulateTraceMetadata(
   }
 
   std::string name_query = params.name().empty() ? "%" : params.name();
-  std::string type_query = params.type().empty() ? "%" : params.type();
+  // Filtering by metadata type is no longer supported.
+  // Ref:
+  // https://perfetto.dev/docs/analysis/perfetto-sql-backcompat#removal-of-code-type-code-column-from-all-non-track-tables
   std::string query_string =
-    "SELECT name, key_type, int_value, str_value "
-    "FROM metadata "
-    "WHERE name like '" +
-    name_query +
-    "' AND type like '" +
-    type_query +
-    "'";
+      "SELECT name, key_type, int_value, str_value "
+      "FROM metadata "
+      "WHERE name like '" +
+      name_query + "'";
   auto it = tp_->ExecuteQuery(query_string);
   while (it.Next()) {
       auto row = result->add_metadata_row();

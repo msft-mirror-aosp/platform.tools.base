@@ -182,8 +182,9 @@ TEST(CountersRequestHandlerTest, PopulatePowerCounterTracks) {
       std::make_pair("power.rails.memory.interface",
                      counter_accumulator{6, 8920933000000, 8925528000000,
                                          276383853.000000, 276582588.000000}),
-      // sql string value: power.VSYS_PWR_MMWAV
-      std::make_pair("power.VSYS_PWR_MMWAVE_uws",
+      // sql string value: power.rails.mmwave
+      // https://github.com/google/perfetto/commit/cc75c2555ddfd6bc678cfed36d6fe66d1789d673
+      std::make_pair("power.rails.mmwave",
                      counter_accumulator{6, 8920934000000, 8925530000000,
                                          29615531.000000, 29638919.000000}),
       // sql string value: power.rails.aoc.memo

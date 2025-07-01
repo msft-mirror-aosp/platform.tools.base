@@ -148,7 +148,10 @@ grpc::Status TraceProcessorServiceImpl::LoadTrace(
       fclose(output_file_fd);
     }
   }
-  tp_->NotifyEndOfFile();
+  auto status = tp_->NotifyEndOfFile();
+  if (!status.ok()) {
+    std::cout << "Failed to notify end of file." << std::endl;
+  }
 
   loaded_trace_id = trace_id;
   return grpc::Status::OK;
