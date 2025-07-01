@@ -40,6 +40,9 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
           [
               (
                   'tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon',
+                  '',
+              ),
+              (
                   'tools/base/profiler/native/sherlock/sherlock_trace_processor',
                   '',
               ),
@@ -78,6 +81,9 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
           [
               (
                   'tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon',
+                  '',
+              ),
+              (
                   'tools/base/profiler/native/sherlock/sherlock_trace_processor',
                   '',
               ),
