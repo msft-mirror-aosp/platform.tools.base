@@ -2259,6 +2259,89 @@ class UastTest : TestCase() {
     assertEquals(3, count)
   }
 
+  fun testSealedClassPermit_java() {
+    val testFiles =
+      arrayOf(
+        java(
+          """
+            public sealed class Shape
+                permits Circle, Square {
+            }
+        """
+        ),
+        java(
+          """
+            public final class Circle extends Shape {
+              float radius;
+            }
+          """
+        ),
+        java(
+          """
+            public final class Square extends Shape {
+              double side;
+            }
+          """
+        ),
+      )
+
+    val expectedPermits = setOf("Circle", "Square")
+    check(
+      *testFiles,
+      javaLanguageLevel = LanguageLevel.JDK_17,
+      check = { file ->
+        file.accept(
+          object : AbstractUastVisitor() {
+            override fun visitClass(node: UClass): Boolean {
+              val permitsList = node.javaPsi.permitsList
+              assertNotNull(permitsList)
+              val permits = permitsList!!.referenceElements.map { it.qualifiedName }
+              assertEquals(2, permits.size)
+              for (permit in permits) {
+                assertTrue(permit in expectedPermits)
+              }
+              return super.visitClass(node)
+            }
+          }
+        )
+      },
+    )
+  }
+
+  fun testSealedClassPermit_kt() {
+    // b/428697839
+    if (!useFirUast()) {
+      // TODO: https://youtrack.jetbrains.com/issue/KT-78773
+      // ULC (K1) raises UnsupportedOperationException
+      return
+    }
+    val source =
+      kotlin(
+        """
+          sealed class Shape
+
+          class Circle(val radius : Float) : Shape()
+
+          class Square(val side: Double) : Shape()
+        """
+      )
+
+    check(
+      source,
+      check = { file ->
+        file.accept(
+          object : AbstractUastVisitor() {
+            override fun visitClass(node: UClass): Boolean {
+              val permitsList = node.javaPsi.permitsList
+              assertNull(permitsList)
+              return super.visitClass(node)
+            }
+          }
+        )
+      },
+    )
+  }
+
   fun test125138962() {
     // Regression test for https://issuetracker.google.com/125138962
     val source =
