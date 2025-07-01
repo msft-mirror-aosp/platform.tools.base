@@ -1206,6 +1206,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.6.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core_1.6.3",
         "@maven//:org.mockito.mockito-core_5.12.0",
+        "@maven//:org.robolectric.android-all-instrumented_9-robolectric-4913185-2-i4",
         "@maven//:org.robolectric.robolectric_4.8.2",
         "@maven//:org.tensorflow.tensorflow-lite-metadata_0.2.0",
         "@maven//:org.tensorflow.tensorflow-lite-support_0.2.0",

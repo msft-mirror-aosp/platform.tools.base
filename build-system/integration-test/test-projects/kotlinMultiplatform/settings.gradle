@@ -2,6 +2,7 @@ rootProject.name = "Kotlin Multiplatform"
 include ':kmpJvmOnly'
 include ':kmpLibraryPlugin'
 include ':kmpFirstLib'
+include ':kmpHostTestOnlyLib'
 include ':kmpSecondLib'
 include ':androidLib'
 include ':app'
