@@ -241,6 +241,9 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
               while (true) {
                 val tag = curr
                 if (tag is KDocTag && isValidTagName(tag.name)) {
+                  if (tag.text.contains(".")) {
+                    return null
+                  }
                   return tag
                 } else if (tag is LeafPsiElement) {
                   val type = tag.elementType

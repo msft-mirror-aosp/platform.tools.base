@@ -272,6 +272,23 @@ class WrongCommentTypeDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testFqnAnnotation() {
+    lint()
+      .files(
+        kotlin(
+            """
+            /* Commented out for now:
+               @com.android.tools.screenshot.PreviewTest
+             */
+            class Test
+            """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testTolerateBaselineChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
