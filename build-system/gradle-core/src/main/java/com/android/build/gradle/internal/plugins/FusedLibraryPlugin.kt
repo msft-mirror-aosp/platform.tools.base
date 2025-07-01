@@ -272,7 +272,7 @@ class FusedLibraryPlugin @Inject constructor(
             GradleBuildProject.PluginType.FUSED_LIBRARY
 
     override fun apply(project: Project) {
-        super.basePluginApply(project, buildFeatures)
+        super.applyBaseServices(project, buildFeatures)
 
         val unstableNotice =
             "*Important* Fused Library Plugin is currently in an early testing phase. Artifacts published by the\n" +

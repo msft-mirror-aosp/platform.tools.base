@@ -173,7 +173,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         GradleBuildProject.PluginType.KOTLIN_MULTIPLATFORM_ANDROID_LIBRARY
 
     override fun apply(project: Project) {
-        super.basePluginApply(project, buildFeatures)
+        super.applyBaseServices(project, buildFeatures)
     }
 
     override fun configureProject(project: Project) {

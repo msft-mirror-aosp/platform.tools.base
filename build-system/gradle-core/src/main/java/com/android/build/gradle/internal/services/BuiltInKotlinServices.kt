@@ -42,6 +42,9 @@ import com.android.build.gradle.internal.utils.disallowPlugin
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
 import com.android.build.gradle.internal.utils.requirePlugin
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.ProjectOptions
+import com.android.builder.errors.IssueReporter
+import com.android.builder.errors.IssueReporter.Type
 import com.android.ide.common.gradle.Version
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
@@ -197,12 +200,42 @@ sealed class BuiltInKaptSupportMode {
 }
 
 /** Performs preliminary actions required for built-in Kotlin support. */
-fun initBuiltInKotlinSupportIfRequired(project: Project) {
+fun initBuiltInKotlinSupportIfRequired(
+    project: Project,
+    projectOptions: ProjectOptions,
+    issueReporter: IssueReporter
+) {
     project.pluginManager.withPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) {
         initBuiltInKotlinSupport(project)
     }
     project.pluginManager.withPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID) {
         project.requirePlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID, ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
+    }
+
+    if (projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
+        || projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)) {
+        // TODO(b/341765853) - no need to have this try/catch once KotlinBaseApiPlugin has been
+        //  added as a runtime dependency.
+        try {
+            project.plugins.apply(KotlinBaseApiPlugin::class.java)
+        } catch (e: Throwable) {
+            if (e is ClassNotFoundException || e is NoClassDefFoundError) {
+                val message =
+                    """
+                    The Kotlin Gradle plugin was not found on the project's buildscript
+                    classpath. Add "org.jetbrains.kotlin:kotlin-gradle-plugin:$MINIMUM_BUILT_IN_KOTLIN_VERSION" to the
+                    buildscript classpath in order to use any of the following Gradle
+                    properties:
+
+                    ${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName},
+                    ${BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT.propertyName}
+
+                    """.trimIndent()
+                issueReporter.reportError(Type.GENERIC, message)
+            } else {
+                throw e
+            }
+        }
     }
 }
 

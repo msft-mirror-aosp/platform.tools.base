@@ -42,8 +42,6 @@ import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.ProjectServices
-import com.android.build.gradle.internal.services.initBuiltInKotlinSupportIfRequired
-import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.MUTUALLY_EXCLUSIVE_ANDROID_GRADLE_PLUGINS
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptionService
@@ -60,7 +58,6 @@ import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.StopExecutionException
 import org.gradle.build.event.BuildEventsListenerRegistry
-import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import java.util.Locale
 
 abstract class AndroidPluginBaseServices(
@@ -132,7 +129,7 @@ abstract class AndroidPluginBaseServices(
         }
     }
 
-    protected open fun basePluginApply(project: Project, buildFeatures: BuildFeatures) {
+    protected open fun applyBaseServices(project: Project, buildFeatures: BuildFeatures) {
         // We run by default in headless mode, so the JVM doesn't steal focus.
         System.setProperty("java.awt.headless", "true")
 
@@ -151,33 +148,6 @@ abstract class AndroidPluginBaseServices(
             ).execute()
         } else {
             NoOpAnalyticsService.RegistrationAction(project).execute()
-        }
-
-        initBuiltInKotlinSupportIfRequired(project)
-        if (projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
-            || projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)) {
-            // TODO(b/341765853) - no need to have this try/catch once KotlinBaseApiPlugin has been
-            //  added as a runtime dependency.
-            try {
-                project.plugins.apply(KotlinBaseApiPlugin::class.java)
-            } catch (e: Throwable) {
-                if (e is ClassNotFoundException || e is NoClassDefFoundError) {
-                    val message =
-                        """
-                            The Kotlin Gradle plugin was not found on the project's buildscript
-                            classpath. Add "org.jetbrains.kotlin:kotlin-gradle-plugin:$MINIMUM_BUILT_IN_KOTLIN_VERSION" to the
-                            buildscript classpath in order to use any of the following Gradle
-                            properties:
-
-                            ${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName},
-                            ${BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT.propertyName}
-
-                        """.trimIndent()
-                    syncIssueReporter.reportError(Type.GENERIC, message)
-                } else {
-                    throw e
-                }
-            }
         }
 
         SyncIssueReporterImpl.GlobalSyncIssueService.RegistrationAction(
