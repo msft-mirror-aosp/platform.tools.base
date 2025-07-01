@@ -170,6 +170,7 @@ abstract class AarMetadataTask : NonIncrementalTask() {
         const val AAR_METADATA_VERSION = "1.0"
         const val DEFAULT_MIN_AGP_VERSION = "1.0.0"
         const val DEFAULT_MIN_COMPILE_SDK_EXTENSION = 0
+        const val DEFAULT_MIN_COMPILE_SDK_VERSION = 1
     }
 }
 

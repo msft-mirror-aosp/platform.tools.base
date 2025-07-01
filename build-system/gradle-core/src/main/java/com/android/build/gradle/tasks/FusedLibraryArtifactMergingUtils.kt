@@ -16,11 +16,13 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.api.dsl.AarMetadata
 import com.android.build.gradle.internal.tasks.AarMetadataReader
 import com.android.build.gradle.internal.tasks.AarMetadataTask
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_AGP_VERSION
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.writeAarMetadataFile
-import org.gradle.util.GradleVersion
+import com.android.ide.common.repository.AgpVersion
 import java.io.File
 import kotlin.math.max
 
@@ -29,48 +31,58 @@ internal fun writeMergedMetadata(
     outputFile: File,
     overrideMinAgp: String?,
     overrideMinCompileSdk: Int?,
-    overrideMinCompileExt: Int?
+    overrideMinCompileSdkExt: Int?
 ) {
     val parsedAarsMetadata = metadataFiles.map { AarMetadataReader.load(it) }
 
-    val mergedMetadata = object : AarMetadata {
-        override var minCompileSdk: Int? = 0 // No minimum restriction.
-        override var minCompileSdkExtension: Int? =
-                AarMetadataTask.DEFAULT_MIN_COMPILE_SDK_EXTENSION
-        override var minAgpVersion: String? =
-                AarMetadataTask.DEFAULT_MIN_AGP_VERSION
+    val mergedMetadata = object {
+        var minCompileSdk: Int = DEFAULT_MIN_COMPILE_SDK_VERSION
+        var minCompileSdkExtension: Int = DEFAULT_MIN_COMPILE_SDK_EXTENSION
+        var minAgpVersion: String = DEFAULT_MIN_AGP_VERSION
     }
     for (metadataFile in parsedAarsMetadata) {
-        mergedMetadata.minCompileSdk = max(
-                mergedMetadata.minCompileSdk!!,
-                metadataFile.minCompileSdk?.toInt()!!
-        )
-        mergedMetadata.minAgpVersion =
-                if (GradleVersion.version(metadataFile.minAgpVersion) >
-                        GradleVersion.version(mergedMetadata.minAgpVersion)
-                ) {
-                    metadataFile.minAgpVersion
-                } else {
-                    mergedMetadata.minAgpVersion
-                }
+        val minCompileSdk = metadataFile.minCompileSdk?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_VERSION
+        val minSdkExtension =
+            metadataFile.minCompileSdkExtension?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
+        val minAgpVersion = metadataFile.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION
 
-        mergedMetadata.minCompileSdkExtension = max(
-                mergedMetadata.minCompileSdkExtension!!,
-                metadataFile.minCompileSdkExtension!!.toInt())
+        when {
+            minCompileSdk > mergedMetadata.minCompileSdk -> {
+                mergedMetadata.minCompileSdk = minCompileSdk
+                mergedMetadata.minCompileSdkExtension = minSdkExtension
+            }
+
+            minCompileSdk == mergedMetadata.minCompileSdk -> {
+                mergedMetadata.minCompileSdkExtension =
+                    max(mergedMetadata.minCompileSdkExtension, minSdkExtension)
+            }
+        }
+        mergedMetadata.minAgpVersion =
+            if (AgpVersion.parse(minAgpVersion) >
+                AgpVersion.parse(mergedMetadata.minAgpVersion)
+            ) {
+                minAgpVersion
+            } else {
+                mergedMetadata.minAgpVersion
+            }
     }
-    if (overrideMinAgp != null || overrideMinCompileSdk != null || overrideMinCompileExt != null) {
-        mergedMetadata.minAgpVersion = overrideMinAgp
-        mergedMetadata.minCompileSdk = overrideMinCompileSdk
-        mergedMetadata.minCompileSdkExtension = overrideMinCompileExt
+
+    overrideMinAgp?.let {
+        mergedMetadata.minAgpVersion = it
     }
+    overrideMinCompileSdk?.let {
+        mergedMetadata.minCompileSdk = it
+        mergedMetadata.minCompileSdkExtension = overrideMinCompileSdkExt
+            ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
+    }
+
     writeAarMetadataFile(
             outputFile,
             aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
             aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            minCompileSdk = mergedMetadata.minCompileSdk ?: 1,
-            minAgpVersion = mergedMetadata.minAgpVersion ?: AarMetadataTask.DEFAULT_MIN_AGP_VERSION,
+            minCompileSdk = mergedMetadata.minCompileSdk,
+            minAgpVersion = mergedMetadata.minAgpVersion,
             minCompileSdkExtension = mergedMetadata.minCompileSdkExtension
-                    ?: AarMetadataTask.DEFAULT_MIN_COMPILE_SDK_EXTENSION
     )
 }
 
