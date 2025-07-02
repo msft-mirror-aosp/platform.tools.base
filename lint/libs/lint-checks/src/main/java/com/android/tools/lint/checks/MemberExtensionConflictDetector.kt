@@ -16,6 +16,7 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.client.api.UElementHandler
+import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
@@ -36,14 +37,18 @@ import org.jetbrains.kotlin.analysis.api.resolution.KaPartiallyAppliedSymbol
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.name
-import org.jetbrains.kotlin.analysis.api.types.KaTypeNullability
 import org.jetbrains.kotlin.builtins.StandardNames
+import org.jetbrains.kotlin.idea.references.mainReference
+import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtImportDirective
+import org.jetbrains.kotlin.psi.KtReferenceExpression
+import org.jetbrains.kotlin.psi.psiUtil.getQualifiedElementSelector
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UImportStatement
 import org.jetbrains.uast.USimpleNameReferenceExpression
 
 class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
@@ -73,11 +78,40 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(UCallExpression::class.java, USimpleNameReferenceExpression::class.java)
+    listOf(
+      UImportStatement::class.java,
+      UCallExpression::class.java,
+      USimpleNameReferenceExpression::class.java,
+    )
+
+  private val explicitlyImportedExtensions = mutableSetOf<CallableId>()
+
+  override fun afterCheckFile(context: Context) {
+    explicitlyImportedExtensions.clear()
+  }
 
   @OptIn(KaExperimentalApi::class)
   override fun createUastHandler(context: JavaContext): UElementHandler =
     object : UElementHandler() {
+      override fun visitImportStatement(node: UImportStatement) {
+        // Regard star import as implicit import
+        if (node.isOnDemand) return
+
+        val importDirective = node.sourcePsi as? KtImportDirective ?: return
+        val importedReference = importDirective.importedReference ?: return
+        val ktReference =
+          importedReference.getQualifiedElementSelector() as? KtReferenceExpression ?: return
+        analyze(ktReference) {
+          if (!isK2()) return
+          val symbols = ktReference.mainReference.resolveToSymbols()
+          for (symbol in symbols) {
+            if (symbol is KaCallableSymbol && symbol.isExtension) {
+              symbol.callableId?.let { explicitlyImportedExtensions.add(it) }
+            }
+          }
+        }
+      }
+
       override fun visitCallExpression(node: UCallExpression) {
         // This conflict of member and extension only happens in Kotlin
         if (!isKotlin(node.lang)) return
@@ -128,12 +162,12 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
         if (filteredMember == null) {
           return
         }
+        // Extensions from Kotlin stdlib are inevitable, so we'd like to skip them
+        // *unless* users explicitly import them. Those are technically unused,
+        // so this warning will bring their attention to either remove import
+        // or introduce import alias if their intention was to use an extension.
         val filteredExtensions =
-          extensions.filterNot { ext ->
-            // E.g., kotlin.Any?.toString(), kotlin.text.StringBuilder.append(kotlin.Any?)
-            ext.isFromKotlinBuiltIns() &&
-              (ext.hasNullableExtensionReceiver() || ext.hasNullableValueParameters())
-          }
+          extensions.filter { !it.isFromKotlinBuiltIns() || it.isExplicitlyImported() }
         // Yet another bail-out: no extensions
         if (filteredExtensions.isEmpty()) {
           return
@@ -146,26 +180,22 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
         return (candidate as? KaCallableMemberCall<*, *>)?.partiallyAppliedSymbol
       }
 
+      private fun KaApplicableCallCandidateInfo.callableId(): CallableId? {
+        return partialSymbol()?.signature?.callableId
+      }
+
       private fun KaApplicableCallCandidateInfo.hasExtensionReceiver(): Boolean {
         return partialSymbol()?.extensionReceiver != null
       }
 
-      private fun KaApplicableCallCandidateInfo.hasNullableExtensionReceiver(): Boolean {
-        return partialSymbol()?.signature?.receiverType?.nullability == KaTypeNullability.NULLABLE
-      }
-
-      private fun KaApplicableCallCandidateInfo.hasNullableValueParameters(): Boolean {
-        val valueParameters =
-          (partialSymbol()?.symbol as? KaFunctionSymbol)?.valueParameters ?: return false
-        return valueParameters.all { it.returnType.nullability == KaTypeNullability.NULLABLE }
+      private fun KaApplicableCallCandidateInfo.isExplicitlyImported(): Boolean {
+        val callableId = callableId() ?: return false
+        return callableId in explicitlyImportedExtensions
       }
 
       private fun KaApplicableCallCandidateInfo.isFromKotlinBuiltIns(): Boolean {
-        return partialSymbol()
-          ?.signature
-          ?.callableId
-          ?.packageName
-          ?.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME) == true
+        val callableId = callableId() ?: return false
+        return callableId.packageName.startsWith(StandardNames.BUILT_INS_PACKAGE_FQ_NAME)
       }
 
       private fun KaSession.reportConflict(

@@ -1111,7 +1111,9 @@ class LintDriver(
         val libraryConfig = library.getConfiguration(this)
         val libraryConfigLeaf = client.configurations.getScopeLeaf(libraryConfig)
         val libraryConfigPrevParent = libraryConfigLeaf.parent
-        libraryConfigLeaf.setParent(projectConfiguration)
+        if (libraryConfigLeaf != projectConfiguration) {
+          libraryConfigLeaf.setParent(projectConfiguration)
+        }
         try {
           analyzeLibraryProject(library, project, main)
           analyzeDependencies(library.directLibraries, libraryConfig, library, main, seen)
@@ -2098,9 +2100,11 @@ class LintDriver(
     uElementVisitor: UElementVisitor,
   ): Boolean {
     for (context in srcContexts) {
-      fireEvent(EventType.SCANNING_FILE, context)
       // TODO: Don't hold read lock around the entire process?
-      client.runReadAction { uElementVisitor.visitFile(context) }
+      client.runReadAction {
+        fireEvent(EventType.SCANNING_FILE, context)
+        uElementVisitor.visitFile(context)
+      }
       fileCount++
       if (context.file.name.endsWith(DOT_JAVA)) {
         javaFileCount++

@@ -42,6 +42,7 @@ import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.ProjectServices
+import com.android.build.gradle.internal.services.initBuiltInKotlinSupportIfRequired
 import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.MUTUALLY_EXCLUSIVE_ANDROID_GRADLE_PLUGINS
 import com.android.build.gradle.options.BooleanOption
@@ -152,6 +153,7 @@ abstract class AndroidPluginBaseServices(
             NoOpAnalyticsService.RegistrationAction(project).execute()
         }
 
+        initBuiltInKotlinSupportIfRequired(project)
         if (projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
             || projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)) {
             // TODO(b/341765853) - no need to have this try/catch once KotlinBaseApiPlugin has been
@@ -196,7 +198,8 @@ abstract class AndroidPluginBaseServices(
                 listenerRegistry,
                 BuildAnalyzerConfiguratorService.RegistrationAction(
                     project
-                ).execute().get()
+                ).execute().get(),
+                buildFeatures.configurationCache.active.get()
             ).execute()
         }
         configuratorService.getProjectBuilder(project.path)?.let {

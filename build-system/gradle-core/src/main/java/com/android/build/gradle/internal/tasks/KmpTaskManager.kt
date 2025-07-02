@@ -46,9 +46,11 @@ import com.android.build.gradle.internal.tasks.factory.TaskConfigAction
 import com.android.build.gradle.internal.tasks.factory.TaskProviderCallback
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.tasks.factory.registerTask
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.ProcessLibraryArtProfileTask
 import com.android.build.gradle.tasks.BundleAar
 import com.android.build.gradle.tasks.CompileLibraryResourcesTask
+import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import com.android.build.gradle.tasks.ProcessLibraryManifest
@@ -218,6 +220,13 @@ class KmpTaskManager(
             project.tasks.registerTask(ExportConsumerProguardFilesTask.CreationAction(variant))
         }
 
+        // Some versions of retrolambda remove the actions from the extract annotations task.
+        // TODO: remove this hack once tests are moved to a version that doesn't do this
+        // b/37564303
+        if (variant.services.projectOptions[BooleanOption.ENABLE_EXTRACT_ANNOTATIONS]) {
+            taskFactory.register(ExtractAnnotations.CreationAction(variant))
+        }
+
         if (variant.requiresJacocoTransformation) {
             val jacocoTask = project.tasks.registerTask(
                 JacocoTask.CreationAction(variant)
@@ -257,13 +266,15 @@ class KmpTaskManager(
         // Create lint tasks here only if the lint standalone plugin is applied (to avoid
         // Android-specific behavior)
         if (project.plugins.hasPlugin(LINT_PLUGIN_ID)) {
-            lintTaskManager.createLintTasks(
-                ComponentTypeImpl.KMP_ANDROID,
-                variant.name,
-                listOf(variant),
-                testComponentPropertiesList = emptyList(),
-                isPerComponent = true
-            )
+            globalConfig.lintOptions?.let { lintOptions ->
+                lintTaskManager.createLintTasks(
+                    ComponentTypeImpl.KMP_ANDROID,
+                    variant.name,
+                    listOf(variant),
+                    testComponentPropertiesList = emptyList(),
+                    isPerComponent = true,
+                )
+            }
         }
 
         project.tasks.registerTask(BundleAar.KotlinMultiplatformLocalLintCreationAction(variant))

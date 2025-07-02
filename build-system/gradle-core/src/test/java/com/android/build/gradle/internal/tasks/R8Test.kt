@@ -766,7 +766,8 @@ class R8Test(private val r8OutputType: R8OutputType) {
                 fullMode = useFullR8,
                 strictFullModeForKeepRules = BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES.defaultValue,
                 isolatedSplits = null,
-                r8OutputType = if (componentType.isAar) R8OutputType.CLASSES else R8OutputType.DEX
+                r8OutputType = if (componentType.isAar) R8OutputType.CLASSES else R8OutputType.DEX,
+                mainDexListDisallowed = BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED.defaultValue
             ),
             resourceShrinkingConfig = null,
             partialShrinkingConfig = partialShrinkingConfig,

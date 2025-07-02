@@ -191,9 +191,9 @@ abstract class BundleAar : Zip(), VariantTask {
                 artifacts.get(InternalArtifactType.AAR_LIBS_DIRECTORY),
                 prependToCopyPath(SdkConstants.LIBS_FOLDER)
             )
+            task.from(artifacts.get(InternalArtifactType.ANNOTATIONS_ZIP))
 
             if (creationConfig !is KmpCreationConfig) {
-                task.from(artifacts.get(InternalArtifactType.ANNOTATIONS_ZIP))
                 task.from(
                     creationConfig.artifacts.get(SingleArtifact.ASSETS),
                     prependToCopyPath(SdkConstants.FD_ASSETS)

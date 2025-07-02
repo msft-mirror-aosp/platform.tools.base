@@ -36,7 +36,7 @@ import com.android.ddmlib.TimeoutException;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
-import com.android.tools.deployer.model.App;
+import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.tracer.Trace;
 import com.android.utils.ILogger;
 
@@ -154,15 +154,15 @@ public class AdbClient {
         }
     }
 
-    public InstallResult install(@NonNull App app, List<String> options, boolean reinstall) {
+    public InstallResult install(DeploymentPlan plan, List<String> options, boolean reinstall) {
         // If there are baseline profiles, let's add them to the list of files to install.
         List<Path> paths = new ArrayList<>();
         paths.addAll(
-                app.getApks().stream()
+                plan.getApksForPackageManager().stream()
                         .map(apk -> Paths.get(apk.path))
                         .collect(Collectors.toList()));
 
-        List<Path> bps = app.getBaselineProfile(device.getVersion().getApiLevel());
+        List<Path> bps = plan.getApp().getBaselineProfile(device.getVersion().getApiLevel());
         paths.addAll(bps);
         logger.info("Installing:");
         for (Path p : paths) {
@@ -183,7 +183,7 @@ public class AdbClient {
             // path: /data/app/~~-[...]==/c.e.c-==/base.apk
             //    arm64: [status=speed-profile] [reason=install] [primary-abi]
             //      [location is /data/app/~~[...]==/c.e.c-==/oat/arm64/base.odex]
-            String[] cmd = {"pm", "art", "dump", app.getAppId()};
+            String[] cmd = {"pm", "art", "dump", plan.getApp().getAppId()};
             byte[] rawResult = new byte[0];
             try {
                 rawResult = shell(cmd, Timeouts.SHELL_BASELINE_PROFILE_STATUS);

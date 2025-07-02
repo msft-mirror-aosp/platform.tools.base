@@ -26,16 +26,16 @@ class BooleanOptionTest {
     fun `check Boolean options are put in correct order`() {
         // Expected order of Boolean options
         val order = listOf(
-                ApiStage.Stable::class.java,
-                FeatureStage.Supported::class.java,
-                ApiStage.Experimental::class.java,
-                FeatureStage.Experimental::class.java,
-                FeatureStage.SoftlyEnforced::class.java,
-                ApiStage.Deprecated::class.java,
-                FeatureStage.Deprecated::class.java,
-                FeatureStage.Enforced::class.java,
-                ApiStage.Removed::class.java,
-                FeatureStage.Removed::class.java
+            ApiStage.Stable::class.java,
+            FeatureStage.Supported::class.java,
+            ApiStage.Experimental::class.java,
+            FeatureStage.Experimental::class.java,
+            FeatureStage.SoftlyEnforced::class.java,
+            ApiStage.Deprecated::class.java,
+            FeatureStage.Deprecated::class.java,
+            FeatureStage.Enforced::class.java,
+            ApiStage.Removed::class.java,
+            FeatureStage.Removed::class.java
         )
 
         BooleanOption.entries.forEachIndexed { index, currentOption ->

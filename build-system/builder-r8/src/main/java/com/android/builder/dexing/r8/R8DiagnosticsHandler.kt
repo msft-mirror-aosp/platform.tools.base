@@ -27,9 +27,10 @@ import java.nio.file.Path
 
 /** Handle R8-specific warning/errors and capture additional information. */
 class R8DiagnosticsHandler(
-        private val missingKeepRulesFile: Path,
-        private val messageReceiver: MessageReceiver,
-        tool: String,
+    private val missingKeepRulesFile: Path,
+    private val messageReceiver: MessageReceiver,
+    private val mainDexListDisallowed: Boolean,
+    tool: String,
 ) : D8DiagnosticsHandler(messageReceiver, tool) {
 
     // TODO(b/181858113): Remove this when main dex list support is removed from AGP.
@@ -39,7 +40,7 @@ class R8DiagnosticsHandler(
                 Message(
                     Message.Kind.WARNING,
                     "Using multiDexKeepFile property with R8 is deprecated and will be fully" +
-                            " removed in AGP 8.0. Please migrate to use multiDexKeepProguard instead."
+                            " removed in AGP 9.0. Please migrate to use multiDexKeepProguard instead."
                 )
             )
         }
@@ -57,7 +58,7 @@ class R8DiagnosticsHandler(
 
     // TODO(b/181858113): Remove this when main dex list support is removed from AGP.
     override fun modifyDiagnosticsLevel(level: DiagnosticsLevel?, diagnostic: Diagnostic?): DiagnosticsLevel? {
-      if (diagnostic is UnsupportedMainDexListUsageDiagnostic) {
+      if (!mainDexListDisallowed && diagnostic is UnsupportedMainDexListUsageDiagnostic) {
         return DiagnosticsLevel.WARNING
       }
 

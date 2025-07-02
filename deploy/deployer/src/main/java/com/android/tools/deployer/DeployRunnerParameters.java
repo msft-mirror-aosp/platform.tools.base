@@ -50,6 +50,7 @@ public class DeployRunnerParameters {
     private StdLogger.Level logLevel = StdLogger.Level.ERROR;
     private String applicationId;
     private String[] userInstallFlags = null;
+    private String strategyJson = null;
     private final List<String> targetDevices = new ArrayList<>();
     private final List<Path> apkPaths = new ArrayList<>();
 
@@ -84,6 +85,8 @@ public class DeployRunnerParameters {
             createAdblibSession = true;
         } else if (arg.startsWith("--install-flags=")) {
             userInstallFlags = arg.substring("--install-flags=".length()).split(" +");
+        } else if (arg.startsWith("--strategy=")) {
+            strategyJson = arg.substring("--strategy=".length());
         } else if (arg.startsWith("--log-level=")) {
             try {
                 logLevel = StdLogger.Level.valueOf(arg.substring("--log-level=".length()));
@@ -203,6 +206,14 @@ public class DeployRunnerParameters {
 
     public String[] getUserInstallFlags() {
         return userInstallFlags;
+    }
+
+    public String getStrategyJson() {
+        return strategyJson;
+    }
+
+    public boolean hasStrategyJson() {
+        return strategyJson != null;
     }
 
     static class Component {

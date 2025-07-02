@@ -63,7 +63,8 @@ abstract class BuildAnalyzerConfiguratorService: BuildService<BuildServiceParame
     fun initBuildAnalyzerService(
         project: Project,
         attributionFileLocation: String,
-        parameters: BuildAnalyzerService.Parameters
+        parameters: BuildAnalyzerService.Parameters,
+        isConfigurationCacheActive: Boolean
     ) {
         if (state != State.NOT_INITIALIZED) {
             return
@@ -130,7 +131,7 @@ abstract class BuildAnalyzerConfiguratorService: BuildService<BuildServiceParame
                 AndroidGradlePluginAttributionData.BuildInfo(
                     agpVersion = Version.ANDROID_GRADLE_PLUGIN_VERSION,
                     gradleVersion = project.gradle.gradleVersion,
-                    configurationCacheIsOn = project.gradle.startParameter.isConfigurationCacheRequested
+                    configurationCacheIsOn = isConfigurationCacheActive
                 )
             )
             parameters.taskNameToTaskInfoMap.set(taskNameToTaskInfoMap)

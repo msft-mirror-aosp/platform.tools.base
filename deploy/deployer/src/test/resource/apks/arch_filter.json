@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.example.myapplication",
+  "applicationId": "com.example.simpleapp",
   "variantName": "debug",
   "elements": [
     {
@@ -25,7 +25,7 @@
       "filters": [
         {
           "filterType": "ABI",
-          "value": "x86_64"
+          "value": "x86"
         }
       ],
       "attributes": [],

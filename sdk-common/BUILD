@@ -66,7 +66,10 @@ fileset(
 
 maven_library(
     name = "tools.sdk-common",
-    srcs = glob(["src/main/java/**"]),
+    srcs = glob([
+        "src/main/java/**/*.java",
+        "src/main/java/**/*.kt",
+    ]),
     bundled_deps = [
         "//tools/base/sdk-common/aia-manifest-jar-generator:tools.proto",
         "//tools/base/sdk-common/gradle:tools.sdk-common.gradle.lib",

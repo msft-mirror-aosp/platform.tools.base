@@ -65,12 +65,20 @@ import kotlin.io.path.readText
 import kotlin.streams.toList
 import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
+import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule
+import org.jetbrains.kotlin.config.LanguageFeature
+import org.jetbrains.kotlin.psi.KtClass
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assume
+import org.junit.Assume.assumeTrue
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -2448,6 +2456,166 @@ class ProjectInitializerTest {
       arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
       null,
       null,
+    )
+  }
+
+  @OptIn(KaExperimentalApi::class)
+  @Test
+  fun testExpectActualWithJustJvm() {
+    assumeTrue(useFirUast())
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="common" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="com/example/Common.kt"/>
+                </module>
+                <module name="desktop" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="com/example/Desktop.kt"/>
+                  <dep module="common" kind="dependsOn" />
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          kotlin(
+              "com/example/Common.kt",
+              """
+              package com.example
+
+              interface Platform {
+                val name: String
+              }
+              expect fun getPlatform(): Platform
+              """,
+            )
+            .indented(),
+          kotlin(
+              "com/example/Desktop.kt",
+              """
+              package com.example
+
+              class DesktopPlatform : Platform {
+                override val name: String
+                get() = "Desktop"
+              }
+
+              actual fun getPlatform(): Platform = DesktopPlatform()
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "Common.kt" -> {}
+              "Desktop.kt" -> {
+                context as JavaContext
+                val uFile = context.uastParser.parse(context)!!
+                val file = uFile.sourcePsi as KtFile
+                val func = file.declarations[1] as KtNamedFunction
+                analyze(func) {
+                  assertTrue(
+                    "KMP should be enabled",
+                    (useSiteModule as KaSourceModule)
+                      .languageVersionSettings
+                      .supportsFeature(LanguageFeature.MultiPlatformProjects),
+                  )
+                  val expectSymbols = func.symbol.getExpectsForActual()
+                  assertEquals(1, expectSymbols.size)
+                  assertTrue(expectSymbols[0].isExpect)
+                }
+              }
+            }
+          }
+          else -> {}
+        }
+      },
+    )
+  }
+
+  @Test
+  fun testKmpEnabledWithJustNative() {
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="ioscode" library="true" android="false" compute_source_roots="false" kotlinPlatforms="Native [ios_arm64]">
+                  <src file="com/example/Code.kt"/>
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          kotlin(
+              "com/example/Code.kt",
+              """
+              package com.example
+
+              class Code {
+                fun hello() {
+                  val s = ""
+                }
+              }
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "Code.kt" -> {
+                context as JavaContext
+                val uFile = context.uastParser.parse(context)!!
+                val clz = uFile.classes[0].sourcePsi as KtClass
+                analyze(clz) {
+                  assertTrue(
+                    "KMP should be enabled",
+                    (useSiteModule as KaSourceModule)
+                      .languageVersionSettings
+                      .supportsFeature(LanguageFeature.MultiPlatformProjects),
+                  )
+                }
+              }
+            }
+          }
+          else -> {}
+        }
+      },
     )
   }
 

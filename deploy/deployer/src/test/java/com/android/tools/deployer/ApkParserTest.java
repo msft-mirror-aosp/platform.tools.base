@@ -166,8 +166,9 @@ public class ApkParserTest {
     @Test
     public void testFindCDSigned() throws Exception {
         ApkParser.ApkArchiveMap map = new ApkParser.ApkArchiveMap();
-        try (RandomAccessFile file = new RandomAccessFile(BASE + "signed_app/base.apk", "r")) {
-            ApkParser.findCDLocation(file.getChannel(), map);
+        String path = BASE + "signed_app/base.apk";
+        try (RandomAccessFile file = new RandomAccessFile(path, "r")) {
+            ApkParser.findCDLocation(file.getChannel(), map, path);
             assertEquals(
                     "CD of signed_app.apk found",
                     true,
@@ -178,8 +179,9 @@ public class ApkParserTest {
     @Test
     public void testFindCDUnsigned() throws Exception {
         ApkParser.ApkArchiveMap map = new ApkParser.ApkArchiveMap();
-        try (RandomAccessFile file = new RandomAccessFile(BASE + "nonsigned_app/base.apk", "r")) {
-            ApkParser.findCDLocation(file.getChannel(), map);
+        String path = BASE + "nonsigned_app/base.apk";
+        try (RandomAccessFile file = new RandomAccessFile(path, "r")) {
+            ApkParser.findCDLocation(file.getChannel(), map, path);
             assertEquals(
                     "CD of signed_app.apk found",
                     true,
@@ -190,8 +192,9 @@ public class ApkParserTest {
     @Test
     public void testFindSignatureBlock() throws Exception {
         ApkParser.ApkArchiveMap map = new ApkParser.ApkArchiveMap();
-        try (RandomAccessFile file = new RandomAccessFile(BASE + "signed_app/base.apk", "r")) {
-            ApkParser.findCDLocation(file.getChannel(), map);
+        String path = BASE + "signed_app/base.apk";
+        try (RandomAccessFile file = new RandomAccessFile(path, "r")) {
+            ApkParser.findCDLocation(file.getChannel(), map, path);
             ApkParser.findSignatureLocation(file.getChannel(), map);
             assertEquals(
                     "Signature block of signed_app.apk found",

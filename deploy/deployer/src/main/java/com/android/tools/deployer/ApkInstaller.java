@@ -24,7 +24,6 @@ import com.android.ddmlib.InstallReceiver;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
-import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.deployer.model.FileDiff;
 import com.android.utils.ILogger;
@@ -134,7 +133,7 @@ public class ApkInstaller {
                             result =
                                     invokeAdbInstall(
                                             adb,
-                                            plan.getApp(),
+                                            plan,
                                             installOptions.getFlags(),
                                             allowReinstall,
                                             installOptions.getShouldUseAssumeVerified());
@@ -174,7 +173,7 @@ public class ApkInstaller {
                     result =
                             invokeAdbInstall(
                                     adb,
-                                    plan.getApp(),
+                                    plan,
                                     installOptions.getFlags(),
                                     allowReinstall,
                                     installOptions.getShouldUseAssumeVerified());
@@ -233,7 +232,7 @@ public class ApkInstaller {
                     result =
                             invokeAdbInstall(
                                     adb,
-                                    plan.getApp(),
+                                    plan,
                                     installOptions.getFlags(),
                                     allowReinstall,
                                     installOptions.getShouldUseAssumeVerified());
@@ -288,7 +287,7 @@ public class ApkInstaller {
             return new DeltaInstallResult(DeltaInstallStatus.API_NOT_SUPPORTED);
         }
 
-        List<Apk> localApks = plan.getApp().getApks();
+        List<Apk> localApks = plan.getApksForPackageManager();
         ApplicationDumper.Dump dump;
         try {
             dump = new ApplicationDumper(installer).dump(localApks);
@@ -482,13 +481,14 @@ public class ApkInstaller {
 
     private AdbClient.InstallResult invokeAdbInstall(
             AdbClient adb,
-            @NonNull App app,
+            @NonNull DeploymentPlan plan,
             List<String> options,
             boolean allowReinstall,
             boolean shouldUseAssumeVerified) {
         return adb.install(
-                app,
-                maybeInjectAssumeVerified(app.isDebuggable(), shouldUseAssumeVerified, options),
+                plan,
+                maybeInjectAssumeVerified(
+                        plan.getApp().isDebuggable(), shouldUseAssumeVerified, options),
                 allowReinstall);
     }
 

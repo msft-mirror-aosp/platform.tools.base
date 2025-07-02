@@ -17,8 +17,8 @@
 package com.android.build.gradle.options
 
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
-import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
 import com.android.build.gradle.options.Version.VERSION_3_5
 import com.android.build.gradle.options.Version.VERSION_3_6
 import com.android.build.gradle.options.Version.VERSION_4_0
@@ -37,6 +37,7 @@ import com.android.builder.model.PROPERTY_DEPLOY_AS_INSTANT_APP
 import com.android.builder.model.PROPERTY_EXTRACT_INSTANT_APK
 import com.android.builder.model.PROPERTY_INVOKED_FROM_IDE
 import com.android.builder.model.PROPERTY_REFRESH_EXTERNAL_NATIVE_MODEL
+import org.gradle.api.Project
 
 enum class BooleanOption(
     override val propertyName: String,
@@ -557,6 +558,50 @@ enum class BooleanOption(
             true,
             FeatureStage.Enforced(Version.VERSION_9_0),
             Version.VERSION_9_0
+        )
+    ),
+
+    /**
+     * Temporary workaround to continue using R8 param of --main-dex-list
+     */
+    R8_MAIN_DEX_LIST_DISALLOWED(
+        "android.r8.mainDexList.disallowed",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Experimental,
+            Version.VERSION_9_0
+        )
+    ),
+
+    /**
+     * Whether to enable built-in Kotlin support (https://issuetracker.google.com/259523353).
+     *
+     * When this property is enabled, AGP provides Kotlin support for all [Project]s without
+     * requiring users to apply the `org.jetbrains.kotlin.android` plugin or the
+     * `com.android.experimental.built-in-kotlin` plugin.
+     *   - If the user applies the `org.jetbrains.kotlin.android` plugin, the build will fail as AGP
+     *   already provides Kotlin support.
+     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin, the build
+     *   doesn't fail, but it also doesn't have any further effect.
+     *
+     * When this property is disabled, the users will need to apply either the
+     * `com.android.experimental.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
+     * plugin to have Kotlin support.
+     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin (recommended),
+     *   AGP will provide Kotlin support for the current project that the plugin is applied to.
+     *   - If the user applies the `org.jetbrains.kotlin.android` plugin (legacy behavior), that
+     *   plugin will provide Kotlin support for the current project that the plugin is applied to.
+     */
+    BUILT_IN_KOTLIN(
+        propertyName = "android.builtInKotlin",
+        defaultValue = false,
+        stage = FeatureStage.Experimental,
+        futureStage = FutureStage(
+            defaultValue = true,
+            stage = FeatureStage.SoftlyEnforced(VERSION_10_0),
+            version = Version.VERSION_9_0
         )
     ),
 

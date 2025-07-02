@@ -19,10 +19,12 @@ package com.android.build.gradle.internal.core.dsl.impl.features
 import com.android.build.api.dsl.EmulatorControl
 import com.android.build.api.dsl.ManagedDevices
 import com.android.build.api.variant.AndroidVersion
+import com.android.build.api.variant.impl.AndroidVersionImpl
 import com.android.build.gradle.internal.core.dsl.features.DeviceTestOptionsDslInfo
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
+import com.android.builder.core.DefaultApiVersion
 
 internal class KmpDeviceTestOptionsDslInfoImpl(
     private val extension: KotlinMultiplatformAndroidLibraryExtensionImpl,
@@ -45,7 +47,11 @@ internal class KmpDeviceTestOptionsDslInfoImpl(
     override val emulatorControl: EmulatorControl
         get() = testOnDeviceConfig.emulatorControl
     override val targetSdkVersion: AndroidVersion?
-        get() = testOnDeviceConfig.run { createTargetSdkVersion(_targetSdk?.apiLevel, _targetSdk?.codeName) }
+        get() = testOnDeviceConfig.run { createTargetSdkVersion(_targetSdk?.apiLevel, _targetSdk?.codeName) } ?: compileSdk
     override val codeCoverageEnabled: Boolean
         get() = extension.androidTestOnJvmOptions!!.enableCoverage
+
+    private val compileSdk: AndroidVersion?
+        get() = extension.compileSdk?.let(::AndroidVersionImpl)
+            ?: extension.compileSdkPreview?.let { AndroidVersionImpl(DefaultApiVersion(it).apiLevel, it) }
 }

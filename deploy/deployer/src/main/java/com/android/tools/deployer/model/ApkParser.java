@@ -127,7 +127,7 @@ public class ApkParser {
             try (RandomAccessFile raf = new RandomAccessFile(absolutePath, "r");
                     FileChannel fileChannel = raf.getChannel()) {
                 ApkArchiveMap map = new ApkArchiveMap();
-                findCDLocation(fileChannel, map);
+                findCDLocation(fileChannel, map, apkPath);
                 findSignatureLocation(fileChannel, map);
                 digest = generateDigest(raf, map);
                 zipEntries = readZipEntries(raf, map);
@@ -202,11 +202,11 @@ public class ApkParser {
         }
     }
 
-    public static void findCDLocation(FileChannel channel, ApkArchiveMap map)
+    public static void findCDLocation(FileChannel channel, ApkArchiveMap map, String path)
             throws IOException, ApkParserException {
         long fileSize = channel.size();
         if (fileSize < EOCD_SIZE) {
-            throw new ApkParserException("File is too small to be a valid zip file");
+            throw new ApkParserException("File " + path + " is too small to be a valid zip file");
         }
         // Search the End of Central Directory Record
         // The End of Central Directory record size is 22 bytes if the comment section size is zero.
@@ -234,7 +234,7 @@ public class ApkParser {
             }
 
             if (endofFileBuffer.position() - 5 < 0) {
-                throw new ApkParserException("Unable to find apk's ECOD signature");
+                throw new ApkParserException("Unable to find " + path + "'s ECOD signature");
             }
             endofFileBuffer.position(endofFileBuffer.position() - 5);
         }

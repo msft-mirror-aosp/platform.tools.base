@@ -152,6 +152,32 @@ class KotlinMultiplatformAndroidPluginBasicTest {
     }
 
     @Test
+    fun androidDeviceTestDefaultTargetSdkToCompileSdk() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpSecondLib").ktsBuildFile,
+            """
+                kotlin {
+                    android {
+                        withDeviceTestBuilder {
+                            sourceSetTreeName = "test"
+                        }
+                    }
+                }
+                androidComponents {
+                    finalizeDsl { extension ->
+                        extension.compileSdk = 36
+                    }
+                }
+            """.trimIndent()
+        )
+        project.executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
+
+        project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+            manifest().contains("android:targetSdkVersion=36")
+        }
+    }
+
+    @Test
     fun testComponentNamesForEachAndroidCompilation() {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,

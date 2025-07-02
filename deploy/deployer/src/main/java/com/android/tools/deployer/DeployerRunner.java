@@ -22,7 +22,6 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
-import com.android.ide.common.build.GenericFilterConfiguration;
 import com.android.tools.deployer.model.App;
 import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.tools.deployer.tasks.Canceller;
@@ -36,6 +35,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -49,9 +49,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class DeployerRunner {
-    // TODO: Remove later. This is just to test our build system has the right dependencies.
-    private static GenericFilterConfiguration test = null;
-
     private static final int SUCCESS = 0;
 
     // These values are > 1000 in order to prevent collision with the DeployerException.Error
@@ -234,7 +231,10 @@ public class DeployerRunner {
                         deployerOption);
         final Deployer.Result deployResult;
         try {
-            App app = getAppToInstall(parameters.getApplicationId(), parameters.getApks());
+            App app =
+                    parameters.hasStrategyJson()
+                            ? getAppToInstall(parameters.getStrategyJson(), logger)
+                            : getAppToInstall(parameters.getApplicationId(), parameters.getApks());
             if (parameters.getCommands().contains(DeployRunnerParameters.Command.INSTALL)) {
                 InstallOptions.Builder options = defaultInstallOptions.toBuilder();
 
@@ -291,6 +291,16 @@ public class DeployerRunner {
     public static App getAppToInstall(String appId, List<Path> apks) throws DeployerException {
         try {
             return App.fromPaths(appId, apks);
+        } catch (ApkParserException e) {
+            throw DeployerException.parseFailed(e.getMessage());
+        }
+    }
+
+    public static App getAppToInstall(String strategyJson, ILogger logger)
+            throws DeployerException {
+        try {
+            Path path = Paths.get(strategyJson);
+            return App.fromStrategy(path, logger);
         } catch (ApkParserException e) {
             throw DeployerException.parseFailed(e.getMessage());
         }

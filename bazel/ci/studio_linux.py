@@ -22,13 +22,17 @@ _BASE_TARGETS = [
 
 
 _EXTRA_TARGETS = [
-    '//tools/adt/idea/studio:android-studio',
+    '//tools/adt/idea/studio:android-studio.linux.zip',
+    '//tools/adt/idea/studio:android-studio.mac.zip',
+    '//tools/adt/idea/studio:android-studio.mac_arm.zip',
+    '//tools/adt/idea/studio:android-studio.win.zip',
     '//tools/adt/idea/studio:updater_deploy.jar',
     '//tools/vendor/google/aswb:aswb.linux.zip',
     '//tools/vendor/google/aswb:aswb.mac.zip',
     '//tools/vendor/google/aswb:aswb.mac_arm.zip',
     '//tools/adt/idea/native/installer:android-studio-bundle-data',
     '//tools/base/profiler/native/trace_processor_daemon',
+    '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
     '//tools/base/deploy/deployer:deployer.runner_deploy.jar',
     '//tools/base/journeys:journeys_maven_repo.zip',
     '//tools/base/preview/screenshot:preview_screenshot_maven_repo.zip',
@@ -85,6 +89,7 @@ _ARTIFACTS = [
     ('tools/base/lint/libs/lint-tests/lint-tests.jar', 'artifacts'),
     ('tools/base/deploy/deployer/deployer.runner_deploy.jar', 'artifacts/deployer.jar'),
     ('tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon', 'artifacts'),
+    ('tools/base/profiler/native/sherlock/sherlock_trace_processor', 'artifacts'),
     ('tools/vendor/google/game-tools/packaging/game-tools-linux.tar.gz', 'artifacts'),
     ('tools/vendor/google/game-tools/packaging/game-tools-win.zip', 'artifacts'),
     ('tools/base/deploy/service/deploy.service_deploy.jar', 'artifacts'),

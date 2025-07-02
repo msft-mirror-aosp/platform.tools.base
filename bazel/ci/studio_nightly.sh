@@ -72,7 +72,10 @@ function run_bazel() {
     --//tools/adt/idea/studio:create-nightly-build \
     --//tools/adt/idea/studio:version-suffix="${version}" \
     -- \
-    //tools/adt/idea/studio:android-studio \
+    //tools/adt/idea/studio:android-studio.linux.zip \
+    //tools/adt/idea/studio:android-studio.mac.zip \
+    //tools/adt/idea/studio:android-studio.mac_arm.zip \
+    //tools/adt/idea/studio:android-studio.win.zip \
     //tools/adt/idea/native/installer:android-studio-bundle-data \
     //tools/vendor/google/adrt:android-studio-cros-skeleton.zip \
     //tools/vendor/google/adrt:android-studio-nsis-prebuilt.zip \

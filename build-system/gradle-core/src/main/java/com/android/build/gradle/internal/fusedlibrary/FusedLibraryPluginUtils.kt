@@ -41,7 +41,10 @@ import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.transform.TransformSpec
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import org.gradle.api.attributes.AttributeCompatibilityRule
+import org.gradle.api.attributes.CompatibilityCheckDetails
 import org.gradle.api.attributes.Usage
+import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
@@ -198,5 +201,21 @@ internal fun getFusedLibraryDependencyModuleVersionIdentifiers(
             .minus(dependenciesIncludedInFusedAar)
             .minus(sourceRootComponent.moduleVersion)
             .toSet() as Set<ModuleVersionIdentifier>
+    }
+}
+
+internal class FusedLibraryTargetJvmEnvironmentCompatibilityRule
+    : AttributeCompatibilityRule<TargetJvmEnvironment> {
+
+    override fun execute(details: CompatibilityCheckDetails<TargetJvmEnvironment?>) {
+        with(details) {
+            // 'standard-jvm' is acceptable when a dependency doesn't have the preferred
+            // 'android' TargetJvmEnvironment attribute value.
+            if (consumerValue?.name == TargetJvmEnvironment.ANDROID
+                && producerValue?.name == TargetJvmEnvironment.STANDARD_JVM
+            ) {
+                compatible()
+            }
+        }
     }
 }

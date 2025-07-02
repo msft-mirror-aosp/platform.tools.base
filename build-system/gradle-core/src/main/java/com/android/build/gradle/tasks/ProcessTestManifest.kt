@@ -61,6 +61,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
@@ -130,6 +131,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             functionalTest.orNull,
             testLabel.orNull?.let { it.ifEmpty { null } },
             if (testManifestFile.get().asFile.isFile) testManifestFile.get().asFile else null,
+            testedAppManifestFile.orNull?.asFile,
             computeProviders(),
             placeholdersValues.get(),
             navJsons,
@@ -189,6 +191,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
         functionalTest: Boolean?,
         testLabel: String?,
         testManifestFile: File?,
+        testedAppManifestFile: File?,
         manifestProviders: List<ManifestProvider?>,
         manifestPlaceholders: Map<String?, Any?>,
         navigationJsons: Collection<File>,
@@ -283,6 +286,11 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                     .setPlaceHolderValues(manifestPlaceholders)
                     .addFlavorAndBuildTypeManifests(
                         *mainManifestAndOverlays.second.toTypedArray())
+                    .apply {
+                        if (testedAppManifestFile != null) {
+                            addLibraryManifest(testedAppManifestFile)
+                        }
+                    }
                     .addLibraryManifest(generatedTestManifest)
                     .addAllowedNonUniqueNamespace(namespace)
                     .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
@@ -295,7 +303,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                     .setNamespace(namespace)
                     .withFeatures(
                         ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
-                        ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST
+                        ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST,
                     )
 
                 instrumentationRunner?.let {
@@ -411,6 +419,11 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     @get:InputFiles // Use InputFiles rather than InputFile to allow the file not to exist
     abstract val testManifestFile: RegularFileProperty
 
+    @get:PathSensitive(PathSensitivity.NONE)
+    @get:InputFile
+    @get:Optional
+    abstract val testedAppManifestFile: RegularFileProperty
+
     @get:Input
     abstract val testApplicationId: Property<String>
 
@@ -524,21 +537,13 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                     .artifacts
                     .setTaskInputToFinalProduct(
                         SingleArtifact.MERGED_MANIFEST,
-                        task.testManifestFile
+                        task.testedAppManifestFile
                     )
-                task.manifestOverlayFilePaths.add(creationConfig.sources.manifestFile)
-                task.manifestOverlayFilePaths.addAll(creationConfig.sources.manifestOverlayFiles)
-                task.manifestOverlayFilePaths.disallowChanges()
-
                 task.testApplicationId.setDisallowChanges(creationConfig.mainVariant.applicationId)
                 task.testedApplicationId.setDisallowChanges(creationConfig.mainVariant.applicationId)
                 task.namespace.setDisallowChanges(creationConfig.mainVariant.namespace)
             } else {
                 // Configuring ProcessTestManifest task for device tests and host tests for libraries.
-                task.testManifestFile.set(creationConfig.sources.manifestFile)
-                task.testManifestFile.disallowChanges()
-                task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.sources.manifestOverlayFiles)
-
                 task.testApplicationId.setDisallowChanges(creationConfig.applicationId)
                 task.testedApplicationId.setDisallowChanges(creationConfig.testedApplicationId)
                 task.namespace.setDisallowChanges(creationConfig.namespace)
@@ -546,6 +551,9 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                 task.instrumentationRunner.setDisallowChanges(creationConfig.instrumentationRunner)
             }
 
+            task.testManifestFile.set(creationConfig.sources.manifestFile)
+            task.testManifestFile.disallowChanges()
+            task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.sources.manifestOverlayFiles)
             task.componentType.setDisallowChanges(creationConfig.componentType.toString())
             task.tmpDir.setDisallowChanges(
                 creationConfig.paths.intermediatesDir(

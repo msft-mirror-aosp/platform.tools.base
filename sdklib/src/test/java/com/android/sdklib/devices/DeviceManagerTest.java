@@ -125,7 +125,7 @@ public class DeviceManagerTest {
                         "Medium Phone",
                         "Medium Tablet",
                         "13.5\" Freeform",
-                        "Resizable",
+                        "Resizable (Experimental)",
                         "Small Phone");
 
         assertThat(dm.getDevice("2.7in QVGA", "Generic").getDisplayName()).isEqualTo("2.7\" QVGA");
@@ -222,7 +222,7 @@ public class DeviceManagerTest {
                         "Medium Phone",
                         "Medium Tablet",
                         "13.5\" Freeform",
-                        "Resizable",
+                        "Resizable (Experimental)",
                         "Small Phone",
                         "Television (4K)",
                         "Television (1080p)",
@@ -355,7 +355,7 @@ public class DeviceManagerTest {
                         "Medium Phone",
                         "Medium Tablet",
                         "13.5\" Freeform",
-                        "Resizable",
+                        "Resizable (Experimental)",
                         "Small Phone");
 
         // this list comes from the nexus.xml bundled in the JAR
@@ -448,7 +448,7 @@ public class DeviceManagerTest {
                         "Medium Phone",
                         "Medium Tablet",
                         "13.5\" Freeform",
-                        "Resizable",
+                        "Resizable (Experimental)",
                         "Small Phone",
                         "Television (4K)",
                         "Television (1080p)",
@@ -576,7 +576,7 @@ public class DeviceManagerTest {
                         "Medium Phone",
                         "Medium Tablet",
                         "13.5\" Freeform",
-                        "Resizable",
+                        "Resizable (Experimental)",
                         "Small Phone");
 
         // this list comes from the nexus.xml bundled in the JAR
@@ -669,7 +669,7 @@ public class DeviceManagerTest {
                         "Medium Phone",
                         "Medium Tablet",
                         "13.5\" Freeform",
-                        "Resizable",
+                        "Resizable (Experimental)",
                         "Small Phone",
                         "Television (4K)",
                         "Television (1080p)",
@@ -1055,7 +1055,7 @@ public class DeviceManagerTest {
                         "Medium Phone",
                         "Medium Tablet",
                         "13.5\" Freeform",
-                        "Resizable",
+                        "Resizable (Experimental)",
                         "Small Phone",
                         "Pixel 9",
                         "Pixel 9 Pro",

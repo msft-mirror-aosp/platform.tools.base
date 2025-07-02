@@ -96,8 +96,8 @@ abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask()
                 when (it.dependency) {
                     is UnresolvedDependencyResult -> {
                         ValidationCheck.Result.Invalid(
-                            it.dependency.failure.message
-                                ?: it.dependency.failure.stackTraceToString()
+                            (it.dependency.failure.message ?: "") +
+                                    "\n Stacktrace: \n" + it.dependency.failure.stackTraceToString()
                         )
                     }
                     is ResolvedDependencyResult -> {

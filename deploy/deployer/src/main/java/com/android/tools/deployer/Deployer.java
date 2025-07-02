@@ -257,7 +257,7 @@ public class Deployer {
                 runner.create(
                         Tasks.ROOT_PUSH_INSTALL,
                         new RootPushApkInstaller(adb, installer, logger)::install,
-                        runner.create(plan.getApp()));
+                        runner.create(plan));
 
         TaskResult result = runner.run(canceller);
         result.getMetrics().forEach(metrics::add);

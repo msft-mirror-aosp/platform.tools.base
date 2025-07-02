@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.bundle
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.AabSubject.Companion.assertThat
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -123,7 +124,9 @@ class DynamicAppLegacyMultidexTest {
     /** Regression test for b/120845002 */
     @Test
     fun testPrimaryDexContainsAllNecessaryClasses() {
-        project.executor().run("bundleIcsR8")
+        project.executor()
+            .with(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED, false)
+            .run("bundleIcsR8")
 
         project.getBundle(GradleTestProject.ApkType.of("icsR8", false)).use { aab ->
             // http://b/163114632

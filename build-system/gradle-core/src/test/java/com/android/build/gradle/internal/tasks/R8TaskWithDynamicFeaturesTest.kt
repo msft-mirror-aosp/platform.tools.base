@@ -41,7 +41,7 @@ import java.nio.file.Path
 
 /**
  * Testing legacy multidex and monodex for [R8Task] with dynamic features. Similar to
- * [R8MainDexListTaskTest], but with dynamic features.
+ * [R8MainDexRulesTest], but with dynamic features.
  */
 class R8TaskWithDynamicFeaturesTest {
     @get: Rule

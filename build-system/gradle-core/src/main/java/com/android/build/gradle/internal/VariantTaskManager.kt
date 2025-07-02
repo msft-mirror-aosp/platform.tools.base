@@ -21,7 +21,6 @@ import com.android.SdkConstants
 import com.android.SdkConstants.DATA_BINDING_KTX_LIB_ARTIFACT
 import com.android.build.api.dsl.DataBinding
 import com.android.build.api.variant.VariantBuilder
-import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.attribution.CheckJetifierBuildService
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.ApkCreationConfig
@@ -30,11 +29,9 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dependency.AndroidXDependencySubstitution
-import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
 import com.android.build.gradle.internal.lint.LintTaskManager
@@ -214,13 +211,15 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     }
 
     open fun createTopLevelTasks(componentType: ComponentType, variantModel: VariantModel) {
-        lintTaskManager.createLintTasks(
-            componentType,
-            variantModel,
-            variantPropertiesList,
-            testComponents,
-            globalConfig.services.projectOptions.get(BooleanOption.LINT_ANALYSIS_PER_COMPONENT)
-        )
+        globalConfig.lintOptions?.let { lintOptions ->
+            lintTaskManager.createLintTasks(
+                componentType,
+                variantModel.defaultVariant,
+                variantPropertiesList,
+                testComponents,
+                globalConfig.services.projectOptions.get(BooleanOption.LINT_ANALYSIS_PER_COMPONENT),
+            )
+        }
         createReportTasks()
 
         // Create C/C++ configuration, build, and clean tasks

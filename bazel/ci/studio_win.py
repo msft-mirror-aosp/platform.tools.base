@@ -27,7 +27,11 @@ def studio_win(build_env: bazel.BuildEnv):
   ]
   extra_targets = [
       '//tools/base/profiler/native/trace_processor_daemon',
-      '//tools/adt/idea/studio:android-studio',
+      '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
+      '//tools/adt/idea/studio:android-studio.linux.zip',
+      '//tools/adt/idea/studio:android-studio.mac.zip',
+      '//tools/adt/idea/studio:android-studio.mac_arm.zip',
+      '//tools/adt/idea/studio:android-studio.win.zip',
       '//tools/vendor/google/skia:skiaparser.zip',
       '//tools/vendor/google/skia:skia_test_support.zip',
   ]
@@ -72,6 +76,7 @@ def studio_win(build_env: bazel.BuildEnv):
           ('tools/vendor/google/skia/skiaparser.zip', ''),
           ('tools/vendor/google/skia/skia_test_support.zip', ''),
           ('tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon.exe', ''),
+          ('tools/base/profiler/native/sherlock/sherlock_trace_processor.exe', ''),
       ],
       missing_ok=(build_type == studio.BuildType.PRESUBMIT),
   )

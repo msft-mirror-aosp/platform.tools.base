@@ -28,7 +28,6 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleTransformExecution
 import org.gradle.api.Project
 import org.gradle.tooling.events.FinishEvent
-import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -47,7 +46,7 @@ abstract class NoOpAnalyticsService : AnalyticsService() {
             null,
             ConcurrentHashMap(),
             null,
-            Collections.synchronizedSet(mutableSetOf()),
+            null,
         )
     }
 

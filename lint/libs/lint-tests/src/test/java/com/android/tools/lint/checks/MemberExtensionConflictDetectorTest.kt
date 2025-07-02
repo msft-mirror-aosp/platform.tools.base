@@ -21,7 +21,7 @@ import com.android.tools.lint.detector.api.TextFormat
 import com.android.tools.lint.useFirUast
 
 class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
-  override fun getDetector(): Detector? {
+  override fun getDetector(): Detector {
     return MemberExtensionConflictDetector()
   }
 
@@ -342,6 +342,317 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
           """
           )
           .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testUserLib_implicitImport() {
+    // Collecting multiple applicable candidates only work for K2 AA
+    if (!useFirUast()) {
+      return
+    }
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            "src/my/cool/lib/MyList.kt",
+            """
+            package my.cool.lib
+
+            interface MyList {
+              val magicCount: Int
+              fun removeMiddle()
+            }
+          """,
+          )
+          .indented(),
+        kotlin(
+            "src/my/cool/lib/Utils.kt",
+            """
+            package my.cool.lib
+
+            fun MyList.removeMiddle() {}
+          """,
+          )
+          .indented(),
+        kotlin(
+            "src/my/cool/lib/test.kt",
+            """
+            package my.cool.lib
+            // same package, hence implicitly imported
+
+            private fun test(l: MyList) {
+              l.removeMiddle() // WARNING
+            }
+          """,
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+src/my/cool/lib/test.kt:5: Warning: removeMiddle is defined both as a member in class my.cool.lib.MyList and an extension in package my.cool.lib. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
+  l.removeMiddle() // WARNING
+  ~~~~~~~~~~~~~~~~
+0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testKotlinCollection_implicitImport() {
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            """
+            fun test() {
+              val set = mutableSetOf<String>()
+              set.add("hi")
+              set.remove("hi") // Member
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testKotlinCollection_randomImport() {
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            """
+            package another.pkg
+
+            class Foo
+
+            fun Foo?.bar() { this?.baz() }
+          """
+          )
+          .indented(),
+        kotlin(
+            """
+            import another.pkg.bar // random import
+
+            fun test() {
+              val set = mutableSetOf<String>()
+              set.add("hi")
+              set.remove("hi") // Member
+            }
+          """
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testKotlinCollection_explicitImport() {
+    // Collecting multiple applicable candidates only work for K2 AA
+    if (!useFirUast()) {
+      return
+    }
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            """
+            import kotlin.collections.remove // technically unused yet explicit import
+
+            fun test() {
+              val set = mutableSetOf<String>()
+              set.add("hi")
+              set.remove("hi") // Member
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+src/test.kt:6: Warning: remove is defined both as a member in class kotlin.collections.MutableSet and an extension in package kotlin.collections. The defined behavior for this is to use the member, but since the extension is explicitly imported into this file, there's a chance that this was not expected. (One common way this happens is for members to be added to a class after code was already written to use an extension). [MemberExtensionConflict]
+  set.remove("hi") // Member
+  ~~~~~~~~~~~~~~~~
+0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testKotlinCollection_explicitImportAlias() {
+    // b/427761232
+    lint()
+      .files(
+        kotlin(
+            """
+            import kotlin.collections.remove as extRemove
+
+            fun test() {
+              val set = mutableSetOf<String>()
+              set.add("hi")
+              set.extRemove("hi") // Extension
+            }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testValueClass_source() {
+    // b/427808171
+    lint()
+      .files(
+        java(
+            """
+            package my.pkg;
+
+            public interface MyView {
+              void setBackgroundColor(int rgb);
+            }
+          """
+          )
+          .indented(),
+        kotlin(
+            """
+            package another.pkg
+
+            import my.pkg.MyView
+
+            @JvmInline
+            value class MyColor(val rgb: Int)
+
+            fun MyView.setBackgroundColor(c: MyColor) = this.setBackgroundColor(c.rgb)
+          """
+          )
+          .indented(),
+        kotlin(
+            """
+            package another.pkg
+
+            import my.pkg.MyView
+
+            fun test(v: MyView, c: MyColor) {
+              v.setBackgroundColor(42) // Member
+              v.setBackgroundColor(c) // Extension
+            }
+          """
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testValueClass_binary() {
+    // b/427808171
+    lint()
+      .files(
+        bytecode(
+          "libs/view.jar",
+          java(
+              """
+              package my.pkg;
+
+              public interface MyView {
+                void setBackgroundColor(int rgb);
+              }
+            """
+            )
+            .indented(),
+          0xe4b0da78,
+          """
+                my/pkg/MyView.class:
+                H4sIAAAAAAAA/zv1b9c+BgYGWwZOdgYmRgbe3Er9gux0fd/KsMzUcnYGFkYG
+                gazEskT9nMS8dH3/pKzU5BJGBqHi1BKnxOTs9KL80rwU5/yc/CJGBhYNT80w
+                Rgau4PzSouRUt8ycVEYGbog5eiAj2BgZGBmYGUCAEWgsKwMbiMXADiSZGDgA
+                Eo20k4gAAAA=
+                """,
+        ),
+        bytecode(
+          "libs/ui.jar",
+          kotlin(
+              """
+              package another.pkg
+
+              import my.pkg.MyView
+
+              @JvmInline
+              value class MyColor(val rgb: Int)
+
+              fun MyView.setBackgroundColor(c: MyColor) = this.setBackgroundColor(c.rgb)
+            """
+            )
+            .indented(),
+          0xd9a3302f,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg4uJiEGILSS0u8S7hkuDiTszLL8lI
+                LdIryE4X4vStdM7PyS/yLlFi0GIAAHsJ/lI+AAAA
+                """,
+          """
+                another/pkg/MyColor.class:
+                H4sIAAAAAAAA/31U3VMbVRT/3ZtNstkssAktJQtqP7RN+GhSrLVKQQq1djEU
+                hYpSfFnCTlhIdmN2w9Q3xhf9C3zwRccXX3ioMxYYO+NQ+ubf5Dieu9kkTMg4
+                s3Pvueeej9/5nXP373///AvAbXzNMGg6rr9t1fO13XJ+6dsFt+LW42AM2o65
+                Z+YrplPOL2/uWCU/jghDrGz5K+VNhkg2Z9BaFzIzVMQhJ8CRYJD8bdtjuFjs
+                EXmaoc93V/267ZQn7WqtQnZZI1fs5Grekd2lbt18w65sWQRugGDcsx3bnw1g
+                rKlIIa1AwyCDGibKErAZGRfJ1KzVLGeLYTJ7Ps35zGGWaRWXMCyCZhhGe0E8
+                azgiDEeF4cL/G74pDN9ikFskMFzI9ihfxRVcFbbXiE+zXi6o6EO/QgRfJwa3
+                TW97wd2yQgYlgke9SHWiGI5vlQVVY5SqZa1iAjkF45hUkRUSR54haX3TMCte
+                GGooaxS7+z6de8qgNJxN91lgpeJdxIT3bYZo0GGG9HkvYr4ZWrS4V1AVtzAl
+                4nzYLGFNgSRaqJVcx/PrjZLv1kNYcis3w7DoRa/JElNwT4S7TwO5R5NwprAC
+                Ic0ahiiE126JZYpqLe66fsV28jt71fziXtVw6GAR7lTrYsnyzS3TN0nHq3sR
+                ejJMLAmxgLLskv6ZLU6UgG9R4Bcn+1cVPswVrp3sK/RxTVa4HKU9SXuM9n7a
+                uXz6/dzwyf4UL7D5dDqmcZ0XIq+P2cn+6a8xSZa06KKuyaRMTMmaokvDrMAe
+                vf4xEtwmNXVR0/qEC+lYoOsnD00bIJ3W1qW09EqqGZrOMsHRJTmmxU9/YLyZ
+                6zsuEZqMAE+EUElKyObNXZ+aIqaGYaBItDxuVDet+hNzs2KJbrsls7Jm1m1x
+                DpV9q75Z2l0ya+FZWXUb9ZL10BaHzErD8e2qtWZ7Nt3ed6iBpm9To2kIOPVd
+                JE+LnwhJopNRxEizRqe8YJr26NgfUA5I4PiS1ligjOGrwCEwQJIkao94KqHz
+                +2Qt7jIvoa0f4UJ66BC6fog3tNwhLh/i7edB5k6QDN4JMDDxAMMg10MEskBw
+                jBvdPnI7MT2r0OdaC7V+jJsHXQ7RdpKJdpldSQrdPp0k9GpCn2WqTkyfPv4K
+                /CdEIwfjJ+CHeG9GH/1ZHKUmX+u0xsET/6C/GXKIlOQWwhDSHaJKALiLD8Lg
+                oi/CKiEAjR9juoOo6Z4IEQkpcNe4eIKh+2zorowdYWZs5AWU33v2rhlLacdS
+                giFgFHO2TeblkBuud7PCmyOjZfAR5kLrG8SJuEu8BF/XjzDf3a8EFgKnlPiR
+                dferNWWsx2Rl8AAfd9WX1Ed+QVz6DVKkQ3aUyJ47y1USD0Oqk/gkqI/jaWD+
+                BTZo3ybpEe0GuS5uIGLgUwNFA0t4TCKWDXyGzzfAPKxgdQODHlQPTzzEg3XW
+                Q85D1EPMw91Ac4felYcpDxMesh6uBMo+D/3/AZO+jOv7BwAA
+                """,
+          """
+                another/pkg/MyColorKt.class:
+                H4sIAAAAAAAA/3VSXU8TQRQ9M/1k+SoFpBQFlSqlCluICSF9UUhMNpZixDQx
+                PJjpdlKmu901u9Mqb43/RP+Bb+iDafDNH2W8WxpE0Ie598yde8+dc2d+/vr2
+                HcATmAzzwvP1iQzMd07LPDjd910/eKFTYAyZtugJ0xVeyzxstKVN0RhDPpR6
+                T9hOK/C7XnOYv+GEOzu7u28YZovVzumIqq7k+4q1XmdYrfpBy2xL3QiE8kJT
+                eNRTaOUTrvm61nXdCkOuoE9UWLhJn0aaYdnxtas8s93rmMrTMvCEa1qeDohQ
+                2WEKBmmxT6TtjBhfikB0JCUyrBWr16VUrkSOIpJWZb0+gQlMGhjHFMPkXzpS
+                yDBkb16NIV60osIsZscxgzkS+z8Zb7vbzctBTV+bEwOzaVkMM9WR0gOpRVNo
+                QWe804vRg7HIjEUGlOtEgNPhBxWhMqHmFsPhoD9nDPoGz3CD5/gQkuNpnl/J
+                DPp5XmYlXubbyUyMcPzHGRv0ybDzz8l4OpFJnn/k40Yiff5pucyoajGi3WZR
+                x/nqP/4K3c4YwU1H0zz2/aaM9ClP1rqdhgxei4ZLkWzVt4VbF4GK9qNg4VXX
+                06ojLa+nQkWhy1d79uePUIcjvxvY8rmKahZHNfWLiiuJ2AJHHBfzWUQCSdqv
+                026PPCc/VcqOnWG6tPQV8xxfovmhRDZJ+Umk8YjwrYtM8gtDpinkiIvhcTR7
+                TiA1DHNsDG0Rm+SfUjxPDZeOEbNw28IdC8tYsXAX9yzcx+oxWIgCHhwjFdJH
+                wsMQCyFyIdZCJEIkfwOO1BR6kwMAAA==
+                """,
+        ),
+        kotlin(
+            """
+            import another.pkg.MyColor
+            import another.pkg.setBackgroundColor
+            import my.pkg.MyView
+
+            fun test(v: MyView, c: MyColor) {
+              v.setBackgroundColor(42) // Member
+              v.setBackgroundColor(c) // Extension
+            }
+          """
+          )
+          .indented(),
       )
       .run()
       .expectClean()
