@@ -46,6 +46,7 @@ import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import java.io.File
@@ -377,6 +378,7 @@ class DslProxy private constructor(
             // Returned as chained proxies
             SourceDirectorySet::class.java,
             KotlinJvmCompilerOptions::class.java -> method.getChainedProxyForReturn(propName)
+            KotlinCommonCompilerOptions::class.java -> method.getChainedProxyForReturn(propName)
             NamedDomainObjectContainer::class.java -> NamedDomainObjectContainerProxy(
                 extractResolvedTypeParamFromReturn(method),
                 dslRecorder.createChainedRecorder(propName)

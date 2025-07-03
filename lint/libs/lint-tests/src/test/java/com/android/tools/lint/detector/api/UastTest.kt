@@ -2342,6 +2342,55 @@ class UastTest : TestCase() {
     )
   }
 
+  fun testDeprecatedConstVal() {
+    // b/428041337
+    val source =
+      kotlin(
+          """
+          object Foo {
+            @Deprecated("use bar")
+            const val foo = "foo"
+
+            const val bar = "bar"
+          }
+        """
+        )
+        .indented()
+
+    check(
+      source,
+      check = { file ->
+        file.accept(
+          object : AbstractUastVisitor() {
+            override fun visitMethod(node: UMethod): Boolean {
+              if (node.isConstructor) {
+                return super.visitMethod(node)
+              }
+
+              // Intentionally calling UMethod.annotations to mimic g3 usage
+              @Suppress("UElementAsPsi")
+              val attributeNames =
+                node.annotations.flatMap { anno -> anno.attributes.map { it.attributeName } }
+
+              // After https://youtrack.jetbrains.com/issue/KTIJ-34167
+              // no more annotation on the accessor (due to annotation use-site)
+              assertEquals(0, attributeNames.size)
+
+              // Before https://youtrack.jetbrains.com/issue/KTIJ-34167
+              // @Deprecated was left, causing b/428041337
+              /*
+              assertEquals(1, attributeNames.size)
+              assertEquals("message", attributeNames.single())
+               */
+
+              return super.visitMethod(node)
+            }
+          }
+        )
+      },
+    )
+  }
+
   fun test125138962() {
     // Regression test for https://issuetracker.google.com/125138962
     val source =

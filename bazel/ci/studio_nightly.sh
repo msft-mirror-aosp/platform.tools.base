@@ -43,7 +43,6 @@ function copy_bazel_artifacts() {(
   cp -a ${bin_dir}/tools/adt/idea/native/installer/android-studio-bundle-data.zip ${artifacts_dir}
   cp -a ${bin_dir}/tools/vendor/google/adrt/android-studio-cros-skeleton.zip ${artifacts_dir}
   cp -a ${bin_dir}/tools/vendor/google/adrt/android-studio-nsis-prebuilt.zip ${artifacts_dir}
-  cp -a ${bin_dir}/tools/vendor/intel/android-studio-intel-haxm.zip ${artifacts_dir}
 )}
 
 
@@ -79,7 +78,6 @@ function run_bazel() {
     //tools/adt/idea/native/installer:android-studio-bundle-data \
     //tools/vendor/google/adrt:android-studio-cros-skeleton.zip \
     //tools/vendor/google/adrt:android-studio-nsis-prebuilt.zip \
-    //tools/vendor/intel:android-studio-intel-haxm.zip \
     //tools/adt/idea/studio:updater_deploy.jar
 }
 

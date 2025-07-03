@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.SdkConstants
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryExtension
@@ -45,7 +44,6 @@ import com.android.build.gradle.internal.VariantTaskManager
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.features.DeviceTestOptionsDslInfoImpl
@@ -84,6 +82,7 @@ import com.android.build.gradle.internal.services.StringCachingBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
 import com.android.build.gradle.internal.services.getBuildService
+import com.android.build.gradle.internal.services.initBuiltInKotlinSupportIfRequired
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfigImpl
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -357,9 +356,9 @@ abstract class BasePlugin<
 
     override fun apply(project: Project) {
         runAction {
-            basePluginApply(project, gradleBuildFeatures)
-            pluginSpecificApply(project)
+            applyBaseServices(project, gradleBuildFeatures)
             project.pluginManager.apply(AndroidBasePlugin::class.java)
+            pluginSpecificApply(project)
         }
     }
 
@@ -436,6 +435,9 @@ abstract class BasePlugin<
         gradle.projectsEvaluated { DeprecationReporterImpl.clean() }
 
         createAndroidJdkImageConfiguration(project)
+
+        // Provide built-in Kotlin support
+        initBuiltInKotlinSupportIfRequired(project, projectOptions, syncIssueReporter)
     }
 
     /** Creates the androidJdkImage configuration */

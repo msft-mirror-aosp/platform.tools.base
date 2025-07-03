@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Jar
@@ -31,7 +30,19 @@ import org.junit.Test
 internal class FusedLibraryMergeArtifactsTest {
 
     @get:Rule
-    val rule = GradleRule.configure().from {
+    val rule = GradleRule.configure()
+        .withMavenRepository {
+            // Test coverage for b/426156521
+            aar(
+                "com.remoteaar", "missing-min-compile-sdk"
+            ).withAarMetadataProperties(
+                mapOf(
+                    "aarFormatVersion" to "1.0",
+                    "aarMetadataVersion" to "1.0"
+                ),
+            )
+        }
+        .from {
         // Library dependency at depth 1 with no dependencies.
         androidLibrary(":androidLib1") {
             android {
@@ -168,6 +179,7 @@ internal class FusedLibraryMergeArtifactsTest {
                 include(project(":androidLib3"))
                 include(project(":androidLib2"))
                 include(project(":androidLib1"))
+                include("com.remoteaar:missing-min-compile-sdk:1.0")
             }
         }
         gradleProperties {
@@ -305,8 +317,8 @@ internal class FusedLibraryMergeArtifactsTest {
                 minAgpVersion().isEqualTo("4.0.1")
                 // Value from androidLib3
                 minCompileSdk().isEqualTo("18")
-                // Value from androidLib1
-                minCompileSdkExtension().isEqualTo("2")
+                // Value not specified androidLib3, so default is used.
+                minCompileSdkExtension().isEqualTo("0")
             }
         }
 
@@ -355,7 +367,6 @@ internal class FusedLibraryMergeArtifactsTest {
                     "android_lib_two_asset.txt",
                     "subdir/android_lib_one_asset_in_subdir.txt"
                 )
-
             }
         }
     }

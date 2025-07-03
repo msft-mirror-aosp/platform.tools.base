@@ -40,8 +40,11 @@ internal class KotlinMultiplatformAndroidLibraryTargetImpl(
     internal var enableJavaSources = false
         private set
 
-    override val compilerOptions: KotlinJvmCompilerOptions
-        get() = super.compilerOptions as KotlinJvmCompilerOptions
+    override val compilerOptions: KotlinJvmCompilerOptions by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        (super.compilerOptions as KotlinJvmCompilerOptions).apply {
+            KotlinJvmToolchain.wireJvmTargetToToolchain(this, project)
+        }
+    }
 
     override val compilations: NamedDomainObjectContainer<KotlinMultiplatformAndroidCompilation> =
         project.objects.domainObjectContainer(

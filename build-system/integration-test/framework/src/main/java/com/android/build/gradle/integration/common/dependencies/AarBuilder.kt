@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.integration.common.dependencies
 
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.AAR_METADATA_ENTRY_PATH
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.AAR_METADATA_RELATIVE_PATH
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.MavenRepoGenerator.Library
 import com.android.testutils.TestInputsGenerator.jarWithEmptyEntries
@@ -126,6 +128,16 @@ interface AarBuilder {
      * Sets the dependencies of the AAR
      */
     fun withDependencies(list: List<String>): AarBuilder
+
+    /**
+     * Populates an aar-metadata.properties file to the AAR.
+     *
+     * If the aar-metadata.properties file is already defined,
+     * the contents will be overridden.
+     *
+     * @param properties a map of string properties to their value
+     */
+    fun withAarMetadataProperties(properties: Map<String, String>): AarBuilder
 }
 
 
@@ -282,6 +294,14 @@ internal class AarBuilderImpl(
 
     override fun withDependencies(list: List<String>): AarBuilder {
         dependencies += list
+        return this
+    }
+
+    override fun withAarMetadataProperties(properties: Map<String, String>): AarBuilder {
+        val content = properties.entries.joinToString(
+            separator = "\n"
+        ) { (key, value) -> "$key=$value" }
+        extraFiles[AAR_METADATA_ENTRY_PATH] = content.toByteArray()
         return this
     }
 }

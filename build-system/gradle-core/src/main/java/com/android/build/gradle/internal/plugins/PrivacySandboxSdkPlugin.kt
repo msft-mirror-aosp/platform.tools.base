@@ -164,7 +164,7 @@ class PrivacySandboxSdkPlugin @Inject constructor(
     }
 
     override fun apply(project: Project) {
-        super.basePluginApply(project, buildFeatures)
+        super.applyBaseServices(project, buildFeatures)
         if (projectServices.projectOptions.let {
                     !it[BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT] && !it[BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT] }) {
             throw GradleException(
