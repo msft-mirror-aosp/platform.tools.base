@@ -209,31 +209,24 @@ class OverlayView(
         super.onDraw(canvas)
 
         // The rendering order matters.
-        recomposingRectangles.forEach {
-            recomposingRectPaint.color = it.color
-            canvas.drawRect(it.rect.toViewCoordinates(), recomposingRectPaint)
-        }
-        visibleRectangles.forEach {
-            visibleRectPaint.color = it.color
-            canvas.drawRect(it.rect.toViewCoordinates(), visibleRectPaint)
-        }
-        hoveredRectangle.forEach {
-            hoveredRectPaint.color = it.color
-            canvas.drawRect(it.rect.toViewCoordinates(), hoveredRectPaint)
-        }
-        selectedRectangles.forEach {
-            selectedRectPaint.color = it.color
-            val bounds = it.rect.toViewCoordinates()
-            canvas.drawRect(bounds, selectedRectPaint)
-            if (it.label != null) {
-                drawLabel(
-                    text = it.label,
-                    nodeBounds = bounds,
-                    backgroundPaint = selectedRectPaint,
-                    textPaint = textPaint,
-                    canvas = canvas
-                )
-            }
+        recomposingRectangles.forEach { it.paint(canvas, recomposingRectPaint) }
+        visibleRectangles.forEach { it.paint(canvas, visibleRectPaint) }
+        hoveredRectangle.forEach { it.paint(canvas, hoveredRectPaint) }
+        selectedRectangles.forEach { it.paint(canvas, selectedRectPaint) }
+    }
+
+    private fun DrawInstruction.paint(canvas: Canvas, paint: Paint) {
+        paint.color = color
+        val bounds = rect.toViewCoordinates()
+        canvas.drawRect(bounds, paint)
+        if (label != null) {
+            drawLabel(
+                text = label,
+                nodeBounds = bounds,
+                backgroundPaint = paint,
+                textPaint = textPaint,
+                canvas = canvas
+            )
         }
     }
 
