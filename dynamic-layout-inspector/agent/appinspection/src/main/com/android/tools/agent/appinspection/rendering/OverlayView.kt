@@ -228,7 +228,7 @@ class OverlayView(
             if (it.label != null) {
                 drawLabel(
                     text = it.label,
-                    viewBounds = bounds,
+                    nodeBounds = bounds,
                     backgroundPaint = selectedRectPaint,
                     textPaint = textPaint,
                     canvas = canvas
@@ -237,12 +237,12 @@ class OverlayView(
         }
     }
 
-    private fun drawLabel(text: String, viewBounds: Rect, backgroundPaint: Paint, textPaint: Paint, canvas: Canvas) {
+    private fun drawLabel(text: String, nodeBounds: Rect, backgroundPaint: Paint, textPaint: Paint, canvas: Canvas) {
         if (
-            viewBounds.bottom < 0 && viewBounds.top < 0 ||
-            viewBounds.left < 0 && viewBounds.right < 0 ||
-            viewBounds.bottom > canvas.height  && viewBounds.top > canvas.height ||
-            viewBounds.left > canvas.width  && viewBounds.right > canvas.width
+            nodeBounds.bottom < 0 && nodeBounds.top < 0 ||
+            nodeBounds.left < 0 && nodeBounds.right < 0 ||
+            nodeBounds.bottom > canvas.height  && nodeBounds.top > canvas.height ||
+            nodeBounds.left > canvas.width  && nodeBounds.right > canvas.width
             ) {
             // The bounds are not visible on the screen, don't render the label.
             return
@@ -255,8 +255,8 @@ class OverlayView(
         val strokeWidth = backgroundPaint.strokeWidth
         val canvasWidth = canvas.width
 
-        var labelBottom = viewBounds.top.toFloat()
-        var labelLeft = viewBounds.left.toFloat() - (strokeWidth / 2f)
+        var labelBottom = nodeBounds.top.toFloat()
+        var labelLeft = nodeBounds.left.toFloat() - (strokeWidth / 2f)
         var labelTop = labelBottom - textHeight
 
         val totalWidth = textWidth + 2 * horizontalPadding
