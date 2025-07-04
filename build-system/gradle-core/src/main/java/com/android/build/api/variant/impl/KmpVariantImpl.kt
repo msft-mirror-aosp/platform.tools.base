@@ -67,6 +67,7 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import java.io.File
 import java.io.Serializable
+import java.util.Collections
 import javax.inject.Inject
 
 open class KmpVariantImpl @Inject constructor(
@@ -93,7 +94,7 @@ open class KmpVariantImpl @Inject constructor(
     global,
     androidKotlinCompilation,
     manifestFile,
-), KotlinMultiplatformAndroidVariant, KmpCreationConfig, HasDeviceTestsCreationConfig {
+), KotlinMultiplatformAndroidVariant, KmpCreationConfig, HasDeviceTestsCreationConfig, HasHostTestsCreationConfig {
 
     override val minSdkVersion: AndroidVersion
         get() = minSdk
@@ -139,7 +140,8 @@ open class KmpVariantImpl @Inject constructor(
     override val deviceTests: Map<String, DeviceTest>
         get() = internalDeviceTests
 
-    override val hostTests = mutableMapOf<String, HostTestCreationConfig>()
+    override val hostTests: Map<String, HostTestCreationConfig>
+            get() = Collections.unmodifiableMap(internalHostTests)
 
     override val isMinifyEnabled: Boolean
         get() = optimizationCreationConfig.minifiedEnabled
@@ -274,6 +276,12 @@ open class KmpVariantImpl @Inject constructor(
                 stats
             ) as T
         }
+    }
+
+    private val internalHostTests = mutableMapOf<String, HostTestCreationConfig>()
+
+    override fun addTestComponent(testTypeName: String, testComponent: HostTestCreationConfig) {
+        internalHostTests[testTypeName] = testComponent
     }
 
     private val internalDeviceTests = mutableMapOf<String, DeviceTest>()

@@ -52,6 +52,24 @@ class KotlinMultiplatformAndroidVariantApiTest {
     }
 
     @Test
+    fun testHostTestCreationConfigExists() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            """
+                androidComponents {
+                    onVariants {
+                       println(it.name + ":" + it.hostTests.size)
+                    }
+                }
+            """.trimIndent()
+        )
+
+        val result = project.executor().run(":kmpFirstLib:assemble")
+
+        result.assertOutputContains("androidMain:1")
+    }
+
+    @Test
     fun testInstrumentedTestDependencySubstitution() {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,

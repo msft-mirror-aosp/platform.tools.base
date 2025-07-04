@@ -33,6 +33,7 @@ import com.android.build.api.dsl.SettingsExtension
 import com.android.build.api.extension.impl.KotlinMultiplatformAndroidComponentsExtensionImpl
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
 import com.android.build.api.variant.DeviceTestBuilder
+import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
@@ -47,6 +48,7 @@ import com.android.build.gradle.internal.DependencyConfigurator
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager.Companion.finalizeAllComponents
+import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.core.dsl.KmpComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.KmpAndroidTestDslInfoImpl
 import com.android.build.gradle.internal.core.dsl.impl.KmpUnitTestDslInfoImpl
@@ -379,6 +381,9 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             taskServices,
             kotlinMultiplatformHandler.getAndroidTarget()
         )
+        unitTest?.let {
+            mainVariant.addTestComponent(HostTestBuilder.UNIT_TEST_TYPE, it as HostTestCreationConfig)
+        }
 
         val androidTest = createAndroidTestComponent(
             project,
