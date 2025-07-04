@@ -130,41 +130,11 @@ class BuiltInKotlinCompilerPluginTest {
         )
         // Also check screenshot test as screenshot-test and test-fixture components are handled
         // slightly differently.
-        result.assertOutputContains(
+        // Currently, the KotlinCompilation instances for these components don't exist, but this
+        // will be fixed soon (tracked by b/429161295).
+        result.assertOutputDoesNotContain(
             """
             Details of KotlinCompilation 'debugScreenshotTest':
-            allAssociatedCompilations = BuiltInKotlinUnsupportedApiException
-            allKotlinSourceSets = [[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]]
-            apiConfigurationName = BuiltInKotlinUnsupportedApiException
-            associateWith = BuiltInKotlinUnsupportedApiException
-            associatedCompilations = BuiltInKotlinUnsupportedApiException
-            compilationName = debugScreenshotTest
-            compileAllTaskName = BuiltInKotlinUnsupportedApiException
-            compileDependencyConfigurationName = BuiltInKotlinUnsupportedApiException
-            compileDependencyFiles = <can't resolve at this point as it is too early>
-            compileKotlinTask = BuiltInKotlinUnsupportedApiException
-            compileKotlinTaskName = compileDebugScreenshotTestKotlin
-            compileKotlinTaskProvider = BuiltInKotlinUnsupportedApiException
-            compileOnlyConfigurationName = BuiltInKotlinUnsupportedApiException
-            compileTaskProvider = provider(task 'compileDebugScreenshotTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
-            compilerOptions = BuiltInKotlinUnsupportedApiException
-            defaultSourceSet = [src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]
-            defaultSourceSetName = debugScreenshotTest
-            disambiguatedName = debugScreenshotTest
-            extras = []
-            getAttributes = BuiltInKotlinUnsupportedApiException
-            getName = debugScreenshotTest
-            implementationConfigurationName = BuiltInKotlinUnsupportedApiException
-            kotlinOptions = BuiltInKotlinUnsupportedApiException
-            kotlinSourceSets = [[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]]
-            output = BuiltInKotlinUnsupportedApiException
-            platformType = androidJvm
-            project = project ':app'
-            runtimeDependencyConfigurationName = BuiltInKotlinUnsupportedApiException
-            runtimeDependencyFiles = <can't resolve at this point as it is too early>
-            runtimeOnlyConfigurationName = BuiltInKotlinUnsupportedApiException
-            target = target  (androidJvm)
-            toString = com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation@<hash-code>
             """.trimIndent()
         )
     }
@@ -199,15 +169,7 @@ class BuiltInKotlinCompilerPluginTest {
 
                         val value = when (member.name) {
                             "compileDependencyFiles", "runtimeDependencyFiles" -> "<can't resolve at this point as it is too early>"
-                            else -> try {
-                                member.call(kotlinCompilation)
-                            } catch (e: java.lang.reflect.InvocationTargetException) {
-                                if (e.cause is com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation.BuiltInKotlinUnsupportedApiException) {
-                                    com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation.BuiltInKotlinUnsupportedApiException::class.simpleName
-                                } else {
-                                    throw e
-                                }
-                            }
+                            else -> member.call(kotlinCompilation)
                         }
                         println(member.name + " = " + printValue(value))
                     }
