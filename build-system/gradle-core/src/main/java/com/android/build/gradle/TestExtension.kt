@@ -56,7 +56,10 @@ open class TestExtension(
      * should be used with Gradle's `all` iterator to process future items.
      */
     val applicationVariants: DefaultDomainObjectSet<ApplicationVariant>
-        get() = applicationVariantList as DefaultDomainObjectSet<ApplicationVariant>
+        get() {
+            recordOldVariantApiUsage()
+            return applicationVariantList as DefaultDomainObjectSet<ApplicationVariant>
+        }
 
     override fun addVariant(variant: BaseVariant) {
         applicationVariantList.add(variant as ApplicationVariant)
