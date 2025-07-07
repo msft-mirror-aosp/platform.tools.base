@@ -23,7 +23,8 @@ fun buildDrawInstructionsProto(
     rootId: Long,
     bounds: List<Rect>,
     color: Int,
-    label: String? = null
+    strokeThickness: Float,
+    label: Label? = null
 ): List<LayoutInspectorViewProtocol.DrawInstruction> {
     return bounds.map {
             val rect =
@@ -41,8 +42,12 @@ fun buildDrawInstructionsProto(
                     this.rootId = rootId
                     this.bounds = rect
                     this.color = color
+                    this.strokeThickness = strokeThickness
                     if (label != null) {
-                        this.label = label
+                        this.label = LayoutInspectorViewProtocol.Label.newBuilder().apply {
+                            text = label.text
+                            size = label.size
+                        }.build()
                     }
                 }
                 .build()

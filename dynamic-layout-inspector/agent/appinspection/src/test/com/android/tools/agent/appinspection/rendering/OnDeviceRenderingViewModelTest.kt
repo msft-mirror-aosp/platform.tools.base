@@ -126,7 +126,8 @@ class OnDeviceRenderingViewModelTest {
             rootId = 1L,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 1,
-            label = "label"
+            label = Label(text = "label", size = 1f),
+            strokeThickness = 1f
         )
         // Calling set selected nods should add back the OverlayView.
         onDeviceRenderingViewModel.setSelectedNodes(drawInstruction)
@@ -223,7 +224,8 @@ class OnDeviceRenderingViewModelTest {
             rootId = 1L,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 1,
-            label = "label"
+            label = Label(text = "label", size = 1f),
+            strokeThickness = 1f
         )
         onDeviceRenderingViewModel.setSelectedNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -235,7 +237,13 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = "label"))
+            listOf(OverlayViewInstruction(
+                rootId = 1L,
+                bounds = Rect(0, 0, 2, 2),
+                color = 1,
+                label = Label(text = "label", size = 2f),
+                strokeThickness = 2f
+            ))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -257,7 +265,8 @@ class OnDeviceRenderingViewModelTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = 1L,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 1
+            color = 1,
+            strokeThickness = 1f
         )
         onDeviceRenderingViewModel.setHoveredNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -269,7 +278,13 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
+            listOf(OverlayViewInstruction(
+                rootId = 1L,
+                bounds = Rect(0, 0, 2, 2),
+                color = 1,
+                label = null,
+                strokeThickness = 2f
+            ))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -291,7 +306,8 @@ class OnDeviceRenderingViewModelTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = 1L,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 1
+            color = 1,
+            strokeThickness = 1f
         )
         onDeviceRenderingViewModel.setVisibleNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -303,7 +319,13 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
+            listOf(OverlayViewInstruction(
+                rootId = 1L,
+                bounds = Rect(0, 0, 2, 2),
+                color = 1,
+                label = null,
+                strokeThickness = 2f
+            ))
         )
         assertThat(instructions[1]).isEmpty()
     }
@@ -325,7 +347,8 @@ class OnDeviceRenderingViewModelTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = 1L,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 1
+            color = 1,
+            strokeThickness = 0f
         )
         onDeviceRenderingViewModel.setRecomposingNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -337,7 +360,13 @@ class OnDeviceRenderingViewModelTest {
 
         assertThat(instructions).hasSize(2)
         assertThat(instructions[0]).isEqualTo(
-            listOf(OverlayViewInstruction(rootId = 1L, bounds = Rect(0, 0, 2, 2), color = 1, label = null))
+            listOf(OverlayViewInstruction(
+                rootId = 1L,
+                bounds = Rect(0, 0, 2, 2),
+                color = 1,
+                label = null,
+                strokeThickness = 0f
+            ))
         )
         assertThat(instructions[1]).isEmpty()
     }
