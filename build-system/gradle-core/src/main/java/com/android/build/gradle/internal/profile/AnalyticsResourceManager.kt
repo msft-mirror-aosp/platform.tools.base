@@ -344,7 +344,9 @@ class AnalyticsResourceManager constructor(
     }
 
     fun recordApplicationId(applicationId: Provider<String>) {
-        applicationIds?.add(applicationId)
+        synchronized(this) {
+            applicationIds?.add(applicationId)
+        }
     }
 
     private fun getProjectId(projectPath: String) : Long {

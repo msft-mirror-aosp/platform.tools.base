@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.analytics
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -32,7 +31,6 @@ class AnalyticsConcurrencyTest {
         }
 
     // Regression tests for b/420715479.
-    @Ignore
     @Test
     fun configuringProjectShouldNotCauseConcurrencyIssues() {
         rule.build.executor
