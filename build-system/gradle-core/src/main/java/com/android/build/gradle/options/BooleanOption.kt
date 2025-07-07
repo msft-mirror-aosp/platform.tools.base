@@ -116,7 +116,6 @@ enum class BooleanOption(
     // Disabled by default due to low usage.
     GENERATE_MANIFEST_CLASS("android.generateManifestClass", false, ApiStage.Stable),
 
-    USE_NON_FINAL_RES_IDS("android.nonFinalResIds", true, ApiStage.Stable),
     NON_TRANSITIVE_R_CLASS("android.nonTransitiveRClass", true, ApiStage.Stable),
 
     /**
@@ -758,6 +757,8 @@ enum class BooleanOption(
     // Flag used to indicate a "deploy as instant" run configuration.
     @Suppress("unused")
     IDE_DEPLOY_AS_INSTANT_APP(PROPERTY_DEPLOY_AS_INSTANT_APP, false, ApiStage.Deprecated(VERSION_9_0)),
+
+    USE_NON_FINAL_RES_IDS("android.nonFinalResIds", true, ApiStage.Deprecated(VERSION_10_0)),
 
     /* -----------------
      * ENFORCED FEATURES
