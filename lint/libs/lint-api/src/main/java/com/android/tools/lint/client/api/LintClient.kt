@@ -86,7 +86,6 @@ import java.net.URL
 import java.net.URLClassLoader
 import java.net.URLConnection
 import java.nio.charset.StandardCharsets
-import java.nio.file.Paths
 import java.util.Locale
 import kotlin.math.max
 import org.jetbrains.kotlin.config.LanguageVersionSettings
@@ -1241,16 +1240,6 @@ abstract class LintClient {
 
     val rules = mutableListOf<File>()
 
-    if (project.isLibrary && project.buildLibraryModel != null) {
-      val model = project.buildLibraryModel
-      if (model != null) {
-        val lintJar = model.lintJar
-        if (lintJar != null && lintJar.exists()) {
-          rules.add(lintJar)
-        }
-      }
-    }
-
     val variant = project.buildVariant
     if (variant != null) {
       addLintJarsFromDependencies(rules, variant.artifact.dependencies.getAll())
@@ -1288,42 +1277,11 @@ abstract class LintClient {
    */
   private fun addLintJarsFromDependency(lintJars: MutableList<File>, library: LintModelLibrary) {
     val lintJar = library.lintJar
+    // When running in the IDE, I observed lintJar being null (in many cases), and otherwise
+    // lintJar.exists() was true. In other words, it seems that lintJar.exists() is not called
+    // excessively.
     if (lintJar != null && lintJar.exists()) {
       lintJars.add(lintJar)
-    }
-
-    if (library is LintModelAndroidLibrary) {
-      val folder = library.folder
-      if (folder.isDirectory) {
-        // Local project: might have locally packaged lint jar
-        // Kept for backward compatibility, see b/66166521
-        val buildDir = folder.path.substringBefore("intermediates")
-        val lintPaths =
-          arrayOf(
-            Paths.get(buildDir, "intermediates", "lint", SdkConstants.FN_LINT_JAR),
-            Paths.get(
-              buildDir,
-              "intermediates",
-              "lint_publish_jar",
-              "global",
-              SdkConstants.FN_LINT_JAR,
-            ),
-            Paths.get(
-              buildDir,
-              "intermediates",
-              "lint_publish_jar",
-              "global",
-              "prepareLintJarForPublish",
-              SdkConstants.FN_LINT_JAR,
-            ),
-          )
-        for (lintPath in lintPaths) {
-          val manualLintJar = lintPath.toFile()
-          if (manualLintJar.exists()) {
-            lintJars.add(manualLintJar)
-          }
-        }
-      }
     }
   }
 
