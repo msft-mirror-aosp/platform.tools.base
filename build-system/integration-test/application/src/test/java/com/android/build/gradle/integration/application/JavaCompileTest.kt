@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVAC
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.google.common.truth.Truth.assertThat
@@ -25,7 +26,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.objectweb.asm.ClassReader
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 
 class JavaCompileTest {
@@ -175,7 +175,7 @@ class JavaCompileTest {
         val fooClassFile =
             JAVAC.getOutputDir(project.getSubproject("app").buildDir)
                 .resolve("debug/compileDebugJavaWithJavac/classes/com/example/Foo.class")
-        val fooClass = ClassNode(Opcodes.ASM7).also {
+        val fooClass = ClassNode(ASM_API_VERSION).also {
             ClassReader(fooClassFile.readBytes()).accept(it, 0)
         }
         val fooMethod = fooClass.methods[1]

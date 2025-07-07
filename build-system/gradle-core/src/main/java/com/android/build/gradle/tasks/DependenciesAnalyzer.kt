@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.Type
@@ -24,7 +25,6 @@ import org.objectweb.asm.FieldVisitor
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.Label
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Opcodes.ACC_PRIVATE
 import org.objectweb.asm.TypePath
 import org.objectweb.asm.signature.SignatureReader
@@ -41,7 +41,7 @@ import java.lang.reflect.Modifier.isPublic
  */
 class DependenciesAnalyzer {
 
-    private val asmVersion = Opcodes.ASM7
+    private val asmVersion = ASM_API_VERSION
 
     private val primitives = setOf(
         "void",

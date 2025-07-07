@@ -16,7 +16,10 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import static com.android.build.gradle.internal.instrumentation.InstrumentationUtilsKt.ASM_API_VERSION;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -25,12 +28,19 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.testutils.apk.Zip;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
+
+import org.junit.Assert;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -43,11 +53,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-import org.junit.Assert;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
 
 /**
  * Helper to help read/test the content of generated zip file.
@@ -291,7 +296,7 @@ public class ZipHelper {
             ZipEntry entry = zipFile.getEntry(entryName);
             assertThat(entry).named(entryName + " entry").isNotNull();
             ClassReader classReader = new ClassReader(zipFile.getInputStream(entry));
-            ClassNode mainTestClassNode = new ClassNode(Opcodes.ASM7);
+            ClassNode mainTestClassNode = new ClassNode(ASM_API_VERSION);
             classReader.accept(mainTestClassNode, 0);
 
             FieldNode fieldNode = null;

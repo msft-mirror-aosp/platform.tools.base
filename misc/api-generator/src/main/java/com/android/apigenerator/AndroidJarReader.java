@@ -17,6 +17,13 @@ package com.android.apigenerator;
 
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
+
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -25,11 +32,6 @@ import java.net.MalformedURLException;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
 
 /**
  * Reads all the android.jar files found in an SDK and generate a map of {@link ApiClass}.
@@ -84,7 +86,7 @@ public class AndroidJarReader {
                         }
 
                         ClassReader reader = new ClassReader(bytes);
-                        ClassNode classNode = new ClassNode(Opcodes.ASM7);
+                        ClassNode classNode = new ClassNode(Opcodes.ASM9);
                         reader.accept(classNode, 0 /*flags*/);
 
                         ApiClass theClass = api.addClass(classNode.name, apiLevel,

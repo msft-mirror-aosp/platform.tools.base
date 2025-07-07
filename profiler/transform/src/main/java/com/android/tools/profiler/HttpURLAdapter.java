@@ -26,10 +26,11 @@ import org.objectweb.asm.Opcodes;
 final class HttpURLAdapter extends ClassVisitor implements Opcodes {
 
     static final String URL_CLASS = "java/net/URL";
-    static final String WRAPPER_CLASS = "com/android/tools/profiler/support/network/httpurl/HttpURLWrapper";
+    static final String WRAPPER_CLASS =
+            "com/android/tools/profiler/support/network/httpurl/HttpURLWrapper";
 
     HttpURLAdapter(ClassVisitor classVisitor) {
-        super(ASM7, classVisitor);
+        super(ASM9, classVisitor);
     }
 
     @Override
@@ -43,7 +44,7 @@ final class HttpURLAdapter extends ClassVisitor implements Opcodes {
     private static final class MethodAdapter extends MethodVisitor implements Opcodes {
 
         public MethodAdapter(MethodVisitor mv) {
-            super(ASM7, mv);
+            super(ASM9, mv);
         }
 
         @Override
@@ -58,14 +59,16 @@ final class HttpURLAdapter extends ClassVisitor implements Opcodes {
             if (name.equals("openConnection") && desc.equals("()Ljava/net/URLConnection;")) {
                 super.visitMethodInsn(opcode, owner, name, desc, itf);
                 invoke("wrapURLConnection", "(Ljava/net/URLConnection;)Ljava/net/URLConnection;");
-            } else if (name.equals("openConnection") && desc.equals("(Ljava/net/Proxy;)Ljava/net/URLConnection;")) {
+            } else if (name.equals("openConnection")
+                    && desc.equals("(Ljava/net/Proxy;)Ljava/net/URLConnection;")) {
                 super.visitMethodInsn(opcode, owner, name, desc, itf);
                 invoke("wrapURLConnection", "(Ljava/net/URLConnection;)Ljava/net/URLConnection;");
             } else if (name.equals("openStream") && desc.equals("()Ljava/io/InputStream;")) {
                 invoke("wrapOpenStream", "(Ljava/net/URL;)Ljava/io/InputStream;");
             } else if (name.equals("getContent") && desc.equals("()Ljava/lang/Object;")) {
                 invoke("wrapGetContent", "(Ljava/net/URL;)Ljava/lang/Object;");
-            } else if (name.equals("getContent") && desc.equals("([Ljava/lang/Class;)Ljava/lang/Object;")) {
+            } else if (name.equals("getContent")
+                    && desc.equals("([Ljava/lang/Class;)Ljava/lang/Object;")) {
                 invoke("wrapGetContent", "(Ljava/net/URL;[Ljava/lang/Class;)Ljava/lang/Object;");
             } else {
                 super.visitMethodInsn(opcode, owner, name, desc, itf);

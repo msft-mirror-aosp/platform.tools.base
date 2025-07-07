@@ -27,7 +27,7 @@ import java.lang.reflect.ParameterizedType
 import java.util.ServiceLoader
 import java.util.function.BiConsumer
 
-const val ASM_API_VERSION_FOR_INSTRUMENTATION = Opcodes.ASM9
+const val ASM_API_VERSION = Opcodes.ASM9
 
 fun getParamsImplClass(factoryClass: Class<out AsmClassVisitorFactory<*>>): Class<*> {
     return (factoryClass.genericInterfaces[0] as ParameterizedType).actualTypeArguments[0] as Class<*>

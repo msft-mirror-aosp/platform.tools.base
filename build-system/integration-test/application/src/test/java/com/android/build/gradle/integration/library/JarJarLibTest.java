@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.library;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.internal.instrumentation.InstrumentationUtilsKt.ASM_API_VERSION;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -155,7 +156,7 @@ public class JarJarLibTest {
             try (InputStream zipEntry = zipFile.getInputStream(entry)) {
                 classReader = new ClassReader(zipEntry);
             }
-            ClassNode mainTestClassNode = new ClassNode(Opcodes.ASM7);
+            ClassNode mainTestClassNode = new ClassNode(ASM_API_VERSION);
             classReader.accept(mainTestClassNode, 0);
 
             // Make sure bytecode got rewritten to point to renamed classes.

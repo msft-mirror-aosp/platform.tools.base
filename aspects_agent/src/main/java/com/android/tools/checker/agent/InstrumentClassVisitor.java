@@ -1,15 +1,17 @@
 package com.android.tools.checker.agent;
 
 import com.android.annotations.NonNull;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
+
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class InstrumentClassVisitor extends ClassVisitor {
     private final Function<String, String> methodAspects;
@@ -24,7 +26,7 @@ public class InstrumentClassVisitor extends ClassVisitor {
             @NonNull Function<String, String> methodAspects,
             @NonNull Consumer<String> notFoundCallback,
             @NonNull AnnotationConflictsManager annotationConflictsManager) {
-        super(Opcodes.ASM7, classVisitor);
+        super(Opcodes.ASM9, classVisitor);
 
         this.className = className;
         this.methodAspects = methodAspects;

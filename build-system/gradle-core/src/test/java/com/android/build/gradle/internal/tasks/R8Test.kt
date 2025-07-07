@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.transforms.testdata.Animal
 import com.android.build.gradle.internal.transforms.testdata.CarbonForm
@@ -51,7 +52,6 @@ import org.mockito.kotlin.mock
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import java.io.File
 import java.nio.file.Files
@@ -608,7 +608,7 @@ class R8Test(private val r8OutputType: R8OutputType) {
         ZipFile(outputDir.resolve("main.jar").toFile()).use {
             val input =
                 it.getInputStream(it.getEntry("$className.class"))
-            ClassReader(input).accept(object : ClassVisitor(Opcodes.ASM7) {
+            ClassReader(input).accept(object : ClassVisitor(ASM_API_VERSION) {
                 override fun visitAnnotation(
                     desc: String?,
                     visible: Boolean

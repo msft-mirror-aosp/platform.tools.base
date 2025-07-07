@@ -7,7 +7,18 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.internal.instrumentation.InstrumentationUtilsKt;
 import com.android.utils.FileUtils;
+
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,15 +28,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
 
 /** Check resources in androidTest are available in the generated R.java. */
 public class AndroidTestResourcesTest {
@@ -64,12 +66,15 @@ public class AndroidTestResourcesTest {
                         + "'\n"
                         + "    defaultConfig {\n"
                         + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
-                        + "        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + "        testInstrumentationRunner"
+                        + " 'android.support.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "}\n"
                         + "dependencies {\n"
-                        + "    androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                        + "    androidTestImplementation \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "    androidTestImplementation"
+                        + " \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "    androidTestImplementation"
+                        + " \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
                         + "}\n");
 
         setUpProject(libProject);
@@ -89,12 +94,15 @@ public class AndroidTestResourcesTest {
                         + "'\n"
                         + "    defaultConfig {\n"
                         + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
-                        + "        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + "        testInstrumentationRunner"
+                        + " 'android.support.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "}\n"
                         + "dependencies {\n"
-                        + "    androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                        + "    androidTestImplementation \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "    androidTestImplementation"
+                        + " \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "    androidTestImplementation"
+                        + " \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
                         + "}\n");
     }
 
@@ -161,7 +169,7 @@ public class AndroidTestResourcesTest {
             ZipEntry layoutEntry = zipFile.getEntry("com/example/helloworld/test/R$layout.class");
             assertThat(layoutEntry).named("R$layout.class entry").isNotNull();
             ClassReader layoutClassReader = new ClassReader(zipFile.getInputStream(layoutEntry));
-            ClassNode layoutClassNode = new ClassNode(Opcodes.ASM7);
+            ClassNode layoutClassNode = new ClassNode(InstrumentationUtilsKt.ASM_API_VERSION);
             layoutClassReader.accept(layoutClassNode, 0);
 
             Set<String> layoutFieldNames =
@@ -173,7 +181,7 @@ public class AndroidTestResourcesTest {
             ZipEntry idEntry = zipFile.getEntry("com/example/helloworld/test/R$id.class");
             assertThat(idEntry).named("R$id.class entry").isNotNull();
             ClassReader idClassReader = new ClassReader(zipFile.getInputStream(idEntry));
-            ClassNode idClassNode = new ClassNode(Opcodes.ASM7);
+            ClassNode idClassNode = new ClassNode(InstrumentationUtilsKt.ASM_API_VERSION);
             idClassReader.accept(idClassNode, 0);
 
             Set<String> idFieldNames =
@@ -218,24 +226,29 @@ public class AndroidTestResourcesTest {
                         + "\n"
                         + "                @RunWith(AndroidJUnit4.class)\n"
                         + "                public class HelloWorldResourceTest {\n"
-                        + "                    @Rule public ActivityTestRule<HelloWorld> rule = new ActivityTestRule<>(HelloWorld.class);\n"
+                        + "                    @Rule public ActivityTestRule<HelloWorld> rule = new"
+                        + " ActivityTestRule<>(HelloWorld.class);\n"
                         + "                    private TextView mainAppTextView;\n"
                         + "                    private Object testLayout;\n"
                         + "\n"
-                        + "\n                  @Before\n"
+                        + "\n"
+                        + "                  @Before\n"
                         + "                    public void setUp() {\n"
                         + "                        final HelloWorld a = rule.getActivity();\n"
                         + "                        mainAppTextView = (TextView) a.findViewById(\n"
                         + "                                com.example.helloworld.R.id.text);\n"
                         + "                        testLayout = rule.getActivity().getResources()\n"
-                        + "                                .getLayout(com.example.helloworld.test.R.layout.test_layout_1);\n"
+                        + "                               "
+                        + " .getLayout(com.example.helloworld.test.R.layout.test_layout_1);\n"
                         + "                    }\n"
                         + "\n"
                         + "                    @Test\n"
                         + "                    @MediumTest\n"
                         + "                    public void testPreconditions() {\n"
-                        + "                        Assert.assertNotNull(\"Should find test test_layout_1.\", testLayout);\n"
-                        + "                        Assert.assertNotNull(\"Should find main app text view.\", mainAppTextView);\n"
+                        + "                        Assert.assertNotNull(\"Should find test"
+                        + " test_layout_1.\", testLayout);\n"
+                        + "                        Assert.assertNotNull(\"Should find main app text"
+                        + " view.\", mainAppTextView);\n"
                         + "                    }\n"
                         + "                }\n"
                         + "                ";

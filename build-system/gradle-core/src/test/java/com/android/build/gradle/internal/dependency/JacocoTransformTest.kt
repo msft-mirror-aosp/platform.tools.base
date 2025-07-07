@@ -17,8 +17,6 @@
 package com.android.build.gradle.internal.dependency
 
 import com.android.SdkConstants
-import com.android.SdkConstants.PLATFORM_WINDOWS
-import com.android.SdkConstants.currentPlatform
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.fixtures.FakeConfigurableFileCollection
 import com.android.build.gradle.internal.fixtures.FakeFileChange
@@ -26,6 +24,7 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
 import com.android.build.gradle.internal.fixtures.FakeInputChanges
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.services.getBuildServiceName
 import com.android.build.gradle.internal.transforms.testdata.Cat
@@ -50,7 +49,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.objectweb.asm.ClassReader
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.io.File
 import java.net.URLClassLoader
@@ -369,7 +367,7 @@ class JacocoTransformTest {
 
     private fun assertInstrumentation(instrumentedClass: File, expectInstrumentation: Boolean) {
         val classReader = ClassReader(instrumentedClass.readBytes())
-        val classNode = ClassNode(Opcodes.ASM7)
+        val classNode = ClassNode(ASM_API_VERSION)
         classReader.accept(classNode, 0)
         val methodNames = classNode.methods.map { it.name }
         if (expectInstrumentation) {

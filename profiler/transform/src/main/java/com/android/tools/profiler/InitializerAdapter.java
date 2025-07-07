@@ -41,7 +41,7 @@ final class InitializerAdapter extends ClassVisitor implements Opcodes {
 
     public InitializerAdapter(
             ClassVisitor classVisitor, boolean unifiedPipeline, boolean keyboardEvent) {
-        super(ASM7, classVisitor);
+        super(ASM9, classVisitor);
         myUnifiedPipeline = unifiedPipeline;
         myKeyboardEventEnabled = keyboardEvent;
     }
@@ -72,7 +72,7 @@ final class InitializerAdapter extends ClassVisitor implements Opcodes {
         private final boolean myKeyboardEventEnabled;
 
         public MethodAdapter(MethodVisitor mv, boolean unifiedPipeline, boolean keyboardEvent) {
-            super(ASM7, mv);
+            super(ASM9, mv);
             myUnifiedPipeline = unifiedPipeline;
             myKeyboardEventEnabled = keyboardEvent;
         }

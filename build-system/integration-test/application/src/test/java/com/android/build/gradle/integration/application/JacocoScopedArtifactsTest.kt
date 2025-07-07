@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Com
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.testutils.truth.DexClassSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -31,7 +32,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.objectweb.asm.ClassReader
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.io.File
 import java.io.IOException
@@ -268,7 +268,7 @@ class JacocoScopedArtifactsTest {
 
     private fun validateDirectoryClass(jacocoPresent: Boolean, classFile: File) {
         val classReader = ClassReader(classFile.readBytes())
-        val classNode = ClassNode(Opcodes.ASM7)
+        val classNode = ClassNode(ASM_API_VERSION)
         classReader.accept(classNode, 0)
         if (jacocoPresent) {
             Truth.assertThat(classNode.fields[0].name).isEqualTo("\$jacocoData")
@@ -283,7 +283,7 @@ class JacocoScopedArtifactsTest {
             val entry: ZipEntry = zipFile.getEntry(clazz)
             TruthHelper.assertThat(entry).named("R.class entry").isNotNull()
             val classReader = ClassReader(zipFile.getInputStream(entry))
-            val classNode = ClassNode(Opcodes.ASM7)
+            val classNode = ClassNode(ASM_API_VERSION)
             classReader.accept(classNode, 0)
             if (expectJacoco) {
                 Truth.assertThat(classNode.fields[0].name).isEqualTo("\$jacocoData")

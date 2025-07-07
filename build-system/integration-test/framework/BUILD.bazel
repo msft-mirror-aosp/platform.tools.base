@@ -33,7 +33,7 @@ kotlin_library(
         "//tools/base/testutils:tools.testutils",
         # Do not change order. jacoco-core depends on old version of ASM, which
         # should not come before this ASM in the classpath, or it will cause build
-        # errors (Cannot find symbol: Opcodes.ASM7).
+        # errors (Cannot find symbol: Opcodes.ASM9).
         "@maven//:org.ow2.asm.asm",
         "@maven//:org.ow2.asm.asm-tree",
         # You can change order after this line:

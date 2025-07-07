@@ -16,14 +16,14 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder.bytecode
 
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
-import org.objectweb.asm.Opcodes.ASM9
 
 /**
  * Class visitor to gather references to other types.
  */
-class ReferenceFinderVisitor: ClassVisitor(ASM9) {
+class ReferenceFinderVisitor: ClassVisitor(ASM_API_VERSION) {
 
     val methods = mutableListOf<ReferenceMethodVisitor>()
     internal val references = mutableSetOf<String>()
