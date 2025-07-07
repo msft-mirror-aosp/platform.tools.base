@@ -181,7 +181,7 @@ class PropertyFileDetector : Detector() {
       val c = line[i]
       if (c == '\\') {
         escaped = !escaped
-        if (escaped) {
+        if (escaped && i < line.length - 1) { // \ at line end: continuation
           path.append(c)
         }
       } else if (c == ':') {
@@ -206,6 +206,9 @@ class PropertyFileDetector : Detector() {
         escaped = false
         path.append(c)
       }
+    }
+    if (path.isEmpty()) {
+      return
     }
     val pathString = path.toString()
     val key = line.substring(0, valueStart)
