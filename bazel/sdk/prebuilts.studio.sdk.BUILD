@@ -419,11 +419,3 @@ filegroup(
     srcs = sdk_glob(["sources/**"]),
     visibility = ["//visibility:public"],
 )
-
-filegroup(
-    name = "instant-apps-sdk",
-    srcs = sdk_glob(
-        include = ["extras/google/instantapps/**"],
-    ),
-    visibility = ["//visibility:public"],
-)
