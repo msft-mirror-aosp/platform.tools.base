@@ -9,5 +9,4 @@ platforms;android-31
 platforms;android-24
 cmake;3.22.1
 add-ons;addon-google_apis-google-24
-patcher;v4
 ndk-bundle
