@@ -657,4 +657,39 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
       .run()
       .expectClean()
   }
+
+  fun testFunctionValueParameter() {
+    // b/429730003
+    lint()
+      .files(
+        kotlin(
+            """
+            @JvmInline
+            value class Color(val rgb: Int) {
+              companion object {
+                fun argb(a: Int, r: Int, g: Int, b: Int) {}
+              }
+            }
+
+            inline val Int.alpha: Int
+              get() = (this shr 24) and 0xff
+
+            inline val Int.red: Int
+              get() = (this shr 16) and 0xff
+
+            inline val Int.green: Int
+              get() = (this shr 8) and 0xff
+
+            inline val Int.blue: Int
+              get() = this and 0xff
+
+            inline fun Int.replaceAlpha(alpha: Int) =
+              Color.argb(alpha, red, green, blue)
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
 }
