@@ -32,7 +32,7 @@ class CircularByteBufferTest {
         val buffer = CircularByteBuffer(10)
 
         // Act
-        val result = buffer.add(createSourceBuffer(0xff))
+        val result = buffer.write(createSourceBuffer(0xff))
 
         // Assert
         assertEquals(1, result)
@@ -47,7 +47,7 @@ class CircularByteBufferTest {
         val buffer = CircularByteBuffer(10)
 
         // Act
-        val result = buffer.add(createSourceBuffer(0x10, 0x20, 0x05, 0x80))
+        val result = buffer.write(createSourceBuffer(0x10, 0x20, 0x05, 0x80))
 
         // Assert
         assertEquals(4, result)
@@ -60,10 +60,10 @@ class CircularByteBufferTest {
     fun addTooManyBytesWorks() {
         // Prepare
         val buffer = CircularByteBuffer(10)
-        buffer.add(ByteBuffer.allocate(5))
+        buffer.write(ByteBuffer.allocate(5))
 
         // Act
-        val result = buffer.add(ByteBuffer.allocate(20))
+        val result = buffer.write(ByteBuffer.allocate(20))
 
         // Assert
         assertEquals(5, result)
@@ -76,7 +76,7 @@ class CircularByteBufferTest {
     fun clearWorks() {
         // Prepare
         val buffer = CircularByteBuffer(10)
-        buffer.add(createSourceBuffer(0xff))
+        buffer.write(createSourceBuffer(0xff))
 
         // Act
         buffer.clear()
@@ -91,7 +91,7 @@ class CircularByteBufferTest {
     fun readSingleByteWorks() {
         // Prepare
         val buffer = CircularByteBuffer(10)
-        buffer.add(createSourceBuffer(0xff))
+        buffer.write(createSourceBuffer(0xff))
 
         // Act
         val dstBuffer = ByteBuffer.allocate(1)
@@ -111,7 +111,7 @@ class CircularByteBufferTest {
     fun readTooManyBytesWorks() {
         // Prepare
         val buffer = CircularByteBuffer(10)
-        buffer.add(createSourceBuffer(0xff, 0x12, 0x25))
+        buffer.write(createSourceBuffer(0xff, 0x12, 0x25))
 
         // Act
         val dstBuffer = ByteBuffer.allocate(10)

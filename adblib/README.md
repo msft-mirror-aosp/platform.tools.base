@@ -108,9 +108,9 @@ To set logging in Android Studio, open the "Debug Log Settings" dialog. e.g:
 #com.android.adblib.tools.debugging.impl.SharedJdwpSessionImpl$PacketSender:all
 #com.android.adblib.tools.debugging.impl.JdwpSessionImpl:all
 #com.android.adblib.tools.debugging.SharedJdwpSession:all
-#com.android.adblib.impl.AdbWriteBackOutputChannel:all
-#com.android.adblib.impl.AdbWriteBackOutputChannel$WriteBackWorker:all
-#com.android.adblib.impl.AdbReadAheadInputChannel:all
+#com.android.adblib.impl.channels.AdbWriteBackOutputChannel:all
+#com.android.adblib.impl.channels.AdbWriteBackOutputChannel$WriteBackWorker:all
+#com.android.adblib.impl.channels.AdbReadAheadInputChannel:all
 #com.android.adblib.tools.debugging.impl.JdwpProcessProfilerImpl:all
 #com.android.adblib.tools.debugging.packets.ddms.MutableDdmsChunk:all
 #com.android.adblib.impl.services.AdbServiceRunner:all

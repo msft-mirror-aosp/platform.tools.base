@@ -26,11 +26,30 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import java.io.EOFException
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousCloseException
+import java.nio.channels.ClosedChannelException
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
+/**
+ * An input channel represents an input stream of bytes from an underlying resource.
+ *
+ * Note: This is the equivalent of [java.io.InputStream] with suspending operations instead
+ * of blocking ones.
+ */
 interface AdbInputChannel : AutoCloseable {
+
+    /**
+     * Closes this input channel and releases any system resources associated with it.
+     * A closed channel cannot perform input operations and cannot be reopened.
+     * Any currently suspended [readBuffer] operation is promptly cancelled and throws
+     * [AsynchronousCloseException]
+     *
+     * Note: Implementations should be thread-safe to allow prompt cancellation of suspended
+     * operations.
+     */
+    override fun close()
 
     /**
      * Reads up to [ByteBuffer.remaining] bytes from the underlying channel, updating
@@ -38,8 +57,11 @@ interface AdbInputChannel : AutoCloseable {
      *
      * [ByteBuffer.position] is left unchanged in if the end of stream is reached.
      *
-     * Throws an [java.io.IOException] in case of error, or a [TimeoutException]
-     * in case no data is available before the timeout expires.
+     * * Throws [ClosedChannelException] if [close] was previously called
+     * * Throws [AsynchronousCloseException] if [close] is called __while this function is
+     * suspended__
+     * * Throws [java.io.IOException] if an I/O occurs reading from the underlying resource
+     * * Throws [TimeoutException] in case the data cannot be read before the timeout expires.
      */
     suspend fun readBuffer(
         buffer: ByteBuffer,
@@ -54,9 +76,12 @@ interface AdbInputChannel : AutoCloseable {
      *
      * If end of stream is reached before all bytes are read, throws an [java.io.EOFException] and the
      * [ByteBuffer] state is undefined (i.e. some bytes may have been read, but not all)
-
-     * Throws an [java.io.IOException] in case of error, or a [TimeoutException]
-     * in case no data is available before the timeout expires.
+     *
+     * * Throws [ClosedChannelException] if [close] was previously called
+     * * Throws [AsynchronousCloseException] if [close] is called __while this function is
+     * suspended__
+     * * Throws [java.io.IOException] if an I/O occurs reading from the underlying resource
+     * * Throws [TimeoutException] in case the data cannot be read before the timeout expires.
      */
     suspend fun readExactly(
         buffer: ByteBuffer,

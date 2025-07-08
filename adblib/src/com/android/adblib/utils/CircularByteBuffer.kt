@@ -20,7 +20,7 @@ import kotlin.math.min
 
 /**
  * A fixed size circular buffer of bytes, i.e. a wrapper over a fixed size [ByteArray]
- * than allows [adding][add] bytes "to the end" and [reading][read] bytes "from the start"
+ * than allows [writing][write] bytes "to the end" and [reading][read] bytes "from the start"
  * efficiently (i.e. without moving bytes in the array).
  *
  * @param size the size of buffer to create
@@ -79,16 +79,16 @@ class CircularByteBuffer(size: Int = DEFAULT_BUFFER_SIZE) {
      * subset of [sourceBuffer] is copied over. In particular, if [CircularByteBuffer] is full,
      * this method returns `zero` and no bytes are copied from [sourceBuffer].
      */
-    fun add(sourceBuffer: ByteBuffer): Int {
+    fun write(sourceBuffer: ByteBuffer): Int {
         val copyLength = min(remaining, sourceBuffer.remaining())
 
         // Copy "length" bytes from "sourceBuffer" to "buffer".
         // Note: We may need 2 operations if we wrap at the end of the circular buffer
         val copyLength1 = min(copyLength, capacity - endOffset)
-        addNBytes(sourceBuffer, copyLength1)
+        writeNBytes(sourceBuffer, copyLength1)
 
         val copyLength2 = copyLength - copyLength1
-        addNBytes(sourceBuffer, copyLength2)
+        writeNBytes(sourceBuffer, copyLength2)
 
         return copyLength
     }
@@ -116,7 +116,7 @@ class CircularByteBuffer(size: Int = DEFAULT_BUFFER_SIZE) {
         return copyLength
     }
 
-    private fun addNBytes(sourceBuffer: ByteBuffer, count: Int) {
+    private fun writeNBytes(sourceBuffer: ByteBuffer, count: Int) {
         assert(count >= 0)
 
         if (count > 0) {

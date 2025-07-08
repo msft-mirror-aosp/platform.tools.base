@@ -113,6 +113,22 @@ interface AdbChannelFactory {
     ): AdbInputChannel
 
     /**
+     * Creates an [AdbBufferedOutputChannel] that writes data to another [AdbOutputChannel] using
+     * an internal [ByteBuffer] of the given [bufferSize].
+     *
+     * This class is similar to [java.io.BufferedOutputStream], but for [AdbOutputChannel]
+     * instead of [OutputStream].
+     *
+     * If [closeOutputChannel] is set to `true` then the [output] channel is closed when this
+     * channel is [closed][AdbInputChannel.close].
+     */
+    fun createBufferedOutputChannel(
+        output: AdbOutputChannel,
+        bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
+        closeOutputChannel: Boolean = true
+    ): AdbBufferedOutputChannel
+
+    /**
      * Creates an [AdbInputChannel] that eagerly reads data from [input], i.e. starts a
      * coroutine that reads data from [input] concurrently with calls to [AdbInputChannel.read],
      * so that data is available as fast as possible. [bufferSize] is the size of the
@@ -144,11 +160,13 @@ interface AdbChannelFactory {
      * may result in data loss. This should be done only in cases where "prompt cancellation"
      * is warranted.
      *
-     * * The [output] channel is closed when this channel is [closed][AdbOutputChannel.close].
+     * If [closeOutputChannel] is set to `true` then the [output] channel is closed when this
+     * channel is [closed][AdbInputChannel.close].
      */
     fun createWriteBackChannel(
         output: AdbOutputChannel,
-        bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE
+        bufferSize: Int = DEFAULT_CHANNEL_BUFFER_SIZE,
+        closeOutputChannel: Boolean = true
     ): AdbBufferedOutputChannel
 
     /**

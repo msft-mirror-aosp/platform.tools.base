@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.adblib.impl
+package com.android.adblib.impl.channels
 
 import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbSession
@@ -51,7 +51,7 @@ internal class AdbReadAheadInputChannel(
 
     init {
         scope.launch {
-            kotlin.runCatching {
+            runCatching {
                 readAhead(input, bufferSize)
             }.onFailure { exception: Throwable ->
                 pipe.pipeSource.error(exception)
@@ -62,6 +62,14 @@ internal class AdbReadAheadInputChannel(
     override suspend fun readBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
         pipe.read(buffer, timeout, unit).also {
             logger.verbose { "read: Read $it bytes from pipe '$pipe'" }
+        }
+    }
+
+    override suspend fun readExactly(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+        buffer.remaining().also { byteCount ->
+            pipe.readExactly(buffer, timeout, unit).also {
+                logger.verbose { "read: Read $byteCount bytes from pipe '$pipe'" }
+            }
         }
     }
 
