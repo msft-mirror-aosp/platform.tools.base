@@ -44,6 +44,7 @@ import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions
@@ -367,6 +368,7 @@ class DslProxy private constructor(
             MapProperty::class.java -> MapPropertyProxy<Any, Any>(dslRecorder.createChainedRecorder(propName))
             DomainObjectSet::class.java -> DomainObjectSetProxy<Any>(dslRecorder.createChainedRecorder(propName))
             ListProperty::class.java -> ListPropertyProxy<Any>(dslRecorder.createChainedRecorder(propName))
+            SetProperty::class.java -> SetPropertyProxy<Any>(dslRecorder.createChainedRecorder(propName))
             // custom implementation for String in order to intercept set/get to namespace
             java.lang.String::class.java -> {
                 if (rootExtensionProxy && propName == "namespace") {
