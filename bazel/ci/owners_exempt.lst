@@ -3532,7 +3532,6 @@ tools/adt/idea/android/src/org/jetbrains/android/spellchecker/AndroidTextSpellch
 tools/adt/idea/android/src/org/jetbrains/android/spellchecker/AndroidXmlSpellcheckingStrategy.java
 tools/adt/idea/android/src/org/jetbrains/android/spellchecker/GoogleServicesJsonSpellcheckingStrategy.kt
 tools/adt/idea/android/src/org/jetbrains/android/util/AndroidBundle.java
-tools/adt/idea/android/src/org/jetbrains/android/util/AndroidOutputReceiver.java
 tools/adt/idea/android/src/org/jetbrains/android/util/AndroidTreeClassChooserFactory.kt
 tools/adt/idea/android/src/org/jetbrains/android/util/AndroidUtils.java
 tools/adt/idea/android/src/org/jetbrains/android/util/DisposableUtils.kt
