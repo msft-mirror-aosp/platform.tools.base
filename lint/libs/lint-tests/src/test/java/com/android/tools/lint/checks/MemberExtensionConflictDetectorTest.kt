@@ -505,155 +505,224 @@ src/test.kt:6: Warning: remove is defined both as a member in class kotlin.colle
 
   fun testValueClass_source() {
     // b/427808171
-    lint()
-      .files(
-        java(
-            """
+    val project1 =
+      project()
+        .files(
+          java(
+              """
             package my.pkg;
 
             public interface MyView {
               void setBackgroundColor(int rgb);
             }
           """
-          )
-          .indented(),
-        kotlin(
-            """
+            )
+            .indented()
+        )
+    val project2 =
+      project()
+        .files(
+          kotlin(
+              """
             package another.pkg
 
             import my.pkg.MyView
 
             @JvmInline
-            value class MyColor(val rgb: Int)
-
-            fun MyView.setBackgroundColor(c: MyColor) = this.setBackgroundColor(c.rgb)
-          """
-          )
-          .indented(),
-        kotlin(
-            """
-            package another.pkg
-
-            import my.pkg.MyView
-
-            fun test(v: MyView, c: MyColor) {
-              v.setBackgroundColor(42) // Member
-              v.setBackgroundColor(c) // Extension
-            }
-          """
-          )
-          .indented(),
-      )
-      .run()
-      .expectClean()
-  }
-
-  fun testValueClass_binary() {
-    // b/427808171
-    lint()
-      .files(
-        bytecode(
-          "libs/view.jar",
-          java(
-              """
-              package my.pkg;
-
-              public interface MyView {
-                void setBackgroundColor(int rgb);
+            value class MyColor(val rgb: int) {
+              companion object {
+                val White = MyColor(0xffffffff.toInt())
               }
-            """
-            )
-            .indented(),
-          0xe4b0da78,
+            }
+
+            fun MyView.setBackgroundColor(c: MyColor) = TODO()
+
+            fun colorWhite() = MyColor.White
           """
-                my/pkg/MyView.class:
-                H4sIAAAAAAAA/zv1b9c+BgYGWwZOdgYmRgbe3Er9gux0fd/KsMzUcnYGFkYG
-                gazEskT9nMS8dH3/pKzU5BJGBqHi1BKnxOTs9KL80rwU5/yc/CJGBhYNT80w
-                Rgau4PzSouRUt8ycVEYGbog5eiAj2BgZGBmYGUCAEWgsKwMbiMXADiSZGDgA
-                Eo20k4gAAAA=
-                """,
-        ),
-        bytecode(
-          "libs/ui.jar",
+            )
+            .indented()
+        )
+        .dependsOn(project1)
+    val project3 =
+      project()
+        .files(
           kotlin(
               """
-              package another.pkg
+            package yet.another.pkg
 
-              import my.pkg.MyView
-
-              @JvmInline
-              value class MyColor(val rgb: Int)
-
-              fun MyView.setBackgroundColor(c: MyColor) = this.setBackgroundColor(c.rgb)
-            """
-            )
-            .indented(),
-          0xd9a3302f,
-          """
-                META-INF/main.kotlin_module:
-                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg4uJiEGILSS0u8S7hkuDiTszLL8lI
-                LdIryE4X4vStdM7PyS/yLlFi0GIAAHsJ/lI+AAAA
-                """,
-          """
-                another/pkg/MyColor.class:
-                H4sIAAAAAAAA/31U3VMbVRT/3ZtNstkssAktJQtqP7RN+GhSrLVKQQq1djEU
-                hYpSfFnCTlhIdmN2w9Q3xhf9C3zwRccXX3ioMxYYO+NQ+ubf5Dieu9kkTMg4
-                s3Pvueeej9/5nXP373///AvAbXzNMGg6rr9t1fO13XJ+6dsFt+LW42AM2o65
-                Z+YrplPOL2/uWCU/jghDrGz5K+VNhkg2Z9BaFzIzVMQhJ8CRYJD8bdtjuFjs
-                EXmaoc93V/267ZQn7WqtQnZZI1fs5Grekd2lbt18w65sWQRugGDcsx3bnw1g
-                rKlIIa1AwyCDGibKErAZGRfJ1KzVLGeLYTJ7Ps35zGGWaRWXMCyCZhhGe0E8
-                azgiDEeF4cL/G74pDN9ikFskMFzI9ihfxRVcFbbXiE+zXi6o6EO/QgRfJwa3
-                TW97wd2yQgYlgke9SHWiGI5vlQVVY5SqZa1iAjkF45hUkRUSR54haX3TMCte
-                GGooaxS7+z6de8qgNJxN91lgpeJdxIT3bYZo0GGG9HkvYr4ZWrS4V1AVtzAl
-                4nzYLGFNgSRaqJVcx/PrjZLv1kNYcis3w7DoRa/JElNwT4S7TwO5R5NwprAC
-                Ic0ahiiE126JZYpqLe66fsV28jt71fziXtVw6GAR7lTrYsnyzS3TN0nHq3sR
-                ejJMLAmxgLLskv6ZLU6UgG9R4Bcn+1cVPswVrp3sK/RxTVa4HKU9SXuM9n7a
-                uXz6/dzwyf4UL7D5dDqmcZ0XIq+P2cn+6a8xSZa06KKuyaRMTMmaokvDrMAe
-                vf4xEtwmNXVR0/qEC+lYoOsnD00bIJ3W1qW09EqqGZrOMsHRJTmmxU9/YLyZ
-                6zsuEZqMAE+EUElKyObNXZ+aIqaGYaBItDxuVDet+hNzs2KJbrsls7Jm1m1x
-                DpV9q75Z2l0ya+FZWXUb9ZL10BaHzErD8e2qtWZ7Nt3ed6iBpm9To2kIOPVd
-                JE+LnwhJopNRxEizRqe8YJr26NgfUA5I4PiS1ligjOGrwCEwQJIkao94KqHz
-                +2Qt7jIvoa0f4UJ66BC6fog3tNwhLh/i7edB5k6QDN4JMDDxAMMg10MEskBw
-                jBvdPnI7MT2r0OdaC7V+jJsHXQ7RdpKJdpldSQrdPp0k9GpCn2WqTkyfPv4K
-                /CdEIwfjJ+CHeG9GH/1ZHKUmX+u0xsET/6C/GXKIlOQWwhDSHaJKALiLD8Lg
-                oi/CKiEAjR9juoOo6Z4IEQkpcNe4eIKh+2zorowdYWZs5AWU33v2rhlLacdS
-                giFgFHO2TeblkBuud7PCmyOjZfAR5kLrG8SJuEu8BF/XjzDf3a8EFgKnlPiR
-                dferNWWsx2Rl8AAfd9WX1Ed+QVz6DVKkQ3aUyJ47y1USD0Oqk/gkqI/jaWD+
-                BTZo3ybpEe0GuS5uIGLgUwNFA0t4TCKWDXyGzzfAPKxgdQODHlQPTzzEg3XW
-                Q85D1EPMw91Ac4felYcpDxMesh6uBMo+D/3/AZO+jOv7BwAA
-                """,
-          """
-                another/pkg/MyColorKt.class:
-                H4sIAAAAAAAA/3VSXU8TQRQ9M/1k+SoFpBQFlSqlCluICSF9UUhMNpZixDQx
-                PJjpdlKmu901u9Mqb43/RP+Bb+iDafDNH2W8WxpE0Ie598yde8+dc2d+/vr2
-                HcATmAzzwvP1iQzMd07LPDjd910/eKFTYAyZtugJ0xVeyzxstKVN0RhDPpR6
-                T9hOK/C7XnOYv+GEOzu7u28YZovVzumIqq7k+4q1XmdYrfpBy2xL3QiE8kJT
-                eNRTaOUTrvm61nXdCkOuoE9UWLhJn0aaYdnxtas8s93rmMrTMvCEa1qeDohQ
-                2WEKBmmxT6TtjBhfikB0JCUyrBWr16VUrkSOIpJWZb0+gQlMGhjHFMPkXzpS
-                yDBkb16NIV60osIsZscxgzkS+z8Zb7vbzctBTV+bEwOzaVkMM9WR0gOpRVNo
-                QWe804vRg7HIjEUGlOtEgNPhBxWhMqHmFsPhoD9nDPoGz3CD5/gQkuNpnl/J
-                DPp5XmYlXubbyUyMcPzHGRv0ybDzz8l4OpFJnn/k40Yiff5pucyoajGi3WZR
-                x/nqP/4K3c4YwU1H0zz2/aaM9ClP1rqdhgxei4ZLkWzVt4VbF4GK9qNg4VXX
-                06ojLa+nQkWhy1d79uePUIcjvxvY8rmKahZHNfWLiiuJ2AJHHBfzWUQCSdqv
-                026PPCc/VcqOnWG6tPQV8xxfovmhRDZJ+Umk8YjwrYtM8gtDpinkiIvhcTR7
-                TiA1DHNsDG0Rm+SfUjxPDZeOEbNw28IdC8tYsXAX9yzcx+oxWIgCHhwjFdJH
-                wsMQCyFyIdZCJEIkfwOO1BR6kwMAAA==
-                """,
-        ),
-        kotlin(
-            """
             import another.pkg.MyColor
+            import another.pkg.colorWhite
             import another.pkg.setBackgroundColor
             import my.pkg.MyView
 
             fun test(v: MyView, c: MyColor) {
               v.setBackgroundColor(42) // Member
               v.setBackgroundColor(c) // Extension
+              v.setBackgroundColor(colorWhite()) // Extension
             }
           """
+            )
+            .indented()
+        )
+        .dependsOn(project1)
+        .dependsOn(project2)
+    lint().projects(project1, project2, project3).run().expectClean()
+  }
+
+  fun testValueClass_binary() {
+    // b/427808171
+    val project1 =
+      project()
+        .files(
+          bytecode(
+            "libs/view.jar",
+            java(
+                """
+              package my.pkg;
+
+              public interface MyView {
+                void setBackgroundColor(int rgb);
+              }
+            """
+              )
+              .indented(),
+            0xe4b0da78,
+            """
+                my/pkg/MyView.class:
+                H4sIAAAAAAAA/zv1b9c+BgYGWwZOdgYmRgbe3Er9gux0fd/KsMzUcnYGFkYG
+                gazEskT9nMS8dH3/pKzU5BJGBqHi1BKnxOTs9KL80rwU5/yc/CJGBhYNT80w
+                Rgau4PzSouRUt8ycVEYGbog5eiAj2BgZGBmYGUCAEWgsKwMbiMXADiSZGDgA
+                Eo20k4gAAAA=
+                """,
           )
-          .indented(),
-      )
+        )
+    val project2 =
+      project()
+        .files(
+          bytecode(
+            "libs/ui.jar",
+            kotlin(
+                """
+              package another.pkg
+
+              import my.pkg.MyView
+
+              @JvmInline
+              value class MyColor(val rgb: Int) {
+                companion object {
+                  val White = MyColor(0xffffffff.toInt())
+                }
+              }
+
+              fun MyView.setBackgroundColor(c: MyColor) = this.setBackgroundColor(c.rgb)
+
+              fun colorWhite() = MyColor.White
+            """
+              )
+              .indented(),
+            0x63c9e678,
+            """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg4uJiEGILSS0u8S7hkuDiTszLL8lI
+                LdIryE4X4vStdM7PyS/yLlFi0GIAAHsJ/lI+AAAA
+                """,
+            """
+                another/pkg/MyColor＄Companion.class:
+                H4sIAAAAAAAA/5VSTU8TURQ97820MwyVlk8p8iFaFVCYQthhTLDGpEnRBEld
+                sDCv0ycMnc6Qea9Ed40L/4eu3bCSuDBN3fmjjHemRY0hJi7mfpz7zr0398z3
+                H1++AtjGOsOCCCN9LGP3tHXk7r2tREEUlypR+1SEfhRaYAyFE3Em3ECER+7z
+                xon0tAWDIfvQD339iMFYWa3nkEHWgQmLwdTHvmJYqv2z8w71PZL65bGv5Xqg
+                tg8auyrtVWWYvIJp4RrDhPA8qVTpkljyTnPII+dgDAWGzZVaK9KBH7onZ23X
+                D7WMQxG4T+Rr0Ql0JQqVjjuejuI9EbdkvLNad8CTlSdL3u/iq3ZaZdj4v24M
+                45eEPalFU2hBGG+fGXRrlpiRxICBtQh/4ydZmaLmJkOz151y+Cx3eKHXdbjN
+                B4lt2P33xmyvu8XL7LFl8/7HLC/w/fmCMcfL5rcL1uuSYfQlJYfo1pxpZwrZ
+                /jueJ37Rydj9D4tlRvFyMmuLJRtk0vMxTF8lEm3NSIWRX1oxOMPSRkuTwJWo
+                Sdx8zQ/ls067IeMD0QgImahFngjqIvaTfAjmqmEo40oglJKksPMi6sSefOon
+                teJ+J9R+W9Z95dPj3ZCWEZomKmySMmZyLhgU0d9FW9+jzE3uRz6z9hn2OQUc
+                K2SzKWhhlWxu8AAjcMiPYzRFEvLGkGxeYPzTX1z7D6454NIvlcHEkLtOng8H
+                T56nOiaEmQE4HJZEU5immoE1ypyUNIY7KOJ+OvAuHpCvED5Db68fwqhitopi
+                FXO4QSHmq1jA4iGYwhJuHsJWcBSWFbIKtxRuK4wq5BRKPwH+rztqxgMAAA==
+                """,
+            """
+                another/pkg/MyColor.class:
+                H4sIAAAAAAAA/31VS3PTVhT+rvySZSUoDoRYCeWVgpMADimllEAaMKUoOKFN
+                aGhIX7IjHMWy5Epyhu4y3bS/oItu6HTTDYtS2iQDM50Udv1NnU7PlRQ7dTyd
+                8dxz77nn8Z3vHF3/9c+LPwBcgsPQr9uOv2a4hUatWpj7uuhYjpsCY1DW9Q29
+                YOl2tXCvvG5U/BRiDMmq4S9Uywyx/KhGq8v3TJORgpiGgDRD3F8zPYYjpS6R
+                pxh6fGfRd027et6sNyyyy2ujpXau8I7sjnbqbjZNa9UgcIcIxjXTNv3pAMaS
+                jD5kJSjoZ5CjRHkCdl3EETLVGw3DXmU4nz+Y5mDmKMuUjKMY5EFzDMPdIO43
+                HOKGw9yw+P+Gb3DD4wziHgkMh/NdypdxEqe47WniU3erEzJ60CsRwWeIwTXd
+                Wys6q0bEYJzgUS/62lE02zeqnKoxSrVnLeMcRiWM47yMPN8JKDBkjK+auuVF
+                oQbyWqmz71OjDxmkpl12HgdWMt5CkntfYkgEHWbIHvQi5sPQvMXdgsq4iEke
+                52pYwpKEOG+hUnFsz3ebFd9xI1jiXm6GQd6LbpPFp+AaD3eDBnKDJmFfYROE
+                NK9pvBChcZEvk4RZr1QMzxuhiX6wZvrGSKVBZsFWhhaO8yzlvlaxomE71iXv
+                SNGpN3TbdOwU5hgu5ks1xyeHwvpGvWBSH1xbtwq3jEd60/KL7crmdLdGQxFO
+                7z0J8/iQId0KxnC8W5XtbFTvAhY5xvsypsN2LjGcLjlutbBu+GVXN22voNsU
+                RPfJwSvMO/5807KoMwP7Qc5u1DWbDgZd9O1dzBm+vqr7OumE+kaMXgvGlzRf
+                QATXSP/Y5CfiVlglTl/sbp6ShEFBEpTdTYl+giJKgpggmSGZJNlLMia++nZm
+                cHfzRP+kMMGusv6b2WxSEVRhIvZ6h+1uvvopGRfjSmJWVURSpidFRVLjg2yC
+                3Xn9fSy4zSjyrKL0cBfSsUDXSx6Kcoh0SkvXp2QX+sLQdBYJkxoXk0rq1XdM
+                CHN9I8QJUo5XQANBdUkRzxdqPsPQQtP2zbqh2RumZ5Yt40abTBpZ/k0xHCoR
+                c/PNetlw7+tkw78Fp6JbS7pr8nOk7Fn09UptTm9EZ1mzbcMtWrrnGRRMWnSa
+                bsW4bfK7XJR36UBW+mIE+kiAGHK8/YS4SqckyU9IZvkrTFLl40uyl0YrEdyu
+                0anA+0YyMfYbpKe0EWBGznxdp1UODZChHTWbvzmR8ztkze9yL6Esb+NwdmAL
+                qrqFY8roFk5sYeSXYC7aQXJ4M8DA+EsWBTkTIRA5gh2c7fQRW4npfYp8Tu+h
+                Vndw4WmHQ6KV5FyrzI4kE50+7ST0/EQ+96g6Psvq+J8QfkAi9nR8F8IW3r6u
+                Dj/hx3jIV43WFIT03+gNQw6QkvMdwuC7y0QVB3AF70bBec+4VZoDGt/BVBtR
+                6J6OEPFd4K4I/C2L3Kcjd2lsG9fHhn6H9Kxr78JYUiuWFAwDvSn8dYhinYi4
+                EdROVoRwdJQc3sNMZH2WOOF36ZcQltVt3OzsVxrFwKmP/yN09mtvyliXycrh
+                Ft7vqC+jDv2IVPxnxGNtshNE9sx+rjK4HVGdwQe8PkJ8p5V8OMgCxH/F3TB3
+                m6UEWZfoEwktx4N+A/0vMb/MtvHRc3ws7ODBc9x99h/HDLnFYAWEMnqlBfru
+                cqgHCB/BJlmj3TLJh5RiZQUxDZ9q+EzD5/iCtvhSg47yCpiHClZXcNiD7MHw
+                kArWaQ+jHhIekh6uBJrL9Jl7mPRwzkPew8lA2eOh18PCvzEalxy6CQAA
+                """,
+            """
+                another/pkg/MyColorKt.class:
+                H4sIAAAAAAAA/31UW08TQRT+ZktvS4ECcmkRqlKlVGELoojVByAh2VjQCKkx
+                PJjpdtIu3e6SnS3KG/Gf6LMv+mDQB0PwzR9lPFMqIqCb7Jxzvjnzzbnt/vj5
+                9RuABTxmGOKuF9SFb+w2asb6/qrneP6TIArGkNzhe9xwuFsznlZ2hEVoiCEt
+                RbDCrUbN91pute0/05CLi0tLLxkGc6XmfoeqbIvXRXO6zDBZ8vyasSOCis9t
+                VxrcpTt5YHukb3jBRstxigyj2aBuy+xF+hhiDBMNL3Bs19jZaxq2Gwjf5Y5h
+                uoFPhLYlo9ApF6surEaH8Rn3eVOQI8NUrnQ+leIZZFOR1IrT5QQS6NHRjV6G
+                nr/yiCLJMHAxNIaunKkODmCwG/24Qsn+K41XrfnqaaH6ztWJgVn0mgy6pZxf
+                1O1AMIRy0wQNXtKjKK4yxFe95i53qZAMmdIlXtlTh2ICE8jEMY5rDOP/dY3i
+                BjW/JoJ2EDOOXNiqLMsEshjTMYmbDP2lTjfWRcCrPOAUv9bcC9FQMbXE1QLK
+                p6EUjTbf2EorkFadY7CODob1owNdG9V0LUZvUuvooXRv8uggrRXY90N2dHD8
+                PkJ76UwyRFBXXiuE5yPJSGf71KUrFk3Gjt9q3USQ0sOx43cTBaaumqeZuKws
+                FC5Fp3es2UZAfVz1qkL1xXbFRqtZEf4WrziEDJQ8iztl7tvK7oDZ5y03sJvC
+                dPdsaRN0Om3Lf2abIWG6rvBXHS6lIFPf9Fq+JdZsRZHqUJRPCM6cwxw0dKkK
+                kkwhjAjJ+2StkNRI9uYH4ofoy499wZCGj22/RVojlFSEZvgB6cMnniRH2ky9
+                GCUuhiXVHo2UaBtOIY0xshR9hqR6op9w/TNufWi38DevYgjhIUmdrEmaowk6
+                XGzffQ+PSK4RPkXR5rYRMjFtIm/iNu6YmMGsCQOFbTCV2/w24pJ+I7grMSbp
+                q8KCxIjEqERYIvILKZtzMZ0EAAA=
+                """,
+          )
+        )
+    val project3 =
+      project()
+        .files(
+          kotlin(
+              """
+            import another.pkg.MyColor
+            import another.pkg.colorWhite
+            import another.pkg.setBackgroundColor
+            import my.pkg.MyView
+
+            fun test(v: MyView, c: MyColor) {
+              v.setBackgroundColor(42) // Member
+              v.setBackgroundColor(c) // Extension
+              v.setBackgroundColor(colorWhite()) // Extension
+            }
+          """
+            )
+            .indented()
+        )
+        .dependsOn(project1)
+        .dependsOn(project2)
+    lint()
+      .projects(project1, project2, project3)
+      // TODO(b/430184413)
+      .allowCompilationErrors()
       .run()
       .expectClean()
   }
