@@ -642,6 +642,9 @@ enum class BooleanOption(
         )
     ),
 
+    /** Enables R8 gradual support */
+    R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */
@@ -1082,6 +1085,7 @@ enum class BooleanOption(
         )
     ),
 
+
     /* ----------------
      * REMOVED FEATURES
      */
@@ -1197,6 +1201,7 @@ enum class BooleanOption(
         false,
         FeatureStage.Removed(Version.VERSION_8_11)
     ),
+
     ; // end of enums
 
     override val status = stage.status

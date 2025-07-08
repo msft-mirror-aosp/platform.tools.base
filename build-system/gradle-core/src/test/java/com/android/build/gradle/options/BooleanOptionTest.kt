@@ -117,6 +117,7 @@ class BooleanOptionTest {
             BooleanOption.DUMP_ARTIFACTS_LOCATIONS,
             BooleanOption.GRADUAL_R8_SHRINKING,
             BooleanOption.ENABLE_PROBLEMS_API,
+            BooleanOption.R8_GRADUAL_API,
         )
 
         checkViolatingProjectOptions(

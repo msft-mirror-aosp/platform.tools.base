@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.core
 import com.android.build.gradle.internal.dsl.BaselineProfileImpl
 import com.android.build.gradle.internal.dsl.KeepRulesImpl
 import com.android.build.gradle.internal.dsl.OptimizationImpl
+import java.io.File
 
 class MergedOptimization : MergedOptions<OptimizationImpl> {
 
@@ -34,11 +35,24 @@ class MergedOptimization : MergedOptions<OptimizationImpl> {
     var ignoreFromAllExternalDependenciesInBaselineProfile: Boolean = false
         private set
 
+    var enable: Boolean = false
+        private set
+
+    var packageScope: Set<String> = setOf()
+        private set
+
+    var keepRuleFiles: Set<File> = setOf()
+        private set
+
     override fun reset() {
         ignoreFromInKeepRules = mutableSetOf()
         ignoreFromAllExternalDependenciesInKeepRules = false
         ignoreFromInBaselineProfile = mutableSetOf()
         ignoreFromAllExternalDependenciesInBaselineProfile = false
+
+        enable = false
+        packageScope = setOf()
+        keepRuleFiles = setOf()
     }
 
     override fun append(option: OptimizationImpl) {
@@ -48,6 +62,12 @@ class MergedOptimization : MergedOptions<OptimizationImpl> {
         ignoreFromInBaselineProfile.addAll((option.baselineProfile as BaselineProfileImpl).ignoreFrom)
         ignoreFromAllExternalDependenciesInBaselineProfile =
             ignoreFromAllExternalDependenciesInBaselineProfile ||
-                    (option.baselineProfile as BaselineProfileImpl).ignoreFromAllExternalDependencies
+                    option.baselineProfile.ignoreFromAllExternalDependencies
+
+        // set instead of append as we only need build type that is appended last
+        enable = option.enable
+        packageScope = option.packageScope.get()
+        if (option.keepRules.files.isPresent)
+            keepRuleFiles = option.keepRules.files.get()
     }
 }

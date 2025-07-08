@@ -49,6 +49,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.process.CommandLineArgumentProvider
 import org.junit.Before
@@ -261,6 +262,18 @@ private class DslScriptGenerator(
             return
         }
 
+        if (listTypes.any { it.isAssignableFrom(dslType) }) {
+            val nestedType = (genericType as ParameterizedType).actualTypeArguments.first() as Class<*>
+            if (nestedType !in typesToIgnore) {
+                allDslValues.add(
+                    getPossibleValues(nestedType).map {
+                        "$callChain.add($it)"
+                    }
+                )
+            }
+            return
+        }
+
         val closures = mutableListOf<Method>()
         val getters = mutableListOf<Method>()
         val methodsNames = dslType.methods.map { it.name }.toSet()
@@ -403,7 +416,8 @@ private class DslScriptGenerator(
 
         private val listTypes = setOf(
             MutableCollection::class.java,
-            ListProperty::class.java
+            ListProperty::class.java,
+            SetProperty::class.java
         )
 
         private val typesToIgnore = setOf(
@@ -488,6 +502,8 @@ private class DslScriptGenerator(
             "public abstract com.android.build.api.dsl.TargetSdkVersion com.android.build.api.dsl.TargetSdkSpec.preview(java.lang.String)",
             "public abstract void com.android.build.api.dsl.ApplicationBaseFlavor.targetSdk(kotlin.jvm.functions.Function1)",
             "public abstract void com.android.build.api.dsl.CommonExtension.compileSdk(kotlin.jvm.functions.Function1)",
+            "public abstract void com.android.build.api.dsl.Optimization.setEnable(boolean)",
+            "public abstract org.gradle.api.provider.SetProperty<java.lang.String> com.android.build.api.dsl.Optimization.getPackageScope()"
         )
 
         private val nullableGetters = listOf(

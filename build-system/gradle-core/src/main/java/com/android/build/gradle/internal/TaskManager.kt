@@ -31,6 +31,7 @@ import com.android.build.api.instrumentation.FramesComputationMode
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
 import com.android.build.gradle.api.AndroidSourceSet
+import com.android.builder.errors.IssueReporter
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -1409,6 +1410,7 @@ abstract class TaskManager(
         // Code Shrinking
         // Since the shrinker (R8) also dexes the class files, if we have minifedEnabled we stop
         // the flow and don't set-up dexing.
+        verifyGradualR8Flag(creationConfig)
         maybeCreateJavaCodeShrinkerTask(creationConfig)
         if (creationConfig.optimizationCreationConfig.minifiedEnabled) {
             maybeCreateDesugarLibTask(creationConfig)
@@ -1467,6 +1469,19 @@ abstract class TaskManager(
                         .getFinalArtifacts(ScopedArtifact.JAVA_RES)
                 )
             }
+    }
+
+    private fun verifyGradualR8Flag(creationConfig: ApkCreationConfig) {
+        if (creationConfig is ApplicationCreationConfig) {
+            if (!creationConfig.services.projectOptions[BooleanOption.R8_GRADUAL_API]
+                && creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
+            ) {
+                creationConfig.services.issueReporter.reportError(
+                    IssueReporter.Type.GENERIC,
+                    "Cannot use optimization.enable=true without setting android.r8.gradual.support flag."
+                )
+            }
+        }
     }
 
     /**
@@ -1887,8 +1902,7 @@ abstract class TaskManager(
         )
     }
 
-    protected open fun maybeCreateJavaCodeShrinkerTask(
-            creationConfig: ConsumableCreationConfig) {
+    protected open fun maybeCreateJavaCodeShrinkerTask(creationConfig: ConsumableCreationConfig) {
         if (creationConfig.optimizationCreationConfig.minifiedEnabled) {
             doCreateJavaCodeShrinkerTask(creationConfig)
         }

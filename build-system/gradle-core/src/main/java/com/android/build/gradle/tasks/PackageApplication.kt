@@ -110,7 +110,7 @@ abstract class PackageApplication : PackageAndroidArtifact() {
                     creationConfig.services.projectOptions[BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS]
             val useResourcesShrinker = creationConfig
                 .androidResourcesCreationConfig
-                ?.useResourceShrinker == true
+                ?.useResourceShrinker == true || creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
             val operationRequest = creationConfig.artifacts.use(taskProvider)
                 .wiredWithDirectories(
                     PackageAndroidArtifact::resourceFiles,

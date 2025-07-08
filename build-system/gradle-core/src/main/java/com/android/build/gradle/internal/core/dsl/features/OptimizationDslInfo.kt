@@ -51,6 +51,19 @@ interface OptimizationDslInfo {
 
     val postProcessingOptions: PostProcessingOptions
 
+    /**
+     * Returns true if R8 optimization is on and only for application module
+     */
+    val applicationOptimizationEnabled: Boolean
+
+    /**
+     * Return set of packages
+     * Return empty set for anything than application module
+     */
+    val includePackages: Set<String>
+
+    val keepRuleFiles: Set<File>
+
     fun getProguardFiles(into: ListProperty<RegularFile>)
 
     fun gatherProguardFiles(type: ProguardFileType): Collection<File>
