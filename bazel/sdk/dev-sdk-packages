@@ -56,4 +56,4 @@ cmake;3.10.2.4988404
 # Latest version that uses the CMake file API.
 cmake;3.22.1
 
-ndk;27.0.12077973:**:{**/OWNERS,**/BUILD.bazel}
+ndk;28.2.13676358:**:{**/OWNERS,**/BUILD.bazel}

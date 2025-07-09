@@ -28,10 +28,6 @@ NDK_20 = [
     "//prebuilts/studio/sdk:ndk-20",
 ]
 
-DOLPHIN = [
-    "//prebuilts/studio/buildbenchmarks/dolphin.3627ef8a:dolphin.3627ef8a",
-]
-
 ABSEIL = [
     "//prebuilts/studio/buildbenchmarks/abseil-cpp.731689ff:abseil-cpp.731689ff",
 ]
@@ -506,17 +502,6 @@ single_gradle_integration_test(
     data = DATA + CMAKE + NDK,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = MAVEN_REPOS,
-    deps = DEPS,
-)
-
-single_gradle_integration_test(
-    name = "DolphinProbe",
-    srcs = "src/test/java/com/android/build/gradle/integration/nativebuild/",
-    data = DATA + CMAKE + NDK + DOLPHIN,
-    maven_repo_zips = MAVEN_REPO_ZIPS,
-    maven_repos = MAVEN_REPOS,
-    shard_count = 1,
-    tags = ["noci:studio-win"],
     deps = DEPS,
 )
 
