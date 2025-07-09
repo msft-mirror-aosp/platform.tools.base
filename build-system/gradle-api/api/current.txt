@@ -491,11 +491,13 @@ package com.android.build.api.dsl {
   }
 
   public interface ApplicationBuildType extends com.android.build.api.dsl.BuildType com.android.build.api.dsl.ApplicationVariantDimension {
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.Optimization getOptimization();
     method public Boolean? isCrunchPngs();
     method public boolean isDebuggable();
     method public boolean isDefault();
     method public boolean isEmbedMicroApp();
     method public boolean isProfileable();
+    method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization,kotlin.Unit> action);
     method public void setCrunchPngs(Boolean?);
     method public void setDebuggable(boolean);
     method public void setDefault(boolean);
@@ -506,6 +508,7 @@ package com.android.build.api.dsl {
     property public abstract boolean isDefault;
     property public abstract boolean isEmbedMicroApp;
     property public abstract boolean isProfileable;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Optimization optimization;
   }
 
   public interface ApplicationDefaultConfig extends com.android.build.api.dsl.ApplicationBaseFlavor com.android.build.api.dsl.DefaultConfig {
@@ -1288,10 +1291,12 @@ package com.android.build.api.dsl {
   }
 
   @org.gradle.api.Incubating public interface KeepRules {
+    method @org.gradle.api.Incubating public org.gradle.api.provider.SetProperty<java.io.File> getFiles();
     method @Deprecated @org.gradle.api.Incubating public void ignoreAllExternalDependencies(boolean ignore);
     method @Deprecated @org.gradle.api.Incubating public void ignoreExternalDependencies(java.lang.String... ids);
     method @org.gradle.api.Incubating public void ignoreFrom(java.lang.String... ids);
     method @org.gradle.api.Incubating public void ignoreFromAllExternalDependencies(boolean ignore);
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.SetProperty<java.io.File> files;
   }
 
   @org.gradle.api.Incubating public interface KmpOptimization {
@@ -1932,7 +1937,12 @@ package com.android.build.api.dsl {
 
   @org.gradle.api.Incubating public interface Optimization {
     method @org.gradle.api.Incubating public void baselineProfile(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public boolean getEnable();
+    method @org.gradle.api.Incubating public org.gradle.api.provider.SetProperty<java.lang.String> getPackageScope();
     method @org.gradle.api.Incubating public void keepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void setEnable(boolean);
+    property @org.gradle.api.Incubating public abstract boolean enable;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.SetProperty<java.lang.String> packageScope;
   }
 
   public interface Packaging {
@@ -2350,13 +2360,13 @@ package com.android.build.api.dsl {
     method @Deprecated public java.io.File? getMultiDexKeepFile();
     method public java.io.File? getMultiDexKeepProguard();
     method public com.android.build.api.dsl.Ndk getNdk();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.Optimization getOptimization();
+    method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.Optimization getOptimization();
     method public java.util.List<java.io.File> getProguardFiles();
     method public com.android.build.api.dsl.Shaders getShaders();
     method public java.util.List<java.io.File> getTestProguardFiles();
     method public void javaCompileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JavaCompileOptions,kotlin.Unit> action);
     method public void ndk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Ndk,kotlin.Unit> action);
-    method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization,kotlin.Unit> action);
+    method @Deprecated @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization,kotlin.Unit> action);
     method public Object proguardFile(Object proguardFile);
     method public Object proguardFiles(java.lang.Object... files);
     method public void resValue(String type, String name, String value);
@@ -2373,7 +2383,7 @@ package com.android.build.api.dsl {
     property @Deprecated public abstract java.io.File? multiDexKeepFile;
     property public abstract java.io.File? multiDexKeepProguard;
     property public abstract com.android.build.api.dsl.Ndk ndk;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Optimization optimization;
+    property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Optimization optimization;
     property public abstract java.util.List<java.io.File> proguardFiles;
     property public abstract com.android.build.api.dsl.Shaders shaders;
     property public abstract java.util.List<java.io.File> testProguardFiles;
