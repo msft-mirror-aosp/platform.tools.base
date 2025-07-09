@@ -468,7 +468,7 @@ def kotlin_proto_library(
         name = java_proto_name,
         srcs = srcs,
         proto_deps = proto_deps,
-        java_deps = deps + ["@intellij//:intellij.libraries.grpc"],
+        java_deps = deps + ["@intellij//:intellij.libraries.grpc"] if grpc_support else [],
         visibility = visibility,
         grpc_support = grpc_support,
         protoc_version = protoc_version,
