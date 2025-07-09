@@ -191,7 +191,7 @@ DATA = [
     "androidx.fragment:fragment:1.3.0",
     "androidx.fragment:fragment:1.3.0-rc01",
     "androidx.fragment:fragment-ktx:1.5.6",
-    "androidx.games:games-activity:1.2.2",
+    "androidx.games:games-activity:4.0.0",
     "androidx.leanback:leanback:1.0.0",
     "androidx.legacy:legacy-support-v13:1.0.0",
     "androidx.legacy:legacy-support-v4:1.0.0",

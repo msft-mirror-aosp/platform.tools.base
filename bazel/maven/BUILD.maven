@@ -30104,10 +30104,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "androidx.games.games-activity_1.2.2",
-    pom = "repository/androidx/games/games-activity/1.2.2/games-activity-1.2.2.pom",
+    name = "androidx.games.games-activity_4.0.0",
+    pom = "repository/androidx/games/games-activity/4.0.0/games-activity-4.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/games/games-activity/1.2.2",
+    repo_path = "androidx/games/games-activity/4.0.0",
     visibility = ["//visibility:public"],
 )
 
