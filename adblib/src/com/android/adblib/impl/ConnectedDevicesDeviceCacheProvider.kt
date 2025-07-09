@@ -23,17 +23,8 @@ import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.device
 
 internal class ConnectedDevicesDeviceCacheProvider(val adbSession: AdbSession) : DeviceCacheProvider {
-    /**
-     * Attempt to use a `ConnectedDevice`'s device cache if found through `ConnectedDevicesTracker`.
-     * Otherwise, always run `block` to produce a new result.
-     */
-    override suspend fun <R> withDeviceCacheIfAvailable(
-        device: DeviceSelector,
-        cacheKey: CoroutineScopeCache.Key<R>,
-        block: suspend () -> R
-    ): R {
-        val deviceCache = adbSession.connectedDevicesTracker.device(device)?.cache
 
-        return deviceCache?.getOrPutSuspending(cacheKey) { block() } ?: block()
+    override suspend fun getCacheOrNull(device: DeviceSelector): CoroutineScopeCache? {
+        return adbSession.connectedDevicesTracker.device(device)?.cache
     }
 }

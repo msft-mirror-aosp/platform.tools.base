@@ -17,13 +17,17 @@ package com.android.adblib
 
 interface DeviceCacheProvider {
 
-    /**
-     * Attempt to retrieve data from cache. If data is not in cache execute `block` to
-     * produce the result and store it in the cache if the device cache is available/supported.
-     */
-    suspend fun <R> withDeviceCacheIfAvailable(
-        device: DeviceSelector,
-        cacheKey: CoroutineScopeCache.Key<R>,
-        block: suspend () -> R
-    ): R
+    suspend fun getCacheOrNull(device: DeviceSelector): CoroutineScopeCache?
+}
+
+/**
+ * Attempt to use a `ConnectedDevice`'s device cache if found through `ConnectedDevicesTracker`.
+ * Otherwise, always run `block` to produce a new result.
+ */
+suspend inline fun <R> DeviceCacheProvider.withDeviceCacheIfAvailable(
+    device: DeviceSelector,
+    cacheKey: CoroutineScopeCache.Key<R>,
+    crossinline block: suspend () -> R
+): R {
+    return getCacheOrNull(device)?.getOrPutSuspending(cacheKey) { block() } ?: block()
 }

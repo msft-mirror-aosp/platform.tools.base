@@ -32,6 +32,7 @@ import com.android.adblib.availableFeatures
 import com.android.adblib.deviceCacheProvider
 import com.android.adblib.utils.rethrowCancellation
 import com.android.adblib.utils.toImmutableMap
+import com.android.adblib.withDeviceCacheIfAvailable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
