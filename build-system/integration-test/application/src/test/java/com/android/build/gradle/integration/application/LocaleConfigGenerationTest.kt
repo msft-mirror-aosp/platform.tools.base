@@ -714,11 +714,13 @@ class LocaleConfigGenerationTest {
         Truth.assertThat(localeConfig.readText()).contains("android:defaultLocale=\"en-US\"")
 
         // In API level before 35, the default locale should not be present in the locale config
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "compileSdkVersion " + DEFAULT_COMPILE_SDK_VERSION,
-            "compileSdkVersion 34"
-        )
+        listOf("app", "lib1", "lib2").forEach {
+            TestFileUtils.searchAndReplace(
+                project.getSubproject(it).buildFile,
+                "compileSdkVersion " + DEFAULT_COMPILE_SDK_VERSION,
+                "compileSdkVersion 34"
+            )
+        }
         project.execute("assembleDebug")
         Truth.assertThat(localeConfig.readText()).doesNotContain("android:defaultLocale")
     }

@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.dexing
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
@@ -154,6 +155,15 @@ class GlobalSyntheticsTest(private val dexType: DexType) {
                 public record Person (String name, String address) {}
             """.trimIndent()
         )
+
+        // AarMetadata defaults minCompileSdk to the compileSdk if unset, explicitly set it to 34 for
+        // this use case.
+        TestFileUtils.searchAndReplace(
+            project.getSubproject("lib").buildFile,
+            "compileSdkVersion " + GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION,
+            "compileSdkVersion 34"
+        )
+
         TestFileUtils.appendToFile(
             app.buildFile,
             """

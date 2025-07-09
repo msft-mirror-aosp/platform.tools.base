@@ -77,6 +77,7 @@ internal class KmpGlobalTaskCreationConfigImpl(
     override val compileSdkHashString: String by lazy {
         compileSdkVersionProvider.invoke()
     }
+
     override val buildToolsRevision: Revision by lazy {
         buildToolsVersionProvider.invoke()
     }
