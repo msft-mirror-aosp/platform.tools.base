@@ -69,15 +69,15 @@ class KotlincFE10Detector : Detector(), SourceCodeScanner {
       when (fqName) {
         // :core:compiler.common
         "org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget" -> true
+        "org.jetbrains.kotlin.descriptors.ClassKind" -> true
         "org.jetbrains.kotlin.descriptors.Modality" -> true
         "org.jetbrains.kotlin.descriptors.Visibility" -> true
         "org.jetbrains.kotlin.resolve.references.ReferenceAccess" -> true
+        "org.jetbrains.kotlin.types.Variance" -> true
         // :compiler:frontend.common
         "org.jetbrains.kotlin.resolve.ImportPath" -> true
         // :compiler:backend.common.jvm
         "org.jetbrains.kotlin.resolve.jvm.checkers.DalvikIdentifierUtils" -> true
-        // used directly from the analysis API (such as KaRenderer) and doesn't seem K1 specific
-        "org.jetbrains.kotlin.types.Variance" -> true
         else -> {
           when {
             // :core:compiler.common
