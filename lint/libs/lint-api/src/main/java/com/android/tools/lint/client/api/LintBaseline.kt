@@ -517,7 +517,7 @@ class LintBaseline(
       "GetLocales" ->
         stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("minSdkVersion is ", i) }
       "FontValidation" ->
-        stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("minSdkVersion", i, '=') }
+        stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("`minSdkVersion`", i, '=') }
       "RestrictedApi" -> {
         val index1 = old.indexOf('(')
         val index2 = new.indexOf('(')
