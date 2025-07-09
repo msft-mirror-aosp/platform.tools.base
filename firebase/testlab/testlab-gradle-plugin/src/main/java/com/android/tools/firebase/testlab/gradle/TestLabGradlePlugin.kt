@@ -50,11 +50,11 @@ class TestLabGradlePlugin : Plugin<Project> {
       if (
         agpVersion.previewType != "dev" &&
           (agpVersion < AndroidPluginVersion(8, 3, 0).alpha(1) ||
-            agpVersion >= AndroidPluginVersion(8, 13, 0).alpha(1))
+            agpVersion >= AndroidPluginVersion(9, 0, 0).alpha(1))
       ) {
         error(
           "Firebase TestLab plugin is an experimental feature. It requires Android " +
-            "Gradle plugin version between 8.3 and 8.12. Current version is $agpVersion."
+            "Gradle plugin version between 8.3 and 9.0. Current version is $agpVersion."
         )
       }
 
