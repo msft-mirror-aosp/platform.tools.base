@@ -21,6 +21,7 @@ import com.google.common.base.CaseFormat
 import java.util.TreeSet
 
 private fun Dependency.isAndroidX(): Boolean = group?.startsWith("androidx.") ?: false
+private fun Dependency.isAndroidXCompose(): Boolean = group?.startsWith("androidx.compose.") ?: false
 
 private infix fun ((String) -> String).compose(second: (String) -> String) = { arg: String ->
     second(this(arg)) }
@@ -29,6 +30,8 @@ private infix fun ((String) -> String).compose(second: (String) -> String) = { a
  * Pick name with next steps. Each step generates name and check whether it
  * exists in reserved set where comparison is done in case-insensitive way.
  * If same name already exists, it tries the next step. Steps defined as follows:
+ * - if artifact is androidx.compose and any reserved alias has androidx-compose prefix - add
+ *   "androidx-compose-" prefix;
  * - if artifact is androidx and any reserved alias has androidx prefix - add
  *   "androidx-" prefix;
  * - in other case just use artifactID
@@ -57,6 +60,13 @@ fun pickLibraryVariableName(
         versionIdentifier == null -> ""
         !includeVersionInKey -> ""
         else -> "-" + "v${versionIdentifier.replace("[^A-Za-z0-9]".toRegex(), "")}".toSafeKey()
+    }
+
+    if (dependency.isAndroidXCompose() && (reserved.isEmpty() || reserved.any { it.startsWith("androidx-compose-") })) {
+        val key = transform("androidx-compose-${dependency.name.toSafeKey()}$versionSuffix")
+        if (!reserved.contains(key)) {
+            return key
+        }
     }
 
     if (dependency.isAndroidX() && (reserved.isEmpty() || reserved.any { it.startsWith("androidx-") })) {

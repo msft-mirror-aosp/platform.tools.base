@@ -114,12 +114,13 @@ class VersionCatalogNamingUtilTest {
             "androidx-lifecycle-lifecycle-runtime-ktx2"
         )
         libraryName(
-            "androidx-material3-window-size-class1",
+            "androidx-compose-material3-window-size-class1",
             "androidx.compose.material3:material3-window-size-class:1.3.1"
         )
         libraryName(
             "androidx-compose-material3-material3-window-size-class2",
             "androidx.compose.material3:material3-window-size-class:1.3.1",
+            "androidx-compose-material3-window-size-class1",
             "androidx-material3-window-size-class1",
             "androidx-compose-material3-material3-window-size-class1",
             "material3-window-size-class1",
