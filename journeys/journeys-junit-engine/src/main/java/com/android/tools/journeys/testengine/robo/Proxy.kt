@@ -33,6 +33,7 @@ import io.grpc.ClientInterceptor
 import io.grpc.CompositeCallCredentials
 import io.grpc.ManagedChannel
 import io.grpc.MethodDescriptor
+import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
 import java.nio.file.Path
@@ -129,6 +130,16 @@ class Proxy(
                 adb.setGlobalSettingsValue("verifier_verify_adb_installs", "0")
             }
             adb.install(crawlerAppApkPath, getCrawlerInstallFlags(deviceApiLevel))
+            val appApkLocation = File(appApkPath)
+            val appApkPath = if (appApkLocation.isDirectory()) {
+                // hopefully, there is only one APK in the directory, we don't handle
+                // multi APKs so far.
+                File(
+                    appApkLocation,
+                    appApkLocation.list()?.single { it.endsWith(".apk") }
+                        ?: throw RuntimeException("no APK present in $appApkPath")
+                ).absolutePath
+            } else appApkPath
             adb.install(appApkPath, getAppInstallFlags(deviceApiLevel))
         } catch (e: Exception) {
             throw JourneyExecutionException(
