@@ -132,3 +132,19 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "dex_test",
+    size = "small",
+    srcs = ["dex_tests.cc"],
+    data = [
+        "data/containerDex.apk",
+        "data/uncompressedDex.apk",
+    ],
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/base/deploy/installer:installer_lib",
+        "@googletest//:gtest_main",
+    ],
+)

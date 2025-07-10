@@ -24,6 +24,7 @@
 #include "tools/base/deploy/installer/delta_install.h"
 #include "tools/base/deploy/installer/delta_preinstall.h"
 #include "tools/base/deploy/installer/dump.h"
+#include "tools/base/deploy/installer/find_dex.h"
 #include "tools/base/deploy/installer/install_coroutine_agent.h"
 #include "tools/base/deploy/installer/live_edit.h"
 #include "tools/base/deploy/installer/live_literal_update.h"
@@ -66,7 +67,8 @@ std::unique_ptr<Command> GetCommand(const char* command_name,
           {"networktest", [&]() { return new NetworkTestCommand(workspace); }},
           {"timeout", [&]() { return new TimeoutCommand(workspace); }},
           {"restartactivity",
-           [&] { return new RestartActivityCommand(workspace); }}
+           [&] { return new RestartActivityCommand(workspace); }},
+          {"finddex", [&]() { return new FindDexCommand(workspace); }},
           // Add here more commands (e.g: version, install, patch, agent, ...)
       };
 

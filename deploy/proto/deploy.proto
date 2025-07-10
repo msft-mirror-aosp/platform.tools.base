@@ -473,6 +473,24 @@ message DumpRequest {
   repeated string package_names = 1;
 }
 
+message FindDexRequest {
+  string package_name = 1;
+  string class_signature = 2;
+  int64 dex_file_size_limit = 3;
+}
+
+message FindDexResponse {
+  enum Status {
+    UNKNOWN = 0;
+    OK = 1;
+    NOT_FOUND = 2;
+    FILE_TOO_LARGE = 3;
+    ERROR = 4;
+  }
+  bytes dex_file = 1;
+  Status status = 2;
+}
+
 message InstallerRequest {
   string version = 1;
   string command_name = 2;
@@ -491,6 +509,7 @@ message InstallerRequest {
     RootPushInstallRequest root_push_install_request = 15;
     ComposeStatusRequest compose_status_request = 16;
     RestartActivityRequest restart_activity_request = 17;
+    FindDexRequest find_dex_request = 18;
   }
 
   // The InstallerResponse should match the ID of the request.
@@ -527,6 +546,7 @@ message InstallerResponse {
     RootPushInstallResponse root_push_install_response = 16;
     ComposeStatusResponse compose_status_response = 17;
     RestartActivityResponse restart_activity_response = 18;
+    FindDexResponse find_dex_response = 19;
   }
 
   string error_message = 14;

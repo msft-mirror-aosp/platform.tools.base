@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include <fstream>
-#include <iostream>
-
+#include <gtest/gtest.h>
 #include <signal.h>
 
-#include <gtest/gtest.h>
+#include <fstream>
+#include <iostream>
 
 #include "tools/base/deploy/common/env.h"
 #include "tools/base/deploy/installer/apk_archive.h"
 #include "tools/base/deploy/installer/command_cmd.h"
 #include "tools/base/deploy/installer/dump.h"
 #include "tools/base/deploy/installer/executor/executor_impl.h"
+#include "tools/base/deploy/installer/find_dex.h"
 #include "tools/base/deploy/installer/highlander.h"
 #include "tools/base/deploy/installer/network_test.h"
 #include "tools/base/deploy/installer/patch_applier.h"
@@ -313,4 +313,23 @@ TEST_F(InstallerTest, TestDumpError) {
   ASSERT_TRUE(response.has_dump_response());
   ASSERT_TRUE(response.dump_response().status() ==
               proto::DumpResponse_Status_ERROR_NO_PACKAGES);
+}
+
+TEST_F(InstallerTest, TestFindDexError) {
+  proto::InstallerRequest request;
+  auto find_dex_request = request.mutable_find_dex_request();
+  find_dex_request->set_package_name("");
+  find_dex_request->set_class_signature("");
+  find_dex_request->set_dex_file_size_limit(0);
+
+  proto::InstallerResponse response;
+  Workspace workspace("");
+  FindDexCommand find_dex_command(workspace);
+  find_dex_command.ParseParameters(request);
+  find_dex_command.Run(&response);
+
+  ASSERT_TRUE(response.has_find_dex_response());
+  auto find_dex_response = response.find_dex_response();
+  ASSERT_EQ(find_dex_response.dex_file().size(), 0);
+  ASSERT_EQ(find_dex_response.status(), proto::FindDexResponse_Status_ERROR);
 }
