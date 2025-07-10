@@ -37,7 +37,7 @@ import java.util.Random
 class UniqueClassGenerator() {
 
     fun generateSimpleClass(location: File) {
-        val className = "RandomNumberHolder"
+        val className = "JourneysEntryPoint"
         val classInternalName = className.replace('.', '/')
         val fieldName = "randomNumber"
         val random = Random()

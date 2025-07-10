@@ -76,22 +76,11 @@ abstract class AgpTestSuiteImpl(
     override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget> = targets
 
     override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
-        throw RuntimeException("Not yet implemented")
+        addSource<TestSuiteAssetsSpecImpl>(action)
     }
 
     override fun hostJar(action: TestSuiteHostJarSpec.() -> Unit) {
-
-        if (sources.isNotEmpty()) {
-            throw RuntimeException(
-                "It is not yet possible to register multiple sources for a test suite")
-        }
-        objects.newInstance(
-            TestSuiteHostJarSpecImpl::class.java,
-            name
-        ).also { newSources ->
-            sources.add(newSources)
-            action.invoke(newSources)
-        }
+        addSource<TestSuiteHostJarSpecImpl>(action)
     }
 
     fun hostJar(action: Action<TestSuiteHostJarSpec>) {
@@ -119,4 +108,21 @@ abstract class AgpTestSuiteImpl(
      * Internal APIs
      */
     internal val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
+
+    /**
+     * Private APIs
+     */
+    private inline fun <reified T: TestSuiteSourceCreationConfig> addSource(action: T.() -> Unit) {
+        if (sources.isNotEmpty()) {
+            throw RuntimeException(
+                "It is not yet possible to register multiple sources for a test suite")
+        }
+        objects.newInstance(
+            T::class.java,
+            name
+        ).also { newSources ->
+            sources.add(newSources)
+            action.invoke(newSources)
+        }
+    }
 }

@@ -91,7 +91,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     override fun executeTests() {
         val engineInputParameters: List<TestEngineInputProperty> = engineInputParameters.get(). map { inputProperty ->
             TestEngineInputProperty(
-                inputProperty.type.toString(),
+                inputProperty.type.propertyName,
                 inputProperty.value.get().asFile.absolutePath
             )
         }
@@ -99,7 +99,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
         // only get the connected devices if the test requested an APK.
         if (
             engineInputParameters.any { inputParameter ->
-                inputParameter.name == AgpTestSuiteInputParameters.TESTED_APKS.name
+                inputParameter.name == AgpTestSuiteInputParameters.TESTED_APKS.propertyName
             }
         ) {
             val deviceProvider = deviceProviderFactory.getDeviceProvider(
@@ -271,7 +271,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             // TODO : Improve file handling by using Artifacts APIs.
             task.engineInputPropertiesFiles.set(
                 task.project.layout.buildDirectory
-                    .file("intermediates/${creationConfig.testedVariant.name}/$name/junit_inputs.json")
+                    .file("intermediates/${creationConfig.testedVariant.name}/$name/junit_inputs.txt")
             )
             task.logFile.set(
                 task.project.layout.buildDirectory

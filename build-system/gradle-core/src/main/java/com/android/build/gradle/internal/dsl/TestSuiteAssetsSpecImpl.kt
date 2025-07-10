@@ -23,8 +23,9 @@ import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import org.gradle.api.model.ObjectFactory
+import javax.inject.Inject
 
-open class TestSuiteAssetsSpecImpl(
+open class TestSuiteAssetsSpecImpl @Inject constructor(
     objects: ObjectFactory,
     override val name: String,
 ): TestSuiteAssetsSpec, TestSuiteSourceCreationConfig {
