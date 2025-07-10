@@ -705,6 +705,23 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         build.executor.run("$FUSED_LIBRARY_PROJECT_NAME:assemble")
     }
 
+    // Test coverage for b/428906893
+    @Test
+    fun testDependencyConstraintsAreIgnoredForTheTransitiveDependencyCheck() {
+        val build = rule.build {
+            fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME") {
+                dependencies {
+                    // This dependency specifies a version constraint on itself. Issue requires
+                    // the constraint be declared in the .module file (not currently supported by
+                    // the test fixtures), so an example Androidx dependency is used to reproduce.
+                    // b/432264894 aims to allow for .module files to be supported for tests.
+                    include("androidx.appcompat:appcompat:1.7.0")
+                }
+            }
+        }
+        build.executor.run(":$FUSED_LIBRARY_PROJECT_NAME:assemble")
+    }
+
     private fun GradleBuild.checkFusedLibReportContents(
         include: List<String>,
         dependencies: List<String>
