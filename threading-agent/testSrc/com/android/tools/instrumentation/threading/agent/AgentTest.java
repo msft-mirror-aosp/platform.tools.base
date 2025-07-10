@@ -226,14 +226,16 @@ public class AgentTest {
         Class<?> transformedClass = loadAndTransform(SampleClasses.ClassWithAnnotatedMethods.class);
         Object instance = transformedClass.getDeclaredConstructor().newInstance();
 
-        ApplicationManager.getApplication().runWriteAction(() -> {
-            try {
-                callMethod(transformedClass, instance, "writeLockMethod1", false);
-            }
-            catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            verify(mockThreadingCheckerHook).verifyWriteLock();
+        ApplicationManager.getApplication().invokeAndWait(() -> {
+            ApplicationManager.getApplication().runWriteAction(() -> {
+                try {
+                    callMethod(transformedClass, instance, "writeLockMethod1", false);
+                }
+                catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                verify(mockThreadingCheckerHook).verifyWriteLock();
+            });
         });
     }
 
