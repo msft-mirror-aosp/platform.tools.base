@@ -202,6 +202,9 @@ class TestFixturesTaskManager(
         // Add a task to create the AAR metadata file
         taskFactory.register(AarMetadataTask.CreationAction(testFixturesComponent))
 
+        // Add a task to check the AAR metadata file
+        createCheckAarMetadataTask(testFixturesComponent)
+
         // Add a task to write the local lint AAR file
         taskFactory.register(BundleAar.TestFixturesLocalLintCreationAction(testFixturesComponent))
 

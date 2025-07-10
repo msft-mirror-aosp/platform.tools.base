@@ -246,6 +246,8 @@ class KmpTaskManager(
         // Add a task to create the AAR metadata file
         project.tasks.registerTask(AarMetadataTask.CreationAction(variant))
 
+        // Add a task to check the AAR metadata file
+        createCheckAarMetadataTask(variant)
 
         // Create a jar with both classes and java resources.  This artifact is not
         // used by the Android application plugin and the task usually don't need to

@@ -629,7 +629,7 @@ abstract class TaskManager(
             creationConfig: ComponentCreationConfig,
             packageOutputType: Single<Directory>?) {
         // Check AAR metadata files
-        taskFactory.register(CheckAarMetadataTask.CreationAction(creationConfig))
+        createCheckAarMetadataTask(creationConfig)
 
         val projectInfo = creationConfig.services.projectInfo
 
@@ -2105,6 +2105,10 @@ abstract class TaskManager(
 
         // and finally debug related tasks.
         createDebugTasks(creationConfig)
+    }
+
+    protected fun createCheckAarMetadataTask(creationConfig: ComponentCreationConfig) {
+        taskFactory.register(CheckAarMetadataTask.CreationAction(creationConfig))
     }
 
     protected open fun createDebugTasks(creationConfig: ComponentCreationConfig) {

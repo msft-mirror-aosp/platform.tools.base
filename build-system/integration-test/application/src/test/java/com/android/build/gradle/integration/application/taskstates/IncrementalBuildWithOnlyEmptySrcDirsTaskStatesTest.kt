@@ -79,6 +79,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":lib:bundleDebugAar",
                             ":lib:bundleLibCompileToJarDebug",
                             ":lib:bundleLibRuntimeToJarDebug",
+                            ":lib:checkDebugAarMetadata",
                             ":lib:compileDebugLibraryResources",
                             ":lib:copyDebugJniLibsProjectAndLocalJars",
                             ":lib:copyDebugJniLibsProjectOnly",

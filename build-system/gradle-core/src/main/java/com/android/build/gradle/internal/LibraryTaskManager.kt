@@ -251,6 +251,9 @@ class LibraryTaskManager(
         // Add a task to create the AAR metadata file
         taskFactory.register(AarMetadataTask.CreationAction(libraryVariant))
 
+        // Add a task to check the AAR metadata file
+        createCheckAarMetadataTask(libraryVariant)
+
         // Add a task to write the local lint AAR file
         taskFactory.register(LibraryLocalLintCreationAction(libraryVariant))
 

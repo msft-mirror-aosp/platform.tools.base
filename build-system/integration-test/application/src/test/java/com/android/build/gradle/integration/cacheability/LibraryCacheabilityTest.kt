@@ -75,6 +75,7 @@ class LibraryCacheabilityTest {
                  */
                 DID_WORK to setOf(
                     ":lib:copyReleaseJniLibsProjectAndLocalJars", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.LibraryJniLibsTask] */
+                    ":lib:checkReleaseAarMetadata", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.CheckAarMetadataTask] */
                     ":lib:prepareReleaseArtProfile", /* No Bug, task is just file copy */
                     ":lib:bundleReleaseAar" /*Bug 121275773 */,
                     ":lib:mapReleaseSourceSetPaths", /* Intentionally not cacheable */
@@ -94,7 +95,7 @@ class LibraryCacheabilityTest {
                     ":lib:mergeReleaseNativeLibs",
                     ":lib:processReleaseJavaRes",
                     ":lib:stripReleaseDebugSymbols"
-                ),
+            ),
                 FAILED to setOf()
             )
     }

@@ -37,11 +37,13 @@ import com.android.builder.core.BuilderConstants
 import org.gradle.api.Action
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.CopySpec
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileCopyDetails
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
@@ -119,6 +121,12 @@ abstract class BundleAar : Zip(), VariantTask {
      */
     @get:Input
     abstract val forLint: Property<Boolean>
+
+    // aarMetadataCheck doesn't affect the task output, but it's marked as an input so that this
+    // task depends on CheckAarMetadataTask.
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val aarMetadataCheck: DirectoryProperty
 
     abstract class BaseCreationAction<T: ComponentCreationConfig>(
         creationConfig: T
@@ -213,6 +221,11 @@ abstract class BundleAar : Zip(), VariantTask {
                     it.name.lowercase(Locale.US).endsWith(SdkConstants.DOT_AAR)
                 }
             )
+
+            task.aarMetadataCheck.setDisallowChanges(
+                artifacts.get(InternalArtifactType.AAR_METADATA_CHECK)
+            )
+
             task.projectPath = task.project.path
             task.forLint.convention(false)
         }
