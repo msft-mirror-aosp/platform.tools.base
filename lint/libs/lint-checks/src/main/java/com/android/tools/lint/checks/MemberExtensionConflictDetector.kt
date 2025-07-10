@@ -156,8 +156,15 @@ class MemberExtensionConflictDetector : Detector(), SourceCodeScanner {
           return
         }
         // Member is chosen over extension.
-        // So, one of candidate members must be the "best" candidate.
-        val filteredMember = members.singleOrNull { it.isInBestCandidates }
+        val filteredMember =
+          members.singleOrNull { member ->
+            // So, one of candidate members must be the "best" candidate.
+            member.isInBestCandidates &&
+              // Also, the member should belong to a certain containing class, not local.
+              // We can indirectly check that by retrieving its callable id
+              // (since the local will not have a callable id).
+              member.callableId() != null
+          }
         // Otherwise, extension (along with explicit import) is chosen. Hence, no conflict.
         if (filteredMember == null) {
           return

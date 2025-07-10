@@ -42,7 +42,7 @@ def require_component_id(build_env: bazel.BuildEnv):
     raise errors.CIError()
 
 
-def _find_unowned_files(workspace_dir: str) -> set[str]:
+def _find_unowned_files(workspace_dir: str) -> (set[str], int):
   """Returns the set of files not owned in a directory tree."""
 
   unowned_files = set()
@@ -53,17 +53,19 @@ def _find_unowned_files(workspace_dir: str) -> set[str]:
       'tools/vendor/google3',
   ]
 
+  total = 0
   for source_root in sources:
     directory_path = os.path.join(workspace_dir, source_root)
     for root, _, files in os.walk(directory_path):
       for file in files:
         if file.endswith(('.java', '.kt')):
+          total += 1
           if not _is_directory_owned(root):
             file_path = os.path.join(root, file)
             workspace_path = os.path.relpath(file_path, workspace_dir)
             unowned_files.add(workspace_path)
 
-  return unowned_files
+  return unowned_files, total
 
 
 def _write_exempt_files(workspace_dir: str, files: set[str]):
@@ -84,9 +86,10 @@ def _read_exempt_files(workspace_dir: str) -> set[str]:
 
 def _check_owned_files(workspace_dir:str) -> bool:
   """Returns true if given directory contains all owned files (except exempt ones)."""
-  unowned = _find_unowned_files(workspace_dir)
+  unowned, total = _find_unowned_files(workspace_dir)
   exempt = _read_exempt_files(workspace_dir)
   new_files = unowned - exempt
+  print(f'Checked {total} files. Of which {len(new_files)} are unowned, and {len(unowned) - len(new_files)} are exempt.')
   if new_files:
     for f in new_files:
       print(f'ERROR: {f} is not owned.')
@@ -96,7 +99,7 @@ def _check_owned_files(workspace_dir:str) -> bool:
 
 
 def _update_owned_files(workspace_dir):
-  unowned = _find_unowned_files(workspace_dir)
+  unowned, _ = _find_unowned_files(workspace_dir)
   _write_exempt_files(workspace_dir, unowned)
 
 def main():

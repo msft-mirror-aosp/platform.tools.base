@@ -227,6 +227,14 @@ class AttributeModel {
         }
 
         /**
+         * Returns true if this attribute should only be included when present on both manifests
+         * being merged, false otherwise
+         */
+        default boolean removeIfNotPresentOnBothManifests() {
+            return false;
+        }
+
+        /**
          * Merges the two attributes values and returns the merged value. If the values cannot be
          * merged, return null.
          */
@@ -340,6 +348,52 @@ class AttributeModel {
                 @Override
                 public String merge(@NotNull String higherPriority, @NotNull String lowerPriority) {
                     return String.format("%s|%s", higherPriority, lowerPriority);
+                }
+            };
+
+    static final MergingPolicy PURPOSE_MIN_SDK_VERSION_MERGING_POLICY =
+            new MergingPolicy() {
+                @Override
+                public boolean shouldMergeDefaultValues() {
+                    return true;
+                }
+
+                @Override
+                public boolean removeIfNotPresentOnBothManifests() {
+                    return true;
+                }
+
+                @Nullable
+                @Override
+                public String merge(@NotNull String higherPriority, @NotNull String lowerPriority) {
+                    if (Integer.parseInt(higherPriority) > Integer.parseInt(lowerPriority)) {
+                        return lowerPriority;
+                    } else {
+                        return higherPriority;
+                    }
+                }
+            };
+
+    static final MergingPolicy PURPOSE_MAX_SDK_VERSION_MERGING_POLICY =
+            new MergingPolicy() {
+                @Override
+                public boolean shouldMergeDefaultValues() {
+                    return true;
+                }
+
+                @Override
+                public boolean removeIfNotPresentOnBothManifests() {
+                    return true;
+                }
+
+                @Nullable
+                @Override
+                public String merge(@NotNull String higherPriority, @NotNull String lowerPriority) {
+                    if (Integer.parseInt(higherPriority) > Integer.parseInt(lowerPriority)) {
+                        return higherPriority;
+                    } else {
+                        return lowerPriority;
+                    }
                 }
             };
 

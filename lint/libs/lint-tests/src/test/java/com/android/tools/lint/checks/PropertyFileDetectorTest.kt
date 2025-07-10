@@ -237,4 +237,18 @@ class PropertyFileDetectorTest : AbstractCheckTest() {
       .run()
       .expectClean()
   }
+
+  fun test429703136() {
+    lint()
+      .files(
+        source(
+          "gradle.properties",
+          "android.suppressUnsupportedOptionWarnings=\\\n" +
+            "  android.experimental.lint.missingBaselineIsEmptyBaseline,\\\n" +
+            "  android.suppressUnsupportedOptionWarnings",
+        )
+      )
+      .run()
+      .expectClean()
+  }
 }

@@ -17,13 +17,13 @@
 package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.model.v2.ide.ArtifactDependencies
-import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
+import com.android.builder.model.v2.models.SourceType
 import com.android.builder.model.v2.models.TestSuiteSourceDependencies
 import java.io.Serializable
 
 data class TestSuiteSourceDependenciesImpl(
     override val name: String,
-    override val type: BaseTestSuiteSourceIdentity.SourceType,
+    override val type: SourceType,
     override val artifactDependencies: ArtifactDependencies
 ): TestSuiteSourceDependencies, Serializable {
     companion object {

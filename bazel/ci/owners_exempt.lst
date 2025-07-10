@@ -604,7 +604,6 @@ tools/adt/idea/android-common/src/com/android/tools/idea/flags/enums/PowerProfil
 tools/adt/idea/android-common/src/com/android/tools/idea/flags/overrides/MendelOverrides.kt
 tools/adt/idea/android-common/src/com/android/tools/idea/flags/overrides/ServerFlagOverrides.kt
 tools/adt/idea/android-common/src/com/android/tools/idea/googleapis/GoogleApiKeyProvider.kt
-tools/adt/idea/android-common/src/com/android/tools/idea/gservices/DevServices.kt
 tools/adt/idea/android-common/src/com/android/tools/idea/io/FilePaths.java
 tools/adt/idea/android-common/src/com/android/tools/idea/io/FileService.kt
 tools/adt/idea/android-common/src/com/android/tools/idea/io/IdeFileUtils.java
@@ -3533,7 +3532,6 @@ tools/adt/idea/android/src/org/jetbrains/android/spellchecker/AndroidTextSpellch
 tools/adt/idea/android/src/org/jetbrains/android/spellchecker/AndroidXmlSpellcheckingStrategy.java
 tools/adt/idea/android/src/org/jetbrains/android/spellchecker/GoogleServicesJsonSpellcheckingStrategy.kt
 tools/adt/idea/android/src/org/jetbrains/android/util/AndroidBundle.java
-tools/adt/idea/android/src/org/jetbrains/android/util/AndroidOutputReceiver.java
 tools/adt/idea/android/src/org/jetbrains/android/util/AndroidTreeClassChooserFactory.kt
 tools/adt/idea/android/src/org/jetbrains/android/util/AndroidUtils.java
 tools/adt/idea/android/src/org/jetbrains/android/util/DisposableUtils.kt
@@ -9170,19 +9168,6 @@ tools/base/sdk-common/src/main/java/com/android/ide/common/process/ProcessResult
 tools/base/sdk-common/src/main/java/com/android/ide/common/process/ProcessResultImpl.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/process/TeeProcessOutputHandler.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/rendering/HardwareConfigHelper.java
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/AgpVersion.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/GoogleMavenArtifactId.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/GoogleMavenRepository.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/GoogleMavenRepositoryV2.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/GoogleMavenRepositoryV2Host.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/KnownVersionStability.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/MavenRepositories.java
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/NetworkCache.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/ResourceVisibilityLookup.java
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/SdkMavenRepository.java
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/StubGoogleMavenRepository.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/VersionCatalogNamingUtil.kt
-tools/base/sdk-common/src/main/java/com/android/ide/common/repository/WellKnownMavenArtifactId.kt
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/AbstractResourceRepository.java
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/AndroidAaptIgnore.kt
 tools/base/sdk-common/src/main/java/com/android/ide/common/resources/AndroidManifestPackageNameUtils.java

@@ -52,7 +52,6 @@ internal abstract class ConsumableComponentDslInfoImpl internal constructor(
     buildTypeObj,
     productFlavorList,
     services,
-    buildDirectory,
     extension
 ), ConsumableComponentDslInfo {
 

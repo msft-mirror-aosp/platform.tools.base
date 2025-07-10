@@ -473,7 +473,12 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           checkDependency(context, dependency, false, valueCookie, statementCookie)
         }
       }
-    } else if (parent == "dependencies" || parent == "declarativeDependencies") {
+    } else if (
+      parent == "dependencies" ||
+        parent == "declarativeDependencies" ||
+        // KMP dependencies?
+        parentParent == "dependencies" && property == "implementation"
+    ) {
       if (value.startsWith("files") && value.matches("^files\\(['\"].*[\"']\\)$".toRegex())) {
         val path = value.substring("files('".length, value.length - 2)
         if (path.contains("\\\\")) {

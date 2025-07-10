@@ -20,7 +20,6 @@ import com.android.build.api.component.analytics.AnalyticsEnabledLibraryVariantB
 import com.android.build.api.variant.AndroidTestBuilder
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.DeviceTestBuilder
-import com.android.build.api.variant.HasDeviceTestsBuilder
 import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.LibraryVariantBuilder
 import com.android.build.api.variant.VariantBuilder

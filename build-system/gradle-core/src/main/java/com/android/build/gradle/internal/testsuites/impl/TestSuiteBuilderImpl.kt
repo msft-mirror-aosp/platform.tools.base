@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.testsuites.impl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.JUnitEngineSpec
-import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
+import com.android.build.gradle.internal.core.dsl.AgpTestSuiteDslInfo
 import com.android.build.gradle.internal.dsl.TestSuiteAssetsSpecImpl
 import com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl
 import com.android.build.gradle.internal.services.BaseServices
@@ -38,7 +38,7 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
     private val objects: ObjectFactory,
     private val _name: String,
     override var enable: Boolean,
-    private val dslDefinedTestSuite: AgpTestSuiteImpl,
+    testSuiteDslInfo: AgpTestSuiteDslInfo,
     private val services: BaseServices,
 ): TestSuiteBuilder {
 
@@ -48,16 +48,16 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
 
         /**
          * Create the list of test suites for this component, the list is driven by
-         * the passed [dslDefinedTestSuiteDefinitions] which is the list of
-         * test suites implicitly or explicitly defined by the Component type and its DSL.
+         * the passed [dslDefinedTestSuites] which is the list of
+         * test suites targets implicitly or explicitly defined by the Component type and its DSL.
          */
         fun create(
-            dslDefinedTestSuiteDefinitions: List<AgpTestSuiteImpl>,
+            dslDefinedTestSuites: List<AgpTestSuiteDslInfo>,
             variantBuilderServices: VariantBuilderServices,
             experimentalProperties: Map<String, Any>,
         ): Map<String, TestSuiteBuilder> {
 
-            if (dslDefinedTestSuiteDefinitions.isEmpty()) return mapOf()
+            if (dslDefinedTestSuites.isEmpty()) return mapOf()
 
             if (!flagChecked.getAndSet(true)) {
                 val unstableNotice =
@@ -74,14 +74,14 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
                 }
             }
 
-            return dslDefinedTestSuiteDefinitions.associate { agpTestSuite ->
-                agpTestSuite.getJunitEngineIfUsed()
+            return dslDefinedTestSuites.associate { agpTestSuite ->
+                agpTestSuite.testSuite.getJunitEngineIfUsed()
                     ?: throw RuntimeException("Test suites must use junit engines for now")
-                agpTestSuite.name to
+                agpTestSuite.testSuite.name to
                         // TODO: lock JUnitEngineSpec instance.
                         variantBuilderServices.newInstance(
                             TestSuiteBuilderImpl::class.java,
-                            agpTestSuite.name,
+                            agpTestSuite.testSuite.name,
                             true,
                             agpTestSuite,
                             variantBuilderServices
@@ -90,20 +90,27 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
         }
     }
 
+
     override val junitEngineSpec: JUnitEngineSpec =
         JUnitEngineSpecForVariantBuilder(
             objects,
-            dslDefinedTestSuite.useJunitEngine as JUnitEngineSpecImpl
+            testSuiteDslInfo.testSuite.useJunitEngine as JUnitEngineSpecImpl
         )
+
+    internal val testSuite = testSuiteDslInfo.testSuite
+
+    override val targets = testSuiteDslInfo.targets.associate {
+        it.name to TestSuiteTargetBuilderImpl(it)
+    }
 
     override fun getName(): String = _name
     internal fun getSources(): Collection<TestSuiteSourceCreationConfig>
     {
         // if the user does not define a single source set, add an assets one by default.
-        if (dslDefinedTestSuite.getSourceContainers().isEmpty()) {
+        if (testSuite.getSourceContainers().isEmpty()) {
             return listOf(TestSuiteAssetsSpecImpl(objects, _name,))
         }
-        return dslDefinedTestSuite.getSourceContainers()
+        return testSuite.getSourceContainers()
     }
 }
 

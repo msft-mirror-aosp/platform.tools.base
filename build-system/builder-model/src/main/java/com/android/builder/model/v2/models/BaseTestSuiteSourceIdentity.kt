@@ -22,13 +22,6 @@ package com.android.builder.model.v2.models
 interface BaseTestSuiteSourceIdentity {
 
     /**
-     * Types of source associated to the test suite with its own set of dependencies
-     *
-     * TODO: Consider moving to variant API once we make it public
-     */
-    enum class SourceType { ASSETS, HOST_JAR, TEST_APK }
-
-    /**
      * Type of source for this test suite and dependencies.
      * For example: [SourceType.ASSETS], [SourceType.HOST_JAR], [SourceType.TEST_APK].
      */

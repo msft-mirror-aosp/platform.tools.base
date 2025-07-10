@@ -2298,6 +2298,75 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testCmpDependencies() {
+    lint()
+      .files(
+        gradleToml(
+            """
+            [versions]
+            appCompat = "1.5.1"
+            androidxTest = "1.5.0"
+
+            [libraries]
+            androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+            androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+            """
+          )
+          .indented(),
+        kts(
+          """
+          kotlin {
+              sourceSets {
+                  commonMain.dependencies {
+                      implementation("androidx.appcompat:appcompat:1.5.1")
+                      implementation("com.google.firebase:firebase-messaging:10.2.1")
+                  }
+              }
+          }
+          """
+        ),
+      )
+      .issues(SWITCH_TO_TOML, DEPENDENCY)
+      .run()
+      .expect(
+        """
+        build.gradle.kts:6: Warning: A newer version of com.google.firebase:firebase-messaging than 10.2.1 is available: 11.0.0 [GradleDependency]
+                              implementation("com.google.firebase:firebase-messaging:10.2.1")
+                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:5: Warning: Use the existing version catalog reference (libs.androidx.appCompat) instead [UseTomlInstead]
+                              implementation("androidx.appcompat:appcompat:1.5.1")
+                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:6: Warning: Use version catalog instead [UseTomlInstead]
+                              implementation("com.google.firebase:firebase-messaging:10.2.1")
+                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 3 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle.kts line 6: Change to 11.0.0:
+        @@ -6 +6 @@
+        -                      implementation("com.google.firebase:firebase-messaging:10.2.1")
+        +                      implementation("com.google.firebase:firebase-messaging:11.0.0")
+        Autofix for build.gradle.kts line 5: Replace with existing version catalog reference `androidx-appCompat`:
+        @@ -5 +5 @@
+        -                      implementation("androidx.appcompat:appcompat:1.5.1")
+        +                      implementation(libs.androidx.appCompat)
+        Autofix for build.gradle.kts line 6: Replace with new library catalog declaration for firebase-messaging:
+        @@ -6 +6 @@
+        -                      implementation("com.google.firebase:firebase-messaging:10.2.1")
+        +                      implementation(libs.firebase.messaging)
+        gradle/libs.versions.toml:
+        @@ -3,0 +4 @@
+        +firebaseMessaging = "10.2.1"
+        @@ -7 +8,2 @@
+        -androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+        +androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+        +firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebaseMessaging" }
+        """
+      )
+  }
+
   fun testDependenciesWithCallSyntax() {
     // Regression test for 134692580
     val expected =

@@ -17,17 +17,19 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.AgpTestSuiteTarget
 import com.android.build.api.dsl.JUnitEngineSpec
 import com.android.build.api.dsl.TestSuiteAssetsSpec
 import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.TestSuiteTestApkSpec
+import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
-import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.model.ObjectFactory
-import org.gradle.testing.base.TestSuiteTarget
+import org.gradle.api.tasks.testing.Test
 import java.util.concurrent.atomic.AtomicBoolean
-
 
 /**
  * Implementation of the [AgpTestSuite] Dsl extension.
@@ -61,13 +63,17 @@ abstract class AgpTestSuiteImpl(
 
     override fun getName(): String = name
 
-    override val targetProductFlavors = mutableListOf<Pair<String, String>>()
     override val targetVariants = mutableListOf<String>()
 
-    @Suppress("UnstableApiUsage")
-    override fun getTargets(): ExtensiblePolymorphicDomainObjectContainer<out TestSuiteTarget> {
-        return objects.polymorphicDomainObjectContainer(TestSuiteTarget::class.java)
+    private val targets = objects.domainObjectContainer(
+        AgpTestSuiteTarget::class.java
+    ) { name ->
+        AgpTestSuiteTargetImpl(
+            this@AgpTestSuiteImpl, name
+        )
     }
+
+    override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget> = targets
 
     override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
         throw RuntimeException("Not yet implemented")
@@ -104,4 +110,13 @@ abstract class AgpTestSuiteImpl(
 
     internal fun  getSourceContainers(): Collection<TestSuiteSourceCreationConfig> =
         sources
+
+    override fun configureTestTasks(action: Test.(TestTaskContext) -> Unit) {
+        testTaskConfigActions.add(action)
+    }
+
+    /**
+     * Internal APIs
+     */
+    internal val testTaskConfigActions = mutableListOf<Test.(TestTaskContext) -> Unit>()
 }

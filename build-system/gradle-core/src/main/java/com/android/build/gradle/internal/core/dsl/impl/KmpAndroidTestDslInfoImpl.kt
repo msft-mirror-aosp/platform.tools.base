@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.core.dsl.impl
 import com.android.build.api.component.impl.ComponentIdentityImpl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.variant.ResValue
+import com.android.build.gradle.internal.core.dsl.AgpTestSuiteDslInfo
 import com.android.build.gradle.internal.core.dsl.AndroidTestComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.KmpComponentDslInfo
@@ -30,13 +31,10 @@ import com.android.build.gradle.internal.core.dsl.features.ManifestPlaceholdersD
 import com.android.build.gradle.internal.core.dsl.features.OptimizationDslInfo
 import com.android.build.gradle.internal.core.dsl.features.RenderscriptDslInfo
 import com.android.build.gradle.internal.core.dsl.features.ShadersDslInfo
-import com.android.build.gradle.internal.dsl.AaptOptions
-import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.getNamePrefixedWithAndroidTarget
-import com.android.build.gradle.internal.scope.ProjectDslInfo
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.ComponentTypeImpl
@@ -172,9 +170,6 @@ class KmpAndroidTestDslInfoImpl(
     override val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo? = null
     override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest> = listOf()
     override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> = listOf()
-    override val dslDefinedTestSuites: List<AgpTestSuiteImpl> = listOf()
+    override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo> = listOf()
 
-    // TODO: Figure out what to do for KMP.
-    override val projectDslInfo: ProjectDslInfo
-        get() = ProjectDslInfo(emptyList())
 }

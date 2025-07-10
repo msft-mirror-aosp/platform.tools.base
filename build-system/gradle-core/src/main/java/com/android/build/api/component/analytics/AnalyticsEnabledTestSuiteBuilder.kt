@@ -19,6 +19,7 @@ package com.android.build.api.component.analytics
 import com.android.build.api.dsl.JUnitEngineSpec
 import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
+import com.android.build.gradle.internal.testsuites.TestSuiteTargetBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 
 open class AnalyticsEnabledTestSuiteBuilder(
@@ -42,4 +43,11 @@ open class AnalyticsEnabledTestSuiteBuilder(
         }
 
     override fun getName(): String = delegate.name
+
+    override val targets: Map<String, TestSuiteTargetBuilder>
+        get() {
+            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
+                VariantMethodType.TEST_SUITE_BUILDER_TARGETS_VALUE
+            return delegate.targets
+        }
 }

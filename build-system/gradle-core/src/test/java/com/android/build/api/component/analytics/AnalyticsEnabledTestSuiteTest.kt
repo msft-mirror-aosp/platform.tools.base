@@ -51,4 +51,15 @@ class AnalyticsEnabledTestSuiteTest {
         verify(delegate, times(1))
             .junitEngineSpec
     }
+
+    @Test
+    fun target() {
+        proxy.targets
+
+        Truth.assertThat(
+            stats.variantApiAccess.variantPropertiesAccessList.first().type
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGETS_VALUE)
+        verify(delegate, times(1))
+            .targets
+    }
 }

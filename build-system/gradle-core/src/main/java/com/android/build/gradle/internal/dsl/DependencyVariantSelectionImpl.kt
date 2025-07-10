@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.DependencyVariantSelection
-import com.android.build.api.dsl.LocalDependencySelection
+import com.android.build.api.dsl.DependencySelection
 import com.android.build.api.dsl.ProductFlavorDimensionSpec
 import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.Action
@@ -28,11 +28,11 @@ import javax.inject.Inject
 
 /**
  * Implementation of the deprecated dependencyVariantSelection block in KMP-Android DSL
- * It just delegates to the given replacement block [LocalDependencySelectionImpl]
+ * It just delegates to the given replacement block [DependencySelectionImpl]
  */
 abstract class DependencyVariantSelectionImpl@Inject constructor(
     internal val dslServices: DslServices,
-    internal val delegate: LocalDependencySelectionImpl,
+    internal val delegate: DependencySelectionImpl,
     internal val objectFactory: ObjectFactory
 ): DependencyVariantSelection {
     @Deprecated("Replaced by LocalDependencySelection.selectBuildTypeFrom")
@@ -44,10 +44,10 @@ abstract class DependencyVariantSelectionImpl@Inject constructor(
         get() = delegate.productFlavorsMap
 }
 
-abstract class LocalDependencySelectionImpl@Inject constructor(
+abstract class DependencySelectionImpl@Inject constructor(
     internal val dslServices: DslServices,
     internal val objectFactory: ObjectFactory
-): LocalDependencySelection {
+): DependencySelection {
 
     val productFlavorsMap: MapProperty<String, List<String>> = objectFactory.mapProperty(
         String::class.java,

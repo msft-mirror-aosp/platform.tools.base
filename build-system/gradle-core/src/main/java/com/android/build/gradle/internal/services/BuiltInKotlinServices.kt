@@ -31,7 +31,6 @@ import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.TestExtension
 import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.BaseVariant
-import com.android.build.gradle.internal.BuiltInKotlinJvmAndroidCompilation
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
@@ -48,7 +47,6 @@ import com.android.builder.errors.IssueReporter.Type
 import com.android.ide.common.gradle.Version
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
-import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
@@ -57,7 +55,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinJvmFactory
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilationFactory
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /**
  * Services related to the built-in Kotlin support, to be used when
@@ -289,37 +286,25 @@ private fun initBuiltInKaptSupport(project: Project) {
 }
 
 internal fun ComponentCreationConfig.createKotlinCompilation(
-    project: Project,
-    kotlinCompileTaskProvider: TaskProvider<out KotlinJvmCompile>
+    baseVariant: BaseVariant,
 ): KotlinCompilation<KotlinJvmOptions> {
     val kotlinServices = services.builtInKotlinServices
-    // Creating a KotlinCompilation instance currently requires access to the old BaseVariant (KT-77300)
-    val variant = kotlinServices.baseExtension?.let { toBaseVariant(it) }
-    return if (variant != null) {
-        // TODO(b/409528883): Use KGP API to create a KotlinCompilation instance once it is
-        // available (KT-77023).
-        // For now, we need to make use of KotlinJvmAndroidCompilationFactory, and because its
-        // constructor is `internal`, we need to use reflection.
-        val constructor = KotlinJvmAndroidCompilationFactory::class.java.getConstructor(KotlinAndroidTarget::class.java, BaseVariant::class.java)
-        constructor.isAccessible = true
-        val kotlinCompilationFactory = constructor.newInstance(kotlinServices.kotlinAndroidProjectExtension.target, variant)
-        kotlinCompilationFactory.create(name).also {
-            // Also add it to KotlinAndroidTarget.compilations
-            @Suppress("UNCHECKED_CAST")
-            (kotlinServices.kotlinAndroidProjectExtension.target.compilations as NamedDomainObjectContainer<KotlinJvmAndroidCompilation>)
-                .add(it)
-        }
-    } else {
-        // For a screenshot-test or test-fixtures component, there isn't a corresponding old
-        // BaseVariant, so we need to create a custom KotlinCompilation instance.
-        BuiltInKotlinJvmAndroidCompilation(
-            project = project,
-            compilationName = name,
-            compileTaskProvider = kotlinCompileTaskProvider,
-            kotlinServices = kotlinServices,
-            kotlinSourceDirectories = sources.kotlin!!.directories,
-        )
-    }
+
+    // TODO(b/409528883): Use KGP API to create a KotlinCompilation instance once it is
+    // available (KT-77023).
+    // For now, we need to make use of KotlinJvmAndroidCompilationFactory, and because its
+    // constructor is `internal`, we need to use reflection.
+    val constructor = KotlinJvmAndroidCompilationFactory::class.java.getConstructor(KotlinAndroidTarget::class.java, BaseVariant::class.java)
+    constructor.isAccessible = true
+    val kotlinCompilationFactory = constructor.newInstance(kotlinServices.kotlinAndroidProjectExtension.target, baseVariant)
+    val kotlinCompilation = kotlinCompilationFactory.create(name)
+
+    // Also add it to KotlinAndroidTarget.compilations
+    @Suppress("UNCHECKED_CAST")
+    (kotlinServices.kotlinAndroidProjectExtension.target.compilations as NamedDomainObjectContainer<KotlinJvmAndroidCompilation>)
+        .add(kotlinCompilation)
+
+    return kotlinCompilation
 }
 
 /**

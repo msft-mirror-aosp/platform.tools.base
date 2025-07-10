@@ -7,7 +7,6 @@ gradle_integration_test(
     srcs = glob(["*.java"]),
     data = [
         "//prebuilts/studio/jdk/jdk17:jdk_runtime_files",
-        "//prebuilts/studio/sdk/remote:dl.google.com/android/repository/3534162-studio.sdk-patcher.zip",
         "//prebuilts/studio/sdk/remote:dl.google.com/android/repository/addon2-3.xml",
         "//prebuilts/studio/sdk/remote:dl.google.com/android/repository/android-ndk-r23-beta4-linux-x86_64.zip",
         "//prebuilts/studio/sdk/remote:dl.google.com/android/repository/build-tools_r35_linux.zip",

@@ -72,7 +72,7 @@ import com.android.build.api.dsl.Splits
 import com.android.build.api.dsl.VcsInfo
 import com.android.build.api.dsl.ViewBinding
 import com.android.build.api.dsl.LibraryAndroidResources
-import com.android.build.api.dsl.LocalDependencySelection
+import com.android.build.api.dsl.DependencySelection
 import com.android.build.api.dsl.MaxSdkSpec
 import com.android.build.api.dsl.MaxSdkVersion
 import com.android.build.api.dsl.MinSdkSpec
@@ -109,7 +109,7 @@ import com.android.build.gradle.internal.dsl.LibraryAndroidResourcesImpl
 import com.android.build.gradle.internal.dsl.LibraryKeepRulesImpl
 import com.android.build.gradle.internal.dsl.LibraryPublishingImpl
 import com.android.build.gradle.internal.dsl.LintImpl
-import com.android.build.gradle.internal.dsl.LocalDependencySelectionImpl
+import com.android.build.gradle.internal.dsl.DependencySelectionImpl
 import com.android.build.gradle.internal.dsl.MultiDexConfigImpl
 import com.android.build.gradle.internal.dsl.NdkBuildOptions
 import com.android.build.gradle.internal.dsl.PrivacySandboxImpl
@@ -189,7 +189,7 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
     SupportedPropertyType.Block(ConsumerKeepRules::class.java, ConsumerKeepRulesImpl::class.java),
     SupportedPropertyType.Block(LibraryKeepRules::class.java, LibraryKeepRulesImpl::class.java),
     SupportedPropertyType.Block(DependencyVariantSelection::class.java, DependencyVariantSelectionImpl::class.java),
-    SupportedPropertyType.Block(LocalDependencySelection::class.java, LocalDependencySelectionImpl::class.java),
+    SupportedPropertyType.Block(DependencySelection::class.java, DependencySelectionImpl::class.java),
     SupportedPropertyType.Block(MultiDexConfig::class.java, MultiDexConfigImpl::class.java),
     SupportedPropertyType.Block(VcsInfo::class.java, VcsInfoImpl::class.java),
     SupportedPropertyType.Block(AgpTestSuite::class.java, com.android.build.gradle.internal.dsl.AgpTestSuiteImpl::class.java),

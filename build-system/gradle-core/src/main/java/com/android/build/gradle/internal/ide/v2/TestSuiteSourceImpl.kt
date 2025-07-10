@@ -17,13 +17,13 @@
 package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.model.v2.ide.SourceProvider
-import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
+import com.android.builder.model.v2.models.SourceType
 import com.android.builder.model.v2.models.TestSuiteSource
 import java.io.File
 
 class TestSuiteSourceImpl private constructor(
     override val name: String,
-    override val type: BaseTestSuiteSourceIdentity.SourceType,
+    override val type: SourceType,
     override val folders: Collection<File>?,
     override val sourceProvider: SourceProvider?
 ): TestSuiteSource {
@@ -37,7 +37,7 @@ class TestSuiteSourceImpl private constructor(
             sources: Collection<File>
         ) = TestSuiteSourceImpl(
             name = name,
-            type = BaseTestSuiteSourceIdentity.SourceType.ASSETS,
+            type = SourceType.ASSETS,
             folders = sources,
             sourceProvider = null,
         )
@@ -51,7 +51,7 @@ class TestSuiteSourceImpl private constructor(
             sources: Collection<File>
         ) = TestSuiteSourceImpl(
             name = name,
-            type = BaseTestSuiteSourceIdentity.SourceType.HOST_JAR,
+            type = SourceType.HOST_JAR,
             folders = sources,
             sourceProvider = null,
         )
@@ -65,7 +65,7 @@ class TestSuiteSourceImpl private constructor(
             sources: SourceProvider
         ) = TestSuiteSourceImpl(
             name = name,
-            type = BaseTestSuiteSourceIdentity.SourceType.TEST_APK,
+            type = SourceType.TEST_APK,
             folders = null,
             sourceProvider = sources,
         )

@@ -83,6 +83,7 @@ class ValidateTaskPropertiesTest {
         project.buildFile.appendText("\n" +
                 """
             apply plugin: 'java-gradle-plugin'
+            apply plugin: 'jvm-toolchains'
 
             tasks {
                 validatePlugins {

@@ -1,9 +1,9 @@
 load(":android.bzl", "select_android")
 load(":functions.bzl", "label_workspace_path")
+load(":kotlin.bzl", "kotlin_library")
 load(":maven.bzl", "maven_library")
 load(":merge_archives.bzl", "merge_jars")
 load(":utils.bzl", "java_jarjar")
-load(":kotlin.bzl", "kotlin_library")
 
 # Enum-like values to determine the language the gen_proto rule will compile
 # the .proto files to.
@@ -508,7 +508,7 @@ def kotlin_proto_library(
     kotlin_library(
         name = kt_proto_name,
         srcs = [kt_srcs_label],
-        deps = deps + [java_proto_label],
+        deps = deps + [java_proto_label] + proto_java_runtime_library,
         visibility = visibility,
         **kwargs
     )
@@ -517,4 +517,5 @@ def kotlin_proto_library(
         name = name,
         out = name + ".jar",
         jars = [":lib%s.jar" % java_proto_name, ":lib%s.jar" % kt_proto_name],
+        visibility = visibility,
     )

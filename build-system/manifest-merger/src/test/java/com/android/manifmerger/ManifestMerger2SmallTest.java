@@ -3201,6 +3201,289 @@ public class ManifestMerger2SmallTest {
         assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
     }
 
+    /** Test related to purpose tag in uses-permission. */
+    @Test
+    public void testPurposeTagsInUsesPermission() throws Exception {
+        MockLog mockLog = new MockLog();
+        String appInput =
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.app1\">\n"
+                    + "\n"
+                    + "    <uses-permission android:name=\"android.permission.INTERNET\">\n"
+                    + "        <purpose android:name=\"minOnBoth\" android:minSdkVersion=\"18\"/>\n"
+                    + "        <purpose android:name=\"lowerPriorityMax\"/>\n"
+                    + "        <purpose android:name=\"higherPriorityOnly\"/>\n"
+                    + "        <purpose android:name=\"higherPriorityMin\" android:minSdkVersion=\"10\"/>\n"
+                    + "        <purpose android:name=\"maxOnBoth\" android:maxSdkVersion=\"35\"/>\n"
+                    + "    </uses-permission>\n"
+                    + "</manifest>";
+
+        File appFile = TestUtils.inputAsFile("purposeTagsHandlingLibApp", appInput);
+        assertTrue(appFile.exists());
+
+        String libInput =
+                "<manifest\n"
+                    + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "package=\"com.example.lib1\">\n"
+                    + "\n"
+                    + "    <uses-permission android:name=\"android.permission.INTERNET\">\n"
+                    + "        <purpose android:name=\"minOnBoth\" android:minSdkVersion=\"15\"/>\n"
+                    + "        <purpose android:name=\"lowerPriorityMax\" android:maxSdkVersion=\"35\"/>\n"
+                    + "        <purpose android:name=\"higherPriorityMin\"/>\n"
+                    + "        <purpose android:name=\"maxOnBoth\" android:maxSdkVersion=\"30\"/>\n"
+                    + "    </uses-permission>\n"
+                    + "</manifest>";
+        File libFile = TestUtils.inputAsFile("purposeTagsHandlingLib", libInput);
+
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(
+                                    appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .addLibraryManifest(libFile)
+                            .merge();
+            assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+            Document mergedDocument =
+                    parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+
+            NodeList permissions = mergedDocument.getElementsByTagName("uses-permission");
+            assertEquals(1, permissions.getLength());
+
+            NodeList purposes =
+                    ((Element) permissions.item(0)).getElementsByTagName(SdkConstants.TAG_PURPOSE);
+            assertThat(purposes.getLength()).isEqualTo(5);
+            Truth.assertThat(
+                            purposes.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:name")
+                                    .getNodeValue())
+                    .isEqualTo("minOnBoth");
+            Truth.assertThat(
+                            purposes.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:minSdkVersion")
+                                    .getNodeValue())
+                    .isEqualTo("15");
+            Truth.assertThat(purposes.item(0).getAttributes().getNamedItem("android:maxSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(
+                            purposes.item(1)
+                                    .getAttributes()
+                                    .getNamedItem("android:name")
+                                    .getNodeValue())
+                    .isEqualTo("lowerPriorityMax");
+            Truth.assertThat(purposes.item(1)
+                            .getAttributes()
+                            .getNamedItem("android:minSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(
+                            purposes.item(1)
+                                    .getAttributes()
+                                    .getNamedItem("android:maxSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(
+                            purposes.item(2)
+                                    .getAttributes()
+                                    .getNamedItem("android:name")
+                                    .getNodeValue())
+                    .isEqualTo("higherPriorityOnly");
+            Truth.assertThat(purposes.item(2).getAttributes().getNamedItem("android:minSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(purposes.item(2).getAttributes().getNamedItem("android:maxSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(
+                            purposes.item(3)
+                                    .getAttributes()
+                                    .getNamedItem("android:name")
+                                    .getNodeValue())
+                    .isEqualTo("higherPriorityMin");
+            Truth.assertThat(purposes.item(3).getAttributes().getNamedItem("android:minSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(purposes.item(3).getAttributes().getNamedItem("android:maxSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(
+                            purposes.item(4)
+                                    .getAttributes()
+                                    .getNamedItem("android:name")
+                                    .getNodeValue())
+                    .isEqualTo("maxOnBoth");
+            Truth.assertThat(purposes.item(4).getAttributes().getNamedItem("android:minSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(
+                    purposes.item(4)
+                            .getAttributes().
+                            getNamedItem("android:maxSdkVersion")
+                            .getNodeValue())
+                    .isEqualTo("35");
+        } finally {
+            assertThat(appFile.delete()).named("Overlay was deleted").isTrue();
+        }
+    }
+
+    @Test
+    public void testPurposeTagsInMultipleUsesPermissions() throws Exception {
+        MockLog mockLog = new MockLog();
+        String appInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + "\n"
+                        + "    <uses-permission android:name=\"a\">\n"
+                        + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"20\" />\n"
+                        + "    </uses-permission>\n"
+                        + "\n"
+                        + "    <uses-permission android:name=\"b\">\n"
+                        + "        <purpose android:name=\"purpose1\" android:maxSdkVersion=\"20\" />\n"
+                        + "    </uses-permission>\n"
+                        + "</manifest>";
+
+        File appFile = TestUtils.inputAsFile("purposeTagsHandlingLibApp", appInput);
+        assertTrue(appFile.exists());
+
+        String libInput =
+                "<manifest\n"
+                        + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "package=\"com.example.lib1\">\n"
+                        + "\n"
+                        + "    <uses-permission android:name=\"a\">\n"
+                        + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"15\"/>\n"
+                        + "    </uses-permission>\n"
+                        + "\n"
+                        + "    <uses-permission android:name=\"b\">\n"
+                        + "        <purpose android:name=\"purpose1\" android:maxSdkVersion=\"30\"/>\n"
+                        + "    </uses-permission>\n"
+                        + "</manifest>";
+        File libFile = TestUtils.inputAsFile("purposeTagsHandlingLib", libInput);
+
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(
+                                    appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .addLibraryManifest(libFile)
+                            .merge();
+            assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+            Document mergedDocument =
+                    parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+
+            NodeList permissions = mergedDocument.getElementsByTagName("uses-permission");
+            assertEquals(2, permissions.getLength());
+
+            // Check merged purpose on first permission
+            Element permission1 = (Element) permissions.item(0);
+            assertThat(permission1.getAttributes().getNamedItem("android:name").getNodeValue()).isEqualTo("a");
+            NodeList purposes1 = permission1.getElementsByTagName(SdkConstants.TAG_PURPOSE);
+            assertThat(purposes1.getLength()).isEqualTo(1);
+            Truth.assertThat(
+                            purposes1.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:name")
+                                    .getNodeValue())
+                    .isEqualTo("purpose1");
+            Truth.assertThat(
+                            purposes1.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:minSdkVersion")
+                                    .getNodeValue())
+                    .isEqualTo("15");
+            Truth.assertThat(purposes1.item(0).getAttributes().getNamedItem("android:maxSdkVersion"))
+                    .isEqualTo(null);
+
+            // Check merged purpose on second permission
+            Element permission2 = (Element) permissions.item(1);
+            assertThat(permission2.getAttributes().getNamedItem("android:name").getNodeValue()).isEqualTo("b");
+            NodeList purposes2 = permission2.getElementsByTagName(SdkConstants.TAG_PURPOSE);
+            assertThat(purposes1.getLength()).isEqualTo(1);
+            Truth.assertThat(
+                            purposes2.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:name")
+                                    .getNodeValue())
+                    .isEqualTo("purpose1");
+            Truth.assertThat(
+                            purposes2.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:minSdkVersion"))
+                    .isEqualTo(null);
+            Truth.assertThat(
+                    purposes2.item(0)
+                            .getAttributes()
+                            .getNamedItem("android:maxSdkVersion")
+                            .getNodeValue())
+                    .isEqualTo("30");
+        } finally {
+            assertThat(appFile.delete()).named("Overlay was deleted").isTrue();
+        }
+    }
+
+    /** Test related to purpose tag in uses-permission-sdk-23. */
+    @Test
+    public void testPurposeTagsInUsesPermissionSdk23() throws Exception {
+        MockLog mockLog = new MockLog();
+        String appInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + "\n"
+                        + "    <uses-permission-sdk-23 android:name=\"android.permission.INTERNET\">\n"
+                        + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"22\" android:maxSdkVersion=\"35\"/>\n"
+                        + "    </uses-permission-sdk-23>\n"
+                        + "</manifest>";
+
+        File appFile = TestUtils.inputAsFile("purposeTagsHandlingLibApp", appInput);
+        assertTrue(appFile.exists());
+
+        String libInput =
+                "<manifest\n"
+                        + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "package=\"com.example.lib1\">\n"
+                        + "\n"
+                        + "    <uses-permission-sdk-23 android:name=\"android.permission.INTERNET\">\n"
+                        + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"15\" android:maxSdkVersion=\"30\"/>\n"
+                        + "    </uses-permission-sdk-23>\n"
+                        + "</manifest>";
+        File libFile = TestUtils.inputAsFile("purposeTagsHandlingLib", libInput);
+
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(
+                                    appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .addLibraryManifest(libFile)
+                            .merge();
+            assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+            Document mergedDocument =
+                    parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+
+            NodeList permissions = mergedDocument.getElementsByTagName("uses-permission-sdk-23");
+            assertEquals(1, permissions.getLength());
+
+            NodeList purposes =
+                    ((Element) permissions.item(0)).getElementsByTagName(SdkConstants.TAG_PURPOSE);
+            assertThat(purposes.getLength()).isEqualTo(1);
+            Truth.assertThat(
+                            purposes.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:name")
+                                    .getNodeValue())
+                    .isEqualTo("purpose1");
+            Truth.assertThat(
+                            purposes.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:minSdkVersion")
+                                    .getNodeValue())
+                    .isEqualTo("15");
+            Truth.assertThat(purposes.item(0)
+                            .getAttributes()
+                            .getNamedItem("android:maxSdkVersion")
+                            .getNodeValue())
+                    .isEqualTo("35");
+        } finally {
+            assertThat(appFile.delete()).named("Overlay was deleted").isTrue();
+        }
+    }
+
     public static void validateFeatureName(
             ManifestMerger2.Invoker invoker, String featureName, boolean isValid) throws Exception {
         try {

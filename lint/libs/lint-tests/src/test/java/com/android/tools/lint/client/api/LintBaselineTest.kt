@@ -454,8 +454,8 @@ class LintBaselineTest {
     assertTrue(
       baseline.sameMessage(
         FontDetector.FONT_VALIDATION,
-        "For minSdkVersion=27 only app: attributes should be used",
-        "For minSdkVersion=100 only app: attributes should be used",
+        "For `minSdkVersion`=27 only app: attributes should be used",
+        "For `minSdkVersion`=100 only app: attributes should be used",
       )
     )
   }

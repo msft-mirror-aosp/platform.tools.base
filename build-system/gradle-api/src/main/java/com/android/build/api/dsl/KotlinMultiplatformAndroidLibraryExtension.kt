@@ -178,17 +178,25 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * Specifies options for doing variant selection for external Android dependencies
      * based on build types and product flavors
      *
-     * For more information about the properties you can configure in this block, see [LocalDependencySelection].
+     * Note that this only affects dependency selection within this
+     * gradle project and does not affect the resolution of dependencies in other Gradle
+     * projects that depend on this project or the artifacts published from this project
+     *
+     * For more information about the properties you can configure in this block, see [DependencySelection].
      */
-    fun localDependencySelection(action: LocalDependencySelection.() -> Unit)
+    fun localDependencySelection(action: DependencySelection.() -> Unit)
 
     /**
      * Specifies options for doing variant selection for external Android dependencies
      * based on build types and product flavors
      *
-     * For more information about the properties you can configure in this block, see [LocalDependencySelection].
+     * Note that this only affects dependency selection within this
+     * gradle project and does not affect the resolution of dependencies in other Gradle
+     * projects that depend on this project or the artifacts published from this project
+     *
+     * For more information about the properties you can configure in this block, see [DependencySelection].
      */
-    val localDependencySelection: LocalDependencySelection
+    val localDependencySelection: DependencySelection
 
     /**
      * Specifies options for the lint tool.

@@ -30,9 +30,9 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.BasicVariant
 import com.android.builder.model.v2.ide.Library
 import com.android.builder.model.v2.ide.SyncIssue
-import com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
 import com.android.builder.model.v2.models.BasicAndroidProject
 import com.android.builder.model.v2.models.BasicTestSuite
+import com.android.builder.model.v2.models.SourceType
 import com.google.common.truth.Truth
 import junit.framework.AssertionFailedError
 import org.junit.Rule
@@ -142,6 +142,8 @@ class TestEngineWiringTest(
                                 implementation.add("com.google.code.gson:gson:2.11.0")
                             }
                         }
+                        it.targetVariants.add("debug")
+                        it.targets.create("t1") { }
                     }
                 }
                 this.dependencies {
@@ -155,8 +157,8 @@ class TestEngineWiringTest(
         val result = rule.build
             .executor
             .expectFailure() // TODO: it fails because Gradle complains I have no tests.
-            .run("testFirstDebugTestSuite")
-        Truth.assertThat(result.didWorkTasks).contains("$modulePath:testFirstDebugTestSuite")
+            .run("testFirstT1DebugTestSuite")
+        Truth.assertThat(result.didWorkTasks).contains("$modulePath:testFirstT1DebugTestSuite")
         result.assertFailureMessage().contains("Deprecated Gradle features were used in this build")
     }
 
@@ -175,7 +177,7 @@ class TestEngineWiringTest(
         Truth.assertThat(firstTestSuite.name).isEqualTo("first")
         val firstTestSuiteSources = firstTestSuite.sources.single()
         Truth.assertThat(firstTestSuiteSources.type).isEqualTo(
-            BaseTestSuiteSourceIdentity.SourceType.HOST_JAR
+            SourceType.HOST_JAR
         )
         Truth.assertThat(firstTestSuiteSources.folders).containsExactly(
             project.subProject(modulePath).resolve("src/first").toFile()
@@ -199,7 +201,10 @@ class TestEngineWiringTest(
         Truth.assertThat(testSuites).isNotNull()
         val firstTestSuite = testSuites?.get("first")
         Truth.assertThat(firstTestSuite).isNotNull()
-        Truth.assertThat(firstTestSuite!!.testInfo.testTaskName).isEqualTo("testFirstDebugTestSuite")
+        val targets = firstTestSuite!!.testInfo.targets
+        Truth.assertThat(targets.size).isEqualTo(1)
+        Truth.assertThat(targets.values.single().name).isEqualTo("t1")
+        Truth.assertThat(targets.values.single().testTaskName).isEqualTo("testFirstT1DebugTestSuite")
         Truth.assertThat(firstTestSuite.testInfo.junitInfo.includedEngines.single()).isEqualTo("[engine:toy-junit-engine-for-tests]")
     }
 

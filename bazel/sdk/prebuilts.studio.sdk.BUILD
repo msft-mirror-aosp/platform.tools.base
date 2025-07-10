@@ -187,14 +187,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-filegroup(
-    name = "patcher/v4",
-    srcs = glob(
-        include = ["*/patcher/v4/**"],
-    ),
-    visibility = ["//visibility:public"],
-)
-
 # Use this target to compile against.
 # Note: these stubbed classes will not be available at runtime.
 java_import(
@@ -417,13 +409,5 @@ filegroup(
 filegroup(
     name = "sources",
     srcs = sdk_glob(["sources/**"]),
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "instant-apps-sdk",
-    srcs = sdk_glob(
-        include = ["extras/google/instantapps/**"],
-    ),
     visibility = ["//visibility:public"],
 )

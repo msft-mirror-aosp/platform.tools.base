@@ -107,4 +107,50 @@ class KotlinMultiplatformTestingTest {
         )
         project.executor().expectFailure().run(":kmpFirstLib:testAndroidHostTest")
     }
+
+    @Test
+    fun testConfigureTestTask() {
+        val kmpFirstLib = project.getSubproject("kmpFirstLib")
+        TestFileUtils.appendToFile(
+            kmpFirstLib.ktsBuildFile,
+            """
+                androidComponents {
+                  onVariants {
+                      it.hostTests.values.forEach { it.configureTestTask { it.maxHeapSize = "2g" } }
+                  }
+                }
+            """.trimIndent()
+        )
+
+        val testFile =
+            FileUtils.join(
+                kmpFirstLib.projectDir,
+                "src",
+                "androidHostTest",
+                "kotlin",
+                "com",
+                "example",
+                "kmpfirstlib",
+                "EasyTest.kt"
+            )
+        testFile.parentFile.mkdirs()
+        TestFileUtils.appendToFile(
+            testFile,
+            """
+                package com.example.kmpfirstlib
+                import org.junit.Assert
+                import org.junit.Test
+
+                class EasyTest {
+                    @Test
+                    fun defaultValues() {
+                        Assert.assertEquals(0, 0)
+                    }
+                }
+            """.trimIndent()
+        )
+
+        val result = project.executor().withArgument("--info").run(":kmpFirstLib:testAndroidHostTest")
+        result.assertOutputContains("-Xmx2g")
+    }
 }

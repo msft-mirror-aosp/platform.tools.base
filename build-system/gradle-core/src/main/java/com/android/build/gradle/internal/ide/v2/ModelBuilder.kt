@@ -51,6 +51,7 @@ import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dependency.AdditionalArtifactType
@@ -120,7 +121,6 @@ import com.android.builder.model.v2.models.ProjectGraph
 import com.android.builder.model.v2.models.ProjectSyncIssues
 import com.android.builder.model.v2.models.TestSuiteDependencies
 import com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList
-import com.android.builder.model.v2.models.TestSuiteSource
 import com.android.builder.model.v2.models.VariantDependencies
 import com.android.builder.model.v2.models.VariantDependenciesAdjacencyList
 import com.android.builder.model.v2.models.VariantDependenciesFlatList
@@ -382,13 +382,14 @@ class ModelBuilder<
             }
         }
 
+        val testSuiteBuilders = gatherTestSuites(variantModel.testSuites)
+
         // gather test suites
-        val testSuites = variantModel.testSuites
-            .distinctBy { it.name }
-            .map { testSuiteCreationConfig ->
+        val testSuites: List<BasicTestSuiteImpl> = testSuiteBuilders
+            .map { testSuiteBuilder ->
             BasicTestSuiteImpl(
-                name = testSuiteCreationConfig.name,
-                sources = testSuiteCreationConfig.sources.map { sourceContainer: TestSuiteSourceContainer ->
+                name = testSuiteBuilder.suite.name,
+                sources = testSuiteBuilder.suite.sources.map { sourceContainer: TestSuiteSourceContainer ->
                     when (val sourceSet = sourceContainer.source) {
                         is TestSuiteSourceSet.Assets ->
                             TestSuiteSourceImpl.assets(
@@ -405,6 +406,19 @@ class ModelBuilder<
                         is TestSuiteSourceSet.TestApk ->
                             throw RuntimeException("Not Implemented")
                     }
+                },
+                targetsByVariant = testSuiteBuilder.variantsTargets.map { testSuiteVariantBuilder ->
+                    TestSuiteVariantTargetImpl(
+                        testSuiteVariantBuilder.targetedVariant,
+                        testSuiteVariantBuilder.targets.map { mapEntry ->
+                            val variantSpecificTarget = mapEntry.value
+                            TestSuiteTargetImpl(
+                                variantSpecificTarget.name,
+                                variantSpecificTarget.testTaskName,
+                                variantSpecificTarget.targetDevices
+                            )
+                        }
+                    )
                 }
             )
         }
@@ -425,6 +439,57 @@ class ModelBuilder<
             variants = variantList,
             bootClasspath = bootClasspath,
         )
+    }
+
+    /**
+     * Intermediary data structure to hold the suite and all its associated targets built from the
+     * variant objects. In many ways, it mirrors how the DSL for test suite is organized but uses
+     * the variant objects to build it instead of the DSL.
+     */
+    class TestSuiteModelBuilder(
+        val suite: TestSuiteCreationConfig,
+        val variantsTargets: MutableList<TestSuiteTargetModelBuilder>
+    ) {
+        class TestSuiteTargetModelBuilder(
+            val targetedVariant: String,
+            val targets: Map<String, TestSuiteTargetCreationConfig>
+        )
+    }
+
+    /**
+     * Gather all test suites for this project.
+     *
+     * This is a bit tricky.
+     * Test suites are defined at the project level and can have multiple targets, each targeting
+     * a particular variant. However at the variant modeling level, each variant can have multiple
+     * test suites each targeting the variant in question. So we need to translate this variant
+     * model where a variant can have multiple test suites each with targets all targeting the variant
+     * to a project level model where each test suites is associated to all its targets, irrespective
+     * of the variants they target.
+     *
+     * variants -> testSuites -> targets (for that variant)
+     *
+     * must become
+     *
+     * project -> testSuites -> targets (for all variants).
+     *
+     */
+    private fun gatherTestSuites(testSuites: Collection<TestSuiteCreationConfig>): Collection<TestSuiteModelBuilder> {
+
+        val suites: MutableMap<String, TestSuiteModelBuilder> = mutableMapOf()
+
+        for (testSuite in testSuites) {
+            val testSuiteModelBuilder = suites.getOrPut(testSuite.name) {
+                TestSuiteModelBuilder(testSuite, mutableListOf())
+            }
+            testSuiteModelBuilder.variantsTargets.add(
+                TestSuiteModelBuilder.TestSuiteTargetModelBuilder(
+                testSuite.testedVariant.name,
+                    testSuite.targets)
+            )
+        }
+
+        return suites.values.toList()
     }
 
     /**
@@ -1015,8 +1080,10 @@ class ModelBuilder<
                 createJavaArtifact(hostTest)
         }
         val testSuiteArtifacts = mutableMapOf<String, TestSuiteArtifact>()
-        (variant as? HasTestSuitesCreationConfig)?.suites?.values?.forEach { testSuite ->
-            testSuiteArtifacts[testSuite.name] = createTestSuiteArtifact(testSuite)
+        (variant as? HasTestSuitesCreationConfig)?.suites?.values?.let { testSuites ->
+            gatherTestSuites(testSuites).forEach { testSuiteBuilder ->
+                testSuiteArtifacts[testSuiteBuilder.suite.name] = createTestSuiteArtifact(testSuiteBuilder)
+            }
         }
         return VariantImpl(
             name = variant.name,
@@ -1044,13 +1111,21 @@ class ModelBuilder<
         )
     }
 
-    private fun createTestSuiteArtifact(testSuite: TestSuiteCreationConfig): TestSuiteArtifactImpl {
+    private fun createTestSuiteArtifact(testSuiteModelBuilder: TestSuiteModelBuilder): TestSuiteArtifactImpl {
+        val targets = testSuiteModelBuilder.suite.targets.mapValues { mapEntry ->
+            val testSuiteTarget = mapEntry.value
+            TestSuiteTargetImpl(
+                testSuiteTarget.name,
+                testSuiteTarget.testTaskName,
+                testSuiteTarget.targetDevices
+            )
+        }
         return TestSuiteArtifactImpl(
             testInfo = TestSuiteTestInfoImpl(
-                testTaskName = testSuite.testTaskName,
                 junitInfo = JUnitEngineInfoImpl(
-                    includedEngines = testSuite.junitEngineSpec.includeEngines
-                )
+                    includedEngines = testSuiteModelBuilder.suite.junitEngineSpec.includeEngines
+                ),
+                targets = targets
             ),
             compileTaskName = null,
             assembleTaskName = null,

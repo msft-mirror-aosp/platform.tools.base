@@ -168,12 +168,15 @@ abstract class ExtractSdkShimTransform : TransformAction<ExtractSdkShimTransform
                 generatedFiles.filter { it.extension == SdkConstants.EXT_JAVA }
         val source =
                 manager.getJavaFileObjectsFromFiles(javaSourceClasspaths.map { it.toFile() })
-        javac.getTask(null,
-                manager, null,
-                ImmutableList.of(
-                        "-classpath", totalClasspathStr,
-                        "-d", javaOutDir.absolutePath), null,
-                source
+        javac.getTask(
+            null,
+            manager, null,
+            ImmutableList.of(
+                "-classpath", totalClasspathStr,
+                "-d", javaOutDir.absolutePath,
+                "-Xlint:-options"
+            ), null,
+            source
         ).call()
     }
 
@@ -185,7 +188,8 @@ abstract class ExtractSdkShimTransform : TransformAction<ExtractSdkShimTransform
                     "-no-jdk",
                     "-no-reflect") + generatedFiles.map { it.pathString } + listOf(
                     "-classpath", totalClasspathStr,
-                    "-d", kotlinOutDir.path)
+                    "-d", kotlinOutDir.path,
+                    "-no-stdlib")
         }
     }
 

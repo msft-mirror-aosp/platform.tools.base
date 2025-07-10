@@ -17,6 +17,7 @@
 package com.android.build.api.variant.impl
 
 import com.android.build.api.variant.AndroidVersion
+import java.util.Locale
 
 /**
  * Returns the API level as an integer. If this is a preview platform, it
@@ -43,3 +44,10 @@ fun AndroidVersion.getApiString(): String = codename ?: apiLevel.toString()
 fun AndroidVersion.toSharedAndroidVersion(): com.android.sdklib.AndroidVersion {
     return com.android.sdklib.AndroidVersion(apiLevel, codename)
 }
+
+fun String.capitalizeFirstChar() =
+    this.replaceFirstChar {
+        if (it.isLowerCase()) it.titlecase(Locale.getDefault())
+        else it.toString()
+    }
+

@@ -161,7 +161,7 @@ public class XmlAttribute extends XmlNode {
     }
 
     void mergeInHigherPriorityElement(@NotNull XmlElement higherPriorityElement,
-            @NotNull MergingReport.Builder mergingReport) {
+            @NotNull MergingReport.Builder mergingReport, boolean removeIfNotPresentOnBothManifests) {
 
         // does the higher priority has the same attribute as myself ?
         Optional<XmlAttribute> higherPriorityAttributeOptional =
@@ -175,6 +175,13 @@ public class XmlAttribute extends XmlNode {
             XmlAttribute higherPriorityAttribute = higherPriorityAttributeOptional.get();
             handleBothAttributePresent(
                     mergingReport, higherPriorityAttribute, attributeOperationType);
+            return;
+        } else if (removeIfNotPresentOnBothManifests) {
+            // record the fact the attribute was actively removed in the merge.
+            mergingReport.getActionRecorder().recordAttributeAction(
+                    this,
+                    Actions.ActionType.MERGED,
+                    AttributeOperationType.REMOVE);
             return;
         }
 

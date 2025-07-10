@@ -16,23 +16,21 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Action
 import org.gradle.api.Incubating
-import org.gradle.api.artifacts.dsl.DependencyCollector
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.base.TestSuite
 
 /**
  * A test suite that runs with the Android Gradle Plugin.
  *
- * An [AgpTestSuite] can run against a single multiple product flavors or variants. Users should
- * use a combination of the [targetProductFlavors] and [targetVariants] to identify the final
- * list of variants that will be tested.
+ * An [AgpTestSuite] can run against a single or multiple variants. Users should
+ * use [com.android.build.api.dsl.AgpTestSuite.targetVariants] to identify the final list of
+ * variants that will be tested.
  *
  * Although this is not strictly necessary, if the test suite has source code, it will be recompiled
  * for each variant it targets. This is to ensure the compatibility of the test suite with each
  * variant individually.
- *
- * TODO : resolve : should we allow to target BuildTypes ?
  *
  * Defines how different types of source files are organized and declared for a test suite
  * within the Android Gradle Plugin. Test suites can incorporate various kinds of sources,
@@ -101,30 +99,7 @@ interface AgpTestSuite: TestSuite {
     fun useJunitEngine(action: JUnitEngineSpec.() -> Unit)
 
     /**
-     * Sets the list of [ProductFlavor]s this test suite will target.
-     *
-     * The list must be finalized during configuration time as we must create compilation and
-     * test tasks to execute the suites.
-     *
-     * Each targeted product flavors is expressed as a pair with the product flavor dimension first
-     * and the product flavor value second.
-     *
-     * [targetProductFlavors] and [targetVariants] are additive, which mean that a variant is selected
-     * if one of its product flavors is in the [targetProductFlavors] list OR if the variant name is in
-     * the [targetVariants] list.
-     */
-    @get:Incubating
-    val targetProductFlavors: MutableList<Pair<String, String>>
-
-    /**
-     * Sets the list of Variants names this test suite will target
-     *
-     * The list must be finalized during configuration time as we must create compilation and
-     * test tasks to execute the suites.
-     *
-     * [targetProductFlavors] and [targetVariants] are additive, which mean that a variant is selected
-     * if one of its product flavors is in the [targetProductFlavors] list OR if the variant name is in
-     * the [targetVariants] list.
+     * Defines which variant this tests suite targets.
      */
     @get:Incubating
     val targetVariants: MutableList<String>
@@ -167,4 +142,30 @@ interface AgpTestSuite: TestSuite {
      */
     @Incubating
     fun testApk(action: TestSuiteTestApkSpec.() -> Unit)
+
+    /**
+     * Targets for this test suite, must be manually created in order to provide the variants this
+     * test suite applies to.
+     */
+    @Incubating
+    override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget>
+
+    /**
+     * Configure the test tasks for this test target.
+     *
+     * There can be one to many instances of [Test] tasks for a particular test suite target. For
+     * instance, if the test suite targets more than one device, AGP may decide to create one [Test]
+     * instance per device.
+     *
+     * The configuration block can use the [action]'s context parameter to disambiguate between each
+     * [Test] task instance.
+     *
+     * Do not make assumption about how AGP decides to allocate [Test] task instances per device, as
+     * each AGP version can potentially change it in future release, always use the context object to
+     * determine what the [Test] task applies to.
+     *
+     * @param action a block to configure the [Test] tasks associated with this test suite target.
+     */
+    @Incubating
+    fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
 }
