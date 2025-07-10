@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.errors.SyncIssueReporter
 import com.android.build.gradle.internal.lint.LintFromMaven
 import com.android.build.gradle.internal.res.Aapt2FromMaven
 import com.android.build.gradle.internal.scope.ProjectInfo
+import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.ProjectOptions
 import org.gradle.api.Task
@@ -88,8 +89,14 @@ class ProjectServices constructor(
         aapt2Input.maxAapt2Daemons.setDisallowChanges(computeMaxAapt2Daemons(projectOptions))
     }
 
-    val builtInKotlinServices: BuiltInKotlinServices by lazy {
-        BuiltInKotlinServices.createFromPlugin(
+    val builtInKotlinServices: BuiltInKotlinServices
+        get() = _builtInKotlinServices ?: error("BuiltInKotlinServices is not available because initBuiltInKotlinServices() is not yet called")
+
+    private var _builtInKotlinServices: BuiltInKotlinServices? = null
+
+    fun initBuiltInKotlinServices(reason: AvailabilityReason) {
+        _builtInKotlinServices = BuiltInKotlinServices.createFromPlugin(
+            reason = reason,
             kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
             kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
             baseExtension = projectInfo.findExtension(BaseExtension::class.java),

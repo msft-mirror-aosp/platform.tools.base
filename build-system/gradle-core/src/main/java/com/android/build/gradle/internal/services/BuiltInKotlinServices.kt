@@ -32,6 +32,8 @@ import com.android.build.gradle.TestExtension
 import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.BuiltInKotlinPluginApplied
+import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.KotlinAndroidPluginAppliedAndTestFixturesOrScreenshotTestEnabled
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
@@ -41,8 +43,6 @@ import com.android.build.gradle.internal.utils.disallowPlugin
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
 import com.android.build.gradle.internal.utils.requirePlugin
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.ProjectOptions
-import com.android.builder.errors.IssueReporter
 import com.android.builder.errors.IssueReporter.Type
 import com.android.ide.common.gradle.Version
 import org.gradle.api.NamedDomainObjectContainer
@@ -62,6 +62,9 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilationFactory
  */
 interface BuiltInKotlinServices {
 
+    /** The reason why [BuiltInKotlinServices] is available. */
+    val reason: AvailabilityReason
+
     val kgpVersion: String
     val factory: KotlinJvmFactory
     val kotlinBaseApiVersion: KotlinBaseApiVersion
@@ -72,6 +75,7 @@ interface BuiltInKotlinServices {
     companion object {
 
         fun createFromPlugin(
+            reason: AvailabilityReason,
             kotlinBaseApiPlugin: KotlinBaseApiPlugin,
             kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
             baseExtension: BaseExtension?,
@@ -95,6 +99,7 @@ interface BuiltInKotlinServices {
             }
 
             return object : BuiltInKotlinServices {
+                override val reason: AvailabilityReason = reason
                 override val kgpVersion: String = kotlinBaseApiPlugin.pluginVersion
                 override val factory: KotlinJvmFactory = kotlinBaseApiPlugin
                 override val kotlinBaseApiVersion = kgpVersion.kotlinBaseApiVersion()
@@ -102,6 +107,21 @@ interface BuiltInKotlinServices {
                 override val baseExtension: BaseExtension? = baseExtension
             }
         }
+    }
+
+    /** The reason why [BuiltInKotlinServices] is available. */
+    sealed interface AvailabilityReason {
+
+        /** [BuiltInKotlinServices] is available because the built-in Kotlin plugin is applied. */
+        object BuiltInKotlinPluginApplied: AvailabilityReason
+
+        /**
+         * [BuiltInKotlinServices] is available because the `kotlin-android` plugin is applied
+         * and either [BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT] or
+         * [BooleanOption.ENABLE_SCREENSHOT_TEST] is enabled .
+         */
+        object KotlinAndroidPluginAppliedAndTestFixturesOrScreenshotTestEnabled: AvailabilityReason
+
     }
 }
 
@@ -197,24 +217,34 @@ sealed class BuiltInKaptSupportMode {
 }
 
 /** Performs preliminary actions required for built-in Kotlin support. */
-fun initBuiltInKotlinSupportIfRequired(
-    project: Project,
-    projectOptions: ProjectOptions,
-    issueReporter: IssueReporter
-) {
+fun initBuiltInKotlinSupportIfRequired(project: Project, projectServices: ProjectServices) {
+    // Handle the case when built-in Kotlin plugin is applied
     project.pluginManager.withPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) {
         initBuiltInKotlinSupport(project)
+        projectServices.initBuiltInKotlinServices(BuiltInKotlinPluginApplied)
     }
+
+    // Built-in Kapt plugin requires built-in Kotlin plugin
     project.pluginManager.withPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID) {
         project.requirePlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID, ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
     }
 
-    if (projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
-        || projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)) {
-        // TODO(b/341765853) - no need to have this try/catch once KotlinBaseApiPlugin has been
-        //  added as a runtime dependency.
-        try {
+    // Handle the case when test-fixtures/screenshot-test feature is enabled
+    if (projectServices.projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
+        || projectServices.projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)
+    ) {
+        // If `kotlin-android` plugin is applied, we will provide built-in Kotlin support
+        // TODO: Once KGP is always available on the build script classpath (b/431147146),
+        //  we can provide built-in Kotlin support even if `kotlin-android` plugin is not applied.
+        project.pluginManager.withPlugin(KOTLIN_ANDROID_PLUGIN_ID) {
             project.plugins.apply(KotlinBaseApiPlugin::class.java)
+            projectServices.initBuiltInKotlinServices(KotlinAndroidPluginAppliedAndTestFixturesOrScreenshotTestEnabled)
+        }
+
+        // TODO: Remove this check once KGP is always available on the build script classpath
+        //  (b/431147146),
+        try {
+            Class.forName(KotlinBaseApiPlugin::class.java.name)
         } catch (e: Throwable) {
             if (e is ClassNotFoundException || e is NoClassDefFoundError) {
                 val message =
@@ -228,7 +258,7 @@ fun initBuiltInKotlinSupportIfRequired(
                     ${BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT.propertyName}
 
                     """.trimIndent()
-                issueReporter.reportError(Type.GENERIC, message)
+                projectServices.issueReporter.reportError(Type.GENERIC, message)
             } else {
                 throw e
             }

@@ -437,7 +437,7 @@ abstract class BasePlugin<
         createAndroidJdkImageConfiguration(project)
 
         // Provide built-in Kotlin support
-        initBuiltInKotlinSupportIfRequired(project, projectOptions, syncIssueReporter)
+        initBuiltInKotlinSupportIfRequired(project, projectServices)
     }
 
     /** Creates the androidJdkImage configuration */
