@@ -47,6 +47,8 @@ maven_repository(
         "@maven//:com.google.auth.google-auth-library-oauth2-http_1.24.0",
         "@maven//:com.google.guava.guava_33.2.1-jre",
         "@maven//:com.google.oauth-client.google-oauth-client_1.34.1",
+        "@maven//:org.jetbrains.kotlin.kotlin-test-junit_1.7.10",
+        "@maven//:org.mockito.kotlin.mockito-kotlin_5.4.0",
     ],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",
