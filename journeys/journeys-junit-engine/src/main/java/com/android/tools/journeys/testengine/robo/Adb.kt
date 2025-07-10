@@ -16,18 +16,27 @@
 
 package com.android.tools.journeys.testengine.robo
 
-import java.util.concurrent.TimeUnit
-
 /**
  * A class for interacting with the Android Debug Bridge (ADB).
  *
  * @param adbPath The path to the ADB executable.
  * @param deviceId The ID of the target device.
+ * @param executor The [ProcessExecutor] to use for running ADB commands.
  */
 class Adb(
     private val adbPath: String,
-    private val deviceId: String
+    private val deviceId: String,
+    private val executor: ProcessExecutor
 ) {
+
+    /**
+     * Secondary constructor that uses the [DefaultProcessExecutor].
+     */
+    constructor(adbPath: String, deviceId: String) : this(
+        adbPath,
+        deviceId,
+        DefaultProcessExecutor()
+    )
 
     /**
      * Installs an APK file on the device.
@@ -39,7 +48,7 @@ class Adb(
     fun install(
         apkFilePath: String,
         flags: List<String> = listOf(),
-        timeoutSeconds: Long = Long.MAX_VALUE
+        timeoutSeconds: Long = 300
     ) {
         execCmdSync(
             adbCmdParts = buildList {
@@ -103,10 +112,22 @@ class Adb(
         runner: String,
         args: Map<String, String> = mapOf(),
     ): Process {
-        val argsStr = args.entries.joinToString(separator = " ") { "-e ${it.key} ${it.value}" }
-        val cmd = buildAdbCommand("shell am instrument -w $argsStr $testApplicationId/$runner")
-        val cmdParts = cmd.trim().split(Regex("\\s+"))
-        return ProcessBuilder(cmdParts).start()
+        val cmdParts = buildList {
+            add(adbPath)
+            add("-s")
+            add(deviceId)
+            add("shell")
+            add("am")
+            add("instrument")
+            add("-w")
+            args.forEach { (key, value) ->
+                add("-e")
+                add(key)
+                add(value)
+            }
+            add("$testApplicationId/$runner")
+        }
+        return executor.execCmdAsync(cmdParts)
     }
 
     /**
@@ -167,20 +188,18 @@ class Adb(
      * @param timeoutSeconds The maximum time to wait for the process to finish.
      * @param hasFailed A lambda with [ProcessResult] as receiver to determine if the execution failed.
      * Defaults to checking if the exit value is non-zero.
-     * @param crashIfTimeout If true, throws [IllegalStateException] on timeout; otherwise, proceeds.
      * @return A [ProcessResult] containing exit code, stdout, and stderr.
-     * @throws IllegalStateException if the command times out (and [crashIfTimeout] is true)
+     * @throws IllegalStateException if the command times out.
      * or if the [hasFailed] predicate returns true.
      */
     private fun execCmdSync(
         adbCmd: String,
         timeoutSeconds: Long = 30,
-        hasFailed: ProcessResult.() -> (Boolean) = { exitValue != 0 },
-        crashIfTimeout: Boolean = true
+        hasFailed: ProcessResult.() -> (Boolean) = { exitValue != 0 }
     ): ProcessResult {
         val cmd = buildAdbCommand(adbCmd)
         val cmdParts = cmd.trim().split(Regex("\\s+"))
-        return execCmdSync(cmdParts, timeoutSeconds, hasFailed, crashIfTimeout)
+        return execCmdSync(cmdParts, timeoutSeconds, hasFailed)
     }
 
     /**
@@ -191,33 +210,23 @@ class Adb(
      * @param timeoutSeconds The maximum time to wait for the process to finish.
      * @param hasFailed A lambda with [ProcessResult] as receiver to determine if the execution failed.
      * Defaults to checking if the exit value is non-zero.
-     * @param crashIfTimeout If true, throws [IllegalStateException] on timeout; otherwise, proceeds.
      * @return A [ProcessResult] containing exit code, stdout, and stderr.
-     * @throws IllegalStateException if the command times out (and [crashIfTimeout] is true)
+     * @throws IllegalStateException if the command times out.
      * or if the [hasFailed] predicate returns true.
      */
     private fun execCmdSync(
         adbCmdParts: List<String>,
         timeoutSeconds: Long = 30,
-        hasFailed: ProcessResult.() -> (Boolean) = { exitValue != 0 },
-        crashIfTimeout: Boolean = true
+        hasFailed: ProcessResult.() -> (Boolean) = { exitValue != 0 }
     ): ProcessResult {
-        val process = ProcessBuilder(adbCmdParts).start()
-        val waitFor = process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
-        if (!waitFor && crashIfTimeout) {
-            throw IllegalStateException("Timeout waiting for ${adbCmdParts.joinToString(" ")}")
-        }
-
-        val stdout = process.inputStream.bufferedReader().use { it.readText() }
-        val stderr = process.errorStream.bufferedReader().use { it.readText() }
-        val fullOutputForLog = StringBuilder()
-            .apply {
-                if (stdout.isNotBlank()) append("------ stdout ------\n${stdout}")
-                if (stderr.isNotBlank()) append("------ stderr ------\n${stderr}")
-            }
-            .toString()
-        val processResult = ProcessResult(process.exitValue(), stdout, stderr)
+        val processResult = executor.execCmdSync(adbCmdParts, timeoutSeconds)
         if (hasFailed(processResult)) {
+            val fullOutputForLog = StringBuilder()
+                .apply {
+                    if (processResult.stdout.isNotBlank()) append("------ stdout ------\n${processResult.stdout}")
+                    if (processResult.stderr.isNotBlank()) append("------ stderr ------\n${processResult.stderr}")
+                }
+                .toString()
             throw IllegalStateException(
                 "Command `${adbCmdParts.joinToString(" ")}` failed (exit code ${processResult.exitValue}) with output:\n$fullOutputForLog"
             )
@@ -234,15 +243,4 @@ class Adb(
     private fun buildAdbCommand(adbCmd: String): String {
         return "$adbPath -s $deviceId $adbCmd"
     }
-}
-
-/**
- * Data class representing the result of a process execution.
- *
- * @param exitValue The exit value of the process.
- * @param stdout The standard output captured from the process.
- * @param stderr The standard error captured from the process.
- */
-internal data class ProcessResult(val exitValue: Int, val stdout: String, val stderr: String) {
-    val fullOut = "$stdout\n$stderr"
 }
