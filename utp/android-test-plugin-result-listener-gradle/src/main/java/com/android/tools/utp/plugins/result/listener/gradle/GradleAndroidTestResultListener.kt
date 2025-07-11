@@ -53,6 +53,7 @@ class GradleAndroidTestResultListener(
             NettyChannelBuilder
                     .forAddress("localhost", config.resultListenerServerPort)
                     .sslContext(sslContext)
+                    .maxInboundMessageSize(Integer.MAX_VALUE)
                     .build()
         }) : TestResultListener, Configurable {
     companion object {
