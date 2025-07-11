@@ -231,6 +231,28 @@ class AvdManager(
     }
 
     /**
+     * Starts an Android Virtual device and [onDeviceReady] callback is invoked once the device
+     * becomes online and system services on the device are started.
+     *
+     * This method blocks execution and [onDeviceReady] callback is invoked from the caller's thread.
+     */
+    fun runWithAvd(deviceName: String, emulatorGpuFlag: String,
+        onDeviceReady: (onlineDeviceSerial: String) -> Unit) {
+        runWithMultiProcessLocking(deviceName) {
+            deviceLockManager.lock(1).use {
+                snapshotHandler.startEmulatorThenStop(
+                    false,
+                    deviceName,
+                    avdFolder,
+                    emulatorGpuFlag,
+                    logger,
+                    onDeviceReady
+                )
+            }
+        }
+    }
+
+    /**
      * Returns the names of all avds currently in the shared avd folder.
      */
     fun allAvds(): List<String> {

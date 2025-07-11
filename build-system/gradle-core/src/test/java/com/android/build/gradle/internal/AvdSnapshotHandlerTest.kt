@@ -22,10 +22,6 @@ import com.android.build.gradle.internal.testing.EmulatorVersionMetadata
 import com.android.build.gradle.internal.testing.QemuExecutor
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdManager
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import com.android.utils.FileUtils
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
@@ -38,15 +34,14 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.mockito.Mock
-import org.mockito.kotlin.any
 import org.mockito.Mockito.contains
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
 import java.io.File
 import java.io.InputStream
-import java.lang.RuntimeException
 
 @RunWith(JUnit4::class)
 class AvdSnapshotHandlerTest {
@@ -109,7 +104,7 @@ class AvdSnapshotHandlerTest {
                 emulatorDirectoryProvider,
                 qemuExecutor,
                 extraWaitAfterBootCompleteMs = 0L,
-                MoreExecutors.directExecutor(),
+                MoreExecutors.newDirectExecutorService(),
                 { _ -> EmulatorVersionMetadata(true) }
         ) { commands ->
             if (commands.contains("-check-snapshot-loadable")) {
@@ -138,7 +133,7 @@ class AvdSnapshotHandlerTest {
                 emulatorDirectoryProvider,
                 qemuExecutor,
                 extraWaitAfterBootCompleteMs = 0L,
-                MoreExecutors.directExecutor(),
+                MoreExecutors.newDirectExecutorService(),
                 { _ -> EmulatorVersionMetadata(true) }
         ) { _ -> createMockProcessBuilder() }
 
@@ -182,7 +177,7 @@ class AvdSnapshotHandlerTest {
             emulatorDirectoryProvider,
             qemuExecutor,
             extraWaitAfterBootCompleteMs = 0L,
-            MoreExecutors.directExecutor(),
+            MoreExecutors.newDirectExecutorService(),
             { _ -> EmulatorVersionMetadata(true) }
         ) { commands ->
             assertThat(commands).contains("-verbose")
@@ -222,7 +217,7 @@ class AvdSnapshotHandlerTest {
             emulatorDirectoryProvider,
             qemuExecutor,
             extraWaitAfterBootCompleteMs = 0L,
-            MoreExecutors.directExecutor(),
+            MoreExecutors.newDirectExecutorService(),
             { _ -> EmulatorVersionMetadata(true) }
         ) { commands ->
             // disabling full kernel logging should disable verbose logging in setup actions.
@@ -255,5 +250,32 @@ class AvdSnapshotHandlerTest {
         assertThat(eNoKernel).hasMessageThat().contains(
             emulatorError
         )
+    }
+
+    @Test
+    fun startEmulatorThenStop() {
+        val env = mutableMapOf<String, String>()
+        val handler = AvdSnapshotHandler(
+            showFullEmulatorKernelLogging = true,
+            deviceBootAndSnapshotCheckTimeoutSec = 1234,
+            mockAdbHelper,
+            emulatorDirectoryProvider,
+            qemuExecutor,
+            extraWaitAfterBootCompleteMs = 0L,
+            MoreExecutors.newDirectExecutorService(),
+            { _ -> EmulatorVersionMetadata(true) }
+        ) { _ -> createMockProcessBuilder() }
+
+        var onDeviceReadyIsCalled = false
+        handler.startEmulatorThenStop(
+            createSnapshot = false,
+            "myTestAvdName",
+            avdDirectory,
+            emulatorGpuFlag = "",
+            mockLogger) {
+            onDeviceReadyIsCalled = true
+        }
+
+        assertThat(onDeviceReadyIsCalled).isTrue()
     }
 }

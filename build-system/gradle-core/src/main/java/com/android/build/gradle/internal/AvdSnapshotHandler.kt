@@ -16,24 +16,23 @@
 
 package com.android.build.gradle.internal
 
-import com.android.build.gradle.internal.testing.getEmulatorMetadata
 import com.android.build.gradle.internal.testing.AdbHelper
 import com.android.build.gradle.internal.testing.EmulatorVersionMetadata
 import com.android.build.gradle.internal.testing.QemuExecutor
+import com.android.build.gradle.internal.testing.getEmulatorMetadata
 import com.android.sdklib.internal.avd.AvdManager
 import com.android.testing.utils.createSetupDeviceId
-import com.android.utils.FileUtils
 import com.android.utils.GrabProcessOutput
 import com.android.utils.ILogger
-import java.io.File
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
+import java.io.File
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val EMULATOR_EXECUTABLE = "emulator"
 private const val DEFAULT_DEVICE_BOOT_AND_SNAPSHOT_CHECK_TIMEOUT_SEC = 600L
@@ -55,7 +54,7 @@ class AvdSnapshotHandler(
     private val emulatorDir: Provider<Directory>,
     private val qemuExecutor: QemuExecutor,
     private val extraWaitAfterBootCompleteMs: Long = WAIT_AFTER_BOOT_MS,
-    private val executor: Executor = Executors.newSingleThreadExecutor(),
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor(),
     private val metadataFactory: (File) -> EmulatorVersionMetadata = ::getEmulatorMetadata,
     private val processFactory: (List<String>) -> ProcessBuilder = { ProcessBuilder(it) }) {
 
@@ -64,6 +63,9 @@ class AvdSnapshotHandler(
             emulatorDir.orNull?.asFile ?: error("Emulator dir does not exist")
         metadataFactory(emulatorDirectory)
     }
+
+    private val timeoutSeconds: Long
+        get() = deviceBootAndSnapshotCheckTimeoutSec ?: DEFAULT_DEVICE_BOOT_AND_SNAPSHOT_CHECK_TIMEOUT_SEC
 
     /**
      * Checks whether the emulator directory contains a valid emulator executable, and returns it.
@@ -173,21 +175,15 @@ class AvdSnapshotHandler(
             logger.warning("Timed out trying to check $snapshotName for $avdName is loadable.")
         }
         if (!timeout) {
-            val timeoutSec =
-                deviceBootAndSnapshotCheckTimeoutSec ?:
-                DEFAULT_DEVICE_BOOT_AND_SNAPSHOT_CHECK_TIMEOUT_SEC
-            outputProcessed.await(timeoutSec, TimeUnit.SECONDS)
+            outputProcessed.await(timeoutSeconds, TimeUnit.SECONDS)
         }
         return success.get()
     }
 
     private fun Process.waitUntilTimeout(logger: ILogger, onTimeout: () -> Unit) {
-        val timeoutSec =
-            deviceBootAndSnapshotCheckTimeoutSec ?:
-            DEFAULT_DEVICE_BOOT_AND_SNAPSHOT_CHECK_TIMEOUT_SEC
-        if (timeoutSec > 0) {
-            logger.verbose("Waiting for a process to complete (timeout $timeoutSec seconds)")
-            if (!waitFor(timeoutSec, TimeUnit.SECONDS)) {
+        if (timeoutSeconds > 0) {
+            logger.verbose("Waiting for a process to complete (timeout $timeoutSeconds seconds)")
+            if (!waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
                 onTimeout()
             }
         } else {
@@ -293,12 +289,19 @@ class AvdSnapshotHandler(
         }
     }
 
-    private fun startEmulatorThenStop(
+    /**
+     * Starts an Android Virtual device and [onDeviceReady] callback is invoked once the device
+     * becomes online and system services on the device are started.
+     *
+     * This method blocks execution and [onDeviceReady] callback is invoked from the caller's thread.
+     */
+    fun startEmulatorThenStop(
         createSnapshot: Boolean,
         avdName: String,
         avdLocation: File,
         emulatorGpuFlag: String,
-        logger: ILogger
+        logger: ILogger,
+        onDeviceReady: (onlineDeviceSerial: String) -> Unit = {},
     ) {
         val deviceId = createSetupDeviceId(avdName)
 
@@ -316,17 +319,14 @@ class AvdSnapshotHandler(
             )
         )
         processBuilder.environment()["ANDROID_AVD_HOME"] = avdLocation.absolutePath
-        processBuilder.environment()["ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL"] = (
-                deviceBootAndSnapshotCheckTimeoutSec ?:
-                DEFAULT_DEVICE_BOOT_AND_SNAPSHOT_CHECK_TIMEOUT_SEC
-                ).toString()
+        processBuilder.environment()["ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL"] = timeoutSeconds.toString()
         val emulatorProcess = processBuilder.start()
         val bootCompleted = AtomicBoolean(false)
         // need to process both stderr and stdout
         val outputProcessed = CountDownLatch(2)
         val emulatorErrorList = mutableListOf<String>()
         try {
-            executor.execute {
+            val deviceSerialFuture = executor.submit<String> {
                 var emulatorSerial: String? = null
                 while(emulatorProcess.isAlive) {
                     try {
@@ -341,7 +341,7 @@ class AvdSnapshotHandler(
                 if (emulatorSerial == null) {
                     // It is possible for the emulator process to return unexpectedly
                     // and the emulatorSerial to not be set.
-                    return@execute
+                    return@submit null
                 }
                 logger.verbose("$avdName is attached to adb ($emulatorSerial).")
 
@@ -372,11 +372,12 @@ class AvdSnapshotHandler(
                 if (emulatorProcess.isAlive) {
                     logger.verbose("$avdName is ready to take a snapshot.")
                     bootCompleted.set(true)
-                    adbHelper.killDevice(emulatorSerial)
+                    return@submit emulatorSerial
                 } else {
                     logger.warning(
                         "Emulator process exited unexpectedly with the return code " +
                         "${emulatorProcess.exitValue()}.")
+                    return@submit null
                 }
             }
 
@@ -403,6 +404,12 @@ class AvdSnapshotHandler(
                 }
             )
 
+            val deviceSerial = deviceSerialFuture.get(timeoutSeconds, TimeUnit.SECONDS)
+            if (deviceSerial != null) {
+                onDeviceReady(deviceSerial)
+                adbHelper.killDevice(deviceSerial)
+            }
+
             emulatorProcess.waitUntilTimeout(logger) {
                 logger.warning("Snapshot creation timed out. Closing emulator.")
                 throw EmulatorSnapshotCannotCreatedException("""
@@ -416,15 +423,9 @@ class AvdSnapshotHandler(
             emulatorProcess.destroy()
         }
 
-
-
         if (!bootCompleted.get()) {
             // wait for processing to complete for output of process
-
-            val timeoutSec =
-                deviceBootAndSnapshotCheckTimeoutSec ?:
-                DEFAULT_DEVICE_BOOT_AND_SNAPSHOT_CHECK_TIMEOUT_SEC
-            outputProcessed.await(timeoutSec, TimeUnit.SECONDS)
+            outputProcessed.await(timeoutSeconds, TimeUnit.SECONDS)
 
             throw EmulatorSnapshotCannotCreatedException(
                 """

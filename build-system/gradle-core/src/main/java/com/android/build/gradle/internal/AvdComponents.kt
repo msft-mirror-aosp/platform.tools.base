@@ -174,10 +174,30 @@ abstract class AvdComponentsBuildService @Inject constructor(
         avdManager.get().loadSnapshotIfNeeded(deviceName, emulatorGpuMode)
     }
 
+    /**
+     * Manages and runs an Android Virtual Device (AVD) for a given operation.
+     *
+     * This function starts the specified AVD, waits for it to come online, and then executes the
+     * [onDeviceReady] callback with the device's serial number. The function is blocking and will
+     * not return until the callback has completed.
+     *
+     * The [onDeviceReady] callback is invoked on the same thread that called this method.
+     *
+     * @param deviceName The name of the AVD to provision. This AVD must have been created beforehand.
+     * @param emulatorGpuMode The GPU mode to use when starting the emulator.
+     * @param onDeviceReady A block of code to execute once the device is ready. It is provided with the
+     * online device's serial number.
+     * @throws RuntimeException if the device cannot be provisioned or fails to start.
+     */
+    fun runWithAvd(deviceName: String, emulatorGpuMode: String,
+        onDeviceReady: (onlineDeviceSerial: String) -> Unit) {
+        avdManager.get().runWithAvd(deviceName, emulatorGpuMode, onDeviceReady)
+    }
+
     /** Closes all active emulators having an id with the given prefix. This should be used to close
      * emulators that may remain after a crashed UTP test run.
      *
-     * @param idPrefix the prefix that is looke for to close the active emulators. All emulators
+     * @param idPrefix the prefix that is looked for to close the active emulators. All emulators
      * that have an id not starting with this prefix are ignored.
      */
     fun closeOpenEmulators(idPrefix: String) {
