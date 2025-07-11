@@ -30,7 +30,7 @@ import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.externalJdwpProcessCommandDispatcherList
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow

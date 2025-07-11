@@ -20,13 +20,12 @@ import com.android.adblib.AdbServerSocket
 import com.android.adblib.AdbSession
 import com.android.adblib.adbLogger
 import com.android.adblib.skipRemaining
-import com.android.adblib.tools.debugging.rethrowCancellation
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.tools.tcpserver.RetryPolicy
 import com.android.adblib.tools.tcpserver.TcpServer
 import com.android.adblib.tools.tcpserver.TcpServerConnection
 import com.android.adblib.utils.closeOnException
 import com.android.adblib.utils.createChildScope
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.utils.runAlongOtherScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel

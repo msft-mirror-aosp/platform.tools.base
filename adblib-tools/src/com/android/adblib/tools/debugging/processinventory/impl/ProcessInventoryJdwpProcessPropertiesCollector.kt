@@ -23,7 +23,7 @@ import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
 import com.android.adblib.tools.debugging.propertiesFlow
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

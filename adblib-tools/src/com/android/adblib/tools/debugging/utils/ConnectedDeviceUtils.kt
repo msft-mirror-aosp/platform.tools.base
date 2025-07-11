@@ -17,6 +17,7 @@ package com.android.adblib.tools.debugging.utils
 
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withPrefix
 import com.android.adblib.withScopeContext
 import kotlinx.coroutines.delay

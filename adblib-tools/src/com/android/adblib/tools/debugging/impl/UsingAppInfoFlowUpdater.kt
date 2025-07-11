@@ -29,7 +29,7 @@ import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.trackApp
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.Deferred
@@ -141,7 +141,7 @@ internal class UsingAppInfoFlowUpdater(
             logger.logIOCompletionErrors(throwable)
             stateFlow.update {
                 it.copy(
-                    vmIdentifier =  optionalValueFactory.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
+                    vmIdentifier = optionalValueFactory.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
                     features = optionalValueFactory.ofError<List<String>>("Error collecting features from device capabilities").orElse(it.features)
                 )
             }

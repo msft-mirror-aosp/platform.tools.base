@@ -21,7 +21,7 @@ import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.impl.AbstractJdwpProcessDelegateProvider
 import com.android.adblib.tools.debugging.impl.JdwpProxySocketServerImpl
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withPrefix
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

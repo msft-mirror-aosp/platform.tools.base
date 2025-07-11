@@ -25,10 +25,9 @@ import com.android.adblib.tools.debugging.sendPacket
 import com.android.adblib.tools.debugging.utils.SynchronizedChannel
 import com.android.adblib.tools.debugging.utils.SynchronizedReceiveChannel
 import com.android.adblib.tools.debugging.utils.SynchronizedSendChannel
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.tools.debugging.utils.receiveAll
 import com.android.adblib.utils.createChildScope
-import com.android.adblib.withPrefix
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch

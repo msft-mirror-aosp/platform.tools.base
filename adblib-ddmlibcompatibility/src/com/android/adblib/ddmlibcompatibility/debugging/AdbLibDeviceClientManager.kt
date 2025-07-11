@@ -26,7 +26,7 @@ import com.android.adblib.ddmlibcompatibility.debugging.ProcessTrackerHost.Clien
 import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.isTrackAppSupported
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.waitForDevice
 import com.android.adblib.waitUntilOnline
 import com.android.adblib.withPrefix

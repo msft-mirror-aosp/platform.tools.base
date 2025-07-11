@@ -25,8 +25,8 @@ import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.AppProcessEntryList
 import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.TrackApp
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.tools.debugging.utils.serviceFlowToMutableStateFlow
+import com.android.adblib.utils.logIOCompletionErrors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow

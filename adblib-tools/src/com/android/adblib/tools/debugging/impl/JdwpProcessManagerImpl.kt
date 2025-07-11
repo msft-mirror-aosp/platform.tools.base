@@ -32,12 +32,11 @@ import com.android.adblib.tools.debugging.JdwpProcessIdList
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.isTrackAppSupported
-import com.android.adblib.tools.debugging.scope
 import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.trackJdwp
 import com.android.adblib.tools.debugging.utils.JobTracker
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
 import com.android.adblib.utils.createChildScope
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.waitForDevice
 import com.android.adblib.withDevicePrefix
 import com.android.adblib.withPrefix

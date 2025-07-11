@@ -29,7 +29,7 @@ import com.android.adblib.tools.debugging.processinventory.protos.ProcessInvento
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto.ProcessCommandReply.CommandResultCase
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
 import com.android.adblib.tools.debugging.resumeProcessImpl
-import com.android.adblib.tools.debugging.utils.logIOCompletionErrors
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.utils.runAlongOtherScope
 import com.android.adblib.withProcessPrefix
 import com.google.protobuf.TextFormat
