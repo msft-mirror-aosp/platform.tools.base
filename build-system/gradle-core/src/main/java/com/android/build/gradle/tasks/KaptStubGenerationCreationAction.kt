@@ -21,9 +21,8 @@ import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
-import com.android.builder.errors.IssueReporter
+import com.android.build.gradle.internal.utils.KgpVersion
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
 import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
@@ -36,7 +35,7 @@ class KaptStubGenerationCreationAction(
     private val kaptExtension: KaptExtensionConfig
 ) : KotlinTaskCreationAction<KaptGenerateStubs>(creationConfig) {
 
-    private val kotlinJvmFactory = kotlinServices.factory
+    private val kotlinJvmFactory = kotlinServices.kotlinBaseApiPlugin
 
     init {
         kotlinServices.let {
@@ -50,7 +49,7 @@ class KaptStubGenerationCreationAction(
     override val taskName: String = creationConfig.computeTaskNameInternal("kaptGenerateStubs", "Kotlin")
 
     override fun getTaskProvider(): TaskProvider<out KaptGenerateStubs> {
-        if (kotlinServices.kotlinBaseApiVersion > KotlinBaseApiVersion.VERSION_1) {
+        if (kotlinServices.kgpVersion >= KgpVersion.KGP_2_1_0) {
             return kotlinJvmFactory.registerKaptGenerateStubsTask(
                 taskName,
                 kotlinCompileTaskProvider,
@@ -142,7 +141,7 @@ class KaptStubGenerationCreationAction(
             }
         }
 
-        if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
+        if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
             task.applyCompilerOptions(kotlinServices.kotlinAndroidProjectExtension.compilerOptions)
         }
     }

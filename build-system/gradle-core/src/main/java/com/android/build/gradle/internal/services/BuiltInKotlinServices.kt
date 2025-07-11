@@ -38,20 +38,19 @@ import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
-import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
+import com.android.build.gradle.internal.utils.KgpVersion
+import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.disallowPlugin
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
 import com.android.build.gradle.internal.utils.requirePlugin
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter.Type
-import com.android.ide.common.gradle.Version
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
-import org.jetbrains.kotlin.gradle.plugin.KotlinJvmFactory
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilationFactory
@@ -60,17 +59,17 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilationFactory
  * Services related to the built-in Kotlin support, to be used when
  * [com.android.build.gradle.internal.component.ComponentCreationConfig.useBuiltInKotlinSupport] == true.
  */
-interface BuiltInKotlinServices {
+class BuiltInKotlinServices(
 
     /** The reason why [BuiltInKotlinServices] is available. */
-    val reason: AvailabilityReason
+    val reason: AvailabilityReason,
 
-    val kgpVersion: String
-    val factory: KotlinJvmFactory
-    val kotlinBaseApiVersion: KotlinBaseApiVersion
-
-    val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension
+    val kotlinBaseApiPlugin: KotlinBaseApiPlugin,
+    val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
     val baseExtension: BaseExtension? // Currently required (KT-77300)
+) {
+
+    val kgpVersion: KgpVersion = KgpVersion.parse(kotlinBaseApiPlugin.pluginVersion)
 
     companion object {
 
@@ -79,10 +78,9 @@ interface BuiltInKotlinServices {
             kotlinBaseApiPlugin: KotlinBaseApiPlugin,
             kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
             baseExtension: BaseExtension?,
-            projectName: String
         ): BuiltInKotlinServices {
             getKotlinPluginVersionFromPlugin(kotlinBaseApiPlugin)?.let {
-                if (Version.parse(it) < Version.parse(MINIMUM_BUILT_IN_KOTLIN_VERSION)) {
+                if (KgpVersion.parse(it) < MINIMUM_BUILT_IN_KOTLIN_VERSION) {
                     val message =
                         """
                         The current Kotlin Gradle plugin version ($it) is below the required
@@ -98,14 +96,12 @@ interface BuiltInKotlinServices {
                 }
             }
 
-            return object : BuiltInKotlinServices {
-                override val reason: AvailabilityReason = reason
-                override val kgpVersion: String = kotlinBaseApiPlugin.pluginVersion
-                override val factory: KotlinJvmFactory = kotlinBaseApiPlugin
-                override val kotlinBaseApiVersion = kgpVersion.kotlinBaseApiVersion()
-                override val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension = kotlinAndroidProjectExtension
-                override val baseExtension: BaseExtension? = baseExtension
-            }
+            return BuiltInKotlinServices(
+                reason,
+                kotlinBaseApiPlugin,
+                kotlinAndroidProjectExtension,
+                baseExtension
+            )
         }
     }
 
@@ -124,28 +120,6 @@ interface BuiltInKotlinServices {
 
     }
 }
-
-/**
- *  AGP's internal versioning of [KotlinBaseApiPlugin] to track availability of APIs.
- */
-enum class KotlinBaseApiVersion {
-    /** Represents versions < 2.1.0-Beta2  */
-    VERSION_1,
-
-    /** Represents versions >= 2.1.0-Beta2  */
-    VERSION_2;
-}
-
-/**
- * Calculate the [KotlinBaseApiVersion] for the given KGP version
- */
-private fun String.kotlinBaseApiVersion(): KotlinBaseApiVersion =
-    when {
-        Version.parse(this) >= Version.parse("2.1.0-Beta2") -> {
-            KotlinBaseApiVersion.VERSION_2
-        }
-        else -> KotlinBaseApiVersion.VERSION_1
-    }
 
 /** Indicates whether built-in Kotlin support is available and why. */
 sealed class BuiltInKotlinSupportMode {

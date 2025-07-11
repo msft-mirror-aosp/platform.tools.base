@@ -26,9 +26,8 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAP
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_GENERATED_JAVA_SOURCES
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_GENERATED_KOTLIN_SOURCES
 import com.android.build.gradle.internal.scope.MutableTaskContainer
-import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
-import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
+import com.android.build.gradle.internal.utils.KgpVersion
 import org.gradle.api.JavaVersion
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
@@ -41,12 +40,12 @@ class KotlinCompileCreationAction(
     private val kotlinServices: BuiltInKotlinServices
 ) : KotlinTaskCreationAction<KotlinJvmCompile>(creationConfig) {
 
-    private val kotlinJvmFactory = kotlinServices.factory
+    private val kotlinJvmFactory = kotlinServices.kotlinBaseApiPlugin
 
     override val taskName: String = creationConfig.computeTaskNameInternal("compile", "Kotlin")
 
     override fun getTaskProvider(): TaskProvider<out KotlinJvmCompile> {
-        if (kotlinServices.kotlinBaseApiVersion > KotlinBaseApiVersion.VERSION_1) {
+        if (kotlinServices.kgpVersion >= KgpVersion.KGP_2_1_0) {
             val kotlinAndroidProjectExtension = kotlinServices.kotlinAndroidProjectExtension
             return kotlinJvmFactory.registerKotlinJvmCompileTask(
                 taskName,
@@ -112,7 +111,7 @@ class KotlinCompileCreationAction(
             }
         }
 
-        if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
+        if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
             task.applyCompilerOptions(kotlinServices.kotlinAndroidProjectExtension.compilerOptions)
         }
 

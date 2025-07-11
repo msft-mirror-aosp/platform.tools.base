@@ -76,8 +76,6 @@ import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
-import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
-import com.android.build.gradle.internal.services.KotlinBaseApiVersion
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.createKotlinCompilation
@@ -147,7 +145,8 @@ import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
-import com.android.build.gradle.internal.utils.MINIMUM_BUILT_IN_KOTLIN_VERSION
+import com.android.build.gradle.internal.utils.KgpVersion
+import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
@@ -187,11 +186,9 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.dexing.DexingType
-import com.android.builder.errors.IssueReporter
 import com.android.utils.appendCapitalized
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings
-import com.google.common.base.Throwables
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -222,7 +219,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.Callable
-import kotlin.math.min
 
 /**
  * Abstract class containing tasks creation logic that is shared between variants and components.
@@ -970,7 +966,7 @@ abstract class TaskManager(
             KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
         val kaptGenerateStubsProvider =
             if (creationConfig.useBuiltInKaptSupport) {
-                if (kotlinServices.kotlinBaseApiVersion < KotlinBaseApiVersion.VERSION_2) {
+                if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
                     copyKaptExtensionProperties(kotlinServices)
                 }
                 val kaptExtensionConfig =
@@ -1027,7 +1023,7 @@ abstract class TaskManager(
                 val jetbrainsKaptExtension =
                     project.extensions.findByName("kapt") as? KaptExtensionConfig
                         ?: return@afterEvaluate
-                kotlinServices.factory.kaptExtension.also {
+                kotlinServices.kotlinBaseApiPlugin.kaptExtension.also {
                     it.correctErrorTypes = jetbrainsKaptExtension.correctErrorTypes
                     it.detectMemoryLeaks = jetbrainsKaptExtension.detectMemoryLeaks
                     it.dumpDefaultParameterValues =

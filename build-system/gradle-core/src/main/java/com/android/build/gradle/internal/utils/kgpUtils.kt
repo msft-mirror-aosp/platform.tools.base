@@ -479,6 +479,3 @@ private fun DependencyHandler.kotlinDependency(moduleName: String, versionOrNull
 private const val KOTLIN_GROUP = "org.jetbrains.kotlin"
 private val KOTLIN_STDLIB_MODULES =
     setOf("kotlin-stdlib", "kotlin-stdlib-jdk7", "kotlin-stdlib-jdk8")
-// The minimum version of KGP required to be on the buildscript classpath for built-in kotlin
-// support in AGP
-const val MINIMUM_BUILT_IN_KOTLIN_VERSION = "1.9.20"
