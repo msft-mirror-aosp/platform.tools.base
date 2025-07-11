@@ -57,11 +57,11 @@ dependencies {
     testImplementation libs.google_api_client
     testImplementation libs.google_storage_client
     testImplementation libs.junit
+    testImplementation libs.junit_platform_engine
     testImplementation libs.protobuf
     testImplementation libs.protobuf_util
     testImplementation libs.truth
     testImplementation libs.unified_test_platform
-
     testImplementation libs.mockito_core
 
     // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to

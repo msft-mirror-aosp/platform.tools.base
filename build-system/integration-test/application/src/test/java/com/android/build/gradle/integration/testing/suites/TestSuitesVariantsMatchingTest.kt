@@ -82,6 +82,14 @@ class TestSuitesVariantsMatchingTest {
                             }
                         }
                     }
+                    testOptions.managedDevices {
+                        localDevices.create("device1") {
+                            it.device = "Pixel 2"
+                        }
+                        localDevices.create("device2") {
+                            it.device = "Pixel 2"
+                        }
+                    }
                 }
                 dependencies {
                     implementation("com.google.truth:truth:0.44")

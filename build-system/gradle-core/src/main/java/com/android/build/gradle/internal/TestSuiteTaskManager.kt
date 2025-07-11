@@ -20,6 +20,7 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import org.gradle.api.Project
 
@@ -36,26 +37,32 @@ class TestSuiteTaskManager(
             .filter { it.value.enabled }
             .forEach { mapEntry ->
                 val target = mapEntry.value
-                taskFactory.register(
+                val testSuiteTestTask = taskFactory.register(
                     TestSuiteTestTask.CreationAction(creationConfig, target)
-                ).also {
-                    val context = object : TestTaskContext {
-                        override val targetName: String
-                            get() = target.name
-                        override val suiteName: String
-                            get() = creationConfig.name
-                        override val targetedVariant: String
-                            get() = creationConfig.testedVariant.name
-                        override val targetedDevices: Collection<String>
-                            get() = target.targetDevices
+                )
+                val context = object : TestTaskContext {
+                    override val targetName: String
+                        get() = target.name
+                    override val suiteName: String
+                        get() = creationConfig.name
+                    override val targetedVariant: String
+                        get() = creationConfig.testedVariant.name
+                    override val targetedDevices: Collection<String>
+                        get() = target.targetDevices
 
-                        override fun toString(): String {
-                            return super.toString() + "targetName:$targetName, suiteName:$suiteName," +
-                                    " targetedVariant:$targetedVariant, " +
-                                    "devices = ${targetedDevices.joinToString(separator = ":")}"
-                        }
+                    override fun toString(): String {
+                        return super.toString() + "targetName:$targetName, suiteName:$suiteName," +
+                                " targetedVariant:$targetedVariant, " +
+                                "devices = ${targetedDevices.joinToString(separator = ":")}"
                     }
-                    creationConfig.runTestTaskConfigurationActions(context, it)
+                }
+                creationConfig.runTestTaskConfigurationActions(context, testSuiteTestTask)
+
+                // Adds GMD Setup task dependency.
+                target.targetDevices.forEach { targetDeviceName ->
+                    val targetDevice = creationConfig.global.androidTestOptions
+                        .managedDevices.localDevices.getByName(targetDeviceName)
+                    testSuiteTestTask.dependsOn(setupTaskName(targetDevice))
                 }
             }
     }

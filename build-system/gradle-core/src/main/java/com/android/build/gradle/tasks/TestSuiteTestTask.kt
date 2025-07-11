@@ -18,31 +18,40 @@ package com.android.build.gradle.tasks
 
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
+import com.android.build.api.testsuites.TestEngineInputProperty
+import com.android.build.api.testsuites.TestSuiteExecutionClient.Companion.DEFAULT_ENV_VARIABLE
 import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BuildToolsExecutableInput
 import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
+import com.android.build.gradle.internal.computeAvdName
+import com.android.build.gradle.internal.computeManagedDeviceEmulatorMode
+import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
+import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.DeviceProviderFactory
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
-import com.android.build.api.testsuites.TestEngineInputProperty
-import com.android.build.api.testsuites.TestSuiteExecutionClient.Companion.DEFAULT_ENV_VARIABLE
+import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.builder.testing.api.DeviceProvider
+import com.android.builder.testing.api.DeviceException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
@@ -87,6 +96,15 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     @get:Nested
     abstract val deviceProviderFactory: DeviceProviderFactory
 
+    @get:Nested
+    abstract val managedDevices: ListProperty<ManagedVirtualDevice>
+
+    @get:Input
+    abstract val emulatorGpuFlag: Property<String>
+
+    @get:Internal
+    abstract val avdService: Property<AvdComponentsBuildService>
+
     @TaskAction
     override fun executeTests() {
         val engineInputParameters: List<TestEngineInputProperty> = engineInputParameters.get(). map { inputProperty ->
@@ -102,21 +120,68 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 inputParameter.name == AgpTestSuiteInputParameters.TESTED_APKS.propertyName
             }
         ) {
-            val deviceProvider = deviceProviderFactory.getDeviceProvider(
-                buildTools.adbExecutable(),
-                System.getenv("ANDROID_SERIAL")
-            )
-            deviceProvider.use {
-                executeTests(engineInputParameters, deviceProvider)
+            provisionDevicesAndExecute { onlineDeviceSerials ->
+                executeTests(engineInputParameters, onlineDeviceSerials)
             }
         } else {
             executeTests(engineInputParameters)
         }
     }
 
+    private fun provisionDevicesAndExecute(executeTestFunc: (onlineDeviceSerials: String) -> Unit) {
+        provisionConnectedDevicesAndExecute { connectedDeviceSerials ->
+            provisionManagedDevicesAndExecute { managedDeviceSerials ->
+                val onlineDeviceSerials =
+                    (connectedDeviceSerials + managedDeviceSerials).joinToString(",")
+                executeTestFunc(onlineDeviceSerials)
+            }
+        }
+    }
+
+    private fun provisionConnectedDevicesAndExecute(onDevicesReady: (onlineDeviceSerials: List<String>) -> Unit) {
+        val deviceProvider = deviceProviderFactory.getDeviceProvider(
+            buildTools.adbExecutable(),
+            // TODO: Read ANDROID_SERIAL at configuration phase and make it a task input.
+            System.getenv("ANDROID_SERIAL")
+        )
+        try {
+            deviceProvider.use {
+                val onlineDeviceSerials = deviceProvider.devices.map {
+                    it.serialNumber
+                }
+                onDevicesReady(onlineDeviceSerials)
+            }
+        } catch (_: DeviceException) {
+            onDevicesReady(listOf())
+        }
+    }
+
+    private fun provisionManagedDevicesAndExecute(onDevicesReady: (onlineDeviceSerials: List<String>) -> Unit) {
+        provisionManagedDevicesAndExecute(
+            managedDevices.get().asIterable().iterator(),
+            mutableListOf(),
+            onDevicesReady,
+        )
+    }
+
+    private fun provisionManagedDevicesAndExecute(
+        iterator: Iterator<ManagedVirtualDevice>,
+        onlineDeviceSerials: MutableList<String>,
+        onDevicesReady: (onlineDeviceSerials: List<String>) -> Unit) {
+        if (!iterator.hasNext()) {
+            onDevicesReady(onlineDeviceSerials)
+            return
+        }
+        val avdName = computeAvdName(iterator.next())
+        avdService.get().runWithAvd(avdName, emulatorGpuFlag.get()) { onlineDeviceSerial ->
+            onlineDeviceSerials += onlineDeviceSerial
+            provisionManagedDevicesAndExecute(iterator, onlineDeviceSerials, onDevicesReady)
+        }
+    }
+
     private fun executeTests(
         engineInputParameters: List<TestEngineInputProperty>,
-        deviceProvider: DeviceProvider? = null,
+        onlineDeviceSerials: String? = null,
     ) {
         val standardInputs = mutableListOf(
             TestEngineInputProperty(
@@ -142,14 +207,11 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             ),
         )
 
-        if (deviceProvider != null ) {
-            val serialIds = deviceProvider.devices.joinToString(",") { device ->
-                device.serialNumber
-            }
+        if (onlineDeviceSerials != null) {
             standardInputs.add(
                 TestEngineInputProperty(
                     TestEngineInputProperty.SERIAL_IDS,
-                    serialIds
+                    onlineDeviceSerials
                 )
             )
         }
@@ -187,6 +249,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
 
         override fun configure(task: TestSuiteTestTask) {
             super.configure(task)
+            task.group = JavaBasePlugin.VERIFICATION_GROUP
             task.outputs.upToDateWhen { false }
 
             val classesDir = task.project.layout.buildDirectory.file(task.name)
@@ -200,6 +263,16 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                     it.from(sourceContainer.dependencies.runtimeClasspath)
                 }
             }
+
+            val localDevices = creationConfig.global.androidTestOptions.managedDevices.localDevices
+            testSuiteTarget.targetDevices.forEach {
+                task.managedDevices.add(localDevices.getByName(it) as ManagedVirtualDevice)
+            }
+            task.managedDevices.disallowChanges()
+
+            task.emulatorGpuFlag.setDisallowChanges(
+                computeManagedDeviceEmulatorMode(creationConfig.services.projectOptions)
+            )
 
             val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
             junitEngineSpec.inputs.forEach { inputParameter: AgpTestSuiteInputParameters ->
@@ -288,6 +361,8 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
             task.environment("junit.platform.commons.logging.level","debug")
             task.deviceProviderFactory.timeOutInMs.set(10000)
+
+            task.avdService.setDisallowChanges(getBuildService(creationConfig.services.buildServiceRegistry))
 
             // TODO : Provide this as a DSL setting
             val debugJunitEngine = System.getenv("DEBUG_JUNIT_ENGINE")

@@ -444,7 +444,8 @@ class TaskMethodModifiersAndAnnotationsTest {
             "com.android.build.gradle.tasks.PrivacySandboxSdkMergeResourcesTask.getAnalytics",
             "com.android.build.gradle.tasks.RenderscriptCompile.getSdkBuildService",
             "com.android.build.gradle.tasks.ShaderCompile.getSdkBuildService",
-            "com.android.build.gradle.tasks.TransformClassesWithAsmTask.getClassesHierarchyBuildService"
+            "com.android.build.gradle.tasks.TestSuiteTestTask.getAvdService",
+            "com.android.build.gradle.tasks.TransformClassesWithAsmTask.getClassesHierarchyBuildService",
         )
     }
 

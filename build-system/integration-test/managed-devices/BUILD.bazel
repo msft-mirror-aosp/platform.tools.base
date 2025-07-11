@@ -44,6 +44,7 @@ TEST_DEPS = [
     "@maven//:com.google.truth.truth",
     "@maven//:junit.junit",
     "@maven//:org.jetbrains.kotlin.kotlin-test",
+    "@maven//:org.junit.platform.junit-platform-engine",
 ]
 
 #keep sorted
@@ -142,6 +143,17 @@ gradle_connected_test(
 
 gradle_connected_test(
     name = "SimpleManagedDeviceTest",
+    srcs = "src/test/java/com/android/build/gradle/integration/manageddevice/application/",
+    avd = None,
+    data = TEST_DATA,
+    jvm_flags = sdk_jvm_flags,
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = TEST_MAVEN_REPOS,
+    deps = TEST_DEPS,
+)
+
+gradle_connected_test(
+    name = "TestSuiteWithManagedDeviceTest",
     srcs = "src/test/java/com/android/build/gradle/integration/manageddevice/application/",
     avd = None,
     data = TEST_DATA,
