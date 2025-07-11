@@ -4212,6 +4212,7 @@ com/android/tools/testutils
   com/android/mockito/
   com/android/mockito/kotlin/
   com/android/testutils/
+  com/android/testutils/annotation/
   com/android/testutils/apk/
   com/android/testutils/classloader/
   com/android/testutils/concurrency/
