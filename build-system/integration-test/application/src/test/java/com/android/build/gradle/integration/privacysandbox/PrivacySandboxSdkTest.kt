@@ -17,13 +17,13 @@
 package com.android.build.gradle.integration.privacysandbox
 
 import com.android.SdkConstants
-import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProject
 import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
@@ -268,7 +268,7 @@ class PrivacySandboxSdkTest {
                 }
             }
             androidLibrary(":kmplib") {
-                applyPlugin(PluginType.KOTLIN_MPP)
+                applyPlugin(PluginType.KOTLIN_MPP, version = KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS)
                 pluginCallbacks += ConfigureKmpCallback::class.java
                 android {
                     defaultConfig {
