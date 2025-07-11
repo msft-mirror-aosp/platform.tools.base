@@ -33,7 +33,7 @@ import java.io.FileOutputStream
 import java.util.Properties
 
 private val minAgpVersion = AndroidPluginVersion(8, 2, 1)
-private val maxAgpVersion = AndroidPluginVersion(8, 12, 255)
+private val maxAgpVersion = AndroidPluginVersion(8, 13, 255)
 
 /**
  * An entry point for Journeys plugin that adds support for Journeys testing.
