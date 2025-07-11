@@ -55,7 +55,7 @@ class BuiltInKotlinCompilerPluginTest {
             """
             Details of KotlinCompilation 'debug':
             allAssociatedCompilations = []
-            allKotlinSourceSets = [[src/debug/kotlin,src/debug/java]]
+            allKotlinSourceSets = [[src/main/kotlin,src/main/java,src/debug/kotlin,src/debug/java]]
             apiConfigurationName = debugCompilationApi
             associateWith = []
             associatedCompilations = []
@@ -69,7 +69,7 @@ class BuiltInKotlinCompilerPluginTest {
             compileOnlyConfigurationName = debugCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
-            defaultSourceSet = [src/debug/kotlin,src/debug/java]
+            defaultSourceSet = [src/main/kotlin,src/main/java,src/debug/kotlin,src/debug/java]
             defaultSourceSetName = debug
             disambiguatedName = debug
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, main))]
@@ -77,7 +77,7 @@ class BuiltInKotlinCompilerPluginTest {
             getName = debug
             implementationConfigurationName = debugCompilationImplementation
             kotlinOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}kotlinOptions$1@<hash-code>
-            kotlinSourceSets = [[src/debug/kotlin,src/debug/java]]
+            kotlinSourceSets = [[src/main/kotlin,src/main/java,src/debug/kotlin,src/debug/java]]
             output = org.jetbrains.kotlin.gradle.plugin.mpp.DefaultKotlinCompilationOutput@<hash-code>
             platformType = androidJvm
             project = project ':app'
@@ -95,7 +95,7 @@ class BuiltInKotlinCompilerPluginTest {
             """
             Details of KotlinCompilation 'debugUnitTest':
             allAssociatedCompilations = []
-            allKotlinSourceSets = [[src/debugUnitTest/kotlin]]
+            allKotlinSourceSets = [[src/test/kotlin,src/test/java,src/testDebug/kotlin,src/testDebug/java]]
             apiConfigurationName = debugUnitTestCompilationApi
             associateWith = []
             associatedCompilations = []
@@ -109,7 +109,7 @@ class BuiltInKotlinCompilerPluginTest {
             compileOnlyConfigurationName = debugUnitTestCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugUnitTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
-            defaultSourceSet = [src/debugUnitTest/kotlin]
+            defaultSourceSet = [src/test/kotlin,src/test/java,src/testDebug/kotlin,src/testDebug/java]
             defaultSourceSetName = debugUnitTest
             disambiguatedName = debugUnitTest
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, test))]
@@ -117,7 +117,7 @@ class BuiltInKotlinCompilerPluginTest {
             getName = debugUnitTest
             implementationConfigurationName = debugUnitTestCompilationImplementation
             kotlinOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}kotlinOptions$1@<hash-code>
-            kotlinSourceSets = [[src/debugUnitTest/kotlin]]
+            kotlinSourceSets = [[src/test/kotlin,src/test/java,src/testDebug/kotlin,src/testDebug/java]]
             output = org.jetbrains.kotlin.gradle.plugin.mpp.DefaultKotlinCompilationOutput@<hash-code>
             platformType = androidJvm
             project = project ':app'

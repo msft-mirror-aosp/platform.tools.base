@@ -299,7 +299,15 @@ internal fun ComponentCreationConfig.createKotlinCompilation(
     val kotlinCompilationFactory = constructor.newInstance(kotlinServices.kotlinAndroidProjectExtension.target, baseVariant)
     val kotlinCompilation = kotlinCompilationFactory.create(name)
 
-    // Also add it to KotlinAndroidTarget.compilations
+    // Set Kotlin source directories. Note that we're setting instead of adding the directories
+    // because we want to overwrite any directories that were previously set and make it consistent
+    // with the Kotlin source directories managed by AGP. For example, for compilation
+    // `debugUnitTest`, KGP automatically adds a source directory named `src/debugUnitTest/kotlin`,
+    // but this directory is not intended by AGP. The directories should be `src/test/kotlin`,
+    // `src/test/java`, `src/testDebug/kotlin`, `src/testDebug/java`.
+    kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.directories))
+
+    // Also add kotlinCompilation to KotlinAndroidTarget.compilations
     @Suppress("UNCHECKED_CAST")
     (kotlinServices.kotlinAndroidProjectExtension.target.compilations as NamedDomainObjectContainer<KotlinJvmAndroidCompilation>)
         .add(kotlinCompilation)
