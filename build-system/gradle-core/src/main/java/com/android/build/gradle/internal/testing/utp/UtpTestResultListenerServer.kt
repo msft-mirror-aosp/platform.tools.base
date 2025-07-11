@@ -22,7 +22,6 @@ import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidT
 import com.google.common.annotations.VisibleForTesting
 import com.google.protobuf.Any
 import com.google.testing.platform.proto.api.core.TestStatusProto
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import io.grpc.Server
 import io.grpc.ServerBuilder
@@ -50,7 +49,7 @@ class UtpTestResultListenerServer private constructor(
         private val logger = Logging.getLogger(UtpTestResultListenerServer::class.java)
 
         private const val DEFAULT_GRPC_SERVER_PORT: Int = 9624
-        private const val DEFAULT_MAX_RETRY_ATTEMPT: Int = 10
+        private const val DEFAULT_MAX_RETRY_ATTEMPT: Int = 300
         private const val DEFAULT_MAX_MESSAGE_SIZE: Int = Int.MAX_VALUE
 
         /**

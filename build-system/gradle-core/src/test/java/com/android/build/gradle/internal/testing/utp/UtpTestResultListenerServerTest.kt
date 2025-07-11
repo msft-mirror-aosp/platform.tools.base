@@ -28,8 +28,8 @@ import io.grpc.testing.GrpcCleanupRule
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.mock
 import java.io.File
 import java.io.IOException
 
@@ -41,7 +41,6 @@ class UtpTestResultListenerServerTest {
     @get:Rule
     val grpcCleanup = GrpcCleanupRule()
 
-    private val mockResultListenerClientCert: File = mock()
     private val mockResultListenerClientPrivateKey: File = mock()
     private val mockTrustCertCollection: File = mock()
     private val mockTestResultListener: UtpTestResultListener = mock()
