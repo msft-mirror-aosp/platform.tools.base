@@ -44,7 +44,6 @@ import com.android.ide.common.gradle.Module;
 import com.android.ide.common.gradle.Version;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Implementation;
@@ -78,11 +77,8 @@ import java.util.List;
 import java.util.Locale;
 
 public class FontDetector extends ResourceXmlDetector {
-    // TODO: Change this to the API version where we don't have to rely on appcompat for
-    // downloadable
-    // fonts loading at runtime.
-    public static final int FUTURE_API_VERSION_WHERE_DOWNLOADABLE_FONTS_WORK_IN_FRAMEWORK =
-            SdkVersionInfo.HIGHEST_KNOWN_API + 10;
+    public static final int FIRST_API_VERSION_WITH_DOWNLOADABLE_FONTS_WORK_IN_FRAMEWORK =
+        AndroidVersion.VersionCodes.P;
 
     public static final String KEY_ARTIFACT_ID = "artifact";
     public static final String KEY_UNEXPECTED_NAMESPACE = "unexpected-ns";
@@ -247,13 +243,12 @@ public class FontDetector extends ResourceXmlDetector {
             @Nullable Attr firstAndroidAttribute,
             @Nullable Attr firstAppAttribute) {
         if (context.getProject().getMinSdk()
-                        < FUTURE_API_VERSION_WHERE_DOWNLOADABLE_FONTS_WORK_IN_FRAMEWORK
+                        < FIRST_API_VERSION_WITH_DOWNLOADABLE_FONTS_WORK_IN_FRAMEWORK
                 && firstAndroidAttribute != null) {
             reportUnexpectedNamespace(context, firstAndroidAttribute, true);
         }
         //noinspection ConstantConditions
-        if (FUTURE_API_VERSION_WHERE_DOWNLOADABLE_FONTS_WORK_IN_FRAMEWORK < Integer.MAX_VALUE - 1
-                && firstAppAttribute != null) {
+        if (firstAppAttribute != null) {
             reportUnexpectedNamespace(context, firstAppAttribute, false);
         }
     }
@@ -287,7 +282,7 @@ public class FontDetector extends ResourceXmlDetector {
             boolean app = map.getBoolean(KEY_UNEXPECTED_NAMESPACE, false);
             AndroidVersion minSdk = context.getMainProject().getMinSdkVersion();
             if (minSdk.getApiLevel()
-                    >= FUTURE_API_VERSION_WHERE_DOWNLOADABLE_FONTS_WORK_IN_FRAMEWORK) {
+                    >= FIRST_API_VERSION_WITH_DOWNLOADABLE_FONTS_WORK_IN_FRAMEWORK) {
                 if (app) {
                     return false;
                 }
