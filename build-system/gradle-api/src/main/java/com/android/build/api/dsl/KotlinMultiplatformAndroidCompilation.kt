@@ -17,7 +17,6 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Action
-import org.gradle.api.Incubating
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
@@ -53,6 +52,5 @@ interface KotlinMultiplatformAndroidCompilation: KotlinCompilation<KotlinCommonO
      *   - androidHostTest
      *   - androidDeviceTest
      */
-    @get:Incubating
     val componentName: String
 }

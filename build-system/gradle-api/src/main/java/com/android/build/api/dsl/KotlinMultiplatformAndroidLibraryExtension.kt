@@ -241,13 +241,11 @@ interface KotlinMultiplatformAndroidLibraryExtension {
     /**
      * Specifies options for configuring android resources and assets for KMP
      */
-    @get:Incubating
     val androidResources: LibraryAndroidResources
 
     /**
      * Specifies options for configuring android resources and assets for KMP
      */
-    @Incubating
     fun androidResources(action: LibraryAndroidResources.() -> Unit)
 
     /**
