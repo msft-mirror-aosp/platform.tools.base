@@ -174,9 +174,9 @@ internal class FusedLibraryClassesRewriteTaskTest {
                 classLoader.loadClass("com.example.dependencyLib3.R\$string")
             val dependencyLib3RClassStringFieldNames =
                 (dependencyLib3RStringsClass.declaredFields).map { it.name }
-            assertThat(dependencyLib3RClassStringFieldNames).containsExactly(
-                "dependencyLib3_str"
-            )
+                    // Ignore Jacoco instrumentation injected by studio-coverage.
+                    .minus("\$jacocoData")
+            assertThat(dependencyLib3RClassStringFieldNames).containsExactly("dependencyLib3_str")
             assertThat(fusedLibraryRClassStringFieldNames)
                 .doesNotContain(
                     // Resources not packaged in the fused library that reference their dependency
