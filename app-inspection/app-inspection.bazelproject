@@ -1,0 +1,44 @@
+directories:
+  tools/base/app-inspection
+
+derive_targets_from_directories: false
+
+targets:
+  //tools/base/app-inspection/inspectors/backgroundtask:agent
+  //tools/base/app-inspection/inspectors/database:agent
+  //tools/base/app-inspection/inspectors/network:agent
+
+additional_languages:
+  # Uncomment any additional languages you want supported
+  # c
+  # dart
+  kotlin
+  # python
+
+workspace_type: java
+
+test_sources:
+  */testSrc
+
+java_language_level: 21
+
+# Please uncomment an android-SDK platform. Available SDKs are:
+# android_sdk_platform: android-19
+# android_sdk_platform: android-21
+# android_sdk_platform: android-23
+# android_sdk_platform: android-24
+# android_sdk_platform: android-25
+# android_sdk_platform: android-27
+# android_sdk_platform: android-28
+# android_sdk_platform: android-29
+# android_sdk_platform: android-30
+# android_sdk_platform: android-31
+# android_sdk_platform: android-32
+# android_sdk_platform: android-33
+# android_sdk_platform: android-34
+# android_sdk_platform: android-35
+# android_sdk_platform: android-36
+# android_sdk_platform: android-Baklava
+# android_sdk_platform: android-Tiramisu
+workspace_location: /home/aalbert/src/studio-main
+use_query_sync: true
