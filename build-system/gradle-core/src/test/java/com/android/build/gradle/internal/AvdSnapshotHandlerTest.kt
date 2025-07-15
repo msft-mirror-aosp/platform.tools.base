@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal
 
 import com.android.build.gradle.internal.AvdSnapshotHandler.EmulatorSnapshotCannotCreatedException
+import com.android.build.gradle.internal.AvdSnapshotHandler.EmulatorStartFailedException
 import com.android.build.gradle.internal.testing.AdbHelper
 import com.android.build.gradle.internal.testing.EmulatorVersionMetadata
 import com.android.build.gradle.internal.testing.QemuExecutor
@@ -193,7 +194,7 @@ class AvdSnapshotHandlerTest {
             }
         }
 
-        val e = assertThrows(EmulatorSnapshotCannotCreatedException::class.java) {
+        val e = assertThrows(EmulatorStartFailedException::class.java) {
             handler.generateSnapshot(
                 "myTestAvdName",
                 avdDirectory,
@@ -204,7 +205,7 @@ class AvdSnapshotHandlerTest {
         }
 
         assertThat(e).hasMessageThat().contains(
-            "The emulator failed to open the managed device to generate the snapshot.")
+            "Unable to start Android emulator for myTestAvdName.")
         assertThat(e).hasMessageThat().contains(
             emulatorError
         )
@@ -235,7 +236,7 @@ class AvdSnapshotHandlerTest {
             }
         }
 
-        val eNoKernel = assertThrows(EmulatorSnapshotCannotCreatedException::class.java) {
+        val eNoKernel = assertThrows(EmulatorStartFailedException::class.java) {
             handlerNoKernel.generateSnapshot(
                 "myTestAvdName",
                 avdDirectory,
@@ -246,7 +247,7 @@ class AvdSnapshotHandlerTest {
         }
 
         assertThat(eNoKernel).hasMessageThat().contains(
-            "The emulator failed to open the managed device to generate the snapshot.")
+            "Unable to start Android emulator for myTestAvdName.")
         assertThat(eNoKernel).hasMessageThat().contains(
             emulatorError
         )

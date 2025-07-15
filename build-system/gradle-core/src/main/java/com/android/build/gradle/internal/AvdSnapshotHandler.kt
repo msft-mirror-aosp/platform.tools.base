@@ -29,6 +29,7 @@ import org.gradle.api.provider.Provider
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -211,7 +212,7 @@ class AvdSnapshotHandler(
         logger.verbose("Creating snapshot for $avdName")
 
         val maxRetryAttempt = 5
-        lateinit var lastException: EmulatorSnapshotCannotCreatedException
+        lateinit var lastException: EmulatorException
         repeat(maxRetryAttempt) { attempt ->
             try {
                 // Create a new snapshot image by starting emulator then stop immediately after
@@ -256,7 +257,7 @@ class AvdSnapshotHandler(
 
                 logger.info("Successfully created snapshot for: $avdName")
                 return
-            } catch (e: EmulatorSnapshotCannotCreatedException) {
+            } catch (e: EmulatorException) {
                 logger.warning(
                     "Failed to create Emulator snapshot image (${attempt + 1}/$maxRetryAttempt). "
                     + "Error: $e")
@@ -269,7 +270,21 @@ class AvdSnapshotHandler(
         throw lastException
     }
 
-    class EmulatorSnapshotCannotCreatedException(message: String) : RuntimeException(message)
+    /**
+     * Thrown when the Android Emulator fails to start.
+     *
+     * This can happen if the emulator process crashes, the boot sequence doesn't complete
+     * within the specified timeout, or system servers fail to start on the guest Android device.
+     *
+     * @param message A detailed reason for the failure.
+     */
+    class EmulatorStartFailedException(message: String, cause: Throwable? = null)
+        : EmulatorException(message, cause)
+
+    class EmulatorSnapshotCannotCreatedException(message: String) : EmulatorException(message)
+
+    abstract class EmulatorException(message: String, cause: Throwable? = null)
+        : RuntimeException(message, cause)
 
     private fun deleteSnapshotForDevice(
         deviceName: String,
@@ -321,27 +336,28 @@ class AvdSnapshotHandler(
         processBuilder.environment()["ANDROID_AVD_HOME"] = avdLocation.absolutePath
         processBuilder.environment()["ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL"] = timeoutSeconds.toString()
         val emulatorProcess = processBuilder.start()
-        val bootCompleted = AtomicBoolean(false)
         // need to process both stderr and stdout
         val outputProcessed = CountDownLatch(2)
         val emulatorErrorList = mutableListOf<String>()
         try {
             val deviceSerialFuture = executor.submit<String> {
                 var emulatorSerial: String? = null
+                var lastException: Exception? = null
                 while(emulatorProcess.isAlive) {
                     try {
                         emulatorSerial = adbHelper.findDeviceSerialWithId(deviceId, logger)
                         break
                     } catch (e: Exception) {
+                        lastException = e
                         logger.verbose(
                             "Waiting for $avdName to be attached to adb. Last attempt: $e")
                     }
                     Thread.sleep(5000)
                 }
                 if (emulatorSerial == null) {
-                    // It is possible for the emulator process to return unexpectedly
-                    // and the emulatorSerial to not be set.
-                    return@submit null
+                    // The emulator process terminated unexpectedly before its serial number could be detected.
+                    throw EmulatorStartFailedException(
+                        "Unable to find device serial for $avdName.", lastException)
                 }
                 logger.verbose("$avdName is attached to adb ($emulatorSerial).")
 
@@ -371,13 +387,11 @@ class AvdSnapshotHandler(
 
                 if (emulatorProcess.isAlive) {
                     logger.verbose("$avdName is ready to take a snapshot.")
-                    bootCompleted.set(true)
                     return@submit emulatorSerial
                 } else {
-                    logger.warning(
+                    throw EmulatorStartFailedException(
                         "Emulator process exited unexpectedly with the return code " +
                         "${emulatorProcess.exitValue()}.")
-                    return@submit null
                 }
             }
 
@@ -404,36 +418,35 @@ class AvdSnapshotHandler(
                 }
             )
 
-            val deviceSerial = deviceSerialFuture.get(timeoutSeconds, TimeUnit.SECONDS)
-            if (deviceSerial != null) {
-                onDeviceReady(deviceSerial)
-                adbHelper.killDevice(deviceSerial)
+            val deviceSerial: String = try {
+                deviceSerialFuture.get(timeoutSeconds, TimeUnit.SECONDS)
+            } catch (e: ExecutionException) {
+                // Wait for processing to complete for output of process.
+                outputProcessed.await(timeoutSeconds, TimeUnit.SECONDS)
+                throw EmulatorStartFailedException(
+                    "Unable to start Android emulator for ${avdName}. Error message " +
+                            "from emulator process = [${emulatorErrorList.joinToString(separator = "\n")}]", e)
             }
 
-            emulatorProcess.waitUntilTimeout(logger) {
-                logger.warning("Snapshot creation timed out. Closing emulator.")
-                throw EmulatorSnapshotCannotCreatedException("""
-                    Gradle was not able to complete device setup for: $avdName
-                    This could be due to having insufficient resources to provision the number of
-                    devices requested. Try running the test again and request fewer devices or
-                    fewer shards.
-                """.trimIndent())
+            requireNotNull(deviceSerial)
+            onDeviceReady(deviceSerial)
+            adbHelper.killDevice(deviceSerial)
+
+            if (createSnapshot) {
+                emulatorProcess.waitUntilTimeout(logger) {
+                    logger.warning("Snapshot creation timed out.")
+                    throw EmulatorSnapshotCannotCreatedException(
+                        """
+                        Gradle was not able to complete device setup for: $avdName
+                        This could be due to having insufficient resources to provision the number of
+                        devices requested. Try running the test again and request fewer devices or
+                        fewer shards.
+                        """.trimIndent()
+                    )
+                }
             }
         } finally {
             emulatorProcess.destroy()
-        }
-
-        if (!bootCompleted.get()) {
-            // wait for processing to complete for output of process
-            outputProcessed.await(timeoutSeconds, TimeUnit.SECONDS)
-
-            throw EmulatorSnapshotCannotCreatedException(
-                """
-                        Gradle was not able to complete device setup for: $avdName
-                        The emulator failed to open the managed device to generate the snapshot.
-                        This is because the emulator closed unexpectedly (exit value = ${emulatorProcess.exitValue()}).
-                        The errors recorded from emulator:
-                    """.trimIndent() + emulatorErrorList.joinToString(separator = "\n"))
         }
     }
 }
