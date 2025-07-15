@@ -81,7 +81,7 @@ abstract class AbstractAdbServices(
     return when (last) {
       "Initialization result: 0" -> true
       "Initialization result: -1000" -> {
-        logger.debug("Failed to initialize '$transport`: $out")
+        logger.warn("Failed to initialize '$transport`: $out")
         false
       }
       else ->
@@ -94,22 +94,18 @@ abstract class AbstractAdbServices(
     val command = "bmgr backupnow @pm@ $applicationId --non-incremental --monitor-verbose"
     val out = executeCommand(command, BACKUP_FAILED).stdout
     val errors = BmgrOutputParser.parseBmgrErrors(out)
-    when {
-      errors.isEmpty() -> return
-      errors.isAppStopped() ->
-        throw BackupException(
-          APP_STOPPED,
-          "Application '$applicationId' is in a stopped state. Please launch the app and try again.",
-        )
-      !initOk ->
-        throw BackupException(TRANSPORT_INIT_FAILED, "Failed to backup '$applicationId`:\n$out")
-      else ->
-        throw BackupException(
-          BMGR_ERROR_BACKUP,
-          "Failed to backup '$applicationId`:\n${errors.joinToString("\n") { it.message }}",
-          BmgrException(command, out, errors),
-        )
+    if (errors.isEmpty()) {
+      return
     }
+    if (errors.isAppStopped()) {
+      throw BackupException(
+        APP_STOPPED,
+        "Application '$applicationId' is in a stopped state. Please launch the app and try again.",
+      )
+    }
+    val errorCode = if (initOk) BMGR_ERROR_BACKUP else TRANSPORT_INIT_FAILED
+    val message = "Failed to backup '$applicationId`:\n${errors.joinToString("\n") { it.message }}"
+    throw BackupException(errorCode, message, BmgrException(command, out, errors))
   }
 
   override suspend fun clearAppData(applicationId: String) {
@@ -130,17 +126,12 @@ abstract class AbstractAdbServices(
     val command = "bmgr restore $token $applicationId --monitor-verbose"
     val out = executeCommand(command, RESTORE_FAILED).stdout
     val errors = BmgrOutputParser.parseBmgrErrors(out)
-    when {
-      errors.isEmpty() -> return
-      !initOk ->
-        throw BackupException(TRANSPORT_INIT_FAILED, "Failed to restore '$applicationId`:\n $out")
-      else ->
-        throw BackupException(
-          BMGR_ERROR_RESTORE,
-          "Failed to restore '$applicationId`:\n${errors.joinToString("\n") { it.message }}",
-          BmgrException(command, out, errors),
-        )
+    if (errors.isEmpty()) {
+      return
     }
+    val errorCode = if (initOk) BMGR_ERROR_RESTORE else TRANSPORT_INIT_FAILED
+    val message = "Failed to restore '$applicationId`:\n${errors.joinToString("\n") { it.message }}"
+    throw BackupException(errorCode, message, BmgrException(command, out, errors))
   }
 
   override suspend fun sendUpdateGmsIntent() {

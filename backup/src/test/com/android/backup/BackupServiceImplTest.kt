@@ -498,13 +498,11 @@ class BackupServiceImplTest {
     assertThat(error.throwable.message)
       .isEqualTo(
         """
-      Failed to backup 'com.app`:
-      Running non-incremental backup for 2 requested packages.
-      Package @pm@ with result: Success
-      => Event{AGENT / FULL_BACKUP_CANCEL : package = com.example.empty(v1)}
-      Package com.example.empty with result: ERROR1
-      Backup finished with result: ERROR2
-    """
+          Failed to backup 'com.app`:
+          Backup was cancelled by either the user or backup service lifecycle.
+          Backup failed for package: com.example.empty
+          Backup operation failed.
+        """
           .trimIndent()
       )
   }
