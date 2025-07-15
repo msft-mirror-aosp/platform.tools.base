@@ -9,11 +9,10 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.commands.bmgr.outputparser;
 
 import java.io.BufferedReader;
@@ -42,21 +41,19 @@ public class BmgrOutputParser {
     private static final Pattern BACKUP_START_PATTERN =
             Pattern.compile("Running (.*?) backup for (.*?) packages.");
     private static final Pattern EVENT_PATTERN =
-            Pattern.compile("=> Event\\{(.*?)/(.*?) : package = (.*?)\\(v(.*?)\\)\\}");
+            Pattern.compile("=> Event\\{(.*?)/(.*?) : package = (.*?)\\(v(.*?)\\).*\\}");
     private static final Pattern PACKAGE_RESULT_PATTERN =
             Pattern.compile("Package (.*?) with result: (.*)");
     private static final Pattern BACKUP_FINISHED_PATTERN =
             Pattern.compile("Backup finished with result: (.*)");
     private static final Pattern RESTORE_FINISHED_PATTERN =
             Pattern.compile("restoreFinished: (.*)");
-
     private static final Map<String, String> sErrorEventInfoMap = new HashMap<>();
 
     static {
         // -----------------------------------------------------------------------------------------
         // Common misconfiguration errors. Errors that developers can encounter when configuring
         // backup for their app.
-
         // Caveat of device to device transfers: allowBackup is ignored (for API level >= 31)
         sErrorEventInfoMap.put(
                 "PACKAGE_INELIGIBLE",
@@ -78,11 +75,9 @@ public class BmgrOutputParser {
                 "FULL_RESTORE_ALLOW_BACKUP_FALSE",
                 "App either has android:allowBackup set to false, or is disabled, or is installed"
                         + " as an instant app.");
-
         // -----------------------------------------------------------------------------------------
         // Uncommon misconfiguration errors. Errors that developers should infrequently encounter
         // when configuring backup for their app.
-
         // The illegal key is logged in BMM event extras.
         sErrorEventInfoMap.put(
                 "ILLEGAL_KEY",
@@ -125,10 +120,8 @@ public class BmgrOutputParser {
         sErrorEventInfoMap.put(
                 "AGENT_FAILURE_DURING_RESTORE",
                 "Either BackupAgent crashed during restore, or it reported failure.");
-
         // -----------------------------------------------------------------------------------------
         // Backup/Restore pre-condition failures. Device or package state is not correct.
-
         sErrorEventInfoMap.put(
                 "PACKAGE_STOPPED",
                 "App is in stopped state. It may happen when the app hasn't been opened yet since "
@@ -146,26 +139,22 @@ public class BmgrOutputParser {
         sErrorEventInfoMap.put(
                 "PACKAGE_NOT_PRESENT",
                 "Package for which restore is requested, is not installed on the device.");
-
         // -----------------------------------------------------------------------------------------
         // Errors due to the size of backup
-
-        // This isn’t treated as an error by BackupTransport. Here it is reported as an error to let
-        // the user decide whether this is intented or not.
+        // This isn’t treated as an error by BackupTransport. Here it is reported as an 'error' to
+        // let the user decide whether this is intented or not.
         sErrorEventInfoMap.put("NO_DATA_TO_SEND", "App did not provide any backup data.");
         sErrorEventInfoMap.put(
                 "ERROR_PREFLIGHT",
-                "Backup Preflight check failed. Either the estimated backup size is over quota or"
-                        + " there is nothing to backup. Please ensure that backup size is within "
-                        + "allowed quota (25MB for Cloud backups, 2GB for device-to-device "
-                        + "backups).");
+                "Backup Preflight check failed. Either the estimated backup size is over quota. "
+                        + "Please ensure that backup size is within allowed quota (25MB for Cloud "
+                        + "backups, 2GB for device-to-device backups).");
         sErrorEventInfoMap.put(
                 "QUOTA_HIT_PREFLIGHT",
                 "App hit quota limit for backup. Estimated backup size > quota (25MB for Cloud "
                         + "backups, 2GB for device-to-device backups).");
         // -----------------------------------------------------------------------------------------
         // Backup infrastructure errors
-
         sErrorEventInfoMap.put(
                 "FULL_BACKUP_CANCEL",
                 "Backup was cancelled by either the user or backup service lifecycle.");
@@ -258,12 +247,10 @@ public class BmgrOutputParser {
                 isBackup = true;
                 continue;
             }
-
             Matcher eventMatcher = EVENT_PATTERN.matcher(line);
             Matcher packageResultMatcher = PACKAGE_RESULT_PATTERN.matcher(line);
             Matcher backupFinishedMatcher = BACKUP_FINISHED_PATTERN.matcher(line);
             Matcher restoreFinishedMatcher = RESTORE_FINISHED_PATTERN.matcher(line);
-
             if (eventMatcher.find()) {
                 String eventId = eventMatcher.group(2).trim();
                 if (sErrorEventInfoMap.containsKey(eventId)) {
@@ -287,7 +274,6 @@ public class BmgrOutputParser {
                 }
             }
         }
-
         reader.close();
         return errors;
     }
