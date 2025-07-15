@@ -59,4 +59,14 @@ class KotlinMultiplatformBaselineProfilesTest {
             textFile(SdkConstants.FN_ART_PROFILE).contains("Lcom/example/kmpfirstlib/*;")
         }
     }
+
+    @Test
+    fun testAppConsumingKmpLibraryRunsPrepareArtProfileTask() {
+        val result = project.executor().run(":app:mergeDebugArtProfile")
+        Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
+            listOf(
+                ":kmpFirstLib:prepareAndroidMainArtProfile",
+            )
+        )
+    }
 }
