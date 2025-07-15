@@ -216,7 +216,7 @@ class AvdManager(
                 return@runWithMultiProcessLocking
             }
 
-            deviceLockManager.lock(1).use {
+            deviceLockManager.lockAndExecute(1) {
                 snapshotHandler.generateSnapshot(
                     deviceName,
                     avdFolder,
@@ -239,7 +239,7 @@ class AvdManager(
     fun runWithAvd(deviceName: String, emulatorGpuFlag: String,
         onDeviceReady: (onlineDeviceSerial: String) -> Unit) {
         runWithMultiProcessLocking(deviceName) {
-            deviceLockManager.lock(1).use {
+            deviceLockManager.lockAndExecute(1) {
                 snapshotHandler.startEmulatorThenStop(
                     false,
                     deviceName,

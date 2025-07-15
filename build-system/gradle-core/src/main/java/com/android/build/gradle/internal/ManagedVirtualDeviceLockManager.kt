@@ -19,7 +19,6 @@ package com.android.build.gradle.internal
 import com.android.builder.utils.SynchronizedFile
 import com.android.prefs.AndroidLocationsProvider
 import com.google.common.annotations.VisibleForTesting
-import java.io.Closeable
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
@@ -40,7 +39,7 @@ private val DEFAULT_RETRY_WAIT_MS = 1000L
  *
  * This class does not create managed devices, but instead acts as the source of truth
  * for how many concurrent gradle managed devices are being run. Keeping the number capped
- * at [maxGMDs]. The way to request a number of managed devices is with the [lock] method.
+ * at [maxGMDs]. The way to request a number of managed devices is with the [lockAndExecute] method.
  *
  * Example:
  *     val lockManager = ManagedVirtualDeviceLockManager(locations, 3)
@@ -79,15 +78,15 @@ class ManagedVirtualDeviceLockManager(
         }
         trackedDevicesInProcess = AtomicInteger()
         trackingFile = SynchronizedFile.getInstanceWithMultiProcessLocking(lockFile)
+
         /*
-         * This shutdown hook is to free any number of devices that may be left over in case
-         * a lock fails to free it's devices due to the process being interrupted. This is to help
-         * the tracking file maintain a valid state in case of the process being interrupted or
-         * cancelled.
+         * Registers a shutdown hook to release any acquired device locks if the process
+         * terminates unexpectedly. This ensures the device tracking file is not left
+         * in an inconsistent state.
          */
         Runtime.getRuntime().addShutdownHook (
             Thread {
-                ::executeShutdown
+                releaseLocks(trackedDevicesInProcess.get())
             }
         )
     }
@@ -95,18 +94,32 @@ class ManagedVirtualDeviceLockManager(
     private val logger: Logger = Logging.getLogger(this.javaClass)
 
     /**
-     * Attempts to retrieve a [DeviceLock] for a number of devices equal to [lockCount]
+     * Acquires up to [lockCount] device locks, executes the [onLockAcquired] block, and returns
+     * its result.
      *
-     * This is a method that blocks if no devices are available. Then, once devices are available,
-     * a closable [DeviceLock] will be returned with a number of locks up to [lockCount]. This is
-     * not guaranteed to be equal to [lockCount], because making some devices available for testing
-     * is better than waiting for all the requested devices.
+     * This function blocks until at least one device lock is available. It repeatedly
+     * attempts to acquire the requested number of locks. Once one or more locks are
+     * secured, it creates a [DeviceLock], passes it to the [onLockAcquired] lambda,
+     * and returns the value produced by the lambda.
      *
-     * @param lockCount the number of device locks requests.
-     * @return a [DeviceLock] with a number of locks up to [lockCount]. To find the number of locks
-     * acquired, check [DeviceLock.lockCount].
+     * The number of acquired locks may be less than the requested [lockCount]. This prioritizes
+     * making progress with available devices over waiting for the full count. The actual
+     * number of acquired locks can be checked via `DeviceLock.lockCount`.
+     *
+     * The locks are released after the [onLockAcquired] block finishes execution, even if an
+     * exception occurs. In case of JVM crashes, we attempt to release locks via the shutdown hook.
+     * However, its execution is not guaranteed. If that happens, a user has to delete the
+     * lock file manually by running
+     * [com.android.build.gradle.internal.tasks.ManagedDeviceCleanTask], which invokes
+     * [deleteLockFile] to forcefully delete the tracking file.
+     *
+     * @param T The type of the value returned by the [onLockAcquired] block.
+     * @param lockCount The desired number of device locks to acquire. Defaults to 1.
+     * @param onLockAcquired The block of code to execute while holding the device locks.
+     * It receives a [DeviceLock] instance, and its result is returned by this function.
+     * @return The result of the [onLockAcquired] lambda.
      */
-    fun lock(lockCount: Int = 1): DeviceLock {
+    fun <T> lockAndExecute(lockCount: Int = 1, onLockAcquired: (DeviceLock) -> T): T {
         var locksAcquired = 0
         while (true) {
             locksAcquired = tryToAcquireLocks(lockCount)
@@ -116,7 +129,12 @@ class ManagedVirtualDeviceLockManager(
             // Rest for a bit before trying again.
             retryWaitAction()
         }
-        return DeviceLock(locksAcquired)
+
+        try {
+            return onLockAcquired(DeviceLock(locksAcquired))
+        } finally {
+            releaseLocks(locksAcquired)
+        }
     }
 
     private fun releaseLocks(locksToRelease: Int) {
@@ -216,25 +234,8 @@ class ManagedVirtualDeviceLockManager(
         }
     }
 
-    @VisibleForTesting
-    fun executeShutdown() {
-        releaseLocks(trackedDevicesInProcess.get())
-    }
-
     /**
      * A lock tracking a number of devices equal to [lockCount].
-     *
-     * A closable lock that tracks a number of managed devices equal to [lockCount]
      */
-    inner class DeviceLock internal constructor(val lockCount: Int): Closeable {
-        var closed = false
-            private set
-
-        override fun close() {
-            if (!closed) {
-                this@ManagedVirtualDeviceLockManager.releaseLocks(lockCount)
-                closed = true
-            }
-        }
-    }
+    data class DeviceLock(val lockCount: Int)
 }

@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal
 
 import com.android.SdkConstants
+import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager.DeviceLock
 import com.android.build.gradle.internal.fixtures.FakeGradleDirectory
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleRegularFile
@@ -27,9 +28,6 @@ import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.testutils.file.recordExistingFile
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
@@ -37,15 +35,16 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.mockito.Answers.RETURNS_DEEP_STUBS
-import org.mockito.kotlin.any
-import org.mockito.Mock
 import org.mockito.Mockito
-import org.mockito.kotlin.whenever
+import org.mockito.junit.MockitoJUnit
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.junit.MockitoJUnit
+import org.mockito.kotlin.whenever
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 
 @RunWith(JUnit4::class)
 class AvdManagerTest {
@@ -67,7 +66,7 @@ class AvdManagerTest {
     private lateinit var snapshotHandler: AvdSnapshotHandler
     private lateinit var versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader
 
-    private val lockManager: ManagedVirtualDeviceLockManager = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+    private val lockManager: ManagedVirtualDeviceLockManager = mock()
 
     private val adbHelper: AdbHelper = mock()
 
@@ -93,6 +92,10 @@ class AvdManagerTest {
 
         versionedSdkLoader = setupVersionedSdkLoader()
         val sdkHandler = setupSdkHandler()
+
+        whenever(lockManager.lockAndExecute(any(), any<(DeviceLock)-> Unit>())).then {
+            it.getArgument<(DeviceLock)->Unit>(1)(DeviceLock(it.getArgument<Int>(0)))
+        }
 
         manager = AvdManager(
             FileOpUtils.toFile(avdFolder),
