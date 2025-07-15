@@ -113,6 +113,9 @@ message AndroidGradlePluginProjectFlags {
 
         // Whether the old variant API is used in this project
         OLD_VARIANT_API_IN_USE = 12;
+
+        // Whether aligning compile to runtime constraints for all components is enabled
+        ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT = 13;
     }
 
     message BooleanFlagValue {

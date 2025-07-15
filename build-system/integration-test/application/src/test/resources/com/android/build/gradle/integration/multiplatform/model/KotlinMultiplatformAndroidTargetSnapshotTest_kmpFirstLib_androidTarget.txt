@@ -212,6 +212,10 @@
             "value": false
           },
           {
+            "flag": "ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT",
+            "value": true
+          },
+          {
             "flag": "DATA_BINDING_ENABLED",
             "value": false
           },

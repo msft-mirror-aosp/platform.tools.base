@@ -19,6 +19,8 @@ package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.options.BooleanOption
+import com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -112,6 +114,17 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
                 """.trimIndent()
             )
         }
+    }
+
+    @Test
+    fun `value is represented in the model`() {
+        val models = project.modelV2()
+            .allowOptionWarning(BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT)
+            .fetchModels()
+        val flags = models.container.getProject(":").androidProject!!.flags
+        assertThat(ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT.getValue(flags))
+            .named("tooling model ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT")
+            .isEqualTo(enableAlignment)
     }
 
 }

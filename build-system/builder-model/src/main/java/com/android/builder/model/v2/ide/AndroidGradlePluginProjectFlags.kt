@@ -99,6 +99,9 @@ interface AndroidGradlePluginProjectFlags {
         /** Whether constraints for library components are disabled */
         EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS(false),
 
+        /** Whether aligning compile to runtime constraints for all components is enabled */
+        ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT(true),
+
         /** Whether data binding is enabled */
         DATA_BINDING_ENABLED(false),
 

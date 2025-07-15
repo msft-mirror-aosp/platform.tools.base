@@ -57,7 +57,6 @@ class BooleanOptionTest {
         val ignoreList = listOf(
             BooleanOption.BUILD_FEATURE_MLMODELBINDING,
             BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG,
-            BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT,
             BooleanOption.ENABLE_PROFILE_JSON,
             BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION,
             BooleanOption.VERSION_CHECK_OVERRIDE_PROPERTY,

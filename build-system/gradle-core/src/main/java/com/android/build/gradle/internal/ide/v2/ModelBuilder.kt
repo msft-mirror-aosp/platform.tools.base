@@ -1671,6 +1671,10 @@ class ModelBuilder<
                 projectOptions[BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS]
             )
             flags.put(
+                BooleanFlag.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT,
+                projectOptions[BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT]
+            )
+            flags.put(
                 BooleanFlag.DATA_BINDING_ENABLED,
                 variants.any { it.buildFeatures.dataBinding }
             )

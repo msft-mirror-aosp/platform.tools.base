@@ -274,7 +274,13 @@ enum class BooleanOption(
      * the dependencies involve `com.google.guava:guava` and `com.google.guava:listenablefuture` --
      * see bug 300760566 for details).
      */
-    ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT("android.enableCompileRuntimeClasspathAlignment", true, ApiStage.Experimental),
+    ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT("android.enableCompileRuntimeClasspathAlignment", true, ApiStage.Experimental,
+        FutureStage(
+            false,
+            FeatureStage.Supported,
+            Version.VERSION_9_0
+        )
+    ),
 
     /* ---------------------
      * EXPERIMENTAL FEATURES
