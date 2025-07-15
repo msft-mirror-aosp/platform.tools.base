@@ -15,7 +15,6 @@
  */
 package com.android.ide.common.resources.escape.xml
 
-import com.android.ide.common.resources.escape.xml.CharacterDataEscaper.escape
 import com.android.ide.common.resources.escape.xml.StringResourceContentHandler.STRING_ELEMENT_NAME
 import com.android.utils.XmlUtils
 import com.google.common.escape.Escapers
@@ -36,11 +35,14 @@ import org.xml.sax.XMLReader
 object CharacterDataEscaper {
   private const val DECIMAL_ESCAPE = "___D"
   private const val HEXADECIMAL_ESCAPE = "___X"
+  private const val UNICODE_ESCAPE = "___U"
   private val DECIMAL_REFERENCE = Pattern.compile("""&#(\d+);""")
   private val HEXADECIMAL_REFERENCE = Pattern.compile("""&#x(\p{XDigit}+);""")
+  private val UNICODE_REFERENCE = Pattern.compile("""\\u(\p{XDigit}{4})""")
   private val ESCAPED_DECIMAL_REFERENCE = Pattern.compile("""$DECIMAL_ESCAPE(\d+);""")
   private val ESCAPED_HEXADECIMAL_REFERENCE =
       Pattern.compile("""$HEXADECIMAL_ESCAPE(\p{XDigit}+);""")
+    private val ESCAPED_UNICODE_REFERENCE = Pattern.compile("""$UNICODE_ESCAPE(\p{XDigit}{4})""")
   private val saxParserFactory =
       XmlUtils.configureSaxFactory(
           SAXParserFactory.newInstance(), /* namespaceAware= */ false, /* checkDtd= */ false)
@@ -197,8 +199,9 @@ object CharacterDataEscaper {
    * Returns a copy of this [String] with all decimal and hexadecimal character references escaped.
    */
   private fun String.escapeCharacterReferences(): String {
-    val s = DECIMAL_REFERENCE.matcher(this).replaceAll("$DECIMAL_ESCAPE$1;")
-    return HEXADECIMAL_REFERENCE.matcher(s).replaceAll("$HEXADECIMAL_ESCAPE$1;")
+    val s1 = DECIMAL_REFERENCE.matcher(this).replaceAll("$DECIMAL_ESCAPE$1;")
+    val s2 = HEXADECIMAL_REFERENCE.matcher(s1).replaceAll("$HEXADECIMAL_ESCAPE$1;")
+    return UNICODE_REFERENCE.matcher(s2).replaceAll("$UNICODE_ESCAPE$1")
   }
 
   /**
@@ -206,8 +209,9 @@ object CharacterDataEscaper {
    * unescaped.
    */
   private fun String.unescapeCharacterReferences(): String {
-    val s = ESCAPED_DECIMAL_REFERENCE.matcher(this).replaceAll("&#$1;")
-    return ESCAPED_HEXADECIMAL_REFERENCE.matcher(s).replaceAll("&#x$1;")
+    val s1 = ESCAPED_DECIMAL_REFERENCE.matcher(this).replaceAll("&#$1;")
+    val s2 = ESCAPED_HEXADECIMAL_REFERENCE.matcher(s1).replaceAll("&#x$1;")
+    return ESCAPED_UNICODE_REFERENCE.matcher(s2).replaceAll("\\\\u$1")
   }
 
   /**

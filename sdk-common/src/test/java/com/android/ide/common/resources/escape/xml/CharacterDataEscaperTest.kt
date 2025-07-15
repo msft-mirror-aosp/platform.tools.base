@@ -39,6 +39,11 @@ class CharacterDataEscaperTest {
   }
 
   @Test
+  fun escape_unicodeReference() {
+    assertThat(CharacterDataEscaper.escape("\\u04AA")).isEqualTo("\\u04AA")
+  }
+
+  @Test
   fun escape_firstQuestionMark() {
     assertThat(CharacterDataEscaper.escape("???")).isEqualTo("""\???""")
     assertThat(CharacterDataEscaper.escape("""?<xliff:g id="id">?</xliff:g>?"""))
@@ -187,6 +192,11 @@ class CharacterDataEscaperTest {
   @Test
   fun unescape_hexadecimalReference() {
     assertThat(CharacterDataEscaper.unescape("&#x26;")).isEqualTo("&#x26;")
+  }
+
+  @Test
+  fun unescape_unicodeReference() {
+    assertThat(CharacterDataEscaper.unescape("\\u04AA")).isEqualTo("\\u04AA")
   }
 
   @Test
