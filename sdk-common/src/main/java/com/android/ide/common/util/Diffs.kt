@@ -64,7 +64,7 @@ class Diffs {
      * last line in the file, we want to detect a difference in whether the file ends with a newline
      * or not.
      */
-    private fun String.splitWithLineSeparators(): List<String> {
+    fun String.splitWithLineSeparators(): List<String> {
       if (this.isEmpty()) {
         return listOf(this) // Consistent with String.lines() for empty string
       }
