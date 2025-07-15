@@ -65,7 +65,8 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
     return try {
       with(adbServices) {
         val tempFile = Files.createTempFile("", ".backup")
-        val appInfo = getAppInfo(applicationId, withPermissions = true)
+        val user = getCurrentUser()
+        val appInfo = getAppInfo(applicationId, withPermissions = true, user)
         if (appInfo == null) {
           throw BackupException(APP_NOT_INSTALLED, "Application '$applicationId' is not installed")
         }
@@ -75,6 +76,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
             "Application '$applicationId' is not debuggable",
           )
         }
+        waitForBackupManager(user)
         // Backup is always handled by the D2D transport
         withSetup(TRANSPORT_DTD) {
           reportProgress("Initializing backup transport")
@@ -141,6 +143,7 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
               )
             }
 
+            waitForBackupManager(getCurrentUser())
             // Restore is always handled by the Cloud transport
             withSetup(TRANSPORT_DTD) {
               reportProgress("Initializing backup transport")

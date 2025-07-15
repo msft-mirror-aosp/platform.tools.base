@@ -45,6 +45,7 @@ private const val DUMPSYS_PACKAGE = "dumpsys package "
 private const val DUMPSYS_PACKAGES = "dumpsys package"
 private const val GRANT_PERMISSION = "pm grant "
 private const val GET_CURRENT_USER = "am get-current-user"
+private const val DUMPSYS_BACKUP_USERS = "dumpsys backup users"
 
 /** A fake [com.android.backup.AdbServices] */
 class FakeAdbServices(
@@ -127,6 +128,7 @@ class FakeAdbServices(
         command == DUMPSYS_PACKAGES -> handleDumpsysPackages()
         command.startsWith(GRANT_PERMISSION) -> handleGrantPermission()
         command == GET_CURRENT_USER -> handleGetCurrentUser()
+        command == DUMPSYS_BACKUP_USERS -> handleDumpsysBackupUsers()
         else -> throw NotImplementedError("Command '$command' is not implemented")
       }
     return out
@@ -259,6 +261,8 @@ class FakeAdbServices(
   private fun handleGetCurrentUser(): AdbOutput {
     return "0".asStdout()
   }
+
+  private fun handleDumpsysBackupUsers() = "Backup Manager is running for users: 0".asStdout()
 
   private fun handleDumpsysApp(command: String): AdbOutput {
     val applicationId = command.split(' ').last()

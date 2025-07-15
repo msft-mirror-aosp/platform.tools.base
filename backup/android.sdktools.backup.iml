@@ -13,6 +13,7 @@
     <orderEntry type="module" module-name="android.sdktools.backup.bmgr.parser" />
     <orderEntry type="module" module-name="android.sdktools.common" />
     <orderEntry type="module" module-name="intellij.android.environment-services" />
+    <orderEntry type="library" scope="TEST" name="jetbrains.kotlinx.coroutines.test" level="project" />
     <orderEntry type="library" scope="TEST" name="junit4" level="project" />
     <orderEntry type="library" scope="TEST" name="jimfs" level="project" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />

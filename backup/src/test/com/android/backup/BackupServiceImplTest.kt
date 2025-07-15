@@ -25,6 +25,7 @@ import com.android.backup.BackupType.DEVICE_TO_DEVICE
 import com.android.backup.ErrorCode.APP_NOT_DEBUGGABLE
 import com.android.backup.ErrorCode.APP_NOT_INSTALLED
 import com.android.backup.ErrorCode.APP_STOPPED
+import com.android.backup.ErrorCode.BACKUP_MANAGER_IS_NOT_RUNNING
 import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
 import com.android.backup.ErrorCode.BACKUP_NOT_ENABLED
 import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
@@ -50,6 +51,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.notExists
 import kotlin.io.path.pathString
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -75,8 +77,9 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "dumpsys package com.app",
         "am get-current-user",
+        "dumpsys package com.app",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -127,8 +130,9 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "dumpsys package com.app",
         "am get-current-user",
+        "dumpsys package com.app",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -179,8 +183,9 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "dumpsys package com.app",
         "am get-current-user",
+        "dumpsys package com.app",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -294,8 +299,9 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "dumpsys package com.app",
         "am get-current-user",
+        "dumpsys package com.app",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "settings put secure backup_enable_testing_flows 1",
@@ -324,7 +330,8 @@ class BackupServiceImplTest {
     val adbServices = adbServicesFactory.adbServices
     val error = result as Error
     assertThat(error.errorCode).isEqualTo(APP_NOT_INSTALLED)
-    assertThat(adbServices.getCommands()).containsExactly("dumpsys package com.app")
+    assertThat(adbServices.getCommands())
+      .containsExactly("am get-current-user", "dumpsys package com.app")
   }
 
   @Test
@@ -342,8 +349,9 @@ class BackupServiceImplTest {
     assertThat(result).isEqualTo(Success)
     assertThat(adbServices.getCommands())
       .containsExactly(
-        "dumpsys package com.app",
         "am get-current-user",
+        "dumpsys package com.app",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -623,6 +631,8 @@ class BackupServiceImplTest {
     assertThat(adbServices.getCommands())
       .containsExactly(
         "dumpsys package com.app",
+        "am get-current-user",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -657,6 +667,8 @@ class BackupServiceImplTest {
     assertThat(adbServices.getCommands())
       .containsExactly(
         "dumpsys package com.app",
+        "am get-current-user",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -696,6 +708,8 @@ class BackupServiceImplTest {
     assertThat(adbServices.getCommands())
       .containsExactly(
         "dumpsys package com.app",
+        "am get-current-user",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -732,6 +746,8 @@ class BackupServiceImplTest {
     assertThat(adbServices.getCommands())
       .containsExactly(
         "dumpsys package com.app",
+        "am get-current-user",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "settings put secure backup_enable_testing_flows 1",
@@ -764,6 +780,8 @@ class BackupServiceImplTest {
     assertThat(adbServices.getCommands())
       .containsExactly(
         "dumpsys package com.app",
+        "am get-current-user",
+        "dumpsys backup users",
         "dumpsys package com.google.android.gms",
         "bmgr enabled",
         "bmgr enable true",
@@ -1135,6 +1153,61 @@ class BackupServiceImplTest {
     val backupService = BackupServiceImpl(adbServicesFactory)
 
     assertThat(backupService.getDebuggableApps("serial")).containsExactly("app2", "app3", "app4")
+  }
+
+  @Test
+  fun backup_backupManagerNotRunning(): Unit = runTest {
+    val backupFile = Path.of(temporaryFolder.root.path, "file.backup")
+
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.addCommandOverride(Output("dumpsys backup users", ""))
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    val error = backupService.backup("serial", "com.app", CLOUD, backupFile, null) as Error
+
+    val adbServices = adbServicesFactory.adbServices
+    assertThat(error.errorCode).isEqualTo(BACKUP_MANAGER_IS_NOT_RUNNING)
+    val backupException = error.throwable as BackupException
+    assertThat(backupException.message).isEqualTo("Backup manager is not running for user 0")
+    assertThat(adbServices.getCommands())
+      .containsExactly(
+        "dumpsys package com.app",
+        "am get-current-user",
+        "dumpsys backup users",
+        "dumpsys backup users",
+        "dumpsys backup users",
+        "dumpsys backup users",
+        "dumpsys backup users",
+      )
+  }
+
+  @Test
+  fun restore_backupManagerNotRunning(): Unit = runTest {
+    val backupFile = backupFileHelper.createBackupFile("com.app", "11223344556677889900")
+    val adbServicesFactory =
+      FakeAdbServicesFactory("com.app") {
+        it.addCommandOverride(Output("dumpsys backup users", ""))
+      }
+    val backupService = BackupServiceImpl(adbServicesFactory)
+
+    val error = backupService.restore("serial", backupFile, null) as Error
+
+    val adbServices = adbServicesFactory.adbServices
+    assertThat(error.errorCode).isEqualTo(BACKUP_MANAGER_IS_NOT_RUNNING)
+    val backupException = error.throwable as BackupException
+    assertThat(backupException.message).isEqualTo("Backup manager is not running for user 0")
+    assertThat(adbServices.getCommands())
+      .containsExactly(
+        "dumpsys package com.app",
+        "am get-current-user",
+        "dumpsys backup users",
+        "dumpsys backup users",
+        "dumpsys backup users",
+        "dumpsys backup users",
+        "dumpsys backup users",
+      )
   }
 }
 

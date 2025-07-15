@@ -10,6 +10,7 @@ iml_module(
     iml_files = ["android.sdktools.backup.iml"],
     # do not sort: must match IML order
     test_deps = [
+        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:jimfs",
         "//tools/adt/idea/.idea/libraries:truth",

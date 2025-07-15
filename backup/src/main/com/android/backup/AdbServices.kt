@@ -78,11 +78,19 @@ interface AdbServices {
 
   suspend fun getForegroundApplicationId(): String
 
-  suspend fun getAppInfo(applicationId: String, withPermissions: Boolean = false): AppInfo?
+  suspend fun getAppInfo(
+    applicationId: String,
+    withPermissions: Boolean = false,
+    user: String? = null,
+  ): AppInfo?
 
   suspend fun isPlayStoreInstalled(): Boolean
 
   suspend fun grantPermission(applicationId: String, permission: String)
+
+  suspend fun getCurrentUser(): String
+
+  suspend fun waitForBackupManager(user: String)
 
   class AdbOutput(val stdout: String, val stderr: String) {
     val out =

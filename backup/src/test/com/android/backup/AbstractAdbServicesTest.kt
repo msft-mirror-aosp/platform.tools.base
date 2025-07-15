@@ -264,7 +264,8 @@ class AbstractAdbServicesTest {
         .addCommandOverride(Output(GET_CURRENT_USER, "0"))
         .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
 
-    val permissions = adbServices.getAppInfo("com.app", withPermissions = true)?.grantedPermissions
+    val permissions =
+      adbServices.getAppInfo("com.app", withPermissions = true, user = "0")?.grantedPermissions
 
     assertThat(permissions).containsExactly("permission2")
   }
@@ -276,7 +277,8 @@ class AbstractAdbServicesTest {
         .addCommandOverride(Output(GET_CURRENT_USER, "10"))
         .addCommandOverride(Output(DUMPSYS_PACKAGE, DUMPSYS_PACKAGE_OUT))
 
-    val permissions = adbServices.getAppInfo("com.app", withPermissions = true)?.grantedPermissions
+    val permissions =
+      adbServices.getAppInfo("com.app", withPermissions = true, user = "10")?.grantedPermissions
 
     assertThat(permissions).containsExactly("permission1", "permission3")
   }

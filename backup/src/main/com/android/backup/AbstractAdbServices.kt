@@ -19,6 +19,7 @@ import com.android.adblib.DeviceSelector
 import com.android.backup.BackupProgressListener.Step
 import com.android.backup.ErrorCode.APP_STOPPED
 import com.android.backup.ErrorCode.BACKUP_FAILED
+import com.android.backup.ErrorCode.BACKUP_MANAGER_IS_NOT_RUNNING
 import com.android.backup.ErrorCode.BACKUP_NOT_ACTIVATED
 import com.android.backup.ErrorCode.BACKUP_NOT_SUPPORTED
 import com.android.backup.ErrorCode.BMGR_ERROR_BACKUP
@@ -37,6 +38,10 @@ import com.android.commands.bmgr.outputparser.BmgrOutputParser
 import com.android.tools.environment.Logger
 import com.android.utils.text.dropPrefix
 import kotlin.text.RegexOption.IGNORE_CASE
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 
 private val TRANSPORT_COMMAND_REGEX =
   "Selected transport [^ ]+ \\(formerly (?<old>[^ ]+)\\)".toRegex()
@@ -218,7 +223,11 @@ abstract class AbstractAdbServices(
     }
   }
 
-  override suspend fun getAppInfo(applicationId: String, withPermissions: Boolean): AppInfo? {
+  override suspend fun getAppInfo(
+    applicationId: String,
+    withPermissions: Boolean,
+    user: String?,
+  ): AppInfo? {
     val lines = executeCommand("dumpsys package $applicationId").stdout.lines()
     val flags =
       lines
@@ -232,7 +241,7 @@ abstract class AbstractAdbServices(
 
     val grantedPermissions = buildList {
       if (withPermissions) {
-        val user = executeCommand("am get-current-user").stdout.trim()
+        assert(user != null) { "User must be specified if withPermissions is true" }
         lines
           .dropWhile { !it.startsWith("  Package [$applicationId] ") }
           .dropWhile { !it.startsWith("    User $user: ") }
@@ -284,6 +293,27 @@ abstract class AbstractAdbServices(
           packageName = null
         }
       }
+    }
+  }
+
+  override suspend fun getCurrentUser() = executeCommand("am get-current-user").stdout.trim()
+
+  override suspend fun waitForBackupManager(user: String) {
+    try {
+      withTimeout(5.seconds) {
+        while (true) {
+          val out = executeCommand("dumpsys backup users").stdout.lines()
+          if (out.contains("Backup Manager is running for users: $user")) {
+            return@withTimeout
+          }
+          delay(1.seconds)
+        }
+      }
+    } catch (_: TimeoutCancellationException) {
+      throw BackupException(
+        BACKUP_MANAGER_IS_NOT_RUNNING,
+        "Backup manager is not running for user $user",
+      )
     }
   }
 
@@ -351,7 +381,7 @@ abstract class AbstractAdbServices(
       val transports = executeCommand("bmgr list transports", TRANSPORT_NOT_SELECTED).stdout.lines()
       val currentTransport = transports.find { it.startsWith("  *") }?.dropPrefix("  * ")
       if (currentTransport != transport) {
-        throw throw BackupException(TRANSPORT_NOT_SELECTED, "Requested transport was not set: $out")
+        throw BackupException(TRANSPORT_NOT_SELECTED, "Requested transport was not set: $out")
       }
     }
     return result.getGroup("old")
