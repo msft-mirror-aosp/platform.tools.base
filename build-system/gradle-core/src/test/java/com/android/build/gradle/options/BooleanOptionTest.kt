@@ -113,7 +113,6 @@ class BooleanOptionTest {
             BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT,
             BooleanOption.SUPPRESS_MANIFEST_PACKAGE_WARNING,
             BooleanOption.DISABLE_INLINE_SCOPES_NUMBERS,
-            BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING,
             BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API,
             BooleanOption.DUMP_ARTIFACTS_LOCATIONS,
             BooleanOption.GRADUAL_R8_SHRINKING,
@@ -143,8 +142,6 @@ class BooleanOptionTest {
             BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES,
             BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS,
             BooleanOption.ENABLE_LEGACY_API,
-            BooleanOption.FULL_R8,
-            BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES,
         )
 
         checkViolatingProjectOptions(

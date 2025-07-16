@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.options
 
+import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
@@ -230,14 +231,24 @@ enum class BooleanOption(
     FULL_R8(
         "android.enableR8.fullMode",
         defaultValue = true,
-        FeatureStage.Supported
+        FeatureStage.Supported,
+        FutureStage(
+            true,
+            FeatureStage.Deprecated(VERSION_10_0),
+            Version.VERSION_9_0
+        )
     ),
 
     /** Enables R8 strict full mode for keep rules (see [FULL_R8] for more context). */
     R8_STRICT_FULL_MODE_FOR_KEEP_RULES(
         "android.r8.strictFullModeForKeepRules",
         defaultValue = false,
-        FeatureStage.Supported
+        FeatureStage.Supported,
+        FutureStage(
+            true,
+            FeatureStage.Supported,
+            Version.VERSION_9_0
+        )
     ),
 
     /**
@@ -484,7 +495,12 @@ enum class BooleanOption(
     R8_OPTIMIZED_RESOURCE_SHRINKING(
         "android.r8.optimizedResourceShrinking",
         false,
-        FeatureStage.Experimental
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.SoftlyEnforced(VERSION_10_0),
+            Version.VERSION_9_0
+        )
     ),
 
     /**
