@@ -253,7 +253,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             project,
             dslServices,
             kmpVariantApiOperationsRegistrar,
-            bootClasspathConfig
+            bootClasspathConfig,
         )
     }
 
@@ -474,7 +474,8 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             runtimePublication = androidTarget.runtimeElementsPublishedConfiguration.forMainVariantConfiguration(dslInfo),
             sourcesPublication = androidTarget.sourcesElementsPublishedConfiguration.forMainVariantConfiguration(dslInfo).also {
                 it?.let { androidTarget.publishSources(androidKotlinCompilation as KotlinMultiplatformAndroidCompilationImpl) }
-            }
+            },
+            kmpVariantApiOperationsRegistrar = kmpVariantApiOperationsRegistrar
         )
     }
 
@@ -702,7 +703,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         project: Project,
         dslServices: DslServices,
         variantApiOperationsRegistrar: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>,
-        bootClasspathConfig: BootClasspathConfig
+        bootClasspathConfig: BootClasspathConfig,
     ): KotlinMultiplatformAndroidComponentsExtension {
         val sdkComponents: SdkComponents = dslServices.newInstance(
             SdkComponentsImpl::class.java,
@@ -724,7 +725,9 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             sdkComponents,
             managedDeviceRegistry,
             variantApiOperationsRegistrar,
-            androidExtension
+            androidExtension,
+            // Pass the provider lambda instead of the value
+            { kotlinMultiplatformHandler.getAndroidTarget() }
         )
     }
 
