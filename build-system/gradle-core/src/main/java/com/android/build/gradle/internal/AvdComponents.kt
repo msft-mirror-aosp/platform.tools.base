@@ -23,11 +23,10 @@ import com.android.build.gradle.internal.testing.QemuExecutor
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
 import com.android.build.gradle.options.ProjectOptions
+import com.android.build.gradle.options.StringOption
 import com.android.repository.Revision
 import com.android.sdklib.repository.AndroidSdkHandler
-import com.android.utils.ILogger
 import com.android.utils.PathUtils
-import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -37,6 +36,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
+import javax.inject.Inject
 
 // TODO(b/233249957): find a way to compute the default based on resources.
 private const val DEFAULT_MAX_GMDS = 4
@@ -48,10 +48,7 @@ private const val DEFAULT_DEVICE_LOCK_TIMEOUT_MINUTES = 10
 abstract class AvdComponentsBuildService @Inject constructor(
     private val objectFactory: ObjectFactory,
     private val providerFactory: ProviderFactory
-) :
-        BuildService<AvdComponentsBuildService.Parameters> {
-
-    private val logger: ILogger = LoggerWrapper.getLogger(AvdComponentsBuildService::class.java)
+) : BuildService<AvdComponentsBuildService.Parameters> {
 
     interface Parameters : BuildServiceParameters {
         val sdkService: Property<SdkComponentsBuildService>
@@ -59,6 +56,7 @@ abstract class AvdComponentsBuildService @Inject constructor(
         val buildToolsRevision: Property<Revision>
         val androidLocationsService: Property<AndroidLocationsBuildService>
         val avdLocation: DirectoryProperty
+        val emulatorGpuFlag: Property<String>
         val showEmulatorKernelLogging: Property<Boolean>
         val deviceSetupTimeoutMinutes: Property<Int>
         val maxConcurrentDevices: Property<Int>
@@ -87,6 +85,7 @@ abstract class AvdComponentsBuildService @Inject constructor(
             locationsService,
             AvdSnapshotHandler(
                 parameters.showEmulatorKernelLogging.get(),
+                parameters.emulatorGpuFlag.get(),
                 snapshotTimeoutSecs,
                 adbHelper,
                 emulatorDirectory,
@@ -100,9 +99,6 @@ abstract class AvdComponentsBuildService @Inject constructor(
             adbHelper
         )
     }
-
-    val lockManager: ManagedVirtualDeviceLockManager
-        get() = avdManager.get().deviceLockManager
 
     /**
      * Returns the location of the shared avd folder.
@@ -172,38 +168,51 @@ abstract class AvdComponentsBuildService @Inject constructor(
      * @param deviceName The name of the avd to check. This avd should have already been created via
      * a call to get() on the provider returned by [avdProvider].
      */
-    fun ensureLoadableSnapshot(deviceName: String, emulatorGpuMode: String) {
-        avdManager.get().loadSnapshotIfNeeded(deviceName, emulatorGpuMode)
+    fun ensureLoadableSnapshot(deviceName: String) {
+        avdManager.get().loadSnapshotIfNeeded(deviceName)
     }
 
     /**
-     * Manages and runs an Android Virtual Device (AVD) for a given operation.
+     * Starts and manages an Android Virtual Device (AVD) for a given operation.
      *
-     * This function starts the specified AVD, waits for it to come online, and then executes the
-     * [onDeviceReady] callback with the device's serial number. The function is blocking and will
-     * not return until the callback has completed.
+     * This function launches the specified AVD, waits for it to be fully booted and online,
+     * and then executes the [onDeviceReady] callback. The function is blocking and will
+     * not return until the callback completes.
      *
      * The [onDeviceReady] callback is invoked on the same thread that called this method.
      *
-     * @param deviceName The name of the AVD to provision. This AVD must have been created beforehand.
-     * @param emulatorGpuMode The GPU mode to use when starting the emulator.
-     * @param onDeviceReady A block of code to execute once the device is ready. It is provided with the
-     * online device's serial number.
-     * @throws RuntimeException if the device cannot be provisioned or fails to start.
+     * @param deviceName The name of the AVD to launch. This AVD must already exist.
+     * @param onDeviceReady The block of code to execute once the device is online. The device's
+     * serial number is passed as an argument.
+     * @return The result of the [onDeviceReady] callback.
+     * @throws AvdSnapshotHandler.EmulatorException if the device fails to start or come online.
      */
-    fun runWithAvd(deviceName: String, emulatorGpuMode: String,
-        onDeviceReady: (onlineDeviceSerial: String) -> Unit) {
-        avdManager.get().runWithAvd(deviceName, emulatorGpuMode, onDeviceReady)
+    fun <T> runWithAvd(deviceName: String, onDeviceReady: (onlineDeviceSerial: String) -> T): T {
+        return avdManager.get().runWithAvds(deviceName, 1) { onDeviceReady(it.first()) }
     }
 
-    /** Closes all active emulators having an id with the given prefix. This should be used to close
-     * emulators that may remain after a crashed UTP test run.
+    /**
+     * Starts and manages multiple Android Virtual Devices (AVDs) for a given operation.
      *
-     * @param idPrefix the prefix that is looked for to close the active emulators. All emulators
-     * that have an id not starting with this prefix are ignored.
+     * This function launches the specified AVD, waits for it to be fully booted and online,
+     * and then executes the [onDevicesReady] callback. The function is blocking and will
+     * not return until the callback completes.
+     *
+     * The [onDevicesReady] callback is invoked on the same thread that called this method.
+     *
+     * @param deviceName The name of the AVD configuration to launch.
+     * @param desiredDeviceCount The desired number of AVD instances to launch. The function
+     * will start up to this many devices based on resource availability.
+     * @param onDevicesReady A lambda that is executed on the caller's thread once all devices are
+     * online. It receives a list of device serials, and its result is returned by this function.
+     * @return The result of the [onDevicesReady] callback.
+     * @throws AvdSnapshotHandler.EmulatorException if any device fails to start or come online.
      */
-    fun closeOpenEmulators(idPrefix: String) {
-        avdManager.get().closeOpenEmulators(idPrefix)
+    fun <T> runWithAvds(
+        deviceName: String,
+        desiredDeviceCount: Int,
+        onDevicesReady: (onlineDeviceSerials: List<String>) -> T): T {
+        return avdManager.get().runWithAvds(deviceName, desiredDeviceCount, onDevicesReady)
     }
 
     class RegistrationAction(
@@ -227,6 +236,8 @@ abstract class AvdComponentsBuildService @Inject constructor(
             parameters.androidLocationsService.set(getBuildService(project.gradle.sharedServices))
             parameters.showEmulatorKernelLogging.set(
                 projectOptions[BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING])
+            parameters.emulatorGpuFlag.set(
+                projectOptions[StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE] ?: "auto-no-window")
             parameters.deviceSetupTimeoutMinutes.set(
                 projectOptions[IntegerOption.GRADLE_MANAGED_DEVICE_SETUP_TIMEOUT_MINUTES]
             )

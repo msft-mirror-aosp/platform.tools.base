@@ -31,11 +31,11 @@ import com.android.utils.ILogger
 import com.google.common.base.Preconditions
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.wireless.android.sdk.stats.DeviceTestSpanProfile
-import java.io.File
-import java.util.logging.Level
 import org.gradle.api.logging.Logger
 import org.gradle.workers.WorkerExecutor
+import java.io.File
 import java.nio.file.Path
+import java.util.logging.Level
 
 class ManagedDeviceTestRunner(
     private val workerExecutor: WorkerExecutor,
@@ -46,14 +46,11 @@ class ManagedDeviceTestRunner(
     private val useOrchestrator: Boolean,
     private val forceCompilation: Boolean,
     private val numShards: Int?,
-    private val emulatorGpuFlag: String,
-    private val showEmulatorKernelLogging: Boolean,
     private val avdComponents: AvdComponentsBuildService,
     private val installApkTimeout: Int?,
     private val enableEmulatorDisplay: Boolean,
     private val utpLoggingLevel: Level = Level.WARNING,
     private val targetIsSplitApk: Boolean,
-    private val uninstallApksAfterTest: Boolean,
     private val utpRunProfileManager: UtpRunProfileManager,
     private val configFactory: UtpConfigFactory = UtpConfigFactory(),
     private val runUtpTestSuiteAndWaitFunc: (
@@ -104,98 +101,89 @@ class ManagedDeviceTestRunner(
         val testedApks = getTestedApks(testData, utpManagedDevice, logger)
         val extractedSdkApks = getExtractedSdkApks(testData, utpManagedDevice)
         val runnerConfigs = mutableListOf<UtpRunnerConfig>()
-        utpRunProfileManager.recordDeviceLockStart()
-        val results = avdComponents.lockManager.lockAndExecute(numShards ?: 1) { lock ->
-            try {
-                utpRunProfileManager.recordDeviceLockEnd()
-                val devicesAcquired = lock.lockCount
-                if (devicesAcquired != (numShards ?: 1)) {
-                    logger.warning(
-                        "Unable to retrieve $numShards devices, only " +
-                                "$devicesAcquired available. Proceeding to run tests on " +
-                                "$devicesAcquired shards."
-                    )
-                }
-                val shardsToRun = if (numShards == null) null else devicesAcquired
-
-                repeat(shardsToRun ?: 1) { currentShard ->
-                    val shardConfig = shardsToRun?.let {
-                        ShardConfig(totalCount = it, index = currentShard)
-                    }
-                    val utpOutputDir = if (shardConfig == null) {
-                        outputDirectory
-                    } else {
-                        File(outputDirectory, "shard_$currentShard")
-                    }.apply {
-                        if (!exists()) {
-                            mkdirs()
-                        }
-                    }
-                    val shardedManagedDevice = if (shardsToRun == null) {
-                        utpManagedDevice
-                    } else {
-                        utpManagedDevice.forShard(currentShard)
-                    }
-                    val runnerConfigProto: (
-                        UtpTestResultListenerServerMetadata,
-                        File
-                    ) -> RunnerConfigProto.RunnerConfig =
-                        { resultListenerServerMetadata, utpTmpDir ->
-                            configFactory.createRunnerConfigProtoForManagedDevice(
-                                shardedManagedDevice,
-                                testData,
-                                TargetApkConfigBundle(testedApks, targetIsSplitApk),
-                                additionalInstallOptions,
-                                helperApks,
-                                utpDependencies,
-                                versionedSdkLoader,
-                                utpOutputDir,
-                                utpTmpDir,
-                                emulatorControlConfig,
-                                coverageOutputDirectory,
-                                additionalTestOutputDir,
-                                useOrchestrator,
-                                forceCompilation,
-                                resultListenerServerMetadata,
-                                emulatorGpuFlag,
-                                showEmulatorKernelLogging,
-                                installApkTimeout,
-                                extractedSdkApks,
-                                uninstallApksAfterTest,
-                                shardConfig,
-                            )
-                        }
-                    runnerConfigs.add(
-                        UtpRunnerConfig(
-                            utpJvmExecutable,
-                            shardedManagedDevice.deviceName,
-                            shardedManagedDevice.id,
-                            utpOutputDir,
-                            runnerConfigProto,
-                            configFactory.createServerConfigProto(),
-                            utpRunProfileManager.createTestRunProfile(
-                                utpOutputDir,
-                                DeviceTestSpanProfile.DeviceType.VIRTUAL_MANAGED_DEVICE,
-                                shardedManagedDevice.deviceName
-                            ),
-                            shardConfig,
-                            utpLoggingLevel
-                        )
-                    )
-                }
-
-                runUtpWithRetryForEmulatorTimeoutException(
-                    runnerConfigs,
-                    projectPath,
-                    variantName,
-                    outputDirectory,
-                    logger
+        val results = avdComponents.runWithAvds(
+            utpManagedDevice.avdName, numShards ?: 1) { deviceSerials ->
+            val devicesAcquired = deviceSerials.size
+            if (devicesAcquired != (numShards ?: 1)) {
+                logger.warning(
+                    "Unable to retrieve $numShards devices, only " +
+                            "$devicesAcquired available. Proceeding to run tests on " +
+                            "$devicesAcquired shards."
                 )
-            } finally {
-                avdComponents.closeOpenEmulators(utpManagedDevice.id)
             }
-        }
 
+            deviceSerials.forEachIndexed { currentShard, deviceSerial ->
+                val shardConfig = numShards?.let {
+                    ShardConfig(totalCount = devicesAcquired, index = currentShard)
+                }
+                val utpOutputDir = if (shardConfig == null) {
+                    outputDirectory
+                } else {
+                    File(outputDirectory, "shard_$currentShard")
+                }.apply {
+                    if (!exists()) {
+                        mkdirs()
+                    }
+                }
+                val shardedManagedDevice = if (numShards == null) {
+                    utpManagedDevice
+                } else {
+                    utpManagedDevice.forShard(currentShard)
+                }
+                val runnerConfigProto: (
+                    UtpTestResultListenerServerMetadata,
+                    File
+                ) -> RunnerConfigProto.RunnerConfig =
+                    { resultListenerServerMetadata, utpTmpDir ->
+                        configFactory.createRunnerConfigProtoForManagedDevice(
+                            shardedManagedDevice,
+                            deviceSerial,
+                            testData,
+                            TargetApkConfigBundle(testedApks, targetIsSplitApk),
+                            additionalInstallOptions,
+                            helperApks,
+                            utpDependencies,
+                            versionedSdkLoader,
+                            utpOutputDir,
+                            utpTmpDir,
+                            emulatorControlConfig,
+                            coverageOutputDirectory,
+                            additionalTestOutputDir,
+                            useOrchestrator,
+                            forceCompilation,
+                            resultListenerServerMetadata,
+                            installApkTimeout,
+                            extractedSdkApks,
+                            shardConfig,
+                        )
+                    }
+                runnerConfigs.add(
+                    UtpRunnerConfig(
+                        utpJvmExecutable,
+                        shardedManagedDevice.deviceName,
+                        shardedManagedDevice.id,
+                        utpOutputDir,
+                        runnerConfigProto,
+                        configFactory.createServerConfigProto(),
+                        utpRunProfileManager.createTestRunProfile(
+                            utpOutputDir,
+                            DeviceTestSpanProfile.DeviceType.VIRTUAL_MANAGED_DEVICE,
+                            shardedManagedDevice.deviceName
+                        ),
+                        shardConfig,
+                        utpLoggingLevel
+                    )
+                )
+            }
+
+            runUtpWithRetryForEmulatorTimeoutException(
+                runnerConfigs,
+                projectPath,
+                variantName,
+                outputDirectory,
+                logger
+            )
+        }
 
         results.forEach { result ->
             if (result.resultsProto?.hasPlatformError() == true) {

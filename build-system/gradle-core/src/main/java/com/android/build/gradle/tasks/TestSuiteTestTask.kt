@@ -28,7 +28,6 @@ import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.computeAvdName
-import com.android.build.gradle.internal.computeManagedDeviceEmulatorMode
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.services.getBuildService
@@ -111,9 +110,6 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     @get:Nested
     abstract val managedDevices: ListProperty<ManagedVirtualDevice>
 
-    @get:Input
-    abstract val emulatorGpuFlag: Property<String>
-
     @get:Internal
     abstract val avdService: Property<AvdComponentsBuildService>
 
@@ -184,7 +180,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             return
         }
         val avdName = computeAvdName(iterator.next())
-        avdService.get().runWithAvd(avdName, emulatorGpuFlag.get()) { onlineDeviceSerial ->
+        avdService.get().runWithAvd(avdName) { onlineDeviceSerial ->
             onlineDeviceSerials += onlineDeviceSerial
             provisionManagedDevicesAndExecute(iterator, onlineDeviceSerials, onDevicesReady)
         }
@@ -283,10 +279,6 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 task.managedDevices.add(localDevices.getByName(it) as ManagedVirtualDevice)
             }
             task.managedDevices.disallowChanges()
-
-            task.emulatorGpuFlag.setDisallowChanges(
-                computeManagedDeviceEmulatorMode(creationConfig.services.projectOptions)
-            )
 
             val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
             junitEngineSpec.inputs.forEach { inputParameter: AgpTestSuiteInputParameters ->

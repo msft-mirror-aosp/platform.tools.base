@@ -22,52 +22,14 @@ import kotlin.test.assertEquals
 class ManagedDeviceUtilsTest {
 
     @Test
-    fun isGradleManagedDevice_detectsManagedDevices() {
+    fun testIsGradleManagedDevice() {
         assertEquals(
             true,
-            isGradleManagedDevice("dev29_google_apis_x86_Pixel_2__something__snapshot")
-        )
-        assertEquals(
-            true,
-            isGradleManagedDevice("dev32_default_arm64-v8a_Pixel_3_snapshot")
-        )
-        assertEquals(
-            true,
-            isGradleManagedDevice("dev34_ext12_google_apis_ps16k_x86_Pixel_3_snapshot")
-        )
-
-        assertEquals(
-            true,
-            isGradleManagedDevice("app:myDeviceAndroidTest")
-        )
-        assertEquals(
-            true,
-            isGradleManagedDevice("app:device1AndroidTest_0")
-        )
-        assertEquals(
-            true,
-            isGradleManagedDevice("sub-project:complex_device_nameAndroidTest_12")
-        )
-    }
-
-    @Test
-    fun isGradleManagedDevice_identifiesNonManagedDevices() {
-        assertEquals(
-            false,
-            isGradleManagedDevice("some_model_id")
-        )
-        // Even a valid GMD AVD should fail, if it doesn't conform to a setup task format.
-        assertEquals(
-            false,
-            isGradleManagedDevice("dev32_default_arm64-v8a_Pixel_3")
+            isGradleManagedDevice("myAvdDeviceID_GradleManagedDevice")
         )
         assertEquals(
             false,
-            isGradleManagedDevice(":toLevelAndroidTest")
-        )
-        assertEquals(
-            false,
-            isGradleManagedDevice("app:device1AndroidTest_")
+            isGradleManagedDevice("myAvdDeviceID")
         )
     }
 }

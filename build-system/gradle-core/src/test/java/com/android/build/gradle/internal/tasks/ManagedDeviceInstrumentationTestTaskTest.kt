@@ -18,8 +18,6 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.api.variant.impl.TestVariantImpl
 import com.android.build.gradle.internal.AvdComponentsBuildService
-import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager
-import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager.DeviceLock
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.SdkComponentsBuildService.VersionedSdkLoader
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -29,13 +27,11 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.profile.AnalyticsService
-import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager
-import com.android.build.gradle.internal.testing.utp.UtpTestRunResult
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.TestOptions
 import com.android.repository.Revision
@@ -100,13 +96,11 @@ class ManagedDeviceInstrumentationTestTaskTest {
 
     private val creationConfig: TestVariantImpl = mock(defaultAnswer = RETURNS_DEEP_STUBS, extraInterfaces = arrayOf(DeviceTestCreationConfig::class))
 
-    private val globalConfig: GlobalTaskCreationConfigImpl = mock(defaultAnswer = RETURNS_DEEP_STUBS)
-
     private val testData: AbstractTestDataImpl = mock(defaultAnswer = RETURNS_DEEP_STUBS)
 
     private val runnerFactory: ManagedDeviceInstrumentationTestTask.TestRunnerFactory = mock()
 
-    private val intallOptions: ListProperty<String> = mock()
+    private val installOptions: ListProperty<String> = mock()
 
     private val dependencies: ArtifactCollection = mock()
 
@@ -143,12 +137,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
         avdFolder = temporaryFolderRule.newFolder("gradle/avd")
         whenever(avdDirectory.asFile).thenReturn(avdFolder)
         whenever(avdService.avdFolder).thenReturn(FakeGradleProvider(avdDirectory))
-
-        val lockManager = mock<ManagedVirtualDeviceLockManager>()
-        whenever(lockManager.lockAndExecute(any(), any<(DeviceLock)-> UtpTestRunResult>())).then {
-            it.getArgument<(DeviceLock)->UtpTestRunResult>(1)(DeviceLock(it.getArgument<Int>(0)))
-        }
-        whenever(avdService.lockManager).thenReturn(lockManager)
 
         reportsFolder = temporaryFolderRule.newFolder("reports")
         whenever(reportsDirectory.asFile).thenReturn(reportsFolder)
@@ -215,8 +203,8 @@ class ManagedDeviceInstrumentationTestTaskTest {
         whenever(buddyApks.files).thenReturn(setOf())
         whenever(task.buddyApks).thenReturn(buddyApks)
 
-        whenever(task.installOptions).thenReturn(intallOptions)
-        whenever(intallOptions.getOrElse(any())).thenReturn(listOf())
+        whenever(task.installOptions).thenReturn(installOptions)
+        whenever(installOptions.getOrElse(any())).thenReturn(listOf())
 
         doReturn(mockDirectoryProperty(resultsDirectory)).whenever(task).resultsDir
         doReturn(mockDirectoryProperty(coverageDirectory)).whenever(task).getCoverageDirectory()
@@ -245,14 +233,10 @@ class ManagedDeviceInstrumentationTestTaskTest {
         whenever(factory.sdkBuildService).thenReturn(FakeGradleProperty(sdkService))
         whenever(factory.avdComponents).thenReturn(FakeGradleProperty(avdService))
         whenever(factory.utpDependencies).thenReturn(mock<UtpDependencies>())
-        whenever(factory.utpLoggingLevel)
-            .thenReturn(FakeGradleProperty(Level.OFF))
-        whenever(factory.emulatorGpuFlag).thenReturn(FakeGradleProperty("auto-no-window"))
-        whenever(factory.showEmulatorKernelLoggingFlag).thenReturn(FakeGradleProperty(false))
+        whenever(factory.utpLoggingLevel).thenReturn(FakeGradleProperty(Level.OFF))
         whenever(factory.installApkTimeout).thenReturn(FakeGradleProperty(0))
         whenever(factory.enableEmulatorDisplay).thenReturn(FakeGradleProperty(false))
         whenever(factory.getTargetIsSplitApk).thenReturn(FakeGradleProperty(false))
-        whenever(factory.getKeepInstalledApks).thenReturn(FakeGradleProperty(false))
         doReturn(mockFileProperty(utpJvmFile)).whenever(factory).jvmExecutable
         doReturn(utpJvm).whenever(utpJvmFile).asFile
 

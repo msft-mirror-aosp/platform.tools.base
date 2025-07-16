@@ -35,11 +35,11 @@ import com.android.testing.utils.isTvOrAutoDevice
 import com.android.utils.FileUtils
 import com.android.utils.ILogger
 import com.sun.xml.bind.v2.util.EditDistance
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 import java.io.File
 import java.nio.file.Path
 import kotlin.math.min
-import org.gradle.api.file.Directory
-import org.gradle.api.provider.Provider
 
 private const val MAX_SYSTEM_IMAGE_RETRIES = 4
 private const val BASE_RETRY_DELAY_SECONDS = 2L
@@ -111,6 +111,11 @@ class AvdManager(
     private fun <V> runWithMultiProcessLocking(deviceName: String, runnable: () -> V): V {
         return SynchronizedFile.getInstanceWithMultiProcessLocking(avdFolder.resolve(deviceName))
             .write { runnable() }
+    }
+
+    private fun <V> runWithMultiProcessReadLocking(deviceName: String, runnable: () -> V): V {
+        return SynchronizedFile.getInstanceWithMultiProcessLocking(avdFolder.resolve(deviceName))
+            .read { runnable() }
     }
 
     private fun deleteLockFile(deviceName: String) {
@@ -200,7 +205,7 @@ class AvdManager(
             .toList()
     }
 
-    fun loadSnapshotIfNeeded(deviceName: String, emulatorGpuFlag: String) {
+    fun loadSnapshotIfNeeded(deviceName: String) {
         // It fails to generate a snapshot image if you try to create a snapshot for two
         // AVD with a same name simultaneously. https://issuetracker.google.com/issues/206798666
         runWithMultiProcessLocking(deviceName) {
@@ -208,7 +213,6 @@ class AvdManager(
             if (snapshotHandler.checkSnapshotLoadable(
                     deviceName,
                     avdFolder,
-                    emulatorGpuFlag,
                     logger
                 )
             ) {
@@ -220,7 +224,6 @@ class AvdManager(
                 snapshotHandler.generateSnapshot(
                     deviceName,
                     avdFolder,
-                    emulatorGpuFlag,
                     avdManager,
                     logger
                 )
@@ -231,23 +234,48 @@ class AvdManager(
     }
 
     /**
-     * Starts an Android Virtual device and [onDeviceReady] callback is invoked once the device
-     * becomes online and system services on the device are started.
+     * Starts one or more Android Virtual Devices (AVDs).
      *
-     * This method blocks execution and [onDeviceReady] callback is invoked from the caller's thread.
+     * This function safely launches multiple instances of a given AVD configuration. It blocks
+     * the calling thread until the AVDs have booted and are online. Once ready, it executes
+     * the [onDevicesReady] lambda, providing a list of the online device serial numbers.
+     *
+     * After the [onDevicesReady] block completes, the AVDs are automatically shut down, and all
+     * underlying locks are released.
+     *
+     * @param T The return type of the [onDevicesReady] block.
+     * @param deviceName The name of the AVD configuration to launch.
+     * @param desiredDeviceCount The desired number of AVD instances to launch. The function
+     * will start up to this many devices based on resource availability.
+     * @param onDevicesReady A lambda that is executed on the caller's thread once all devices are
+     * online. It receives a list of device serials, and its result is returned by this function.
+     * @return The value returned by the [onDevicesReady] lambda.
      */
-    fun runWithAvd(deviceName: String, emulatorGpuFlag: String,
-        onDeviceReady: (onlineDeviceSerial: String) -> Unit) {
-        runWithMultiProcessLocking(deviceName) {
-            deviceLockManager.lockAndExecute(1) {
-                snapshotHandler.startEmulatorThenStop(
-                    false,
-                    deviceName,
-                    avdFolder,
-                    emulatorGpuFlag,
-                    logger,
-                    onDeviceReady
-                )
+    fun <T> runWithAvds(
+        deviceName: String,
+        desiredDeviceCount: Int,
+        onDevicesReady: (onlineDeviceSerials: List<String>) -> T): T {
+        return runWithMultiProcessReadLocking(deviceName) {
+            deviceLockManager.lockAndExecute(desiredDeviceCount) { deviceLock ->
+                val onlineDevices = mutableListOf<String>()
+
+                fun startEmulatorsThenStop(numberOfRemainingDevices: Int): T {
+                    return if (numberOfRemainingDevices == 0) {
+                        onDevicesReady(onlineDevices)
+                    } else {
+                        snapshotHandler.startEmulatorThenStop(
+                            false,
+                            deviceName,
+                            avdFolder,
+                            logger,
+                        ) { deviceSerial ->
+                            onlineDevices += deviceSerial
+                            startEmulatorsThenStop(numberOfRemainingDevices - 1)
+                        }
+                    }
+                }
+
+                startEmulatorsThenStop(deviceLock.lockCount)
             }
         }
     }

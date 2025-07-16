@@ -24,7 +24,6 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.test.ApkBundlesFinder
 import com.android.build.gradle.internal.test.ApksFinder
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConnector
 import com.android.sdklib.BuildToolInfo
@@ -69,7 +68,7 @@ class UtpConfigFactoryTest {
     private val mockAdbProvider: Provider<RegularFile> = mock()
     private val mockBuildToolInfo: BuildToolInfo = mock()
     private val mockBuildToolInfoProvider: Provider<BuildToolInfo> = mock()
-    private val mockemulatorControlConfig: EmulatorControlConfig = mock()
+    private val mockEmulatorControlConfig: EmulatorControlConfig = mock()
     private val mockResultListenerClientCert: File = mock()
     private val mockResultListenerClientPrivateKey: File = mock()
     private val mockTrustCertCollection: File = mock()
@@ -189,7 +188,7 @@ class UtpConfigFactoryTest {
                 versionedSdkLoader,
                 mockOutputDir,
                 mockTmpDir,
-                mockemulatorControlConfig,
+                mockEmulatorControlConfig,
                 mockCoverageOutputDir,
                 useOrchestrator,
                 forceCompilation,
@@ -211,11 +210,8 @@ class UtpConfigFactoryTest {
             forceCompilation: Boolean = false,
             additionalTestOutputDir: File? = null,
             shardConfig: ShardConfig? = null,
-            emulatorGpuFlag: String = "auto-no-window",
-            showEmulatorKernelLogging: Boolean = false,
             installApkTimeout: Int? = null,
             targetApkConfigBundle: TargetApkConfigBundle = testTargetApkConfigBundle,
-            cleanTestArtifacts: Boolean = false,
     ): RunnerConfigProto.RunnerConfig {
         val managedDevice = UtpManagedDevice(
                 "deviceName",
@@ -229,6 +225,7 @@ class UtpConfigFactoryTest {
                 false)
         return UtpConfigFactory().createRunnerConfigProtoForManagedDevice(
                 managedDevice,
+                "mockDeviceSerialNumber",
                 testData,
                 targetApkConfigBundle,
                 listOf("-additional_install_option"),
@@ -237,17 +234,14 @@ class UtpConfigFactoryTest {
                 versionedSdkLoader,
                 mockOutputDir,
                 mockTmpDir,
-                mockemulatorControlConfig,
+                mockEmulatorControlConfig,
                 mockCoverageOutputDir,
                 additionalTestOutputDir,
                 useOrchestrator,
                 forceCompilation,
                 testResultListenerServerMetadata,
-                emulatorGpuFlag,
-                showEmulatorKernelLogging,
                 installApkTimeout,
                 testExtractedSdkApks,
-                cleanTestArtifacts,
                 shardConfig,
         )
     }
@@ -293,9 +287,9 @@ class UtpConfigFactoryTest {
     fun createRunnerConfigProtoForManagedDeviceInstallApkWithFullForceCompilation() {
         val runnerConfigProto = createForManagedDevice(forceCompilation = true)
         assertRunnerConfigProto(runnerConfigProto,
-            forceCompilation = true,
             deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true
+            forceCompilation = true,
+            isForceReinstallBeforeTest = true,
         )
     }
 
@@ -330,11 +324,11 @@ class UtpConfigFactoryTest {
         """.trimIndent()
         Files.writeString(filePath, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE)
 
-        whenever(mockemulatorControlConfig.enabled).thenReturn(true)
-        whenever(mockemulatorControlConfig.secondsValid).thenReturn(100)
+        whenever(mockEmulatorControlConfig.enabled).thenReturn(true)
+        whenever(mockEmulatorControlConfig.secondsValid).thenReturn(100)
         whenever(mockDevice.serialNumber).thenReturn("emulator-mockDeviceSerialNumber")
 
-        assertThat(mockemulatorControlConfig.enabled).isTrue()
+        assertThat(mockEmulatorControlConfig.enabled).isTrue()
 
         val runnerConfigProto = createForLocalDevice()
 
@@ -355,6 +349,7 @@ class UtpConfigFactoryTest {
 
         assertRunnerConfigProto(
             runnerConfigProto,
+            deviceSerial = "emulator-mockDeviceSerialNumber",
             deviceId = "emulator-mockDeviceSerialNumber",
             instrumentationArgs = mapOf("grpc.port" to "1234", "grpc.token" to token),
             emulatorControlConfig = """
@@ -369,16 +364,16 @@ class UtpConfigFactoryTest {
     @Test
     fun createRunnerConfigProtoWithEmulatorAccessForManagedDevice() {
         val aud = setOf(*arrayOf("a", "b"))
-        whenever(mockemulatorControlConfig.enabled).thenReturn(true)
-        whenever(mockemulatorControlConfig.secondsValid).thenReturn(100)
-        whenever(mockemulatorControlConfig.allowedEndpoints).thenReturn(aud)
-        assertThat(mockemulatorControlConfig.enabled).isTrue()
+        whenever(mockEmulatorControlConfig.enabled).thenReturn(true)
+        whenever(mockEmulatorControlConfig.secondsValid).thenReturn(100)
+        whenever(mockEmulatorControlConfig.allowedEndpoints).thenReturn(aud)
+        assertThat(mockEmulatorControlConfig.enabled).isTrue()
 
         val runnerConfigProto = createForManagedDevice()
         assertRunnerConfigProto(
             runnerConfigProto,
             deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true,
+            isForceReinstallBeforeTest = true,
             emulatorControlConfig = """
                 seconds_valid: 100
                 allowed_endpoints: "a"
@@ -394,7 +389,7 @@ class UtpConfigFactoryTest {
         assertRunnerConfigProto(
             runnerConfigProto,
             deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true
+            isForceReinstallBeforeTest = true
         )
     }
 
@@ -408,10 +403,10 @@ class UtpConfigFactoryTest {
         )
 
         assertRunnerConfigProto(
-                runnerConfigProto,
-                deviceId = ":app:deviceNameDebugAndroidTest",
-                useGradleManagedDeviceProvider = true,
-                isSplitApk = true,
+            runnerConfigProto,
+            deviceId = ":app:deviceNameDebugAndroidTest",
+            isForceReinstallBeforeTest = true,
+            isSplitApk = true,
         )
     }
 
@@ -423,7 +418,7 @@ class UtpConfigFactoryTest {
             runnerConfigProto,
             deviceId = ":app:deviceNameDebugAndroidTest",
             useOrchestrator = true,
-            useGradleManagedDeviceProvider = true
+            isForceReinstallBeforeTest = true
         )
     }
 
@@ -432,7 +427,7 @@ class UtpConfigFactoryTest {
         val runnerConfigProto = createForManagedDevice(installApkTimeout = 5)
         assertRunnerConfigProto(runnerConfigProto,
             deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true,
+            isForceReinstallBeforeTest = true,
             installApkTimeout = 5)
     }
 
@@ -516,7 +511,7 @@ class UtpConfigFactoryTest {
         assertRunnerConfigProto(
             runnerConfigProto,
             deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true,
+            isForceReinstallBeforeTest = true,
             instrumentationArgs = mapOf(
                 "coverage" to "true",
                 "coverageFile" to "/data/data/com.example.application/coverage.ec",
@@ -570,31 +565,18 @@ class UtpConfigFactoryTest {
     }
 
     @Test
-    fun createManagedDeviceRunnerConfigProtoToUninstallApksAfterTest() {
-        val runnerConfigProto = createForManagedDevice(
-                cleanTestArtifacts = true
-        )
-        assertRunnerConfigProto(
-                runnerConfigProto,
-                useGradleManagedDeviceProvider = true,
-                deviceId = ":app:deviceNameDebugAndroidTest",
-                isUninstallAfterTest = true,
-        )
-    }
-
-    @Test
     fun createRunnerConfigProtoForManagedDeviceWithShardConfig() {
         val runnerConfigProto = createForManagedDevice(
             shardConfig = ShardConfig(totalCount = 10, index = 2))
         assertRunnerConfigProto(
             runnerConfigProto,
+            deviceId = ":app:deviceNameDebugAndroidTest",
             // TODO(b/201577913): remove
             instrumentationArgs = mapOf(
                 "numShards" to "10",
                 "shardIndex" to "2"
             ),
-            deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true,
+            isForceReinstallBeforeTest = true,
             shardingConfig = """
                 shard_count: 10
                 shard_index: 2
@@ -634,34 +616,6 @@ class UtpConfigFactoryTest {
     }
 
     @Test
-    fun createRunnerConfigProtoForManagedDeviceWithCustomEmulatorGpuFlag() {
-        val runnerConfigProto = createForManagedDevice(
-            emulatorGpuFlag = "swiftshader_indirect"
-        )
-
-        assertRunnerConfigProto(
-            runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true,
-            emulatorGpuFlag = "swiftshader_indirect"
-        )
-    }
-
-    @Test
-    fun createRunnerConfigProtoForManagedDeviceWithShowEmulatorKernelLogging() {
-        val runnerConfigProto = createForManagedDevice(
-            showEmulatorKernelLogging = true
-        )
-
-        assertRunnerConfigProto(
-            runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true,
-            showEmulatorKernelLogging = true,
-        )
-    }
-
-    @Test
     fun createRunnerConfigProtoForLocalDeviceWithAdditionalTestOutputNotSupported() {
         whenever(mockDevice.apiLevel).thenReturn(15)
         val runnerConfigProto = createForLocalDevice(
@@ -690,7 +644,7 @@ class UtpConfigFactoryTest {
         assertRunnerConfigProto(
             runnerConfigProto,
             deviceId = ":app:deviceNameDebugAndroidTest",
-            useGradleManagedDeviceProvider = true,
+            isForceReinstallBeforeTest = true,
             instrumentationArgs = mapOf(
                 "additionalTestOutputDir" to onDeviceDir,
             ),

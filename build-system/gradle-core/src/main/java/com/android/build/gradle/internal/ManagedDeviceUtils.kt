@@ -112,6 +112,3 @@ fun computeAbiFromArchitecture(
     sdkVersion <= 30 -> "x86"
     else -> "x86_64"
 }
-
-fun computeManagedDeviceEmulatorMode(projectOptions: ProjectOptions) =
-    projectOptions[StringOption.GRADLE_MANAGED_DEVICE_EMULATOR_GPU_MODE] ?: "auto-no-window"

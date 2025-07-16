@@ -72,7 +72,6 @@ class UtpConnectedTest : UtpTestBase() {
             testReportPath = "${moduleName}/$TEST_REPORT"
             testLogcatPath = "${moduleName}/$LOGCAT"
         }
-        utpProfilePath = "${moduleName}/$UTP_PROFILE"
         testResultPbPath = "${moduleName}/$TEST_RESULT_PB"
         aggTestResultPbPath = "${moduleName}/$AGGREGATED_TEST_RESULT_PB"
         testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"

@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.testing.utp
 
 import com.android.tools.utp.plugins.deviceprovider.ddmlib.proto.AndroidDeviceProviderDdmlibConfigProto
-import com.android.tools.utp.plugins.deviceprovider.gradle.proto.GradleManagedAndroidDeviceProviderProto
 import com.android.tools.utp.plugins.host.additionaltestoutput.proto.AndroidAdditionalTestOutputConfigProto
 import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstallerConfigProto
 import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstallerConfigProto.InstallableApk.InstallOption.ForceCompilation
@@ -41,7 +40,6 @@ private val protoPrinter: ProtoPrinter = ProtoPrinter(listOf(
     AndroidTestCoverageConfigProto.AndroidTestCoverageConfig::class.java,
     AndroidTestLogcatConfigProto.AndroidTestLogcatConfig::class.java,
     GradleAndroidTestResultListenerConfigProto.GradleAndroidTestResultListenerConfig::class.java,
-    GradleManagedAndroidDeviceProviderProto.GradleManagedAndroidDeviceProviderConfig::class.java,
     EmulatorControlPluginProto.EmulatorControlPlugin::class.java,
     LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider::class.java,
     PathProto.Path::class.java,
@@ -57,6 +55,7 @@ fun printProto(runnerConfig: RunnerConfigProto.RunnerConfig) : String{
  */
 fun assertRunnerConfigProto(
     runnerConfig: RunnerConfigProto.RunnerConfig,
+    deviceSerial: String = "mockDeviceSerialNumber",
     deviceId: String = "mockDeviceSerialNumber",
     useOrchestrator: Boolean = false,
     forceCompilation: Boolean = false,
@@ -64,54 +63,17 @@ fun assertRunnerConfigProto(
     noWindowAnimation: Boolean = false,
     instrumentationArgs: Map<String, String> = mapOf(),
     emulatorControlConfig: String = "",
-    useGradleManagedDeviceProvider: Boolean = false,
+    isForceReinstallBeforeTest: Boolean = false,
     testCoverageConfig: String = "",
     additionalTestOutputConfig: String = "",
     shardingConfig: String = "",
-    emulatorGpuFlag: String = "auto-no-window",
-    showEmulatorKernelLogging: Boolean = false,
     uninstallIncompatibleApks: Boolean = false,
     installApkTimeout: Int? = null,
     isSplitApk: Boolean = false,
     isDependencyApkSplit: Boolean = false,
     isUninstallAfterTest: Boolean = false,
 ) {
-    val deviceProviderProto = if (useGradleManagedDeviceProvider) { """
-        label {
-          label: "ANDROID_DEVICE_PROVIDER_GRADLE"
-        }
-        class_name: "com.android.tools.utp.plugins.deviceprovider.gradle.GradleManagedAndroidDeviceProvider"
-        jar {
-          path: "path-to-DeviceProviderGradle.jar"
-        }
-        config {
-          type_url: "type.googleapis.com/com.android.tools.utp.plugins.deviceprovider.gradle.proto.GradleManagedAndroidDeviceProviderConfig"
-          value {
-            managed_device {
-              avd_folder {
-                type_url: "type.googleapis.com/google.testing.platform.proto.api.core.Path"
-                value {
-                  path: "path/to/gradle/avd"
-                }
-              }
-              avd_name: "avdName"
-              avd_id: "${deviceId}"
-              emulator_path {
-                type_url: "type.googleapis.com/google.testing.platform.proto.api.core.Path"
-                value {
-                  path: "path/to/emulator"
-                }
-              }
-              gradle_dsl_device_name: "deviceName"
-              emulator_gpu: "$emulatorGpuFlag"
-              ${if (showEmulatorKernelLogging) "show_emulator_kernel_logging: true" else ""}
-            }
-            adb_server_port: 5037
-          }
-        }
-        use_single_class_loader: true
-        """
-    } else { """
+    val deviceProviderProto = """
         label {
           label: "ANDROID_DEVICE_PROVIDER_DDMLIB"
         }
@@ -125,7 +87,7 @@ fun assertRunnerConfigProto(
             local_android_device_provider_config {
               type_url: "type.googleapis.com/google.testing.platform.proto.api.config.LocalAndroidDeviceProvider"
               value {
-                serial: "${deviceId}"
+                serial: "$deviceSerial"
               }
             }
             ${if (uninstallIncompatibleApks)  "uninstall_incompatible_apks: true"  else ""}
@@ -133,7 +95,6 @@ fun assertRunnerConfigProto(
         }
         use_single_class_loader: true
         """
-    }
 
     val testCoveragePluginProto = if (testCoverageConfig.isNotBlank()) { """
         host_plugin {
@@ -224,7 +185,7 @@ fun assertRunnerConfigProto(
     """ else """
         apk_paths: "mockDependencyApkPath"
     """
-    val forceReinstallBeforeTest = if(useGradleManagedDeviceProvider) "force_reinstall_before_test: true" else ""
+    val forceReinstallBeforeTest = if(isForceReinstallBeforeTest) "force_reinstall_before_test: true" else ""
 
     val testApkInstallerConfigProto = """
         host_plugin {
@@ -292,7 +253,7 @@ fun assertRunnerConfigProto(
     assertThat(protoPrinter.printToString(runnerConfig)).isEqualTo("""
         device {
           device_id {
-            id: "${deviceId}"
+            id: "${deviceSerial}"
           }
           provider {
             ${"\n" + deviceProviderProto.trimIndent().prependIndent(" ".repeat(12))}
@@ -425,7 +386,7 @@ fun assertRunnerConfigProto(
               resultListenerClientCertFilePath: "mockResultListenerClientCertPath"
               resultListenerClientPrivateKeyFilePath: "mockResultListenerClientPrivateKeyPath"
               trustCertCollectionFilePath: "mockTrustCertCollectionPath"
-              deviceId: "${deviceId}"
+              deviceId: "$deviceId"
             }
           }
           use_single_class_loader: true
@@ -433,7 +394,7 @@ fun assertRunnerConfigProto(
         single_device_executor {
           device_execution {
             device_id {
-              id: "${deviceId}"
+              id: "${deviceSerial}"
             }
             test_fixture_id {
               id: "AGP_Test_Fixture"

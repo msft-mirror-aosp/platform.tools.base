@@ -21,13 +21,14 @@ import com.android.build.gradle.internal.testing.EmulatorVersionMetadata
 import com.android.build.gradle.internal.testing.QemuExecutor
 import com.android.build.gradle.internal.testing.getEmulatorMetadata
 import com.android.sdklib.internal.avd.AvdManager
-import com.android.testing.utils.createSetupDeviceId
+import com.android.testing.utils.ManagedDeviceDeviceIDSuffix
 import com.android.utils.GrabProcessOutput
 import com.android.utils.ILogger
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import java.io.File
 import java.io.IOException
+import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
@@ -50,12 +51,13 @@ private const val WAIT_AFTER_BOOT_MS = 5000L
  */
 class AvdSnapshotHandler(
     private val showFullEmulatorKernelLogging: Boolean,
+    private val emulatorGpuFlag: String,
     private val deviceBootAndSnapshotCheckTimeoutSec: Long?,
     private val adbHelper: AdbHelper,
     private val emulatorDir: Provider<Directory>,
     private val qemuExecutor: QemuExecutor,
     private val extraWaitAfterBootCompleteMs: Long = WAIT_AFTER_BOOT_MS,
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor(),
+    private val executor: ExecutorService = Executors.newCachedThreadPool(),
     private val metadataFactory: (File) -> EmulatorVersionMetadata = ::getEmulatorMetadata,
     private val processFactory: (List<String>) -> ProcessBuilder = { ProcessBuilder(it) }) {
 
@@ -85,7 +87,6 @@ class AvdSnapshotHandler(
 
     private fun getEmulatorCommand(
         avdName: String,
-        emulatorGpuFlag: String,
         additionalParams: List<String>,
     ): List<String> {
         return listOfNotNull(
@@ -121,7 +122,6 @@ class AvdSnapshotHandler(
     fun checkSnapshotLoadable(
         avdName: String,
         avdLocation: File,
-        emulatorGpuFlag: String,
         logger: ILogger,
         snapshotName: String = "default_boot"
     ): Boolean {
@@ -129,7 +129,6 @@ class AvdSnapshotHandler(
         val processBuilder = processFactory(
             getEmulatorCommand(
                 avdName,
-                emulatorGpuFlag,
                 listOf(
                     "-read-only",
                     "-no-snapshot-save",
@@ -205,7 +204,6 @@ class AvdSnapshotHandler(
     fun generateSnapshot(
         avdName: String,
         avdLocation: File,
-        emulatorGpuFlag: String,
         avdManager: AvdManager,
         logger: ILogger
     ) {
@@ -225,13 +223,11 @@ class AvdSnapshotHandler(
                         createSnapshot = true,
                         avdName,
                         avdLocation,
-                        emulatorGpuFlag,
-                        logger)
+                        logger) {}
 
                 if (!checkSnapshotLoadable(
                         avdName,
                         avdLocation,
-                        emulatorGpuFlag,
                         logger)) {
 
                     throw EmulatorSnapshotCannotCreatedException(
@@ -252,8 +248,7 @@ class AvdSnapshotHandler(
                         createSnapshot = false,
                         avdName,
                         avdLocation,
-                        emulatorGpuFlag,
-                        logger)
+                        logger) {}
 
                 logger.info("Successfully created snapshot for: $avdName")
                 return
@@ -310,20 +305,18 @@ class AvdSnapshotHandler(
      *
      * This method blocks execution and [onDeviceReady] callback is invoked from the caller's thread.
      */
-    fun startEmulatorThenStop(
+    fun <T> startEmulatorThenStop(
         createSnapshot: Boolean,
         avdName: String,
         avdLocation: File,
-        emulatorGpuFlag: String,
         logger: ILogger,
-        onDeviceReady: (onlineDeviceSerial: String) -> Unit = {},
-    ) {
-        val deviceId = createSetupDeviceId(avdName)
+        onDeviceReady: (onlineDeviceSerial: String) -> T,
+    ): T {
+        val deviceId = UUID.randomUUID().toString() + ManagedDeviceDeviceIDSuffix
 
         val processBuilder = processFactory(
             getEmulatorCommand(
                 avdName,
-                emulatorGpuFlag,
                 listOfNotNull(
                     "-no-snapshot-load".takeIf { createSnapshot },
                     "-force-snapshot-load".takeIf {
@@ -336,10 +329,12 @@ class AvdSnapshotHandler(
         processBuilder.environment()["ANDROID_AVD_HOME"] = avdLocation.absolutePath
         processBuilder.environment()["ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL"] = timeoutSeconds.toString()
         val emulatorProcess = processBuilder.start()
+
         // need to process both stderr and stdout
         val outputProcessed = CountDownLatch(2)
         val emulatorErrorList = mutableListOf<String>()
-        try {
+
+        return try {
             val deviceSerialFuture = executor.submit<String> {
                 var emulatorSerial: String? = null
                 var lastException: Exception? = null
@@ -429,7 +424,7 @@ class AvdSnapshotHandler(
             }
 
             requireNotNull(deviceSerial)
-            onDeviceReady(deviceSerial)
+            val returnValue = onDeviceReady(deviceSerial)
             adbHelper.killDevice(deviceSerial)
 
             if (createSnapshot) {
@@ -445,6 +440,8 @@ class AvdSnapshotHandler(
                     )
                 }
             }
+
+            returnValue
         } finally {
             emulatorProcess.destroy()
         }

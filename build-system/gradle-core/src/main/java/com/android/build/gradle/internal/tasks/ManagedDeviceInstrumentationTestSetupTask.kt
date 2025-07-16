@@ -22,7 +22,6 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.SdkComponentsBuildService.VersionedSdkLoader
 import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
-import com.android.build.gradle.internal.computeManagedDeviceEmulatorMode
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.services.getBuildService
@@ -34,15 +33,15 @@ import com.android.buildanalyzer.common.TaskCategory
 import com.android.repository.Revision
 import com.android.testing.utils.canSourcePerformNdkTranslation
 import com.android.testing.utils.computeSystemImageHashFromDsl
+import com.android.testing.utils.getPageAlignmentSuffix
 import com.android.testing.utils.isTvOrAutoDevice
 import com.android.testing.utils.isTvOrAutoSource
-import com.android.testing.utils.getPageAlignmentSuffix
 import com.android.utils.osArchitecture
 import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.work.DisableCachingByDefault
 
 /**
@@ -97,9 +96,6 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
     @get: Input
     abstract val hardwareProfile: Property<String>
 
-    @get: Input
-    abstract val emulatorGpuFlag: Property<String>
-
     // Used in error messaging
     @get: Internal
     abstract val managedDeviceName: Property<String>
@@ -130,7 +126,6 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
                     abi.get(),
                     hardwareProfile.get()))
             it.hardwareProfile.set(hardwareProfile)
-            it.emulatorGpuFlag.set(emulatorGpuFlag)
             it.managedDeviceName.set(managedDeviceName)
             it.systemImageVendor.set(systemImageVendor)
             it.pageAlignmentSuffix.set(pageAlignmentSuffix)
@@ -339,8 +334,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
                 parameters.hardwareProfile.get()).get()
 
             parameters.avdService.get().ensureLoadableSnapshot(
-                parameters.deviceName.get(),
-                parameters.emulatorGpuFlag.get())
+                parameters.deviceName.get())
         }
 
         private fun computeImageHash(): String =
@@ -360,7 +354,6 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
         abstract val avdService: Property<AvdComponentsBuildService>
         abstract val deviceName: Property<String>
         abstract val hardwareProfile: Property<String>
-        abstract val emulatorGpuFlag: Property<String>
         abstract val managedDeviceName: Property<String>
         abstract val systemImageVendor: Property<String>
         abstract val pageAlignmentSuffix: Property<String>
@@ -423,11 +416,6 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             task.sdkExtensionVersion.setDisallowChanges(sdkExtensionVersion)
             task.abi.setDisallowChanges(abi)
             task.hardwareProfile.setDisallowChanges(hardwareProfile)
-
-            task.emulatorGpuFlag.setDisallowChanges(
-                computeManagedDeviceEmulatorMode(creationConfig.services.projectOptions)
-            )
-
             task.managedDeviceName.setDisallowChanges(managedDeviceName)
             task.require64Bit.setDisallowChanges(require64Bit)
         }
