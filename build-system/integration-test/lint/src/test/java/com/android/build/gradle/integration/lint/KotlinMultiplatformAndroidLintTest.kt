@@ -58,9 +58,11 @@ class KotlinMultiplatformAndroidLintTest(private val lintAnalysisPerComponent: B
             """
                 kotlin {
                     android {
-                        compilations.all {
-                            compilerOptions.configure {
-                                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+                        compilations.configureEach {
+                            compileTaskProvider.configure {
+                                compilerOptions {
+                                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+                                }
                             }
                         }
 

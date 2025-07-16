@@ -133,7 +133,6 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.Jar
 import org.gradle.workers.WorkerExecutor
-import org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.Companion.DEFAULT
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
@@ -2820,6 +2819,7 @@ abstract class UastInputs  {
             kotlinCompileTaskProvider.flatMap { kotlinCompileTask ->
                 // languageVersion is defined as a String? so it's ok to wrap it in a Provider
                 // as no task dependency needs to be carried over.
+                @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
                 runCatching { kotlinCompileTask.kotlinOptions.languageVersion }.getOrNull()?.let {
                     project.provider { it }
                 } ?: project.provider { null }
@@ -2937,7 +2937,7 @@ class KotlinMultiplatformExtensionWrapper(val kotlinExtension: KotlinMultiplatfo
  *
  * When using this class, perform a runtime check that the Kotlin Gradle plugin is applied.
  */
-class KotlinCompilationWrapper(val kotlinCompilation: KotlinCompilation<KotlinCommonOptions>)
+class KotlinCompilationWrapper(val kotlinCompilation: KotlinCompilation<out Any>)
 
 enum class LintMode {
     ANALYSIS,

@@ -57,7 +57,7 @@ ARTIFACTS = [
     "com.google.code.findbugs:jsr305:3.0.2",
     "com.google.code.gson:gson:2.11.0",
     "com.google.crypto.tink:tink:1.7.0",
-    "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.1.20-1.0.31",  # AGP dependencies
+    "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.0-2.0.2",  # AGP dependencies
     "com.google.errorprone:error_prone_annotations:2.28.0",
     "com.google.flatbuffers:flatbuffers-java:1.12.0",
     "com.google.flogger:flogger:0.8",
@@ -184,15 +184,15 @@ ARTIFACTS = [
     "org.jacoco:org.jacoco.report:0.8.12",
     "org.jetbrains.dokka:dokka-core:1.4.32",
     "org.jetbrains.intellij.deps:asm-all:8.0.1",
-    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.1.20",  # AGP dependencies
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-compiler:2.1.20",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.20",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-reflect:2.1.20",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-stdlib:2.1.20",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-test:2.1.20",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-test-junit:2.1.20",  # AGP dependencies
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.0",  # AGP dependencies
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0",  # AGP dependencies
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.2.0",  # AGP dependencies
+    "org.jetbrains.kotlin:kotlin-compiler:2.2.0",  # AGP dependencies
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.2.0",  # AGP dependencies
+    "org.jetbrains.kotlin:kotlin-reflect:2.2.0",  # AGP dependencies
+    "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",  # AGP dependencies
+    "org.jetbrains.kotlin:kotlin-test:2.2.0",  # AGP dependencies
+    "org.jetbrains.kotlin:kotlin-test-junit:2.2.0",  # AGP dependencies
     "org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4",

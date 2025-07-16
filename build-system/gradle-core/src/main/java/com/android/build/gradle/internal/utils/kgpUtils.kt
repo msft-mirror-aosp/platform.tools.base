@@ -210,6 +210,7 @@ fun recordKotlinCompilePropertiesForAnalytics(
  * (e.g., because the compile and runtime versions of KGP differ), this method will return `null`.
  */
 private fun getLanguageVersionUnsafe(kotlinCompile: KotlinCompile): String? {
+    @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
     return runCatching { kotlinCompile.kotlinOptions.languageVersion }.getOrNull()
         ?: runCatching { kotlinCompile.compilerOptions.languageVersion.orNull?.version }.getOrNull()
         ?: runCatching { org.jetbrains.kotlin.gradle.dsl.KotlinVersion.DEFAULT.version }.getOrNull()
@@ -246,6 +247,7 @@ fun addComposeArgsToKotlinCompile(
     if (kotlinVersion.isVersionAtLeast(1, 8)) {
         task.compilerOptions.freeCompilerArgs.add("-Xallow-unstable-dependencies")
     } else {
+        @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
         task.kotlinOptions.freeCompilerArgs += "-Xallow-unstable-dependencies"
     }
 }
@@ -280,6 +282,7 @@ private fun KotlinCompile.addPluginClasspath(
             .withPropertyName("composeCompilerExtension")
             .withNormalizer(ClasspathNormalizer::class.java)
         doFirst {
+            @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
             (it as KotlinCompile).kotlinOptions.freeCompilerArgs +=
                 "-Xplugin=${compilerExtension.files.single().path}"
         }
@@ -296,6 +299,7 @@ private fun KotlinCompile.addPluginOption(
         if (kotlinVersion.isVersionAtLeast(1, 8)) {
             compilerOptions.freeCompilerArgs.getOrElse(emptyList())
         } else {
+            @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
             kotlinOptions.freeCompilerArgs
         }
     val pluginOption = "plugin:$pluginId:$key"
@@ -310,6 +314,7 @@ private fun KotlinCompile.addPluginOption(
              }
          )
     } else {
+        @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
         kotlinOptions.freeCompilerArgs += listOf("-P", "$pluginOption=$value")
     }
 }

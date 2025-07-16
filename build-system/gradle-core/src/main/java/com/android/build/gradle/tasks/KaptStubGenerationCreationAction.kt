@@ -91,6 +91,7 @@ class KaptStubGenerationCreationAction(
 
         // try/catch because moduleName is deprecated and may be removed in the future
         try {
+            @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
             task.moduleName.set(creationConfig.name)
         } catch (e: Exception) {
             // do nothing

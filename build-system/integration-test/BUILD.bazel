@@ -146,8 +146,8 @@ maven_repository(
 maven_repository(
     name = "compose_gradle_plugin",
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.1.20",
-        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.1.20",
+        "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.2.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -251,13 +251,13 @@ maven_repository(
 maven_repository(
     name = "kotlin_and_ksp_dependencies_for_privacy_sandbox_tests",
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.1.20",
-        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.20",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.20",
-        "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.1.20",
-        "@maven//:com.google.devtools.ksp.com.google.devtools.ksp.gradle.plugin_2.1.20-2.0.1",
-        "@maven//:com.google.devtools.ksp.symbol-processing_2.1.20-2.0.1",
-        "@maven//:com.google.devtools.ksp.symbol-processing-aa-embeddable_2.1.20-2.0.1",
+        "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.0",
+        "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.2.0",
+        "@maven//:com.google.devtools.ksp.com.google.devtools.ksp.gradle.plugin_2.2.0-2.0.2",
+        "@maven//:com.google.devtools.ksp.symbol-processing_2.2.0-2.0.2",
+        "@maven//:com.google.devtools.ksp.symbol-processing-aa-embeddable_2.2.0-2.0.2",
     ],
     visibility = [":__subpackages__"],
 )
