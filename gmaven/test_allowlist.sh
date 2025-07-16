@@ -2,7 +2,7 @@
 
 cp $2 "${TEST_UNDECLARED_OUTPUTS_DIR}/maven-artifacts.txt"
 
-output="$(diff $1 $2)"
+output="$(diff <(sort $1) <(sort $2))"
 if [[ "$?" -ne 0 ]]; then
   >&2 echo "Diff detected in maven artifacts!"
   >&2 echo "${output}"
