@@ -123,6 +123,12 @@ enum class IntegerOption(
     GRADLE_MANAGED_DEVICE_MAX_CONCURRENT_DEVICES("android.experimental.testOptions.managedDevices.maxConcurrentDevices", ApiStage.Experimental),
 
     /**
+     * Timeout in minutes for acquiring a device lock for a Gradle Managed Device.
+     * A value of 0 or less disables the timeout, causing it to wait indefinitely.
+     */
+    GRADLE_MANAGED_DEVICE_LOCK_TIMEOUT_MINUTES("android.experimental.testOptions.managedDevices.deviceLockTimeoutMinutes", ApiStage.Experimental),
+
+    /**
      * The timeout duration in seconds for install apk
      * If the value is 0 or negative value, it will be set to a default value by UTP.
      */

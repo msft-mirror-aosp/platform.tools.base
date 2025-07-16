@@ -65,7 +65,7 @@ class ManagedDeviceTestRunnerTest {
     private val mockHelperApk: File = mock()
     private val mockLogger: Logger = mock()
     private val mockUtpConfigFactory: UtpConfigFactory = mock()
-    private val mockemulatorControlConfig: EmulatorControlConfig = mock()
+    private val mockEmulatorControlConfig: EmulatorControlConfig = mock()
     private val mockCoverageOutputDir: File = mock()
     private val mockAdditionalTestOutputDir: File = mock()
     private val mockDslDevice: ManagedVirtualDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
@@ -80,7 +80,6 @@ class ManagedDeviceTestRunnerTest {
     private val mockUtpRunProfileManager: UtpRunProfileManager = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private lateinit var emulatorFolder: File
     private lateinit var avdFolder: File
-    private lateinit var emulatorFile: File
     private lateinit var outputDirectory: File
     private lateinit var jvmExecutable: File
 
@@ -183,7 +182,7 @@ class ManagedDeviceTestRunnerTest {
                 mockUtpDependencies,
                 jvmExecutable,
                 mockVersionedSdkLoader,
-                mockemulatorControlConfig,
+                mockEmulatorControlConfig,
                 useOrchestrator = false,
                 forceCompilation = false,
                 numShards,
@@ -315,7 +314,7 @@ class ManagedDeviceTestRunnerTest {
         // use a real device lock manager to ensure blocking behavior.
         val avdFolder = temporaryFolderRule.newFolder()
         whenever(androidLocations.gradleAvdLocation).thenReturn(avdFolder.toPath())
-        val deviceLockManager = ManagedVirtualDeviceLockManager(androidLocations, 1) {}
+        val deviceLockManager = ManagedVirtualDeviceLockManager(androidLocations, 1, 0) {}
         whenever(mockAvdComponents.lockManager).thenReturn(deviceLockManager)
 
         // contains the list of blocking actions in order.
@@ -401,7 +400,7 @@ class ManagedDeviceTestRunnerTest {
             mockUtpDependencies,
             jvmExecutable,
             mockVersionedSdkLoader,
-            mockemulatorControlConfig,
+            mockEmulatorControlConfig,
             useOrchestrator = false,
             forceCompilation = false,
             numShards = null,

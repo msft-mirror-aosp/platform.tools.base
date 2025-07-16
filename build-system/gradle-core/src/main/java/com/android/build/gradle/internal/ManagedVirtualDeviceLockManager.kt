@@ -25,6 +25,7 @@ import kotlin.math.min
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 
 private const val LOCK_COUNT_PREFIX = "MDLockCount"
@@ -34,24 +35,40 @@ private const val TRACKING_FILE_NAME = "active_gradle_devices"
 private val DEFAULT_RETRY_WAIT_MS = 1000L
 
 /**
- * Class for tracking the number of active Virtual Managed Devices being spawned
- * by the Android Plugin for gradle.
+ * Manages concurrent access to Gradle Managed Devices across multiple Gradle processes
+ * to enforce a system-wide limit.
  *
- * This class does not create managed devices, but instead acts as the source of truth
- * for how many concurrent gradle managed devices are being run. Keeping the number capped
- * at [maxGMDs]. The way to request a number of managed devices is with the [lockAndExecute] method.
+ * This class solves the problem of limiting the total number of concurrently running
+ * Gradle Managed Devices (GMDs) to avoid overloading the host machine. Since Gradle
+ * can run tasks in parallel, including across different projects, a process-safe
+ * locking mechanism is required.
  *
- * Example:
- *     val lockManager = ManagedVirtualDeviceLockManager(locations, 3)
+ * The manager uses a shared lock file (`tracking_file.lock`) stored in the Gradle
+ * AVD directory. This file contains a simple count of all currently "locked" or active
+ * devices across the entire system. All operations on this file are performed
+ * atomically to ensure safety between competing processes.
  *
- *     lockManager.lock(locksRequested).use { lock ->
- *         val locksAcquired = lock.lockCount
- *         // Do stuff with a number of devices equal to the locks acquired...
- *     }
+ * A JVM shutdown hook is registered to attempt to release any acquired locks if the
+ * process terminates unexpectedly, reducing the chance of stale locks. If a stale lock
+ * file is encountered, it can be cleared by running the `cleanManagedDevices` task.
+ *
+ * The primary entry point is the [lockAndExecute] method, which handles the lifecycle
+ * of acquiring and releasing locks.
+ *
+ * @param androidLocationsProvider Service to locate the shared `.android/avd` directory
+ * where the lock file is stored.
+ * @param maxGMDs The maximum number of concurrent Gradle Managed Devices allowed to run
+ * system-wide.
+ * @param deviceLockWaitTimeoutSeconds The maximum time in seconds to wait for a device
+ * lock to become available before throwing a [TimeoutException]. A value of 0 or less
+ * disables the timeout.
+ * @param retryWaitAction A lambda executed between failed attempts to acquire a lock.
+ * Defaults to sleeping the thread and is mainly used for testing.
  */
 class ManagedVirtualDeviceLockManager(
     androidLocationsProvider: AndroidLocationsProvider,
     private val maxGMDs: Int,
+    private val deviceLockWaitTimeoutSeconds: Int,
     private val retryWaitAction: () -> Unit = {
         Thread.sleep(DEFAULT_RETRY_WAIT_MS)
     }
@@ -120,20 +137,33 @@ class ManagedVirtualDeviceLockManager(
      * @return The result of the [onLockAcquired] lambda.
      */
     fun <T> lockAndExecute(lockCount: Int = 1, onLockAcquired: (DeviceLock) -> T): T {
-        var locksAcquired = 0
+        val startSystemTime = System.currentTimeMillis()
+        var locksAcquired = AcquireLocksResult(0, 0)
         while (true) {
             locksAcquired = tryToAcquireLocks(lockCount)
-            if (locksAcquired != 0) {
+            if (locksAcquired.locksToClaim != 0) {
                 break
             }
+
+            if (deviceLockWaitTimeoutSeconds > 0 &&
+                System.currentTimeMillis() - startSystemTime > deviceLockWaitTimeoutSeconds * 1000) {
+                throw TimeoutException("""
+                    Could not acquire device lock after waiting for $deviceLockWaitTimeoutSeconds seconds.
+                    The limit of $maxGMDs concurrent devices has been reached (${locksAcquired.currentTotalDevicesCount} are active).
+
+                    If this seems incorrect, you may have a stale lock file.
+                    Run the `./gradlew cleanManagedDevices` task to resolve the issue.
+                    """.trimIndent())
+            }
+
             // Rest for a bit before trying again.
             retryWaitAction()
         }
 
         try {
-            return onLockAcquired(DeviceLock(locksAcquired))
+            return onLockAcquired(DeviceLock(locksAcquired.locksToClaim))
         } finally {
-            releaseLocks(locksAcquired)
+            releaseLocks(locksAcquired.locksToClaim)
         }
     }
 
@@ -170,7 +200,7 @@ class ManagedVirtualDeviceLockManager(
         }
     }
 
-    private fun tryToAcquireLocks(locksRequested: Int): Int {
+    private fun tryToAcquireLocks(locksRequested: Int): AcquireLocksResult {
         trackingFile.createIfAbsent { file -> createDefaultLockFile(file) }
         return trackingFile.write { file ->
             // Get the current lock count.
@@ -181,9 +211,14 @@ class ManagedVirtualDeviceLockManager(
                 writeLockCount(file, currentTotalDevicesCount + locksToClaim)
                 trackedDevicesInProcess.addAndGet(locksToClaim)
             }
-            locksToClaim
+            AcquireLocksResult(locksToClaim, currentTotalDevicesCount)
         }
     }
+
+    private data class AcquireLocksResult(
+        val locksToClaim: Int,
+        val currentTotalDevicesCount: Int,
+    )
 
 
     /**
