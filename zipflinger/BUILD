@@ -102,6 +102,10 @@ java_test(
         "test/resource/zip_with_directories.zip",
     ],
     jvm_flags = ["-Dtest.suite.jar=testsZipFlinger.jar"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":test_utils",
@@ -121,6 +125,10 @@ java_test(
         "test/resource/5GiBFile.zip",
     ],
     jvm_flags = ["-Dtest.suite.jar=testZip64.jar"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":test_utils",
@@ -160,6 +168,10 @@ java_test(
         "test/resource/4-5files.zip",
     ],
     jvm_flags = ["-Dtest.suite.jar=testsMerge.jar"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":test_utils",
