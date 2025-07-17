@@ -26,7 +26,6 @@
       type="MAIN"
       applicationId="com.example.android.lint.kotlin"
       generatedSourceFolders="build/generated/ap_generated_sources/debug/out"
-      generatedResourceFolders="build/generated/res/resValues/debug"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </artifact>
 </variant>

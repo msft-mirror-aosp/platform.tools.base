@@ -28,8 +28,7 @@
             - applicationId                 = "pkg.name.app"
             - sourceGenTaskName             = "generateProDebugSources"
             - resGenTaskName                = "generateProDebugResources"
-            - generatedResourceFolders:
-               * {PROJECT}/app/build/generated/res/resValues/pro/debug{!}
+            - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proDebug/createProDebugApkListingFileRedirect/redirect.txt{!}
@@ -61,8 +60,7 @@
             - applicationId                 = "pkg.name.app.test"
             - sourceGenTaskName             = "generateProDebugAndroidTestSources"
             - resGenTaskName                = "generateProDebugAndroidTestResources"
-            - generatedResourceFolders:
-               * {PROJECT}/app/build/generated/res/resValues/androidTest/pro/debug{!}
+            - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proDebugAndroidTest/createProDebugAndroidTestApkListingFileRedirect/redirect.txt{!}

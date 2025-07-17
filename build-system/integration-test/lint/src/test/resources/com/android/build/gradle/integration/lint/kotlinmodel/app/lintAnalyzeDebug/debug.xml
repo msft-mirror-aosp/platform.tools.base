@@ -37,12 +37,10 @@
       type="MAIN"
       applicationId="com.example.android.lint.kotlin"
       generatedSourceFolders="build/generated/ap_generated_sources/debug/out"
-      generatedResourceFolders="build/generated/res/resValues/debug"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </artifact>
   <androidTestArtifact
       applicationId="com.example.android.lint.kotlin.test"
-      generatedResourceFolders="build/generated/res/resValues/androidTest/debug"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </androidTestArtifact>
   <testArtifact>

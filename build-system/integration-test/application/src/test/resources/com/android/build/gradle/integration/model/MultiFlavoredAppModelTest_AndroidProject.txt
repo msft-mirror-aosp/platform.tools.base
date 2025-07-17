@@ -28,8 +28,7 @@
             - applicationId                 = "pkg.name.app"
             - sourceGenTaskName             = "generateProPlayDebugSources"
             - resGenTaskName                = "generateProPlayDebugResources"
-            - generatedResourceFolders:
-               * {PROJECT}/app/build/generated/res/resValues/proPlay/debug{!}
+            - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proPlayDebug/createProPlayDebugApkListingFileRedirect/redirect.txt{!}
@@ -61,8 +60,7 @@
             - applicationId                 = "pkg.name.app.test"
             - sourceGenTaskName             = "generateProPlayDebugAndroidTestSources"
             - resGenTaskName                = "generateProPlayDebugAndroidTestResources"
-            - generatedResourceFolders:
-               * {PROJECT}/app/build/generated/res/resValues/androidTest/proPlay/debug{!}
+            - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proPlayDebugAndroidTest/createProPlayDebugAndroidTestApkListingFileRedirect/redirect.txt{!}

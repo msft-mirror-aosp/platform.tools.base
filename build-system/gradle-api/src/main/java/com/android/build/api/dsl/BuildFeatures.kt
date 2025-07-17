@@ -89,12 +89,7 @@ interface BuildFeatures : ExtensionAware {
      * Flag to enable Resource Values generation.
      *
      * Setting the value to `null` resets to the default value.
-     * Default value is `true`.
-     *
-     * You can override the default for this for all projects in your build by adding the line
-     *     `android.defaults.buildfeatures.resvalues=true`
-     * in the gradle.properties file at the root project of your build.
-
+     * Default value is `false`.
      * See [Resources](http://developer.android.com/r/tools/res-values).
      */
     @get:Restricted

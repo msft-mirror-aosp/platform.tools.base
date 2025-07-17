@@ -77,18 +77,18 @@ public class HelloWorldApp extends GradleProject {
                 "src/main/res/layout",
                 "main.xml",
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                        + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    android:orientation=\"vertical\"\n"
-                        + "    android:layout_width=\"fill_parent\"\n"
-                        + "    android:layout_height=\"fill_parent\"\n"
-                        + "    >\n"
-                        + "<TextView\n"
-                        + "    android:layout_width=\"fill_parent\"\n"
-                        + "    android:layout_height=\"wrap_content\"\n"
-                        + "    android:text=\"hello world!\"\n"
-                        + "    android:id=\"@+id/text\"\n"
-                        + "    />\n"
-                        + "</LinearLayout>\n");
+                    + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    android:orientation=\"vertical\"\n"
+                    + "    android:layout_width=\"fill_parent\"\n"
+                    + "    android:layout_height=\"fill_parent\"\n"
+                    + "    >\n"
+                    + "<TextView\n"
+                    + "    android:layout_width=\"fill_parent\"\n"
+                    + "    android:layout_height=\"wrap_content\"\n"
+                    + "    android:text=\"hello world!\"\n"
+                    + "    android:id=\"@+id/text\"\n"
+                    + "    />\n"
+                    + "</LinearLayout>\n");
     }
 
     protected TestSourceFile getManifest() {
@@ -96,21 +96,22 @@ public class HelloWorldApp extends GradleProject {
                 "src/main",
                 "AndroidManifest.xml",
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "      android:versionCode=\"1\"\n"
-                        + "      android:versionName=\"1.0\">\n"
-                        + "\n"
-                        + "    <application android:label=\"@string/app_name\">\n"
-                        + "        <activity android:name=\".HelloWorld\"\n"
-                        + "                  android:exported=\"true\"\n"
-                        + "                  android:label=\"@string/app_name\">\n"
-                        + "            <intent-filter>\n"
-                        + "                <action android:name=\"android.intent.action.MAIN\" />\n"
-                        + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
-                        + "            </intent-filter>\n"
-                        + "        </activity>\n"
-                        + "    </application>\n"
-                        + "</manifest>\n");
+                    + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "      android:versionCode=\"1\"\n"
+                    + "      android:versionName=\"1.0\">\n"
+                    + "\n"
+                    + "    <application android:label=\"@string/app_name\">\n"
+                    + "        <activity android:name=\".HelloWorld\"\n"
+                    + "                  android:exported=\"true\"\n"
+                    + "                  android:label=\"@string/app_name\">\n"
+                    + "            <intent-filter>\n"
+                    + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                    + "                <category android:name=\"android.intent.category.LAUNCHER\""
+                    + " />\n"
+                    + "            </intent-filter>\n"
+                    + "        </activity>\n"
+                    + "    </application>\n"
+                    + "</manifest>\n");
     }
 
     protected TestSourceFile getAndroidTestSource() {
@@ -133,7 +134,8 @@ public class HelloWorldApp extends GradleProject {
                         + "\n"
                         + "@RunWith(AndroidJUnit4.class)\n"
                         + "public class HelloWorldTest {\n"
-                        + "    @Rule public ActivityTestRule<HelloWorld> rule = new ActivityTestRule<>(HelloWorld.class);\n"
+                        + "    @Rule public ActivityTestRule<HelloWorld> rule = new"
+                        + " ActivityTestRule<>(HelloWorld.class);\n"
                         + "    private TextView mTextView;\n"
                         + "\n"
                         + "    @Before\n"
@@ -194,12 +196,16 @@ public class HelloWorldApp extends GradleProject {
                                 + "\n"
                                 + "    lintOptions.checkReleaseBuilds = false\n"
                                 + "    defaultConfig {\n"
-                                + "        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                                + "        testInstrumentationRunner"
+                                + " 'android.support.test.runner.AndroidJUnitRunner'\n"
                                 + "    }\n"
+                                + "    buildFeatures { resValues = true }\n"
                                 + "}\n"
                                 + "dependencies {\n"
-                                + "    androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                                + "    androidTestImplementation \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                                + "    androidTestImplementation"
+                                + " \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
+                                + "    androidTestImplementation"
+                                + " \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
                                 + "}\n");
 
         addFile(buildFile);

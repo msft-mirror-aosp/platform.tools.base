@@ -55,7 +55,7 @@ class OptionVersionTest {
             BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
             BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
-            BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER
+            BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER,
         )
 
         /**
@@ -71,7 +71,6 @@ class OptionVersionTest {
         private val INVALID_FUTURE_STAGES: List<Option<*>> = listOf(
             BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM,
             BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
-            BooleanOption.BUILD_FEATURE_RESVALUES,
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
             BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
             BooleanOption.ENABLE_EMULATOR_CONTROL,

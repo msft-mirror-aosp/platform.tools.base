@@ -22,7 +22,13 @@ import org.junit.Test
 
 class DisabledResValuesInAppModelTest: ReferenceModelComparator(
     referenceConfig = {
-        androidApplication { }
+        androidApplication {
+            android {
+                buildFeatures {
+                    resValues = true
+                }
+            }
+        }
     },
     deltaConfig = {
         androidApplication {

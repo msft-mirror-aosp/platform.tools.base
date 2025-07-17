@@ -5,27 +5,20 @@
             - classesFolders:
                * {PROJECT}/lib/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}{REMOVED}
             - resGenTaskName = (null)
-            - generatedResourceFolders:
-               * {PROJECT}/lib/build/generated/res/resValues/debug{!}{REMOVED}
          - androidTestArtifact:
             - resGenTaskName = (null)
-            - generatedResourceFolders:
-               * {PROJECT}/lib/build/generated/res/resValues/androidTest/debug{!}{REMOVED}
          - unitTestArtifact:
             - classesFolders:
                * {PROJECT}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugUnitTest/generateDebugUnitTestStubRFile/R.jar{!}{REMOVED}
       < debug
-      > release:
+      - release:
          - mainArtifact:
             - classesFolders:
                * {PROJECT}/lib/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}{REMOVED}
             - resGenTaskName = (null)
-            - generatedResourceFolders:
-               * {PROJECT}/lib/build/generated/res/resValues/release{!}{REMOVED}
          - unitTestArtifact:
             - classesFolders:
                * {PROJECT}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/releaseUnitTest/generateReleaseUnitTestStubRFile/R.jar{!}{REMOVED}
-      < release
    < variants
    - flags:
       * "BUILD_FEATURE_ANDROID_RESOURCES -> false"{ADDED}

@@ -26,12 +26,14 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.generators.ResValueGenerator;
 import com.android.utils.FileUtils;
-import java.io.File;
-import java.io.IOException;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 /** Test resValue for string type is treated as String. */
 public class ResValueTypeTest {
@@ -49,7 +51,8 @@ public class ResValueTypeTest {
                                 + "\n"
                                 + "public class ResValueTest extends AndroidTestCase {\n"
                                 + "    public void testResValue() {\n"
-                                + "        assertEquals(\"00\", getContext().getString(R.string.resString));\n"
+                                + "        assertEquals(\"00\","
+                                + " getContext().getString(R.string.resString));\n"
                                 + "    }\n"
                                 + "}\n"));
     }
@@ -65,6 +68,7 @@ public class ResValueTypeTest {
                         + "apply plugin: 'com.android.application'\n"
                         + "\n"
                         + "android {\n"
+                        + "    buildFeatures { resValues = true }\n"
                         + "    namespace = \""
                         + HelloWorldApp.NAMESPACE
                         + "\"\n"
@@ -76,18 +80,29 @@ public class ResValueTypeTest {
                         + "\"\n"
                         + "\n"
                         + "    defaultConfig {\n"
-                        + "        resValue \"array\",             \"resArray\",            \"foo\"\n"
-                        + "        resValue \"attr\",              \"resAttr\",             \"foo\"\n"
-                        + "        resValue \"bool\",              \"resBool\",             \"true\"\n"
-                        + "        resValue \"color\",             \"resColor\",            \"#ffffff\"\n"
-                        + "        resValue \"declare-styleable\", \"resDeclareStyleable\", \"foo\"\n"
-                        + "        resValue \"dimen\",             \"resDimen\",            \"42px\"\n"
-                        + "        resValue \"fraction\",          \"resFraction\",         \"42%\"\n"
-                        + "        resValue \"id\",                \"resId\",               \"42\"\n"
-                        + "        resValue \"integer\",           \"resInteger\",          \"42\"\n"
+                        + "        resValue \"array\",             \"resArray\",           "
+                        + " \"foo\"\n"
+                        + "        resValue \"attr\",              \"resAttr\",            "
+                        + " \"foo\"\n"
+                        + "        resValue \"bool\",              \"resBool\",            "
+                        + " \"true\"\n"
+                        + "        resValue \"color\",             \"resColor\",           "
+                        + " \"#ffffff\"\n"
+                        + "        resValue \"declare-styleable\", \"resDeclareStyleable\","
+                        + " \"foo\"\n"
+                        + "        resValue \"dimen\",             \"resDimen\",           "
+                        + " \"42px\"\n"
+                        + "        resValue \"fraction\",          \"resFraction\",        "
+                        + " \"42%\"\n"
+                        + "        resValue \"id\",                \"resId\",              "
+                        + " \"42\"\n"
+                        + "        resValue \"integer\",           \"resInteger\",         "
+                        + " \"42\"\n"
                         + "        resValue \"plurals\",           \"resPlurals\",          \"s\"\n"
-                        + "        resValue \"string\",            \"resString\",           \"00\"  // resString becomes \"0\" if it is incorrectly treated  as int.\n"
-                        + "        resValue \"style\",             \"resStyle\",            \"foo\"\n"
+                        + "        resValue \"string\",            \"resString\",           \"00\" "
+                        + " // resString becomes \"0\" if it is incorrectly treated  as int.\n"
+                        + "        resValue \"style\",             \"resStyle\",           "
+                        + " \"foo\"\n"
                         + "    }\n"
                         + "}\n");
     }
@@ -108,8 +123,7 @@ public class ResValueTypeTest {
                                 + ResValueGenerator.RES_VALUE_FILENAME_XML);
         assertTrue("Missing file: " + outputFile, outputFile.isFile());
         assertEquals(
-                ""
-                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                         + "<resources>\n"
                         + "\n"
                         + "    <!-- Automatically generated file. DO NOT MODIFY -->\n"
@@ -123,7 +137,8 @@ public class ResValueTypeTest {
                         + "    <!-- Value from default config. -->\n"
                         + "    <color name=\"resColor\">#ffffff</color>\n"
                         + "    <!-- Value from default config. -->\n"
-                        + "    <declare-styleable name=\"resDeclareStyleable\">foo</declare-styleable>\n"
+                        + "    <declare-styleable"
+                        + " name=\"resDeclareStyleable\">foo</declare-styleable>\n"
                         + "    <!-- Value from default config. -->\n"
                         + "    <dimen name=\"resDimen\">42px</dimen>\n"
                         + "    <!-- Value from default config. -->\n"

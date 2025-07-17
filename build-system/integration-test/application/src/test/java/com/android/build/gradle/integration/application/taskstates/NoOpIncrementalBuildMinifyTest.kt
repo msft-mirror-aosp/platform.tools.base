@@ -175,6 +175,11 @@ class NoOpIncrementalBuildMinifyTest {
             android.buildTypes {
                 release { minifyEnabled true }
             }
+            android {
+                buildFeatures {
+                    resValues = true
+                }
+            }
             """.trimIndent()
         )
     }

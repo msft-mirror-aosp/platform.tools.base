@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.junit.Before
@@ -42,13 +41,22 @@ class DisabledSrcResGenTest {
     }
 
     @Test
-    fun `test disabling Res Values via gradle-properties`() {
-        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_RESVALUES, "generateDebugResValues")
-    }
+    fun `test enabling Res Values via gradle-properties`() {
+        val taskName = "generateDebugResValues"
+        var result = rootProject.executor().run("assembleDebug")
+        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
+        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
 
-    @Test
-    fun `test disabling Res Values via build-gradle`() {
-        checkViaBuildFile("resValues", "generateDebugResValues")
+        rootProject.gradlePropertiesFile
+            .appendText(
+                """
+    ${BooleanOption.BUILD_FEATURE_RESVALUES.propertyName}=true"""
+            )
+
+        result = rootProject.executor().run("assembleDebug")
+
+        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
+        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
     }
 
     @Test

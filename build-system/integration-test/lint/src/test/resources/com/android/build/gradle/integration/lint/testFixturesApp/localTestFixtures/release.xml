@@ -41,12 +41,10 @@
       type="MAIN"
       applicationId="com.example.app"
       generatedSourceFolders="build/generated/ap_generated_sources/release/out"
-      generatedResourceFolders="build/generated/res/resValues/release"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </artifact>
   <androidTestArtifact
       applicationId="com.example.app.test"
-      generatedResourceFolders="build/generated/res/resValues/androidTest/release"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </androidTestArtifact>
   <testFixturesArtifact

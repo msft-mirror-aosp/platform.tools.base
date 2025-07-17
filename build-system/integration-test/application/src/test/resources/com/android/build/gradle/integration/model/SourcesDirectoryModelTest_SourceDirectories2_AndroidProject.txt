@@ -29,8 +29,7 @@
             - applicationId                 = "pkg.name.app"
             - sourceGenTaskName             = "generateDebugSources"
             - resGenTaskName                = "generateDebugResources"
-            - generatedResourceFolders:
-               * {PROJECT}/app/build/generated/res/resValues/debug{!}
+            - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/debug/createDebugApkListingFileRedirect/redirect.txt{!}
@@ -62,8 +61,7 @@
             - applicationId                 = "pkg.name.app.test"
             - sourceGenTaskName             = "generateDebugAndroidTestSources"
             - resGenTaskName                = "generateDebugAndroidTestResources"
-            - generatedResourceFolders:
-               * {PROJECT}/app/build/generated/res/resValues/androidTest/debug{!}
+            - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/debugAndroidTest/createDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
@@ -116,8 +114,7 @@
             - applicationId                 = "pkg.name.app"
             - sourceGenTaskName             = "generateReleaseSources"
             - resGenTaskName                = "generateReleaseResources"
-            - generatedResourceFolders:
-               * {PROJECT}/app/build/generated/res/resValues/release{!}
+            - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
             - abiFilters                    = []
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/release/createReleaseApkListingFileRedirect/redirect.txt{!}

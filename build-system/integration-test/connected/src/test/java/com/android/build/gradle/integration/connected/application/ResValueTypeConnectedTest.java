@@ -22,12 +22,14 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
-import java.io.IOException;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+
+import java.io.IOException;
 
 public class ResValueTypeConnectedTest {
     public static GradleProject app = HelloWorldApp.noBuildFile();
@@ -39,21 +41,22 @@ public class ResValueTypeConnectedTest {
                         "src/androidTest/java/com/example/helloworld",
                         "ResValueTest.java",
                         "\n"
-                                + "package com.example.helloworld;\n"
-                                + "\n"
-                                + "import android.support.test.InstrumentationRegistry;\n"
-                                + "import android.support.test.runner.AndroidJUnit4;\n"
-                                + "import org.junit.Assert;\n"
-                                + "import org.junit.Test;\n"
-                                + "import org.junit.runner.RunWith;\n"
-                                + "\n"
-                                + "@RunWith(AndroidJUnit4.class)\n"
-                                + "public class ResValueTest {\n"
-                                + "    @Test\n"
-                                + "    public void testResValue() {\n"
-                                + "        Assert.assertEquals(\"00\", InstrumentationRegistry.getTargetContext().getString(R.string.resString));\n"
-                                + "    }\n"
-                                + "}\n"));
+                            + "package com.example.helloworld;\n"
+                            + "\n"
+                            + "import android.support.test.InstrumentationRegistry;\n"
+                            + "import android.support.test.runner.AndroidJUnit4;\n"
+                            + "import org.junit.Assert;\n"
+                            + "import org.junit.Test;\n"
+                            + "import org.junit.runner.RunWith;\n"
+                            + "\n"
+                            + "@RunWith(AndroidJUnit4.class)\n"
+                            + "public class ResValueTest {\n"
+                            + "    @Test\n"
+                            + "    public void testResValue() {\n"
+                            + "        Assert.assertEquals(\"00\","
+                            + " InstrumentationRegistry.getTargetContext().getString(R.string.resString));\n"
+                            + "    }\n"
+                            + "}\n"));
     }
 
     @Rule
@@ -82,27 +85,40 @@ public class ResValueTypeConnectedTest {
                         + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION
                         + "\"\n"
                         + "\n"
+                        + "    buildFeatures { resValues = true }\n"
                         + "    defaultConfig {\n"
-                        + "        resValue \"array\",             \"resArray\",            \"foo\"\n"
-                        + "        resValue \"attr\",              \"resAttr\",             \"foo\"\n"
-                        + "        resValue \"bool\",              \"resBool\",             \"true\"\n"
-                        + "        resValue \"color\",             \"resColor\",            \"#ffffff\"\n"
-                        + "        resValue \"declare-styleable\", \"resDeclareStyleable\", \"foo\"\n"
-                        + "        resValue \"dimen\",             \"resDimen\",            \"42px\"\n"
-                        + "        resValue \"fraction\",          \"resFraction\",         \"42%\"\n"
-                        + "        resValue \"id\",                \"resId\",               \"\"\n // needs to be empty or a resource reference"
-                        + "        resValue \"integer\",           \"resInteger\",          \"42\"\n"
+                        + "        resValue \"array\",             \"resArray\",           "
+                        + " \"foo\"\n"
+                        + "        resValue \"attr\",              \"resAttr\",            "
+                        + " \"foo\"\n"
+                        + "        resValue \"bool\",              \"resBool\",            "
+                        + " \"true\"\n"
+                        + "        resValue \"color\",             \"resColor\",           "
+                        + " \"#ffffff\"\n"
+                        + "        resValue \"declare-styleable\", \"resDeclareStyleable\","
+                        + " \"foo\"\n"
+                        + "        resValue \"dimen\",             \"resDimen\",           "
+                        + " \"42px\"\n"
+                        + "        resValue \"fraction\",          \"resFraction\",        "
+                        + " \"42%\"\n"
+                        + "        resValue \"id\",                \"resId\",               \"\"\n"
+                        + " // needs to be empty or a resource reference        resValue"
+                        + " \"integer\",           \"resInteger\",          \"42\"\n"
                         + "        resValue \"plurals\",           \"resPlurals\",          \"s\"\n"
-                        + "        resValue \"string\",            \"resString\",           \"00\"  // resString becomes \"0\" if it is incorrectly treated  as int.\n"
-                        + "        resValue \"style\",             \"resStyle\",            \"foo\"\n"
+                        + "        resValue \"string\",            \"resString\",           \"00\" "
+                        + " // resString becomes \"0\" if it is incorrectly treated  as int.\n"
+                        + "        resValue \"style\",             \"resStyle\",           "
+                        + " \"foo\"\n"
                         + "\n"
                         + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
-                        + "        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + "        testInstrumentationRunner"
+                        + " 'android.support.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "}\n"
                         + "\n"
                         + "dependencies {\n"
-                        + "    androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "    androidTestImplementation"
+                        + " \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
                         + "}\n"
                         + "\n");
         // fail fast if no response
