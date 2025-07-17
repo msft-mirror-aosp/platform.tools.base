@@ -1,0 +1,30 @@
+#
+# Test uses-sdk_main: check that no USES_SDK_IN_MANIFEST_LENIENT_HANDLING results in errors
+#
+
+@main
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app"
+    android:versionCode="100"
+    android:versionName="1.0.0">
+    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+</manifest>
+
+@result
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app"
+    android:versionCode="100"
+    android:versionName="1.0.0" >
+
+    <uses-sdk
+        android:minSdkVersion="10"
+        android:targetSdkVersion="31" />
+
+    <application />
+
+</manifest>
+@errors
+ERROR:The <uses-sdk> element was found in your AndroidManifest.xml file. Starting with Android Gradle Plugin 9.0, this is a build-breaking error. Previously, this condition only generated a warning. However, the SDK version properties defined in the DSL or the variant API have always overridden the manifest values. To eliminate this source of confusion, declaring <uses-sdk> in the manifest is no longer allowed.[\s]*Fix: Remove <uses-sdk> from your AndroidManifest.xml

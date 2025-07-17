@@ -32,21 +32,24 @@ import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.XmlUtils;
+
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 /**
  * Represents a loaded xml document.
@@ -463,7 +466,8 @@ public class XmlDocument {
     boolean checkTopLevelDeclarations(
             Map<String, Object> placeHolderValues,
             MergingReport.Builder mergingReportBuilder,
-            XmlDocument.Type documentType) {
+            XmlDocument.Type documentType,
+            Boolean handleUsesSdkInManifestLeniently) {
         // first do we have a package declaration in the main manifest ?
         Optional<XmlAttribute> mainPackageAttribute = getPackage();
         if (!placeHolderValues.containsKey(PACKAGE_NAME)
@@ -479,10 +483,12 @@ public class XmlDocument {
             return false;
         }
 
-        // the version from uses-sdk is ignore, issue a warning if is a different version than
-        // the injected one as it would lead to confusion.
         Optional<XmlElement> usesSdk = getByTypeAndKey(ManifestModel.NodeTypes.USES_SDK, null);
-        if (usesSdk.isPresent()) {
+        if (usesSdk.isEmpty()) {
+            return true;
+        } else if (handleUsesSdkInManifestLeniently) {
+            // the version from uses-sdk is ignored, issue a warning if is a different version than
+            // the injected one as it would lead to confusion.
             verifyVersion(
                     usesSdk.get(),
                     () -> getExplicitMinSdkVersion(mergingReportBuilder),
@@ -503,8 +509,23 @@ public class XmlDocument {
                     () -> getMaxSdkVersion(mergingReportBuilder),
                     "maxSdkVersion",
                     mergingReportBuilder);
+            return true;
+        } else {
+            String error =
+                    "The <uses-sdk> element was found in your AndroidManifest.xml file. Starting"
+                        + " with Android Gradle Plugin 9.0, this is a build-breaking error."
+                        + " Previously, this condition only generated a warning. However, the SDK"
+                        + " version properties defined in the DSL or the variant API have always"
+                        + " overridden the manifest values. To eliminate this source of confusion,"
+                        + " declaring <uses-sdk> in the manifest is no longer allowed.\n\n"
+                        + " Fix: Remove <uses-sdk> from your AndroidManifest.xml";
+
+            mergingReportBuilder.addMessage(
+                    new SourceFilePosition(getSourceFile(), usesSdk.get().getPosition()),
+                    MergingReport.Record.Severity.ERROR,
+                    error);
+            return false;
         }
-        return true;
     }
 
     private void verifyVersion(

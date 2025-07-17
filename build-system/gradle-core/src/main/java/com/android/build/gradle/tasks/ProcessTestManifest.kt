@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.manifest.ManifestProviderImpl
 import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.ProcessApplicationManifest.Companion.getArtifactName
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.internal.InstrumentedTestManifestGenerator
@@ -104,6 +105,9 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
 
     @get:Input
     abstract val namespacedAndroidResources: Property<Boolean>
+
+    @get:Input
+    abstract val disallowUsesSdkInManifest: Property<Boolean>
 
     override fun doTaskAction() {
         val manifestOutputFolder = packagedManifestOutputDirectory.get().asFile
@@ -302,8 +306,13 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                     }
                     .setNamespace(namespace)
                     .withFeatures(
-                        ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
-                        ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST,
+                        *listOfNotNull(
+                            ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
+                            ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST,
+                            ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
+                                disallowUsesSdkInManifest.get()
+                            }
+                        ).toTypedArray()
                     )
 
                 instrumentationRunner?.let {
@@ -340,7 +349,12 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                 ManifestMerger2.MergeType.APPLICATION
             )
                 .withFeatures(
-                    ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS
+                    *listOfNotNull(
+                        ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS,
+                        ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
+                            disallowUsesSdkInManifest.get()
+                        }
+                    ).toTypedArray()
                 )
                 .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
                 .addManifestProviders(manifestProviders)
@@ -619,6 +633,9 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                 .setDisallowChanges(
                     parseTargetHash(creationConfig.global.compileSdkHashString).apiLevel
                 )
+            task.disallowUsesSdkInManifest.setDisallowChanges(
+                creationConfig.services.projectOptions[BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST]
+            )
         }
     }
 

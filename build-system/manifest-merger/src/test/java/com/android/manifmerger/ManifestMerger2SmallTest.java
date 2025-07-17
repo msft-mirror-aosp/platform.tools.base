@@ -898,6 +898,7 @@ public class ManifestMerger2SmallTest {
         MergingReport mergingReport =
                 ManifestMerger2.newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
                         .addLibraryManifest(libFile)
+                        .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                         .merge();
 
         assertTrue(mergingReport.getResult().isSuccess());
@@ -1403,6 +1404,7 @@ public class ManifestMerger2SmallTest {
                 ManifestMerger2.newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
                         .setFeatureName("dynamic_split")
                         .withFeatures(Feature.ADD_DYNAMIC_FEATURE_ATTRIBUTES)
+                        .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                         .merge();
 
         assertTrue(mergingReport.getResult().isSuccess());
@@ -1687,6 +1689,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     tmpFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertEquals(MergingReport.Result.ERROR, mergingReport.getResult());
             assertStringPresenceInLogRecords(mergingReport, "Package name 'example' at position ");
@@ -1718,6 +1721,7 @@ public class ManifestMerger2SmallTest {
         try {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(tmpFile, mockLog, ManifestMerger2.MergeType.LIBRARY)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertEquals(MergingReport.Result.SUCCESS, mergingReport.getResult());
             assertNotNull(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
@@ -2482,6 +2486,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.ERROR);
             assertNull(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
@@ -2529,6 +2534,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.ERROR);
             assertNull(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
@@ -2636,6 +2642,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.ERROR);
             assertNull(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
@@ -2678,6 +2685,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.ERROR);
             assertNull(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
@@ -2758,6 +2766,7 @@ public class ManifestMerger2SmallTest {
                     ManifestMerger2.newMerger(
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
                             .withFeatures(Feature.REMOVE_TOOLS_DECLARATIONS)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             System.out.println(mergingReport.getLoggingRecords());
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.WARNING);
@@ -2811,6 +2820,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
         } finally {
@@ -2842,6 +2852,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
             Document xmlDocument =
@@ -2892,6 +2903,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
             Document xmlDocument =
@@ -3048,6 +3060,7 @@ public class ManifestMerger2SmallTest {
                                     appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
                             .addLibraryManifest(libFile)
                             .withFeatures(Feature.DISABLE_MINSDKLIBRARY_CHECK)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
         } finally {
@@ -3071,6 +3084,7 @@ public class ManifestMerger2SmallTest {
             MergingReport mergingReport =
                     ManifestMerger2.newMerger(
                                     libFile, new MockLog(), ManifestMerger2.MergeType.LIBRARY)
+                            .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369
                             .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
             Document mergedDocument =
@@ -3104,7 +3118,9 @@ public class ManifestMerger2SmallTest {
                             libFile, new MockLog(), ManifestMerger2.MergeType.LIBRARY);
 
             invoker.setOverride(ManifestSystemProperty.UsesSdk.TARGET_SDK_VERSION, "32");
-            MergingReport mergingReport = invoker.merge();
+            MergingReport mergingReport = invoker
+                    .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369
+                    .merge();
             assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
             Document mergedDocument =
                     parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));

@@ -70,7 +70,8 @@ fun mergeManifests(
     logger: ILogger,
     checkIfPackageInMainManifest: Boolean = true,
     checkIfInstantModule: Boolean = false,
-    compileSdk: Int? = null
+    compileSdk: Int? = null,
+    usesSdkInManifestLenientHandling: Boolean = true
 ): MergingReport {
 
     try {
@@ -105,6 +106,10 @@ fun mergeManifests(
 
         if (outAaptSafeManifestLocation != null) {
             manifestMergerInvoker.withFeatures(ManifestMerger2.Invoker.Feature.MAKE_AAPT_SAFE)
+        }
+
+        if (usesSdkInManifestLenientHandling) {
+            manifestMergerInvoker.withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING)
         }
 
         manifestMergerInvoker.setGeneratedLocaleConfigAttribute(generatedLocaleConfigAttribute)

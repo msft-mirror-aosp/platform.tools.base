@@ -105,6 +105,7 @@ public class ManifestMerger2Test {
                 "29b_uses_perm_invalidSelector",
                 "29c_uses_perm_unsupportedSelector",
                 "30_uses_sdk_ok",
+                "31_uses_sdk_disallowed",
                 "32_uses_sdk_minsdk_ok",
                 "33_uses_sdk_minsdk_conflict",
                 "33b_uses_sdk_minsdk_override.xml",
@@ -167,13 +168,16 @@ public class ManifestMerger2Test {
                 "109d_activity_feature_flag_node_multiple_incoming_match",
                 "109e_uses_sdk_feature_flag_node_validation.xml",
                 "109f_dup_uses_sdk_feature_flag_node_validation.xml",
-                "109g_dup_uses_sdk_node_validation.xml"
+                "109g_dup_uses_sdk_node_validation.xml",
             };
 
     private static final Multimap<Predicate<String>, ManifestMerger2.Invoker.Feature>
             TEST_CASE_FEATURES =
                     ImmutableSetMultimap
                             .<Predicate<String>, ManifestMerger2.Invoker.Feature>builder()
+                            .put(
+                                    testCaseIsNot("31_uses_sdk_disallowed"),
+                                    ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING)
                             .put(
                                     testCaseIsNot("91_tools_in_lib_but_not_main.xml"),
                                     ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)

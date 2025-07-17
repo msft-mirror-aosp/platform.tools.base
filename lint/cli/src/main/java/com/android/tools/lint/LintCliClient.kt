@@ -1690,6 +1690,7 @@ open class LintCliClient : LintClient {
             ManifestMerger2.Invoker.Feature.SKIP_BLAME,
             ManifestMerger2.Invoker.Feature.SKIP_XML_STRING,
             ManifestMerger2.Invoker.Feature.NO_PLACEHOLDER_REPLACEMENT,
+            ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING,
           )
           .addLibraryManifests(*manifests.toTypedArray())
           .withFileStreamProvider(

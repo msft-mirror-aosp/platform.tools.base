@@ -197,7 +197,11 @@ public class ManifestMerger2 {
         if (!loadedMainManifestInfo
                         .getXmlDocument()
                         .checkTopLevelDeclarations(
-                                mPlaceHolderValues, mergingReportBuilder, mDocumentType)
+                                mPlaceHolderValues,
+                                mergingReportBuilder,
+                                mDocumentType,
+                                mOptionalFeatures.contains(
+                                        Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING))
                 && !mOptionalFeatures.contains(Invoker.Feature.KEEP_GOING_AFTER_ERRORS)) {
             return mergingReportBuilder.build();
         }
@@ -1877,6 +1881,9 @@ public class ManifestMerger2 {
             SUPPRESS_MANIFEST_PACKAGE_WARNING,
 
             CHECK_INSTANT_FLAG,
+
+            /** Warns instead of throwing an error when the main manifest contains <uses-sdk>. */
+            USES_SDK_IN_MANIFEST_LENIENT_HANDLING,
         }
 
         /**

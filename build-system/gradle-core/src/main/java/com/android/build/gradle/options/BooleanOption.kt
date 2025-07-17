@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.options
 
-import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
@@ -718,6 +717,15 @@ enum class BooleanOption(
     PRIVACY_SANDBOX_SDK_ENABLE_LINT(
         "android.experimental.privacysandboxsdk.enableLint",
         true,
+        FeatureStage.SoftlyEnforced(VERSION_9_0)
+    ),
+
+    /**
+     * When enabled, the <uses-sdk> tag in AndroidManifest.xml will generate build errors.
+     */
+    DISALLOW_USES_SDK_IN_MANIFEST(
+        "android.usesSdkInManifest.disallowed",
+        false,
         FeatureStage.SoftlyEnforced(VERSION_9_0)
     ),
 
