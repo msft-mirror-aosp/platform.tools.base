@@ -81,8 +81,6 @@
   com/android/tools:testutils
   com/android/tools/utp:android-device-provider-ddmlib
   com/android/tools/utp:android-device-provider-ddmlib-proto
-  com/android/tools/utp:android-device-provider-gradle
-  com/android/tools/utp:android-device-provider-gradle-proto
   com/android/tools/utp:android-device-provider-profile
   com/android/tools/utp:android-device-provider-profile-proto
   com/android/tools/utp:android-test-plugin-host-additional-test-output

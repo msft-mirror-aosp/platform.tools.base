@@ -151,7 +151,6 @@ dependencies {
     implementation project(':base:builder-test-api')
     implementation libs.com.android.tools.layoutlib.layoutlibApi
     implementation libs.com.android.tools.utp.androidDeviceProviderDdmlibProto
-    implementation libs.com.android.tools.utp.androidDeviceProviderGradleProto
     implementation libs.com.android.tools.utp.androidDeviceProviderProfileProto
     implementation libs.com.android.tools.utp.androidTestPluginHostAdditionalTestOutputProto
     implementation libs.com.android.tools.utp.androidTestPluginHostCoverageProto

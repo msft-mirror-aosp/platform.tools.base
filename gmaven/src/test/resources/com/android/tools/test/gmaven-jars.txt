@@ -4254,35 +4254,6 @@ com/android/tools/utp/android-device-provider-ddmlib-proto
   com/android/tools/utp/plugins/deviceprovider/ddmlib/
   com/android/tools/utp/plugins/deviceprovider/ddmlib/proto/
 
-com/android/tools/utp/android-device-provider-gradle
-  META-INF/
-  META-INF/MANIFEST.MF
-  META-INF/android-device-provider-gradle.kotlin_module
-  META-INF/services/
-  META-INF/services/com.google.testing.platform.api.device.DeviceProvider
-  com/
-  com/android/
-  com/android/tools/
-  com/android/tools/utp/
-  com/android/tools/utp/plugins/
-  com/android/tools/utp/plugins/deviceprovider/
-  com/android/tools/utp/plugins/deviceprovider/gradle/
-
-com/android/tools/utp/android-device-provider-gradle-proto
-  META-INF/
-  META-INF/MANIFEST.MF
-  NOTICE
-  com/
-  com/android/
-  com/android/tools/
-  com/android/tools/utp/
-  com/android/tools/utp/plugins/
-  com/android/tools/utp/plugins/deviceprovider/
-  com/android/tools/utp/plugins/deviceprovider/gradle/
-  com/android/tools/utp/plugins/deviceprovider/gradle/proto/
-  gradle_managed_android_device_provider_config.proto
-  gradle_managed_device_config.proto
-
 com/android/tools/utp/android-device-provider-profile
   META-INF/
   META-INF/MANIFEST.MF

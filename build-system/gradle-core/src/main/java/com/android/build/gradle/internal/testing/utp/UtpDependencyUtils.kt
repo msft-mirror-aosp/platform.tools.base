@@ -52,12 +52,6 @@ enum class UtpDependency(
             UtpDependencies::deviceControllerDdmlib,
             ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
             ANDROID_TOOLS_UTP_PLUGIN_VERSION),
-    ANDROID_DEVICE_PROVIDER_GRADLE(
-            "android-device-provider-gradle",
-            "com.android.tools.utp.plugins.deviceprovider.gradle.GradleManagedAndroidDeviceProvider",
-            UtpDependencies::deviceProviderGradle,
-            ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-            ANDROID_TOOLS_UTP_PLUGIN_VERSION),
     ANDROID_DRIVER_INSTRUMENTATION(
             "android-driver-instrumentation",
             "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver",
@@ -131,10 +125,6 @@ abstract class UtpDependencies {
     @get:Optional
     @get:Classpath
     abstract val deviceControllerDdmlib: ConfigurableFileCollection
-
-    @get:Optional
-    @get:Classpath
-    abstract val deviceProviderGradle: ConfigurableFileCollection
 
     @get:Optional
     @get:Classpath

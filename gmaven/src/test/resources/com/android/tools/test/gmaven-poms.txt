@@ -545,7 +545,6 @@ com.android.tools.build:gradle
     com.android.tools.build:builder-test-api (runtime)
     com.android.tools.layoutlib:layoutlib-api (runtime)
     com.android.tools.utp:android-device-provider-ddmlib-proto (runtime)
-    com.android.tools.utp:android-device-provider-gradle-proto (runtime)
     com.android.tools.utp:android-device-provider-profile-proto (runtime)
     com.android.tools.utp:android-test-plugin-host-additional-test-output-proto (runtime)
     com.android.tools.utp:android-test-plugin-host-coverage-proto (runtime)
@@ -825,24 +824,6 @@ com.android.tools.utp:android-device-provider-ddmlib
 com.android.tools.utp:android-device-provider-ddmlib-proto
   pomName=com.android.tools.utp.android-device-provider-ddmlib-proto
   description=A protobuf messages used in a UTP plugin to provide Android device using ddmlib
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-device-provider-gradle
-  pomName=com.android.tools.utp.android-device-provider-gradle
-  description=A UTP plugin to provide a Gradle managed virtual Android device
-  dependencies:
-    com.android.tools:common (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.android.tools.utp:android-device-provider-gradle-proto (runtime)
-    com.android.tools.utp:android-device-provider-profile (runtime)
-    com.google.testing.platform:core-proto (runtime)
-    com.google.testing.platform:android-device-provider-local (runtime)
-
-com.android.tools.utp:android-device-provider-gradle-proto
-  pomName=com.android.tools.utp.android-device-provider-gradle-proto
-  description=A protobuf messages used in a UTP plugin to provide a Gradle managed virtual Android devices
   dependencies:
     com.google.protobuf:protobuf-java (runtime)
 

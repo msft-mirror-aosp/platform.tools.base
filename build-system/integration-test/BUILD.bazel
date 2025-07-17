@@ -217,8 +217,6 @@ maven_repository(
     artifacts = [
         "//tools/base/utp/android-device-provider-ddmlib:android-device-provider-ddmlib",
         "//tools/base/utp/android-device-provider-ddmlib-proto:android-device-provider-ddmlib-proto",
-        "//tools/base/utp/android-device-provider-gradle:android-device-provider-gradle",
-        "//tools/base/utp/android-device-provider-gradle-proto:android-device-provider-gradle-proto",
         "//tools/base/utp/android-test-plugin-host-additional-test-output:android-test-plugin-host-additional-test-output",
         "//tools/base/utp/android-test-plugin-host-additional-test-output-proto:android-test-plugin-host-additional-test-output-proto",
         "//tools/base/utp/android-test-plugin-host-apk-installer:android-test-plugin-host-apk-installer",
