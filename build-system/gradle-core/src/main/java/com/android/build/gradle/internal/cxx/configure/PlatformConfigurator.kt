@@ -361,16 +361,8 @@ class PlatformConfigurator(private val ndkRoot: File) {
         }
         if (minSdkVersion >= min) return minSdkVersion
 
-        // We use min of the NDK instead of the NDK version to avoid injecting the NDK version into here.
-        if (min <= 19) {
-            // Before NDK r26, issue a warning and lift the min SDK version to NDK min.
-            // This warning branch is here so that we don't break existing users on a minor version of AGP.
-            // The next chance to have a breaking change, and remove this warning and let it become an error
-            // is AGP 9.0.
-            // TODO(b/313501727) - AGP C++: Remove pre-r26 warning about min SDK too low
-            warnln("Platform version ${displayVersionString(minSdkVersion, displayVersion)} is unsupported by this NDK, using $min instead. Please change minSdk to at least $min to avoid this warning.")
-            return min
-        }
+        // If minSdkVersion isn't specified, then use the minimum available.
+        if (minSdkVersion == 0) return min
 
         // NDK r26 and newer below here.
 
