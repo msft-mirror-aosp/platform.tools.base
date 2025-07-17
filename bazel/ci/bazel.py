@@ -117,7 +117,7 @@ def make_build_env(
   bazel_path = os.path.normpath(bazel_path)
   if not bazel_version:
     with open(os.path.join(workspace_dir, ".bazelversion")) as f:
-      bazel_version = f.read()
+      bazel_version = f.readline().rstrip()
   # Assuming the workspace root is the name of the branch.
   # Ideally, buildbot provides a concerete environment variable.
   branch = workspace_dir.split("/")[-1]
