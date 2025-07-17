@@ -211,6 +211,14 @@ enum class BooleanOption(
     ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Supported),
 
     /**
+     * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
+     */
+    ENABLE_LEGACY_VARIANT_API("android.enableLegacyVariantApi", true, FeatureStage.Supported,
+        FutureStage(false, FeatureStage.Supported, Version.VERSION_9_0)
+    ),
+
+
+    /**
      * Enables R8 full mode
      * (https://r8.googlesource.com/r8/+/refs/heads/8.8/compatibility-faq.md#r8-full-mode).
      *

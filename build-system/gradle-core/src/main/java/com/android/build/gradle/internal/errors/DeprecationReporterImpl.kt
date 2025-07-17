@@ -50,10 +50,11 @@ class DeprecationReporterImpl(
         newApiElement: String?,
         oldApiElement: String,
         url: String,
-        deprecationTarget: DeprecationTarget
+        deprecationTarget: DeprecationTarget,
+        requiresOptIn: Boolean,
     ) {
-        if (!checkAndSet(oldApiElement)) {
-            val debugApi = projectOptions.get(BooleanOption.DEBUG_OBSOLETE_API)
+        if (requiresOptIn || !checkAndSet(oldApiElement)) {
+            val debugApi = projectOptions.get(BooleanOption.DEBUG_OBSOLETE_API) || requiresOptIn
             val firstLine = if(newApiElement != null) {
                 "API '$oldApiElement' is obsolete and has been replaced with '$newApiElement'."
             } else {
@@ -66,29 +67,30 @@ class DeprecationReporterImpl(
             var messageEnd = ""
 
             if (debugApi) {
-                val traces = Thread.currentThread().stackTrace
+                val traces = Thread.currentThread().stackTrace // TODO: Use StackWalker ?
 
                 // special check for the Kotlin plugin.
                 val kotlin = traces.filter {
                     it.className.startsWith("org.jetbrains.kotlin.gradle.plugin.")
                 }
 
-                messageEnd = if (kotlin.isNotEmpty()) {
+                messageEnd = if (kotlin.isNotEmpty() && false) {
                     "REASON: The Kotlin plugin is currently calling this deprecated API." +
-                            " Watch https://youtrack.jetbrains.com/issue/KT-25428 and, if possible," +
-                            " use a newer version of the Kotlin plugin that has fixed this issue."
+                            " Please migrate to built in kotlin."
                 } else {
                     // other cases.
                     getCallingSite(traces)
 
-                } + "\nWARNING: Debugging obsolete API calls can take time during configuration. It's recommended to not keep it on at all times."
+                } + if(requiresOptIn) "" else "\nWARNING: Debugging obsolete API calls can take time during configuration. It's recommended to not keep it on at all times."
             } else {
                 messageEnd = "To determine what is calling $oldApiElement, use -P${BooleanOption.DEBUG_OBSOLETE_API.propertyName}=true on the command line to display more information."
             }
 
-            issueReporter.reportWarning(
-                Type.DEPRECATED_DSL,
-                "$messageStart\n$messageEnd")
+            if (requiresOptIn) {
+                issueReporter.reportError(Type.DEPRECATED_DSL, "$messageStart\n\n$messageEnd")
+            } else {
+                issueReporter.reportWarning(Type.DEPRECATED_DSL, "$messageStart\n\n$messageEnd")
+            }
 
         }
     }

@@ -6,6 +6,7 @@ import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
+import com.android.build.gradle.options.BooleanOption
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.NamedDomainObjectContainer
@@ -59,7 +60,7 @@ abstract class AbstractAppExtension(
      */
     val applicationVariants: DomainObjectSet<ApplicationVariant>
         get() {
-            recordOldVariantApiUsage()
+            recordOldVariantApiUsage("applicationVariants")
            return _applicationVariants
         }
 
@@ -67,6 +68,7 @@ abstract class AbstractAppExtension(
         dslServices.domainObjectSet(ApplicationVariant::class.java)
 
     override fun addVariant(variant: BaseVariant) {
+        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
         _applicationVariants.add(variant as ApplicationVariant)
     }
 }

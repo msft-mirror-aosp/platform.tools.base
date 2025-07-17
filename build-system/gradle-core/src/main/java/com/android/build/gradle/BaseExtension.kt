@@ -50,6 +50,7 @@ import com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.LibraryRequest
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.SourceProvider
@@ -152,7 +153,16 @@ abstract class BaseExtension protected constructor(
         lock()
     }
 
-    protected fun recordOldVariantApiUsage() {
+    protected fun recordOldVariantApiUsage(elementName: String) {
+        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) {
+            dslServices.deprecationReporter.reportDeprecatedApi(
+                null,
+                elementName,
+                "https://developer.android.com/studio/releases/gradle-plugin-api-updates",
+                deprecationTarget = DeprecationReporter.DeprecationTarget.LEGACY_VARIANT_API,
+                requiresOptIn = true,
+            )
+        }
         stats?.oldVariantApiInUse = true
         hasOldVariantApiUsage = true
     }
