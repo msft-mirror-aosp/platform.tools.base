@@ -31,6 +31,7 @@ import com.android.repository.api.SchemaModule
 import com.android.repository.api.SettingsController
 import com.android.repository.impl.meta.RepositoryPackages
 import java.nio.file.Path
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
 import org.w3c.dom.ls.LSResourceResolver
 
@@ -108,13 +109,34 @@ class FakeRepoManager(override val localPath: Path?, override val packages: Repo
 
   override fun getResourceResolver(progress: ProgressIndicator): LSResourceResolver? = null
 
-  override fun addLocalChangeListener(listener: RepoLoadedListener) {}
+  private val localListeners = CopyOnWriteArrayList<RepoLoadedListener>()
+  private val remoteListeners = CopyOnWriteArrayList<RepoLoadedListener>()
 
-  override fun removeLocalChangeListener(listener: RepoLoadedListener) {}
+  override fun addLocalChangeListener(listener: RepoLoadedListener) {
+    localListeners.add(listener)
+  }
 
-  override fun addRemoteChangeListener(listener: RepoLoadedListener) {}
+  override fun removeLocalChangeListener(listener: RepoLoadedListener) {
+    localListeners.remove(listener)
+  }
 
-  override fun removeRemoteChangeListener(listener: RepoLoadedListener) {}
+  fun updateLocalPackages(localPackages: Collection<LocalPackage>) {
+    packages.setLocalPkgInfos(localPackages)
+    localListeners.forEach { it.loaded(packages) }
+  }
+
+  override fun addRemoteChangeListener(listener: RepoLoadedListener) {
+    remoteListeners.add(listener)
+  }
+
+  override fun removeRemoteChangeListener(listener: RepoLoadedListener) {
+    remoteListeners.remove(listener)
+  }
+
+  fun updateRemotePackages(localPackages: Collection<RemotePackage>) {
+    packages.setRemotePkgInfos(localPackages)
+    remoteListeners.forEach { it.loaded(packages) }
+  }
 
   override fun installBeginning(repoPackage: RepoPackage, installer: PackageOperation) {}
 
