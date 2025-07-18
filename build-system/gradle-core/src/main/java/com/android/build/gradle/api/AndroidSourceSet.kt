@@ -132,7 +132,8 @@ interface AndroidSourceSet: com.android.build.api.dsl.AndroidSourceSet {
      * The Android JNI source directory for this source set.
      * @deprecated This is unused and will be removed in AGP 9.0
      */
-    @Deprecated("This property is unused and will be removed in AGP 9.0")
+    @Deprecated("This property is unused and will be removed in AGP 9.0",
+        level = DeprecationLevel.HIDDEN)
     override val jni: AndroidSourceDirectorySet
 
     /**
@@ -144,7 +145,8 @@ interface AndroidSourceSet: com.android.build.api.dsl.AndroidSourceSet {
      *
      * @deprecated This is unused and will be removed in AGP 9.0
      */
-    @Deprecated("This property is unused and will be removed in AGP 9.0")
+    @Deprecated("This property is unused and will be removed in AGP 9.0",
+        level = DeprecationLevel.HIDDEN)
     fun jni(configureClosure: Closure<*>): AndroidSourceSet
 
     override val jniLibs: AndroidSourceDirectorySet

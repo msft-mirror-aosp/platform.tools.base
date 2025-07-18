@@ -49,7 +49,6 @@ https://issuetracker.google.com/328748193
   * com.android.build.api.dsl.JacocoOptions.setVersion: void (java.lang.String)
 https://issuetracker.google.com/328748252
   * com.android.build.api.dsl.AndroidSourceSet.getJni: com.android.build.api.dsl.AndroidSourceDirectorySet ()
-  * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
 https://issuetracker.google.com/328748254
   * com.android.build.api.dsl.HasInitWith
   * com.android.build.api.dsl.HasInitWith.initWith: void (T)
@@ -636,6 +635,8 @@ https://issuetracker.google.com/362941219
 https://issuetracker.google.com/368059518
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.getLint: com.android.build.api.dsl.Lint ()
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.lint: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint, kotlin.Unit>)
+https://issuetracker.google.com/368426598
+  * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1)
 https://issuetracker.google.com/369698074
   * com.android.build.api.variant.DeviceTest.getBuildConfigFields: org.gradle.api.provider.MapProperty<java.lang.String, com.android.build.api.variant.BuildConfigField<? extends java.io.Serializable>> ()
 https://issuetracker.google.com/373816438

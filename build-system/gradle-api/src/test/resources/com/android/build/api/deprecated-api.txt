@@ -4,6 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
 Deprecated from AGP 8.13.0
+  * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.getCompilerOptions: org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions> ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.getKotlinOptions: org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.kotlinOptions: void (kotlin.jvm.functions.Function1<? super org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions, kotlin.Unit>)
@@ -174,7 +175,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.AaptOptions implements com.android.build.api.dsl.AndroidResources
   * com.android.build.api.dsl.AdbOptions implements com.android.build.api.dsl.Installation
   * com.android.build.api.dsl.AndroidSourceSet.getJni: com.android.build.api.dsl.AndroidSourceDirectorySet ()
-  * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
   * com.android.build.api.dsl.ApkSigningConfig.isV1SigningEnabled: boolean ()
   * com.android.build.api.dsl.ApkSigningConfig.isV2SigningEnabled: boolean ()
   * com.android.build.api.dsl.ApkSigningConfig.setV1SigningEnabled: void (boolean)

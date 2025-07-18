@@ -80,7 +80,8 @@ public class SourceSetsTask extends ProjectBasedReportTask {
                         "Baseline profile sources",
                         (AndroidSourceDirectorySet) sourceSet.getBaselineProfiles(),
                         project);
-                renderDirectorySet("JNI sources", sourceSet.getJni(), project);
+                renderDirectorySet(
+                        "JNI sources", ((DefaultAndroidSourceSet) sourceSet).getJni(), project);
                 renderDirectorySet("JNI libraries", sourceSet.getJniLibs(), project);
             }
             if (sourceSet instanceof DefaultAndroidSourceSet) {

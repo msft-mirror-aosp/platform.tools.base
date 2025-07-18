@@ -597,7 +597,7 @@ com.android.build.gradle.api.AndroidSourceSet.getRes: com.android.build.gradle.a
 com.android.build.gradle.api.AndroidSourceSet.getResources: com.android.build.gradle.api.AndroidSourceDirectorySet ()
 com.android.build.gradle.api.AndroidSourceSet.getShaders: com.android.build.gradle.api.AndroidSourceDirectorySet ()
 com.android.build.gradle.api.AndroidSourceSet.java: com.android.build.gradle.api.AndroidSourceSet (groovy.lang.Closure<?>)
-com.android.build.gradle.api.AndroidSourceSet.jni: com.android.build.gradle.api.AndroidSourceSet (groovy.lang.Closure<?>)
+com.android.build.gradle.api.AndroidSourceSet.jni: com.android.build.gradle.api.AndroidSourceSet (groovy.lang.Closure)
 com.android.build.gradle.api.AndroidSourceSet.jniLibs: com.android.build.gradle.api.AndroidSourceSet (groovy.lang.Closure<?>)
 com.android.build.gradle.api.AndroidSourceSet.manifest: com.android.build.gradle.api.AndroidSourceSet (groovy.lang.Closure<?>)
 com.android.build.gradle.api.AndroidSourceSet.mlModels: com.android.build.gradle.api.AndroidSourceSet (groovy.lang.Closure<?>)
