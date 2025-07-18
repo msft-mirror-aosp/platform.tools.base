@@ -25,12 +25,4 @@ interface Installation {
 
     /** The list of FULL_APK installation options. */
     val installOptions: MutableList<String>
-
-    /** Sets the list of FULL_APK installation options */
-    @Deprecated("To be removed in AGP 9.0") // b/368484483
-    fun installOptions(option: String)
-
-    /** Sets the list of FULL_APK installation options */
-    @Deprecated("To be removed in AGP 9.0") // b/368484483
-    fun installOptions(vararg options: String)
 }

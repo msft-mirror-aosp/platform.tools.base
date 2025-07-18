@@ -1218,8 +1218,6 @@ package com.android.build.api.dsl {
   public interface Installation {
     method public java.util.List<java.lang.String> getInstallOptions();
     method public int getTimeOutInMs();
-    method @Deprecated public void installOptions(String option);
-    method @Deprecated public void installOptions(java.lang.String... options);
     method public void setTimeOutInMs(int);
     property public abstract java.util.List<java.lang.String> installOptions;
     property public abstract int timeOutInMs;
