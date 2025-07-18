@@ -235,8 +235,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
         model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
         buildConfig: Boolean?
     ) {
-        val finalResValues = buildConfig ?:
-            dslServices.projectOptions[BooleanOption.BUILD_FEATURE_BUILDCONFIG]
+        val finalResValues = buildConfig ?: false
 
         if (!finalResValues) {
             val issueReporter = dslServices.issueReporter

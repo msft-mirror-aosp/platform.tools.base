@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.options
 
-import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.EXCLUDE_LIBRARIES_FROM_CONSTRAINTS
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
@@ -682,14 +681,6 @@ enum class BooleanOption(
      * DEPRECATED FEATURES
      */
 
-    // TODO(b/254305041) move to ApiStage.Removed
-    BUILD_FEATURE_BUILDCONFIG(
-        "android.defaults.buildfeatures.buildconfig",
-        false,
-        ApiStage.Deprecated(BUILD_CONFIG_GLOBAL_PROPERTY),
-    )
-    ,
-
     // Flag used to indicate a "deploy as instant" run configuration.
     @Suppress("unused")
     IDE_DEPLOY_AS_INSTANT_APP(PROPERTY_DEPLOY_AS_INSTANT_APP, false, ApiStage.Deprecated(VERSION_9_0)),
@@ -1082,6 +1073,13 @@ enum class BooleanOption(
     /* ----------------
      * REMOVED FEATURES
      */
+
+    @Suppress("unused")
+    BUILD_FEATURE_BUILDCONFIG(
+        "android.defaults.buildfeatures.buildconfig",
+        false,
+        ApiStage.Removed(Version.VERSION_9_0),
+    ),
 
     @Suppress("unused")
     ENABLE_IN_PROCESS_AAPT2(
