@@ -2922,6 +2922,14 @@ public final class SdkConstants {
     public static final String GRADLE_LATEST_VERSION = "9.0.0";
 
     /**
+     * The minimum released version of the Android Gradle Plugin for which Studio will attempt a
+     * "forced upgrade" using the AGP Upgrade Assistant. Below this version, Studio will attempt to
+     * display a diagnostic informing the user that this project's version AGP is unsupported, but
+     * at some point that might fail.
+     */
+    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "3.2.0";
+
+    /**
      * The minimum released version of the Android Gradle Plugin that this version of Studio will
      * support. (Support of the development series leading up to it is unknown.)
      */
