@@ -175,19 +175,44 @@ public class ArchiveTreeStructure {
                         node -> {
                             ArchiveEntry data = node.getData();
                             long loadSectionAlignment = data.getElfMinimumLoadSectionAlignment();
-                            if (loadSectionAlignment != -1
-                                    && (loadSectionAlignment % (16L * 1024) != 0L
-                                            || data.getFileAlignment()
-                                                    != ZipEntryInfo.Alignment.ALIGNMENT_16K)) {
-                                data.setSelfOrChild16kbIncompatible(true);
+                            if (loadSectionAlignment == -1) {
+                                // This file or folder is not an ELF file.
+                                // Set selfOrChild16kbIncompatible to true only if one of its
+                                // children are incompatible with 16 KB devices.
+                                for (ArchiveNode childNode : node.getChildren()) {
+                                    ArchiveEntry childData = childNode.getData();
+                                    if (childData.getSelfOrChild16kbIncompatible()) {
+                                        data.setSelfOrChild16kbIncompatible(true);
+                                    }
+                                }
                                 return;
                             }
-
-                            for (ArchiveNode childNode : node.getChildren()) {
-                                ArchiveEntry childData = childNode.getData();
-                                if (childData.getSelfOrChild16kbIncompatible()) {
+                            // At this point, we know we're dealing with an ELF file. Do the checks
+                            // for compatibility with 16 KB devices, which are:
+                            // 1) ALL ELF files must have LOAD sections that are aligned at a 16 KB
+                            //    boundary.
+                            // 2) If the ELF file is stored uncompressed in the zip then it is
+                            //    intended to be directly memmap'd rather than extracted. So it must
+                            //    be stored at a 16 KB boundary within the zip.
+                            if (loadSectionAlignment % (16L * 1024) != 0L) {
+                                // .so file contains LOAD sections that are not aligned at a
+                                // 16 KB boundary.
+                                // It doesn't matter if the .so file was stored compressed or
+                                // uncompressed in the zip, as running code from an .so with
+                                // unaligned LOAD sections will cause error at runtime on
+                                // 16 KB devices.
+                                data.setSelfOrChild16kbIncompatible(true);
+                            } else if (!data.isFileCompressed()) {
+                                // The .so file is not compressed in the zip. This means that it
+                                // will
+                                // be mmap'ed from the zip file directly to the application's
+                                // address space.
+                                if (data.getFileAlignment()
+                                        != ZipEntryInfo.Alignment.ALIGNMENT_16K) {
+                                    // The .so not have 16K alignment within the zip, so the
+                                    // mmap'ed file's sections will have improper page alignment
+                                    // in memory on 16 KB devices.
                                     data.setSelfOrChild16kbIncompatible(true);
-                                    return;
                                 }
                             }
                         });
