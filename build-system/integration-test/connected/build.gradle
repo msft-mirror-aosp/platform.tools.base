@@ -40,6 +40,7 @@ dependencies {
     testImplementation libs.protobuf_util
     testImplementation libs.truth
     testImplementation libs.unified_test_platform
+    testImplementation 'org.junit.platform:junit-platform-engine:1.9.2'
 
     testImplementation libs.mockito_core
 
