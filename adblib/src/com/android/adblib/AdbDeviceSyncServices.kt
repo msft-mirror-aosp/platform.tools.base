@@ -15,6 +15,7 @@
  */
 package com.android.adblib
 
+import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 import java.nio.file.attribute.FileTime
 
@@ -48,7 +49,8 @@ interface AdbDeviceSyncServices : AutoShutdown {
     override suspend fun shutdown()
 
     /**
-     * Sends the contents of an [AdbInputChannel] to file on the remote device (`SEND` command).
+     * Sends the contents of an [AdbInputChannel] to the [remoteFilePath] file on the
+     * remote device (`SEND` command).
      *
      * If [remoteFileTime] is not provided, it defaults to the current system time.
      *
@@ -70,8 +72,8 @@ interface AdbDeviceSyncServices : AutoShutdown {
     )
 
     /**
-     * Retrieve the contents of a file from the remote device to an [AdbOutputChannel]
-     * ("RECV" command)
+     * Retrieves the contents of the [remoteFilePath] file from the remote device
+     * to an [AdbOutputChannel] (`RECV` command)
      *
      * @throws AdbFailResponseException if the ADB daemon cannot send the file contents
      * @throws AdbProtocolErrorException if there is an unexpected ADB protocol error
@@ -85,8 +87,7 @@ interface AdbDeviceSyncServices : AutoShutdown {
     )
 
     /**
-     * Stat a file on the remote device
-     * ("STAT" command)
+     * Returns a [FileStat] for a [remoteFilePath] on the remote device (`STAT` sync command)
      *
      * @throws AdbFailResponseException if the ADB daemon cannot stat the file contents
      * @throws AdbProtocolErrorException if there is an unexpected ADB protocol error
@@ -94,6 +95,27 @@ interface AdbDeviceSyncServices : AutoShutdown {
      */
     suspend fun stat(remoteFilePath: String) : FileStat?
 
+    /**
+     * Returns a [Flow] of [DirectoryEntry] using the `LIST` command on the [remoteFilePath]
+     * directory.
+     *
+     * * Note: The current implementation of `LIST` returns an empty flow if there is any kind
+     * of error opening the directory on the device
+     * (see [adbd source code](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=199))
+     * * Note: A new `LIST` command is executed on the device every time the [Flow] is collected.
+     * * Note: Collecting the [Flow] throws [java.nio.channels.ClosedChannelException] once this
+     * [AdbDeviceSyncServices] is closed.
+     * * Note: Due to [bug 434252203](https://issuetracker.google.com/issues?q=434252203),
+     * the `LIST` command is not a direct equivalent of running `shell ls -l`, as some
+     * directories are accessible to `ls -l`, but not accessible to `LIST` due to the fact
+     * `shell` and `adbd` permissions are set up differently.
+     *
+     * @throws AdbFailResponseException if the ADB daemon cannot list entries of the directory
+     * @throws AdbProtocolErrorException if there is an unexpected ADB protocol error
+     * @throws java.nio.channels.ClosedChannelException if [AdbDeviceSyncServices] is closed
+     * @throws IOException if there is an I/O error
+     */
+    fun list(remoteFilePath: String) : Flow<DirectoryEntry>
 }
 
 /**
@@ -125,6 +147,20 @@ val FileStat.isError: Boolean
                 size == 0 &&
                 lastModified.toMillis() == 0L)
     }
+
+/**
+ * A directory entry as returned from [AdbDeviceSyncServices.list]
+ */
+data class DirectoryEntry(
+    /**
+     * The file name of this entry in the directory
+     */
+    val fileName: String,
+    /**
+     * The [FileStat] of this entry in the directory
+     */
+    val fileStat: FileStat
+)
 
 /**
  * Reports progress about a single remote file transfer.

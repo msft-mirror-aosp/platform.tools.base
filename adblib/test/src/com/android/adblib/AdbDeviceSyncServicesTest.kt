@@ -27,6 +27,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.toList
 import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -35,6 +36,7 @@ import org.junit.rules.ExpectedException
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.PosixFilePermission.OWNER_READ
 import java.nio.file.attribute.PosixFilePermission.OWNER_WRITE
@@ -60,7 +62,7 @@ class AdbDeviceSyncServicesTest {
     private val adbSession get() = fakeAdbRule.adbSession
 
     @Test
-    fun testSyncSendFileWorks(): Unit = runBlockingWithTimeout {
+    fun testSendFileWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -98,7 +100,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendEmptyFileWorks(): Unit = runBlockingWithTimeout {
+    fun testSendEmptyFileWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -136,7 +138,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendWithTimeoutWorks(): Unit = runBlockingWithTimeout {
+    fun testSendWithTimeoutWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -180,7 +182,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendRethrowsProgressException(): Unit = runBlockingWithTimeout {
+    fun testSendRethrowsProgressException(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -213,7 +215,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendTwoFilesInSameSessionWorks(): Unit = runBlockingWithTimeout {
+    fun testSendTwoFilesInSameSessionWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -278,7 +280,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendFileWithNoDateSetsModifiedDateToCurrentTime(): Unit = runBlockingWithTimeout {
+    fun testSendFileWithNoDateSetsModifiedDateToCurrentTime(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -315,7 +317,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncRecvFileWorks(): Unit = runBlockingWithTimeout {
+    fun testRecvFileWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -355,7 +357,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncRecvTwoFileInSameSessionWorks(): Unit = runBlockingWithTimeout {
+    fun testRecvTwoFileInSameSessionWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -424,7 +426,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendThenRecvFileInSameSessionWorks(): Unit = runBlockingWithTimeout {
+    fun testSendThenRecvFileInSameSessionWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -481,7 +483,7 @@ class AdbDeviceSyncServicesTest {
      * This test tries do download a file that does not exist on the device
      */
     @Test
-    fun testSyncRecvFileThrowsExceptionIfFileDoesNotExist(): Unit = runBlockingWithTimeout {
+    fun testRecvFileThrowsExceptionIfFileDoesNotExist(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -507,7 +509,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncRecvRethrowsProgressException(): Unit = runBlockingWithTimeout {
+    fun testRecvRethrowsProgressException(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -548,7 +550,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncRecvRethrowsOutputChannelException(): Unit = runBlockingWithTimeout {
+    fun testRecvRethrowsOutputChannelException(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -591,7 +593,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncStatFileWorks(): Unit = runBlockingWithTimeout {
+    fun testStatFileWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -622,7 +624,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncStatFileReturnsNullIfNoFile(): Unit = runBlockingWithTimeout {
+    fun testStatFileReturnsNullIfNoFile(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -636,6 +638,114 @@ class AdbDeviceSyncServicesTest {
 
         // Assert
         Assert.assertNull(fileStat)
+    }
+
+    @Test
+    fun testListWorks(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        (1..9).forEach { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+            fakeDevice.createFile(
+                DeviceFileState(
+                    filePath,
+                    fileMode.modeBits,
+                    (fileDate.toMillis() / 1_000).toInt(),
+                    fileBytes
+                )
+            )
+        }
+
+        // Act
+        val entries = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.list("/sdcard/foo").toList()
+        }
+
+        // Assert
+        Assert.assertEquals(9, entries.size)
+        entries.sortedBy { it.fileName } .forEachIndexed { index, entry ->
+            Assert.assertEquals("bar.bin_${index + 1}", entry.fileName)
+            Assert.assertEquals(1_000, entry.fileStat.size)
+            Assert.assertEquals("rw-------", entry.fileStat.remoteFileMode.posixString)
+        }
+    }
+
+    @Test
+    fun testListFlowCanBeCollectedMultipleTimes(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        (1..9).forEach { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+            fakeDevice.createFile(
+                DeviceFileState(
+                    filePath,
+                    fileMode.modeBits,
+                    (fileDate.toMillis() / 1_000).toInt(),
+                    fileBytes
+                )
+            )
+        }
+
+        // Act
+        val entriesList = withSyncServices(deviceSelector) { syncServices ->
+            listOf(
+                syncServices.list("/sdcard/foo").toList(),
+                syncServices.list("/sdcard/foo").toList(),
+                syncServices.list("/sdcard/foo").toList(),
+            )
+        }
+
+        // Assert
+        entriesList.forEach { entries ->
+            Assert.assertEquals(9, entries.size)
+            entries.sortedBy { it.fileName }.forEachIndexed { index, entry ->
+                Assert.assertEquals("bar.bin_${index + 1}", entry.fileName)
+                Assert.assertEquals(1_000, entry.fileStat.size)
+                Assert.assertEquals("rw-------", entry.fileStat.remoteFileMode.posixString)
+            }
+        }
+    }
+
+    @Test
+    fun testListFlowThrowsAfterSyncServicesIsClosed(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        (1..9).forEach { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+            fakeDevice.createFile(
+                DeviceFileState(
+                    filePath,
+                    fileMode.modeBits,
+                    (fileDate.toMillis() / 1_000).toInt(),
+                    fileBytes
+                )
+            )
+        }
+
+        // Act
+        val flow = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.list("/sdcard/foo")
+        }
+
+        // Assert
+        exceptionRule.expect(ClosedChannelException::class.java)
+        flow.collect {  }
+        Assert.fail() // Should not be reached
     }
 
     open class TestSyncProgress : SyncProgress {

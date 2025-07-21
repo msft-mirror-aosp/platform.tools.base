@@ -62,6 +62,7 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
                 "SEND" -> handleSendProtocol(device, input, output)
                 "RECV" -> handleRecvProtocol(device, input, output)
                 "STAT" -> handleStatProtocol(device, input, output)
+                "LIST" -> handleListProtocol(device, input, output)
                 "QUIT" -> handleQuitProtocol(socket)
                 else -> throwUnsupportedRequest(output, syncRequest)
             }
@@ -139,9 +140,43 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
         writeInt32(output, fileState?.modifiedDate ?: 0)
     }
 
+    /**
+     * Response is four int32s: id, mode, size, time
+     */
+    private fun handleListProtocol(device: DeviceState, input: InputStream, output: OutputStream) {
+        val path = readRecvHeader(input)
+        val fileStates = device.getFileEntries(path)
+        fileStates.forEach { fileState ->
+            // The directory entries will be returned in the following form
+            // 1. A four-byte sync response id "DENT"
+            // 2. A four-byte integer representing file mode.
+            // 3. A four-byte integer representing file size.
+            // 4. A four-byte integer representing last modified time.
+            // 5. A four-byte integer representing file name length.
+            // 6. length number of bytes containing an utf-8 string representing the file name.
+            //     *
+            //     * When a sync response "DONE" is received the listing is done.
+            writeDent(output) // 1
+            writeInt32(output, fileState.permission) // 2
+            writeInt32(output, fileState.bytes.size) // 3
+            writeInt32(output, fileState.modifiedDate) // 4
+            val filePathBytes = fileState.fileName.toByteArray(UTF_8)
+            writeInt32(output, filePathBytes.size) // 5
+            output.write(filePathBytes) // 6
+        }
+        writeDone(output) // "DONE"
+        writeInt32(output, 0) // file mode = 0
+        writeInt32(output, 0) // file size = 0
+        writeInt32(output, 0) // last modified time = 0
+        writeInt32(output, 0) // file name length = 0
+    }
+
     private fun handleQuitProtocol(socket: Socket) {
         socket.shutdownOutput()
     }
+
+    private val DeviceFileState.fileName: String
+        get() = path.substringAfterLast("/")
 
     private fun readSyncRequest(input: InputStream): String {
         val bytes = readExactly(input, 4)
@@ -228,6 +263,10 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
 
     private fun writeStat(stream: OutputStream) {
         stream.write("STAT".toByteArray(UTF_8))
+    }
+
+    private fun writeDent(stream: OutputStream) {
+        stream.write("DENT".toByteArray(UTF_8))
     }
 
     private fun readInt32(input: InputStream): Int {

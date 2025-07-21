@@ -167,6 +167,29 @@ class DeviceState internal constructor(
         synchronized(mFiles) { return mFiles[filepath] }
     }
 
+    fun getFileEntries(directoryPath: String): List<DeviceFileState> {
+        fun fileIsDirectoryEntry(directoryPath: String, filePath: String): Boolean {
+            val index = filePath.lastIndexOf("/")
+            return when {
+                index <= 0 -> directoryPath.isEmpty()
+                else -> {
+                    val fileDir = filePath.substring(0, index)
+                    fileDir == directoryPath
+                }
+            }
+        }
+
+        return synchronized(mFiles) {
+            // We don't have a "true" notion of directory implemented, so just go through all
+            // files and look for the files that are directly under `directoryPath`
+            mFiles.filter {
+                fileIsDirectoryEntry(directoryPath, it.key)
+            }.map {
+                it.value
+            }
+        }
+    }
+
     fun deleteFile(filepath: String) {
         synchronized(mFiles) { mFiles.remove(filepath) }
     }

@@ -7,7 +7,9 @@ import com.android.adblib.impl.ShellCommandImpl
 import com.android.adblib.utils.AdbProtocolUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -1040,6 +1042,21 @@ suspend fun AdbDeviceServices.syncStat(
 ): FileStat? {
     return withSyncServices(device) {
         it.stat(remoteFilePath)
+    }
+}
+
+/**
+ * Returns a [Flow] of [DirectoryEntry] found in the [remoteFilePath] directory. Each time
+ * the [Flow] is collected, a new "LIST" command is executed on the device.
+ *
+ * @see [AdbDeviceSyncServices.list]
+ */
+fun AdbDeviceServices.syncList(
+    device: DeviceSelector,
+    remoteFilePath: String
+): Flow<DirectoryEntry> = flow {
+    withSyncServices(device) {
+        emitAll(it.list(remoteFilePath))
     }
 }
 

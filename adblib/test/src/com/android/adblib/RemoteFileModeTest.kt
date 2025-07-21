@@ -125,6 +125,151 @@ class RemoteFileModeTest {
         Assert.assertNull(fileMode)
     }
 
+    @Test
+    fun fileTypeShouldSupportRegularFileType() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0x8000)
+
+        // Assert
+        Assert.assertEquals(true, mode1.isRegularFile)
+        Assert.assertEquals(false, mode1.isDirectory)
+        Assert.assertEquals(false, mode1.isSymbolicLink)
+        Assert.assertEquals(false, mode1.isBlockDevice)
+        Assert.assertEquals(false, mode1.isSocket)
+        Assert.assertEquals(false, mode1.isCharacterDevice)
+        Assert.assertEquals(false, mode1.isFifo)
+        Assert.assertEquals('-', mode1.fileTypePrefix)
+    }
+
+    @Test
+    fun fileTypeShouldSupportDirectoryFileType() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0x4000)
+
+        // Assert
+        Assert.assertEquals(false, mode1.isRegularFile)
+        Assert.assertEquals(true, mode1.isDirectory)
+        Assert.assertEquals(false, mode1.isSymbolicLink)
+        Assert.assertEquals(false, mode1.isBlockDevice)
+        Assert.assertEquals(false, mode1.isSocket)
+        Assert.assertEquals(false, mode1.isCharacterDevice)
+        Assert.assertEquals(false, mode1.isFifo)
+        Assert.assertEquals('d', mode1.fileTypePrefix)
+    }
+
+    @Test
+    fun fileTypeShouldSupportSymbolicLinkFileType() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0xa000)
+
+        // Assert
+        Assert.assertEquals(false, mode1.isRegularFile)
+        Assert.assertEquals(false, mode1.isDirectory)
+        Assert.assertEquals(true, mode1.isSymbolicLink)
+        Assert.assertEquals(false, mode1.isBlockDevice)
+        Assert.assertEquals(false, mode1.isSocket)
+        Assert.assertEquals(false, mode1.isCharacterDevice)
+        Assert.assertEquals(false, mode1.isFifo)
+        Assert.assertEquals('l', mode1.fileTypePrefix)
+    }
+
+    @Test
+    fun fileTypeShouldSupportBlockDeviceFileType() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0x6000)
+
+        // Assert
+        Assert.assertEquals(false, mode1.isRegularFile)
+        Assert.assertEquals(false, mode1.isDirectory)
+        Assert.assertEquals(false, mode1.isSymbolicLink)
+        Assert.assertEquals(true, mode1.isBlockDevice)
+        Assert.assertEquals(false, mode1.isSocket)
+        Assert.assertEquals(false, mode1.isCharacterDevice)
+        Assert.assertEquals(false, mode1.isFifo)
+        Assert.assertEquals('b', mode1.fileTypePrefix)
+    }
+
+    @Test
+    fun fileTypeShouldSupportSocketFileType() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0xc000)
+
+        // Assert
+        Assert.assertEquals(false, mode1.isRegularFile)
+        Assert.assertEquals(false, mode1.isDirectory)
+        Assert.assertEquals(false, mode1.isSymbolicLink)
+        Assert.assertEquals(false, mode1.isBlockDevice)
+        Assert.assertEquals(true, mode1.isSocket)
+        Assert.assertEquals(false, mode1.isCharacterDevice)
+        Assert.assertEquals(false, mode1.isFifo)
+        Assert.assertEquals('s', mode1.fileTypePrefix)
+    }
+
+    @Test
+    fun fileTypeShouldSupportCharacterDeviceFileType() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0x2000)
+
+        // Assert
+        Assert.assertEquals(false, mode1.isRegularFile)
+        Assert.assertEquals(false, mode1.isDirectory)
+        Assert.assertEquals(false, mode1.isSymbolicLink)
+        Assert.assertEquals(false, mode1.isBlockDevice)
+        Assert.assertEquals(false, mode1.isSocket)
+        Assert.assertEquals(true, mode1.isCharacterDevice)
+        Assert.assertEquals(false, mode1.isFifo)
+        Assert.assertEquals('c', mode1.fileTypePrefix)
+    }
+
+    @Test
+    fun fileTypeShouldSupportFifoFileType() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0x1000)
+
+        // Assert
+        Assert.assertEquals(false, mode1.isRegularFile)
+        Assert.assertEquals(false, mode1.isDirectory)
+        Assert.assertEquals(false, mode1.isSymbolicLink)
+        Assert.assertEquals(false, mode1.isBlockDevice)
+        Assert.assertEquals(false, mode1.isSocket)
+        Assert.assertEquals(false, mode1.isCharacterDevice)
+        Assert.assertEquals(true, mode1.isFifo)
+        Assert.assertEquals('p', mode1.fileTypePrefix)
+    }
+
+    @Test
+    fun stickyBitShouldBeSupported() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0x200)
+
+        // Assert
+        Assert.assertEquals(true, mode1.hasStickyBit)
+        Assert.assertEquals(false, mode1.hasSetUserIddBit)
+        Assert.assertEquals(false, mode1.hasSetGroupIdBit)
+    }
+
+    @Test
+    fun setUidBitShouldBeSupported() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0x800)
+
+        // Assert
+        Assert.assertEquals(false, mode1.hasStickyBit)
+        Assert.assertEquals(true, mode1.hasSetUserIddBit)
+        Assert.assertEquals(false, mode1.hasSetGroupIdBit)
+    }
+
+    @Test
+    fun setGidBitShouldBeSupported() {
+        // Act
+        val mode1 = RemoteFileMode.fromModeBits(0x400)
+
+        // Assert
+        Assert.assertEquals(false, mode1.hasStickyBit)
+        Assert.assertEquals(false, mode1.hasSetUserIddBit)
+        Assert.assertEquals(true, mode1.hasSetGroupIdBit)
+    }
+
     private fun posixPermissionsSupported(): Boolean {
         val tempFile = folder.newFile().toPath()
         return try {

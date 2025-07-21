@@ -41,6 +41,10 @@ object AdbProtocolUtils {
         return is4Letters(buffer, "STAT")
     }
 
+    fun isDent(buffer: ByteBuffer): Boolean {
+        return is4Letters(buffer, "DENT")
+    }
+
     /**
      * Encode an integer value into a 4 byte integer representing the hexadecimal
      * string of that value.

@@ -19,11 +19,13 @@ import com.android.adblib.AdbDeviceSyncServices
 import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbOutputChannel
 import com.android.adblib.DeviceSelector
+import com.android.adblib.DirectoryEntry
 import com.android.adblib.FileStat
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.SyncProgress
 import com.android.adblib.impl.services.AdbServiceRunner
 import com.android.adblib.utils.closeOnException
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.nio.channels.ClosedChannelException
@@ -63,6 +65,11 @@ internal class AdbDeviceSyncServicesImpl private constructor(
      * Helper class to handle `STAT` commands
      */
     private val statHandler = SyncStatHandler(syncConnection)
+
+    /**
+     * Helper class to handle `LIST` commands
+     */
+    private val listHandler = SyncListHandler(syncConnection)
 
     override suspend fun shutdown() {
         checkNotClosed()
@@ -104,9 +111,14 @@ internal class AdbDeviceSyncServicesImpl private constructor(
         recvHandler.recv(remoteFilePath, destinationChannel, progress)
     }
 
-    override suspend fun stat(remoteFilePath: String): FileStat? {
+    override suspend fun stat(remoteFilePath: String) : FileStat? {
         checkNotClosed()
         return statHandler.stat(remoteFilePath)
+    }
+
+    override fun list(remoteFilePath: String): Flow<DirectoryEntry> {
+        checkNotClosed()
+        return listHandler.list(remoteFilePath)
     }
 
     private fun checkNotClosed() {

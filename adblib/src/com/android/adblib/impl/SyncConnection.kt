@@ -141,6 +141,20 @@ internal class SyncConnection(
         )
     }
 
+    suspend fun readFileName(buffer: ByteBuffer): String {
+        if (buffer.remaining() < 4) {
+            throw IllegalArgumentException("Buffer should contain at least 4 bytes for path length")
+        }
+        val fileNameLength = buffer.getInt()
+        // Read file name bytes
+        workBuffer.clear()
+        return inputChannel.readExactly(workBuffer.forChannelRead(fileNameLength)).let {
+            workBuffer.afterChannelRead().let { buffer ->
+                AdbProtocolUtils.byteBufferToString(buffer)
+            }
+        }
+    }
+
     suspend fun readSyncFailMessageAndThrow(service: String, buffer: ByteBuffer) {
         buffer.getInt() // Consume 'FAIL'
         val length = buffer.getInt() // Consume length
@@ -232,5 +246,8 @@ internal class SyncConnection(
     object Constants {
         const val STAT_ID = 0x54415453 // "STAT"
         const val STAT_BUFFER_SIZE = 16
+
+        const val DENT_ID = 0x544E4544 // "DENT"
+        const val DENT_BUFFER_SIZE = STAT_BUFFER_SIZE + 4
     }
 }
