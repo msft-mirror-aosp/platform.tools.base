@@ -15,19 +15,14 @@
  */
 package com.android.adblib.impl
 
-import com.android.adblib.AdbChannel
 import com.android.adblib.AdbInputChannel
-import com.android.adblib.AdbSessionHost
-import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.SyncProgress
 import com.android.adblib.adbLogger
-import com.android.adblib.impl.services.AdbServiceRunner
 import com.android.adblib.read
 import com.android.adblib.utils.AdbProtocolUtils
 import com.android.adblib.withPrefix
 import kotlinx.coroutines.withContext
-import java.nio.ByteOrder
 import java.nio.file.attribute.FileTime
 
 /**
@@ -35,18 +30,11 @@ import java.nio.file.attribute.FileTime
  *
  * See [https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT]
  */
-internal class SyncSendHandler(
-    private val serviceRunner: AdbServiceRunner,
-    private val device: DeviceSelector,
-    private val deviceChannel: AdbChannel
-) {
+internal class SyncSendHandler(private val connection: SyncConnection) {
 
-    private val logger = adbLogger(host).withPrefix("device:$device,sync:SEND - ")
+    private val syncRequestId: String = "SEND"
 
-    private val host: AdbSessionHost
-        get() = serviceRunner.host
-
-    private val workBuffer = serviceRunner.newResizableBuffer().order(ByteOrder.LITTLE_ENDIAN)
+    private val logger = adbLogger(connection.session).withPrefix("device:${connection.device},sync:$syncRequestId - ")
 
     /**
      * From [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT;l=50)
@@ -87,7 +75,7 @@ internal class SyncSendHandler(
         progress: SyncProgress?,
         bufferSize: Int,
     ) {
-        withContext(host.ioDispatcher) {
+        withContext(connection.session.ioDispatcher) {
             // Note: ADB daemon implementation
             //       See [https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=498;drc=fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f;bpv=0;bpt=1]
             logger.info { "$sourceChannel -> \"$remoteFilePath\"" }
@@ -97,7 +85,7 @@ internal class SyncSendHandler(
             }
             val remoteFileEpoch =
                 AdbProtocolUtils.convertFileTimeToEpochSeconds(
-                    remoteFileTime ?: FileTime.from(host.utcNow())
+                    remoteFileTime ?: FileTime.from(connection.session.host.utcNow())
                 )
 
             // Send the file using the "SEND" query
@@ -114,13 +102,7 @@ internal class SyncSendHandler(
             //       daemon could not create the directory for the file), reading "DONE"/"FAIL"
             //       reading should be done before sending the whole file contents to the device,
             //       since that content will essentially be ignored.
-            serviceRunner.consumeSyncOkayFailResponse(
-                device,
-                "sync-send('$remoteFilePath')",
-                deviceChannel,
-                workBuffer,
-                TimeoutTracker.INFINITE
-            )
+            connection.consumeSyncOkayFailResponse("sync-send('$remoteFilePath')")
         }
     }
 
@@ -130,23 +112,7 @@ internal class SyncSendHandler(
         progress: SyncProgress?
     ) {
         progress?.transferStarted(remoteFilePath)
-
-        logger.debug { "Starting sync request to \"$remoteFilePath\"" }
-        // Bytes 0-3: 'SEND'
-        // Bytes 4-7: request size (little endian)
-        // Bytes 8-xx: An utf-8 string with the remote file path followed by ','
-        //             followed by the mode (bits) as a decimal string
-        workBuffer.clear()
-        workBuffer.appendString("SEND", AdbProtocolUtils.ADB_CHARSET)
-        val lengthPos = workBuffer.position
-        workBuffer.appendInt(0) // Set later
-        workBuffer.appendString(
-            "${remoteFilePath},${remoteFileMode.modeBits}",
-            AdbProtocolUtils.ADB_CHARSET
-        )
-        workBuffer.setInt(lengthPos, workBuffer.position - 8)
-
-        deviceChannel.writeExactly(workBuffer.forChannelWrite())
+        connection.startSyncRequest(syncRequestId, "${remoteFilePath},${remoteFileMode.modeBits}")
     }
 
     private suspend fun sendFileContents(
@@ -157,31 +123,20 @@ internal class SyncSendHandler(
     ): Long {
         var totalBytesSoFar = 0L
         while (true) {
-            // Bytes 0-3: 'DATA'
-            // Bytes 4-7: request size (little endian)
-            // Bytes 8-xx: file bytes
-            workBuffer.clear()
-            workBuffer.appendString("DATA", AdbProtocolUtils.ADB_CHARSET)
-            val lengthPosition = workBuffer.position
-            workBuffer.appendInt(0) // Set later
-            val headerLength = workBuffer.position
-            val byteCount = sourceChannel.read(workBuffer.forChannelRead(bufferSize - headerLength))
-            if (byteCount < 0) {
+            val buffer = connection.prepareDataRequest(bufferSize)
+            val byteCount = sourceChannel.read(buffer)
+            if (byteCount <= 0) {
                 // We reached EOF, we are done
                 logger.debug { "Done reading bytes from source channel $sourceChannel" }
                 break
             }
-
-            // We have data from 0 to position(8+byteCount),/ Write them all to the output
-            val writeBuffer = workBuffer.afterChannelRead(useMarkedPosition = false)
-            workBuffer.setInt(lengthPosition, byteCount)
-            deviceChannel.writeExactly(writeBuffer)
+            connection.sendPreparedDataRequest(byteCount)
 
             totalBytesSoFar += byteCount
             progress?.transferProgress(remoteFilePath, totalBytesSoFar)
         }
 
-        logger.debug { "Done writing bytes to channel $deviceChannel ($totalBytesSoFar bytes written)" }
+        logger.debug { "Done sending file contents to '$remoteFilePath' ($totalBytesSoFar bytes written)" }
         return totalBytesSoFar
     }
 
@@ -192,14 +147,7 @@ internal class SyncSendHandler(
         byteCount: Long
     ) {
         logger.debug { "Committing remote file $remoteFilePath ($byteCount bytes)" }
-
-        // Bytes 0-3: 'DONE'
-        // Bytes 4-7: modified date (since epoch, in seconds)
-        workBuffer.clear()
-        workBuffer.appendString("DONE", AdbProtocolUtils.ADB_CHARSET)
-        workBuffer.appendInt(remoteFileEpoch)
-        deviceChannel.writeExactly(workBuffer.forChannelWrite())
-
+        connection.sendDoneRequest(remoteFileEpoch)
         progress?.transferDone(remoteFilePath, byteCount)
     }
 }

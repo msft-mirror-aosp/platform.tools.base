@@ -27,7 +27,6 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.toList
 import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.Rule

@@ -15,91 +15,45 @@
  */
 package com.android.adblib.impl
 
-import com.android.adblib.AdbChannel
-import com.android.adblib.AdbProtocolErrorException
-import com.android.adblib.AdbSessionHost
-import com.android.adblib.DeviceSelector
 import com.android.adblib.FileStat
-import com.android.adblib.RemoteFileMode
-import com.android.adblib.adbLogger
-import com.android.adblib.impl.services.AdbServiceRunner
-import com.android.adblib.utils.AdbProtocolUtils
-import com.android.adblib.withPrefix
+import com.android.adblib.isError
 import kotlinx.coroutines.withContext
-import java.nio.ByteOrder
-import java.nio.file.attribute.FileTime
-import java.util.concurrent.TimeUnit
 
 /**
  * Implementation of the `STAT` protocol of the `SYNC` command
  *
  * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
  */
-internal class SyncStatHandler(
-    private val serviceRunner: AdbServiceRunner,
-    private val device: DeviceSelector,
-    private val deviceChannel: AdbChannel
-) {
+internal class SyncStatHandler(private val connection: SyncConnection) {
 
-    private val logger = adbLogger(host).withPrefix("device:$device,sync:STAT - ")
-
-    private val host: AdbSessionHost
-        get() = serviceRunner.host
-
-    private val workBuffer = serviceRunner.newResizableBuffer().order(ByteOrder.LITTLE_ENDIAN)
+    private val syncRequestId: String = "STAT"
 
     /**
-     * See (SYNC.TXT)[https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT]
+     * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
      *
      * ```
      * STAT:
      * Returns information about the file or null if file is not found
+     * ```
      */
     suspend fun stat(remoteFilePath: String) : FileStat? {
-        return withContext(host.ioDispatcher) {
-            // Receive the file using the "RECV" query
-            startStatRequest(remoteFilePath)
+        return withContext(connection.session.ioDispatcher) {
+            connection.startSyncRequest(syncRequestId, remoteFilePath)
 
-            workBuffer.clear()
-            deviceChannel.readExactly(workBuffer.forChannelRead(16))
-            val buffer = workBuffer.afterChannelRead()
-            // Consume `STAT` which is always returned in the first 4 bytes
-            // https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=142
-            if (!AdbProtocolUtils.isStat(buffer)) {
-                val contents = AdbProtocolUtils.bufferToByteDumpString(buffer)
-                val errorMessage =
-                    "Received an invalid packet from a STAT sync query: $contents"
-                throw AdbProtocolErrorException(errorMessage)
-            }
-            buffer.getInt()
-
-            val mode = buffer.getInt()
-            val size = buffer.getInt()
-            val lastModifiedSecs = buffer.getInt()
-            // When file is not found `mode`, `size` and `lastModifiedSecs` are all 0
-            if (mode == 0 && size == 0 && lastModifiedSecs == 0) {
-                return@withContext null
-            }
-            FileStat(
-                RemoteFileMode.fromModeBits(mode),
-                size,
-                FileTime.from(lastModifiedSecs.toLong(), TimeUnit.SECONDS)
-            )
+            // See https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT
+            // 1. A four-byte sync response id "DENT" (or "DONE" if no more entries)
+            // 2. A four-byte integer representing file mode (or 0 if no more entries)
+            // 3. A four-byte integer representing file size (or 0 if no more entries)
+            // 4. A four-byte integer representing last modified time (or 0 if no more entries)
+            val buffer = connection.readExactly(SyncConnection.Constants.STAT_BUFFER_SIZE)
+            connection.parseStatBuffer(syncRequestId, SyncConnection.Constants.STAT_ID, buffer)
+                .let { fileStat ->
+                    if (fileStat.isError) {
+                        null
+                    } else {
+                        fileStat
+                    }
+                }
         }
-    }
-
-    private suspend fun startStatRequest(remoteFilePath: String) {
-        logger.debug { "sending \"STAT\" command to device $device" }
-        // Bytes 0-3: 'STAT'
-        // Bytes 4-7: request size (little endian)
-        // Bytes 8-xx: An utf-8 string with the remote file path
-        workBuffer.clear()
-        workBuffer.appendString("STAT", AdbProtocolUtils.ADB_CHARSET)
-        val lengthPos = workBuffer.position
-        workBuffer.appendInt(0) // Set later
-        workBuffer.appendString(remoteFilePath, AdbProtocolUtils.ADB_CHARSET)
-        workBuffer.setInt(lengthPos, workBuffer.position - 8)
-
-        deviceChannel.writeExactly(workBuffer.forChannelWrite())
     }
 }

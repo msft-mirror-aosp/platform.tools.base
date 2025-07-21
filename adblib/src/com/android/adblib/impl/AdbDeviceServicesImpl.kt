@@ -233,8 +233,12 @@ internal class AdbDeviceServicesImpl(
         }.flowOn(host.ioDispatcher)
     }
 
-    override suspend fun sync(device: DeviceSelector): AdbDeviceSyncServices {
-        return AdbDeviceSyncServicesImpl.open(serviceRunner, device, timeout, unit)
+    override suspend fun sync(
+        device: DeviceSelector,
+        readAheadBufferSize: Int,
+        writeBackBufferSize: Int
+    ): AdbDeviceSyncServices {
+        return AdbDeviceSyncServicesImpl.open(serviceRunner, device, readAheadBufferSize, writeBackBufferSize, timeout, unit)
     }
 
     override suspend fun reverseListForward(device: DeviceSelector): ReverseSocketList {
