@@ -127,21 +127,6 @@ abstract class BuildType @Inject constructor(
         action.execute(optimization)
     }
 
-    override var isRenderscriptDebuggable: Boolean
-        get() {
-            dslServices.deprecationReporter.reportObsoleteUsage(
-                "isRenderscriptDebuggable",
-                DeprecationReporter.DeprecationTarget.VERSION_9_0
-            )
-            return false
-        }
-        set(_) {
-            dslServices.deprecationReporter.reportObsoleteUsage(
-                "isRenderscriptDebuggable",
-                DeprecationReporter.DeprecationTarget.VERSION_9_0
-            )
-        }
-
     abstract override var renderscriptOptimLevel: Int
 
     abstract override var isProfileable: Boolean

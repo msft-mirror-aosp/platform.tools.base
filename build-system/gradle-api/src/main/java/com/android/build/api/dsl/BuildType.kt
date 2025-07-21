@@ -115,16 +115,6 @@ interface BuildType : Named, VariantDimension, ExtensionAware {
     var isJniDebuggable: Boolean
 
     /**
-     * Whether the build type is configured to generate an apk with debuggable RenderScript code.
-     *
-     * RenderScript APIs are deprecated starting in Android 12.
-     * For more information about how to migrate, see
-     * [https://developer.android.com/guide/topics/renderscript/migrate]
-     */
-    @Deprecated("This dsl option has no effect and will be removed in AGP 9.0") // b/368482484
-    var isRenderscriptDebuggable: Boolean
-
-    /**
      * Optimization level to use by the renderscript compiler.
      * RenderScript APIs are deprecated starting in Android 12.
      * For more information about how to migrate, see
