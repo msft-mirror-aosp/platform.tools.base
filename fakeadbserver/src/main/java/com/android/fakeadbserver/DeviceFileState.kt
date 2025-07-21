@@ -21,6 +21,7 @@ class DeviceFileState(
     val path: String,
     /** UNIX-style permissions bits */
     val permission: Int,
+    /** a "time_t", i.e. number of seconds since the start of the unix epoch */
     val modifiedDate: Int,
     val bytes: ByteArray
 ) {
@@ -30,6 +31,22 @@ class DeviceFileState(
         modifiedDate: Int,
         bytes: ByteArray
     ) : this(path, modeBitsFromPosixFilePermissions(permissions), modifiedDate, bytes)
+
+    val uid: Int
+        get() = 100
+
+    val gid: Int
+        get() = 110
+
+    val inode: Long
+        get() = path.hashCode().toLong()
+
+    val dev: Long
+        get() = 200
+
+    val nlink: Int
+        get() = 0
+
 
     fun isOwnerWritable(): Boolean =
         (permission and (2 shl 6)) > 0

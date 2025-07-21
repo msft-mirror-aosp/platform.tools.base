@@ -41,8 +41,16 @@ object AdbProtocolUtils {
         return is4Letters(buffer, "STAT")
     }
 
+    fun isSta2(buffer: ByteBuffer): Boolean {
+        return is4Letters(buffer, "STA2")
+    }
+
     fun isDent(buffer: ByteBuffer): Boolean {
         return is4Letters(buffer, "DENT")
+    }
+
+    fun isDnt2(buffer: ByteBuffer): Boolean {
+        return is4Letters(buffer, "DNT2")
     }
 
     /**

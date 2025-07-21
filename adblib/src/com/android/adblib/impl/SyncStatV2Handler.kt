@@ -15,37 +15,25 @@
  */
 package com.android.adblib.impl
 
-import com.android.adblib.FileStat
-import com.android.adblib.isError
+import com.android.adblib.FileStatV2
 import kotlinx.coroutines.withContext
 
 /**
- * Implementation of the `STAT` protocol of the `SYNC` command
+ * Implementation of the `STA2` protocol of the `SYNC` command
  *
  * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
  */
-internal class SyncStatHandler(private val connection: SyncConnection) {
+internal class SyncStatV2Handler(private val connection: SyncConnection) {
 
-    private val syncRequestId: String = "STAT"
+    private val syncRequestId: String = "STA2"
 
     /**
-     * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
-     *
-     * ```
-     * STAT:
-     * Returns information about the file or null if file is not found
-     * ```
+     * Execute a "STA2" sync request
      */
-    suspend fun stat(remoteFilePath: String) : FileStat? {
+    suspend fun statV2(remoteFilePath: String) : FileStatV2 {
         return withContext(connection.session.ioDispatcher) {
             connection.startSyncRequest(syncRequestId, remoteFilePath)
-            connection.readFileStat(syncRequestId).let { fileStat ->
-                if (fileStat.isError) {
-                    null
-                } else {
-                    fileStat
-                }
-            }
+            connection.readFileStatV2(syncRequestId)
         }
     }
 }

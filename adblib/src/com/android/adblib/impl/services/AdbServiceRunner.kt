@@ -422,7 +422,7 @@ internal class AdbServiceRunner(
         workBuffer: ResizableBuffer,
         length: Int,
         timeout: TimeoutTracker
-    ) {
+    ): Nothing {
         workBuffer.clear()
         channel.readExactly(workBuffer.forChannelRead(length), timeout)
         val messageBuffer = workBuffer.afterChannelRead()

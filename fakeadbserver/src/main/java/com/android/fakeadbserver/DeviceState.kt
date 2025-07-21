@@ -605,11 +605,14 @@ class DeviceState internal constructor(
             if (api >= 24) {
                 features.add("cmd")
                 features.add("shell_v2")
+            }
+            if (api >= 26) {
                 features.add("stat_v2")
             }
             if (api >= 30) {
                 features.add("abb")
                 features.add("abb_exec")
+                features.add("ls_v2")
             }
             if (api >= 31) {
                 features.add("track_app")

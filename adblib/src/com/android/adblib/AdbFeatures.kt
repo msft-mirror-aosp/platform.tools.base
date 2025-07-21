@@ -42,6 +42,22 @@ object AdbFeatures {
 
     /**
      * If the result of [AdbHostServices.features] contains this value, the
+     * [AdbDeviceSyncServices.statV2] invocation is supported by the specified device.
+     *
+     * Note: This feature was initially implemented for API=26
+     */
+    const val STAT_V2 = "stat_v2"
+
+    /**
+     * If the result of [AdbHostServices.features] contains this value, the
+     * [AdbDeviceSyncServices.listV2] invocation is supported by the specified device.
+     *
+     * Note: This feature was initially implemented for API=30
+     */
+    const val LS_V2 = "ls_v2"
+
+    /**
+     * If the result of [AdbHostServices.features] contains this value, the
      * device supports listening for device events via host:track-devices-proto-text
      * and host:track-devices-proto-binary.
      */

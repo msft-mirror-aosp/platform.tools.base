@@ -103,19 +103,111 @@ interface AdbDeviceSyncServices : AutoShutdown {
      * of error opening the directory on the device
      * (see [adbd source code](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=199))
      * * Note: A new `LIST` command is executed on the device every time the [Flow] is collected.
-     * * Note: Collecting the [Flow] throws [java.nio.channels.ClosedChannelException] once this
-     * [AdbDeviceSyncServices] is closed.
      * * Note: Due to [bug 434252203](https://issuetracker.google.com/issues?q=434252203),
      * the `LIST` command is not a direct equivalent of running `shell ls -l`, as some
      * directories are accessible to `ls -l`, but not accessible to `LIST` due to the fact
      * `shell` and `adbd` permissions are set up differently.
      *
-     * @throws AdbFailResponseException if the ADB daemon cannot list entries of the directory
+     * This function does not throw any error when invoked, but collecting the returned [Flow]
+     * can throw the following exceptions:
+     *
+     * * [AdbFailResponseException] if the ADB daemon cannot list entries of the directory
+     * * [AdbProtocolErrorException] if there is an unexpected ADB protocol error
+     * * [java.nio.channels.ClosedChannelException] if [AdbDeviceSyncServices] is closed
+     * * [IOException] if there is an I/O error
+     */
+    fun list(remoteFilePath: String, options: ListOptions = defaultListOptions) : Flow<DirectoryEntry>
+
+    /**
+     * Stat a file on the remote device ("STA2" command).
+     *
+     * Note: Requires the [AdbFeatures.STAT_V2] from [AdbHostServices.availableFeatures], or
+     * the implementation falls back to [stat] if [StatV2Options.fallbackToStatV1] is `true`
+     * (the default)
+     *
+     * @throws AdbFailResponseException if the ADB daemon cannot stat the file contents
      * @throws AdbProtocolErrorException if there is an unexpected ADB protocol error
-     * @throws java.nio.channels.ClosedChannelException if [AdbDeviceSyncServices] is closed
      * @throws IOException if there is an I/O error
      */
-    fun list(remoteFilePath: String) : Flow<DirectoryEntry>
+    suspend fun statV2(remoteFilePath: String, options: StatV2Options = defaultStatV2Options) : FileStatV2
+
+    /**
+     * Returns a [Flow] of [DirectoryEntryV2] using the `LIS2` command on the [remoteFilePath]
+     * directory.
+     *
+     * Note: Requires the [AdbFeatures.LS_V2] from [AdbHostServices.availableFeatures], or
+     * the implementation falls back to [list] if [ListV2Options.fallbackToListV1] is `true`
+     * (the default)
+     *
+     * * Note: The current implementation of returns an empty flow if there is any kind
+     * of error opening the directory on the device
+     * (see [adbd source code](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=199))
+     * * Note: A new `LIS2` command is executed on the device every time the [Flow] is collected.
+     * * Note: Due to [bug 434252203](https://issuetracker.google.com/issues?q=434252203),
+     * the `LIS2` command is not a direct equivalent of running `shell ls -l`, as some
+     * directories are accessible to `ls -l`, but not accessible to `LIS2` due to the fact
+     * `shell` and `adbd` permissions are set up differently.
+     *
+     * This function does not throw any error when invoked, but collecting the returned [Flow]
+     * can throw the following exceptions:
+     *
+     * * [AdbFailResponseException] if the ADB daemon cannot list entries of the directory
+     * * [AdbProtocolErrorException] if there is an unexpected ADB protocol error
+     * * [java.nio.channels.ClosedChannelException] if [AdbDeviceSyncServices] is closed
+     * * [IOException] if there is an I/O error
+     */
+    fun listV2(remoteFilePath: String, options: ListV2Options = defaultListV2Options) : Flow<DirectoryEntryV2>
+
+    /**
+     * Options of [AdbDeviceSyncServices.list]
+     */
+    data class ListOptions(
+        /**
+         * Skip `".."` and `"."` directory entries when [listing][AdbDeviceSyncServices.list]
+         * a directory
+         */
+        val skipDotEntries: Boolean = true,
+    )
+
+    /**
+     * Options of [AdbDeviceSyncServices.statV2]
+     */
+    data class StatV2Options(
+        /**
+         * Fallback to executing [AdbDeviceSyncServices.stat] when [AdbDeviceSyncServices.statV2]
+         * is not supported (older devices).
+         */
+        val fallbackToStatV1: Boolean = true,
+    )
+
+    /**
+     * Options of [AdbDeviceSyncServices.listV2]
+     */
+    data class ListV2Options(
+        /**
+         * Skip `".."` and `"."` directory entries when [listing][AdbDeviceSyncServices.listV2]
+         * a directory
+         */
+        val skipDotEntries: Boolean = true,
+        /**
+         * Skip [FileStatV2.isError] directory entries when [listing][AdbDeviceSyncServices.listV2]
+         * a directory
+         */
+        val skipErrorEntries: Boolean = true,
+        /**
+         * Fallback to executing [AdbDeviceSyncServices.list] when [AdbDeviceSyncServices.listV2]
+         * is not supported (older devices).
+         */
+        val fallbackToListV1: Boolean = true,
+    )
+
+    companion object {
+        private val defaultListOptions = ListOptions()
+
+        private val defaultStatV2Options = StatV2Options()
+
+        private val defaultListV2Options = ListV2Options()
+    }
 }
 
 /**
@@ -148,6 +240,95 @@ val FileStat.isError: Boolean
                 lastModified.toMillis() == 0L)
     }
 
+
+/**
+ * Return value of [AdbDeviceSyncServices.statV2]
+ */
+data class FileStatV2(
+    /**
+     * "errno" value when listing file on the device. If the value is non-zero, various other
+     * properties may have a "zero" value.
+     */
+    val errno: Int,
+
+    /**
+     * The [RemoteFileMode] of this file system entry.
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val mode: RemoteFileMode,
+
+    /**
+     * The size (in bytes) of this file system entry.
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val size: Long,
+
+    /**
+     * Tne [FileTime] of the last modification of this file system entry
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val lastModifiedTime: FileTime,
+
+    /**
+     * Tne [FileTime] of the last access of this file system entry
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val lastAccessTime: FileTime,
+
+    /**
+     * Tne [FileTime] of the time that the file was created.
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val creationTime: FileTime,
+
+    /**
+     * ID of device containing file
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val dev: Long,
+
+    /**
+     * Inode number
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val inode: Long,
+
+    /**
+     * Number of hard links
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val nlink: Int,
+
+    /**
+     * User ID of owner
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val uid: Int,
+
+    /**
+     * Group ID of owner
+     *
+     * Note: The value may be "zero" if [errno]` != 0`.
+     */
+    val gid: Int,
+)
+
+/**
+ * Whether this [FileStatV2] instance contains valid data or is the result of an error
+ * on the device.
+ */
+val FileStatV2.isError: Boolean
+    get() = (errno != 0)
+
 /**
  * A directory entry as returned from [AdbDeviceSyncServices.list]
  */
@@ -160,6 +341,20 @@ data class DirectoryEntry(
      * The [FileStat] of this entry in the directory
      */
     val fileStat: FileStat
+)
+
+/**
+ * A directory entry as returned from [AdbDeviceSyncServices.listV2]
+ */
+data class DirectoryEntryV2(
+    /**
+     * The file name of this entry in the directory
+     */
+    val fileName: String,
+    /**
+     * The [FileStatV2] of this entry in the directory
+     */
+    val fileStat: FileStatV2
 )
 
 /**

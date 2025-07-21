@@ -15,49 +15,45 @@
  */
 package com.android.adblib.impl
 
-import com.android.adblib.AdbDeviceSyncServices.ListOptions
-import com.android.adblib.DirectoryEntry
+import com.android.adblib.AdbDeviceSyncServices.ListV2Options
+import com.android.adblib.DirectoryEntryV2
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 /**
- * Implementation of the `LIST` protocol of the `SYNC` command
+ * Implementation of the `LIS2` protocol of the `SYNC` command
  *
  * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
  */
-internal class SyncListHandler(private val connection: SyncConnection) {
+internal class SyncListV2Handler(private val connection: SyncConnection) {
 
-    private val syncRequestId: String = "LIST"
+    private val syncRequestId: String = "LIS2"
 
     /**
      * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
      *
      * ```
-     * LIST:
+     * LIS2:
      * Lists files in the directory specified by the remote filename. The server will
      * respond with zero or more directory entries or "dents".
-     *
-     * The directory entries will be returned in the following form
-     * 1. A four-byte sync response id "DENT"
-     * 2. A four-byte integer representing file mode.
-     * 3. A four-byte integer representing file size.
-     * 4. A four-byte integer representing last modified time.
-     * 5. A four-byte integer representing file name length.
-     * 6. length number of bytes containing an utf-8 string representing the file
-     *    name.
      *
      * When a sync response "DONE" is received the listing is done.
      * ```
      */
-    fun list(remoteFilePath: String, options: ListOptions): Flow<DirectoryEntry> = flow {
+    fun listV2(remoteFilePath: String, options: ListV2Options) : Flow<DirectoryEntryV2> = flow {
         // Note: adb daemon implementation lives at:
         // https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=186
         connection.startSyncRequest(syncRequestId, remoteFilePath)
+
         while (true) {
-            val entry = connection.readDirectoryEntry(syncRequestId) ?: break
+            val entry = connection.readDirectoryEntryV2(syncRequestId) ?: break
             when {
                 options.skipDotEntries && (entry.fileName == "." || entry.fileName == "..") -> {
                     // Skip "." and ".." according to option setting
+                }
+
+                options.skipErrorEntries && entry.fileStat.errno != 0 -> {
+                    // Skip "errors" according to option setting
                 }
 
                 else -> {

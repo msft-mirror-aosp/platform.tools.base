@@ -653,6 +653,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
                     "shell_v2",
                     "apex",
                     "stat_v2",
+                    "ls_v2",
                     "cmd",
                     "abb",
                     "abb_exec",
