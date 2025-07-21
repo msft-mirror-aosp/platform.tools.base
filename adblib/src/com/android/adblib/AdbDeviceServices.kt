@@ -902,6 +902,21 @@ fun AdbDeviceServices.abbCommand(device: DeviceSelector, args: List<String>): Ab
 }
 
 /**
+ * Opens a [AdbDeviceSyncServices] session on this [device] for performing one or more file
+ * transfer operation in the given [block].
+ *
+ * @see AdbDeviceServices.sync
+ */
+suspend inline fun <R> AdbDeviceServices.withSyncServices(
+    device: DeviceSelector,
+    block: (AdbDeviceSyncServices) -> R
+): R {
+    return sync(device).use {
+        block(it)
+    }
+}
+
+/**
  * Uploads a single file to a remote device transferring the contents of [sourceChannel].
  *
  * @see [AdbDeviceSyncServices.send]
