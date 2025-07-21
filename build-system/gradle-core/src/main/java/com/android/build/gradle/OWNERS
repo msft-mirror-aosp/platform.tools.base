@@ -1,2 +1,3 @@
+# Bug component: 1127272
 # Restrict owners in this directory as it contains API implementations
 include /build-system/gradle-api/OWNERS
