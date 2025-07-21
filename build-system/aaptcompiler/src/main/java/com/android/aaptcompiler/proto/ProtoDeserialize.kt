@@ -213,6 +213,7 @@ fun deserializeConfigFromPb(
   val screenWidth = config.getScreenWidth()
   val screenHeight = config.getScreenHeight()
   val sdkVersion = config.getSdkVersion().toShort()
+  val minorVersion = config.getSdkVersionMinor().toShort()
 
   val configDescription = ConfigDescription(
     ResTableConfig(
@@ -228,6 +229,7 @@ fun deserializeConfigFromPb(
       screenWidth = screenWidth,
       screenHeight = screenHeight,
       sdkVersion = sdkVersion,
+      minorVersion = minorVersion,
       screenLayout = (screenLayoutDir.toInt() or
         screenLayoutLong.toInt() or
         screenLayoutSize.toInt()).toByte(),
