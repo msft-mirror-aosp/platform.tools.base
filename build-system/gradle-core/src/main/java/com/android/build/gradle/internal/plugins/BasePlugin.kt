@@ -230,7 +230,6 @@ abstract class BasePlugin<
                 bootClasspathConfig,
                 createCustomLintPublishConfig(project),
                 createCustomLintChecksConfig(project),
-                createAndroidJarConfig(project),
                 createFakeDependencyConfig(project),
                 createSettingsOptions(dslServices),
                 managedDeviceRegistry
@@ -434,32 +433,34 @@ abstract class BasePlugin<
         // As soon as project is evaluated we can clear the shared state for deprecation reporting.
         gradle.projectsEvaluated { DeprecationReporterImpl.clean() }
 
-        createAndroidJdkImageConfiguration(project)
+        createAndroidJdkImageConfiguration(project, versionedSdkLoaderService)
 
         // Provide built-in Kotlin support
         initBuiltInKotlinSupportIfRequired(project, projectServices)
     }
 
-    /** Creates the androidJdkImage configuration */
-    private fun createAndroidJdkImageConfiguration(project: Project) {
-        project.configurations.register(CONFIG_NAME_ANDROID_JDK_IMAGE) { config ->
-            config.isVisible = false
-            config.isCanBeConsumed = false
-            config.description = "Configuration providing JDK image for compiling Java 9+ sources"
+    companion object {
+        fun createAndroidJdkImageConfiguration(
+            project: Project,
+            versionedSdkLoaderService: VersionedSdkLoaderService
+        ) {
+            project.configurations.register(CONFIG_NAME_ANDROID_JDK_IMAGE) { config ->
+                config.isVisible = false
+                config.isCanBeConsumed = false
+                config.description = "Configuration providing JDK image for compiling Java 9+ sources"
+            }
+
+            project.dependencies
+                .add(
+                    CONFIG_NAME_ANDROID_JDK_IMAGE,
+                    project.files(
+                        versionedSdkLoaderService
+                            .versionedSdkLoader
+                            .flatMap { it.coreForSystemModulesProvider }
+                    )
+                )
         }
 
-        project.dependencies
-            .add(
-                CONFIG_NAME_ANDROID_JDK_IMAGE,
-                project.files(
-                    versionedSdkLoaderService
-                        .versionedSdkLoader
-                        .flatMap { it.coreForSystemModulesProvider }
-                )
-            )
-    }
-
-    companion object {
         fun createCustomLintChecksConfig(project: Project): Configuration {
             val lintChecks = project.configurations.maybeCreate(VariantDependencies.CONFIG_NAME_LINTCHECKS)
             lintChecks.isVisible = false
@@ -477,13 +478,7 @@ abstract class BasePlugin<
             return lintChecks
         }
 
-        fun createAndroidJarConfig(project: Project): Configuration  {
-            val androidJarConfig: Configuration = project.configurations
-                .maybeCreate(VariantDependencies.CONFIG_NAME_ANDROID_APIS)
-            androidJarConfig.description = "Configuration providing various types of Android JAR file"
-            androidJarConfig.isCanBeConsumed = false
-            return androidJarConfig
-        }
+
         private fun createFakeDependencyConfig(project: Project): Configuration {
             val fakeJarService = getBuildService(
                 project.gradle.sharedServices,

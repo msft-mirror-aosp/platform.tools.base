@@ -1963,22 +1963,8 @@ abstract class TaskManager(
     }
 
     protected fun registerParseLibraryResourcesTask(creationConfig: ComponentCreationConfig) {
-        addAndroidJarDependency()
         taskFactory.register(ParseLibraryResourcesTask.CreateAction(creationConfig))
     }
-
-    protected fun addAndroidJarDependency() {
-        project.dependencies
-            .add(
-                VariantDependencies.CONFIG_NAME_ANDROID_APIS,
-                project.files(
-                    Callable {
-                        globalConfig.versionedSdkLoader.flatMap {
-                            it.androidJarProvider
-                        }.orNull
-                    } as Callable<*>))
-    }
-
 
     /**
      * We have a separate method for publishing artifacts back to the features (instead of using the

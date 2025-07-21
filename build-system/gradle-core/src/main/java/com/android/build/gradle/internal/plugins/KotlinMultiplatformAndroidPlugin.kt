@@ -55,7 +55,6 @@ import com.android.build.gradle.internal.core.dsl.impl.KmpUnitTestDslInfoImpl
 import com.android.build.gradle.internal.core.dsl.impl.KmpVariantDslInfoImpl
 import com.android.build.gradle.internal.core.dsl.impl.features.KmpDeviceTestOptionsDslInfoImpl
 import com.android.build.gradle.internal.dependency.AgpVersionCompatibilityRule
-import com.android.build.gradle.internal.dependency.CONFIG_NAME_ANDROID_JDK_IMAGE
 import com.android.build.gradle.internal.dependency.JacocoInstrumentationService
 import com.android.build.gradle.internal.dependency.ModelArtifactCompatibilityRule.Companion.setUp
 import com.android.build.gradle.internal.dependency.SingleVariantBuildTypeRule
@@ -112,10 +111,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.configuration.BuildFeatures
-import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
 import org.gradle.build.event.BuildEventsListenerRegistry
-import org.gradle.jvm.toolchain.JavaToolchainService
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import javax.inject.Inject
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.publishSources
@@ -205,7 +202,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             "kotlin.publishJvmEnvironmentAttribute", "true"
         )
 
-        createAndroidJdkImageConfiguration(project)
+        BasePlugin.createAndroidJdkImageConfiguration(project, versionedSdkLoaderService)
     }
 
     override fun configureExtension(project: Project) {
@@ -248,7 +245,6 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             bootClasspathConfig,
             ::getCompileSdkVersion,
             ::getBuildToolsVersion,
-            BasePlugin.createAndroidJarConfig(project),
             dslServices,
             createSettingsOptions(dslServices)
         )
@@ -276,24 +272,6 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             }
             afterEvaluate(it)
         }
-    }
-
-    private fun createAndroidJdkImageConfiguration(project: Project) {
-        project.configurations.register(CONFIG_NAME_ANDROID_JDK_IMAGE) { config ->
-            config.isVisible = false
-            config.isCanBeConsumed = false
-            config.description = "Configuration providing JDK image for compiling Java 9+ sources"
-        }
-
-        project.dependencies
-            .add(
-                CONFIG_NAME_ANDROID_JDK_IMAGE,
-                project.files(
-                    versionedSdkLoaderService
-                        .versionedSdkLoader
-                        .flatMap { it.coreForSystemModulesProvider }
-                )
-            )
     }
 
     private fun KotlinMultiplatformAndroidLibraryExtension.initExtensionFromSettings(
