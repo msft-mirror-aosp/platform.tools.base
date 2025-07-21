@@ -252,11 +252,11 @@ public class PluginDslTest {
                         + "project.android {\n"
                         + "    adbOptions {\n"
                         + "        timeOutInMs 180000 \n"
-                        + "        installOptions '-d','-t' \n"
+                        + "        installOptions = ['-d','-t'] \n"
                         + "    }\n"
                         + "    installation {\n"
                         + "        timeOutInMs 180000 \n"
-                        + "        installOptions '-d','-t' \n"
+                        + "        installOptions = ['-d','-t'] \n"
                         + "    }\n"
                         + "}\n");
 
