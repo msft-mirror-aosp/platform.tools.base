@@ -652,7 +652,7 @@ public class BinaryResourceConfiguration implements SerializableResource {
     result.put(Type.NAVIGATION_HIDDEN,
         getOrDefault(NAVIGATIONHIDDEN_VALUES, navigationHidden(), ""));
     result.put(Type.NAVIGATION, getOrDefault(NAVIGATION_VALUES, navigation(), ""));
-    result.put(Type.SDK_VERSION, sdkVersion() != 0 ? "v" + sdkVersion() : "");
+    result.put(Type.SDK_VERSION, sdkVersion() != 0 ? "v" + sdkVersion() + (minorVersion() != 0 ? "." + minorVersion() : "") : "");
     return result;
   }
 
