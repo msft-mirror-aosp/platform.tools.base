@@ -41,11 +41,6 @@ class EnabledSrcResGenTest {
     }
 
     @Test
-    fun `test enabling Renderscript via gradle-properties`() {
-        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_RENDERSCRIPT, "compileDebugRenderscript")
-    }
-
-    @Test
     fun `test enabling Renderscript via build-gradle`() {
         checkViaBuildFile("renderScript", "compileDebugRenderscript")
     }

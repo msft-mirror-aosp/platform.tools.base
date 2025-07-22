@@ -68,8 +68,7 @@ open class BuildFeatureValuesImpl constructor(
         else -> true
     }
 
-    private val _renderScript = buildFeatures.renderScript ?:
-    projectOptions[BooleanOption.BUILD_FEATURE_RENDERSCRIPT]
+    private val _renderScript = buildFeatures.renderScript ?: false
 
     override val renderScript: Boolean
         get() = androidResources && _renderScript
