@@ -47,6 +47,9 @@ class DeviceInfo {
   static constexpr int Q = 29;  // First API where Statsd is supported.
   // First API where simpleperf's --log-to-android-buffer flag is supported.
   static constexpr int R = 30;
+  static constexpr int TIRAMISU = 33;
+  // First API level where ART's --clock-type flag is supported.
+  static constexpr int UPSIDE_DOWN_CAKE = 34;
 
  private:
   DeviceInfo();

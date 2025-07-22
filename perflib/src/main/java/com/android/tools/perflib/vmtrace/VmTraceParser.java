@@ -19,10 +19,12 @@ package com.android.tools.perflib.vmtrace;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.ddmlib.ByteBufferUtil;
+
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
 import com.google.common.primitives.UnsignedInts;
 import com.intellij.openapi.diagnostic.Logger;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -52,6 +54,14 @@ public class VmTraceParser {
         }
         mTraceFile = traceFile;
         mTraceDataHandler = traceHandler;
+    }
+
+    /**
+     * Returns the clock type used in the trace file. Note: This will return {@code null} if called
+     * before {@link #parse()}, which populates {@link #mVmClockType} by reading the trace file.
+     */
+    public VmClockType getVmClockType() {
+        return mVmClockType;
     }
 
     public void parse() throws IOException {
@@ -387,7 +397,8 @@ public class VmTraceParser {
         if (version != mVersion) {
             String msg =
                     String.format(
-                            "Error: version number mismatch; got %d in data header but %d in options\n",
+                            "Error: version number mismatch; got %d in data header but %d in"
+                                    + " options\n",
                             version, mVersion);
             throw new RuntimeException(msg);
         }
