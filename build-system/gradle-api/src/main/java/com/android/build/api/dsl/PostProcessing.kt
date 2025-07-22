@@ -30,28 +30,42 @@ import java.io.File
  * href="https://developer.android.com/studio/build/shrink-code.html">Shrink Your Code and
  * Resources</a>.
  */
+@Deprecated("This block is unused and will be removed in AGP 9.0")
 @Incubating
 interface PostProcessing {
     fun initWith(that: PostProcessing)
 
+    @Deprecated("Unused")
     var isRemoveUnusedCode: Boolean
 
+    @Deprecated("Unused")
     var isRemoveUnusedResources: Boolean
 
+    @Deprecated("Unused")
     var isObfuscate: Boolean
 
+    @Deprecated("Unused")
     var isOptimizeCode: Boolean
 
+    @Deprecated("Unused")
     fun setProguardFiles(proguardFiles: List<Any>)
+    @Deprecated("Unused")
     fun proguardFile(file: Any)
+    @Deprecated("Unused")
     fun proguardFiles(vararg files: Any)
 
+    @Deprecated("Unused")
     fun setTestProguardFiles(testProguardFiles: List<Any>)
+    @Deprecated("Unused")
     fun testProguardFile(file: Any)
+    @Deprecated("Unused")
     fun testProguardFiles(vararg files: Any)
 
+    @Deprecated("Unused")
     fun setConsumerProguardFiles(consumerProguardFiles: List<Any>)
+    @Deprecated("Unused")
     fun consumerProguardFile(file: Any)
+    @Deprecated("Unused")
     fun consumerProguardFiles(vararg files: Any)
 
     @Deprecated("This property no longer has any effect. R8 is always used.")
