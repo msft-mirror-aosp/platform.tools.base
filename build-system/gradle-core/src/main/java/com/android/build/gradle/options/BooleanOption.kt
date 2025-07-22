@@ -747,13 +747,6 @@ enum class BooleanOption(
      */
 
     // TODO(b/254305041) move to ApiStage.Removed
-    BUILD_FEATURE_AIDL(
-        "android.defaults.buildfeatures.aidl",
-        false,
-        ApiStage.Deprecated(VERSION_9_0),
-    ),
-
-    // TODO(b/254305041) move to ApiStage.Removed
     BUILD_FEATURE_BUILDCONFIG(
         "android.defaults.buildfeatures.buildconfig",
         false,
@@ -1119,6 +1112,15 @@ enum class BooleanOption(
         ApiStage.Removed(
             Version.VERSION_9_0,
             "The buildfeatures.renderscript property has no effect"
+        ),
+    ),
+
+    BUILD_FEATURE_AIDL(
+        "android.defaults.buildfeatures.aidl",
+        false,
+        ApiStage.Removed(
+            Version.VERSION_9_0,
+            "The buildfeatures.aidl property has no effect"
         ),
     ),
 

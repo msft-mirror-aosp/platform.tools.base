@@ -53,7 +53,7 @@ open class BuildFeatureValuesImpl constructor(
         }
     }
 
-    override val aidl: Boolean = buildFeatures.aidl ?: projectOptions[BooleanOption.BUILD_FEATURE_AIDL]
+    override val aidl: Boolean = buildFeatures.aidl ?: false
 
     override val compose: Boolean =
             projectServices.plugins.hasPlugin(COMPOSE_COMPILER_PLUGIN_ID) || (buildFeatures.compose

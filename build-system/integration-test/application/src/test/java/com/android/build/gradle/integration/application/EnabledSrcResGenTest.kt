@@ -46,11 +46,6 @@ class EnabledSrcResGenTest {
     }
 
     @Test
-    fun `test enabling AIDL via gradle-properties`() {
-        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_AIDL, "compileDebugAidl")
-    }
-
-    @Test
     fun `test enabling AIDL via build-gradle`() {
         checkViaBuildFile("aidl", "compileDebugAidl")
     }
