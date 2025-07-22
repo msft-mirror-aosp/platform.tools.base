@@ -308,16 +308,6 @@ enum class BooleanOption(
     /** When set R classes are treated as compilation classpath in libraries, rather than runtime classpath, with values set to 0. */
     ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT("android.enableAdditionalTestOutput", true, FeatureStage.Experimental),
 
-    ENABLE_APP_COMPILE_TIME_R_CLASS(
-        "android.enableAppCompileTimeRClass",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.SoftlyEnforced(VERSION_10_0),
-            Version.VERSION_9_0
-        )
-    ),
     ENABLE_EXTRACT_ANNOTATIONS("android.enableExtractAnnotations", true, FeatureStage.Experimental),
 
     // Marked as stable to avoid reporting deprecation twice.
@@ -680,6 +670,12 @@ enum class BooleanOption(
         "android.aar.metadata.defaultMinCompileSdkToCompileSdk",
         true,
         FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
+    ENABLE_APP_COMPILE_TIME_R_CLASS(
+        "android.enableAppCompileTimeRClass",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0),
     ),
 
     /* -------------------

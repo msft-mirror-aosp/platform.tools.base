@@ -74,7 +74,6 @@ class OptionVersionTest {
             BooleanOption.BUILT_IN_KOTLIN,
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
             BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
-            BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS,
             BooleanOption.ENABLE_EMULATOR_CONTROL,
             BooleanOption.ENABLE_LEGACY_VARIANT_API,
             BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE,

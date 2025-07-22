@@ -80,6 +80,10 @@ public class ProjectOptionsBuilder {
                     BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE,
                     false);
         }
+        if (!booleans.containsKey(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS)) {
+            booleans.put(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false);
+            suppressWarnings.add(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS);
+        }
     }
 
     private static void injectWarningSuppression(
