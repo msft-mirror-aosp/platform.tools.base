@@ -75,6 +75,8 @@ function run_bazel() {
     //tools/adt/idea/studio:android-studio.mac.zip \
     //tools/adt/idea/studio:android-studio.mac_arm.zip \
     //tools/adt/idea/studio:android-studio.win.zip \
+    //tools/adt/idea/studio:android-studio_build_manifest.textproto \
+    //tools/adt/idea/studio:android-studio_update_message.html \
     //tools/adt/idea/native/installer:android-studio-bundle-data \
     //tools/vendor/google/adrt:android-studio-cros-skeleton.zip \
     //tools/vendor/google/adrt:android-studio-nsis-prebuilt.zip \
