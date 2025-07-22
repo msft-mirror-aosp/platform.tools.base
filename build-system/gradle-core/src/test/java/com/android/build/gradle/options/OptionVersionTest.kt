@@ -81,7 +81,6 @@ class OptionVersionTest {
             BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE,
             BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
             BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS,
-            BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES,
             BooleanOption.GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE,
             BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
             BooleanOption.LINT_ANALYSIS_PER_COMPONENT,

@@ -70,6 +70,10 @@ public class ProjectOptionsBuilder {
             booleans.put(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false);
             suppressWarnings.add(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET);
         }
+        if (!booleans.containsKey(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES)) {
+            booleans.put(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, false);
+            suppressWarnings.add(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES);
+        }
     }
 
     private static void injectWarningSuppression(

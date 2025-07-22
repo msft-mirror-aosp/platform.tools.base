@@ -503,20 +503,6 @@ enum class BooleanOption(
     ENABLE_PROBLEMS_API("android.enableProblemsAPI", false, FeatureStage.Experimental),
 
     /**
-     * As of AGP 9.0 missing proguard files will throw a runtime exception.
-     */
-    FAIL_ON_MISSING_PROGUARD_FILES(
-        "android.proguard.failOnMissingFiles",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            Version.VERSION_9_0
-        )
-    ),
-
-    /**
      * Setting custom shader path is required with `glslc.dir` property
      */
     CUSTOM_SHADER_PATH_REQUIRED(
@@ -701,6 +687,12 @@ enum class BooleanOption(
     FULL_R8(
         "android.enableR8.fullMode",
         defaultValue = true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
+    FAIL_ON_MISSING_PROGUARD_FILES(
+        "android.proguard.failOnMissingFiles",
+        true,
         FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
