@@ -16,6 +16,8 @@
 
 package com.android.tools.agent.appinspection.rendering
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.PointF
 import android.graphics.Rect
 import android.util.Log
@@ -29,6 +31,7 @@ import com.android.tools.agent.appinspection.sendEvent
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.DrawInstruction
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.UserInputEvent
+import com.android.tools.idea.protobuf.ByteString
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,6 +84,12 @@ class OnDeviceRenderingViewModel(
     private val _interceptTouchEvents = MutableStateFlow<Boolean>(false)
     var interceptTouchEvents = _interceptTouchEvents.asStateFlow()
 
+    private val _overlayImage = MutableStateFlow<Bitmap?>(null)
+    var overlayImage = _overlayImage.asStateFlow()
+
+    private val _overlayAlpha = MutableStateFlow<Float>(0.5f)
+    var overlayAlpha = _overlayAlpha.asStateFlow()
+
     suspend fun setEnableOnDeviceRendering(enable: Boolean) {
         if (enable) {
             roots.values.forEach { addOverlayView(it) }
@@ -125,6 +134,16 @@ class OnDeviceRenderingViewModel(
     fun setInterceptTouchEvents(intercept: Boolean) {
         addOverlayViewsIfMissing()
         _interceptTouchEvents.value = intercept
+    }
+
+    fun setOverlayImage(image: ByteString?) {
+        val byteArray = image?.toByteArray()
+        val bitmap = byteArray?.let { BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size) }
+        _overlayImage.value = bitmap
+    }
+
+    fun setOverlayAlpha(alpha: Float) {
+        _overlayAlpha.value = alpha
     }
 
     fun onTouchEvent(rootId: Long, point: PointF) {

@@ -373,6 +373,21 @@ message DrawCommand {
 message DrawResponse {
 }
 
+message DrawOverlayCommand {
+    optional bytes image = 1;
+}
+message DrawOverlayResponse {
+}
+
+// We have two separate commands for draw overlay and set alpha because each time the alpha changes
+// we don't want to have to re-send the image.
+message SetOverlayAlphaCommand {
+    // The alpha to apply to the overlay image. It's a value between 0 and 1.
+    float alpha = 1;
+}
+message SetOverlayAlphaResponse {
+}
+
 message InterceptTouchEventsCommand {
     bool intercept = 1;
 }
@@ -454,6 +469,8 @@ message Command {
         EnableOnDeviceRenderingCommand enable_on_device_rendering_command = 8;
         DrawCommand draw_command = 9;
         InterceptTouchEventsCommand intercept_touch_events_command = 10;
+        DrawOverlayCommand draw_overlay_command = 11;
+        SetOverlayAlphaCommand set_overlay_alpha_command = 12;
     }
 }
 
@@ -469,6 +486,8 @@ message Response {
         EnableOnDeviceRenderingResponse enable_on_device_rendering_response = 8;
         DrawResponse draw_response = 9;
         InterceptTouchEventsResponse intercept_touch_events_response = 10;
+        DrawOverlayResponse draw_overlay_response = 11;
+        SetOverlayAlphaResponse set_overlay_alpha_response = 12;
     }
 }
 

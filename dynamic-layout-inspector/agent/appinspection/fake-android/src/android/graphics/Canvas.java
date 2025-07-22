@@ -17,6 +17,7 @@
 package android.graphics;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -31,6 +32,9 @@ public final class Canvas {
 
     @VisibleForTesting public List<DrawTextLog> drawTextLogs = new ArrayList<>();
     private int drawTextInvocations = 0;
+
+    @VisibleForTesting public List<DrawBitmapLog> drawBitmapLogs = new ArrayList<>();
+    private int drawBitmapInvocations = 0;
 
     private Bitmap mBitmap;
 
@@ -57,6 +61,12 @@ public final class Canvas {
     public void drawText(@NonNull String text, float x, float y, @NonNull Paint paint) {
         drawTextLogs.add(new DrawTextLog(drawTextInvocations, text, x, y, paint));
         drawTextInvocations += 1;
+    }
+
+    public void drawBitmap(
+            @NonNull Bitmap bitmap, @Nullable Rect src, @NonNull Rect dst, @Nullable Paint paint) {
+        drawBitmapLogs.add(new DrawBitmapLog(bitmap, src, dst, paint));
+        drawBitmapInvocations += 1;
     }
 
     public int getWidth() {
@@ -124,6 +134,21 @@ public final class Canvas {
         @Override
         public int hashCode() {
             return Objects.hash(text, x, y, paint, generation);
+        }
+    }
+
+    @VisibleForTesting
+    public static class DrawBitmapLog {
+        public final Bitmap bitmap;
+        public final Rect src;
+        public final Rect dst;
+        public final Paint paint;
+
+        public DrawBitmapLog(Bitmap bitmap, Rect src, Rect dst, Paint paint) {
+            this.bitmap = bitmap;
+            this.src = src;
+            this.dst = dst;
+            this.paint = paint;
         }
     }
 }
