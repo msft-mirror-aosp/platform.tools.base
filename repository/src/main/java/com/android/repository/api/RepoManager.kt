@@ -25,9 +25,10 @@ import com.google.common.annotations.VisibleForTesting
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.runBlocking
 import org.w3c.dom.ls.LSResourceResolver
-import kotlin.time.Duration
 
 /**
  * Primary interface for interacting with repository packages.
@@ -199,14 +200,14 @@ abstract class RepoManager {
 
   abstract suspend fun loadLocalPackages(
     indicator: ProgressIndicator,
-    cacheExpiration: Duration,
+    cacheExpiration: Duration = DEFAULT_EXPIRATION_PERIOD,
   ): List<LocalPackage>
 
   abstract suspend fun loadRemotePackages(
     indicator: ProgressIndicator,
-    cacheExpiration: Duration,
     downloader: Downloader,
     settings: SettingsController?,
+    cacheExpiration: Duration = DEFAULT_EXPIRATION_PERIOD,
   ): List<RemotePackage>
 
   /**
@@ -303,6 +304,9 @@ abstract class RepoManager {
      * to be stale and need to be reloaded.
      */
     @JvmField val DEFAULT_EXPIRATION_PERIOD_MS: Long = TimeUnit.DAYS.toMillis(1)
+
+    val DEFAULT_EXPIRATION_PERIOD: Duration
+      get() = DEFAULT_EXPIRATION_PERIOD_MS.milliseconds
 
     /** Pattern for name of the xsd file used in [commonModule]. */
     private const val COMMON_XSD_PATTERN = "/xsd/repo-common-%02d.xsd"

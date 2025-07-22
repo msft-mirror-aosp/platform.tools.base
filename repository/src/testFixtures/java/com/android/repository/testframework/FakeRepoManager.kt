@@ -96,9 +96,9 @@ class FakeRepoManager(override val localPath: Path?, override val packages: Repo
 
   override suspend fun loadRemotePackages(
     indicator: ProgressIndicator,
-    cacheExpiration: Duration,
     downloader: Downloader,
     settings: SettingsController?,
+    cacheExpiration: Duration,
   ): List<RemotePackage> = emptyList()
 
   override fun markInvalid() {}
