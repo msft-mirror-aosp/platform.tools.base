@@ -60,29 +60,12 @@ internal class AdbChannelProviderConnectAddresses(
             // Try all local addresses, and collect all exceptions for later reporting
             var suppressedExceptions = SuppressedExceptions.init()
             addresses.forEach { localAddress ->
-                // IntelliJ warns about this due to the "throws IOException" signature
-                @Suppress("BlockingMethodInNonBlockingContext")
-                val socketChannel = AsynchronousSocketChannel.open(host.asynchronousChannelGroup)
-                socketChannel.closeOnException {
-                    socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true)
-                    socketChannel.setOption(
-                        StandardSocketOptions.SO_KEEPALIVE,
-                        host.getPropertyValue(SOCKET_CHANNEL_KEEPALIVE)
-                    )
-                    val adbChannel = AdbSocketChannelImpl(host, socketChannel)
-                    try {
-                        adbChannel.connect(
-                            localAddress,
-                            tracker.remainingNanos,
-                            TimeUnit.NANOSECONDS
-                        )
-
-                        // Success, return the channel
-                        return@withContext adbChannel
-                    } catch (e: IOException) {
-                        suppressedExceptions = SuppressedExceptions.add(suppressedExceptions, e)
-                        adbChannel.close()
-                    }
+                try {
+                    // Attempt to open and connect a channel for the current address
+                    return@withContext openAndConnect(localAddress, tracker)
+                } catch (e: IOException) {
+                    // Suppress `IOException` so that we could connect to other addresses
+                    suppressedExceptions = SuppressedExceptions.add(suppressedExceptions, e)
                 }
             }
             // If we reach here, none of the addresses worked, so we bail out and throw
@@ -92,6 +75,34 @@ internal class AdbChannelProviderConnectAddresses(
             val error = IOException(message).withSuppressed(suppressedExceptions)
             host.logger.info(error) { "Error connecting to local ADB instance" }
             throw error
+        }
+    }
+
+    private suspend fun openAndConnect(
+        localAddress: InetSocketAddress,
+        tracker: TimeoutTracker
+    ): AdbChannel {
+        // IntelliJ warns about this due to the "throws IOException" signature
+        @Suppress("BlockingMethodInNonBlockingContext")
+        val socketChannel = AsynchronousSocketChannel.open(host.asynchronousChannelGroup)
+        return socketChannel.closeOnException {
+            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true)
+            socketChannel.setOption(
+                StandardSocketOptions.SO_KEEPALIVE,
+                host.getPropertyValue(SOCKET_CHANNEL_KEEPALIVE)
+            )
+
+            val adbChannel = AdbSocketChannelImpl(host, socketChannel)
+            // Since `adbChannel` is a wrapper around `socketChannel`, we don't need a
+            // nested `closeOnException` here. If this `connect()` call fails, the outer
+            // block will correctly close the underlying `socketChannel`, handling all
+            // necessary cleanup.
+            adbChannel.connect(
+                localAddress,
+                tracker.remainingNanos,
+                TimeUnit.NANOSECONDS
+            )
+            adbChannel
         }
     }
 }
