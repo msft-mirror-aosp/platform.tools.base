@@ -23,8 +23,7 @@
             * {INCLUDED_BUILD(:other-build)}/lib/src/main/assets{!}
          - jniLibsDirectories:
             * {INCLUDED_BUILD(:other-build)}/lib/src/main/jniLibs{!}
-         - shadersDirectories:
-            * {INCLUDED_BUILD(:other-build)}/lib/src/main/shaders{!}
+         - shadersDirectories      = (null)
          - mlModelsDirectories     = (null)
          - custom                  = []
       < sourceProvider
@@ -46,8 +45,7 @@
             * {INCLUDED_BUILD(:other-build)}/lib/src/androidTest/assets{!}
          - jniLibsDirectories:
             * {INCLUDED_BUILD(:other-build)}/lib/src/androidTest/jniLibs{!}
-         - shadersDirectories:
-            * {INCLUDED_BUILD(:other-build)}/lib/src/androidTest/shaders{!}
+         - shadersDirectories      = (null)
          - mlModelsDirectories     = (null)
          - custom                  = []
       < androidTestSourceProvider
@@ -69,8 +67,7 @@
             * {INCLUDED_BUILD(:other-build)}/lib/src/test/assets{!}
          - jniLibsDirectories:
             * {INCLUDED_BUILD(:other-build)}/lib/src/test/jniLibs{!}
-         - shadersDirectories:
-            * {INCLUDED_BUILD(:other-build)}/lib/src/test/shaders{!}
+         - shadersDirectories      = (null)
          - mlModelsDirectories     = (null)
          - custom                  = []
       < unitTestSourceProvider
@@ -96,8 +93,7 @@
                * {INCLUDED_BUILD(:other-build)}/lib/src/debug/assets{!}
             - jniLibsDirectories:
                * {INCLUDED_BUILD(:other-build)}/lib/src/debug/jniLibs{!}
-            - shadersDirectories:
-               * {INCLUDED_BUILD(:other-build)}/lib/src/debug/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < sourceProvider
@@ -119,8 +115,7 @@
                * {INCLUDED_BUILD(:other-build)}/lib/src/androidTestDebug/assets{!}
             - jniLibsDirectories:
                * {INCLUDED_BUILD(:other-build)}/lib/src/androidTestDebug/jniLibs{!}
-            - shadersDirectories:
-               * {INCLUDED_BUILD(:other-build)}/lib/src/androidTestDebug/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < androidTestSourceProvider
@@ -142,8 +137,7 @@
                * {INCLUDED_BUILD(:other-build)}/lib/src/testDebug/assets{!}
             - jniLibsDirectories:
                * {INCLUDED_BUILD(:other-build)}/lib/src/testDebug/jniLibs{!}
-            - shadersDirectories:
-               * {INCLUDED_BUILD(:other-build)}/lib/src/testDebug/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < unitTestSourceProvider
@@ -168,8 +162,7 @@
                * {INCLUDED_BUILD(:other-build)}/lib/src/release/assets{!}
             - jniLibsDirectories:
                * {INCLUDED_BUILD(:other-build)}/lib/src/release/jniLibs{!}
-            - shadersDirectories:
-               * {INCLUDED_BUILD(:other-build)}/lib/src/release/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < sourceProvider
@@ -192,8 +185,7 @@
                * {INCLUDED_BUILD(:other-build)}/lib/src/testRelease/assets{!}
             - jniLibsDirectories:
                * {INCLUDED_BUILD(:other-build)}/lib/src/testRelease/jniLibs{!}
-            - shadersDirectories:
-               * {INCLUDED_BUILD(:other-build)}/lib/src/testRelease/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < unitTestSourceProvider

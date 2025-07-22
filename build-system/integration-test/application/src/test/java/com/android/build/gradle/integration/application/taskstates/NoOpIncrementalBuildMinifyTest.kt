@@ -92,7 +92,6 @@ class NoOpIncrementalBuildMinifyTest {
                 ":mergeDebugAndroidTestJavaResource",
                 ":mergeDebugAndroidTestJniLibFolders",
                 ":mergeDebugAndroidTestResources",
-                ":mergeDebugAndroidTestShaders",
                 ":mergeDebugJniLibFolders",
                 ":mergeDebugResources",
                 ":mergeDexDebugAndroidTest",
@@ -103,7 +102,6 @@ class NoOpIncrementalBuildMinifyTest {
                 ":mergeReleaseJavaResource",
                 ":mergeReleaseJniLibFolders",
                 ":mergeReleaseResources",
-                ":mergeReleaseShaders",
                 ":mergeReleaseStartupProfile",
                 ":mapReleaseSourceSetPaths",
                 ":minifyReleaseWithR8",
@@ -139,8 +137,6 @@ class NoOpIncrementalBuildMinifyTest {
                 ":writeReleaseSigningConfigVersions"
             ),
             SKIPPED to setOf(
-                ":compileDebugAndroidTestShaders",
-                ":compileReleaseShaders",
                 ":compileReleaseUnitTestJavaWithJavac",
                 ":extractReleaseNativeSymbolTables",
                 ":lint",

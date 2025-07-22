@@ -84,13 +84,8 @@ enum class BooleanOption(
     ),
     BUILD_FEATURE_SHADERS(
         "android.defaults.buildfeatures.shaders",
-        true,
+        false,
         ApiStage.Stable,
-        FutureStage(
-            false,
-            ApiStage.Stable,
-            Version.VERSION_9_0
-        )
     ),
     BUILD_FEATURE_VIEWBINDING("android.defaults.buildfeatures.viewbinding", false, ApiStage.Stable),
     BUILD_FEATURE_ANDROID_RESOURCES("android.library.defaults.buildfeatures.androidresources", true, ApiStage.Stable),

@@ -23,8 +23,7 @@
             * {PROJECT}/test/src/main/assets{!}
          - jniLibsDirectories:
             * {PROJECT}/test/src/main/jniLibs{!}
-         - shadersDirectories:
-            * {PROJECT}/test/src/main/shaders{!}
+         - shadersDirectories      = (null)
          - mlModelsDirectories     = (null)
          - custom                  = []
       < sourceProvider
@@ -52,8 +51,7 @@
                * {PROJECT}/test/src/debug/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/test/src/debug/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/test/src/debug/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < sourceProvider

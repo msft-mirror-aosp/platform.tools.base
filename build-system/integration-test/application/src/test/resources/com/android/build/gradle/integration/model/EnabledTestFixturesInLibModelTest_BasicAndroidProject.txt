@@ -18,8 +18,7 @@
             * {PROJECT}/lib/src/testFixtures/assets{!}
          - jniLibsDirectories:
             * {PROJECT}/lib/src/testFixtures/jniLibs{!}
-         - shadersDirectories:
-            * {PROJECT}/lib/src/testFixtures/shaders{!}
+         - shadersDirectories      = (null)
          - mlModelsDirectories     = (null)
          - custom                  = []
       < testFixturesSourceProvider{ADDED}
@@ -44,8 +43,7 @@
                * {PROJECT}/lib/src/testFixturesDebug/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/lib/src/testFixturesDebug/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/lib/src/testFixturesDebug/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < testFixturesSourceProvider{ADDED}
@@ -69,8 +67,7 @@
                * {PROJECT}/lib/src/testFixturesRelease/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/lib/src/testFixturesRelease/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/lib/src/testFixturesRelease/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < testFixturesSourceProvider{ADDED}

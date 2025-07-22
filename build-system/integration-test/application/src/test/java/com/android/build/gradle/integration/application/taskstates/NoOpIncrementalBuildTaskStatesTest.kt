@@ -66,7 +66,6 @@ class NoOpIncrementalBuildTaskStatesTest {
                 ":app:mergeDebugJavaResource",
                 ":app:mergeDebugJniLibFolders",
                 ":app:mergeDebugResources",
-                ":app:mergeDebugShaders",
                 ":app:mergeDexDebug",
                 ":app:mergeExtDexDebug",
                 ":app:packageDebug",
@@ -89,7 +88,6 @@ class NoOpIncrementalBuildTaskStatesTest {
                 }
             ),
             SKIPPED to setOf(
-                ":app:compileDebugShaders",
                 ":app:mergeDebugNativeDebugMetadata",
                 ":app:mergeDebugNativeLibs",
                 ":app:processDebugJavaRes",

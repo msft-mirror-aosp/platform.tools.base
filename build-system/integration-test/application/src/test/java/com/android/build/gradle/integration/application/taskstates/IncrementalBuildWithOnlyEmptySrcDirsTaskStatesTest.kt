@@ -61,7 +61,6 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":app:mergeDebugJavaResource",
                             ":app:mergeDebugJniLibFolders",
                             ":app:mergeDebugResources",
-                            ":app:mergeDebugShaders",
                             ":app:mergeDexDebug",
                             ":app:mergeExtDexDebug",
                             ":app:packageDebug",
@@ -97,7 +96,6 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":lib:mergeDebugJavaResource",
                             ":lib:mergeDebugJniLibFolders",
                             ":lib:mergeDebugNativeLibs",
-                            ":lib:mergeDebugShaders",
                             ":lib:mergeDebugAssets",
                             ":lib:packageDebugResources",
                             ":lib:parseDebugLocalResources",
@@ -118,13 +116,11 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             }),
                 SKIPPED to
                     setOf(
-                        ":app:compileDebugShaders",
                         ":app:mergeDebugNativeDebugMetadata",
                         ":app:mergeDebugNativeLibs",
                         ":app:processDebugJavaRes",
                         ":app:stripDebugDebugSymbols",
                         ":lib:compileDebugJavaWithJavac",
-                        ":lib:compileDebugShaders",
                         ":lib:mergeDebugNativeLibs",
                         ":lib:processDebugJavaRes",
                         ":lib:stripDebugDebugSymbols"))

@@ -58,7 +58,6 @@ class CleanBuildTaskStatesTest {
                 ":app:mergeDebugJavaResource",
                 ":app:mergeDebugJniLibFolders",
                 ":app:mergeDebugResources",
-                ":app:mergeDebugShaders",
                 ":app:mergeDexDebug",
                 ":app:mergeExtDexDebug",
                 ":app:packageDebug",
@@ -89,7 +88,6 @@ class CleanBuildTaskStatesTest {
             ),
             SKIPPED to setOf(
                 ":app:assembleDebug",
-                ":app:compileDebugShaders",
                 ":app:mergeDebugNativeDebugMetadata",
                 ":app:mergeDebugNativeLibs",
                 ":app:processDebugJavaRes",

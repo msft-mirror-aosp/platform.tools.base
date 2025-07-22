@@ -52,16 +52,6 @@ class DisabledSrcResGenTest {
     }
 
     @Test
-    fun `test disabling shaders via gradle-properties`() {
-        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_SHADERS, "compileDebugShaders")
-    }
-
-    @Test
-    fun `test disabling shaders via build-gradle`() {
-        checkViaBuildFile("shaders", "compileDebugShaders")
-    }
-
-    @Test
     fun `check disabling Res Values triggers validation errors`() {
         appProject.buildFile.appendText("""
             android {

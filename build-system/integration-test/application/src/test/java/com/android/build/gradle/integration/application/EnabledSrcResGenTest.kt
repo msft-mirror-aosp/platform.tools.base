@@ -50,6 +50,16 @@ class EnabledSrcResGenTest {
         checkViaBuildFile("aidl", "compileDebugAidl")
     }
 
+    @Test
+    fun `test enabling shaders via gradle-properties`() {
+        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_SHADERS, "compileDebugShaders")
+    }
+
+    @Test
+    fun `test enabling shaders via build-gradle`() {
+        checkViaBuildFile("shaders", "compileDebugShaders")
+    }
+
     private fun checkViaGradleProperties(
         booleanOption: BooleanOption,
         taskName: String

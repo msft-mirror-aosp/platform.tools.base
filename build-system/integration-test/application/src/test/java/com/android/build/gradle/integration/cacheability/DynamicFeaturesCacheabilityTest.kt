@@ -171,7 +171,6 @@ class DynamicFeaturesCacheabilityTest {
                     ":app:mergeDebugAssets",
                     ":app:mergeDebugJavaResource", /* Bug 181142260 */
                     ":app:mergeDebugJniLibFolders",
-                    ":app:mergeDebugShaders",
                     ":app:packageDebug", /* Bug 74595859 */
                     ":app:preDebugBuild", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.AppPreBuildTask]*/
                     ":app:signingConfigWriterDebug", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.SigningConfigWriterTask]*/
@@ -191,7 +190,6 @@ class DynamicFeaturesCacheabilityTest {
                     ":feature1:mergeDebugAssets",
                     ":feature1:mergeDebugJavaResource",
                     ":feature1:mergeDebugJniLibFolders",
-                    ":feature1:mergeDebugShaders",
                     ":feature1:packageDebug",
                     ":feature1:processApplicationManifestDebugForBundle", /** Intentionally not cacheable. See [com.android.build.gradle.tasks.ProcessManifestForBundleTask] */
 
@@ -206,27 +204,23 @@ class DynamicFeaturesCacheabilityTest {
                     ":feature2:mergeDebugAssets",
                     ":feature2:mergeDebugJavaResource",
                     ":feature2:mergeDebugJniLibFolders",
-                    ":feature2:mergeDebugShaders",
                     ":feature2:packageDebug",
                     ":feature2:processApplicationManifestDebugForBundle", /** Intentionally not cacheable. See [com.android.build.gradle.tasks.ProcessManifestForBundleTask] */
 
                 ),
                 SKIPPED to setOf(
                     ":app:assembleDebug",
-                    ":app:compileDebugShaders",
                     ":app:mergeDebugNativeDebugMetadata",
                     ":app:mergeDebugNativeLibs",
                     ":app:processDebugJavaRes",
                     ":app:stripDebugDebugSymbols",
 
                     ":feature1:assembleDebug",
-                    ":feature1:compileDebugShaders",
                     ":feature1:mergeDebugNativeLibs",
                     ":feature1:processDebugJavaRes",
                     ":feature1:stripDebugDebugSymbols",
 
                     ":feature2:assembleDebug",
-                    ":feature2:compileDebugShaders",
                     ":feature2:mergeDebugNativeLibs",
                     ":feature2:processDebugJavaRes",
                     ":feature2:stripDebugDebugSymbols"
