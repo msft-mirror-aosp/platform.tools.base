@@ -138,7 +138,6 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.tasks.mlkit.GenerateMlModelClass
 import com.android.build.gradle.internal.tasks.runResourceShrinking
-import com.android.build.gradle.internal.tasks.runResourceShrinkingWithR8
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.testing.utp.TEST_RESULT_PB_FILE_NAME
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
@@ -1919,7 +1918,7 @@ abstract class TaskManager(
                 && creationConfig.buildFeatures.androidResources)
         val task: TaskProvider<out Task> =
                 createR8Task(creationConfig, isTestApplication, addCompileRClass)
-        if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
+        if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
             // Also convert shrunk resources from proto format to binary format so it can be
             // included in an APK
             taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(creationConfig))
@@ -1941,7 +1940,7 @@ abstract class TaskManager(
                     InternalArtifactType.FEATURE_SHRUNK_JAVA_RES,
                     AndroidArtifacts.ArtifactType.FEATURE_SHRUNK_JAVA_RES,
                     DOT_JAR)
-            if (creationConfig.runResourceShrinkingWithR8()) {
+            if (creationConfig.runResourceShrinking()) {
                 publishArtifactsToDynamicFeatures(
                     creationConfig,
                     InternalArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT,
@@ -2025,7 +2024,7 @@ abstract class TaskManager(
         creationConfig: ApkCreationConfig
     ) {
         if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true
-            && !creationConfig.runResourceShrinkingWithR8()
+            && !creationConfig.runResourceShrinking()
         ) {
             // For the APK
             taskFactory.register(ShrinkResourcesNewShrinkerTask.CreationAction(creationConfig))

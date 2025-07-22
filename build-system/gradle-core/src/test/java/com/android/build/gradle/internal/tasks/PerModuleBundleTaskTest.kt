@@ -62,7 +62,7 @@ class PerModuleBundleTaskTest {
         val resFile = testFolder.newFile("res").also {
             createRes(it)
         }
-        task.runResourceShrinkingWithR8.set(false)
+        task.runResourceShrinking.set(false)
         task.linkedResourcesFile.set(resFile)
         task.outputDir.set(testFolder.newFolder("out"))
     }

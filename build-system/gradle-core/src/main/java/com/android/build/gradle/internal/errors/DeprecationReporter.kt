@@ -53,6 +53,8 @@ interface DeprecationReporter {
          */
         private val additionalMessage: String? = null
     ) {
+        VERSION_11_0(Version.VERSION_11_0),
+
         VERSION_10_0(Version.VERSION_10_0),
 
         VERSION_9_0(Version.VERSION_9_0),

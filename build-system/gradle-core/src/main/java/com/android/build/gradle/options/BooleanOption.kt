@@ -18,6 +18,7 @@ package com.android.build.gradle.options
 
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
 import com.android.build.gradle.options.Version.VERSION_3_5
@@ -210,45 +211,15 @@ enum class BooleanOption(
         FutureStage(false, FeatureStage.Supported, Version.VERSION_9_0)
     ),
 
-
-    /**
-     * Enables R8 full mode
-     * (https://r8.googlesource.com/r8/+/refs/heads/8.8/compatibility-faq.md#r8-full-mode).
-     *
-     * Note that to help users migrate to R8 full mode, we provide 2 types of R8 full mode:
-     *   - Legacy full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = false): In this
-     *   mode, the default constructor is implicitly kept when a class is kept
-     *   (i.e., "-keep class A" is the same as "-keep class A { void <init>(); }")
-     *   - Strict full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = true): In this
-     *   mode, the default constructor is not implicitly kept when a class is kept
-     *   (i.e., "-keep class A" is different from "-keep class A { void <init>(); }").
-     *
-     * When migrating from legacy full mode to strict full mode, if the user's app or a library that
-     * the app uses contains a keep rule such as "-keep class A", then the app/library's author will
-     * need to manually update the rule to "-keep class A { void <init>(); }" if they want to keep
-     * the default constructor. If they don't want to keep the default constructor, then they can
-     * keep the rule as-is.
-     */
-    FULL_R8(
-        "android.enableR8.fullMode",
+    /** Enables R8 strict full mode for keep rules (see [FULL_R8] for more context). */
+    R8_STRICT_FULL_MODE_FOR_KEEP_RULES(
+        "android.r8.strictFullModeForKeepRules",
         defaultValue = true,
         FeatureStage.Supported,
         FutureStage(
             true,
-            FeatureStage.Deprecated(VERSION_10_0),
-            Version.VERSION_9_0
-        )
-    ),
-
-    /** Enables R8 strict full mode for keep rules (see [FULL_R8] for more context). */
-    R8_STRICT_FULL_MODE_FOR_KEEP_RULES(
-        "android.r8.strictFullModeForKeepRules",
-        defaultValue = false,
-        FeatureStage.Supported,
-        FutureStage(
-            true,
-            FeatureStage.Supported,
-            Version.VERSION_9_0
+            FeatureStage.SoftlyEnforced(VERSION_11_0),
+            Version.VERSION_10_0
         )
     ),
 
@@ -266,7 +237,22 @@ enum class BooleanOption(
         )
     ),
 
-
+    /**
+     * When enabled, R8 will perform resource shrinking in a more optimal way.
+     *
+     * Note: This flag takes effect only if resource shrinking is enabled AND
+     * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
+     */
+    R8_OPTIMIZED_RESOURCE_SHRINKING(
+        "android.r8.optimizedResourceShrinking",
+        true,
+        FeatureStage.Supported,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_10_0
+        )
+    ),
 
     /* -----------------
      * EXPERIMENTAL APIs
@@ -488,23 +474,6 @@ enum class BooleanOption(
     ),
 
     /**
-     * When enabled, R8 will perform resource shrinking in a more optimal way.
-     *
-     * Note: This flag takes effect only if resource shrinking is enabled AND
-     * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
-     */
-    R8_OPTIMIZED_RESOURCE_SHRINKING(
-        "android.r8.optimizedResourceShrinking",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.SoftlyEnforced(VERSION_10_0),
-            Version.VERSION_9_0
-        )
-    ),
-
-    /**
      * Whether to enable the deviceTargetingConfig option in app bundles.
      */
     ENABLE_DEVICE_TARGETING_CONFIG_API(
@@ -690,19 +659,6 @@ enum class BooleanOption(
      */
     GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE("android.experimental.testOptions.managedDevices.customDevice", true, FeatureStage.SoftlyEnforced(VERSION_9_0)),
 
-    /**
-     * When enabled, the R8 task will perform resource shrinking in addition to code shrinking.
-     * When disabled, resource shrinking will be performed in a separate task after the R8 task has
-     * run.
-     *
-     * Note: If resource shrinking is not enabled, this flag has no effect.
-     */
-    R8_INTEGRATED_RESOURCE_SHRINKING(
-        "android.r8.integratedResourceShrinking",
-        true,
-        FeatureStage.SoftlyEnforced(VERSION_9_0)
-    ),
-
     PRIVACY_SANDBOX_SDK_ENABLE_LINT(
         "android.experimental.privacysandboxsdk.enableLint",
         true,
@@ -721,6 +677,30 @@ enum class BooleanOption(
     DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET(
         "android.sdk.defaultTargetSdkToCompileSdkIfUnset",
         true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
+    /**
+     * Enables R8 full mode
+     * (https://r8.googlesource.com/r8/+/refs/heads/8.8/compatibility-faq.md#r8-full-mode).
+     *
+     * Note that to help users migrate to R8 full mode, we provide 2 types of R8 full mode:
+     *   - Legacy full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = false): In this
+     *   mode, the default constructor is implicitly kept when a class is kept
+     *   (i.e., "-keep class A" is the same as "-keep class A { void <init>(); }")
+     *   - Strict full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = true): In this
+     *   mode, the default constructor is not implicitly kept when a class is kept
+     *   (i.e., "-keep class A" is different from "-keep class A { void <init>(); }").
+     *
+     * When migrating from legacy full mode to strict full mode, if the user's app or a library that
+     * the app uses contains a keep rule such as "-keep class A", then the app/library's author will
+     * need to manually update the rule to "-keep class A { void <init>(); }" if they want to keep
+     * the default constructor. If they don't want to keep the default constructor, then they can
+     * keep the rule as-is.
+     */
+    FULL_R8(
+        "android.enableR8.fullMode",
+        defaultValue = true,
         FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
@@ -1082,6 +1062,14 @@ enum class BooleanOption(
             Version.VERSION_8_3,
             "If you run into issues with dexing transforms, try setting `${USE_FULL_CLASSPATH_FOR_DEXING_TRANSFORM.propertyName} = true` instead."
         )
+    ),
+
+    R8_INTEGRATED_RESOURCE_SHRINKING(
+        "android.r8.integratedResourceShrinking",
+        true,
+        FeatureStage.Enforced(Version.VERSION_9_0,
+            additionalMessage = "The android.r8.integratedResourceShrinking property does not have any effect. " +
+                    "R8 Integrated Resource Shrinking is always enabled.")
     ),
 
     /* ----------------

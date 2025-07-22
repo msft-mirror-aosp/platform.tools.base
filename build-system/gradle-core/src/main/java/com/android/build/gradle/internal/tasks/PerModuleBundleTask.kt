@@ -107,16 +107,16 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
 
     @get:Input
     @get:Optional // Set if baseModule == true
-    abstract val runResourceShrinkingWithR8: Property<Boolean>
+    abstract val runResourceShrinking: Property<Boolean>
 
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional // Set iff baseModule == true && runResourceShrinkingWithR8 == true
+    @get:Optional // Set iff baseModule == true && runResourceShrinking == true
     abstract val shrunkResourcesDirectory: DirectoryProperty
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:Optional // Set iff baseModule == true && runResourceShrinkingWithR8 == false
+    @get:Optional // Set iff baseModule == true && runResourceShrinking == false
     abstract val linkedResourcesFile: RegularFileProperty
 
     @get:InputFiles
@@ -297,7 +297,7 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
 
     private fun getResourcesFile(): File {
         return if (baseModule.get()) {
-            if (runResourceShrinkingWithR8.get()) {
+            if (runResourceShrinking.get()) {
                 getShrunkResourcesFileInDirectory(shrunkResourcesDirectory.get().asFile)
             } else {
                 linkedResourcesFile.get().asFile
@@ -365,7 +365,7 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
             // Not applicable
             task.featureDexDirectories.fromDisallowChanges()
             task.featureJavaResFiles.fromDisallowChanges()
-            task.runResourceShrinkingWithR8.setDisallowChanges(false)
+            task.runResourceShrinking.setDisallowChanges(false)
             task.shrunkResourcesDirectory.disallowChanges()
             task.featureShrunkResourcesFiles.disallowChanges()
             task.featureLinkedResourcesFile.disallowChanges()
@@ -458,9 +458,9 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
             )
 
             if (componentType.isBaseModule) {
-                task.runResourceShrinkingWithR8.setDisallowChanges(
-                    (creationConfig as ApplicationCreationConfig).runResourceShrinkingWithR8())
-                if (creationConfig.runResourceShrinkingWithR8()) {
+                task.runResourceShrinking.setDisallowChanges(
+                    (creationConfig as ApplicationCreationConfig).runResourceShrinking())
+                if (creationConfig.runResourceShrinking()) {
                     task.shrunkResourcesDirectory.setDisallowChanges(
                         artifacts.get(InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT))
                 } else {

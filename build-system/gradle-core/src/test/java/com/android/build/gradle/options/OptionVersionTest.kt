@@ -55,7 +55,6 @@ class OptionVersionTest {
             BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
             BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
-            BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING,
         )
 
         /**
@@ -83,16 +82,12 @@ class OptionVersionTest {
             BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
             BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS,
             BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES,
-            BooleanOption.FULL_R8,
             BooleanOption.GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE,
             BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
             BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
             BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE,
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
-            BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING,
             BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED,
-            BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING,
-            BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES,
             BooleanOption.TEST_SUITE_SUPPORT,
             BooleanOption.USE_ANDROID_X,
         )

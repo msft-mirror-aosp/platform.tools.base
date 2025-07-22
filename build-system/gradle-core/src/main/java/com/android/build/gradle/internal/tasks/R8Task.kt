@@ -418,7 +418,7 @@ abstract class R8Task @Inject constructor(
                 .wiredWithFiles(R8Task::resourcesJar, R8Task::outputResources)
                 .toTransform(InternalArtifactType.MERGED_JAVA_RES)
 
-            if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
+            if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
                 creationConfig.artifacts.setInitialProvider(taskProvider) {
                     it.resourceShrinkingParams.shrunkResourcesOutputDir
                 }.on(InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT)
@@ -433,7 +433,7 @@ abstract class R8Task @Inject constructor(
                     .setInitialProvider(taskProvider, R8Task::featureJavaResourceOutputDir)
                     .on(InternalArtifactType.FEATURE_SHRUNK_JAVA_RES)
 
-                if (creationConfig.runResourceShrinkingWithR8()) {
+                if (creationConfig.runResourceShrinking()) {
                     creationConfig.artifacts.setInitialProvider(taskProvider) {
                             it.resourceShrinkingParams.featureShrunkResourcesOutputDir
                     }.on(InternalArtifactType.FEATURE_SHRUNK_RESOURCES_PROTO_FORMAT)
@@ -595,7 +595,7 @@ abstract class R8Task @Inject constructor(
                 )
             }
 
-            if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
+            if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
                 task.resourceShrinkingParams.initialize(creationConfig, task.mappingFile)
             } else {
                 task.resourceShrinkingParams.enabled.setDisallowChanges(false)

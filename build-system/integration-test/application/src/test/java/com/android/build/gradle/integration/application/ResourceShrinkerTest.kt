@@ -49,36 +49,30 @@ import java.util.zip.ZipFile
 @RunWith(Parameterized::class)
 class ResourceShrinkerTest(
     private val nonFinalResIds: Boolean,
-    private val r8IntegratedResourceShrinking: Boolean,
     private val r8OptimizedShrinking: Boolean
 ) {
 
     companion object {
 
-        @Parameterized.Parameters(name = "nonFinalResIds_{0}_r8IntegratedResourceShrinking_{1}__r8OptimizedShrinking_{2}")
+        @Parameterized.Parameters(name = "nonFinalResIds_{0}__r8OptimizedShrinking_{1}")
         @JvmStatic
         fun parameters() = listOf(
-            arrayOf(false, false, false),
-            arrayOf(false, true, false),
-            arrayOf(true, false, false),
-            arrayOf(true, true, false),
-            // r8OptimizedShrinking only takes effect when nonFinalResIds = true and
-            // r8IntegratedResourceShrinking = true
-            arrayOf(true, true, true),
+            arrayOf(false, false),
+            arrayOf(true, false),
+            // r8OptimizedShrinking only takes effect when nonFinalResIds = true
+            arrayOf(true, true),
         )
     }
 
     @get:Rule
     var project = builder().fromTestProject("shrink")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
-        .addGradleProperty(BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING, r8IntegratedResourceShrinking)
         .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
         .create()
 
     @get:Rule
     var projectWithDynamicFeatureModules = builder().fromTestProject("shrinkDynamicFeatureModules")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
-        .addGradleProperty(BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING, r8IntegratedResourceShrinking)
         .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
         .create()
 
@@ -277,12 +271,7 @@ class ResourceShrinkerTest(
         project: GradleTestProject,
         unusedResources: List<String>
     ) {
-        if (r8IntegratedResourceShrinking) {
-            assertThat(getZipPaths(project.getOriginalBundle())).containsNoneIn(unusedResources)
-        } else {
-            assertThat(getZipPaths(project.getOriginalBundle())).containsAtLeastElementsIn(unusedResources)
-            assertThat(getZipPaths(project.getShrunkBundle())).containsNoneIn(unusedResources)
-        }
+        assertThat(getZipPaths(project.getOriginalBundle())).containsNoneIn(unusedResources)
     }
 
     @Test
@@ -516,18 +505,7 @@ class ResourceShrinkerTest(
                 "res/layout/unused14.xml",
                 "res/layout/unused2.xml",
                 "res/menu/unused12.xml",
-            ) + if (r8IntegratedResourceShrinking) {
-                emptyList()
-            } else {
-                // This resource is used by a feature module, so the fact that it appears in this
-                // list of unusedResources is unexpected. This is a limitation of the legacy
-                // resource shrinking pipeline (r8IntegratedResourceShrinking = false).
-                listOf(
-                    "res/drawable/from_raw_feat.xml",
-                    "res/layout/used_from_feature_1.xml",
-                    "res/layout/used_from_feature_2.xml"
-                )
-            }
+            )
         )
     }
 
@@ -663,11 +641,7 @@ class ResourceShrinkerTest(
     }
 
     private fun GradleTestProject.getShrunkProtoResources(splitName: String? = null): File {
-        val task = if (r8IntegratedResourceShrinking) {
-            "minifyReleaseWithR8"
-        } else {
-            "shrinkReleaseRes"
-        }
+        val task = "minifyReleaseWithR8"
         return InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT.getOutputDir(buildDir)
             .resolve("release/$task")
             .resolve(listOfNotNull("shrunk-resources-proto-format", splitName, "release.ap_").joinToString("-"))
