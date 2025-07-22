@@ -129,7 +129,7 @@ class CmakeBasicProjectTest(
             val result : Array<Array<*>> = cartesianOf(
                 // This test covers a wider range of CMake versions than most other tests to verify that
                 // the basic functionality of each mode works.
-                CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(),
+                CMakeVersion.values().map { it.version }.toTypedArray(),
                 Mode.values())
                 // Shuffle helps find problems earlier by not grouping similar cases with each other
                 .toList().shuffled(Random(192))

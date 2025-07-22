@@ -374,14 +374,14 @@ filegroup(
 filegroup(
     name = "ndk",
     srcs = sdk_glob(
-        include = ["ndk/28.2.13676358/**"],
+        include = ["ndk/27.0.12077973/**"],
         exclude = [
-            "ndk/28.2.13676358/**/*.pyc",
+            "ndk/27.0.12077973/**/*.pyc",
             # Bazel can't handle paths with spaces in them.
-            "ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/python3.11/site-packages/setuptools/command/launcher manifest.xml",
-            "ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/python3.11/site-packages/setuptools/script (dev).tmpl",
-            "ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/python3/lib/python3.11/site-packages/setuptools/command/launcher manifest.xml",
-            "ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/python3/lib/python3.11/site-packages/setuptools/script (dev).tmpl",
+            "ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/python3.11/site-packages/setuptools/command/launcher manifest.xml",
+            "ndk/27.0.12077973/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/python3.11/site-packages/setuptools/script (dev).tmpl",
+            "ndk/27.0.12077973/toolchains/llvm/prebuilt/darwin-x86_64/python3/lib/python3.11/site-packages/setuptools/command/launcher manifest.xml",
+            "ndk/27.0.12077973/toolchains/llvm/prebuilt/darwin-x86_64/python3/lib/python3.11/site-packages/setuptools/script (dev).tmpl",
         ],
     ),
     visibility = ["//visibility:public"],
