@@ -34,7 +34,6 @@ import com.android.build.gradle.internal.tasks.BundleLibraryClassesDir
 import com.android.build.gradle.internal.tasks.BundleLibraryClassesJar
 import com.android.build.gradle.internal.tasks.LibraryAarJarsTask
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
-import com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.TaskProviderCallback
@@ -42,7 +41,6 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.build.gradle.tasks.BundleAar
 import com.android.build.gradle.tasks.CompileLibraryResourcesTask
-import com.android.build.gradle.tasks.CompileNavigationXmlTask
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.ExtractDeepLinksTask
 import com.android.build.gradle.tasks.MergeResources
@@ -132,12 +130,6 @@ class TestFixturesTaskManager(
             taskFactory.register(GenerateApiPublicTxtTask.CreationAction(testFixturesComponent))
 
             taskFactory.register(CompileLibraryResourcesTask.CreationAction(testFixturesComponent))
-
-            taskFactory.register(
-                ProcessNavigationXmlTask.LibraryCreationAction(testFixturesComponent)
-            )
-
-            taskFactory.register(CompileNavigationXmlTask.CreationAction(testFixturesComponent))
 
             // Add a task to generate resource source files, directing the location
             // of the r.txt file to be directly in the bundle.

@@ -21,7 +21,6 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
-import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoReportTask
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
@@ -41,7 +40,6 @@ import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.ManagedDeviceCleanTask
 import com.android.build.gradle.internal.tasks.ManagedDeviceInstrumentationTestSetupTask
 import com.android.build.gradle.internal.tasks.ManagedDeviceSetupTask
-import com.android.build.gradle.internal.tasks.ProcessNavigationXmlTask
 import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
 import com.android.build.gradle.internal.tasks.SigningConfigWriterTask
 import com.android.build.gradle.internal.tasks.StripDebugSymbolsTask
@@ -55,7 +53,6 @@ import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.test.TestDataImpl
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
-import com.android.build.gradle.tasks.CompileNavigationXmlTask
 import com.android.builder.core.BuilderConstants.FD_MANAGED_DEVICE_SETUP_RESULTS
 import com.android.builder.core.ComponentType
 import com.android.utils.FileUtils
@@ -170,8 +167,6 @@ class AndroidTestTaskManager(
         // Add a task to merge the resource folders
         createMergeResourcesTask(androidTestProperties, true, ImmutableSet.of())
 
-        createNavigationProcessingTasks(androidTestProperties)
-
         // Add a task to package the resource folders
         createPackageResourcesTask(androidTestProperties)
 
@@ -251,11 +246,6 @@ class AndroidTestTaskManager(
         }
 
         createConnectedTestForVariant(androidTestProperties)
-    }
-
-    private fun createNavigationProcessingTasks(creationConfig: ComponentCreationConfig) {
-        taskFactory.register(ProcessNavigationXmlTask.LibraryCreationAction(creationConfig))
-        taskFactory.register(CompileNavigationXmlTask.CreationAction(creationConfig))
     }
 
     private fun createPackageResourcesTask(creationConfig: DeviceTestCreationConfig) {

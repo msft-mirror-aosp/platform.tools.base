@@ -67,11 +67,6 @@ abstract class R8ResourceShrinkingParameters {
     abstract val mergedNotCompiledResourcesInputDir: DirectoryProperty
 
     @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional // Set iff enabled == true
-    abstract val mergedNotCompiledNavigationResourcesInputDir: DirectoryProperty
-
-    @get:InputFiles
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     @get:Optional // Set iff enabled == true and the application has dynamic features
     abstract val featureLinkedResourcesInputFiles: ConfigurableFileCollection
@@ -106,10 +101,7 @@ abstract class R8ResourceShrinkingParameters {
             val inputArtifacts = loadInputBuiltArtifacts().elements
             ResourceShrinkingConfig(
                 linkedResourcesInputFiles = inputArtifacts.map { File(it.outputFile) },
-                mergedNotCompiledResourcesInputDirs = listOf(
-                    mergedNotCompiledResourcesInputDir.get().asFile,
-                    mergedNotCompiledNavigationResourcesInputDir.get().asFile
-                ),
+                mergedNotCompiledResourcesInputDir = mergedNotCompiledResourcesInputDir.get().asFile,
                 featureLinkedResourcesInputFiles = featureLinkedResourcesInputFiles.files.toList(),
                 usePreciseShrinking = usePreciseShrinking.get(),
                 optimizedShrinking = optimizedShrinking.get(),
@@ -184,10 +176,6 @@ fun R8ResourceShrinkingParameters.initialize(
     creationConfig.artifacts.setTaskInputToFinalProduct(
         InternalArtifactType.MERGED_NOT_COMPILED_RES,
         mergedNotCompiledResourcesInputDir
-    )
-    creationConfig.artifacts.setTaskInputToFinalProduct(
-        InternalArtifactType.UPDATED_NAVIGATION_XML,
-        mergedNotCompiledNavigationResourcesInputDir
     )
     if (creationConfig.shrinkingWithDynamicFeatures) {
         featureLinkedResourcesInputFiles.fromDisallowChanges(

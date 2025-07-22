@@ -57,9 +57,6 @@ abstract class GenerateEmptyResourceFilesTask : NonIncrementalTask() {
     @get:OutputDirectory
     abstract val emptyMergedResources: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val emptyNavigationResources: DirectoryProperty
-
     override fun doTaskAction() {
         // TODO(147579629): should this contain transitive resources or is it okay to have it empty?
         // Create empty R.txt, will be used for bundling in the AAR.
@@ -67,7 +64,6 @@ abstract class GenerateEmptyResourceFilesTask : NonIncrementalTask() {
 
         // Create empty res/ directory to bundle in the AAR.
         FileUtils.mkdirs(emptyMergedResources.asFile.get())
-        FileUtils.mkdirs(emptyNavigationResources.asFile.get())
     }
 
     class CreateAction(creationConfig: ComponentCreationConfig) :
@@ -91,11 +87,6 @@ abstract class GenerateEmptyResourceFilesTask : NonIncrementalTask() {
                 taskProvider,
                 GenerateEmptyResourceFilesTask::emptyMergedResources
             ).withName(SdkConstants.FD_RES).on(InternalArtifactType.PACKAGED_RES)
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                GenerateEmptyResourceFilesTask::emptyNavigationResources
-            ).withName(SdkConstants.FD_RES).on(InternalArtifactType.UPDATED_NAVIGATION_XML)
         }
     }
 }

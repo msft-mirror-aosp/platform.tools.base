@@ -65,7 +65,6 @@ class MinifyCacheabilityTest {
             ":processMinifiedMainManifest",
             ":processMinifiedManifest",
             ":processMinifiedManifestForPackage",
-            ":processMinifiedNavigationResources",
         ).plus(
             if (BooleanOption.GENERATE_MANIFEST_CLASS.defaultValue) {
                 setOf(":generateMinifiedManifestClass")

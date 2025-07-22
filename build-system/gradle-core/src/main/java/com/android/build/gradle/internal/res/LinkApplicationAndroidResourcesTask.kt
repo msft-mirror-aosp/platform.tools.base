@@ -46,7 +46,6 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactTyp
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.InternalArtifactType.UPDATED_NAVIGATION_XML
 import com.android.build.gradle.internal.services.Aapt2Input
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.getBuildService
@@ -285,11 +284,6 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
     @get:Input
     abstract val pseudoLocalesEnabled: Property<Boolean>
 
-    @get:Classpath
-    @get:Optional
-    @get:Incremental
-    abstract val navigationUpdatedFolder: DirectoryProperty
-
     @Internal
     override fun getManifestFile(): File? {
         val manifestDirectory = if (aaptFriendlyManifestFiles.isPresent) {
@@ -354,7 +348,6 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
             parameters.imports.from(sharedLibraryDependencies)
             parameters.incrementalDirectory.set(incrementalDirectory)
             parameters.inputResourcesDirectory.set(inputResourcesDir)
-            parameters.inputNavigationDirectory.set(navigationUpdatedFolder)
             parameters.inputStableIdsFile.set(inputStableIdsFile)
             parameters.dynamicFeature.set(dynamicFeature)
             parameters.library.set(library)
@@ -404,7 +397,6 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
         abstract val imports: ConfigurableFileCollection
         abstract val incrementalDirectory: DirectoryProperty
         abstract val inputResourcesDirectory: DirectoryProperty
-        abstract val inputNavigationDirectory: DirectoryProperty
         abstract val inputStableIdsFile: RegularFileProperty
         abstract val dynamicFeature: Property<Boolean>
         abstract val library: Property<Boolean>
@@ -797,10 +789,6 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
                 sourceArtifactType.outputType,
                 task.inputResourcesDir
             )
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                UPDATED_NAVIGATION_XML,
-                task.navigationUpdatedFolder
-            )
 
             if (creationConfig.services.projectOptions[BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES]) {
                 task.sharedLibraryDependencies.fromDisallowChanges(
@@ -1045,9 +1033,6 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
                             configBuilder.setLibrarySymbolTableFiles(parameters.dependencies.files)
                         }
                         configBuilder.addResourceDir(checkNotNull(parameters.inputResourcesDirectory.orNull?.asFile))
-                        if(parameters.inputNavigationDirectory.isPresent) {
-                            configBuilder.addResourceDir(parameters.inputNavigationDirectory.get().asFile)
-                        }
                     }
 
                     val logger = Logging.getLogger(LinkApplicationAndroidResourcesTask::class.java)

@@ -74,7 +74,6 @@ class NoOpIncrementalBuildTaskStatesTest {
                 ":app:processDebugMainManifest",
                 ":app:processDebugManifest",
                 ":app:processDebugManifestForPackage",
-                ":app:processDebugNavigationResources",
                 ":app:processDebugResources",
                 ":app:testDebugUnitTest",
                 ":app:validateSigningDebug",

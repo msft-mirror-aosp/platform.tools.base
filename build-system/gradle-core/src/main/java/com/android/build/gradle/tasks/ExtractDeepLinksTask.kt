@@ -68,28 +68,16 @@ abstract class ExtractDeepLinksTask: NonIncrementalTask() {
      * locations into the AAR, and (2) don't write an output navigation.json when there are no
      * navigation xml inputs because we don't want to package an empty navigation.json in the AAR.
      */
+    @get:Optional
     @get:Input
     abstract val forAar: Property<Boolean>
 
     @get:OutputFile
     abstract val navigationJson: RegularFileProperty
 
-    @get:Input
-    abstract val finalNavigationTransformation: Property<Boolean>
-
-    @get:Optional
-    @get:Input
-    abstract val applicationId: Property<String>
-
     override fun doTaskAction() {
         val navigationIds = mutableSetOf<String>()
         val navDatas = mutableListOf<NavigationXmlDocumentData>()
-        val updatedPlaceholders = manifestPlaceholders.get().toMap().let {
-            if (finalNavigationTransformation.get())
-                it.plus("applicationId" to applicationId.get())
-            else
-                it
-        }
         navFilesFolders.get().forEach { directory ->
             val folder = directory.asFile
             if (folder.exists()) {
@@ -101,7 +89,7 @@ abstract class ExtractDeepLinksTask: NonIncrementalTask() {
                                 navDatas.add(
                                     NavigationXmlLoader
                                         .load(navigationId, navigationFile, inputStream)
-                                        .convertToData(updatedPlaceholders, forAar.get())
+                                        .convertToData(manifestPlaceholders.get().toMap(), forAar.get())
                                 )
                             }
                         }
@@ -117,7 +105,6 @@ abstract class ExtractDeepLinksTask: NonIncrementalTask() {
         }
     }
 
-    // This also works for libraries as local modules of applications
     class CreationAction(
         creationConfig: ComponentCreationConfig
     ) : BaseCreationAction(creationConfig) {
@@ -181,11 +168,6 @@ abstract class ExtractDeepLinksTask: NonIncrementalTask() {
                 }
             )
             task.forAar.set(forAar)
-
-            val apk = creationConfig.componentType.isApk
-            task.finalNavigationTransformation.setDisallowChanges(apk)
-            if (apk) task.applicationId.set(creationConfig.applicationId)
-            task.applicationId.disallowChanges()
         }
     }
 }

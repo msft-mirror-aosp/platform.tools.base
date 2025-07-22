@@ -189,7 +189,6 @@ public class AndroidArtifacts {
     public static final String TYPE_PLATFORM_ATTR = "android-platform-attr";
 
     private static final String TYPE_NAVIGATION_JSON = "android-navigation-json";
-    private static final String TYPE_NAVIGATION_XML = "android-navigation-xml";
 
     private static final String TYPE_PREFAB_PACKAGE = "android-prefab";
     private static final String TYPE_PREFAB_PACKAGE_CONFIGURATION = "android-prefab-configuration";
@@ -658,8 +657,6 @@ public class AndroidArtifacts {
         MERGED_TEST_ONLY_NATIVE_LIBS(TYPE_MERGED_TEST_ONLY_NATIVE_LIBS),
 
         PACKAGES_FOR_R8(TYPE_PACKAGES_FOR_R8),
-
-        NAVIGATION_XML(TYPE_NAVIGATION_XML),
         ;
 
         @NonNull private final String type;

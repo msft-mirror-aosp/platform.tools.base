@@ -261,10 +261,8 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
         ) {
             super.configure(task)
             val packagedRes = creationConfig.artifacts.get(InternalArtifactType.PACKAGED_RES)
-            val packagedNavigationRes = creationConfig.artifacts.get(InternalArtifactType.UPDATED_NAVIGATION_XML)
             task.inputDirectories.setFrom(
-                creationConfig.services.fileCollection(packagedRes),
-                creationConfig.services.fileCollection(packagedNavigationRes),
+                creationConfig.services.fileCollection(packagedRes)
             )
             task.pseudoLocalesEnabled.setDisallowChanges(
                 creationConfig.androidResourcesCreationConfig!!.pseudoLocalesEnabled

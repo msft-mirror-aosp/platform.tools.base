@@ -72,7 +72,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.MODULE_BUNDL
 import com.android.build.gradle.internal.scope.InternalArtifactType.NATIVE_DEBUG_METADATA
 import com.android.build.gradle.internal.scope.InternalArtifactType.NATIVE_SYMBOL_TABLES
 import com.android.build.gradle.internal.scope.InternalArtifactType.NAVIGATION_JSON
-import com.android.build.gradle.internal.scope.InternalArtifactType.UPDATED_NAVIGATION_XML
 import com.android.build.gradle.internal.scope.InternalArtifactType.PACKAGED_DEPENDENCIES
 import com.android.build.gradle.internal.scope.InternalArtifactType.PACKAGED_RES
 import com.android.build.gradle.internal.scope.InternalArtifactType.PACKAGES_FOR_R8
@@ -275,7 +274,6 @@ class PublishingSpecs {
                 runtime(JAVA_RES, ArtifactType.JAVA_RES)
                 runtime(CONSUMER_PROGUARD_DIR, ArtifactType.UNFILTERED_PROGUARD_RULES)
                 runtime(NAVIGATION_JSON, ArtifactType.NAVIGATION_JSON)
-                runtime(UPDATED_NAVIGATION_XML, ArtifactType.NAVIGATION_XML)
                 runtime(LIBRARY_JNI, ArtifactType.JNI)
                 runtime(COMPILED_LOCAL_RESOURCES, ArtifactType.COMPILED_DEPENDENCIES_RESOURCES)
                 runtime(AAR_METADATA, ArtifactType.AAR_METADATA)
@@ -330,7 +328,6 @@ class PublishingSpecs {
                 runtime(COMPILE_SYMBOL_LIST, ArtifactType.COMPILE_SYMBOL_LIST)
                 runtime(JAVA_RES, ArtifactType.JAVA_RES)
                 runtime(NAVIGATION_JSON, ArtifactType.NAVIGATION_JSON)
-                runtime(UPDATED_NAVIGATION_XML, ArtifactType.NAVIGATION_XML)
                 runtime(COMPILED_LOCAL_RESOURCES, ArtifactType.COMPILED_DEPENDENCIES_RESOURCES)
                 runtime(AAR_METADATA, ArtifactType.AAR_METADATA)
                 // Publish LOCAL_AAR_FOR_LINT to API_AND_RUNTIME_ELEMENTS to support compileOnly
@@ -357,8 +354,6 @@ class PublishingSpecs {
                 runtime(RUNTIME_LIBRARY_CLASSES_DIR, ArtifactType.CLASSES_DIR, LibraryElements.CLASSES)
                 runtime(ASSETS, ArtifactType.ASSETS)
                 runtime(PACKAGED_RES, ArtifactType.ANDROID_RES)
-                runtime(UPDATED_NAVIGATION_XML, ArtifactType.NAVIGATION_XML)
-
                 runtime(PUBLIC_RES, ArtifactType.PUBLIC_RES)
                 runtime(COMPILE_SYMBOL_LIST, ArtifactType.COMPILE_SYMBOL_LIST)
                 runtime(JAVA_RES, ArtifactType.JAVA_RES)

@@ -81,7 +81,6 @@ class DynamicFeaturesCacheabilityTest {
                     ":app:processDebugMainManifest",
                     ":app:processDebugManifest",
                     ":app:processDebugManifestForPackage",
-                    ":app:processDebugNavigationResources",
                     ":app:processDebugResources", /* Bug 141301405 */
 
                     ":feature1:compileDebugJavaWithJavac",
@@ -103,7 +102,6 @@ class DynamicFeaturesCacheabilityTest {
                     ":feature1:processDebugManifestForPackage",
                     ":feature1:processDebugResources",
                     ":feature1:processManifestDebugForFeature",
-                    ":feature1:processDebugNavigationResources",
 
                     ":feature2:checkDebugAarMetadata",
                     ":feature2:compileDebugJavaWithJavac",
@@ -125,7 +123,6 @@ class DynamicFeaturesCacheabilityTest {
                     ":feature2:processDebugManifestForPackage",
                     ":feature2:processDebugResources",
                     ":feature2:processManifestDebugForFeature",
-                    ":feature2:processDebugNavigationResources",
                 ).plus(
                     if (BooleanOption.GENERATE_MANIFEST_CLASS.defaultValue) {
                         setOf(

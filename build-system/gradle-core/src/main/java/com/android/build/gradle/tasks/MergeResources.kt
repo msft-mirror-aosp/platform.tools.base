@@ -235,10 +235,6 @@ abstract class MergeResources : NewIncrementalTask() {
     private var processedInputs: MutableList<ResourceSet> = mutableListOf()
     private val fileValidity = FileValidity<ResourceSet>()
 
-    // coma separated list of ignore declarations
-    private val ignoreNavigationFolder = "!<dir>navigation" // ignore merging navigation as it has parallel flow
-    private val defaultIgnoreFolders = "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
-
     @Throws(IOException::class, JAXBException::class)
     protected fun doFullTaskAction() {
         val preprocessor = preprocessor
@@ -729,8 +725,6 @@ abstract class MergeResources : NewIncrementalTask() {
     private fun getConfiguredResourceSets(
         preprocessor: ResourcePreprocessor, aaptEnv: String?
     ): List<ResourceSet> {
-        // excluding navigation from merge resources
-        val ignoreFilesPattern = prepareIgnoreFilesPattern(aaptEnv)
         // It is possible that this get called twice in case the incremental run fails and reverts
         // to full task run. Because the cached ResourceList is modified we don't want
         // to recompute this twice (plus, why recompute it twice anyway?)
@@ -738,7 +732,7 @@ abstract class MergeResources : NewIncrementalTask() {
             processedInputs.addAll(
                 resourcesComputer.compute(
                     precompileDependenciesResources,
-                    ignoreFilesPattern,
+                    aaptEnv,
                     renderscriptGeneratedResDir
                 )
             )
@@ -769,18 +763,6 @@ abstract class MergeResources : NewIncrementalTask() {
         }
         return processedInputs
     }
-
-    // Returns ignore pattern string (separated with colons).
-    private fun prepareIgnoreFilesPattern(aaptEnv: String?): String =
-        buildString {
-            if (aaptEnv != null) {
-                append(aaptEnv)
-            } else {
-                append(defaultIgnoreFolders)
-            }
-            if (isNotEmpty()) append(":")
-            append(ignoreNavigationFolder)
-        }
 
     /**
      * Releases resource sets not needed anymore, otherwise they will waste heap space for the

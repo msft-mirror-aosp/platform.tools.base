@@ -26,8 +26,6 @@ import com.android.ide.common.symbols.SymbolTable
 import com.android.resources.ResourceFolderType
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
-import org.gradle.api.Project
-import org.gradle.api.file.Directory
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
 import org.gradle.testfixtures.ProjectBuilder
@@ -49,7 +47,6 @@ class ParseLibraryResourcesTaskTest(
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
-    private lateinit var project: Project
     private lateinit var objects: ObjectFactory
 
     companion object {
@@ -63,8 +60,7 @@ class ParseLibraryResourcesTaskTest(
 
     @Before
     fun setUp() {
-        project = ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build()
-        objects = project.objects
+        objects = ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build().objects
     }
 
     @Test
@@ -124,11 +120,9 @@ class ParseLibraryResourcesTaskTest(
         val platformAttrsRTxtFile = File(parentFolder, "R.txt")
         val librarySymbolsFile = File(parentFolder, "R-def.txt")
         val partialRDirectory = File(parentFolder, SdkConstants.FD_PARTIAL_R)
-        val innerResDirs =  objects.listProperty(Directory::class.java)
-        innerResDirs.add(objects.directoryProperty().fileValue(resourcesFolder))
 
         val params = object : ParseLibraryResourcesTask.ParseResourcesParams() {
-            override val inputResDirs = innerResDirs
+            override val inputResDir = objects.directoryProperty().fileValue(resourcesFolder)
             override val platformAttrsRTxt = objects.fileProperty().fileValue(platformAttrsRTxtFile)
             override val librarySymbolsFile = objects.fileProperty().fileValue(librarySymbolsFile)
             override val incremental = FakeGradleProperty(false)
@@ -165,11 +159,9 @@ class ParseLibraryResourcesTaskTest(
         val platformAttrsRTxtFile = File(parentFolder, "R.txt")
         val librarySymbolsFile = File(parentFolder, "R-def.txt")
         val partialRDirectory = File(parentFolder, SdkConstants.FD_PARTIAL_R)
-        val innerResDirs =  objects.listProperty(Directory::class.java)
-        innerResDirs.add(objects.directoryProperty().fileValue(resourcesFolder))
 
         val params = object : ParseLibraryResourcesTask.ParseResourcesParams() {
-            override val inputResDirs = innerResDirs
+            override val inputResDir = objects.directoryProperty().fileValue(resourcesFolder)
             override val platformAttrsRTxt = objects.fileProperty().fileValue(platformAttrsRTxtFile)
             override val librarySymbolsFile = objects.fileProperty().fileValue(librarySymbolsFile)
             override val incremental = FakeGradleProperty(false)
@@ -222,11 +214,9 @@ class ParseLibraryResourcesTaskTest(
         val changedResources = listOf(
           SerializableChange(addedLayout, FileStatus.NEW, addedLayout.absolutePath)
         )
-        val innerResDirs =  objects.listProperty(Directory::class.java)
-        innerResDirs.add(objects.directoryProperty().fileValue(resourcesFolder))
 
         val params = object : ParseLibraryResourcesTask.ParseResourcesParams() {
-            override val inputResDirs = innerResDirs
+            override val inputResDir = objects.directoryProperty().fileValue(resourcesFolder)
             override val platformAttrsRTxt = objects.fileProperty().fileValue(platformAttrsRTxtFile)
             override val librarySymbolsFile = objects.fileProperty().fileValue(librarySymbolsFile)
             override val incremental = FakeGradleProperty(true)
@@ -291,10 +281,8 @@ class ParseLibraryResourcesTaskTest(
         val changedResources = listOf(
                 SerializableChange(modifiedLayout, FileStatus.CHANGED, modifiedLayout.absolutePath)
         )
-        val innerResDirs =  objects.listProperty(Directory::class.java)
-        innerResDirs.add(objects.directoryProperty().fileValue(resourcesFolder))
         val params = object : ParseLibraryResourcesTask.ParseResourcesParams() {
-            override val inputResDirs = innerResDirs
+            override val inputResDir = objects.directoryProperty().fileValue(resourcesFolder)
             override val platformAttrsRTxt = objects.fileProperty().fileValue(platformAttrsRTxtFile)
             override val librarySymbolsFile = objects.fileProperty().fileValue(librarySymbolsFile)
             override val incremental = FakeGradleProperty(true)
@@ -384,10 +372,8 @@ class ParseLibraryResourcesTaskTest(
         val changedResources = listOf(
                 SerializableChange(removedLayout, FileStatus.REMOVED, removedLayout.absolutePath)
         )
-        val innerResDirs =  objects.listProperty(Directory::class.java)
-        innerResDirs.add(objects.directoryProperty().fileValue(resourcesFolder))
         val params = object : ParseLibraryResourcesTask.ParseResourcesParams() {
-            override val inputResDirs = innerResDirs
+            override val inputResDir = objects.directoryProperty().fileValue(resourcesFolder)
             override val platformAttrsRTxt = objects.fileProperty().fileValue(platformAttrsRTxtFile)
             override val librarySymbolsFile = objects.fileProperty().fileValue(librarySymbolsFile)
             override val incremental = FakeGradleProperty(true)
@@ -489,10 +475,9 @@ class ParseLibraryResourcesTaskTest(
         File(FileUtils.join(fakeResourceDirectory.path, "layout"), "second_activity.png").also {
             FileUtils.createFile(it, "")
         }
-        val innerResDirs =  objects.listProperty(Directory::class.java)
-        innerResDirs.add(objects.directoryProperty().fileValue(fakeResourceDirectory))
+
         val params = object : ParseLibraryResourcesTask.ParseResourcesParams() {
-            override val inputResDirs = innerResDirs
+            override val inputResDir = objects.directoryProperty().fileValue(fakeResourceDirectory)
             override val platformAttrsRTxt = objects.fileProperty().fileValue(platformAttrsRTxtFile)
             override val librarySymbolsFile = objects.fileProperty().fileValue(librarySymbolsFile)
             override val incremental = FakeGradleProperty(false)
