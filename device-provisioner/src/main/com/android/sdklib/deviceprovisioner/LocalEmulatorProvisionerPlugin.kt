@@ -56,6 +56,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -238,6 +239,9 @@ internal constructor(
         _devices.value = deviceHandles.values.toList()
       }
     } catch (t: Throwable) {
+      if (t is CancellationException) {
+        throw t
+      }
       // The PeriodicAction's action must not throw, or it will not get rescheduled.
       logger.error(t, "Exception scanning AVDs")
     }
