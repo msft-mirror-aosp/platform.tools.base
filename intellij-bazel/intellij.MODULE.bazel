@@ -38,9 +38,9 @@ intellij.remote_platform(
 )
 intellij.remote_platform(
     name = "intellij_ce_2025_2",
-    sha256 = "1a074dc9ae03a0033adc4c9a6c1b77106602869dc16574067203fd5057a534c8",
-    top_level_dir = "idea-IC-252.19874.12",
-    url = "https://download.jetbrains.com/idea/ideaIC-252.19874.12.tar.gz",
+    sha256 = "30e917c55507443c61674d0bdd5cbb40a5b02c628d5073f8a0028ef49e0c50b5",
+    top_level_dir = "idea-IC-252.23892.409",
+    url = "https://download.jetbrains.com/idea/ideaIC-2025.2.tar.gz",
 )
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
