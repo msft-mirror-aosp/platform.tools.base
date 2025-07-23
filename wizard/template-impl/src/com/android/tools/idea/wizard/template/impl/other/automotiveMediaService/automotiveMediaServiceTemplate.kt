@@ -40,8 +40,8 @@ val automotiveMediaServiceTemplate
     description = "Create a MediaBrowserService and adds the required metadata for Android Automotive"
     minApi = 21
 
-    category = Category.Automotive
-    formFactor = FormFactor.Automotive
+    category = Category.Car
+    formFactor = FormFactor.Car
     screens = listOf(WizardUiContext.NewProject, WizardUiContext.MenuEntry, WizardUiContext.NewModule)
 
     val mediaBrowserServiceName = stringParameter {
