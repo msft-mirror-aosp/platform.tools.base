@@ -22,7 +22,8 @@ import com.android.tools.idea.wizard.template.RecipeExecutor
 
 fun RecipeExecutor.addAllKotlinDependencies(data: ModuleTemplateData, revision: String = data.projectTemplateData.kotlinVersion) {
     val projectData = data.projectTemplateData
-    if (!data.isNewModule && projectData.language == Language.Kotlin) {
+    if (!data.isNewModule && projectData.language == Language.Kotlin
+            && !data.projectTemplateData.agpVersion.isAtLeastIncludingPreviews(9, 0, 0)) {
         addPlugin("org.jetbrains.kotlin.android", "org.jetbrains.kotlin:kotlin-gradle-plugin", revision)
     }
 }
