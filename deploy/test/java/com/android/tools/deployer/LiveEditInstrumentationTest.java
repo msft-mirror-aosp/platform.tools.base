@@ -25,17 +25,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
 public class LiveEditInstrumentationTest extends LiveEditTestBase {
-    @Parameterized.Parameters
-    public static Collection<String> artFlags() {
-        return ALL_ART_FLAGS;
-    }
-
-    public LiveEditInstrumentationTest(String artFlag) {
-        super(artFlag);
-    }
-
     @Test
     public void testTransformSucceeds() throws Exception {
         android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);

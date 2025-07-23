@@ -20,23 +20,10 @@ import com.android.tools.idea.protobuf.ByteString;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.IOException;
-import java.util.Collection;
 
-@RunWith(Parameterized.class)
 public class LiveEditBasicTest extends LiveEditTestBase {
-    @Parameterized.Parameters
-    public static Collection<String> artFlags() {
-        return ALL_ART_FLAGS;
-    }
-
-    public LiveEditBasicTest(String artFlag) {
-        super(artFlag);
-    }
-
     @Test
     public void testLiveEditSimple() throws IOException {
         android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);

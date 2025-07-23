@@ -38,7 +38,11 @@ public class ProxySourceLocationTest {
     @Test
     public void testLambdaLocations() {
         InspectorLambdas tester = new InspectorLambdas();
-        LiveEditStubs.stubV(testClass, "run", "()V", new Object[] {tester, tester});
+        LiveEditStubs.stubV(
+                LiveEditStubs.getClassBytecode(testClass),
+                "run",
+                "()V",
+                new Object[] {tester, tester});
 
         assertLocation(tester.getLambdas().get(0), "$run$1", 22, 22);
         assertLocation(tester.getLambdas().get(1), "$run$2", 23, 23);

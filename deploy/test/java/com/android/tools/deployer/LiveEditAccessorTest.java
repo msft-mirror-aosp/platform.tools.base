@@ -24,17 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
 public class LiveEditAccessorTest extends LiveEditTestBase {
-    @Parameterized.Parameters
-    public static Collection<String> artFlags() {
-        return ALL_ART_FLAGS;
-    }
-
-    public LiveEditAccessorTest(String artFlag) {
-        super(artFlag);
-    }
-
     @Test
     public void testAccessPrivateVariableFromLambda() throws IOException {
         android.loadDex(DEX_LOCATION + ":" + LIVE_EDIT_LAMBDA_DEX_LOCATION);

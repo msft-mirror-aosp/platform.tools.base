@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,26 +12,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-#include <jvmti.h>
+package pkg
 
-#include <memory>
+var stored: Any? = null
+fun testIncompatible() {
+    val lambda = { 100 }
+    if (stored == null) {
+        stored = lambda
+    }
+    println((stored!! as () -> Int)())
+}
 
-#include "slicer/dex_ir.h"
-#include "slicer/instrumentation.h"
-#include "slicer/reader.h"
-#include "slicer/writer.h"
-#include "tools/base/deploy/agent/native/transform/transforms.h"
-
-namespace deploy {
-
-class StubTransform : public Transform {
- public:
-  StubTransform(const std::string& class_name) : Transform(class_name) {}
-
-  void Apply(std::shared_ptr<ir::DexFile> dex_ir) const override;
-};
-
-}  // namespace deploy
+val otherStored: Any? = null
+fun testCompatible() {
+    val lambda = { 100 }
+    if (stored == null) {
+        stored = lambda;
+    }
+    println((stored!! as () -> Int)())
+}

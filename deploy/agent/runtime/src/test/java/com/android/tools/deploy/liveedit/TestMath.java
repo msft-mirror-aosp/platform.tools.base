@@ -32,7 +32,13 @@ public class TestMath {
         try {
             LiveEditStubs.addClass(CLASS_NAME, new Interpretable(byteCode), false);
             Object[] parameters = {null, null, 1f, 0f};
-            Float f = (Float) LiveEditStubs.stubL(CLASS_NAME, methodName, methodDesc, parameters);
+            Float f =
+                    (Float)
+                            LiveEditStubs.stubL(
+                                    LiveEditStubs.getClassBytecode(CLASS_NAME),
+                                    methodName,
+                                    methodDesc,
+                                    parameters);
             Assert.assertTrue(
                     "Float +infinity expected", f.floatValue() == Float.POSITIVE_INFINITY);
         } finally {
@@ -48,7 +54,13 @@ public class TestMath {
         try {
             LiveEditStubs.addClass(CLASS_NAME, new Interpretable(byteCode), false);
             Object[] parameters = {null, null, -1f, 0f};
-            Float f = (Float) LiveEditStubs.stubL(CLASS_NAME, methodName, methodDesc, parameters);
+            Float f =
+                    (Float)
+                            LiveEditStubs.stubL(
+                                    LiveEditStubs.getClassBytecode(CLASS_NAME),
+                                    methodName,
+                                    methodDesc,
+                                    parameters);
             Assert.assertTrue(
                     "Float -infinity expected", f.floatValue() == Float.NEGATIVE_INFINITY);
         } finally {
@@ -64,7 +76,13 @@ public class TestMath {
         try {
             LiveEditStubs.addClass(CLASS_NAME, new Interpretable(byteCode), false);
             Object[] parameters = {null, null, 1f, 0f};
-            Float f = (Float) LiveEditStubs.stubL(CLASS_NAME, methodName, methodDesc, parameters);
+            Float f =
+                    (Float)
+                            LiveEditStubs.stubL(
+                                    LiveEditStubs.getClassBytecode(CLASS_NAME),
+                                    methodName,
+                                    methodDesc,
+                                    parameters);
             Assert.assertTrue("Float NaN expected", f.isNaN());
         } finally {
             LiveEditStubs.deleteClass(CLASS_NAME);
@@ -79,7 +97,13 @@ public class TestMath {
         try {
             LiveEditStubs.addClass(CLASS_NAME, new Interpretable(byteCode), false);
             Object[] parameters = {null, null, 1d, 0d};
-            Double d = (Double) LiveEditStubs.stubL(CLASS_NAME, methodName, methodDesc, parameters);
+            Double d =
+                    (Double)
+                            LiveEditStubs.stubL(
+                                    LiveEditStubs.getClassBytecode(CLASS_NAME),
+                                    methodName,
+                                    methodDesc,
+                                    parameters);
             Assert.assertTrue(
                     "Double +infinity expected", d.doubleValue() == Double.POSITIVE_INFINITY);
         } finally {
@@ -95,7 +119,13 @@ public class TestMath {
         try {
             LiveEditStubs.addClass(CLASS_NAME, new Interpretable(byteCode), false);
             Object[] parameters = {null, null, -1d, 0d};
-            Double d = (Double) LiveEditStubs.stubL(CLASS_NAME, methodName, methodDesc, parameters);
+            Double d =
+                    (Double)
+                            LiveEditStubs.stubL(
+                                    LiveEditStubs.getClassBytecode(CLASS_NAME),
+                                    methodName,
+                                    methodDesc,
+                                    parameters);
             Assert.assertTrue(
                     "Double -infinity expected", d.doubleValue() == Double.NEGATIVE_INFINITY);
         } finally {
@@ -111,7 +141,13 @@ public class TestMath {
         try {
             LiveEditStubs.addClass(CLASS_NAME, new Interpretable(byteCode), false);
             Object[] parameters = {null, null, 1d, 0d};
-            Double d = (Double) LiveEditStubs.stubL(CLASS_NAME, methodName, methodDesc, parameters);
+            Double d =
+                    (Double)
+                            LiveEditStubs.stubL(
+                                    LiveEditStubs.getClassBytecode(CLASS_NAME),
+                                    methodName,
+                                    methodDesc,
+                                    parameters);
             Assert.assertTrue("Double NaN expected", d.isNaN());
         } finally {
             LiveEditStubs.deleteClass(CLASS_NAME);

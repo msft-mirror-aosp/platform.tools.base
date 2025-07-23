@@ -48,4 +48,12 @@ public class LiveEditActivity extends Activity {
     public void invokeLiveEditAddAccessor() {
         System.out.println("AddAccessor: " + (new pkg.AddAccessor()).accessX().invoke());
     }
+
+    public void invokeVersionIncompatible() {
+        pkg.KotlinBytecodeVersioningKt.testIncompatible();
+    }
+
+    public void invokeVersionCompatible() {
+        pkg.KotlinBytecodeVersioningKt.testCompatible();
+    }
 }
