@@ -20,9 +20,11 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.android.flags.overrides.DefaultFlagOverrides;
 import com.android.flags.overrides.PropertyOverrides;
-import java.util.Properties;
+
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Properties;
 
 public class FlagsTest {
 
@@ -48,7 +50,7 @@ public class FlagsTest {
         FlagGroup group = new FlagGroup(flags, "test", "Test Group");
 
         Flag<Integer> flagInt = new IntFlag(group, "int", "Unused", "Unused", 10);
-        Flag<Boolean> flagBool = new BooleanFlag(group, "bool", "Unused", "Unused", false);
+        Flag<Boolean> flagBool = new BooleanFlag(group, "bool", "Unused", "Unused");
         Flag<String> flagStr = new StringFlag(group, "str", "Unused", "Unused", "Default value");
         Flag<TestingEnum> flagEnum =
                 new EnumFlag(group, "enum", "Unused", "Unused", TestingEnum.FOO);
@@ -66,7 +68,7 @@ public class FlagsTest {
         FlagGroup group = new FlagGroup(flags, "test", "Test Group");
 
         Flag<Integer> flagInt = new IntFlag(group, "int", "Unused", "Unused", 10);
-        Flag<Boolean> flagBool = new BooleanFlag(group, "bool", "Unused", "Unused", false);
+        Flag<Boolean> flagBool = new BooleanFlag(group, "bool", "Unused", "Unused");
         Flag<String> flagStr = new StringFlag(group, "str", "Unused", "Unused", "Default value");
         Flag<TestingEnum> flagEnum =
                 new EnumFlag(group, "enum", "Unused", "Unused", TestingEnum.FOO);

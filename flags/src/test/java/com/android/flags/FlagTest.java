@@ -34,7 +34,7 @@ public class FlagTest {
         assertThat(GameFeatures.MEMORY.getFlags()).isEqualTo(GameFeatures.FLAGS);
         assertThat(GameFeatures.MEMORY.getDisplayName()).isEqualTo("Memory");
 
-        assertThat(GameFeatures.USE_3D_AUDIO.get()).isTrue();
+        assertThat(GameFeatures.USE_3D_AUDIO.get()).isFalse();
         assertThat(GameFeatures.USE_3D_AUDIO.getGroup()).isEqualTo(GameFeatures.AUDIO);
         assertThat(GameFeatures.USE_3D_AUDIO.getId()).isEqualTo("audio.3d");
         assertThat(GameFeatures.USE_3D_AUDIO.getDisplayName()).isEqualTo("Enable 3D audio");
@@ -81,21 +81,21 @@ public class FlagTest {
 
         FlagGroup group = new FlagGroup(flags, "mango", "Mango");
         try {
-            Flag<Boolean> flag = new BooleanFlag(group, "", "Mango", "Mango Description", false);
+            Flag<Boolean> flag = new BooleanFlag(group, "", "Mango", "Mango Description");
             flag.validate();
             Assert.fail();
         } catch (IllegalArgumentException ignored) {
         }
 
         try {
-            Flag<Boolean> flag = new BooleanFlag(group, "mango", "", "Mango Description", false);
+            Flag<Boolean> flag = new BooleanFlag(group, "mango", "", "Mango Description");
             flag.validate();
             Assert.fail();
         } catch (IllegalArgumentException ignored) {
         }
 
         try {
-            Flag<Boolean> flag = new BooleanFlag(group, "mango", "Mango", "", false);
+            Flag<Boolean> flag = new BooleanFlag(group, "mango", "Mango", "");
             flag.validate();
             Assert.fail();
         } catch (IllegalArgumentException ignored) {
@@ -183,7 +183,7 @@ public class FlagTest {
     public void flagCanOverrideValue() {
         Flags flags = new Flags();
         FlagGroup group = new FlagGroup(flags, "mango", "Mango");
-        Flag<Boolean> boolFlag = new BooleanFlag(group, "bool", "Mango", "Mango", true);
+        Flag<Boolean> boolFlag = new BooleanFlag(group, "bool", "Mango", "Mango");
         Flag<Integer> intFlag = new IntFlag(group, "int", "Mango", "Mango", 123);
         Flag<Long> longFlag = new LongFlag(group, "long", "Mango", "Mango", 30L);
         Flag<String> stringFlag = new StringFlag(group, "string", "Mango", "Mango", "hello");
@@ -195,18 +195,18 @@ public class FlagTest {
         assertThat(stringFlag.isOverridden()).isFalse();
         assertThat(enumFlag.isOverridden()).isFalse();
 
-        boolFlag.override(false);
+        boolFlag.override(true);
         intFlag.override(456);
         longFlag.override(60L);
         stringFlag.override("goodbye");
         enumFlag.override(Colors.INDIGO);
 
-        assertThat(flags.getOverrides().get(boolFlag)).isEqualTo("false");
+        assertThat(flags.getOverrides().get(boolFlag)).isEqualTo("true");
         assertThat(flags.getOverrides().get(intFlag)).isEqualTo("456");
         assertThat(flags.getOverrides().get(longFlag)).isEqualTo("60");
         assertThat(flags.getOverrides().get(stringFlag)).isEqualTo("goodbye");
         assertThat(flags.getOverrides().get(enumFlag)).isEqualTo("INDIGO");
-        assertThat(boolFlag.get()).isFalse();
+        assertThat(boolFlag.get()).isTrue();
         assertThat(intFlag.get()).isEqualTo(456);
         assertThat(longFlag.get()).isEqualTo(60L);
         assertThat(stringFlag.get()).isEqualTo("goodbye");
@@ -229,7 +229,7 @@ public class FlagTest {
         assertThat(longFlag.isOverridden()).isFalse();
         assertThat(stringFlag.isOverridden()).isFalse();
         assertThat(enumFlag.isOverridden()).isFalse();
-        assertThat(boolFlag.get()).isTrue();
+        assertThat(boolFlag.get()).isFalse();
         assertThat(intFlag.get()).isEqualTo(123);
         assertThat(longFlag.get()).isEqualTo(30L);
         assertThat(stringFlag.get()).isEqualTo("hello");
@@ -238,20 +238,11 @@ public class FlagTest {
 
     @Test
     public void constructorsWithSuppliers() {
-        AtomicInteger boolSupplierCalled = new AtomicInteger();
         AtomicInteger intSupplierCalled = new AtomicInteger();
         AtomicInteger longSupplierCalled = new AtomicInteger();
         AtomicInteger stringSupplierCalled = new AtomicInteger();
         AtomicInteger enumSupplierCalled = new AtomicInteger();
 
-        FlagDefault<Boolean> boolSupplier =
-                new FlagDefault<Boolean>("test boolean supplier") {
-                    @Override
-                    public Boolean get() {
-                        boolSupplierCalled.incrementAndGet();
-                        return true;
-                    }
-                };
         FlagDefault<Integer> intSupplier =
                 new FlagDefault<Integer>("test integer supplier") {
                     @Override
@@ -287,7 +278,6 @@ public class FlagTest {
 
         Flags flags = new Flags();
         FlagGroup group = new FlagGroup(flags, "mango", "Mango");
-        Flag<Boolean> boolFlag = new BooleanFlag(group, "bool", "Mango", "Mango", boolSupplier);
         Flag<Integer> intFlag = new IntFlag(group, "int", "Mango", "Mango", intSupplier);
         Flag<Long> longFlag = new LongFlag(group, "long", "Mango", "Mango", longSupplier);
         Flag<String> stringFlag = new StringFlag(group, "string", "Mango", "Mango", stringSupplier);
@@ -295,7 +285,6 @@ public class FlagTest {
                 new EnumFlag<>(group, "enum", "Mango", "Mango", enumSupplier, Colors.class);
 
         // Check suppliers are not called at construction
-        assertThat(boolSupplierCalled.get()).isEqualTo(0);
         assertThat(intSupplierCalled.get()).isEqualTo(0);
         assertThat(longSupplierCalled.get()).isEqualTo(0);
         assertThat(stringSupplierCalled.get()).isEqualTo(0);
@@ -303,20 +292,17 @@ public class FlagTest {
 
         // Access each flag twice, to confirm the supplier is only run once.
         for (int i = 0; i < 2; i++) {
-            assertThat(boolFlag.get()).isTrue();
             assertThat(intFlag.get()).isEqualTo(753);
             assertThat(longFlag.get()).isEqualTo(555L);
             assertThat(stringFlag.get()).isEqualTo("some string");
             assertThat(enumFlag.get()).isEqualTo(Colors.BLUE);
         }
 
-        assertThat(boolSupplierCalled.get()).isEqualTo(1);
         assertThat(intSupplierCalled.get()).isEqualTo(1);
         assertThat(longSupplierCalled.get()).isEqualTo(1);
         assertThat(stringSupplierCalled.get()).isEqualTo(1);
         assertThat(enumSupplierCalled.get()).isEqualTo(1);
 
-        assertThat(boolFlag.getDefault().getExplanation()).isEqualTo("test boolean supplier");
         assertThat(intFlag.getDefault().getExplanation()).isEqualTo("test integer supplier");
         assertThat(longFlag.getDefault().getExplanation()).isEqualTo("test long supplier");
         assertThat(stringFlag.getDefault().getExplanation()).isEqualTo("test string supplier");
@@ -330,7 +316,7 @@ public class FlagTest {
         private static final FlagGroup AUDIO = new FlagGroup(FLAGS, "audio", "Audio");
 
         public static final Flag<Boolean> USE_3D_AUDIO =
-                new BooleanFlag(AUDIO, "3d", "Enable 3D audio", "<audio.3d description>", true);
+                new BooleanFlag(AUDIO, "3d", "Enable 3D audio", "<audio.3d description>");
 
         private static final FlagGroup GRAPHICS = new FlagGroup(FLAGS, "graphics", "Graphics");
 
