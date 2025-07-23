@@ -110,11 +110,9 @@ open class ApplicationVariantBuilderImpl @Inject constructor(
 
     override var isMinifyEnabled: Boolean =
         dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
-        set(value) = setMinificationIfPossible("minifyEnabled", value) { field = it }
 
     override var shrinkResources: Boolean =
         dslInfo.optimizationDslInfo.postProcessingOptions.resourcesShrinkingEnabled()
-        set(value) = setMinificationIfPossible("shrinkResources", value) { field = it }
 
     internal var _enableMultiDex = dslInfo.dexingDslInfo.isMultiDexEnabled
     override var enableMultiDex: Boolean?

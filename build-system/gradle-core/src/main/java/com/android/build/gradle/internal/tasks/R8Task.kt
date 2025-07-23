@@ -626,14 +626,6 @@ abstract class R8Task @Inject constructor(
             proguardConfigurations.add("-dontwarn $dontWarn")
         }
 
-        override fun setActions(actions: PostprocessingFeatures) {
-            disableTreeShaking = !actions.isRemoveUnusedCode
-            disableMinification = !actions.isObfuscate
-            if (!actions.isOptimize) {
-                proguardConfigurations.add("-dontoptimize")
-            }
-        }
-
         private fun setBootClasspathForCodeShrinker(task: R8Task) {
             val javaTarget = creationConfig.global.compileOptions.targetCompatibility
 

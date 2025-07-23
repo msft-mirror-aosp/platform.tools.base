@@ -23,14 +23,10 @@ import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.core.PostProcessingOptions
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
-import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.core.dsl.features.DexingDslInfo
 import com.android.build.gradle.internal.core.dsl.features.OptimizationDslInfo
-import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
-import com.android.build.gradle.options.ProjectOptions
-import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Before
@@ -75,7 +71,6 @@ internal class VariantBuilderImplTest {
         val dexingDslInfo = mock<DexingDslInfo>()
         val postProcessingOptions = mock<PostProcessingOptions>()
         whenever(optimizationDslInfo.postProcessingOptions).thenReturn(postProcessingOptions)
-        whenever(postProcessingOptions.hasPostProcessingConfiguration()).thenReturn(false)
         whenever(variantDslInfo.dexingDslInfo).thenReturn(dexingDslInfo)
         whenever(variantDslInfo.optimizationDslInfo).thenReturn(optimizationDslInfo)
         whenever(variantDslInfo.minSdkVersion).thenReturn(MutableAndroidVersion(12, null))

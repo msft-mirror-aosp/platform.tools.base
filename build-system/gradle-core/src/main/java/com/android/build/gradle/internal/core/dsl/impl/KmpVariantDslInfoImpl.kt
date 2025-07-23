@@ -25,7 +25,6 @@ import com.android.build.api.variant.ResValue
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.ProguardFiles
-import com.android.build.gradle.internal.PostprocessingFeatures
 import com.android.build.gradle.internal.ProguardFileType
 import com.android.build.gradle.internal.core.PostProcessingOptions
 import com.android.build.gradle.internal.core.dsl.AgpTestSuiteDslInfo
@@ -174,13 +173,10 @@ class KmpVariantDslInfoImpl(
                         )
                     )
 
-                override fun getPostprocessingFeatures(): PostprocessingFeatures? = null
-
                 override fun codeShrinkerEnabled(): Boolean = extension.optimization.minify
 
                 // No android resources
                 override fun resourcesShrinkingEnabled(): Boolean = false
-                override fun hasPostProcessingConfiguration(): Boolean = false
 
                 override fun getProguardFiles(type: ProguardFileType): Collection<File> {
                     return when (type) {

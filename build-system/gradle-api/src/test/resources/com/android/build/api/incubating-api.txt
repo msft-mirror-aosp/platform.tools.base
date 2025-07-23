@@ -68,28 +68,6 @@ https://issuetracker.google.com/328748349
   * com.android.build.api.dsl.LibraryKeepRules.setIgnoreFromAllExternalDependencies: void (boolean)
 https://issuetracker.google.com/328748351
   * com.android.build.api.transform.Transform.applyToVariant: boolean (com.android.build.api.variant.VariantInfo)
-https://issuetracker.google.com/328748373
-  * com.android.build.api.dsl.PostProcessing
-  * com.android.build.api.dsl.PostProcessing.consumerProguardFile: void (java.lang.Object)
-  * com.android.build.api.dsl.PostProcessing.consumerProguardFiles: void (java.lang.Object[])
-  * com.android.build.api.dsl.PostProcessing.getCodeShrinker: java.lang.String ()
-  * com.android.build.api.dsl.PostProcessing.initWith: void (com.android.build.api.dsl.PostProcessing)
-  * com.android.build.api.dsl.PostProcessing.isObfuscate: boolean ()
-  * com.android.build.api.dsl.PostProcessing.isOptimizeCode: boolean ()
-  * com.android.build.api.dsl.PostProcessing.isRemoveUnusedCode: boolean ()
-  * com.android.build.api.dsl.PostProcessing.isRemoveUnusedResources: boolean ()
-  * com.android.build.api.dsl.PostProcessing.proguardFile: void (java.lang.Object)
-  * com.android.build.api.dsl.PostProcessing.proguardFiles: void (java.lang.Object[])
-  * com.android.build.api.dsl.PostProcessing.setCodeShrinker: void (java.lang.String)
-  * com.android.build.api.dsl.PostProcessing.setConsumerProguardFiles: void (java.util.List<?>)
-  * com.android.build.api.dsl.PostProcessing.setObfuscate: void (boolean)
-  * com.android.build.api.dsl.PostProcessing.setOptimizeCode: void (boolean)
-  * com.android.build.api.dsl.PostProcessing.setProguardFiles: void (java.util.List<?>)
-  * com.android.build.api.dsl.PostProcessing.setRemoveUnusedCode: void (boolean)
-  * com.android.build.api.dsl.PostProcessing.setRemoveUnusedResources: void (boolean)
-  * com.android.build.api.dsl.PostProcessing.setTestProguardFiles: void (java.util.List<?>)
-  * com.android.build.api.dsl.PostProcessing.testProguardFile: void (java.lang.Object)
-  * com.android.build.api.dsl.PostProcessing.testProguardFiles: void (java.lang.Object[])
 https://issuetracker.google.com/328748451
   * com.android.build.api.artifact.SingleArtifact$RUNTIME_SYMBOL_LIST extends com.android.build.api.artifact.SingleArtifact
 https://issuetracker.google.com/328748453
@@ -103,9 +81,6 @@ https://issuetracker.google.com/328748469
   * com.android.build.api.dsl.BundleLanguage.setEnableSplit: void (java.lang.Boolean)
 https://issuetracker.google.com/328748471
   * com.android.build.api.dsl.LibraryExtension.getPrefab: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> ()
-https://issuetracker.google.com/328748487
-  * com.android.build.api.dsl.BuildType.getPostprocessing: com.android.build.api.dsl.PostProcessing ()
-  * com.android.build.api.dsl.BuildType.postprocessing: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PostProcessing, kotlin.Unit>)
 https://issuetracker.google.com/328748492
   * com.android.build.api.variant.Component.getCompileClasspath: org.gradle.api.file.FileCollection ()
 https://issuetracker.google.com/328748494

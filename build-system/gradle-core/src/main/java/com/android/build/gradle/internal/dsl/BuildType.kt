@@ -21,7 +21,6 @@ import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.Ndk
 import com.android.build.api.dsl.Optimization
-import com.android.build.api.dsl.PostProcessing
 import com.android.build.api.dsl.Shaders
 import com.android.build.api.dsl.TestBuildType
 import com.android.build.api.variant.impl.ResValueKeyImpl
@@ -34,7 +33,6 @@ import com.android.builder.core.ComponentType
 import com.android.builder.errors.IssueReporter
 import com.android.builder.internal.ClassFieldImpl
 import com.android.builder.model.BaseConfig
-import com.google.common.base.MoreObjects
 import com.google.common.base.Preconditions
 import com.google.common.collect.Iterables
 import org.gradle.api.Action
@@ -42,7 +40,6 @@ import org.gradle.api.Incubating
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Internal
 import org.gradle.declarative.dsl.model.annotations.Configuring
 import org.gradle.declarative.dsl.model.annotations.ElementFactoryName
 import org.gradle.declarative.dsl.model.annotations.Restricted
@@ -179,14 +176,6 @@ abstract class BuildType @Inject constructor(
             return this.externalNativeBuild
         }
 
-    val _postProcessing: PostProcessingBlock = dslServices.newInstance(
-        PostProcessingBlock::class.java,
-        dslServices,
-        componentType
-    )
-
-    private var _shrinkResources = false
-
     /*
      * (Non javadoc): Whether png crunching should be enabled if not explicitly overridden.
      *
@@ -291,13 +280,12 @@ abstract class BuildType @Inject constructor(
         javaCompileOptions.annotationProcessorOptions._initWith(
             thatBuildType.javaCompileOptions.annotationProcessorOptions
         )
-        _shrinkResources = thatBuildType._shrinkResources
+        isMinifyEnabled = thatBuildType.isMinifyEnabled
+        isShrinkResources = thatBuildType.isShrinkResources
         shaders._initWith(thatBuildType.shaders)
         enableUnitTestCoverage = thatBuildType.enableUnitTestCoverage
         enableAndroidTestCoverage = thatBuildType.enableAndroidTestCoverage
         externalNativeBuildOptions._initWith(thatBuildType.externalNativeBuildOptions)
-        postProcessingBlockUsed = thatBuildType.postProcessingBlockUsed
-        _postProcessing.initWith(that._postProcessing)
         isCrunchPngs = thatBuildType.isCrunchPngs
         isCrunchPngsDefault = thatBuildType.isCrunchPngsDefault
         setMatchingFallbacks(thatBuildType.matchingFallbacks)
@@ -504,31 +492,17 @@ abstract class BuildType @Inject constructor(
     }
 
     @get:Restricted
-    override var isMinifyEnabled: Boolean
-        get() =
-            // Try to return a sensible value for the model and other Gradle plugins inspecting the DSL.
-            _postProcessing.isRemoveUnusedCode ||
-                    _postProcessing.isObfuscate ||
-                    _postProcessing.isOptimizeCode
-
-        set(value) {
-            _postProcessing.isRemoveUnusedCode = value
-            _postProcessing.isObfuscate = value
-            _postProcessing.isOptimizeCode = value
-        }
+    override var isMinifyEnabled: Boolean = false
 
     /**
      * Whether shrinking of unused resources is enabled.
      *
      * Default is false;
      */
-    override var isShrinkResources: Boolean
-        get() =
-            // Try to return a sensible value for the model and other Gradle plugins inspecting the DSL.
-            _postProcessing.isRemoveUnusedResources
+    override var isShrinkResources: Boolean = false
         set(value) {
             checkShrinkResourceEligibility(componentType, dslServices, value)
-            _postProcessing.isRemoveUnusedResources = value
+            field = value
         }
 
     /**
@@ -556,36 +530,6 @@ abstract class BuildType @Inject constructor(
 
     // This method is present to resolve warning in Gradle 8.13: b/399393875
     abstract fun getCrunchPngs(): Boolean?
-
-    var postProcessingBlockUsed = false
-
-    /** This DSL is incubating and subject to change.  */
-    @get:Internal
-    @get:Incubating
-    override val postprocessing: PostProcessingBlock
-        get() {
-            checkPostProcessingConfiguration()
-            return _postProcessing
-        }
-
-    /** This DSL is incubating and subject to change.  */
-    @Incubating
-    @Internal
-    fun postprocessing(action: Action<PostProcessingBlock>) {
-        checkPostProcessingConfiguration()
-        action.execute(_postProcessing)
-    }
-
-    override fun postprocessing(action: PostProcessing.() -> Unit) {
-        postprocessing(Action { action.invoke(it) })
-    }
-
-    private fun checkPostProcessingConfiguration() {
-        if (!postProcessingBlockUsed) {
-            postProcessingBlockUsed = true
-            _postProcessing.isRemoveUnusedCode = true
-        }
-    }
 
     override fun initWith(that: com.android.build.api.dsl.BuildType) {
         if (that !is BuildType) {

@@ -32,48 +32,6 @@ class BuildTypeDslTest {
     @get:Rule
     val project = GradleTestProject.builder().fromTestApp(app).create()
 
-    // Regression test for b/307784512
-    @Test
-    fun testBuildTypeInitWithPostProcessingBlock() {
-        val proguardFile = project.file("proguard-rules.pro")
-        proguardFile.createNewFile()
-        proguardFile.writeText("-dontwarn com.google.apps.SuppressViolation")
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android {
-                    buildTypes {
-                        release {
-                            postprocessing {
-                                removeUnusedCode = true
-                                optimizeCode = true
-                                obfuscate = true
-                                removeUnusedResources = true
-                                proguardFiles file("proguard-rules.pro")
-                            }
-                        }
-                        secondRelease {
-                            initWith(release)
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        project.execute("assembleRelease", "assembleSecondRelease")
-        val releaseConfigurationFile = project.getOutputFile(
-            "mapping",
-            "release",
-            "configuration.txt"
-        )
-        Truth.assertThat(releaseConfigurationFile.readText()).contains("SuppressViolation")
-        val secondReleaseConfigurationFile = project.getOutputFile(
-            "mapping",
-            "secondRelease",
-            "configuration.txt"
-        )
-        Truth.assertThat(secondReleaseConfigurationFile.readText()).contains("SuppressViolation")
-    }
-
     // Regression test for b/379125947
     @Test
     fun testBuildTypeInitWithShrinkResources() {

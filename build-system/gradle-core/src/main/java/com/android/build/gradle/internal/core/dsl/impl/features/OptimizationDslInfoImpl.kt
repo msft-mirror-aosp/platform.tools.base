@@ -20,10 +20,8 @@ import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.ProguardFiles
-import com.android.build.gradle.internal.PostprocessingFeatures
 import com.android.build.gradle.internal.ProguardFileType
 import com.android.build.gradle.internal.core.MergedOptimization
-import com.android.build.gradle.internal.core.PostProcessingBlockOptions
 import com.android.build.gradle.internal.core.PostProcessingOptions
 import com.android.build.gradle.internal.core.dsl.features.OptimizationDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.computeMergedOptions
@@ -98,13 +96,9 @@ class OptimizationDslInfoImpl(
     }
 
     override val postProcessingOptions: PostProcessingOptions by lazy {
-        if ((buildTypeObj as com.android.build.gradle.internal.dsl.BuildType).postProcessingBlockUsed) {
-            PostProcessingBlockOptions(
-                buildTypeObj._postProcessing, componentType.isTestComponent,
-            )
-        } else object : PostProcessingOptions {
+        object : PostProcessingOptions {
             override fun getProguardFiles(type: ProguardFileType): Collection<File> =
-                buildTypeObj.getProguardFiles(type)
+                (buildTypeObj as com.android.build.gradle.internal.dsl.BuildType).getProguardFiles(type)
 
             override fun getDefaultProguardFiles(): List<File> =
                 listOf(
@@ -113,8 +107,6 @@ class OptimizationDslInfoImpl(
                         buildDirectory
                     )
                 )
-
-            override fun getPostprocessingFeatures(): PostprocessingFeatures? = null
 
             override fun codeShrinkerEnabled(): Boolean {
                 if (componentType.isTestComponent && buildTypeObj is LibraryBuildType) {
@@ -125,8 +117,6 @@ class OptimizationDslInfoImpl(
             }
 
             override fun resourcesShrinkingEnabled(): Boolean = buildTypeObj.isShrinkResources
-
-            override fun hasPostProcessingConfiguration() = false
         }
     }
 

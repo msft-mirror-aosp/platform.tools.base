@@ -454,32 +454,12 @@ public class PluginDslTest {
                 project,
                 "\n"
                         + "project.android {\n"
-                        + "    buildTypes {\n"
-                        + "        release {\n"
-                        + "            postprocessing{\n"
-                        + "                proguardFile 'file1.1'\n"
-                        + "                proguardFiles 'file1.2', 'file1.3'\n"
-                        + "            }\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        custom {\n"
-                        + "            postprocessing {\n"
-                        + "                proguardFile 'file3.1'\n"
-                        + "                proguardFiles 'file3.2', 'file3.3'\n"
-                        + "                proguardFiles = ['file3.1']\n"
-                        + "            }\n"
-                        + "        }\n"
-                        + "    }\n"
                         + "\n"
                         + "    flavorDimensions 'foo'\n"
                         + "    productFlavors {\n"
                         + "        f1 {\n"
                         + "            proguardFile 'file2.1'\n"
                         + "            proguardFiles 'file2.2', 'file2.3'\n"
-                        + "        }\n"
-                        + "\n"
-                        + "        f2  {\n"
-                        + "\n"
                         + "        }\n"
                         + "\n"
                         + "        f3 {\n"
@@ -491,29 +471,16 @@ public class PluginDslTest {
                         + "}\n");
         plugin.createAndroidTasks(project);
 
-        String defaultFile =
-                new File(
-                                project.getBuildDir(),
-                                "intermediates/default_proguard_files/global/proguard-defaults.txt-"
-                                        + Version.ANDROID_GRADLE_PLUGIN_VERSION)
-                        .getAbsolutePath();
-
         Map<String, List<String>> expected = new TreeMap<>();
         expected.put(
                 "f1Release",
                 ImmutableList.of(
-                        defaultFile,
-                        "file1.1",
-                        "file1.2",
-                        "file1.3",
                         "file2.1",
                         "file2.2",
                         "file2.3"));
-        expected.put("f2Release", ImmutableList.of(defaultFile, "file1.1", "file1.2", "file1.3"));
 
         // The custom build type uses setProguardFiles, so the default file will not be there.
-        expected.put("f2Custom", ImmutableList.of("file3.1"));
-        expected.put("f3Custom", ImmutableList.of("file3.1", "file4.1"));
+        expected.put("f3Debug", ImmutableList.of("file4.1"));
 
         checkProguardFiles(expected);
     }

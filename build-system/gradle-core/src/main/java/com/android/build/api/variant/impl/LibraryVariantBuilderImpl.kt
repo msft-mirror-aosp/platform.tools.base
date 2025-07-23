@@ -95,7 +95,6 @@ open class LibraryVariantBuilderImpl @Inject constructor(
 
     override var isMinifyEnabled: Boolean =
         dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
-        set(value) = setMinificationIfPossible("minifyEnabled", value) { field = it }
 
     override val deviceTests: Map<String, DeviceTestBuilderImpl> =
         DeviceTestBuilderImpl.create(

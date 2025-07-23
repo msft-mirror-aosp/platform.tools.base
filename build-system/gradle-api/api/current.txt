@@ -711,7 +711,6 @@ package com.android.build.api.dsl {
     method public boolean getEnableAndroidTestCoverage();
     method public boolean getEnableUnitTestCoverage();
     method public java.util.List<java.lang.String> getMatchingFallbacks();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.PostProcessing getPostprocessing();
     method public int getRenderscriptOptimLevel();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.VcsInfo getVcsInfo();
     method public void initWith(com.android.build.api.dsl.BuildType that);
@@ -722,7 +721,6 @@ package com.android.build.api.dsl {
     method public boolean isShrinkResources();
     method @Deprecated public boolean isTestCoverageEnabled();
     method @Deprecated public boolean isZipAlignEnabled();
-    method @org.gradle.api.Incubating public void postprocessing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PostProcessing,kotlin.Unit> action);
     method public void setEnableAndroidTestCoverage(boolean);
     method public void setEnableUnitTestCoverage(boolean);
     method public void setJniDebuggable(boolean);
@@ -746,7 +744,6 @@ package com.android.build.api.dsl {
     property @Deprecated public abstract boolean isTestCoverageEnabled;
     property @Deprecated public abstract boolean isZipAlignEnabled;
     property public abstract java.util.List<java.lang.String> matchingFallbacks;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.PostProcessing postprocessing;
     property public abstract int renderscriptOptimLevel;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.VcsInfo vcsInfo;
   }
@@ -1906,34 +1903,6 @@ package com.android.build.api.dsl {
     property @Deprecated public abstract java.util.Set<java.lang.String> merges;
     property @Deprecated public abstract java.util.Set<java.lang.String> pickFirsts;
     property public abstract com.android.build.api.dsl.ResourcesPackaging resources;
-  }
-
-  @Deprecated @org.gradle.api.Incubating public interface PostProcessing {
-    method @Deprecated public void consumerProguardFile(Object file);
-    method @Deprecated public void consumerProguardFiles(java.lang.Object... files);
-    method @Deprecated public String getCodeShrinker();
-    method @Deprecated public void initWith(com.android.build.api.dsl.PostProcessing that);
-    method @Deprecated public boolean isObfuscate();
-    method @Deprecated public boolean isOptimizeCode();
-    method @Deprecated public boolean isRemoveUnusedCode();
-    method @Deprecated public boolean isRemoveUnusedResources();
-    method @Deprecated public void proguardFile(Object file);
-    method @Deprecated public void proguardFiles(java.lang.Object... files);
-    method @Deprecated public void setCodeShrinker(String);
-    method @Deprecated public void setConsumerProguardFiles(java.util.List<?> consumerProguardFiles);
-    method @Deprecated public void setObfuscate(boolean);
-    method @Deprecated public void setOptimizeCode(boolean);
-    method @Deprecated public void setProguardFiles(java.util.List<?> proguardFiles);
-    method @Deprecated public void setRemoveUnusedCode(boolean);
-    method @Deprecated public void setRemoveUnusedResources(boolean);
-    method @Deprecated public void setTestProguardFiles(java.util.List<?> testProguardFiles);
-    method @Deprecated public void testProguardFile(Object file);
-    method @Deprecated public void testProguardFiles(java.lang.Object... files);
-    property @Deprecated public abstract String codeShrinker;
-    property @Deprecated public abstract boolean isObfuscate;
-    property @Deprecated public abstract boolean isOptimizeCode;
-    property @Deprecated public abstract boolean isRemoveUnusedCode;
-    property @Deprecated public abstract boolean isRemoveUnusedResources;
   }
 
   public interface Prefab {

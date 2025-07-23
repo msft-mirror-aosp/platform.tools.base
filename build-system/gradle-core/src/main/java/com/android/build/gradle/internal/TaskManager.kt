@@ -85,7 +85,6 @@ import com.android.build.gradle.internal.services.toBaseVariant
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
 import com.android.build.gradle.internal.tasks.CheckDuplicateClassesTask
-import com.android.build.gradle.internal.tasks.CheckProguardFiles
 import com.android.build.gradle.internal.tasks.ClassesClasspathUtils
 import com.android.build.gradle.internal.tasks.D8BundleMainDexListTask
 import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
@@ -1920,11 +1919,6 @@ abstract class TaskManager(
                 && creationConfig.buildFeatures.androidResources)
         val task: TaskProvider<out Task> =
                 createR8Task(creationConfig, isTestApplication, addCompileRClass)
-        if (creationConfig.optimizationCreationConfig.postProcessingFeatures != null) {
-            val checkFilesTask =
-                    taskFactory.register(CheckProguardFiles.CreationAction(creationConfig))
-            task.dependsOn(checkFilesTask)
-        }
         if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
             // Also convert shrunk resources from proto format to binary format so it can be
             // included in an APK

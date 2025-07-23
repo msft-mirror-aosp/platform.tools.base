@@ -24,7 +24,6 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.services.VariantBuilderServices
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.errors.IssueReporter
 
 abstract class VariantBuilderImpl(
     globalVariantBuilderConfig: GlobalVariantBuilderConfig,
@@ -176,22 +175,4 @@ abstract class VariantBuilderImpl(
         if (registeredExtensionDelegate.isInitialized())
             registeredExtensionDelegate.value
         else null
-
-    private val hasPostProcessingConfiguration =
-        variantDslInfo.optimizationDslInfo.postProcessingOptions.hasPostProcessingConfiguration()
-
-    internal fun setMinificationIfPossible(
-        varName: String,
-        newValue: Boolean,
-        setter: (Boolean) -> Unit
-    ) {
-        if (hasPostProcessingConfiguration)
-            variantBuilderServices.issueReporter.reportWarning(
-                IssueReporter.Type.GENERIC,
-                "You cannot set $varName via Variant API as build uses postprocessing{...} " +
-                        "instead of buildTypes{...}"
-            )
-        else
-            setter(newValue)
-    }
 }

@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.component.features
 
-import com.android.build.gradle.internal.PostprocessingFeatures
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
@@ -67,8 +66,6 @@ interface OptimizationCreationConfig {
 
     val minifiedEnabled: Boolean
     val resourcesShrink: Boolean
-
-    val postProcessingFeatures: PostprocessingFeatures?
 
     /**
      * New optimization API that enables gradual R8
