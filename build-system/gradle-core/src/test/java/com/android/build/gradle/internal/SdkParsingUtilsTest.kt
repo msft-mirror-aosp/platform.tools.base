@@ -400,6 +400,47 @@ class SdkParsingUtilsTest {
     }
 
     @Test
+    fun `don't warn when using the next preview version in alpha AGP where max supported is stable with minor`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(36, 1, "C", 19, true),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(36, 1),
+            androidGradlePluginVersion = AgpVersion.parse("8.13.0-alpha01")
+        )
+        assertThat(issueReporter.messages).isEmpty()
+        assertThat(issueReporter.syncIssues).isEmpty()
+    }
+
+    @Test
+    fun `warn when using a later preview version in alpha AGP where max supported is stable with minor`() {
+        val issueReporter = FakeSyncIssueReporter(throwOnError = true)
+        warnIfCompileSdkTooNew(
+            version = AndroidVersion(36, 2, "C", 19, true),
+            issueReporter = issueReporter,
+            maxVersion = AndroidVersion(36, 1),
+            androidGradlePluginVersion = AgpVersion.parse("8.13.0-alpha01")
+        )
+        assertThat(issueReporter.messages).containsExactly("""
+            compile SDK preview version "C" has not been tested with this version of the Android Gradle plugin.
+
+            This Android Gradle plugin (8.13.0-alpha01) was tested up to compile SDK version 36.1.
+
+            If you are already using the latest preview version of the Android Gradle plugin,
+            you may need to wait until a newer version with support for compile SDK preview version "C" is available.
+
+            For more information refer to the compatibility table:
+            https://d.android.com/r/tools/api-level-support
+
+            To suppress this warning, add/update
+                android.suppressUnsupportedCompileSdk=C
+            to this project's gradle.properties.
+            """.trimIndent()
+        )
+        assertThat(issueReporter.syncIssues[0].data).isEqualTo("android.suppressUnsupportedCompileSdk=C")
+    }
+
+    @Test
     fun `warn when using a newer preview version with alpha AGP where max supported is a preview`() {
         val issueReporter = FakeSyncIssueReporter(throwOnError = true)
         warnIfCompileSdkTooNew(
@@ -518,7 +559,7 @@ class SdkParsingUtilsTest {
         warnIfCompileSdkTooNew(
             version = AndroidVersion(36, 3),
             issueReporter = issueReporter,
-            maxVersion = AndroidVersion(36),
+            maxVersion = AndroidVersion(36, 1),
             androidGradlePluginVersion = AgpVersion.parse("7.0.0-beta01"),
             suppressWarningIfTooNewForVersions = "S , 31.2 , ,",
         )
@@ -526,7 +567,7 @@ class SdkParsingUtilsTest {
             """
             We recommend using a newer Android Gradle plugin to use compile SDK version 36.3
 
-            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 36.0.
+            This Android Gradle plugin (7.0.0-beta01) was tested up to compile SDK version 36.1.
 
             You are strongly encouraged to update your project to use a newer
             Android Gradle plugin that has been tested with compile SDK version 36.3.

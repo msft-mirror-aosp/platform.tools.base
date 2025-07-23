@@ -144,7 +144,7 @@ internal fun warnIfCompileSdkTooNew(
 ) {
     if (AndroidVersion.API_LEVEL_ORDERING.compare(version, maxVersion) <= 0) return
     // Don't warn about the next preview version when AGP is in dev/alpha
-    if (version.isPreview && version.apiLevel == maxVersion.apiLevel && !maxVersion.isPreview &&
+    if (version.isPreview && version.androidApiLevel == maxVersion.androidApiLevel && !maxVersion.isPreview &&
         (androidGradlePluginVersion.previewKind == AgpVersion.PreviewKind.ALPHA || androidGradlePluginVersion.previewKind == AgpVersion.PreviewKind.DEV)) return
     val suppressName = version.apiStringWithoutExtension
     val suppressSet = suppressWarningIfTooNewForVersions
@@ -155,7 +155,7 @@ internal fun warnIfCompileSdkTooNew(
     if (suppressSet.contains(suppressName)) return
 
     val currentCompileSdk = version.toStringDescription()
-    val maxCompileSdk = AndroidVersion(maxVersion.apiLevel).toStringDescription() +
+    val maxCompileSdk = AndroidVersion(maxVersion.androidApiLevel).toStringDescription() +
         if (maxVersion.isPreview && version.isPreview) {
             " (and ${maxVersion.toStringDescription()})"
         } else ""
