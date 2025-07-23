@@ -19,12 +19,12 @@ import com.android.adblib.AdbBufferedOutputChannel
 import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbOutputChannel
 import com.android.adblib.AdbPipedInputChannel
-import com.android.adblib.AdbPipedOutputChannel
 import com.android.adblib.AdbSession
 import com.android.adblib.adbLogger
 import com.android.adblib.read
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.utils.runAlongOtherScope
+import com.android.adblib.withErrorTimeout
 import com.android.adblib.write
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -32,9 +32,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousCloseException
@@ -45,21 +45,23 @@ import java.util.concurrent.TimeoutException
 /**
  * Implementation of an [AdbOutputChannel] that buffers write operations to an in-memory
  * [AdbPipedInputChannel], and uses a "write-back" coroutine to flush the in-memory
- * [AdbPipedInputChannel] contents to [outputChannel].
+ * [AdbPipedInputChannel] contents to [destinationChannel].
  */
 internal class AdbWriteBackOutputChannel(
-    session: AdbSession,
-    private val outputChannel: AdbOutputChannel,
+    private val session: AdbSession,
+    private val destinationChannel: AdbOutputChannel,
     bufferSize: Int,
-    private val closeOutputChannel: Boolean
+    private val closeDestinationChannel: Boolean
 ) : AdbBufferedOutputChannel {
 
     private val logger = adbLogger(session)
 
+    private val pipeSize = bufferSize
+
     /**
      * The [AdbPipedInputChannel] used to concurrently store write-back from [writeBuffer] operations.
      */
-    private val pipe = session.channelFactory.createPipedChannel(bufferSize)
+    private val pipe = session.channelFactory.createPipedChannel(pipeSize)
 
     /**
      * The scope of the write-back coroutine.
@@ -72,14 +74,14 @@ internal class AdbWriteBackOutputChannel(
     private val bytesWrittenToPipe = MutableStateFlow(0L)
 
     /**
-     * Keeps track of the # of bytes written to [outputChannel]
+     * Keeps track of the # of bytes written to [destinationChannel] by [writeBackWorker]
      */
-    private val bytesWrittenToOutput = MutableStateFlow(0L)
+    private val bytesWrittenFromPipeToDestinationChannel = MutableStateFlow(0L)
 
     /**
      * The "Write Back" coroutine helper class
      */
-    private val writeBackWorker = WriteBackWorker(session, thisScope, pipe, outputChannel, bytesWrittenToOutput, bufferSize)
+    private val writeBackWorker = WriteBackWorker(this)
 
     /**
      * Whether [shutdown] has been called, preventing additional calls to [write], [shutdown], [flush]
@@ -111,38 +113,32 @@ internal class AdbWriteBackOutputChannel(
     }
 
     /**
-     * Write [buffer] asynchronously to the underlying output channel.
+     * Write [buffer] asynchronously to the destination channel.
      *
      * * Throws [ClosedChannelException] if [close] or [shutdown] were previously called
      * * Throws [AsynchronousCloseException] if [close] is called __while this function is
      * suspended__
-     * * Throws [Throwable] if there was a previous error while writing to the underlying output channel
+     * * Throws [Throwable] if there was a previous error while writing to the destination channel
      * * Throws [TimeoutException] in case the data cannot be written before the timeout expires.
      */
     override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
         wrapPublicEntryPoint {
-            wrapPipeSourceWriteOperation { pipeSource ->
-                pipeSource.write(buffer, timeout, unit)
-            }
+            writeOrWriteExactlyImpl(buffer, timeout, unit, writeExactly = false)
         }
     }
 
     /**
-     * Write [buffer] asynchronously to the underlying output channel.
+     * Write [buffer] asynchronously to the destination channel.
      *
      * * Throws [ClosedChannelException] if [close] or [shutdown] were previously called
      * * Throws [AsynchronousCloseException] if [close] is called __while this function is
      * suspended__
-     * * Throws [Throwable] if there was a previous error while writing to the underlying output channel
+     * * Throws [Throwable] if there was a previous error while writing to the destination channel
      * * Throws [TimeoutException] in case the data cannot be written before the timeout expires.
      */
     override suspend fun writeExactly(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
         wrapPublicEntryPoint {
-            wrapPipeSourceWriteOperation { pipeSource ->
-                buffer.remaining().also {
-                    pipeSource.writeExactly(buffer, timeout, unit)
-                }
-            }
+            writeOrWriteExactlyImpl(buffer, timeout, unit, writeExactly = true)
         }
     }
 
@@ -152,7 +148,7 @@ internal class AdbWriteBackOutputChannel(
      * * Throws [ClosedChannelException] if [close] or [shutdown] were previously called
      * * Throws [AsynchronousCloseException] if [close] is called __while this function is
      * suspended__
-     * * Throws [Throwable] if there was a previous error while writing to the underlying output channel
+     * * Throws [Throwable] if there was a previous error while writing to the destination channel
      */
     override suspend fun flush() {
         wrapPublicEntryPoint {
@@ -170,7 +166,7 @@ internal class AdbWriteBackOutputChannel(
      * * Throws [ClosedChannelException] if [close] or [shutdown] were previously called
      * * Throws [AsynchronousCloseException] if [close] is called __while this function is
      * suspended__
-     * * Throws [Throwable] if there was a previous error while writing to the underlying output channel
+     * * Throws [Throwable] if there was a previous error while writing to the destination channel
      */
     override suspend fun shutdown() {
         wrapPublicEntryPoint {
@@ -188,10 +184,10 @@ internal class AdbWriteBackOutputChannel(
                 flushImpl()
                 writeBackWorker.await()
 
-                // Finally, we optionally shut down the output channel
-                if (closeOutputChannel) {
-                    // In case the wrapped output channel is buffered, we shut it down too.
-                    (outputChannel as? AdbBufferedOutputChannel)?.shutdown()
+                // Finally, we optionally shut down the destination channel
+                if (closeDestinationChannel) {
+                    // In case the wrapped destination channel is buffered, we shut it down too.
+                    (destinationChannel as? AdbBufferedOutputChannel)?.shutdown()
                 }
             }
         }
@@ -203,50 +199,99 @@ internal class AdbWriteBackOutputChannel(
      * (e.g. [writeBuffer] or [flush] or even [shutdown]) is active.
      */
     override fun close() {
-        logger.debug { "close: Closing write-back output channel" }
+        logger.debug { "close: Closing write-back destination channel" }
 
         // Closing the pipe ensures any pending read operation on the pipe is cancelled
         isClosed = true
         pipe.close()
 
-        // Closing the scope ensures any pending write operation on this output channel is cancelled
+        // Closing the scope ensures any pending write operation on this destination channel is cancelled
         thisScope.cancel("${this::class.simpleName} has been closed")
 
-        // Close the underlying output channel if required
-        if (closeOutputChannel) {
-            outputChannel.close()
+        // Close the destination channel if required
+        if (closeDestinationChannel) {
+            destinationChannel.close()
         }
     }
 
     private suspend fun flushImpl() {
-        // Wait until the number of bytes sent to us via the `writeXxx` methods is exactly
-        // equal to the number of bytes send to the output channel by the `writeBackLoop`
-        logger.debug { "flush: waiting for all bytes to be written to output" }
-        bytesWrittenToOutput.first { it == bytesWrittenToPipe.value }
+        waitUntilWriteBackWorkerHasWrittenAllPendingData()
 
-        // In case the wrapped output channel is buffered, we flush it too.
-        (outputChannel as? AdbBufferedOutputChannel)?.also {
-            logger.debug { "flush: flushing output channel" }
+        // In case the destination channel is buffered, we flush it too.
+        (destinationChannel as? AdbBufferedOutputChannel)?.also {
+            logger.debug { "flush: flushing destination channel" }
             it.flush()
         }
     }
 
     /**
-     * Executes [writeOperation] on [pipe], handling exceptions appropriately
-     *
-     * Throws [CancellationException] if [close] is called during this operation
-     * Throws [ClosedChannelException] if [close] or [shutdown] were previously called.
-     * Throws [Throwable] if there was a previous error while writing to the underlying output channel
+     * Implementation of [write] and [writeExactly], handling exceptions and corner cases
+     * appropriately.
      */
-    private inline fun wrapPipeSourceWriteOperation(writeOperation: (AdbPipedOutputChannel) -> Int): Int {
-        // Note: The pipe ensures cancellation if/when the pipe is closed
-        return writeOperation(pipe.pipeSource).also { byteCount ->
-            logger.verbose { "write: Wrote $byteCount bytes to pipe '$pipe'" }
-            bytesWrittenToPipe.update { it + byteCount }
+    private suspend fun writeOrWriteExactlyImpl(
+        buffer: ByteBuffer,
+        timeout: Long,
+        unit: TimeUnit,
+        writeExactly: Boolean,
+    ): Int {
+        return if (buffer.remaining() > pipeSize) {
+            // Optimization: for writes larger than the pipe size, write directly to the underlying
+            // destination channel, avoiding the overhead of the pipe and write back coroutine.
+            session.withErrorTimeout(timeout, unit) {
+                runAlongOtherScope(thisScope) {
+                    // Ensure destination channel is not in use
+                    waitUntilWriteBackWorkerHasWrittenAllPendingData()
+
+                    // Send the large buffer write to the destination channel
+                    destinationChannel.writeOrWriteExactly (buffer, timeout, unit, writeExactly).also { byteCount ->
+                        logger.verbose { "write: Wrote $byteCount bytes directly to the destination channel '$destinationChannel'" }
+                    }
+                }
+            }
+        } else {
+            // Note: The pipe ensures cancellation if/when the pipe is closed
+            pipe.pipeSource.writeOrWriteExactly (buffer, timeout, unit, writeExactly).also { byteCount ->
+                logger.verbose { "write: Wrote $byteCount bytes to pipe '$pipe'" }
+                bytesWrittenToPipe.update { it + byteCount }
+            }
         }
     }
 
-    private inline fun <R> wrapPublicEntryPoint(block: () -> R): R {
+    /**
+     * Calls [AdbOutputChannel.write] or [AdbOutputChannel.writeExactly] depending on
+     * [writeExactly] and returns # of bytes written.
+     */
+    private suspend inline fun AdbOutputChannel.writeOrWriteExactly(
+        buffer: ByteBuffer,
+        timeout: Long,
+        unit: TimeUnit,
+        writeExactly: Boolean
+    ): Int {
+        return if (writeExactly) {
+            val byteCount = buffer.remaining()
+            writeExactly(buffer, timeout, unit)
+            byteCount
+        } else {
+            write(buffer, timeout, unit)
+        }
+    }
+
+    /**
+     * Waits until the write back worker has written all data currently in [pipe] to
+     * [destinationChannel].
+     */
+    private suspend fun waitUntilWriteBackWorkerHasWrittenAllPendingData() {
+        // Wait until the number of bytes sent to us via the `writeXxx` methods is exactly
+        // equal to the number of bytes send to the destination channel by the `writeBackLoop`
+        logger.debug { "Waiting for all bytes to be written to output: bytesWrittenToPipe=${bytesWrittenToPipe.value},  bytesWrittenFromPipeToDestinationChannel:${bytesWrittenFromPipeToDestinationChannel.value}" }
+        bytesWrittenFromPipeToDestinationChannel.waitUntil { it == bytesWrittenToPipe.value }
+    }
+
+    /**
+     * Wraps a public entry point implementation [entryPointBlock], handling [isShutdown]
+     * and [isClosed] states.
+     */
+    private inline fun <R> wrapPublicEntryPoint(entryPointBlock: () -> R): R {
         if (isShutdown) {
             throw ClosedChannelException().initCause(
                 IOException("${AdbWriteBackOutputChannel::class.java.simpleName} has been shutdown"))
@@ -258,7 +303,7 @@ internal class AdbWriteBackOutputChannel(
         }
 
         return try {
-            block()
+            entryPointBlock()
         } catch (t: Throwable) {
             if (isClosed) {
                 throw AsynchronousCloseException().initCause(
@@ -270,26 +315,36 @@ internal class AdbWriteBackOutputChannel(
     }
 
     /**
-     * Handles the "write-back" coroutine: writes bytes from [input] to [output] as fast
-     * as possible.
+     * Handles the "write-back" coroutine: writes bytes from [AdbWriteBackOutputChannel.pipe] to
+     * [AdbWriteBackOutputChannel.destinationChannel] as fast as possible.
      */
-    private class WriteBackWorker(
-        session: AdbSession,
-        parentScope: CoroutineScope,
-        private val input: AdbInputChannel,
-        private val output: AdbOutputChannel,
-        private val bytesWritten: MutableStateFlow<Long>,
-        bufferSize: Int
-    ) {
+    private class WriteBackWorker(private val outerImpl: AdbWriteBackOutputChannel) {
+        private val session: AdbSession
+            get() = outerImpl.session
 
         private val logger = adbLogger(session)
+
+        private val parentScope: CoroutineScope
+            get() = outerImpl.thisScope
+
+        private val bufferSize: Int
+            get() = outerImpl.pipeSize
+
+        private val input: AdbInputChannel
+            get() = outerImpl.pipe
+
+        private val output: AdbOutputChannel
+            get() = outerImpl.destinationChannel
+
+        private val bytesWrittenToOutput: MutableStateFlow<Long>
+            get() = outerImpl.bytesWrittenFromPipeToDestinationChannel
 
         /**
          * The [Job] where [writeBackLoop] is launched.
          */
         private val writeBackAsync = parentScope.async {
-            // Note: [writeBack] may throw an exception if it fails to write to the output channel,
-            // or if the parent `AdbWriteBackOutputChannel` is closed.
+            // Note: [writeBack] may throw an exception if it fails to write to the
+            // destination channel, or if the parent `AdbWriteBackOutputChannel` is closed.
             writeBackLoop(bufferSize)
         }
 
@@ -323,12 +378,21 @@ internal class AdbWriteBackOutputChannel(
                 buffer.flip() // [position=byteCount, limit=capacity] -> [position=0, limit]
                 output.writeExactly(buffer)
                 logger.verbose { "$byteCount bytes forwarded to output '$output'" }
-                bytesWritten.update { it + byteCount }
+                bytesWrittenToOutput.update { it + byteCount }
             }
         }
     }
 
     companion object {
+        /**
+         * Similar to [first], optimized to avoid collecting of the [StateFlow] if [predicate] is
+         * verified on entry.
+         */
+        private suspend inline fun <T> StateFlow<T>.waitUntil(crossinline predicate: (T) -> Boolean) {
+            if (!predicate(value)) {
+                first { predicate(it) }
+            }
+        }
 
         private fun Throwable.toCancellationException(): CancellationException {
             return when {

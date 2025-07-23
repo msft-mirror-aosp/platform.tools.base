@@ -25,7 +25,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.sync.Mutex
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +33,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 class AdbWriteBackOutputChannelTest {
 
@@ -50,6 +50,31 @@ class AdbWriteBackOutputChannelTest {
     }
 
     @Test
+    fun writeShouldWriteToWrappedOutputChannel(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val output = TestAdbBufferedOutputChannel()
+        val writeBackChannel = channelFactory.createWriteBackChannel(output, 1_000)
+        val dataBytes = generateSequence<Byte>(1) { (it + 1).toByte() }
+        val dataBytesIterator = dataBytes.iterator()
+
+        // Act
+        writeBackChannel.write(createBuffer(dataBytesIterator, 100))
+        writeBackChannel.shutdown()
+        writeBackChannel.close()
+
+        // Assert: Check there was at most 10 writes (maybe less if we write faster than
+        // the write back coroutine can work), but we have 1_000 bytes at the end.
+        Assert.assertEquals(1, output.writeBufferCallCount)
+        Assert.assertEquals(1, output.shutdownCallCount)
+        Assert.assertEquals(1, output.flushCallCount)
+        Assert.assertEquals(100, output.length)
+        Assert.assertEquals(dataBytes.take(100).toList(), output.bytes)
+        Assert.assertTrue(output.closed)
+    }
+
+    @Test
     fun writeMultipleTimesShouldWriteToWrappedOutputChannel(): Unit = runBlockingWithTimeout {
         // Prepare
         val session = registerCloseable(TestingAdbSession())
@@ -61,12 +86,7 @@ class AdbWriteBackOutputChannelTest {
 
         // Act
         repeat(10) {
-            val buffer = ByteBuffer.allocate(100)
-            while(buffer.hasRemaining()) {
-                buffer.put(dataBytesIterator.next())
-            }
-            buffer.flip()
-            writeBackChannel.writeExactly(buffer)
+            writeBackChannel.write(createBuffer(dataBytesIterator, 100))
         }
         writeBackChannel.shutdown()
         writeBackChannel.close()
@@ -79,6 +99,81 @@ class AdbWriteBackOutputChannelTest {
         Assert.assertEquals(1_000, output.length)
         Assert.assertEquals(dataBytes.take(1_000).toList(), output.bytes)
         Assert.assertTrue(output.closed)
+    }
+
+    @Test
+    fun writeMultipleTimesShouldEventuallyTimeoutIfUnderlyingChannelIsSlow(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val output = object: TestAdbBufferedOutputChannel() {
+            override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+                delay(5_000)
+            }
+        }
+        val writeBackChannel = channelFactory.createWriteBackChannel(output, 20)
+
+        // Act
+        exceptionRule.expect(TimeoutException::class.java)
+        repeat(10) {
+            writeBackChannel.write(ByteBuffer.allocate(10), 20, TimeUnit.MILLISECONDS)
+        }
+
+        // Assert
+        Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun writeWithLargeBufferShouldSkipPipe(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val output = TestAdbBufferedOutputChannel()
+        val writeBackChannel = channelFactory.createWriteBackChannel(output, 100)
+        val dataBytes = generateSequence<Byte>(1) { (it + 1).toByte() }
+        val dataBytesIterator = dataBytes.iterator()
+
+        // Act
+        writeBackChannel.write(createBuffer(dataBytesIterator, 100))
+        writeBackChannel.write(createBuffer(dataBytesIterator, 2_000))
+        writeBackChannel.write(createBuffer(dataBytesIterator, 100))
+        writeBackChannel.shutdown()
+        writeBackChannel.close()
+
+        // Assert: Check there was at most 10 writes (maybe less if we write faster than
+        // the write back coroutine can work), but we have 1_000 bytes at the end.
+        Assert.assertEquals(
+            "There should be exactly 3 write operations to the output channel: " +
+                    "one write operation of 100 bytes before the large buffer write, " +
+                    "one large write operation of 2_000 bytes, " +
+                    "one last write operation of 100 bytes after the large buffer write.",
+            3, output.writeBufferCallCount
+        )
+        Assert.assertEquals(1, output.shutdownCallCount)
+        Assert.assertEquals(1, output.flushCallCount)
+        Assert.assertEquals(2_200, output.length)
+        Assert.assertEquals(dataBytes.take(2_200).toList(), output.bytes)
+        Assert.assertTrue(output.closed)
+    }
+
+    @Test
+    fun writeWithLargeBufferShouldTimeoutIfUnderlyingChannelIsSlow(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val output = object: TestAdbBufferedOutputChannel() {
+            override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
+                delay(5_000)
+            }
+        }
+        val writeBackChannel = channelFactory.createWriteBackChannel(output, 5)
+
+        // Act
+        exceptionRule.expect(TimeoutException::class.java)
+        writeBackChannel.write(ByteBuffer.allocate(10), 20, TimeUnit.MILLISECONDS)
+
+        // Assert
+        Assert.fail("Should not reach")
     }
 
     @Test
@@ -100,31 +195,10 @@ class AdbWriteBackOutputChannelTest {
         // the exception thrown by the underlying output channel it writes to.
         exceptionRule.expect(IOException::class.java)
         exceptionRule.expectMessage("Fake I/O error")
-        while (true) {
+        repeat (1_000) {
             writeBackChannel.write(ByteBuffer.allocate(100))
             delay(10)
         }
-
-        // Assert
-        Assert.fail("Should not reach")
-    }
-
-    @Test
-    fun writeThrowsAfterClose(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val testOutputChannel = TestAdbBufferedOutputChannel()
-        val writeBackChannel = channelFactory.createWriteBackChannel(testOutputChannel, 1_000)
-
-        // Act
-        val buffer = ByteBuffer.allocate(10)
-        writeBackChannel.write(buffer)
-        writeBackChannel.close()
-
-        exceptionRule.expect(ClosedChannelException::class.java)
-        buffer.clear()
-        writeBackChannel.write(buffer)
 
         // Assert
         Assert.fail("Should not reach")
@@ -152,7 +226,7 @@ class AdbWriteBackOutputChannelTest {
     }
 
     @Test
-    fun writeExactlyThrowsAfterShutdown(): Unit = runBlockingWithTimeout {
+    fun writeThrowsAfterClose(): Unit = runBlockingWithTimeout {
         // Prepare
         val session = registerCloseable(TestingAdbSession())
         val channelFactory = AdbChannelFactoryImpl(session)
@@ -162,11 +236,101 @@ class AdbWriteBackOutputChannelTest {
         // Act
         val buffer = ByteBuffer.allocate(10)
         writeBackChannel.write(buffer)
-        writeBackChannel.shutdown()
+        writeBackChannel.close()
 
         exceptionRule.expect(ClosedChannelException::class.java)
         buffer.clear()
-        writeBackChannel.writeExactly(buffer)
+        writeBackChannel.write(buffer)
+
+        // Assert
+        Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun writeExactlyShouldWriteToWrappedOutputChannel(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val output = TestAdbBufferedOutputChannel()
+        val writeBackChannel = channelFactory.createWriteBackChannel(output, 1_000)
+        val dataBytes = generateSequence<Byte>(1) { (it + 1).toByte() }
+        val dataBytesIterator = dataBytes.iterator()
+
+        // Act
+        writeBackChannel.writeExactly(createBuffer(dataBytesIterator, 100))
+        writeBackChannel.shutdown()
+        writeBackChannel.close()
+
+        // Assert: Check there was at most 10 writes (maybe less if we write faster than
+        // the write back coroutine can work), but we have 1_000 bytes at the end.
+        Assert.assertEquals(1, output.writeBufferCallCount)
+        Assert.assertEquals(1, output.shutdownCallCount)
+        Assert.assertEquals(1, output.flushCallCount)
+        Assert.assertEquals(100, output.length)
+        Assert.assertEquals(dataBytes.take(100).toList(), output.bytes)
+        Assert.assertTrue(output.closed)
+    }
+
+    @Test
+    fun writeExactlyMultipleTimesShouldWriteToWrappedOutputChannel(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val output = TestAdbBufferedOutputChannel()
+        val writeBackChannel = channelFactory.createWriteBackChannel(output, 1_000)
+        val dataBytes = generateSequence<Byte>(1) { (it + 1).toByte() }
+        val dataBytesIterator = dataBytes.iterator()
+
+        // Act
+        repeat(10) {
+            writeBackChannel.writeExactly(createBuffer(dataBytesIterator, 100))
+        }
+        writeBackChannel.shutdown()
+        writeBackChannel.close()
+
+        // Assert: Check there was at most 10 writes (maybe less if we write faster than
+        // the write back coroutine can work), but we have 1_000 bytes at the end.
+        Assert.assertTrue(output.writeBufferCallCount <= 10)
+        Assert.assertEquals(1, output.shutdownCallCount)
+        Assert.assertEquals(1, output.flushCallCount)
+        Assert.assertEquals(1_000, output.length)
+        Assert.assertEquals(dataBytes.take(1_000).toList(), output.bytes)
+        Assert.assertTrue(output.closed)
+    }
+
+    @Test
+    fun writeExactlyThrowsAfterShutdown(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val testOutputChannel = TestAdbBufferedOutputChannel()
+        val writeBackChannel = channelFactory.createWriteBackChannel(testOutputChannel, 1_000)
+
+        // Act
+        writeBackChannel.write(ByteBuffer.allocate(10))
+        writeBackChannel.shutdown()
+
+        exceptionRule.expect(ClosedChannelException::class.java)
+        writeBackChannel.writeExactly(ByteBuffer.allocate(10))
+
+        // Assert
+        Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun writeExactlyThrowsAfterClose(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val testOutputChannel = TestAdbBufferedOutputChannel()
+        val writeBackChannel = channelFactory.createWriteBackChannel(testOutputChannel, 1_000)
+
+        // Act
+        writeBackChannel.write(ByteBuffer.allocate(10))
+        writeBackChannel.close()
+
+        exceptionRule.expect(ClosedChannelException::class.java)
+        writeBackChannel.writeExactly(ByteBuffer.allocate(10))
 
         // Assert
         Assert.fail("Should not reach")
@@ -329,6 +493,23 @@ class AdbWriteBackOutputChannelTest {
     }
 
     @Test
+    fun closeDoesNotThrowIfNotShutDown(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val output = TestAdbOutputChannel()
+        val writeBackChannel = channelFactory.createWriteBackChannel(output, 1_000)
+
+        // Act
+        val buffer = ByteBuffer.allocate(10)
+        writeBackChannel.write(buffer)
+        writeBackChannel.close()
+
+        // Assert
+        Assert.assertTrue(output.closed)
+    }
+
+    @Test
     fun shutdownRethrowsUnderlyingChannelException(): Unit = runBlockingWithTimeout {
         // Prepare
         val session = registerCloseable(TestingAdbSession())
@@ -349,67 +530,6 @@ class AdbWriteBackOutputChannelTest {
 
         // Assert
         Assert.fail("Should not reach")
-    }
-
-    @Test
-    fun writeBackRethrowsExceptionOnShutdown(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val writeMutex = Mutex()
-        writeMutex.lock()
-        val output = object: AdbOutputChannel {
-            override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-                writeMutex.lock() // Wait for "shutdown" to be called
-                throw IOException("Fake I/O error")
-            }
-
-            override fun close() {
-            }
-        }
-
-        val writeBackChannel = channelFactory.createWriteBackChannel(output, 1_000)
-
-        // Act
-        val buffer = ByteBuffer.allocate(10)
-        writeBackChannel.write(buffer)
-
-        exceptionRule.expect(IOException::class.java)
-        exceptionRule.expectMessage("Fake I/O error")
-        writeMutex.unlock() // Wake up "write" operation on underlying "output" channel
-        writeBackChannel.shutdown()
-
-        // Assert
-        Assert.fail("Should not reach")
-    }
-
-    @Test
-    fun writeBackCloseDoesNotThrowIfNotShutDown(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val output = object: AdbOutputChannel {
-            var closeCalled = false
-
-            override suspend fun writeBuffer(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
-                // This delay should be cancelled right away by `writeBackChannel.close`
-                delay(1_000)
-            }
-
-            override fun close() {
-                closeCalled = true
-            }
-        }
-
-        val writeBackChannel = channelFactory.createWriteBackChannel(output, 1_000)
-
-        // Act
-        val buffer = ByteBuffer.allocate(10)
-        writeBackChannel.write(buffer)
-        writeBackChannel.close()
-
-        // Assert
-        Assert.assertTrue(output.closeCalled)
     }
 
     @Test
@@ -440,6 +560,14 @@ class AdbWriteBackOutputChannelTest {
 
         // Assert
         Assert.fail("Should not reach")
+    }
+
+    private fun createBuffer(dataBytesIterator: Iterator<Byte>, count: Int): ByteBuffer {
+        val buffer = ByteBuffer.allocate(count)
+        while(buffer.hasRemaining()) {
+            buffer.put(dataBytesIterator.next())
+        }
+        return buffer.flip()
     }
 
     private open class TestAdbOutputChannel : AdbOutputChannel {
