@@ -133,7 +133,6 @@ public class VariantDependenciesBuilder {
     private final Set<Configuration> implementationConfigurations = Sets.newLinkedHashSet();
     private final Set<Configuration> runtimeClasspaths = Sets.newLinkedHashSet();
     private final Set<Configuration> annotationConfigs = Sets.newLinkedHashSet();
-    private final Set<Configuration> wearAppConfigs = Sets.newLinkedHashSet();
     private VariantCreationConfig mainVariant;
     private VariantCreationConfig testedVariant;
     private String overrideVariantNameAttribute = null;
@@ -228,7 +227,6 @@ public class VariantDependenciesBuilder {
             if (kaptConfig != null) {
                 annotationConfigs.add(kaptConfig);
             }
-            wearAppConfigs.add(configs.getByName(sourceSet.getWearAppConfigurationName()));
         }
 
         return this;
@@ -382,21 +380,7 @@ public class VariantDependenciesBuilder {
         }
 
         Configuration reverseMetadataValues = null;
-        Configuration wearApp = null;
         Map<PublishedConfigSpec, Configuration> elements = Maps.newHashMap();
-
-        if (componentType.isBaseModule()) {
-            wearApp = configurations.maybeCreate(variantName + "WearBundling");
-            wearApp.setDescription(
-                    "Resolved Configuration for wear app bundling for variant: " + variantName);
-            wearApp.setExtendsFrom(wearAppConfigs);
-            wearApp.setCanBeConsumed(false);
-            final AttributeContainer wearAttributes = wearApp.getAttributes();
-            applyVariantAttributes(wearAttributes, buildType, consumptionFlavorMap);
-            // because the APK is published to Runtime, then we need to make sure this one consumes RUNTIME as well.
-            wearAttributes.attribute(Usage.USAGE_ATTRIBUTE, runtimeUsage);
-            wearAttributes.attribute(AgpVersionAttr.ATTRIBUTE, agpVersion);
-        }
 
         VariantAttr variantNameAttr =
                 factory.named(
@@ -714,7 +698,6 @@ public class VariantDependenciesBuilder {
                 providedClasspath,
                 annotationProcessor,
                 reverseMetadataValues,
-                wearApp,
                 testedVariant,
                 project,
                 projectOptions,

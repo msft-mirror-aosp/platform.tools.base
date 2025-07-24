@@ -132,12 +132,6 @@ interface AndroidSourceSet : Named {
     val runtimeOnlyConfigurationName: String
 
     /**
-     * Returns the name of the wearApp configuration for this source set.
-     */
-    @Deprecated("Deprecated configuration - to be removed in AGP 9.0")
-    val wearAppConfigurationName: String
-
-    /**
      * Returns the name of the annotation processing tool classpath for this source set.
      */
     val annotationProcessorConfigurationName: String
