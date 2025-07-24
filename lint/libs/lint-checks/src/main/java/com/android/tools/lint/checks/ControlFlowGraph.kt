@@ -601,8 +601,8 @@ open class ControlFlowGraph<T : Any> private constructor() {
       val instructions = method.instructions
 
       // Create a flow control graph using ASM5's analyzer. According to the ASM 4 guide
-      // (download.forge.objectweb.org/asm/asm4-guide.pdf) there are faster ways to construct
-      // it, but those require a lot more code.
+      // (https://web.archive.org/web/20180621042740/download.forge.objectweb.org/asm/ASM4-guide.pdf)
+      // there are faster ways to construct it, but those require a lot more code.
       val interpreter = BasicInterpreter()
       val analyzer =
         object : Analyzer<BasicValue>(interpreter) {

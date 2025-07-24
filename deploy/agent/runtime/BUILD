@@ -10,28 +10,18 @@ coverage_java_library(
         "src/main/java/com/android/tools/deploy/interpreter/**/*.java",
     ]),
     deps = [
-        ":asm4",
+        ":asm",
         "//tools/base/annotations",
     ],
 )
 
-# Generates asm4.jar. Must be run manually and output copied to lib/asm4.jar.
-# $ tools/base/bazel/bazel build tools/base/deploy/agent/runtime:jarjar_asm4
-# $ cp bazel-bin/tools/base/deploy/agent/runtime/jarjar_asm4.jar tools/base/deploy/agent/runtime/lib/deploy_asm4.jar
 java_jarjar(
-    name = "jarjar_asm4",
+    name = "asm",
     srcs = [
         "lib/asm-all-9.0.jar",
     ],
-    rules = "jarjar_asm4_rules.txt",
+    rules = "jarjar_asm_rules.txt",
     visibility = ["//visibility:private"],
-)
-
-java_import(
-    name = "asm4",
-    jars = [
-        "lib/deploy_asm4.jar",
-    ],
 )
 
 coverage_java_library(
@@ -53,7 +43,7 @@ coverage_java_library(
         "src/main/java/com/android/tools/deploy/liveedit/backported/*.java",
     ]),
     deps = [
-        ":asm4",
+        ":asm",
         ":instrument_java",
         ":interpreter_common",
         "//prebuilts/studio/sdk:platforms/latest_jar",
@@ -100,7 +90,7 @@ coverage_java_test(
     tags = ["noci:studio-win"],
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
-        ":asm4",
+        ":asm",
         ":instrument_java",
         ":interpreter_common",
         ":liveedit_java",
@@ -122,7 +112,7 @@ dex_library(
         ":instrument_java",
         ":liveedit_java",
         ":interpreter_common",
-        ":asm4",
+        ":asm",
     ],
     visibility = ["//visibility:public"],
 )
@@ -172,7 +162,7 @@ kotlin_library(
     ],
     visibility = ["//tools/base/deploy:__subpackages__"],
     deps = [
-        ":asm4",
+        ":asm",
         ":liveedit_java",
         "@maven//:com.squareup.javapoet",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect",

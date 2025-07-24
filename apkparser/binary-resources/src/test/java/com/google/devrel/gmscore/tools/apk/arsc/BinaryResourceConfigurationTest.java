@@ -37,5 +37,17 @@ public class BinaryResourceConfigurationTest {
       };
       assertEquals("b+sr+Latn", BinaryResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
     }
+    {
+      byte[] buff = new byte[] {
+          0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 0
+      };
+      assertEquals("v36", BinaryResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
+    }
+    {
+      byte[] buff = new byte[] {
+          0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 1
+      };
+      assertEquals("v36.1", BinaryResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
+    }
   }
 }

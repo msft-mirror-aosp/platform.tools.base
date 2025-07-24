@@ -27,11 +27,6 @@ snapshot_dir_short_path="%snapshot_dir_short_path%"
 emulator_boot_timeout=${EMULATOR_BOOT_TIMEOUT:-200}
 echo "timeout is $emulator_boot_timeout"
 
-# Emulator gRPC port. This is used when setting up emulator gRPC connection.
-# Emulator gRPC connection is required by embedded emulator and Android Test
-# Retention.
-emulator_grpc_port=8554
-
 if [ "$(uname)" = "Darwin" ]; then
   OS_DIR_NAME=darwin
 elif [ "$(uname)" = "Linux" ]; then
@@ -164,7 +159,6 @@ do
   # MultiDisplay is not used, generates some red herring error messages
   $emulator @emu\
     -port $port\
-    -grpc $emulator_grpc_port\
     -delay-adb\
     -no-window\
     -gpu swiftshader_indirect\

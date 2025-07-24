@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.res.namespaced
 
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.google.common.annotations.VisibleForTesting
 import com.android.builder.symbols.exportToCompiledJava
 import com.android.builder.utils.zipEntry
@@ -40,7 +41,6 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.MethodVisitor
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ACC_STATIC
 import org.w3c.dom.Document
@@ -85,7 +85,7 @@ class NamespaceRewriter(
 
     private fun rewriteClass(originalClass: ByteArray) : ByteArray {
         val cw = ClassWriter(0)
-        val crw = ClassReWriter(Opcodes.ASM7, cw)
+        val crw = ClassReWriter(ASM_API_VERSION, cw)
         val cr = ClassReader(originalClass)
         cr.accept(crw, 0)
         // Write inner R classes references.

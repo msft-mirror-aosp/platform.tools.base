@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dependency
 
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.google.common.collect.Lists
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
@@ -27,7 +28,6 @@ import org.gradle.api.tasks.Classpath
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.FieldVisitor
-import org.objectweb.asm.Opcodes
 import java.io.FileWriter
 import java.util.zip.ZipFile
 
@@ -70,7 +70,7 @@ abstract class PlatformAttrTransform : TransformAction<GenericTransformParameter
 
 data class AttributeValue(val name: String, val value: Int)
 
-class CustomClassVisitor : ClassVisitor(Opcodes.ASM7) {
+class CustomClassVisitor : ClassVisitor(ASM_API_VERSION) {
 
     val attributes: MutableList<AttributeValue> = Lists.newArrayList()
 

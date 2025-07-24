@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
-import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.builder.testing.api.DeviceException
 import com.android.builder.testing.api.TestException
 import com.android.utils.ILogger
@@ -106,7 +105,7 @@ class ManagedDeviceTestRunner(
         val extractedSdkApks = getExtractedSdkApks(testData, utpManagedDevice)
         val runnerConfigs = mutableListOf<UtpRunnerConfig>()
         utpRunProfileManager.recordDeviceLockStart()
-        val results = avdComponents.lockManager.lock(numShards ?: 1).use { lock ->
+        val results = avdComponents.lockManager.lockAndExecute(numShards ?: 1) { lock ->
             try {
                 utpRunProfileManager.recordDeviceLockEnd()
                 val devicesAcquired = lock.lockCount

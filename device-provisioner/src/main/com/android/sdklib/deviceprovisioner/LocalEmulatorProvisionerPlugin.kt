@@ -56,6 +56,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -205,36 +206,44 @@ internal constructor(
    * Do not call directly; this should only be called by PeriodicAction.
    */
   private suspend fun rescanAvds() {
-    val avdsOnDisk = avdManager.rescanAvds().associateBy { it.dataFolderPath }
-    mutex.withLock {
-      // Remove any current DeviceHandles that are no longer present on disk, unless they are
-      // connected. (If a client holds on to the disconnected device handle, and it gets
-      // recreated with the same path, the client will get a new device handle, which is fine.)
-      val iterator = deviceHandles.entries.iterator()
-      while (iterator.hasNext()) {
-        val (path, handle) = iterator.next()
-        if (!avdsOnDisk.containsKey(path) && handle.state is Disconnected) {
-          iterator.remove()
-          handle.scope.cancel()
+    try {
+      val avdsOnDisk = avdManager.rescanAvds().associateBy { it.dataFolderPath }
+      mutex.withLock {
+        // Remove any current DeviceHandles that are no longer present on disk, unless they are
+        // connected. (If a client holds on to the disconnected device handle, and it gets
+        // recreated with the same path, the client will get a new device handle, which is fine.)
+        val iterator = deviceHandles.entries.iterator()
+        while (iterator.hasNext()) {
+          val (path, handle) = iterator.next()
+          if (!avdsOnDisk.containsKey(path) && handle.state is Disconnected) {
+            iterator.remove()
+            handle.scope.cancel()
+          }
         }
-      }
 
-      for ((path, avdInfo) in avdsOnDisk) {
-        when (val handle = deviceHandles[path]) {
-          null ->
-            deviceHandles[path] =
-              LocalEmulatorDeviceHandle(
-                context,
-                ::refreshDevices,
-                scope.createChildScope(isSupervisor = true),
-                handleExtensions,
-                avdInfo,
-              )
-          else -> handle.updateAvdInfo(avdInfo)
+        for ((path, avdInfo) in avdsOnDisk) {
+          when (val handle = deviceHandles[path]) {
+            null ->
+              deviceHandles[path] =
+                LocalEmulatorDeviceHandle(
+                  context,
+                  ::refreshDevices,
+                  scope.createChildScope(isSupervisor = true),
+                  handleExtensions,
+                  avdInfo,
+                )
+            else -> handle.updateAvdInfo(avdInfo)
+          }
         }
-      }
 
-      _devices.value = deviceHandles.values.toList()
+        _devices.value = deviceHandles.values.toList()
+      }
+    } catch (t: Throwable) {
+      if (t is CancellationException) {
+        throw t
+      }
+      // The PeriodicAction's action must not throw, or it will not get rescheduled.
+      logger.error(t, "Exception scanning AVDs")
     }
   }
 

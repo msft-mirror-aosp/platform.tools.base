@@ -17,6 +17,7 @@
 package com.android.build.api.extension.impl
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.SdkComponents
 import com.android.build.api.instrumentation.manageddevice.ManagedDeviceRegistry
 import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
@@ -24,15 +25,19 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import com.android.build.api.variant.VariantSelector
 import com.android.build.gradle.internal.services.DslServices
+import com.android.builder.errors.IssueReporter
+import com.android.utils.appendCapitalized
 import org.gradle.api.Action
+import org.gradle.api.artifacts.Configuration
 import javax.inject.Inject
 
 open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
-    dslServices: DslServices,
+    val dslServices: DslServices,
     sdkComponents: SdkComponents,
     managedDeviceRegistry: ManagedDeviceRegistry,
     private val variantApiOperations: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>,
-    kmpExtension: KotlinMultiplatformAndroidLibraryExtension
+    kmpExtension: KotlinMultiplatformAndroidLibraryExtension,
+    private val androidTargetProvider: () -> KotlinMultiplatformAndroidLibraryTarget
 ) : KotlinMultiplatformAndroidComponentsExtension,
     AndroidComponentsExtensionImpl<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>(
         dslServices,
@@ -65,11 +70,64 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
         throw RuntimeException("not supported yet")
     }
 
-    override fun addSourceSetConfigurations(suffix: String) {
-        throw RuntimeException("Kotlin multiplatform Variant API does not support addSourceSetConfigurations() yet")
-    }
+    override fun registerConfigurations(lowercaseAffix: String, useLegacyPrefix: Boolean) {
+         androidTargetProvider.invoke().compilations.forEach { compilation ->
+         val configurationName =
+             getConfigurationName(lowercaseAffix, useLegacyPrefix, compilation.componentName)
+         dslServices.configurations
+             .maybeCreate(configurationName)
+             .apply {
+                 isCanBeResolved = false
+                 isCanBeConsumed = false
+                 isVisible = false
+             }
+        }
+     }
 
-    override fun addKspConfigurations(useGlobalConfiguration: Boolean) {
-        throw RuntimeException("Kotlin multiplatform Variant API does not support addKspConfigurations() yet")
+    override fun getOperationCallback(
+        resolvableConfigurationNameMapper: (String) -> String,
+        globalConfiguration: Configuration?,
+        lowercaseAffix: String,
+        useLegacyPrefix: Boolean
+    ): (KotlinMultiplatformAndroidVariant) -> Unit {
+        val callback: (KotlinMultiplatformAndroidVariant) -> Unit = { variant ->
+            val variantResolvableConfiguration =
+                dslServices.configurations
+                    .maybeCreate(resolvableConfigurationNameMapper(variant.name))
+                    .apply {
+                        isCanBeResolved = true
+                        isCanBeConsumed = false
+                        isVisible = false
+                    }
+
+            if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
+                variantResolvableConfiguration.extendsFrom(globalConfiguration)
+            }
+
+            dslServices.configurations
+                .findByName(getConfigurationName(lowercaseAffix, useLegacyPrefix, variant.name))
+                ?.takeIf { it.allDependencies.isNotEmpty() }
+                ?.let { variantResolvableConfiguration.extendsFrom(it) }
+
+            variant.nestedComponents.forEach { component ->
+                val componentResolvableConfiguration =
+                    dslServices.configurations
+                        .maybeCreate(resolvableConfigurationNameMapper(component.name))
+                        .apply {
+                            isCanBeResolved = true
+                            isCanBeConsumed = false
+                            isVisible = false
+                        }
+                if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
+                    componentResolvableConfiguration.extendsFrom(globalConfiguration)
+                }
+
+                dslServices.configurations
+                    .findByName(getConfigurationName(lowercaseAffix, useLegacyPrefix, component.name))
+                    ?.takeIf { it.allDependencies.isNotEmpty() }
+                    ?.let { componentResolvableConfiguration.extendsFrom(it) }
+            }
+        }
+        return callback
     }
 }

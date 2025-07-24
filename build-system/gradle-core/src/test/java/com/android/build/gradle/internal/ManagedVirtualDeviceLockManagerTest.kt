@@ -16,11 +16,9 @@
 
 package com.android.build.gradle.internal
 
-import com.android.builder.utils.SynchronizedFile
 import com.android.prefs.AndroidLocationsProvider
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
@@ -28,19 +26,17 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.mockito.Mock
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoRule
-import org.mockito.junit.MockitoJUnit
-import java.lang.Thread.UncaughtExceptionHandler
 import java.io.File
 import java.util.concurrent.Executors.newCachedThreadPool
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.concurrent.thread
+import kotlin.test.assertFailsWith
+import kotlin.test.fail
 
 @RunWith(JUnit4::class)
 class ManagedVirtualDeviceLockManagerTest {
@@ -69,9 +65,9 @@ class ManagedVirtualDeviceLockManagerTest {
 
     @Test
     fun lock_basicLockUpdatesTrackingCorrectly() {
-        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 1) {}
+        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 1, 0) {}
 
-        lockManager.lock().use {
+        lockManager.lockAndExecute {
             // We can go ahead and read the file here to assure it keeps track of the lock number
             assertThat(trackedFile).exists()
 
@@ -87,17 +83,17 @@ class ManagedVirtualDeviceLockManagerTest {
 
     @Test
     fun lock_multipleLocksCanRunSimultaneously() {
-        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 2) {}
+        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 2, 0) {}
 
-        lockManager.lock().use {
+        lockManager.lockAndExecute {
             assertThat(trackedFile).exists()
 
             assertThat(trackedFile).contains("MDLockCount 1")
             assertThat(lockManager.devicesInProcess).isEqualTo(1)
 
             // Run two locks concurrently.
-            val thread = executorService.submit() {
-                lockManager.lock().use {
+            val thread = executorService.submit {
+                lockManager.lockAndExecute {
 
                     assertThat(trackedFile).contains("MDLockCount 2")
                     assertThat(lockManager.devicesInProcess).isEqualTo(2)
@@ -122,19 +118,19 @@ class ManagedVirtualDeviceLockManagerTest {
 
     @Test
     fun lock_multipleLocksBlockCorrectly() {
-        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 1) {}
+        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 1, 0) {}
 
         lateinit var thread: Future<*>
 
-        lockManager.lock().use {
+        lockManager.lockAndExecute {
             assertThat(trackedFile).exists()
 
             assertThat(trackedFile).contains("MDLockCount 1")
             assertThat(lockManager.devicesInProcess).isEqualTo(1)
 
             // Attempt to run the second lock
-            thread = executorService.submit() {
-                lockManager.lock().use {
+            thread = executorService.submit {
+                lockManager.lockAndExecute {
 
                     // When it eventually runs the lock count should only be 1
                     assertThat(trackedFile).contains("MDLockCount 1")
@@ -156,10 +152,10 @@ class ManagedVirtualDeviceLockManagerTest {
 
     @Test
     fun lock_worksWhenMultipleRequested() {
-        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 8) {}
+        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 8, 0) {}
 
         // Attempt to grab most of the locks
-        lockManager.lock(6).use { lock ->
+        lockManager.lockAndExecute(6) { lock ->
             assertThat(lock.lockCount).isEqualTo(6)
 
             assertThat(trackedFile).exists()
@@ -175,7 +171,7 @@ class ManagedVirtualDeviceLockManagerTest {
         assertThat(lockManager.devicesInProcess).isEqualTo(0)
 
         // Attempt to grab all of the locks
-        lockManager.lock(8).use { lock ->
+        lockManager.lockAndExecute(8) { lock ->
             assertThat(lock.lockCount).isEqualTo(8)
 
             assertThat(trackedFile).exists()
@@ -190,7 +186,7 @@ class ManagedVirtualDeviceLockManagerTest {
         assertThat(lockManager.devicesInProcess).isEqualTo(0)
 
         // Attempt to grab more than are available
-        lockManager.lock(20).use { lock ->
+        lockManager.lockAndExecute(20) { lock ->
             assertThat(lock.lockCount).isEqualTo(8)
 
             assertThat(trackedFile).exists()
@@ -210,13 +206,13 @@ class ManagedVirtualDeviceLockManagerTest {
     fun lock_simultaneousLockManagers() {
         // used to simulate two lock managers from separate gradle instances interacting at the
         // same time.
-        val lockManager1 = ManagedVirtualDeviceLockManager(androidLocations, 8) {}
-        val lockManager2 = ManagedVirtualDeviceLockManager(androidLocations, 8) {}
+        val lockManager1 = ManagedVirtualDeviceLockManager(androidLocations, 8, 0) {}
+        val lockManager2 = ManagedVirtualDeviceLockManager(androidLocations, 8, 0) {}
 
         lateinit var thread: Future<*>
 
         // Grab  a lock from the first manager
-        lockManager1.lock().use { lock1 ->
+        lockManager1.lockAndExecute { lock1 ->
             assertThat(lock1.lockCount).isEqualTo(1)
 
             assertThat(trackedFile).exists()
@@ -226,8 +222,8 @@ class ManagedVirtualDeviceLockManagerTest {
             assertThat(lockManager2.devicesInProcess).isEqualTo(0)
 
             // Attempt to run the second lock
-            thread = executorService.submit() {
-                lockManager2.lock().use { lock2 ->
+            thread = executorService.submit {
+                lockManager2.lockAndExecute { lock2 ->
                     assertThat(lock2.lockCount).isEqualTo(1)
 
                     assertThat(trackedFile).contains("MDLockCount 2")
@@ -253,13 +249,13 @@ class ManagedVirtualDeviceLockManagerTest {
     fun lock_simultaneousLockManagersDifferentMaximums() {
         // used to simulate two lock managers from separate gradle instances interacting at the
         // same time. They have different maximum concurrent devices 6 and 9 respectively.
-        val lockManager1 = ManagedVirtualDeviceLockManager(androidLocations, 6) {}
-        val lockManager2 = ManagedVirtualDeviceLockManager(androidLocations, 9) {}
+        val lockManager1 = ManagedVirtualDeviceLockManager(androidLocations, 6, 0) {}
+        val lockManager2 = ManagedVirtualDeviceLockManager(androidLocations, 9, 0) {}
 
         lateinit var thread: Future<*>
 
         // Grab  5 lock from the first manager
-        lockManager1.lock(5).use { lock1 ->
+        lockManager1.lockAndExecute(5) { lock1 ->
             assertThat(lock1.lockCount).isEqualTo(5)
 
             assertThat(trackedFile).exists()
@@ -271,7 +267,7 @@ class ManagedVirtualDeviceLockManagerTest {
             // Attempt to grab 3 locks from second, since the second manager has a max of 9
             // this is fine.
             thread = executorService.submit() {
-                lockManager2.lock(3).use { lock2 ->
+                lockManager2.lockAndExecute(3) { lock2 ->
                     assertThat(lock2.lockCount).isEqualTo(3)
 
                     assertThat(trackedFile).contains("MDLockCount 8")
@@ -293,7 +289,7 @@ class ManagedVirtualDeviceLockManagerTest {
         assertThat(lockManager2.devicesInProcess).isEqualTo(0)
 
         // Now go the other way, grab 5 locks from the second manager
-        lockManager2.lock(5).use { lock2 ->
+        lockManager2.lockAndExecute(5) { lock2 ->
             assertThat(lock2.lockCount).isEqualTo(5)
 
             assertThat(trackedFile).exists()
@@ -304,8 +300,8 @@ class ManagedVirtualDeviceLockManagerTest {
 
             // Attempt to grab 3 locks from the first, it will only allocate 1, as the maximum
             // for the first manager is 6, and only 1 is left available.
-            thread = executorService.submit() {
-                lockManager1.lock(3).use { lock1 ->
+            thread = executorService.submit {
+                lockManager1.lockAndExecute(3) { lock1 ->
                     assertThat(lock1.lockCount).isEqualTo(1)
 
                     assertThat(trackedFile).contains("MDLockCount 6")
@@ -331,12 +327,12 @@ class ManagedVirtualDeviceLockManagerTest {
     fun lock_simultaneousLockManagersDoesNotFailOnOverAllocation() {
         // used to simulate two lock managers from separate gradle instances interacting at the
         // same time. They have different maximum concurrent devices 2 and 5 respectively.
-        val lockManager1 = ManagedVirtualDeviceLockManager(androidLocations, 2) {}
-        val lockManager2 = ManagedVirtualDeviceLockManager(androidLocations, 5) {}
+        val lockManager1 = ManagedVirtualDeviceLockManager(androidLocations, 2, 0) {}
+        val lockManager2 = ManagedVirtualDeviceLockManager(androidLocations, 5, 0) {}
 
         lateinit var thread: Future<*>
 
-        lockManager2.lock(4).use {
+        lockManager2.lockAndExecute(4) {
             assertThat(trackedFile).exists()
 
             assertThat(trackedFile).contains("MDLockCount 4")
@@ -345,8 +341,8 @@ class ManagedVirtualDeviceLockManagerTest {
 
             // Attempt to grab a lock for manager 1. Since 4 are already allocated and manager 1
             // has a max of 2, this will wait to execute.
-            thread = executorService.submit() {
-                lockManager1.lock().use {
+            thread = executorService.submit {
+                lockManager1.lockAndExecute {
 
                     // When it eventually runs the lock count should only be 1
                     // the locks for the second manager should already be freed.
@@ -371,85 +367,13 @@ class ManagedVirtualDeviceLockManagerTest {
     }
 
     @Test
-    fun executeShutdown_shutdownReleasesLocks() {
-
-        val lockManager1 = ManagedVirtualDeviceLockManager(androidLocations, 3) {}
-        val lockManager2 = ManagedVirtualDeviceLockManager(androidLocations, 3) {}
-
-        lockManager1.lock().use {
-            assertThat(trackedFile).exists()
-
-            assertThat(trackedFile).contains("MDLockCount 1")
-            assertThat(lockManager1.devicesInProcess).isEqualTo(1)
-
-            // Note: This lock will not be closed. We have 1 stale device.
-            lockManager1.lock()
-
-            assertThat(trackedFile).contains("MDLockCount 2")
-            assertThat(lockManager1.devicesInProcess).isEqualTo(2)
-        }
-
-        assertThat(trackedFile).contains("MDLockCount 1")
-        assertThat(lockManager1.devicesInProcess).isEqualTo(1)
-
-        // Clean up any stale devices with shutdown hook.
-        lockManager1.executeShutdown()
-
-        assertThat(trackedFile).contains("MDLockCount 0")
-        assertThat(lockManager1.devicesInProcess).isEqualTo(0)
-
-        lockManager2.lock().use {
-            assertThat(trackedFile).exists()
-
-            assertThat(trackedFile).contains("MDLockCount 1")
-            assertThat(lockManager1.devicesInProcess).isEqualTo(0)
-            assertThat(lockManager2.devicesInProcess).isEqualTo(1)
-
-            lockManager1.lock().use {
-
-                assertThat(trackedFile).exists()
-
-                assertThat(trackedFile).contains("MDLockCount 2")
-                assertThat(lockManager1.devicesInProcess).isEqualTo(1)
-                assertThat(lockManager2.devicesInProcess).isEqualTo(1)
-
-                // Note: This lock will not be closed. We again have 1 stale device.
-                lockManager1.lock()
-
-                assertThat(trackedFile).contains("MDLockCount 3")
-                assertThat(lockManager1.devicesInProcess).isEqualTo(2)
-                assertThat(lockManager2.devicesInProcess).isEqualTo(1)
-
-                // Clean up all device locks asociated with lcokManager1 with shutdown hook.
-                lockManager1.executeShutdown()
-
-                // Should still have 1 lock associated with lockManager2
-                assertThat(trackedFile).contains("MDLockCount 1")
-                assertThat(lockManager1.devicesInProcess).isEqualTo(0)
-                assertThat(lockManager2.devicesInProcess).isEqualTo(1)
-            }
-
-            // closing the device lock after a shutdown (which should not occur anyway) should
-            // not result in more devices being deallocated.
-
-            assertThat(trackedFile).contains("MDLockCount 1")
-            assertThat(lockManager1.devicesInProcess).isEqualTo(0)
-            assertThat(lockManager2.devicesInProcess).isEqualTo(1)
-        }
-
-        assertThat(trackedFile).contains("MDLockCount 0")
-        assertThat(lockManager1.devicesInProcess).isEqualTo(0)
-        assertThat(lockManager2.devicesInProcess).isEqualTo(0)
-    }
-
-    @Test
     fun lock_doesNotCallRetryWaitOnImmediateGet() {
-
         var numRetries = 0
 
         val lockManager = ManagedVirtualDeviceLockManager(
             androidLocations,
             1,
+            0,
             retryWaitAction = {
                 ++numRetries
             }
@@ -457,8 +381,26 @@ class ManagedVirtualDeviceLockManagerTest {
 
         assertThat(numRetries).isEqualTo(0)
 
-        lockManager.lock().use {}
+        lockManager.lockAndExecute {}
 
         assertThat(numRetries).isEqualTo(0)
+    }
+
+    @Test
+    fun lock_times_out() {
+        val lockManager = ManagedVirtualDeviceLockManager(androidLocations, 1, 1) {}
+
+        val exception = assertFailsWith<TimeoutException> {
+            lockManager.lockAndExecute {
+                lockManager.lockAndExecute {
+                    fail("OnLockAcquired callback should not be invoked.")
+                }
+            }
+        }
+
+        assertThat(exception).hasMessageThat().contains("""
+            Could not acquire device lock after waiting for 1 seconds.
+            The limit of 1 concurrent devices has been reached (1 are active).
+        """.trimIndent())
     }
 }

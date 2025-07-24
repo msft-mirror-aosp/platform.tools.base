@@ -38,7 +38,7 @@ import com.android.build.gradle.internal.core.dsl.impl.features.KmpUnitTestOptio
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.LanguageSplitOptions
-import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION_FOR_INSTRUMENTATION
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.build.gradle.internal.lint.getLocalCustomLintChecks
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
@@ -70,14 +70,9 @@ internal class KmpGlobalTaskCreationConfigImpl(
     bootClasspathConfig: BootClasspathConfigImpl,
     compileSdkVersionProvider: () -> String,
     buildToolsVersionProvider: () -> Revision,
-    private val androidJar: Configuration,
     override val services: BaseServices,
     override val settingsOptions: SettingsOptions
 ): GlobalTaskCreationConfig, BootClasspathConfig by bootClasspathConfig {
-
-    init {
-        bootClasspathConfig.androidJar = androidJar
-    }
 
     override val compileSdkHashString: String by lazy {
         compileSdkVersionProvider.invoke()
@@ -88,7 +83,7 @@ internal class KmpGlobalTaskCreationConfigImpl(
     override val versionedSdkLoader: Provider<SdkComponentsBuildService.VersionedSdkLoader>
         get() = versionedSdkLoaderService.versionedSdkLoader
 
-    override val asmApiVersion = ASM_API_VERSION_FOR_INSTRUMENTATION
+    override val asmApiVersion = ASM_API_VERSION
 
     override val createdBy: String = "Android Gradle ${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
 
@@ -108,7 +103,8 @@ internal class KmpGlobalTaskCreationConfigImpl(
                     AndroidArtifacts.TYPE_PLATFORM_ATTR
                 )
             }
-        androidJar
+
+        bootClasspathConfig.androidJar
             .incoming
             .artifactView { config -> config.attributes(attributes) }
             .artifacts

@@ -48,6 +48,7 @@ class NodeParser {
             inputLines: List<String>,
             firstLinePrefix: String,
             additionalLinesPrefix: String,
+            multiLinePrefix: String,
             referenceLinePrefix: String
         ): Node {
             val lines = inputLines.map { it.trim() }
@@ -64,7 +65,7 @@ class NodeParser {
             }
 
             val leakingNode =
-                parseLeakNode(objectLines, firstLinePrefix, additionalLinesPrefix)
+                parseLeakNode(objectLines, firstLinePrefix, multiLinePrefix, additionalLinesPrefix)
             leakingNode.referencingField =
                 ReferencingFieldParser.parseReferencingField(referenceLines, additionalLinesPrefix)
             return leakingNode
@@ -83,7 +84,9 @@ class NodeParser {
          */
         fun parseLeakNode(
             inputLines: List<String>,
-            firstLinePrefix: String, additionalLinesPrefix: String
+            firstLinePrefix: String,
+            multiLinePrefix: String,
+            additionalLinesPrefix: String
         ): Node {
             var className: String? = null
             var type: LeakTraceNodeType? = null
@@ -92,15 +95,38 @@ class NodeParser {
             var retainedHeapByteSize: Int? = null
             var retainedObjectCount: Int? = null
             var leakingMultiLine = false
+            var isClassTypeFound = false
             val leakingStatusReasonBuilder = StringBuilder()
             val notes = mutableListOf<String>()
 
             for (line in inputLines) {
                 when {
                     line.startsWith(firstLinePrefix) -> {
-                        val parts = line.removePrefix(firstLinePrefix).split(" ")
-                        className = parts.getOrNull(0)
-                        type = parts.getOrNull(1)?.let { LeakTraceNodeType.valueOf(it.uppercase()) }
+                        val formattedLine = line.removePrefix(firstLinePrefix).trim()
+
+                        isClassTypeFound = isClassTypeExist(formattedLine)
+                        if(isClassTypeFound) {
+                            val parts = formattedLine.split(" ")
+                            className = parts.getOrNull(0)
+                            type = parts.lastOrNull()?.let { LeakTraceNodeType.valueOf(it.uppercase()) }
+                        }
+                        else {
+                            className = formattedLine
+                        }
+                    }
+
+                    !isClassTypeFound -> {
+                        val formattedLine = line.removePrefix(multiLinePrefix).trim()
+                        isClassTypeFound = isClassTypeExist(formattedLine)
+                        if (isClassTypeFound) {
+                            val parts = formattedLine.split(" ")
+                            className += if (parts.size > 1) parts[0] else ""
+                            type =
+                                parts.lastOrNull()
+                                    ?.let { LeakTraceNodeType.valueOf(it.uppercase()) }
+                        } else {
+                            className += formattedLine
+                        }
                     }
 
                     leakingStatusRegex.matches(line.removePrefix(additionalLinesPrefix)) -> {
@@ -114,16 +140,17 @@ class NodeParser {
                         val matchResult =
                             leakingStatusMultiLineRegex.find(line.removePrefix(additionalLinesPrefix))!!
                         leakingStatus = LeakingStatus.fromString(matchResult.groupValues[1])
-                        leakingStatusReasonBuilder.append(matchResult.groupValues[2])
+                        leakingStatusReasonBuilder.append(matchResult.groupValues[2].trim())
                         leakingMultiLine = true
                     }
 
                     leakingMultiLine -> {
                         leakingStatusReasonBuilder.append(" ")
                             .append(line.removePrefix(additionalLinesPrefix))
-                        leakingStatusReason =
-                            leakingStatusReasonBuilder.toString().trimEnd().dropLast(1)
-                        leakingMultiLine = false
+
+                        leakingMultiLine = !line.endsWith(")")
+                        if(!leakingMultiLine)
+                            leakingStatusReason = leakingStatusReasonBuilder.toString().trimEnd().dropLast(1)
                     }
 
                     retainingRegex.matches(line.removePrefix(additionalLinesPrefix)) -> {
@@ -154,6 +181,16 @@ class NodeParser {
                 notes,
                 null
             )
+        }
+
+        fun isClassTypeExist(line: String): Boolean {
+            if (line.isEmpty())
+                return false
+            val parts = line.split(" ")
+
+            return parts.last() == LeakTraceNodeType.INSTANCE.name.lowercase()
+                    || parts.last() == LeakTraceNodeType.CLASS.name.lowercase()
+                    || parts.last() == LeakTraceNodeType.ARRAY.name.lowercase()
         }
 
         /**

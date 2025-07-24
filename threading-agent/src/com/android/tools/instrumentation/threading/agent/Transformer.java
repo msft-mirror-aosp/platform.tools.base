@@ -50,7 +50,14 @@ class Transformer implements ClassFileTransformer {
         String className = classJvmName.replace('/', '.');
         // To optimize the performance skip the classes that certainly
         // do not contain Android Studio threading annotations
-        if (INCLUDE_LIST_PATTERNS.stream().noneMatch(classJvmName::contains)) {
+        boolean matched = false;
+        for (String pattern : INCLUDE_LIST_PATTERNS) {
+            if (classJvmName.contains(pattern)) {
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
             return null;
         }
 

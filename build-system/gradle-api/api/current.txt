@@ -1959,32 +1959,32 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.ResourcesPackaging resources;
   }
 
-  @org.gradle.api.Incubating public interface PostProcessing {
-    method public void consumerProguardFile(Object file);
-    method public void consumerProguardFiles(java.lang.Object... files);
+  @Deprecated @org.gradle.api.Incubating public interface PostProcessing {
+    method @Deprecated public void consumerProguardFile(Object file);
+    method @Deprecated public void consumerProguardFiles(java.lang.Object... files);
     method @Deprecated public String getCodeShrinker();
-    method public void initWith(com.android.build.api.dsl.PostProcessing that);
-    method public boolean isObfuscate();
-    method public boolean isOptimizeCode();
-    method public boolean isRemoveUnusedCode();
-    method public boolean isRemoveUnusedResources();
-    method public void proguardFile(Object file);
-    method public void proguardFiles(java.lang.Object... files);
+    method @Deprecated public void initWith(com.android.build.api.dsl.PostProcessing that);
+    method @Deprecated public boolean isObfuscate();
+    method @Deprecated public boolean isOptimizeCode();
+    method @Deprecated public boolean isRemoveUnusedCode();
+    method @Deprecated public boolean isRemoveUnusedResources();
+    method @Deprecated public void proguardFile(Object file);
+    method @Deprecated public void proguardFiles(java.lang.Object... files);
     method @Deprecated public void setCodeShrinker(String);
-    method public void setConsumerProguardFiles(java.util.List<?> consumerProguardFiles);
-    method public void setObfuscate(boolean);
-    method public void setOptimizeCode(boolean);
-    method public void setProguardFiles(java.util.List<?> proguardFiles);
-    method public void setRemoveUnusedCode(boolean);
-    method public void setRemoveUnusedResources(boolean);
-    method public void setTestProguardFiles(java.util.List<?> testProguardFiles);
-    method public void testProguardFile(Object file);
-    method public void testProguardFiles(java.lang.Object... files);
+    method @Deprecated public void setConsumerProguardFiles(java.util.List<?> consumerProguardFiles);
+    method @Deprecated public void setObfuscate(boolean);
+    method @Deprecated public void setOptimizeCode(boolean);
+    method @Deprecated public void setProguardFiles(java.util.List<?> proguardFiles);
+    method @Deprecated public void setRemoveUnusedCode(boolean);
+    method @Deprecated public void setRemoveUnusedResources(boolean);
+    method @Deprecated public void setTestProguardFiles(java.util.List<?> testProguardFiles);
+    method @Deprecated public void testProguardFile(Object file);
+    method @Deprecated public void testProguardFiles(java.lang.Object... files);
     property @Deprecated public abstract String codeShrinker;
-    property public abstract boolean isObfuscate;
-    property public abstract boolean isOptimizeCode;
-    property public abstract boolean isRemoveUnusedCode;
-    property public abstract boolean isRemoveUnusedResources;
+    property @Deprecated public abstract boolean isObfuscate;
+    property @Deprecated public abstract boolean isOptimizeCode;
+    property @Deprecated public abstract boolean isRemoveUnusedCode;
+    property @Deprecated public abstract boolean isRemoveUnusedResources;
   }
 
   public interface Prefab {

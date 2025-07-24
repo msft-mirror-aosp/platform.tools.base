@@ -40,7 +40,7 @@ import org.gradle.api.services.BuildServiceParameters
 
 // TODO(b/233249957): find a way to compute the default based on resources.
 private const val DEFAULT_MAX_GMDS = 4
-private const val SECONDS_PER_MINUTE = 60L
+private const val DEFAULT_DEVICE_LOCK_TIMEOUT_MINUTES = 10
 
 /**
  * Build Service for loading and creating Android Virtual Devices.
@@ -62,6 +62,7 @@ abstract class AvdComponentsBuildService @Inject constructor(
         val showEmulatorKernelLogging: Property<Boolean>
         val deviceSetupTimeoutMinutes: Property<Int>
         val maxConcurrentDevices: Property<Int>
+        val deviceLockTimeoutMinutes: Property<Int>
     }
 
     private val avdManager: Provider<AvdManager> = providerFactory.provider {
@@ -71,7 +72,7 @@ abstract class AvdComponentsBuildService @Inject constructor(
         }
         val adbHelper = versionedSdkLoader.get().adbHelper.get()
         val snapshotTimeoutSecs = if (parameters.deviceSetupTimeoutMinutes.isPresent()) {
-            parameters.deviceSetupTimeoutMinutes.get() * SECONDS_PER_MINUTE
+            parameters.deviceSetupTimeoutMinutes.get() * 60L
         } else {
             null
         }
@@ -93,7 +94,8 @@ abstract class AvdComponentsBuildService @Inject constructor(
             ),
             ManagedVirtualDeviceLockManager(
                 locationsService,
-                parameters.maxConcurrentDevices.getOrElse(DEFAULT_MAX_GMDS)
+                parameters.maxConcurrentDevices.getOrElse(DEFAULT_MAX_GMDS),
+                parameters.deviceLockTimeoutMinutes.getOrElse(DEFAULT_DEVICE_LOCK_TIMEOUT_MINUTES) * 60,
             ),
             adbHelper
         )
@@ -230,6 +232,9 @@ abstract class AvdComponentsBuildService @Inject constructor(
             )
             parameters.maxConcurrentDevices.set(
                 projectOptions[IntegerOption.GRADLE_MANAGED_DEVICE_MAX_CONCURRENT_DEVICES]
+            )
+            parameters.deviceLockTimeoutMinutes.set(
+                projectOptions[IntegerOption.GRADLE_MANAGED_DEVICE_LOCK_TIMEOUT_MINUTES]
             )
         }
     }

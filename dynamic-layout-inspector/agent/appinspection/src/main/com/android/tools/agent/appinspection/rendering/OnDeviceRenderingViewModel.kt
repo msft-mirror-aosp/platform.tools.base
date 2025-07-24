@@ -36,12 +36,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+data class Label(val text: String, val size: Float)
+
 /**
  * Defines a draw instruction for an [OverlayView].
  * @param rootId The id of the root view containing the [OverlayView] that needs to do the drawing.
  * @param bounds The rectangle to be rendered.
+ * @param color The color to be used for this draw instruction.
+ * @param strokeThickness The thickness to be used to render the bounds stroke
  */
-data class OverlayViewInstruction(val rootId: Long, val bounds: Rect, val color: Int, val label: String?)
+data class OverlayViewInstruction(
+    val rootId: Long,
+    val bounds: Rect,
+    val color: Int,
+    val strokeThickness: Float,
+    val label: Label?
+)
 
 /** View model handling the logic for on-device rendering */
 class OnDeviceRenderingViewModel(
@@ -208,6 +218,29 @@ class OnDeviceRenderingViewModel(
     }
 }
 
-private fun DrawInstruction.toOverlayViewInstruction() = OverlayViewInstruction(rootId, bounds.toAndroidRect(), color, labelOrNull())
+/**
+ * Sizes used for studio-side rendering look small in on-device rendering.
+ * This scale factor is used to adjust them.
+ */
+private const val SIZE_SCALE_FACTOR = 2
+
+private fun DrawInstruction.toOverlayViewInstruction(): OverlayViewInstruction {
+    return OverlayViewInstruction(
+        rootId = rootId,
+        bounds = bounds.toAndroidRect(),
+        color = color,
+        strokeThickness = strokeThickness * SIZE_SCALE_FACTOR,
+        label = labelOrNull()
+    )
+}
+
+private fun DrawInstruction.labelOrNull(): Label? {
+    return if (hasLabel()) {
+        Label(label.text, label.size * SIZE_SCALE_FACTOR)
+    }
+    else {
+        null
+    }
+}
+
 private fun LayoutInspectorViewProtocol.Rect.toAndroidRect() = Rect(x, y, x + w, y + h)
-private fun DrawInstruction.labelOrNull() = if (hasLabel()) label else null

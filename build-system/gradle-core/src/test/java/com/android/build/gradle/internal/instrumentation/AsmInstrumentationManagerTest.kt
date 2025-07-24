@@ -42,7 +42,6 @@ import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Opcodes.ACC_PUBLIC
 import org.objectweb.asm.Opcodes.ARETURN
-import org.objectweb.asm.Opcodes.ASM7
 import org.objectweb.asm.Type
 import java.io.BufferedOutputStream
 import java.io.File
@@ -74,7 +73,7 @@ class AsmInstrumentationManagerTest(private val testMode: TestMode) {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
-    private val apiVersion: Int = ASM7
+    private val apiVersion: Int = ASM_API_VERSION
     private val androidJar =
         TestUtils.resolvePlatformPath("android.jar", TestUtils.TestType.AGP).toFile()
     private val classesCache = ClassesDataCache()
@@ -672,7 +671,7 @@ class AsmInstrumentationManagerTest(private val testMode: TestMode) {
             }
 
          */
-        val cw = ClassWriter(Opcodes.ASM7)
+        val cw = ClassWriter(ASM_API_VERSION)
 
         cw.visit(
             Opcodes.V1_6,

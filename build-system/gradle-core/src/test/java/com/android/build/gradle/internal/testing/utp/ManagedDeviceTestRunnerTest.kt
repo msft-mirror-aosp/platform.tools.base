@@ -19,10 +19,10 @@ package com.android.build.gradle.internal.testing.utp
 import com.android.build.api.variant.impl.AndroidVersionImpl
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager
+import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager.DeviceLock
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.prefs.AndroidLocationsProvider
 import com.android.testutils.SystemPropertyOverrides
 import com.android.testutils.truth.PathSubject.assertThat
@@ -32,8 +32,6 @@ import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import com.google.testing.platform.proto.api.service.ServerConfigProto.ServerConfig
-import java.io.File
-import java.util.logging.Level
 import org.gradle.api.file.Directory
 import org.gradle.api.logging.Logger
 import org.gradle.api.provider.Provider
@@ -47,7 +45,9 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Level
 import kotlin.concurrent.thread
 import kotlin.io.path.Path
 
@@ -65,7 +65,7 @@ class ManagedDeviceTestRunnerTest {
     private val mockHelperApk: File = mock()
     private val mockLogger: Logger = mock()
     private val mockUtpConfigFactory: UtpConfigFactory = mock()
-    private val mockemulatorControlConfig: EmulatorControlConfig = mock()
+    private val mockEmulatorControlConfig: EmulatorControlConfig = mock()
     private val mockCoverageOutputDir: File = mock()
     private val mockAdditionalTestOutputDir: File = mock()
     private val mockDslDevice: ManagedVirtualDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
@@ -73,7 +73,6 @@ class ManagedDeviceTestRunnerTest {
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val androidLocations: AndroidLocationsProvider = mock()
     private val lockManager: ManagedVirtualDeviceLockManager = mock()
-    private val deviceLock: ManagedVirtualDeviceLockManager.DeviceLock = mock()
     private val emulatorProvider: Provider<Directory> = mock()
     private val emulatorDirectory: Directory = mock()
     private val avdProvider: Provider<Directory> = mock()
@@ -81,7 +80,6 @@ class ManagedDeviceTestRunnerTest {
     private val mockUtpRunProfileManager: UtpRunProfileManager = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private lateinit var emulatorFolder: File
     private lateinit var avdFolder: File
-    private lateinit var emulatorFile: File
     private lateinit var outputDirectory: File
     private lateinit var jvmExecutable: File
 
@@ -130,7 +128,9 @@ class ManagedDeviceTestRunnerTest {
                 .thenReturn(ServerConfig.getDefaultInstance())
 
         whenever(mockAvdComponents.lockManager).thenReturn(lockManager)
-        whenever(lockManager.lock(any())).thenReturn(deviceLock)
+        whenever(lockManager.lockAndExecute(any(), any<(DeviceLock)-> UtpTestRunResult>())).then {
+            it.getArgument<(DeviceLock)->UtpTestRunResult>(1)(DeviceLock(it.getArgument<Int>(0)))
+        }
 
         emulatorFolder = temporaryFolderRule.newFolder("emulator")
         whenever(emulatorDirectory.asFile).thenReturn(emulatorFolder)
@@ -182,7 +182,7 @@ class ManagedDeviceTestRunnerTest {
                 mockUtpDependencies,
                 jvmExecutable,
                 mockVersionedSdkLoader,
-                mockemulatorControlConfig,
+                mockEmulatorControlConfig,
                 useOrchestrator = false,
                 forceCompilation = false,
                 numShards,
@@ -279,7 +279,6 @@ class ManagedDeviceTestRunnerTest {
 
     @Test
     fun runUtpWithShardsAndPassed() {
-        whenever(deviceLock.lockCount).thenReturn(2)
         val result = runUtp(result = true, numShards = 2)
 
         assertThat(capturedRunnerConfigs).hasSize(2)
@@ -300,7 +299,6 @@ class ManagedDeviceTestRunnerTest {
 
     @Test
     fun rerunUtpWhenEmulatorTimeoutExceptionOccurs() {
-        whenever(deviceLock.lockCount).thenReturn(2)
         val result = runUtp(
             result = true,
             numShards = 2,
@@ -316,7 +314,7 @@ class ManagedDeviceTestRunnerTest {
         // use a real device lock manager to ensure blocking behavior.
         val avdFolder = temporaryFolderRule.newFolder()
         whenever(androidLocations.gradleAvdLocation).thenReturn(avdFolder.toPath())
-        val deviceLockManager = ManagedVirtualDeviceLockManager(androidLocations, 1) {}
+        val deviceLockManager = ManagedVirtualDeviceLockManager(androidLocations, 1, 0) {}
         whenever(mockAvdComponents.lockManager).thenReturn(deviceLockManager)
 
         // contains the list of blocking actions in order.
@@ -402,7 +400,7 @@ class ManagedDeviceTestRunnerTest {
             mockUtpDependencies,
             jvmExecutable,
             mockVersionedSdkLoader,
-            mockemulatorControlConfig,
+            mockEmulatorControlConfig,
             useOrchestrator = false,
             forceCompilation = false,
             numShards = null,

@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.AndroidPluginVersion
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.SdkComponents
 import com.android.build.api.extension.impl.KotlinMultiplatformAndroidComponentsExtensionImpl
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
@@ -41,6 +42,8 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
     private lateinit var applicationExtension: ApplicationExtension
     private lateinit var variantApiOperationsRegistrar: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>
     private lateinit var extension: KotlinMultiplatformAndroidLibraryExtension
+    private lateinit var androidTarget: KotlinMultiplatformAndroidLibraryTarget
+    val mockProvider: () -> KotlinMultiplatformAndroidLibraryTarget = { androidTarget }
 
     @Before
     fun setUp() {
@@ -51,6 +54,7 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
         applicationExtension = mock<ApplicationExtension>()
         extension = mock<KotlinMultiplatformAndroidLibraryExtension>()
         variantApiOperationsRegistrar = VariantApiOperationsRegistrar(extension)
+        androidTarget = mock<KotlinMultiplatformAndroidLibraryTarget>()
     }
 
     @Test
@@ -61,6 +65,7 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
             managedDeviceRegistry,
             variantApiOperationsRegistrar,
             extension,
+            mockProvider
         )
         Truth.assertThat(androidComponents.pluginVersion).isNotNull()
         Truth.assertThat(androidComponents.pluginVersion >= AndroidPluginVersion(4, 2)).isTrue()
@@ -74,6 +79,7 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
             managedDeviceRegistry,
             variantApiOperationsRegistrar,
             extension,
+            mockProvider
         ).sdkComponents
         Truth.assertThat(sdkComponentsFromComponents).isSameInstanceAs(sdkComponents)
     }
@@ -86,6 +92,7 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
             managedDeviceRegistry,
             variantApiOperationsRegistrar,
             extension,
+            mockProvider
         ).managedDeviceRegistry
         Truth.assertThat(deviceRegistryFromComponents).isSameInstanceAs(managedDeviceRegistry)
     }
@@ -99,6 +106,7 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
             managedDeviceRegistry,
             variantApiOperationsRegistrar,
             extension,
+            mockProvider
         )
 
         var called = false
@@ -119,6 +127,7 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
             managedDeviceRegistry,
             variantApiOperationsRegistrar,
             extension,
+            mockProvider
         )
 
         var called = false

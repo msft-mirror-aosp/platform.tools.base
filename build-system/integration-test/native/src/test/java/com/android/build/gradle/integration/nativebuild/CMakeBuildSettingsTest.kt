@@ -55,7 +55,7 @@ class CMakeBuildSettingsTest(
         @JvmStatic
         fun data() =
                 cartesianOf(
-                    CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(),
+                    CMakeVersion.values().map { it.version }.toTypedArray(),
                     arrayOf(true, false)
                 )
     }

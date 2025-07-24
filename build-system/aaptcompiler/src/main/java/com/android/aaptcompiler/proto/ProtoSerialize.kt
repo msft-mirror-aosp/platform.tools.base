@@ -373,6 +373,7 @@ fun serializeConfigToPb(
     })
 
   configBuilder.setSdkVersion(config.sdkVersion.toInt() and 0xffff)
+  configBuilder.setSdkVersionMinor(config.minorVersion.toInt() and 0xffff)
 
   if (product != null) {
     configBuilder.setProduct(product)

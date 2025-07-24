@@ -19,11 +19,11 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.api.variant.impl.TestVariantImpl
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager
+import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager.DeviceLock
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.SdkComponentsBuildService.VersionedSdkLoader
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.dsl.EmulatorControl
-import com.android.build.gradle.internal.dsl.EmulatorSnapshots
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager
+import com.android.build.gradle.internal.testing.utp.UtpTestRunResult
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.TestOptions
 import com.android.repository.Revision
@@ -144,9 +145,9 @@ class ManagedDeviceInstrumentationTestTaskTest {
         whenever(avdService.avdFolder).thenReturn(FakeGradleProvider(avdDirectory))
 
         val lockManager = mock<ManagedVirtualDeviceLockManager>()
-        val lock = mock<ManagedVirtualDeviceLockManager.DeviceLock>()
-        whenever(lock.lockCount).thenReturn(1)
-        whenever(lockManager.lock(any())).thenReturn(lock)
+        whenever(lockManager.lockAndExecute(any(), any<(DeviceLock)-> UtpTestRunResult>())).then {
+            it.getArgument<(DeviceLock)->UtpTestRunResult>(1)(DeviceLock(it.getArgument<Int>(0)))
+        }
         whenever(avdService.lockManager).thenReturn(lockManager)
 
         reportsFolder = temporaryFolderRule.newFolder("reports")

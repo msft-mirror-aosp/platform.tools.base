@@ -204,6 +204,32 @@ class ObjectAnimatorDetector : Detector(), SourceCodeScanner, XmlScanner {
         null,
       )
     } else {
+
+      val className = bestMethod.containingClass?.qualifiedName
+      if (className != null) {
+        val handled1 =
+          KeepRuleDetector.checkMethodUsage(
+            context,
+            propertyNameExpression,
+            null,
+            className,
+            methodName,
+            null,
+          )
+        val handled2 =
+          KeepRuleDetector.checkMethodUsage(
+            context,
+            propertyNameExpression,
+            null,
+            className,
+            getMethodName("get", property),
+            null,
+          )
+        if (handled1 || handled2) {
+          return
+        }
+      }
+
       var owner: PsiModifierListOwner? = bestMethod
       while (owner != null) {
         for (annotation in context.evaluator.getAnnotations(owner, false)) {

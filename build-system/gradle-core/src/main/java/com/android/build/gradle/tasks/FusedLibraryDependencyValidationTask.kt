@@ -149,7 +149,10 @@ abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask()
                         // This check prevents cyclic dependencies.
                         val parent = it.parentId
                         val id = it.dependency.selected.id
-                        if (id in mergedDependencies && parent !in mergedDependencies) {
+                        if (id in mergedDependencies &&
+                            parent !in mergedDependencies &&
+                            !it.dependency.isConstraint
+                        ) {
                             ValidationCheck.Result.Invalid(
                                 "${id.displayName} is included in the fused library .aar, " +
                                         "however its parent dependency ${parent?.displayName} was not."

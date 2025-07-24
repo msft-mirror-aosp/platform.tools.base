@@ -18,7 +18,10 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.tasks.factory.dependsOn
@@ -70,6 +73,66 @@ class ConfigurationPerSourceSetTest {
                 }
             }
         }
+
+    @get:Rule
+    val kmpRule = GradleRule.configure()
+        .withMavenRepository {
+            jar("com.example:main:1.0.0")
+            jar("com.example:other:1.0.0")
+        }.from {
+            androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
+                android {
+                    namespace = "com.mylibrary.foo"
+                    compileSdk = DEFAULT_COMPILE_SDK_VERSION
+                }
+            }
+        }
+
+    @Test
+    fun testBasicUsageKmp() {
+        val build = kmpRule.build {
+            androidKotlinMultiplatformLibrary(":library") {
+                pluginCallbacks += BasicUsageCallbackKMP::class.java
+                dependencies {
+                    add("androidMainFoo", "com.example:main:1.0.0")
+                }
+            }
+        }
+
+        val result = build.executor.with(BooleanOption.ENABLE_PROFILE_JSON, true).run("printFooInputs")
+        ScannerSubject.assertThat(result.stdout)
+            .contains(
+                "androidMain: main-1.0.0.jar, other-1.0.0.jar;"
+            )
+    }
+
+    class BasicUsageCallbackKMP : AndroidKotlinMultiplatformLibraryComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            androidComponents: KotlinMultiplatformAndroidComponentsExtension
+        ) {
+            val globalTaskProvider = project.tasks.register("printFooInputs")
+            androidComponents.onVariants { variant ->
+                project.configurations
+                    .getByName("androidMainFoo")
+                    .dependencies
+                    .add(project.dependencies.create("com.example:other:1.0.0"))
+                val variantTaskProvider =
+                    project.tasks.register(
+                        "print${variant.name.replaceFirstChar { it.uppercase() }}FooInputs",
+                        PrintInputFilesTask::class.java
+                    )
+                globalTaskProvider.dependsOn(variantTaskProvider)
+                variantTaskProvider.configure {
+                    it.componentName.set(variant.name)
+                    it.inputFiles.from(variant.getResolvableConfiguration("foo"))
+                }
+            }
+            // Call addSourceSetConfigurations after onVariants to check that the order of these
+            // calls doesn't matter.
+            androidComponents.addSourceSetConfigurations(suffix = "foo")
+        }
+    }
 
     @Test
     fun testBasicUsage() {

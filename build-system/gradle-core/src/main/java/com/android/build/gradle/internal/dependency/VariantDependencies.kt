@@ -20,6 +20,10 @@ import com.android.Version
 import com.android.build.api.attributes.AgpVersionAttr
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.ProductFlavorAttr
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
+import com.android.build.api.extension.impl.VariantApiOperationsRegistrar
+import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
+import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.KmpComponentDslInfo
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -440,6 +444,7 @@ class VariantDependencies internal constructor(
             apiPublication: Configuration?,
             runtimePublication: Configuration?,
             sourcesPublication: Configuration?,
+            kmpVariantApiOperationsRegistrar: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>,
         ): VariantDependencies {
             val incomingConfigurations = listOf(compileClasspath, runtimeClasspath)
             val outgoingConfigurations = listOfNotNull(apiElements, runtimeElements, sourcesElements)
@@ -573,7 +578,7 @@ class VariantDependencies internal constructor(
                 projectOptions = projectOptions,
                 isLibraryConstraintsApplied = false,
                 isSelfInstrumenting = false,
-                sourceSetConfigurationsMap = emptyMap() // TODO(b/317215060) - implement for KMP
+                sourceSetConfigurationsMap = kmpVariantApiOperationsRegistrar.sourceSetConfigurationsMap.toMap()
             )
         }
 

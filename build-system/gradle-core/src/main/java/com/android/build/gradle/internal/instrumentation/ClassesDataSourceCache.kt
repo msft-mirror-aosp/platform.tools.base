@@ -40,7 +40,7 @@ abstract class ClassesDataSourceCache(val sourceType: SourceType) : Closeable {
         val interfacesList = mutableListOf<String>()
         classInputStream.use { inputStream ->
             val classReader = ClassReader(ByteStreams.toByteArray(inputStream))
-            classReader.accept(object : ClassVisitor(ASM_API_VERSION_FOR_INSTRUMENTATION) {
+            classReader.accept(object : ClassVisitor(ASM_API_VERSION) {
 
                 override fun visitAnnotation(
                     descriptor: String?,

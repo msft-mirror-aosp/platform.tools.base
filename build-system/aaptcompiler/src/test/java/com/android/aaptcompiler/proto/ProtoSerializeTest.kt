@@ -339,6 +339,7 @@ class ProtoSerializeTest {
     testSerializeDeserialize(parse("300x200"))
 
     testSerializeDeserialize(parse("v8"))
+    testSerializeDeserialize(parse("v36.1"))
 
     testSerializeDeserialize(
       parse("mcc310-pl-sw720dp-normal-long-port-night-xhdpi-keyssoft-qwerty-navexposed-nonav"))

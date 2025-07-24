@@ -53,28 +53,26 @@ class OverlayView(
      * Drawing instructions for an [OverlayView].
      * @param rect The rect to be drawn.
      * @param color The color used to draw the [rect], in ARGB format.
+     * @param strokeThickness The thickness of the stroke used to draw [rect].
+     * @param label The label associated with [rect].
      */
-    private class DrawInstruction(val rect: Rect, val color: Int, val label: String?)
+    private class DrawInstruction(val rect: Rect, val color: Int, val strokeThickness: Float, val label: Label?)
 
     private val rootId = root.uniqueDrawingId
     private val selectedRectPaint = Paint().apply {
         style = Paint.Style.STROKE
-        strokeWidth = dpToPx(4f)
     }
     private val hoveredRectPaint = Paint().apply {
         style = Paint.Style.STROKE
-        strokeWidth = dpToPx(4f)
     }
     private val visibleRectPaint = Paint().apply {
         style = Paint.Style.STROKE
-        strokeWidth = dpToPx(1f)
     }
     private val recomposingRectPaint = Paint().apply {
         style = Paint.Style.FILL
     }
     val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        textSize = dpToPx(20f)
     }
 
     /** Holds the screen coordinates of this [OverlayView]. Updated in onLayout. */
@@ -216,12 +214,13 @@ class OverlayView(
     }
 
     private fun DrawInstruction.paint(canvas: Canvas, paint: Paint) {
+        paint.strokeWidth = dpToPx(strokeThickness)
         paint.color = color
         val bounds = rect.toViewCoordinates()
         canvas.drawRect(bounds, paint)
         if (label != null) {
             drawLabel(
-                text = label,
+                label = label,
                 nodeBounds = bounds,
                 backgroundPaint = paint,
                 textPaint = textPaint,
@@ -230,7 +229,7 @@ class OverlayView(
         }
     }
 
-    private fun drawLabel(text: String, nodeBounds: Rect, backgroundPaint: Paint, textPaint: Paint, canvas: Canvas) {
+    private fun drawLabel(label: Label, nodeBounds: Rect, backgroundPaint: Paint, textPaint: Paint, canvas: Canvas) {
         if (
             nodeBounds.bottom < 0 && nodeBounds.top < 0 ||
             nodeBounds.left < 0 && nodeBounds.right < 0 ||
@@ -241,9 +240,10 @@ class OverlayView(
             return
         }
 
+        textPaint.textSize = dpToPx(label.size)
         val fontMetrics = textPaint.fontMetrics
         val horizontalPadding = dpToPx(4f)
-        val textWidth = textPaint.measureText(text)
+        val textWidth = textPaint.measureText(label.text)
         val textHeight = fontMetrics.bottom - fontMetrics.top
         val strokeWidth = backgroundPaint.strokeWidth
         val canvasWidth = canvas.width
@@ -281,7 +281,7 @@ class OverlayView(
 
         val textBaseline = labelBottom - fontMetrics.bottom
         val textX = labelLeft + horizontalPadding
-        canvas.drawText(text, textX, textBaseline, textPaint)
+        canvas.drawText(label.text, textX, textBaseline, textPaint)
     }
 
     /** Convert the [MotionEvent] coordinates from view to screen coordinates. */
@@ -308,6 +308,14 @@ class OverlayView(
 
     /** Map each [OverlayViewInstruction] to a [Rect] to be rendered in the provided [ownerRootId]. */
     private fun List<OverlayViewInstruction>.mapToDrawInstructions(ownerRootId: Long): List<DrawInstruction> {
-        return filter { it.rootId == ownerRootId }.map { DrawInstruction(it.bounds, it.color, it.label) }
+        return filter { it.rootId == ownerRootId }
+            .map {
+                DrawInstruction(
+                    rect = it.bounds,
+                    color = it.color,
+                    strokeThickness = it.strokeThickness,
+                    label = it.label
+                )
+            }
     }
 }

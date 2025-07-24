@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.ClassLoaderWorkerSpec
@@ -192,7 +193,7 @@ class WorkerActionDecorator(
     paramsType: String,
     private val injectableService: List<FakeInjectableService>
 ) :
-    ClassVisitor(Opcodes.ASM7, classWriter) {
+    ClassVisitor(ASM_API_VERSION, classWriter) {
 
     private val parameterDescriptor = binaryToDescriptor(paramsType)
 

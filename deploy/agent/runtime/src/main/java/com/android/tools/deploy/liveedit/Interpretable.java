@@ -23,6 +23,7 @@ import com.android.deploy.asm.Opcodes;
 import com.android.deploy.asm.commons.TryCatchBlockSorter;
 import com.android.deploy.asm.tree.FieldNode;
 import com.android.deploy.asm.tree.MethodNode;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +43,7 @@ class Interpretable extends ClassVisitor {
     private final Map<String, Object> defaultFieldValues;
 
     Interpretable(byte[] classData) {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM9);
 
         declaredMethods = new HashMap<>();
         declaredFields = new HashMap<>();

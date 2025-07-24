@@ -18,10 +18,30 @@ package com.android.adblib
 import com.android.adblib.impl.TimeoutTracker
 import java.io.EOFException
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousCloseException
+import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
+/**
+ * An output channel accepts output bytes and sends them to some sink.
+ *
+ * Note: This is the equivalent of [java.io.OutputStream] with suspending operations instead
+ * of blocking ones.
+ */
 interface AdbOutputChannel : AutoCloseable {
+
+    /**
+     * Closes this output channel and releases any system resources associated with it.
+     * A closed channel cannot perform output operations and cannot be reopened.
+     * Any currently suspended [writeBuffer] operation is promptly cancelled and throws
+     * [AsynchronousCloseException]
+     *
+     * Note: Implementations should be thread-safe to allow prompt cancellation of suspended
+     * operations.
+     */
+    override fun close()
+
     /**
      * Writes up to [ByteBuffer.remaining] bytes from [buffer] to the underlying channel, updating
      * [ByteBuffer.position] to match the number of bytes written.
@@ -29,7 +49,11 @@ interface AdbOutputChannel : AutoCloseable {
      * If a failure occurs, an [java.io.IOException] is thrown, and the [ByteBuffer] state
      * is undefined (i.e. some bytes may have been written, but not all).
      *
-     * Throws a [TimeoutException] in case the data cannot be written before the timeout expires.
+     * * Throws [ClosedChannelException] if [close] was previously called
+     * * Throws [AsynchronousCloseException] if [close] is called __while this function is
+     * suspended__
+     * * Throws [java.io.IOException] if an I/O occurs writing from the underlying resource
+     * * Throws [TimeoutException] in case the data cannot be written before the timeout expires.
      */
     suspend fun writeBuffer(
         buffer: ByteBuffer,
@@ -45,7 +69,11 @@ interface AdbOutputChannel : AutoCloseable {
      * If a failure occurs, an [java.io.IOException] is thrown, and the [ByteBuffer] state
      * is undefined (i.e. some bytes may have been written, but not all).
      *
-     * Throws a [TimeoutException] in case the data cannot be written before the timeout expires.
+     * * Throws [ClosedChannelException] if [close] was previously called
+     * * Throws [AsynchronousCloseException] if [close] is called __while this function is
+     * suspended__
+     * * Throws [java.io.IOException] if an I/O occurs writing from the underlying resource
+     * * Throws [TimeoutException] in case the data cannot be written before the timeout expires.
      */
     suspend fun writeExactly(
         buffer: ByteBuffer,
@@ -95,8 +123,3 @@ internal suspend fun AdbOutputChannel.writeExactly(buffer: ByteBuffer, timeout: 
     writeExactly(buffer, timeout.remainingNanos, TimeUnit.NANOSECONDS)
 }
 
-/**
- * A [AdbOutputChannel] that requires calling [AutoShutdown.shutdown] to prevent data loss,
- * typically to allow flushing any pending writes to the underlying resource.
- */
-interface AdbBufferedOutputChannel : AdbOutputChannel, AutoShutdown

@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -138,6 +139,117 @@ public class ArchiveTreeStructureTest {
         assertThat(actual).isEqualTo(expected);
     }
 
+    // APK .so is:
+    // - compressed and not zip-aligned
+    // - LOAD aligned
+    // expect:
+    // - no top level warning message
+    @Test
+    public void compressedSoFile_isNot16kbIncompatible_APK() throws IOException {
+        try (ArchiveContext archive =
+                Archives.open(
+                        TestResources.getFile("/pagealign-compressed-so-not-zipaligned.apk")
+                                .toPath(),
+                        logger)) {
+            ArchiveNode root = ArchiveTreeStructure.create(archive);
+            ArchiveTreeStructure.updateFileInfo(root, ApkSizeCalculator.getDefault());
+            assertThat(root.getData().getSelfOrChild16kbIncompatible()).isFalse();
+        }
+    }
+
+    // AAB .so is:
+    // - compressed and not zip-aligned
+    // - LOAD aligned
+    // expect:
+    // - no top level warning message
+    @Test
+    public void compressedSoFile_isNot16kbIncompatible_AAB() throws IOException {
+        try (ArchiveContext archive =
+                Archives.open(
+                        TestResources.getFile("/pagealign-compressed-so-not-zipaligned.aab")
+                                .toPath(),
+                        logger)) {
+            ArchiveNode root = ArchiveTreeStructure.create(archive);
+            ArchiveTreeStructure.updateFileInfo(root, ApkSizeCalculator.getDefault());
+            assertThat(root.getData().getSelfOrChild16kbIncompatible()).isFalse();
+        }
+    }
+
+    // APK .so is:
+    // - compressed and not zip-aligned
+    // - not LOAD aligned
+    // expect:
+    // - top level warning message
+    @Test
+    public void notLOADAlignedSoFile_is16kbIncompatible_APK() throws IOException {
+        try (ArchiveContext archive =
+                Archives.open(
+                        TestResources.getFile("/pagealign-compressed-so-not-LOAD-aligned.apk")
+                                .toPath(),
+                        logger)) {
+            ArchiveNode root = ArchiveTreeStructure.create(archive);
+            ArchiveTreeStructure.updateFileInfo(root, ApkSizeCalculator.getDefault());
+            assertThat(root.getData().getSelfOrChild16kbIncompatible()).isTrue();
+            String actual =
+                    dumpTree(
+                            root,
+                            n -> {
+                                ArchiveEntry entry = n.getData();
+                                if (!entry.getSelfOrChild16kbIncompatible()) return null;
+                                return entry.getSummaryDisplayString();
+                            });
+            // These are the nodes that are expected to be marked as 'selfOrChild16kbIncompatible'
+            assertThat(actual)
+                    .isEqualTo(
+                            "/\n"
+                                    + "/lib/\n"
+                                    + "/lib/arm64-v8a/\n"
+                                    + "/lib/arm64-v8a/libtensorflowlite_jni.so\n"
+                                    + "/lib/arm64-v8a/liba16kbbash.so\n"
+                                    + "/lib/x86_64/\n"
+                                    + "/lib/x86_64/libtensorflowlite_jni.so\n"
+                                    + "/lib/x86_64/liba16kbbash.so");
+        }
+    }
+
+    // AAB .so is:
+    // - compressed and not zip-aligned
+    // - not LOAD aligned
+    // expect:
+    // - top level warning message
+    @Test
+    public void notLOADAlignedSoFile_is16kbIncompatible_AAB() throws IOException {
+        try (ArchiveContext archive =
+                Archives.open(
+                        TestResources.getFile("/pagealign-compressed-so-not-LOAD-aligned.aab")
+                                .toPath(),
+                        logger)) {
+            ArchiveNode root = ArchiveTreeStructure.create(archive);
+            ArchiveTreeStructure.updateFileInfo(root, ApkSizeCalculator.getDefault());
+            assertThat(root.getData().getSelfOrChild16kbIncompatible()).isTrue();
+            String actual =
+                    dumpTree(
+                            root,
+                            n -> {
+                                ArchiveEntry entry = n.getData();
+                                if (!entry.getSelfOrChild16kbIncompatible()) return null;
+                                return entry.getSummaryDisplayString();
+                            });
+            // These are the nodes that are expected to be marked as 'selfOrChild16kbIncompatible'
+            assertThat(actual)
+                    .isEqualTo(
+                            "/\n"
+                                    + "/base/\n"
+                                    + "/base/lib/\n"
+                                    + "/base/lib/x86_64/\n"
+                                    + "/base/lib/x86_64/libtensorflowlite_jni.so\n"
+                                    + "/base/lib/x86_64/liba16kbbash.so\n"
+                                    + "/base/lib/arm64-v8a/\n"
+                                    + "/base/lib/arm64-v8a/libtensorflowlite_jni.so\n"
+                                    + "/base/lib/arm64-v8a/liba16kbbash.so");
+        }
+    }
+
     @Test
     public void sort() {
         ArchiveTreeStructure.updateFileInfo(root, ApkSizeCalculator.getDefault());
@@ -211,7 +323,10 @@ public class ArchiveTreeStructureTest {
 
     private static String dumpTree(
             @NotNull ArchiveNode root, @NotNull Function<ArchiveNode, String> mapper) {
-        return ArchiveTreeStream.preOrderStream(root).map(mapper).collect(Collectors.joining("\n"));
+        return ArchiveTreeStream.preOrderStream(root)
+                .map(mapper)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining("\n"));
     }
 
     private String getCompressedString(ArchiveNode node) {

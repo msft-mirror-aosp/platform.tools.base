@@ -16,8 +16,11 @@
 
 package com.android.build.gradle.internal.plugins;
 
+import static com.android.build.gradle.internal.instrumentation.InstrumentationUtilsKt.ASM_API_VERSION;
 import static com.android.build.gradle.internal.utils.OfflineMavenRepoUtilKt.importOfflineMavenRepo;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
@@ -44,16 +47,14 @@ import com.android.builder.model.SigningConfig;
 import com.android.prefs.AbstractAndroidLocations;
 import com.android.utils.EnvironmentProvider;
 import com.android.utils.StdLogger;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
 import groovy.util.Eval;
-import java.io.File;
-import java.lang.reflect.Field;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+
 import junit.framework.TestCase;
+
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.internal.project.ProjectStateInternal;
@@ -63,6 +64,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.objectweb.asm.Opcodes;
+
+import java.io.File;
+import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Tests for the internal workings of the app plugin ("android") */
 public class AppPluginInternalTest {
@@ -469,7 +477,8 @@ public class AppPluginInternalTest {
                         + "}\n"
                         + "project.androidComponents {\n"
                         + "     onVariants(selector().withBuildType(\"staging\"), { variant ->\n"
-                        + "         variant.signingConfig.setConfig(project.android.signingConfigs.one)\n"
+                        + "        "
+                        + " variant.signingConfig.setConfig(project.android.signingConfigs.one)\n"
                         + "     })\n"
                         + "}\n");
 
@@ -604,20 +613,31 @@ public class AppPluginInternalTest {
 
         VariantCheckers.checkDefaultVariants(components);
 
-        int latestAsmVersion = 4;
-        int latestAsmVersionEnum = Opcodes.ASM4;
+        int latestAvailableAsmApi = -1;
+        int currentAsmApi = -1;
+
+        Field latestAsmField = null;
+        Field currentAsmField = null;
+
         for (Field field : Opcodes.class.getDeclaredFields()) {
+            if (field.getType() == int.class && field.getInt(null) == ASM_API_VERSION) {
+                currentAsmField = field;
+                currentAsmApi = Integer.parseInt(field.getName().substring(3));
+            }
             if (field.getName().startsWith("ASM") && !field.getName().endsWith("EXPERIMENTAL")) {
                 int asmVersion = Integer.parseInt(field.getName().substring(3));
-                if (asmVersion > latestAsmVersion) {
-                    latestAsmVersion = asmVersion;
-                    latestAsmVersionEnum = field.getInt(null);
+                if (asmVersion > latestAvailableAsmApi) {
+                    latestAvailableAsmApi = asmVersion;
+                    latestAsmField = field;
                 }
             }
         }
 
+        assertThat(currentAsmField).isEqualTo(latestAsmField);
+        assertThat(currentAsmApi).isEqualTo(latestAvailableAsmApi);
         for (ComponentCreationConfig component : components) {
-            assertThat(component.getGlobal().getAsmApiVersion()).isEqualTo(latestAsmVersionEnum);
+            assertThat(component.getGlobal().getAsmApiVersion())
+                    .isEqualTo(latestAsmField.getInt(null));
         }
     }
 

@@ -25,6 +25,7 @@ import com.android.build.api.instrumentation.manageddevice.ManagedDeviceRegistry
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.DslExtension
+import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.VariantExtensionConfig
 import com.android.build.api.variant.VariantSelector
 import com.android.build.api.variant.Variant
@@ -34,6 +35,7 @@ import com.android.build.gradle.internal.services.DslServices
 import com.android.builder.errors.IssueReporter
 import com.android.utils.appendCapitalized
 import org.gradle.api.Action
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.plugins.ExtensionAware
 
 abstract class AndroidComponentsExtensionImpl<
@@ -182,7 +184,7 @@ abstract class AndroidComponentsExtensionImpl<
      *        the mapping of the component name to the corresponding resolvable configuration name.
      *        This should be null unless supporting legacy behavior.
      */
-    private fun addSourceSetConfigurations(
+    open fun addSourceSetConfigurations(
         affix: String,
         useLegacyPrefix: Boolean,
         useGlobalConfiguration: Boolean,
@@ -212,28 +214,27 @@ abstract class AndroidComponentsExtensionImpl<
                 )
         }
 
-        /**
-         * Returns the name of the configuration that should be used for the given source set.
-         *
-         * @param affix the affix that was used to call [addSourceSetConfigurations]
-         * @param useLegacyPrefix whether the legacy prefix should be used
-         * @param sourceSetName the name of the source set
-         */
-        fun getConfigurationName(
-            affix: String,
-            useLegacyPrefix: Boolean,
-            sourceSetName: String
-        ): String {
-            val thisLowercaseAffix = affix.lowercase()
-            if (sourceSetName == "main") {
-                return thisLowercaseAffix
-            }
-            if (useLegacyPrefix) {
-                return thisLowercaseAffix.appendCapitalized(sourceSetName)
-            }
-            return sourceSetName.appendCapitalized(thisLowercaseAffix)
+        registerConfigurations(lowercaseAffix, useLegacyPrefix)
+
+        val globalConfiguration = if (useGlobalConfiguration) {
+            dslServices.configurations
+                .maybeCreate(lowercaseAffix)
+                .apply {
+                    isCanBeResolved = false
+                    isCanBeConsumed = false
+                    isVisible = false
+                }
+        } else {
+            null
         }
 
+        val callback = getOperationCallback(resolvableConfigurationNameMapper, globalConfiguration, lowercaseAffix, useLegacyPrefix)
+
+        variantApiOperations.variantOperations
+            .addInternalOperation({ callback.invoke(it) }, callingFunctionName)
+    }
+
+    open fun registerConfigurations(lowercaseAffix: String, useLegacyPrefix: Boolean) {
         if (extension is CommonExtension<*, *, *, *, *, *>) {
             extension.sourceSets
                 .configureEach { sourceSet ->
@@ -248,68 +249,63 @@ abstract class AndroidComponentsExtensionImpl<
                         }
                 }
         }
+    }
 
-        val globalConfiguration = if (useGlobalConfiguration) {
-            dslServices.configurations
-                .maybeCreate(lowercaseAffix)
-                .apply {
-                    isCanBeResolved = false
-                    isCanBeConsumed = false
-                    isVisible = false
-                }
-        } else {
-            null
-        }
-
-        /**
-         * Returns the names of the source sets that are used for the given component.
-         *
-         * @param component the component
-         */
-        fun calculateSourceSetNames(component: Component): List<String> {
-            val sourceSetNames = mutableSetOf<String>()
-            val componentImpl =
-                if (component is AnalyticsEnabledComponent) {
-                    (component.delegate as? ComponentImpl<*>)
-                } else {
-                    component as? ComponentImpl<*>
-                } ?: throw RuntimeException("Unexpected type for component \"${component.name}\".")
-            val sourceSetPrefix = componentImpl.componentType.prefix
-            if (sourceSetPrefix.isEmpty()) {
-                sourceSetNames.add("main")
+    /**
+     * Returns the names of the source sets that are used for the given component.
+     *
+     * @param component the component
+     */
+    private fun calculateSourceSetNames(component: Component): List<String> {
+        val sourceSetNames = mutableSetOf<String>()
+        val componentImpl =
+            if (component is AnalyticsEnabledComponent) {
+                (component.delegate as? ComponentImpl<*>)
             } else {
-                sourceSetNames.add(sourceSetPrefix)
-            }
-            component.buildType
-                ?.also { buildType ->
-                    sourceSetNames.add(
-                        sourceSetPrefix.appendCapitalized(buildType)
-                            .replaceFirstChar { it.lowercase() }
-                    )
-                }
-            component.productFlavors
-                .forEach { productFlavor ->
-                    sourceSetNames.add(
-                        sourceSetPrefix.appendCapitalized(productFlavor.second)
-                            .replaceFirstChar { it.lowercase() }
-                    )
-                }
-            val combinedFlavors =
-                component.productFlavors
-                    .joinToString("") { it.second.replaceFirstChar { char -> char.uppercase() } }
-            sourceSetNames.add(
-                "$sourceSetPrefix$combinedFlavors".replaceFirstChar { it.lowercase() }
-            )
-            val variantSourceSetSuffix =
-                component.name
-                    .removeSuffix(componentImpl.componentType.suffix)
-                    .replaceFirstChar { it.uppercase() }
-            sourceSetNames.add(
-                "$sourceSetPrefix$variantSourceSetSuffix".replaceFirstChar { it.lowercase() }
-            )
-            return sourceSetNames.toList()
+                component as? ComponentImpl<*>
+            } ?: throw RuntimeException("Unexpected type for component \"${component.name}\".")
+        val sourceSetPrefix = componentImpl.componentType.prefix
+        if (sourceSetPrefix.isEmpty()) {
+            sourceSetNames.add("main")
+        } else {
+            sourceSetNames.add(sourceSetPrefix)
         }
+        component.buildType
+            ?.also { buildType ->
+                sourceSetNames.add(
+                    sourceSetPrefix.appendCapitalized(buildType)
+                        .replaceFirstChar { it.lowercase() }
+                )
+            }
+        component.productFlavors
+            .forEach { productFlavor ->
+                sourceSetNames.add(
+                    sourceSetPrefix.appendCapitalized(productFlavor.second)
+                        .replaceFirstChar { it.lowercase() }
+                )
+            }
+        val combinedFlavors =
+            component.productFlavors
+                .joinToString("") { it.second.replaceFirstChar { char -> char.uppercase() } }
+        sourceSetNames.add(
+            "$sourceSetPrefix$combinedFlavors".replaceFirstChar { it.lowercase() }
+        )
+        val variantSourceSetSuffix =
+            component.name
+                .removeSuffix(componentImpl.componentType.suffix)
+                .replaceFirstChar { it.uppercase() }
+        sourceSetNames.add(
+            "$sourceSetPrefix$variantSourceSetSuffix".replaceFirstChar { it.lowercase() }
+        )
+        return sourceSetNames.toList()
+    }
 
+    open fun getOperationCallback(
+        resolvableConfigurationNameMapper: (String) -> String,
+        globalConfiguration: Configuration?,
+        lowercaseAffix: String,
+        useLegacyPrefix: Boolean
+    ): (VariantT) -> Unit {
         val callback: (VariantT) -> Unit = { variant ->
             val variantResolvableConfiguration =
                 dslServices.configurations
@@ -348,8 +344,28 @@ abstract class AndroidComponentsExtensionImpl<
                     .forEach { componentResolvableConfiguration.extendsFrom(it) }
             }
         }
+        return callback
+    }
 
-        variantApiOperations.variantOperations
-            .addInternalOperation({ callback.invoke(it) }, callingFunctionName)
+    /**
+     * Returns the name of the configuration that should be used for the given source set.
+     *
+     * @param affix the affix that was used to call [addSourceSetConfigurations]
+     * @param useLegacyPrefix whether the legacy prefix should be used
+     * @param sourceSetName the name of the source set
+     */
+    fun getConfigurationName(
+        affix: String,
+        useLegacyPrefix: Boolean,
+        sourceSetName: String
+    ): String {
+        val thisLowercaseAffix = affix.lowercase()
+        if (sourceSetName == "main") {
+            return thisLowercaseAffix
+        }
+        if (useLegacyPrefix) {
+            return thisLowercaseAffix.appendCapitalized(sourceSetName)
+        }
+        return sourceSetName.appendCapitalized(thisLowercaseAffix)
     }
 }

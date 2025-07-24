@@ -16,13 +16,13 @@
 
 package com.android.build.gradle.integration.common.output
 
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.testutils.apk.Dex
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedClassDef
 import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertAbout
 import org.objectweb.asm.ClassReader
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
 import java.util.regex.Pattern
 
@@ -361,7 +361,7 @@ internal class JarWithClassesSubject(
     override fun classDefinition(binaryName: String): ClassDefinitionSubject {
         check("classes()").that(classNames).contains(binaryName)
 
-        val classNode = ClassNode(Opcodes.ASM9)
+        val classNode = ClassNode(ASM_API_VERSION)
 
         // this can be null when we're testing the fixture. In normal operation, the call
         // to contains above guarantees that it's not null

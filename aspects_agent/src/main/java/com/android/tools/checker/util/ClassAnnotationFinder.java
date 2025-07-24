@@ -16,12 +16,13 @@
 
 package com.android.tools.checker.util;
 
-import java.util.function.Consumer;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import java.util.function.Consumer;
 
 /** Reads the annotations from a given {@link ClassVisitor}. */
 public class ClassAnnotationFinder extends ClassVisitor {
@@ -29,7 +30,7 @@ public class ClassAnnotationFinder extends ClassVisitor {
 
     private class MethodAnnotationFinder extends MethodVisitor {
         MethodAnnotationFinder(MethodVisitor delegate) {
-            super(Opcodes.ASM7, delegate);
+            super(Opcodes.ASM9, delegate);
         }
 
         @Override
@@ -50,7 +51,7 @@ public class ClassAnnotationFinder extends ClassVisitor {
      * @param annotationFound {@link Consumer} that will received the annotations.
      */
     public ClassAnnotationFinder(ClassVisitor delegate, Consumer<Type> annotationFound) {
-        super(Opcodes.ASM7, delegate);
+        super(Opcodes.ASM9, delegate);
         this.annotationFound = annotationFound;
     }
 

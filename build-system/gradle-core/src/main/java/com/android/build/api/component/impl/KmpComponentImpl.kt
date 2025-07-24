@@ -529,8 +529,27 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
         }
 
     override fun getResolvableConfiguration(sourceSetConfigurationsAffix: String): Configuration {
-        // TODO(b/317215060) - implement for KMP
-        throw RuntimeException("Not yet implemented")
+        val lowercaseAffix = sourceSetConfigurationsAffix.lowercase()
+
+        val configurationName =
+            variantDependencies.sourceSetConfigurationsMap[lowercaseAffix]?.apply(name)
+                ?: throw RuntimeException(
+                    "Invalid call to " +
+                            "getResolvableConfiguration(\"$sourceSetConfigurationsAffix\"). " +
+                            "There must be a corresponding call to " +
+                            if (lowercaseAffix == "ksp") {
+                                "addKspConfigurations() "
+                            } else {
+                                "addSourceSetConfigurations(\"$sourceSetConfigurationsAffix\") "
+                            } +
+                            "to create the resolvable configuration."
+                )
+
+        val configuration = services.configurations.findByName(configurationName)
+            ?: throw RuntimeException(
+                "Cannot find expected resolvable configuration: \"$configurationName\"."
+            )
+        return configuration
     }
 
     override fun finalizeAndLock() {

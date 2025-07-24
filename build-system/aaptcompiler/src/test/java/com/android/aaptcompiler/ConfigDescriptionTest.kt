@@ -2,7 +2,9 @@ package com.android.aaptcompiler
 
 import com.android.aaptcompiler.android.ResTableConfig
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import kotlin.test.assertFailsWith
 
 class ConfigDescriptionTest {
 
@@ -129,4 +131,49 @@ class ConfigDescriptionTest {
     Truth.assertThat(lowDRConfig.sdkVersion).isEqualTo(26)
     Truth.assertThat(lowDRConfig.toString()).isEqualTo("lowdr-v26")
   }
+
+  @Test
+  fun testParseInvalidVersionQualifier() {
+    assertFailsWith<Exception> { parse("-v34") }
+    assertFailsWith<Exception> { parse("v0.3") }
+    assertFailsWith<Exception> { parse("v3x") }
+    assertFailsWith<Exception> { parse("v34.") }
+    assertFailsWith<Exception> { parse("v34.x") }
+    assertFailsWith<Exception> { parse("v34.1x") }
+    assertFailsWith<Exception> { parse("v3x.1") }
+    assertFailsWith<Exception> { parse("v34.1.1") }
+    assertFailsWith<Exception> { parse("v.37") }
+    assertFailsWith<Exception> { parse("300x200-v") }
+    assertFailsWith<Exception> { parse("300x200-v0.3") }
+    assertFailsWith<Exception> { parse("300x200-v3x") }
+    assertFailsWith<Exception> { parse("300x200-v34.") }
+    assertFailsWith<Exception> { parse("300x200-v34.x") }
+    assertFailsWith<Exception> { parse("300x200-v34.1x") }
+    assertFailsWith<Exception> { parse("300x200-v3x.1") }
+    assertFailsWith<Exception> { parse("300x200-v34.1.1") }
+    assertFailsWith<Exception> { parse("300x200-v.37") }
+  }
+
+    @Test
+    fun testParseValidVersionQualifier() {
+        assertThat(parse("v34"))
+            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 0)))
+        assertThat(parse("v0"))
+            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 0, minorVersion = 0)))
+        assertThat(parse("v34.0"))
+            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 0)))
+        assertThat(parse("v19876"))
+            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 0)))
+        assertThat(parse("v19876.000"))
+            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 0)))
+        assertThat(parse("v19876.23450"))
+            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 23450)))
+        assertThat(parse("v019876.023450"))
+            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 19876, minorVersion = 23450)))
+        assertThat(parse("v34.1"))
+            .isEqualTo(ConfigDescription(ResTableConfig(sdkVersion = 34, minorVersion = 1)))
+
+
+    }
+
 }

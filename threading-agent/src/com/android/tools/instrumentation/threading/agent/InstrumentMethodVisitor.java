@@ -17,17 +17,19 @@
 package com.android.tools.instrumentation.threading.agent;
 
 import com.android.annotations.NonNull;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
+
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.Method;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Logger;
 
 public class InstrumentMethodVisitor extends AdviceAdapter {
 
@@ -53,7 +55,7 @@ public class InstrumentMethodVisitor extends AdviceAdapter {
             int access,
             @NonNull String name,
             @NonNull String desc) {
-        super(Opcodes.ASM7, methodVisitor, access, name, desc);
+        super(Opcodes.ASM9, methodVisitor, access, name, desc);
         this.annotationMappings = annotationMappings;
         this.classThreadingAnnotation = classThreadingAnnotation;
         this.className = className;
@@ -82,7 +84,8 @@ public class InstrumentMethodVisitor extends AdviceAdapter {
             // methods.
             if (threadingAnnotations != null && (methodAccess & ACC_BRIDGE) == 0) {
                 LOGGER.warning(
-                        "Threading annotation found on a generated method which is not a bridge method. "
+                        "Threading annotation found on a generated method which is not a bridge"
+                                + " method. "
                                 + className
                                 + "#"
                                 + methodName);

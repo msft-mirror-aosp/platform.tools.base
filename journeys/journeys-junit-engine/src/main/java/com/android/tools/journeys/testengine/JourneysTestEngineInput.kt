@@ -13,24 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.tools.journeys.testengine
-
 import java.io.File
-
+import java.io.FileReader
+import java.util.Properties
 object JourneysTestEngineInput {
-    val journeysInputDir: File = getFileFromSystemProperty("journeysInputDir")
-    val testDeviceId: String = getSystemProperty("testDeviceId")
-    val testDeviceDisplayName: String = getSystemProperty("testDeviceDisplayName")
+    val journeysInputDir: File
+    val testDeviceId: String
+    val testDeviceDisplayName: String
     val journeysFilter: List<String> = getStringListFromSystemProperty("journeysFilter")
-    val resultsDir: File = getFileFromSystemProperty("resultsDir")
-
+    val resultsDir: File
+    init {
+        if (System.getenv("com.android.junit.engine.input.parameters")!=null) {
+            val inputProperties = Properties().also {
+                it.load(FileReader(System.getenv("com.android.junit.engine.input.parameters")))
+            }
+            journeysInputDir = File(inputProperties["com.android.junit.engine.source.folders"].toString())
+            testDeviceId = inputProperties["com.android.junit.engine.serial.ids"].toString().substringAfter(":")
+            testDeviceDisplayName = inputProperties["com.android.junit.engine.serial.ids"].toString().substringBefore(":")
+            resultsDir = File(inputProperties["om.android.junit.engine.results.dir"].toString())
+        } else {
+            journeysInputDir = getFileFromSystemProperty("journeysInputDir")
+            testDeviceId = getSystemProperty("testDeviceId")
+            testDeviceDisplayName = getSystemProperty("testDeviceDisplayName")
+            resultsDir = getFileFromSystemProperty("resultsDir")
+        }
+    }
     object ProxyInput {
-        val applicationId: String = getSystemProperty("Proxy.applicationId")
-        val appApkPath: File = getFileFromSystemProperty("Proxy.appApkPath")
+        val applicationId: String
+        val appApkPath: File
         val crawlerApkPath: File = getFileFromSystemProperty("Proxy.crawlerApkPath")
-        val adbPath: File = getFileFromSystemProperty("Proxy.adbPath")
+        val adbPath: File
         val accessTokenPath: String = getSystemProperty("Proxy.accessTokenPath")
+        init {
+            if (System.getenv("com.android.junit.engine.input.parameters")!=null) {
+                val inputProperties = Properties().also {
+                    it.load(FileReader(System.getenv("com.android.junit.engine.input.parameters")))
+                }
+                applicationId  = inputProperties["com.android.junit.engine.tested.application.id"].toString()
+                appApkPath = File(inputProperties["com.android.agp.test.TESTED_APKS"].toString())
+                adbPath = File(inputProperties["com.android.agp.test.ADB_EXECUTABLE"].toString())
+            } else {
+                applicationId = getSystemProperty("Proxy.applicationId")
+                appApkPath = getFileFromSystemProperty("Proxy.appApkPath")
+                adbPath = getFileFromSystemProperty("Proxy.adbPath")
+            }
+        }
     }
 }
 

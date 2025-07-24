@@ -42,12 +42,14 @@ data class Node(
                 NodeParser.parseLeakNode(
                     inputLines = input.lines(),
                     firstLinePrefix = "╰→ ",
+                    multiLinePrefix = "${ZERO_WIDTH_SPACE}  ",
                     additionalLinesPrefix = "${ZERO_WIDTH_SPACE}     "
                 )
             } else {
                 NodeParser.parse(
                     inputLines = input.lines(),
                     firstLinePrefix = "├─ ",
+                    multiLinePrefix = "│  ",
                     additionalLinesPrefix = "│    ",
                     referenceLinePrefix = "│    ↓",
                 )

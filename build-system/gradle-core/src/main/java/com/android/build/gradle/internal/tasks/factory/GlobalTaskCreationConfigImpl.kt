@@ -40,7 +40,7 @@ import com.android.build.gradle.internal.core.dsl.impl.features.DeviceTestOption
 import com.android.build.gradle.internal.core.dsl.impl.features.UnitTestOptionsDslInfoImpl
 import com.android.build.gradle.internal.dsl.CommonExtensionImpl
 import com.android.build.gradle.internal.dsl.LanguageSplitOptions
-import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION_FOR_INSTRUMENTATION
+import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.build.gradle.internal.lint.getLocalCustomLintChecks
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -73,7 +73,6 @@ class GlobalTaskCreationConfigImpl(
     bootClasspathConfig: BootClasspathConfigImpl,
     override val lintPublish: Configuration,
     override val lintChecks: Configuration,
-    private val androidJar: Configuration,
     override val fakeDependency: Configuration,
     override val settingsOptions: SettingsOptions,
     override val managedDeviceRegistry: ManagedDeviceRegistry,
@@ -87,10 +86,6 @@ class GlobalTaskCreationConfigImpl(
             )
             return converter.convert(this)
         }
-    }
-
-    init {
-        bootClasspathConfig.androidJar = androidJar
     }
 
     // DSL elements
@@ -211,7 +206,7 @@ class GlobalTaskCreationConfigImpl(
 
     override val createdBy: String = "Android Gradle ${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
 
-    override val asmApiVersion = ASM_API_VERSION_FOR_INSTRUMENTATION
+    override val asmApiVersion = ASM_API_VERSION
 
     // Utility methods
 
@@ -223,7 +218,8 @@ class GlobalTaskCreationConfigImpl(
                     AndroidArtifacts.TYPE_PLATFORM_ATTR
                 )
             }
-        androidJar
+
+        bootClasspathConfig.androidJar
             .incoming
             .artifactView { config -> config.attributes(attributes) }
             .artifacts

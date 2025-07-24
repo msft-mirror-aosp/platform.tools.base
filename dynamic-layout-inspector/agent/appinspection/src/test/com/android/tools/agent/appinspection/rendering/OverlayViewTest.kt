@@ -52,7 +52,8 @@ class OverlayViewTest {
             rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
             color = 0x10101010.toInt(),
-            label = "label"
+            label = Label(text = "label", size = 1f),
+            strokeThickness = 1f
         )
         viewModel.setSelectedNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -92,7 +93,9 @@ class OverlayViewTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = null,
+            strokeThickness = 1f
         )
         viewModel.setHoveredNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -121,7 +124,9 @@ class OverlayViewTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = null,
+            strokeThickness = 1f
         )
         viewModel.setVisibleNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -150,7 +155,9 @@ class OverlayViewTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = null,
+            strokeThickness = 1f
         )
         viewModel.setRecomposingNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -185,7 +192,9 @@ class OverlayViewTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = rootId1,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = null,
+            strokeThickness = 1f
         )
         viewModel.setSelectedNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -224,7 +233,9 @@ class OverlayViewTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = rootId1,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = null,
+            strokeThickness = 1f
         )
         viewModel.setHoveredNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -263,7 +274,9 @@ class OverlayViewTest {
         val drawInstruction = buildDrawInstructionsProto(
             rootId = rootId1,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = null,
+            strokeThickness = 1f
         )
         viewModel.setVisibleNodes(drawInstruction)
         testScheduler.advanceUntilIdle()
@@ -293,7 +306,9 @@ class OverlayViewTest {
         val drawInstruction1 = buildDrawInstructionsProto(
             rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = null,
+            strokeThickness = 1f
         )
         viewModel.setSelectedNodes(drawInstruction1)
         testScheduler.advanceUntilIdle()
@@ -307,7 +322,9 @@ class OverlayViewTest {
         val drawInstruction2 = buildDrawInstructionsProto(
             rootId = rootId,
             bounds = listOf(Rect(0, 0, 2, 2)),
-            color = 0x10101010.toInt()
+            color = 0x10101010.toInt(),
+            label = null,
+            strokeThickness = 1f
         )
         viewModel.setSelectedNodes(drawInstruction2)
         testScheduler.advanceUntilIdle()

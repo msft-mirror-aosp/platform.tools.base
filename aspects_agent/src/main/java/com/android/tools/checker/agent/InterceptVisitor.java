@@ -1,17 +1,19 @@
 package com.android.tools.checker.agent;
 
 import com.android.annotations.NonNull;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.logging.Logger;
+
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.AdviceAdapter;
 import org.objectweb.asm.commons.Method;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.logging.Logger;
 
 public class InterceptVisitor extends AdviceAdapter {
     private static final Logger LOGGER = Logger.getLogger(InterceptVisitor.class.getName());
@@ -49,7 +51,7 @@ public class InterceptVisitor extends AdviceAdapter {
             @NonNull String className,
             @NonNull Function<String, String> aspects,
             @NonNull Consumer<String> notFoundCallback) {
-        super(Opcodes.ASM7, mv, access, name, desc);
+        super(Opcodes.ASM9, mv, access, name, desc);
 
         this.name = name;
         this.desc = desc;

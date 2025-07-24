@@ -19,15 +19,11 @@ import com.android.adblib.AdbBufferedOutputChannel
 import com.android.adblib.AdbChannel
 import com.android.adblib.AdbChannelFactory
 import com.android.adblib.AdbInputChannel
-import com.android.adblib.impl.AdbPipedInputChannelImpl
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.AdbOutputChannel
 import com.android.adblib.AdbPipedInputChannel
 import com.android.adblib.AdbServerSocket
 import com.android.adblib.AdbSession
-import com.android.adblib.impl.AdbBufferedInputChannelImpl
-import com.android.adblib.impl.AdbReadAheadInputChannel
-import com.android.adblib.impl.AdbWriteBackOutputChannel
 import com.android.adblib.utils.closeOnException
 import kotlinx.coroutines.withContext
 import java.io.InputStream
@@ -103,6 +99,14 @@ internal class AdbChannelFactoryImpl(private val session: AdbSession) : AdbChann
         return AdbBufferedInputChannelImpl(session, input, bufferSize, closeInputChannel)
     }
 
+    override fun createBufferedOutputChannel(
+        output: AdbOutputChannel,
+        bufferSize: Int,
+        closeOutputChannel: Boolean
+    ): AdbBufferedOutputChannel {
+        return AdbBufferedOutputChannelImpl(session, output, bufferSize, closeOutputChannel)
+    }
+
     override fun createReadAheadChannel(
         input: AdbInputChannel,
         bufferSize: Int
@@ -112,9 +116,10 @@ internal class AdbChannelFactoryImpl(private val session: AdbSession) : AdbChann
 
     override fun createWriteBackChannel(
         output: AdbOutputChannel,
-        bufferSize: Int
+        bufferSize: Int,
+        closeOutputChannel: Boolean
     ): AdbBufferedOutputChannel {
-        return AdbWriteBackOutputChannel(session, output, bufferSize)
+        return AdbWriteBackOutputChannel(session, output, bufferSize, closeOutputChannel)
     }
 
     override fun wrapInputStream(

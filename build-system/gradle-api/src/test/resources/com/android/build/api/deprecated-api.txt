@@ -3,6 +3,26 @@ Deprecated Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
+Deprecated from AGP 8.13.0
+  * com.android.build.api.dsl.PostProcessing
+  * com.android.build.api.dsl.PostProcessing.consumerProguardFile: void (java.lang.Object)
+  * com.android.build.api.dsl.PostProcessing.consumerProguardFiles: void (java.lang.Object[])
+  * com.android.build.api.dsl.PostProcessing.initWith: void (com.android.build.api.dsl.PostProcessing)
+  * com.android.build.api.dsl.PostProcessing.isObfuscate: boolean ()
+  * com.android.build.api.dsl.PostProcessing.isOptimizeCode: boolean ()
+  * com.android.build.api.dsl.PostProcessing.isRemoveUnusedCode: boolean ()
+  * com.android.build.api.dsl.PostProcessing.isRemoveUnusedResources: boolean ()
+  * com.android.build.api.dsl.PostProcessing.proguardFile: void (java.lang.Object)
+  * com.android.build.api.dsl.PostProcessing.proguardFiles: void (java.lang.Object[])
+  * com.android.build.api.dsl.PostProcessing.setConsumerProguardFiles: void (java.util.List<?>)
+  * com.android.build.api.dsl.PostProcessing.setObfuscate: void (boolean)
+  * com.android.build.api.dsl.PostProcessing.setOptimizeCode: void (boolean)
+  * com.android.build.api.dsl.PostProcessing.setProguardFiles: void (java.util.List<?>)
+  * com.android.build.api.dsl.PostProcessing.setRemoveUnusedCode: void (boolean)
+  * com.android.build.api.dsl.PostProcessing.setRemoveUnusedResources: void (boolean)
+  * com.android.build.api.dsl.PostProcessing.setTestProguardFiles: void (java.util.List<?>)
+  * com.android.build.api.dsl.PostProcessing.testProguardFile: void (java.lang.Object)
+  * com.android.build.api.dsl.PostProcessing.testProguardFiles: void (java.lang.Object[])
 Deprecated from AGP 8.12.0
   * com.android.build.api.dsl.BaseFlavor.getMinSdkPreview: java.lang.String ()
   * com.android.build.api.dsl.BaseFlavor.setMinSdkPreview: void (java.lang.String)

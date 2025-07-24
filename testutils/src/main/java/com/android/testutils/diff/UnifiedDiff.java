@@ -22,6 +22,9 @@ import static com.android.testutils.diff.UnifiedDiff.Chunk.Type.TO;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+
+import kotlin.text.StringsKt;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +38,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import kotlin.text.StringsKt;
 
 /**
  * Parses and applies diff files in git unified format.
@@ -404,7 +406,7 @@ public class UnifiedDiff {
         }
     }
 
-    private static class Line {
+    public static class Line {
         public String line;
         public Chunk.Type type;
 
