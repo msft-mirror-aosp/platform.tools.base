@@ -784,7 +784,7 @@ gradle_connected_test(
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
     avd = ":avd",
     data = TEST_DATA + [
-        "//tools/adt/idea/utp:addGradleAndroidTestListener",
+        "//tools/adt/idea/utp:resources/utp/addGradleAndroidTestListener.gradle",
     ],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,

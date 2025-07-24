@@ -30,7 +30,7 @@ import org.junit.Rule
 /**
  * An integration test for Gradle Managed Device.
  */
-class UtpManagedDeviceTest : UtpTestBase() {
+class UtpManagedDeviceTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBuiltInPlatform) {
 
     @get:Rule
     val customAndroidSdkRule = CustomAndroidSdkRule()
