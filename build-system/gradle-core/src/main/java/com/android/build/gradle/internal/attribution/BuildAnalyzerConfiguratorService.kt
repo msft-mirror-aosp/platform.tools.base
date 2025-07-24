@@ -26,6 +26,7 @@ import com.android.buildanalyzer.common.TaskCategoryIssue
 import com.android.tools.analytics.HostData
 import com.android.utils.HelpfulEnumConverter
 import org.gradle.api.Project
+import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import java.util.Collections
@@ -64,7 +65,8 @@ abstract class BuildAnalyzerConfiguratorService: BuildService<BuildServiceParame
         project: Project,
         attributionFileLocation: String,
         parameters: BuildAnalyzerService.Parameters,
-        isConfigurationCacheActive: Boolean
+        isConfigurationCacheActive: Boolean,
+        isProjectIsolationActive: Boolean,
     ) {
         if (state != State.NOT_INITIALIZED) {
             return
@@ -76,43 +78,17 @@ abstract class BuildAnalyzerConfiguratorService: BuildService<BuildServiceParame
         project.gradle.taskGraph.whenReady { taskGraph ->
             val outputFileToTasksMap = mutableMapOf<String, MutableList<String>>()
             val taskNameToTaskInfoMap = mutableMapOf<String, AndroidGradlePluginAttributionData.TaskInfo>()
-            taskGraph.allTasks.forEach { task ->
 
-                task.outputs.files.forEach { outputFile ->
-                    outputFileToTasksMap.computeIfAbsent(outputFile.absolutePath) {
-                        ArrayList()
-                    }.add(task.path)
-                }
-
-                val taskCategoryInfo =
-                    if (task::class.java.isAnnotationPresent(BuildAnalyzer::class.java)) {
-                        val annotation =
-                            task::class.java.getAnnotation(BuildAnalyzer::class.java)
-                        val primaryTaskCategory =
-                            taskCategoryConverter.convert(annotation.primaryTaskCategory.toString())!!
-                        val secondaryTaskCategories =
-                            annotation.secondaryTaskCategories.map {
-                                taskCategoryConverter.convert(
-                                    it.toString()
-                                )!!
-                            }
-                        AndroidGradlePluginAttributionData.TaskCategoryInfo(
-                            primaryTaskCategory = primaryTaskCategory,
-                            secondaryTaskCategories = secondaryTaskCategories
-                        )
-                    } else AndroidGradlePluginAttributionData.TaskCategoryInfo(
-                        primaryTaskCategory = TaskCategory.UNCATEGORIZED
-                    )
-
-                taskNameToTaskInfoMap[task.name] =
-                    AndroidGradlePluginAttributionData.TaskInfo(
-                        className = getTaskClassName(task.javaClass.name),
-                        taskCategoryInfo = taskCategoryInfo
-                    )
+            if (isProjectIsolationActive.not()) {
+                // Accessing all tasks is not supported in project isolation mode
+                collectAllTaskInfo(taskGraph, outputFileToTasksMap, taskNameToTaskInfoMap, taskCategoryConverter)
             }
 
-            val buildscriptDependenciesInfo = getBuildscriptDependencies(project.rootProject)
-                .map { "${it.group}:${it.module}:${it.version}" }
+            val buildscriptDependenciesInfo = if (isProjectIsolationActive.not()) {
+                // Accessing root project is not supported in project isolation mode
+                getBuildscriptDependencies(project.rootProject)
+                    .map { "${it.group}:${it.module}:${it.version}" }
+            } else emptyList()
 
             parameters.attributionFileLocation.set(attributionFileLocation)
             parameters.tasksSharingOutputs.set(
@@ -139,6 +115,47 @@ abstract class BuildAnalyzerConfiguratorService: BuildService<BuildServiceParame
             parameters.taskCategoryIssues.set(taskCategoryIssues)
 
             state = State.MAIN_SERVICE_CONFIGURED
+        }
+    }
+
+    private fun collectAllTaskInfo(
+        taskGraph: TaskExecutionGraph,
+        outputFileToTasksMap: MutableMap<String, MutableList<String>>,
+        taskNameToTaskInfoMap: MutableMap<String, AndroidGradlePluginAttributionData.TaskInfo>,
+        taskCategoryConverter: HelpfulEnumConverter<TaskCategory>
+    ) {
+        taskGraph.allTasks.forEach { task ->
+            task.outputs.files.forEach { outputFile ->
+                outputFileToTasksMap.computeIfAbsent(outputFile.absolutePath) {
+                    ArrayList()
+                }.add(task.path)
+            }
+
+            val taskCategoryInfo =
+                if (task::class.java.isAnnotationPresent(BuildAnalyzer::class.java)) {
+                    val annotation =
+                        task::class.java.getAnnotation(BuildAnalyzer::class.java)
+                    val primaryTaskCategory =
+                        taskCategoryConverter.convert(annotation.primaryTaskCategory.toString())!!
+                    val secondaryTaskCategories =
+                        annotation.secondaryTaskCategories.map {
+                            taskCategoryConverter.convert(
+                                it.toString()
+                            )!!
+                        }
+                    AndroidGradlePluginAttributionData.TaskCategoryInfo(
+                        primaryTaskCategory = primaryTaskCategory,
+                        secondaryTaskCategories = secondaryTaskCategories
+                    )
+                } else AndroidGradlePluginAttributionData.TaskCategoryInfo(
+                    primaryTaskCategory = TaskCategory.UNCATEGORIZED
+                )
+
+            taskNameToTaskInfoMap[task.name] =
+                AndroidGradlePluginAttributionData.TaskInfo(
+                    className = getTaskClassName(task.javaClass.name),
+                    taskCategoryInfo = taskCategoryInfo
+                )
         }
     }
 
