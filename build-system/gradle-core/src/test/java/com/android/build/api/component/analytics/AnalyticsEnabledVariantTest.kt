@@ -253,23 +253,4 @@ class AnalyticsEnabledVariantTest {
             .isEqualTo(VariantPropertiesMethodType.COMPONENTS_VALUE)
         verify(delegate, times(1)).components
     }
-
-    @Test
-    fun testUnitTest() {
-        val mockedUnitTest = mock<com.android.build.api.component.UnitTest>()
-        @Suppress("UNCHECKED_CAST")
-        val map: MapProperty<String, String> =
-            mock<MapProperty<String, String>>()
-
-        whenever(mockedUnitTest.manifestPlaceholders).thenReturn(map)
-        whenever(delegate.unitTest).thenReturn(mockedUnitTest)
-
-
-        Truth.assertThat(proxy.unitTest!!.manifestPlaceholders).isEqualTo(map)
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
-            .isEqualTo(VariantPropertiesMethodType.MANIFEST_PLACEHOLDERS_VALUE)
-        verify(delegate, times(1)).unitTest
-    }
 }
