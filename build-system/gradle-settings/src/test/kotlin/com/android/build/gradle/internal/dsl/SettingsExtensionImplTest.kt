@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dsl
 
 import com.google.common.truth.ComparableSubject
+import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -66,6 +67,20 @@ internal class SettingsExtensionImplTest {
         settings.compileSdk = 12
         settings.compileSdkAddon("foo", "bar", 42)
         testCompileValues(addOnVendor = "foo", addOnName = "bar", addOnVersion = 42)
+
+        settings.compileSdk {
+            version = release(33)
+        }
+        testCompileValues(compileSdk = 33)
+
+        settings.compileSdk {
+            version = release(33) {
+                sdkExtension = 18
+                minorApiLevel = 0
+            }
+            assertThat(version?.minorApiLevel).isEqualTo(0)
+        }
+        testCompileValues(compileSdk = 33, compileSdkExtension = 18)
     }
 
     @Test
@@ -80,6 +95,14 @@ internal class SettingsExtensionImplTest {
         settings.compileSdkPreview = "S"
         settings.compileSdkAddon("foo", "bar", 42)
         testCompileValues(addOnVendor = "foo", addOnName = "bar", addOnVersion = 42)
+
+        settings.compileSdk {
+            version = preview("S")
+        }
+        settings.compileSdk {
+
+        }
+        testCompileValues(compileSdkPreview = "S")
     }
 
     @Test
@@ -94,6 +117,11 @@ internal class SettingsExtensionImplTest {
         settings.compileSdkAddon("foo", "bar", 42)
         settings.compileSdkPreview = "S"
         testCompileValues(compileSdkPreview = "S")
+
+        settings.compileSdk {
+            version = addon("foo", "bar", 41)
+        }
+        testCompileValues(addOnVendor = "foo", addOnName = "bar", addOnVersion = 41)
     }
 
     @Test
@@ -104,6 +132,11 @@ internal class SettingsExtensionImplTest {
         // test reset to null from other values
         settings.minSdkPreview = "S"
         testMinSdkValues(minSdkPreview = "S")
+
+        settings.minSdk {
+            version = release(33)
+        }
+        testMinSdkValues(minSdk = 33)
     }
 
     @Test
@@ -114,6 +147,24 @@ internal class SettingsExtensionImplTest {
         // test reset to null from other values
         settings.minSdk = 12
         testMinSdkValues(minSdk = 12)
+
+        settings.minSdk {
+            version = preview("S")
+        }
+        testMinSdkValues(minSdkPreview = "S")
+    }
+
+    @Test
+    fun targetSdk() {
+        settings.targetSdk {
+            version = release(33)
+        }
+        testTargetSdkValues(targetSdk = 33)
+
+        settings.targetSdk {
+            version = preview("S")
+        }
+        testTargetSdkValues(targetSdkPreview = "S")
     }
 
     private fun testCompileValues(
@@ -158,6 +209,19 @@ internal class SettingsExtensionImplTest {
         assertWithMessage("minSdkPreview")
             .that(settings.minSdkPreview)
             .compareTo(minSdkPreview)
+    }
+
+    private fun testTargetSdkValues(
+        targetSdk: Int? = null,
+        targetSdkPreview: String? = null
+    ) {
+        assertWithMessage("targetSdk")
+            .that(settings.targetSdk)
+            .compareTo(targetSdk)
+
+        assertWithMessage("targetSdkPreview")
+            .that(settings.targetSdkPreview)
+            .compareTo(targetSdkPreview)
     }
 
     private fun <TypeT, SubjectT : ComparableSubject<SubjectT, TypeT>> SubjectT.compareTo(value: TypeT?) =
