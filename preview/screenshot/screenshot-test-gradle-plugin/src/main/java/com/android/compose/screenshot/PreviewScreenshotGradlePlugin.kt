@@ -51,7 +51,7 @@ import java.util.Properties
 import java.util.UUID
 
 private val minAgpVersion = AndroidPluginVersion(8, 5, 0).beta(1)
-private val maxAgpVersion = AndroidPluginVersion(8, 13, 255)
+private val maxAgpVersion = AndroidPluginVersion(9, 0, Int.MAX_VALUE)
 
 /**
  * An entry point for Screenshot plugin that adds support for screenshot testing on Compose Previews
