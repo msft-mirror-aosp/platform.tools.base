@@ -33,7 +33,7 @@ import java.io.FileOutputStream
 import java.util.Properties
 
 private val minAgpVersion = AndroidPluginVersion(8, 2, 1)
-private val maxAgpVersion = AndroidPluginVersion(8, 13, 255)
+private val maxAgpVersion = AndroidPluginVersion(9, 0, Int.MAX_VALUE)
 
 /**
  * An entry point for Journeys plugin that adds support for Journeys testing.
@@ -68,7 +68,7 @@ class JourneysGradlePlugin : Plugin<Project> {
             val componentsExtension =
                 project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
             val agpVersion = componentsExtension.pluginVersion
-            if (agpVersion < minAgpVersion || (agpVersion >= maxAgpVersion && agpVersion.previewType != "dev")) {
+            if (agpVersion < minAgpVersion || (agpVersion > maxAgpVersion && agpVersion.previewType != "dev")) {
                 error(
                     """
                     Journeys plugin requires Android Gradle plugin version between ${minAgpVersion.toVersionString()} and ${maxAgpVersion.major}.${maxAgpVersion.minor}.
