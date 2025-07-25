@@ -17,7 +17,6 @@ package com.android.zipflinger;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
@@ -119,10 +118,7 @@ public class LargeFileSource extends Source {
                         Files.newOutputStream(tmp, StandardOpenOption.CREATE_NEW), deflater)) {
 
             // Just in case we crash before writeTo is called, attempt to clean up on VM exit.
-            // Path.toFile() is supported only by the default file system.
-            if ("file".equals(tmp.getFileSystem().provider().getScheme())) {
-                tmp.toFile().deleteOnExit();
-            }
+            tmp.toFile().deleteOnExit();
 
             int read;
             byte[] buffer = new byte[4096];
