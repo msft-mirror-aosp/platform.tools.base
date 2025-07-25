@@ -3463,8 +3463,8 @@ package com.android.build.api.variant {
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;
     property public abstract int renderscriptTargetApi;
-    property @Deprecated public abstract Integer? targetSdk;
-    property @Deprecated public abstract String? targetSdkPreview;
+    property @Deprecated public Integer? targetSdk;
+    property @Deprecated public String? targetSdkPreview;
     property @Deprecated public abstract boolean unitTestEnabled;
   }
 

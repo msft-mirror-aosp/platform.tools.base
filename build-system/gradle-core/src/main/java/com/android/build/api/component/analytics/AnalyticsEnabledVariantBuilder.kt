@@ -16,6 +16,7 @@
 
 package com.android.build.api.component.analytics
 
+import com.android.build.api.variant.GeneratesApkBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -51,19 +52,19 @@ abstract class AnalyticsEnabledVariantBuilder(
         }
 
     override var targetSdk: Int?
-        get() = delegate.targetSdk
+        get() = (delegate as? GeneratesApkBuilder)?.targetSdk
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
                     VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE
-            delegate.targetSdk = value
+            (delegate as? GeneratesApkBuilder)?.targetSdk = value
         }
 
     override var targetSdkPreview: String?
-        get() = delegate.targetSdkPreview
+        get() = (delegate as? GeneratesApkBuilder)?.targetSdkPreview
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
                 VariantMethodType.TARGET_SDK_PREVIEW_VALUE
-            delegate.targetSdkPreview = value
+            (delegate as? GeneratesApkBuilder)?.targetSdkPreview = value
         }
 
     override var renderscriptTargetApi: Int

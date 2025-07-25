@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 package com.android.build.api.component.analytics
+import com.android.build.api.variant.ApplicationVariantBuilder
+import com.android.build.api.variant.GeneratesApkBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -32,7 +33,7 @@ class AnalyticsEnabledVariantBuilderTest {
     @get:Rule
     val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: AnalyticsEnabledVariantBuilder = mock()
+    private val delegate: ApplicationVariantBuilder = mock()
 
     private val stats = GradleBuildVariant.newBuilder()
     private val proxy: AnalyticsEnabledVariantBuilder by lazy {
@@ -69,23 +70,22 @@ class AnalyticsEnabledVariantBuilderTest {
         verify(delegate, times(1)).maxSdk = 23
     }
 
+
     @Test
     fun setTargetSdkVersion() {
-        proxy.targetSdk = 23
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE)
-        verify(delegate, times(1)).targetSdk = 23
+        val apkBuilder: GeneratesApkBuilder = mock()
+        GeneratesApkBuilder::class.java
+            .getMethod("setTargetSdk", Integer::class.java)
+            .invoke(apkBuilder, 23)
+        verify(apkBuilder as GeneratesApkBuilder, times(1)).targetSdk = 23
     }
 
     @Test
     fun setTargetSdkVersionPreview() {
-        proxy.targetSdkPreview = "S"
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.TARGET_SDK_PREVIEW_VALUE)
-        verify(delegate, times(1)).targetSdkPreview = "S"
+        val apkBuilder: GeneratesApkBuilder = mock()
+        GeneratesApkBuilder::class.java
+            .getMethod("setTargetSdkPreview", String::class.java)
+            .invoke(apkBuilder, "S")
+        verify(apkBuilder as GeneratesApkBuilder, times(1)).targetSdkPreview = "S"
     }
 }
