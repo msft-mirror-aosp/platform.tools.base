@@ -28,6 +28,7 @@ import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
+import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
@@ -139,6 +140,7 @@ internal class UsingAppInfoFlowUpdater(
             }
         } catch (throwable: Throwable) {
             logger.logIOCompletionErrors(throwable)
+            throwable.rethrowCancellation()
             stateFlow.update {
                 it.copy(
                     vmIdentifier = optionalValueFactory.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
