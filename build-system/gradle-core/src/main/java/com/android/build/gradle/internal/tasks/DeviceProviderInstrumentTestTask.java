@@ -88,6 +88,7 @@ import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.ide.common.workers.ExecutorServiceAdapter;
+import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
@@ -113,6 +114,7 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
@@ -303,7 +305,17 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @Override
     protected void doTaskAction() throws DeviceException, IOException, ExecutionException {
         if (getRunWithBuiltInPlatform().get()) {
-            AndroidTestUtilsKt.runAndroidTest(getWorkerExecutor());
+            AndroidTestUtilsKt.runAndroidTest(
+                    getWorkerExecutor(),
+                    getBuildTools().adbExecutable(),
+                    getAaptExecutable(),
+                    getDeviceProviderFactory(),
+                    getTestData().get(),
+                    getBuddyApks(),
+                    getDeviceProviderFactory().getTimeOutInMs(),
+                    getInstallOptions(),
+                    getTestRunnerFactory().getKeepInstalledApks().map((it) -> !it)
+            );
         } else {
             run(
                     getDeviceProviderFactory(),
@@ -667,6 +679,13 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @Input
     public abstract Property<Boolean> getRunWithBuiltInPlatform();
 
+    @Nested
+    public abstract BuildToolsExecutableInput getBuildTools();
+
+    @InputFile
+    @PathSensitive(PathSensitivity.ABSOLUTE)
+    public abstract RegularFileProperty getAaptExecutable();
+
     public static class CreationAction
             extends VariantTaskCreationAction<
                     DeviceProviderInstrumentTestTask, InstrumentedTestCreationConfig> {
@@ -878,6 +897,14 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             SdkComponentsKt.initialize(
                     task.getTestRunnerFactory().getBuildTools(), task, creationConfig);
 
+            task.getAaptExecutable().fileProvider(
+            task.getTestRunnerFactory().getSdkBuildService().flatMap((it) -> it.sdkLoader(
+                    task.getTestRunnerFactory().getBuildTools().getCompileSdkVersion(),
+                    task.getTestRunnerFactory().getBuildTools().getBuildToolsRevision()
+            ).getBuildToolInfoProvider()).map(
+                    (it) -> new File(it.getPath(BuildToolInfo.PathId.AAPT))));
+            task.getAaptExecutable().disallowChanges();
+
             task.getTestRunnerFactory()
                     .getExecutionEnum()
                     .set(this.creationConfig.getGlobal().getTestOptionExecutionEnum());
@@ -1028,6 +1055,14 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             task.getRunWithBuiltInPlatform().set(
                     projectOptions.getProvider(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM));
             task.getRunWithBuiltInPlatform().disallowChanges();
+
+            SdkComponentsKt.initialize(
+                    task.getBuildTools(),
+                    task,
+                    creationConfig.getServices().getBuildServiceRegistry(),
+                    creationConfig.getGlobal().getCompileSdkHashString(),
+                    creationConfig.getGlobal().getBuildToolsRevision()
+            );
         }
     }
 }

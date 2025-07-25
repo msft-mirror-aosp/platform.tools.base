@@ -16,6 +16,10 @@
 
 package com.android.build.gradle.internal.testing.androidtest
 
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 
@@ -23,9 +27,38 @@ import org.gradle.workers.WorkParameters
  * A Gradle work action to run Android instrumentation tests.
  */
 abstract class AndroidTestWorkAction : WorkAction<AndroidTestWorkAction.Parameters> {
-    interface Parameters : WorkParameters
+    interface Parameters : WorkParameters {
+        val adbExecutable: RegularFileProperty
+        val aaptExecutable: RegularFileProperty
+        val deviceSerial: Property<String>
+        val deviceApiLevel: Property<Int>
+        val testedApks: ConfigurableFileCollection
+        val testUtilApks: ConfigurableFileCollection
+        val apkInstallTimeOutInMs: Property<Integer>
+        val apkInstallOptions: ListProperty<String>
+        val uninstallApksAfterTests: Property<Boolean>
+    }
 
     override fun execute() {
-        error("Not implemented yet")
+        val adb = parameters.adbExecutable.get().asFile
+        val aaptExecutable = parameters.aaptExecutable.get().asFile
+        val deviceSerial = parameters.deviceSerial.get()
+        val deviceApiLevel = parameters.deviceApiLevel.get()
+        val testedApks = parameters.testedApks.toList()
+        val testUtilApks = parameters.testUtilApks.toList()
+        val uninstallApksAfterTests = parameters.uninstallApksAfterTests.get()
+        val apkInstallTimeOutInMs = parameters.apkInstallTimeOutInMs.get().toLong()
+        val apkInstallOptions = parameters.apkInstallOptions.get()
+        val adbApkInstaller = AdbApkInstaller(
+            adb, aaptExecutable, deviceSerial, deviceApiLevel,
+            apkInstallTimeOutInMs)
+
+        AndroidTestRunner(
+            adbApkInstaller,
+            testedApks,
+            apkInstallOptions,
+            testUtilApks,
+            uninstallApksAfterTests,
+            ).run()
     }
 }
