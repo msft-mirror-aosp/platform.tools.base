@@ -612,9 +612,6 @@ interface CommonExtension<
      */
     val flavorDimensions: MutableList<String>
 
-    @Deprecated("Replaced by flavorDimensions property")
-    fun flavorDimensions(vararg dimensions: String)
-
     /**
      * Specifies this project's resource prefix to Android Studio for editor features, such as Lint
      * checks. This property is useful only when using Android Studio.

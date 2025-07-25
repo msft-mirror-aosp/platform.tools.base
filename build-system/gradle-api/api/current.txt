@@ -904,7 +904,6 @@ package com.android.build.api.dsl {
     method public void debug(org.gradle.api.NamedDomainObjectContainer<BuildTypeT>, kotlin.jvm.functions.Function1<? super BuildTypeT,kotlin.Unit> action);
     method public void defaultConfig(kotlin.jvm.functions.Function1<? super DefaultConfigT,kotlin.Unit> action);
     method public void externalNativeBuild(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ExternalNativeBuild,kotlin.Unit> action);
-    method @Deprecated public void flavorDimensions(java.lang.String... dimensions);
     method @Deprecated public com.android.build.api.dsl.AaptOptions getAaptOptions();
     method @Deprecated public com.android.build.api.dsl.AdbOptions getAdbOptions();
     method public AndroidResourcesT getAndroidResources();
@@ -1983,7 +1982,6 @@ package com.android.build.api.dsl {
     method public String? getDimension();
     method public java.util.List<java.lang.String> getMatchingFallbacks();
     method public void setDimension(String?);
-    method @Deprecated public Void? setDimension(String? dimension);
     method @Deprecated public void setMatchingFallbacks(java.lang.String... fallbacks);
     method @Deprecated public void setMatchingFallbacks(java.util.List<java.lang.String> fallbacks);
     property public abstract String? dimension;
