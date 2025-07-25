@@ -202,7 +202,7 @@ class AdbHelper(
                         }
 
                         override fun err(line: String?) {}
-                    }
+                    }, null, null
                 )
 
                 listDevicesProcess.waitFor()
@@ -244,7 +244,7 @@ class AdbHelper(
                         }
 
                         override fun err(line: String?) {}
-                    }
+                    }, null, null
                 )
 
                 idDetectionProcess.waitFor()
@@ -296,7 +296,7 @@ class AdbHelper(
                             }
 
                             override fun err(line: String?) {}
-                        }
+                        }, null, null
                 )
             }
         } catch (e: TimeoutException) {

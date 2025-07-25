@@ -24,6 +24,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class GrabProcessOutput {
 
@@ -60,33 +62,48 @@ public class GrabProcessOutput {
 
     public interface IProcessOutput {
         /**
-         * Processes an stdout message line.
+         * Processes a stdout message line.
          * @param line The stdout message line. Null when the reader reached the end of stdout.
          */
         void out(@Nullable String line);
         /**
-         * Processes an stderr message line.
+         * Processes a stderr message line.
          * @param line The stderr message line. Null when the reader reached the end of stderr.
          */
         void err(@Nullable String line);
     }
 
     /**
-     * Get the stderr/stdout outputs of a process and return when the process is done.
-     * Both <b>must</b> be read or the process will block on windows.
+     * Grabs and processes the standard and error output of a given {@link Process} and waits for
+     * it to complete based on the specified mode.
      *
-     * @param process The process to get the output from.
-     * @param output Optional object to capture stdout/stderr.
-     *      Note that on Windows capturing the output is not optional. If output is null
-     *      the stdout/stderr will be captured and discarded.
-     * @param waitMode Whether to wait for the process and/or the readers to finish.
-     * @return the process return code.
-     * @throws InterruptedException if {@link Process#waitFor()} was interrupted.
+     * <p>This method spawns two separate threads to consume the {@code stdout} and {@code stderr}
+     * streams of the process to prevent the process from blocking due to full I/O buffers. The
+     * output lines are passed to the provided {@link IProcessOutput} handler.
+     *
+     * <p>The waiting behavior is controlled by the {@code waitMode} parameter. A timeout can also be
+     * specified for the process completion.
+     *
+     * @param process The running process to monitor. Must not be {@code null}.
+     * @param waitMode The waiting strategy to use (e.g., asynchronous, wait for readers, etc.).
+     * @param output An optional callback handler for processing {@code stdout} and {@code stderr}
+     * lines. If {@code null}, the output is consumed but ignored.
+     * @param timeout An optional timeout duration. If {@code null}, the method will wait
+     * indefinitely for the process to complete.
+     * @param timeoutUnit The time unit for the {@code timeout} parameter.
+     * @return The exit code of the process. If {@code waitMode} is {@link Wait#ASYNC}, this method
+     * returns 0 immediately.
+     * @throws InterruptedException if the current thread is interrupted while waiting for the
+     * process to complete.
+     * @throws TimeoutException if the process does not complete within the specified timeout.
      */
     public static int grabProcessOutput(
             @NonNull final Process process,
             Wait waitMode,
-            @Nullable final IProcessOutput output) throws InterruptedException {
+            @Nullable final IProcessOutput output,
+            @Nullable Long timeout,
+            @Nullable TimeUnit timeoutUnit
+    ) throws InterruptedException, TimeoutException {
         // read the lines as they come. if null is returned, it's
         // because the process finished
         Thread threadErr = new Thread("stderr") {
@@ -194,7 +211,15 @@ public class GrabProcessOutput {
             }
         }
 
-        // get the return code from the process
-        return process.waitFor();
+        if (timeout == null) {
+            // get the return code from the process
+            return process.waitFor();
+        }
+
+        if (!process.waitFor(timeout, timeoutUnit)) {
+            throw new TimeoutException();
+        }
+
+        return process.exitValue();
     }
 }

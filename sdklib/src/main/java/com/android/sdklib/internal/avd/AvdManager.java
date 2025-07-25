@@ -82,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -1779,22 +1780,22 @@ public class AvdManager {
             final ArrayList<String> errorOutput = new ArrayList<>();
 
             GrabProcessOutput.grabProcessOutput(
-              chattrProcess,
-              Wait.WAIT_FOR_READERS,
-              new IProcessOutput() {
-                  @Override
-                  public void out(@Nullable String line) { }
+                    chattrProcess,
+                    Wait.WAIT_FOR_READERS,
+                    new IProcessOutput() {
+                        @Override
+                        public void out(@Nullable String line) { }
 
-                  @Override
-                  public void err(@Nullable String line) {
-                      // Don't complain if this command is not supported. That just means
-                      // that the file system is not 'btrfs', and it does not support Copy
-                      // on Write. So we're happy.
-                      if (line != null && !line.startsWith("chattr: Operation not supported")) {
-                          errorOutput.add(line);
-                      }
-                  }
-              });
+                        @Override
+                        public void err(@Nullable String line) {
+                            // Don't complain if this command is not supported. That just means
+                            // that the file system is not 'btrfs', and it does not support Copy
+                            // on Write. So we're happy.
+                            if (line != null && !line.startsWith("chattr: Operation not supported")) {
+                                errorOutput.add(line);
+                            }
+                        }
+                    }, null, null);
 
             if (!errorOutput.isEmpty()) {
                 log.warning("Failed 'chattr' for %1$s:", avdFolder.toAbsolutePath().toString());
@@ -1803,7 +1804,7 @@ public class AvdManager {
                 }
             }
         }
-        catch (InterruptedException | IOException ee) {
+        catch (InterruptedException | TimeoutException | IOException ee) {
             log.warning(
                     "Failed 'chattr' for %1$s: %2$s", avdFolder.toAbsolutePath().toString(), ee);
         }

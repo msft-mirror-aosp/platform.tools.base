@@ -164,7 +164,7 @@ class AvdSnapshotHandler(
                     }
 
                     override fun err(line: String?) {}
-                }
+                }, null, null
             )
         } catch (e: Exception) {
             process.destroy()
@@ -410,7 +410,7 @@ class AvdSnapshotHandler(
                         }
                         logger.verbose(line)
                     }
-                }
+                }, null, null
             )
 
             val deviceSerial: String = try {

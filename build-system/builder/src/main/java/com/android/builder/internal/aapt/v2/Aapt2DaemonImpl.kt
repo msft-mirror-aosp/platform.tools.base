@@ -84,9 +84,11 @@ class Aapt2DaemonImpl(
         process = processBuilder.start()
         writer = try {
             GrabProcessOutput.grabProcessOutput(
-                    process,
-                    GrabProcessOutput.Wait.ASYNC,
-                    processOutput)
+                process,
+                GrabProcessOutput.Wait.ASYNC,
+                processOutput,
+                null,
+                null)
             process.outputStream.bufferedWriter(Charsets.UTF_8)
         } catch (e: Exception) {
             // Something went wrong with starting the process or reader threads.
