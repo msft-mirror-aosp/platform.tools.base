@@ -19,9 +19,12 @@ package com.android.build.gradle.integration.lint;
 import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import java.io.File;
+import com.android.build.gradle.options.BooleanOption;
+
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
 
 /** Integration test for lint analyzing Kotlin code from Gradle. */
 public class LintInstantiateTest {
@@ -34,12 +37,19 @@ public class LintInstantiateTest {
 
     @Test
     public void checkFindErrors() throws Exception {
-        project.executor().run(":app:clean", ":app:lintDebug");
+        project.executor()
+                // Disabled due to a dependency on
+                // com.android.support:animated-vector-drawable:28.0.0
+                .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+                .run(":app:clean", ":app:lintDebug");
         File lintReport = project.file("app/lint-results.txt");
         assertThat(lintReport).contains("No issues found.");
 
-        File sarifFile = new File(project.getSubproject("app").getBuildDir(), "reports/lint-results.sarif");
+        File sarifFile =
+                new File(project.getSubproject("app").getBuildDir(), "reports/lint-results.sarif");
         assertThat(sarifFile).exists();
-        assertThat(sarifFile).contains("\"$schema\" : \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/");
+        assertThat(sarifFile)
+                .contains(
+                        "\"$schema\" : \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/");
     }
 }

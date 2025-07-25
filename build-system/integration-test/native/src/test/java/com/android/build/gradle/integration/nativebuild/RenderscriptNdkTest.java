@@ -18,17 +18,21 @@ package com.android.build.gradle.integration.nativebuild;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static org.junit.Assert.assertNotNull;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
+
 import com.google.common.base.Throwables;
-import java.io.IOException;
-import java.nio.file.Path;
+
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.nio.file.Path;
 
 /** Assemble tests for renderscript with NDK mode enabled. */
 public class RenderscriptNdkTest {
@@ -43,13 +47,19 @@ public class RenderscriptNdkTest {
             GradleTestProject.builder()
                     .fromTestProject("renderscriptNdk")
                     .setSideBySideNdkVersion(NDK_WITH_RENDERSCRIPT_VERSION)
-                    .addGradleProperties(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
+                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
+                    .addGradleProperties(
+                            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     private void checkPackagedFiles(boolean checkDotSo, boolean is32Bit, boolean is64Bit)
             throws IOException, InterruptedException {
 
-        project.execute("clean", "assembleDebug");
+        project.executor()
+                // Test project depends on vector drawable libraries that violate unique
+                // namespacing.
+                .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+                .run("clean", "assembleDebug");
 
         if (checkDotSo) {
             if (is32Bit) {
@@ -166,6 +176,19 @@ public class RenderscriptNdkTest {
 
     @Test
     public void checkOldVersionApi() throws IOException, InterruptedException {
+        // Add tools:overrideLibrary to the manifest to resolve minSdk conflict with appcompat.
+        Path manifest = project.getProjectDir().toPath().resolve("src/main/AndroidManifest.xml");
+        TestFileUtils.searchAndReplace(
+                manifest.toFile(),
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">",
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " xmlns:tools=\"http://schemas.android.com/tools\">");
+        TestFileUtils.searchAndReplace(
+                manifest.toFile(),
+                "<!-- Min/target SDK versions (<uses-sdk>) managed by build.gradle -->",
+                "<!-- Min/target SDK versions (<uses-sdk>) managed by build.gradle -->\n"
+                    + "    <uses-sdk tools:overrideLibrary=\"androidx.appcompat.resources,"
+                    + " androidx.appcompat\" android:minSdkVersion=\"20\"/>");
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(), "renderscriptTargetApi = 28", "renderscriptTargetApi = 20");
         TestFileUtils.searchAndReplace(
@@ -175,7 +198,13 @@ public class RenderscriptNdkTest {
                 project.getBuildFile(),
                 "android {\n" + "    ndkVersion = '" + NDK_WITH_RENDERSCRIPT_VERSION + "'\n" + "}");
 
-        GradleBuildResult result = project.executor().expectFailure().run("clean", "assembleDebug");
+        GradleBuildResult result =
+                project.executor()
+                        // Test project depends on vector drawable libraries that violate unique
+                        // namespacing.
+                        .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+                        .expectFailure()
+                        .run("clean", "assembleDebug");
         assertNotNull(result.getException());
         assertThat(Throwables.getRootCause(result.getException()).getMessage())
                 .contains("Api version 20 does not support 64 bit ndk compilation");

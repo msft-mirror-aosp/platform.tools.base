@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -40,9 +41,12 @@ class LintNoJavaClassesTest {
     @Test
     @Throws(Exception::class)
     fun checkNoMissingClass() {
+        val executor = project.executor()
+            // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
         // Run twice to catch issues with configuration caching
-        project.executor().run(":app:clean", ":app:lintDebug")
-        project.executor().run(":app:clean", ":app:lintDebug")
+        executor.run(":app:clean", ":app:lintDebug")
+        executor.run(":app:clean", ":app:lintDebug")
         project.buildResult.assertConfigurationCacheHit()
         val app = project.getSubproject("app")
         val file = File(app.projectDir, "lint-results.txt")

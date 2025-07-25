@@ -95,7 +95,9 @@ class JetifierTest(private val withKotlin: Boolean) {
 
         // Build the project with Jetifier disabled
         project.executor()
-            .with(BooleanOption.ENABLE_JETIFIER, false).run("assembleDebug")
+            .with(BooleanOption.ENABLE_JETIFIER, false)
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            .run("assembleDebug")
         val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
 
         apk.use {
@@ -120,6 +122,7 @@ class JetifierTest(private val withKotlin: Boolean) {
         project.executor()
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             .run("assembleDebug")
         val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
 
@@ -172,6 +175,7 @@ class JetifierTest(private val withKotlin: Boolean) {
         project.executor()
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             .run("assembleDebug")
         val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
 
@@ -203,6 +207,8 @@ class JetifierTest(private val withKotlin: Boolean) {
         project.executor()
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
+            // Test project depends on vector drawable libraries that violate unique namespacing.
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             .expectFailure()
             .run("assembleDebug")
             .assertErrorContains(
@@ -217,6 +223,8 @@ class JetifierTest(private val withKotlin: Boolean) {
         project.executor()
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
+            // Test project depends on vector drawable libraries that violate unique namespacing.
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             .run("assembleDebug")
     }
 
@@ -239,6 +247,7 @@ class JetifierTest(private val withKotlin: Boolean) {
         project.executor()
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             .run("assembleDebug")
     }
 
