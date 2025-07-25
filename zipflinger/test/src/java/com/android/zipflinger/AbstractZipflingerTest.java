@@ -15,13 +15,14 @@
  */
 package com.android.zipflinger;
 
+import static com.android.testutils.file.InMemoryFileSystems.createInMemoryFileSystemAndFolder;
+
 import com.android.testutils.TestUtils;
 
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -54,6 +55,10 @@ public abstract class AbstractZipflingerTest {
 
     protected Path getTestPath(String filename) throws IOException {
         return temporaryFolder.newFolder().toPath().resolve(filename);
+    }
+
+    protected Path getInMemoryTestPath(String filename) throws IOException {
+        return createInMemoryFileSystemAndFolder("test").resolve(filename);
     }
 
     protected static Map<String, Entry> verifyArchive(Path archiveFile) throws IOException {
@@ -103,7 +108,7 @@ public abstract class AbstractZipflingerTest {
 
         // As of version 24, the JDK enforces the following recommendation as an error. Even though
         // it is incorrect we still try to not break users.
-        try (var zipInputStream = new ZipInputStream(new FileInputStream(archiveFile.toFile()))) {
+        try (var zipInputStream = new ZipInputStream(Files.newInputStream(archiveFile))) {
             var entry = zipInputStream.getNextEntry();
             while (entry != null) {
                 int size = LocalFileHeader.LOCAL_FILE_HEADER_SIZE;

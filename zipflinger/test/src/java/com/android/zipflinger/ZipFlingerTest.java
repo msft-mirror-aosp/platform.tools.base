@@ -15,6 +15,10 @@
  */
 package com.android.zipflinger;
 
+import static com.android.testutils.file.InMemoryFileSystems.createInMemoryFileSystemAndFolder;
+
+import com.android.testutils.OsType;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,10 +31,11 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -43,7 +48,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testDeleteRecord() throws Exception {
         Path src = getPath("1-2-3files.zip");
-        Path dst = getTestPath("testDeleteRecord.zip");
+        Path dst = getInMemoryTestPath("testDeleteRecord.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive zipArchive = new ZipArchive(dst)) {
@@ -64,7 +69,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testAddFileEntry() throws Exception {
         Path src = getPath("1-2-3files.zip");
-        Path dst = getTestPath("testAddFileEntry.zip");
+        Path dst = getInMemoryTestPath("testAddFileEntry.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive zipArchive = new ZipArchive(dst)) {
@@ -86,7 +91,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testAddCompressedEntry() throws Exception {
         Path src = getPath("1-2-3files.zip");
-        Path dst = getTestPath("testAddCompressedEntry.zip");
+        Path dst = getInMemoryTestPath("testAddCompressedEntry.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         ZipArchive zipArchive = new ZipArchive(dst);
@@ -109,7 +114,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testModifyingClosedArchive() throws IOException {
-        Path dst = getTestPath("newArchive.zip");
+        Path dst = getInMemoryTestPath("newArchive.zip");
 
         ZipArchive zipArchive = new ZipArchive(dst);
         zipArchive.close();
@@ -158,7 +163,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testFileSourceCompressed() throws IOException {
         Path src = getPath("1-2-3files.zip");
-        Path dst = getTestPath("testFileSourceCompressed.zip");
+        Path dst = getInMemoryTestPath("testFileSourceCompressed.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive zipArchive = new ZipArchive(dst)) {
@@ -177,7 +182,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testInputStreamSourceCompressed() throws IOException {
         Path src = getPath("1-2-3files.zip");
-        Path dst = getTestPath("testInputStreamSourceCompressed.zip");
+        Path dst = getInMemoryTestPath("testInputStreamSourceCompressed.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive zipArchive = new ZipArchive(dst)) {
@@ -197,7 +202,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testBytesSourceCompressed() throws IOException {
         Path src = getPath("1-2-3files.zip");
-        Path dst = getTestPath("testBytesSourceCompressed.zip");
+        Path dst = getInMemoryTestPath("testBytesSourceCompressed.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive zipArchive = new ZipArchive(dst)) {
@@ -230,7 +235,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     }
 
     private void testFileSourceAlignment(long alignment) throws IOException {
-        Path dst = getTestPath("testFileSourceAlignment-" + alignment + ".zip");
+        Path dst = getInMemoryTestPath("testFileSourceAlignment-" + alignment + ".zip");
         try (ZipArchive zipArchive = new ZipArchive(dst)) {
             for (int length = 0; length < alignment; length++) {
                 String name = makeString(length);
@@ -258,7 +263,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     }
 
     public void testBytesSourceAlignment(long alignment) throws IOException {
-        Path dst = getTestPath("testBytesSourceAlignment-" + alignment + ".zip");
+        Path dst = getInMemoryTestPath("testBytesSourceAlignment-" + alignment + ".zip");
 
         try (ZipArchive zipArchive = new ZipArchive(dst)) {
             byte[] bytes = Files.readAllBytes(getPath("file4.txt"));
@@ -283,7 +288,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     }
 
     public void testZipSourceAlignment(long alignment) throws IOException {
-        Path dst = getTestPath("testZipSourceAlignment-" + alignment + ".zip");
+        Path dst = getInMemoryTestPath("testZipSourceAlignment-" + alignment + ".zip");
 
         ZipSource source = new ZipSource(getPath("4-5files.zip"));
         source.select("file4.txt", "file4.txt", ZipSource.COMPRESSION_NO_CHANGE, alignment);
@@ -311,7 +316,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     }
 
     public void testInputSourceAlignment(long alignment) throws IOException {
-        Path dst = getTestPath("testInputSourceAlignment.zip");
+        Path dst = getInMemoryTestPath("testInputSourceAlignment.zip");
 
         try (ZipArchive zipArchive = new ZipArchive(dst);
                 InputStream stream = Files.newInputStream(getPath("file4.txt"))) {
@@ -330,7 +335,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testNameCollision() throws IOException {
-        ZipArchive zipArchive = new ZipArchive(getTestPath("nonexistent.zip"));
+        ZipArchive zipArchive = new ZipArchive(getInMemoryTestPath("nonexistent.zip"));
         Path file = getPath("1-2-3files.zip");
         BytesSource source = new BytesSource(file, "name", COMP_NONE);
 
@@ -348,7 +353,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testExistentDoubleDelete() throws IOException {
         Path src = getPath("1-2-3files.zip");
-        Path archive = getTestPath("testExistentDoubleDelete.zip");
+        Path archive = getInMemoryTestPath("testExistentDoubleDelete.zip");
         Files.copy(src, archive, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive zipArchive = new ZipArchive(archive)) {
@@ -360,7 +365,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testNonExistentDelete() throws IOException {
         Path src = getPath("1-2-3files.zip");
-        Path archive = getTestPath("testNonExistentDelete.zip");
+        Path archive = getInMemoryTestPath("testNonExistentDelete.zip");
         Files.copy(src, archive, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive zipArchive = new ZipArchive(archive)) {
@@ -371,7 +376,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     // Test deleting an entry resulting in virtual entry.
     @Test
     public void testVirtualEntryExistingEntryDeleted() throws IOException {
-        Path file = getTestPath("testVirtualEntryExisting.zip");
+        Path file = getInMemoryTestPath("testVirtualEntryExisting.zip");
         try (ZipArchive archive = new ZipArchive(file)) {
             byte[] entry1Bytes = new byte[1_000];
             BytesSource source1 = new BytesSource(entry1Bytes, "entry1", COMP_NONE);
@@ -395,7 +400,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testVirtualEntryNewEntryDeleted() throws IOException {
-        Path file = getTestPath("testVirtualEntryNew.zip");
+        Path file = getInMemoryTestPath("testVirtualEntryNew.zip");
         try (ZipArchive archive = new ZipArchive(file)) {
             byte[] entry1Bytes = new byte[1_000];
             BytesSource source1 = new BytesSource(entry1Bytes, "entry1", COMP_NONE);
@@ -417,7 +422,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testVirtualEntryLargeDelete() throws IOException {
-        Path file = getTestPath("testVirtualEntryLargeDelete.zip");
+        Path file = getInMemoryTestPath("testVirtualEntryLargeDelete.zip");
         try (ZipArchive archive = new ZipArchive(file)) {
 
             byte[] padding1Bytes = new byte[1];
@@ -457,7 +462,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     // Test deleting an entry resulting in multiple virtual entry (more than 64KiB entry).
     @Test
     public void testMultipleVirtualEntry() throws IOException {
-        Path file = getTestPath("testMultipleVirtualEntry.zip");
+        Path file = getInMemoryTestPath("testMultipleVirtualEntry.zip");
         try (ZipArchive archive = new ZipArchive(file)) {
             byte[] entry1Bytes = new byte[1_000];
             BytesSource source1 = new BytesSource(entry1Bytes, "entry1", COMP_NONE);
@@ -482,7 +487,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     // generally exceed 65,535 bytes.
     @Test
     public void testStrictVirtualEntry() throws IOException {
-        Path path = getTestPath("testStrictVirtualEntry.zip");
+        Path path = getInMemoryTestPath("testStrictVirtualEntry.zip");
         try (ZipArchive archive = new ZipArchive(path)) {
             BytesSource source;
 
@@ -524,7 +529,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testCompressionDetection() throws Exception {
         Path src = getPath("1-2-3files.zip");
-        Path dst = getTestPath("testCompressionDetection.zip");
+        Path dst = getInMemoryTestPath("testCompressionDetection.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive zipArchive = new ZipArchive(dst)) {
@@ -541,7 +546,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testCompressionMode() throws Exception {
-        Path archiveFile = getTestPath("testCompressionMode.zip");
+        Path archiveFile = getInMemoryTestPath("testCompressionMode.zip");
         Path input = getPath("text.txt");
 
         try (ZipArchive zipArchive = new ZipArchive(archiveFile)) {
@@ -574,7 +579,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testZipEntryChangeCompression() throws Exception {
         Path src = getPath("two_files.zip");
-        Path dst = getTestPath("testZipEntryChanges.zip");
+        Path dst = getInMemoryTestPath("testZipEntryChanges.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         Map<String, Entry> entries = ZipArchive.listEntries(src);
@@ -602,7 +607,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testZipExtraction() throws Exception {
-        try (ZipArchive archive = new ZipArchive(getTestPath("testZipExtraction.zip"))) {
+        try (ZipArchive archive = new ZipArchive(getInMemoryTestPath("testZipExtraction.zip"))) {
 
             // Add compressed file
             Path file1File = getPath("file1.txt");
@@ -629,7 +634,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         Path file1Path = getPath("file1.txt");
         byte[] file1Bytes = Files.readAllBytes(file1Path);
 
-        Path path = getTestPath("testZipStreamExtraction.zip");
+        Path path = getInMemoryTestPath("testZipStreamExtraction.zip");
         try (ZipArchive archive = new ZipArchive(path)) {
 
             // Add compressed file
@@ -654,7 +659,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testZipExtractionFromJavaZip() throws Exception {
         Path[] files = {getPath("file1.txt"), getPath("file2.txt"), getPath("file3.txt")};
-        Path archive = getTestPath("testZipExtractionFromJavaZip.zip");
+        Path archive = getInMemoryTestPath("testZipExtractionFromJavaZip.zip");
         createZip(archive, files);
 
         try (ZipArchive zipArchive = new ZipArchive(archive)) {
@@ -670,7 +675,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testZipExtractionFromZipUtils() throws Exception {
         Path src = getPath("1-2-3files.zip");
-        Path dst = getTestPath("testZipExtractionFromZipUtils.zip");
+        Path dst = getInMemoryTestPath("testZipExtractionFromZipUtils.zip");
         Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
 
         try (ZipArchive archive = new ZipArchive(dst)) {
@@ -692,7 +697,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         // for not consuming as much as possible but leave enough space for the next LFH.
         int entrySize =
                 Math.toIntExact(Ints.USHRT_MAX - LocalFileHeader.LOCAL_FILE_HEADER_SIZE - 2);
-        Path dst = getTestPath("testVirtualSpecialEntry.zip");
+        Path dst = getInMemoryTestPath("testVirtualSpecialEntry.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             archive.add(new BytesSource(new byte[entrySize], "a", 0));
             archive.add(new BytesSource(new byte[10], "b", 0));
@@ -702,7 +707,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testBigZipParsing() throws Exception {
-        Path archive = getTestPath("testBigkZipParsing.zip");
+        Path archive = getInMemoryTestPath("testBigkZipParsing.zip");
         int numFiles = 3;
         int sizePerFile = 1_000_000_000;
         createZip(numFiles, sizePerFile, archive);
@@ -717,7 +722,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testBigZipGeneration() throws Exception {
-        Path archive = getTestPath("testBigZipGeneration.zip");
+        Path archive = getInMemoryTestPath("testBigZipGeneration.zip");
         try (ZipArchive zipArchive = new ZipArchive(archive)) {
             for (int i = 0; i < 3; i++) {
                 byte[] bytes = new byte[1_000_000_000];
@@ -734,7 +739,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     // Regression test for b/143215332 where "int cannot be converted to ushort" in the case
     // gap filling space is a multiple of (65_535 + [30-33]) bytes
     public void testGapTooBigForOneVirtualEntry() throws Exception {
-        Path dst = getTestPath("testGapTooBigForOneVirtualEntry.zip");
+        Path dst = getInMemoryTestPath("testGapTooBigForOneVirtualEntry.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             // This entry will result in a 30 (header) + 1 (filename length) + max ushort (payload)
             // size
@@ -749,7 +754,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testDeleteSmallestPossibleEntry() throws Exception {
-        Path dst = getTestPath("testDeleteSmallestPossibleEntry.zip");
+        Path dst = getInMemoryTestPath("testDeleteSmallestPossibleEntry.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             archive.add(new BytesSource(new byte[0], "", 0));
             archive.add(new BytesSource(new byte[0], "file2", 0));
@@ -763,7 +768,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     private ByteBuffer extractCentralDirectory(Path archivePath) throws IOException {
         ZipMap map = ZipMap.from(archivePath, false);
 
-        Path cdDumpPath = getTestPath("cd_dump");
+        Path cdDumpPath = getInMemoryTestPath("cd_dump");
         try (ZipWriter writer = new ZipWriter(cdDumpPath)) {
             map.getCentralDirectory().write(writer);
         }
@@ -777,7 +782,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     // Regression test for b/141861587
     public void testAttributes() throws Exception {
         int fileSize = 4;
-        Path dst = getTestPath("testMadeByZero.zip");
+        Path dst = getInMemoryTestPath("testMadeByZero.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             archive.add(new BytesSource(new byte[fileSize], "file1", 0));
         }
@@ -808,17 +813,21 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testFullFileSource() throws Exception {
+        Path dir = createInMemoryFileSystemAndFolder("test");
         // Create an executable file
-        Path execFilePath = getTestPath("x.exe");
+        Path execFilePath = dir.resolve("x.exe");
         Files.createFile(execFilePath);
-        execFilePath.toFile().setExecutable(true);
+        if (OsType.getHostOs() != OsType.WINDOWS) {
+            Files.setPosixFilePermissions(
+                    execFilePath, EnumSet.of(PosixFilePermission.OWNER_EXECUTE));
+        }
 
         // Create a symbolic link
-        Path symbFilePath = getTestPath("symb");
+        Path symbFilePath = dir.resolve("symb");
         Files.createSymbolicLink(symbFilePath, execFilePath);
 
         // Create an archive dst containing both + a followed symbolic link
-        Path dst = getTestPath("testFullFileSource.zip");
+        Path dst = dir.resolve("testFullFileSource.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             FullFileSource fs = new FullFileSource(execFilePath, "x", Deflater.NO_COMPRESSION);
             archive.add(fs);
@@ -856,16 +865,20 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testZipMergingAttributes() throws Exception {
         // Create an executable file
-        Path execFilePath = getTestPath("x.exe");
+        Path dir = createInMemoryFileSystemAndFolder("test");
+        Path execFilePath = dir.resolve("x.exe");
         Files.createFile(execFilePath);
-        execFilePath.toFile().setExecutable(true);
+        if (OsType.getHostOs() != OsType.WINDOWS) {
+            Files.setPosixFilePermissions(
+                    execFilePath, EnumSet.of(PosixFilePermission.OWNER_EXECUTE));
+        }
 
         // Create a symbolic link
-        Path symbFilePath = getTestPath("symb");
+        Path symbFilePath = dir.resolve("symb");
         Files.createSymbolicLink(symbFilePath, execFilePath);
 
         // Create an archive src containing both + a followed symbolic link
-        Path src = getTestPath("testZipMergingAttributesSrc.zip");
+        Path src = dir.resolve("testZipMergingAttributesSrc.zip");
         try (ZipArchive archive = new ZipArchive(src)) {
             FullFileSource fs = new FullFileSource(execFilePath, "x", Deflater.NO_COMPRESSION);
             archive.add(fs);
@@ -883,7 +896,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         }
 
         // Transfer entries from one archive to an archive "dst"
-        Path dst = getTestPath("testZipMergingAttributesDst.zip");
+        Path dst = dir.resolve("testZipMergingAttributesDst.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             ZipSource zipSource = ZipSource.selectAll(src);
            archive.add(zipSource);
@@ -914,7 +927,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         Assert.assertNotEquals("Bad time", CentralDirectoryRecord.DEFAULT_TIME, 0);
         Assert.assertNotEquals("Bad date", CentralDirectoryRecord.DEFAULT_DATE, 0);
 
-        Path dst = getTestPath("testTimeAndDateNotZero.zip");
+        Path dst = getInMemoryTestPath("testTimeAndDateNotZero.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             archive.add(new BytesSource(new byte[0], "", 0));
         }
@@ -932,7 +945,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testEmptyArchive() throws Exception {
-        Path dst = getTestPath("testEmptyArchive.zip");
+        Path dst = getInMemoryTestPath("testEmptyArchive.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {}
 
         verifyArchive(dst);
@@ -956,7 +969,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testInvalidLFHName() throws Exception {
         // Create a normal archive
-        Path file = getTestPath("testInvalidLFHName.zip");
+        Path file = getInMemoryTestPath("testInvalidLFHName.zip");
         try (ZipArchive archive = new ZipArchive(file)) {
             BytesSource src = new BytesSource(new byte[0], "a", Deflater.NO_COMPRESSION);
             archive.add(src);
@@ -991,7 +1004,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         byte[] content2 = new byte[] {5, 6, 7, 8, 9, 10};
         ByteArrayInputStream stream1 = new ByteArrayInputStream(content1);
 
-        Path file = getTestPath("testTransferFromInputStream.zip");
+        Path file = getInMemoryTestPath("testTransferFromInputStream.zip");
         try (ZipArchive archive = new ZipArchive(file)) {
             archive.add(
                     new BytesSource(content1, "file1.txt", Deflater.NO_COMPRESSION) {
@@ -1019,7 +1032,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         Random random = new Random(0);
         random.nextBytes(bytes);
 
-        Path path = getTestPath(filename);
+        Path path = getInMemoryTestPath(filename);
         try (OutputStream out =
                 Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             out.write(bytes);
@@ -1032,10 +1045,10 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         byte[] bytes = new byte[4096];
         Path srcPath = createRandomFile("testLargeSource.txt", bytes);
 
-        Path tmpPath = getTestPath("testLargeSourceTmpPath.tmp");
+        Path tmpPath = getInMemoryTestPath("testLargeSourceTmpPath.tmp");
 
         // Test compressed FileBackedSource
-        Path compressedDstFile = getTestPath("testLargeSourceCompressed.zip");
+        Path compressedDstFile = getInMemoryTestPath("testLargeSourceCompressed.zip");
         try (ZipArchive zipArchive = new ZipArchive(compressedDstFile)) {
             LargeFileSource s = new LargeFileSource(srcPath, tmpPath, "x", 1);
             zipArchive.add(s);
@@ -1049,7 +1062,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         Assert.assertFalse("LargeSource tmp file was not deleted", Files.exists(tmpPath));
 
         // Test uncompressed FileBackedSource
-        Path uncompressedDstFile = getTestPath("testLargeSourceUncompressed.zip");
+        Path uncompressedDstFile = getInMemoryTestPath("testLargeSourceUncompressed.zip");
         try (ZipArchive zipArchive = new ZipArchive(uncompressedDstFile)) {
             LargeFileSource s = new LargeFileSource(srcPath, tmpPath, "x", 0);
             zipArchive.add(s);
@@ -1068,7 +1081,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         byte[] bytes = new byte[4096];
         Path srcPath = createRandomFile("testLargeCompressedSourceNoTmp.txt", bytes);
 
-        Path archiveFile = getTestPath("testLargeCompressedSourceNoTmp.zip");
+        Path archiveFile = getInMemoryTestPath("testLargeCompressedSourceNoTmp.zip");
         try (ZipArchive zipArchive = new ZipArchive(archiveFile)) {
             LargeFileSource s = new LargeFileSource(srcPath, "x", 1);
             zipArchive.add(s);
@@ -1089,13 +1102,13 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testDetectLargeFileTmpCollision() throws Exception {
-        Path tmpCollider = getTestPath("tmpFileToCollide.txt");
+        Path tmpCollider = getInMemoryTestPath("tmpFileToCollide.txt");
         Files.createFile(tmpCollider);
 
-        Path fooSrc = getTestPath("testTmpCollisionSrc.txt");
+        Path fooSrc = getInMemoryTestPath("testTmpCollisionSrc.txt");
         Files.createFile(fooSrc);
 
-        Path f = getTestPath("testTmpCollisionArchive.zip");
+        Path f = getInMemoryTestPath("testTmpCollisionArchive.zip");
         try (ZipArchive archive = new ZipArchive(f)) {
             LargeFileSource s = new LargeFileSource(fooSrc, tmpCollider, "x", 1);
             archive.add(s);
@@ -1106,10 +1119,10 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testDetectBadParameter() throws Exception {
-        Path fooPath = getTestPath("testDetectBadParameter.txt");
+        Path fooPath = getInMemoryTestPath("testDetectBadParameter.txt");
         Files.createFile(fooPath);
 
-        Path f = getTestPath("testDetectBadParameter.zip");
+        Path f = getInMemoryTestPath("testDetectBadParameter.zip");
 
         try (ZipArchive archive = new ZipArchive(f)) {
             LargeFileSource s = new LargeFileSource(fooPath, null, "x", 0);
@@ -1128,10 +1141,10 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     public void testSmallInputStream() throws Exception {
         int streamSize = 500;
 
-        Path a = getTestPath("testSmallInputStreamCompression.zip");
+        Path a = getInMemoryTestPath("testSmallInputStreamCompression.zip");
         runInputStreamSource(a, Deflater.BEST_COMPRESSION, streamSize, streamSize);
 
-        Path b = getTestPath("testSmallInputStreamNoCompression.zip");
+        Path b = getInMemoryTestPath("testSmallInputStreamNoCompression.zip");
         runInputStreamSource(b, Deflater.NO_COMPRESSION, streamSize, streamSize);
     }
 
@@ -1169,28 +1182,28 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     public void testLargeInputStream() throws Exception {
         int streamSize = 20000;
 
-        Path a = getTestPath("testLargeInputStreamCompression.zip");
+        Path a = getInMemoryTestPath("testLargeInputStreamCompression.zip");
         runInputStreamSource(a, Deflater.BEST_COMPRESSION, streamSize, 5000);
 
-        Path b = getTestPath("testLargeInputStreamNoCompression.zip");
+        Path b = getInMemoryTestPath("testLargeInputStreamNoCompression.zip");
         runInputStreamSource(b, Deflater.NO_COMPRESSION, streamSize, 5000);
     }
 
     @Test
     public void testDirectory() throws Exception {
-        Path cwd = temporaryFolder.newFolder().toPath();
-        final String newFolderName = "newFolder/";
-        Path newFolder = Paths.get(cwd.toString(), newFolderName);
+        Path cwd = createInMemoryFileSystemAndFolder("test");
+        String newFolderName = "newFolder";
+        Path newFolder = cwd.resolve(newFolderName);
         Files.createDirectories(newFolder);
 
-        Path archPath = getTestPath("testDirectory.zip");
+        Path archPath = cwd.resolve("testDirectory.zip");
         try (ZipArchive archive = new ZipArchive(archPath)) {
             archive.add(Sources.dir(cwd.relativize(newFolder).toString()));
         }
 
         try (ZipRepo repo = new ZipRepo(archPath)) {
             Map<String, Entry> entries = repo.getEntries();
-            Entry entry = entries.get(newFolderName);
+            Entry entry = entries.get(newFolderName + '/');
             Assert.assertNotNull("Directory Entry not found", entry);
             Assert.assertTrue("Directory entry test1", entry.isDirectory());
         }
@@ -1206,8 +1219,8 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testDoubleDirectoryAdd() throws Exception {
-        Path cwd = temporaryFolder.newFolder().toPath();
-        Path archPath = getTestPath("testDirectory.zip");
+        Path cwd = createInMemoryFileSystemAndFolder("test");
+        Path archPath = getInMemoryTestPath("testDirectory.zip");
         String dirName = Source.directoryName("dir");
         try (ZipArchive archive = new ZipArchive(archPath)) {
             archive.add(Sources.dir(dirName));
@@ -1217,7 +1230,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testDirectoryPermission() throws Exception {
-        Path archPath = getTestPath("testDirectoryPermission.zip");
+        Path archPath = getInMemoryTestPath("testDirectoryPermission.zip");
         String dirName = Source.directoryName("dir");
         try (ZipArchive archive = new ZipArchive(archPath)) {
             archive.add(Sources.dir(dirName));
