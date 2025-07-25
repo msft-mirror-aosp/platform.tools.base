@@ -66,6 +66,7 @@ class ProductFlavorTest {
                         "getTargetSdk",
                         "getMinSdk",
                         "getGeneratedDensities",
+                        "getApplicationId",
                 )
         ) { original: ProductFlavor ->
             val copy = dslServices.newDecoratedInstance(ProductFlavor::class.java,

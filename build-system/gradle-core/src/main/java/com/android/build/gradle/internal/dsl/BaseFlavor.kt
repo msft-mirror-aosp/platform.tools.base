@@ -81,46 +81,33 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
             maxSdk { version = value?.let { release(it) } }
         }
 
+    protected abstract var _minSdk: MinSdkVersion?
+
+    private val minSdkDelegate = MinSdkDelegate(
+        getMinSdk = { _minSdk },
+        setMinSdk = { _minSdk = it },
+        dslServices = dslServices
+    )
+
     @get:Restricted
     override var minSdk: Int?
-        get() = _minSdk?.apiLevel
+        get() = minSdkDelegate.minSdk
         set(value) {
-            minSdk { version = value?.let { release(value)} }
+            minSdkDelegate.minSdk = value
         }
 
     override var minSdkVersion: ApiVersion?
-        get() = _minSdk?.let { DefaultApiVersion(it.apiLevel, it.codeName) }
+        get() = minSdkDelegate.minSdkVersion
         set(value) {
-            if (value == null) {
-                _minSdk = null
-            } else {
-                val codeName = value.getCodename()
-                if (codeName != null) {
-                    minSdk { version = preview(codeName) }
-                } else {
-                    minSdk { version = release(value.apiLevel) }
-                }
-            }
+            minSdkDelegate.minSdkVersion = value
         }
-
-    protected abstract var _minSdk: MinSdkVersion?
 
     override fun minSdk(action: MinSdkSpec.() -> Unit) {
-        createMinSdkSpec().also {
-            action.invoke(it)
-            updateIfChanged(_minSdk, it.version) {
-                _minSdk = it
-            }
-        }
+        minSdkDelegate.minSdk(action)
     }
 
     open fun minSdk(action: Action<MinSdkSpec>) {
-        createMinSdkSpec().also {
-            action.execute(it)
-            updateIfChanged(_minSdk, it.version) {
-                _minSdk = it
-            }
-        }
+        minSdkDelegate.minSdk(action)
     }
 
     //TODO(b/421964815): remove the support for groovy space assignment(e.g `minSdk 24`).
@@ -133,9 +120,9 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
     }
 
     override var minSdkPreview: String?
-        get() = _minSdk?.codeName
+        get() =  minSdkDelegate.minSdkPreview
         set(value) {
-            setMinSdkVersion(value)
+            minSdkDelegate.minSdkPreview = value
         }
 
     protected abstract var _targetSdk: TargetSdkVersion?
@@ -195,7 +182,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
         }
 
     override fun setMinSdkVersion(minSdkVersion: Int) {
-        minSdk { version = release(minSdkVersion) }
+        minSdkDelegate.setMinSdkVersion(minSdkVersion)
     }
 
     /**
@@ -208,16 +195,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
     }
 
     override fun setMinSdkVersion(minSdkVersion: String?) {
-        minSdk {
-            version = minSdkVersion?.let { minSdkVersion ->
-                val apiLevel = minSdkVersion.apiVersionToInt()
-                if (apiLevel != null) {
-                    release(apiLevel)
-                } else {
-                    preview(minSdkVersion)
-                }
-            }
-        }
+        minSdkDelegate.setMinSdkVersion(minSdkVersion)
     }
 
     /**
@@ -674,21 +652,6 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
      */
     open fun wearAppUnbundled(wearAppUnbundled: Boolean?) {
         this.wearAppUnbundled = wearAppUnbundled
-    }
-
-    /**
-     * Try to convert apiVersion from String to Int if the String is probably consisted with digits
-     *
-     * Return exception when converting fails. Returns null when this apiVersion should be codeName.
-     */
-    fun String.apiVersionToInt(): Int? {
-        return if (this[0].isDigit()) {
-            try {
-                this.toInt()
-            } catch (e: NumberFormatException) {
-                throw RuntimeException("'$this' is not a valid API level. ", e)
-            }
-        } else null
     }
 
     private fun createTargetSdkSpec(): TargetSdkSpecImpl {
