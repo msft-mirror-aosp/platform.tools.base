@@ -2841,7 +2841,7 @@ package com.android.build.api.variant {
     method public void setEnable(boolean);
     method @Deprecated public void setEnabled(boolean);
     property public abstract boolean enable;
-    property @Deprecated public abstract boolean enabled;
+    property @Deprecated public boolean enabled;
   }
 
   public interface ComponentIdentity {

@@ -52,6 +52,7 @@ interface ComponentBuilder: ComponentIdentity {
      */
     var enable: Boolean
 
-    @Deprecated("Will be removed in 9.0") // b/368602406
+    // Keep in 9.x for binary compatibility
+    @Deprecated(level = DeprecationLevel.HIDDEN, message = "Will be removed in 10.0") // b/368602406
     var enabled: Boolean
 }
