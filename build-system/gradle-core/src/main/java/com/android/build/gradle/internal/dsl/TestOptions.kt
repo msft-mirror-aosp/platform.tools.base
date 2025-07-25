@@ -51,12 +51,6 @@ abstract class TestOptions @Inject constructor(
     override var reportDir: String? = null
     override var animationsDisabled: Boolean = false
 
-    override val devices: ExtensiblePolymorphicDomainObjectContainer<Device>
-        get() = managedDevices.devices
-
-    override val deviceGroups: NamedDomainObjectContainer<DeviceGroup>
-        get() = managedDevices.groups
-
     override val managedDevices: ManagedDevices =
         dslServices.newInstance(ManagedDevices::class.java, dslServices)
 

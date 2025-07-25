@@ -49,35 +49,6 @@ interface TestOptions {
     var animationsDisabled: Boolean
 
     /**
-     * List of test devices for this project for use with the Unified Test Platform
-     *
-     * These APIs are experimental and may change without notice.
-     *
-     * [devices] is deprecated, use [managedDevices.devices] to specify Gradle Managed Devices
-     */
-    @Deprecated("devices is deprecated in testOptions, use managedDevices.devices instead")
-    @get:Incubating
-    val devices: ExtensiblePolymorphicDomainObjectContainer<Device>
-
-    /**
-     * List of DeviceGroups that can be run through connected check, using the Unified Test
-     * Platform.
-     *
-     * DeviceGroups with individual devices are added automatically, with the same name of the
-     * individual device.
-     *
-     * These APIs are experimental and may change without notice.
-     *
-     * [deviceGroups] is deprecated, use [managedDevices.groups] to specify groups of
-     * Gradle Managed Devices.
-     */
-    @Deprecated(
-        "deviceGroups is deprecated in testOptions, use managedDevices.groups instead"
-    )
-    @get:Incubating
-    val deviceGroups: NamedDomainObjectContainer<DeviceGroup>
-
-    /**
      * Configures Gradle Managed Devices for use in testing with the Unified test platform.
      */
     @get:Incubating

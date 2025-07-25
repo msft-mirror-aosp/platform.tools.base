@@ -18,8 +18,6 @@ https://issuetracker.google.com/328747928
 https://issuetracker.google.com/328748002
   * com.android.build.api.artifact.SingleArtifact$APK_FROM_BUNDLE extends com.android.build.api.artifact.SingleArtifact
 https://issuetracker.google.com/328748006
-  * com.android.build.api.dsl.TestOptions.getDeviceGroups: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> ()
-  * com.android.build.api.dsl.TestOptions.getDevices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> ()
   * com.android.build.api.dsl.TestOptions.getManagedDevices: com.android.build.api.dsl.ManagedDevices ()
   * com.android.build.api.dsl.TestOptions.managedDevices: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ManagedDevices, kotlin.Unit>)
 https://issuetracker.google.com/328748020

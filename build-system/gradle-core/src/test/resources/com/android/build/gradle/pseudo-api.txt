@@ -2012,8 +2012,6 @@ com.android.build.gradle.internal.dsl.TestOptions.emulatorSnapshots: void (org.g
 com.android.build.gradle.internal.dsl.TestOptions.failureRetention: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.FailureRetention, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestOptions.failureRetention: void (org.gradle.api.Action<com.android.build.api.dsl.FailureRetention>)
 com.android.build.gradle.internal.dsl.TestOptions.getAnimationsDisabled: boolean ()
-com.android.build.gradle.internal.dsl.TestOptions.getDeviceGroups: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> ()
-com.android.build.gradle.internal.dsl.TestOptions.getDevices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> ()
 com.android.build.gradle.internal.dsl.TestOptions.getEmulatorControl: com.android.build.api.dsl.EmulatorControl ()
 com.android.build.gradle.internal.dsl.TestOptions.getEmulatorSnapshots: com.android.build.api.dsl.EmulatorSnapshots ()
 com.android.build.gradle.internal.dsl.TestOptions.getExecution: java.lang.String ()
