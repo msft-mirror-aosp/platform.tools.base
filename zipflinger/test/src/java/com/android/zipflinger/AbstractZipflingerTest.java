@@ -20,8 +20,6 @@ import static com.android.testutils.file.InMemoryFileSystems.createInMemoryFileS
 import com.android.testutils.TestUtils;
 
 import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,8 +40,6 @@ public abstract class AbstractZipflingerTest {
 
     protected static final String BASE = "tools/base/zipflinger/test/resource/";
 
-    @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
     protected static Path getPath(String filename) {
         String fullPath = BASE + filename;
         Path prospect = Paths.get(fullPath);
@@ -53,11 +49,7 @@ public abstract class AbstractZipflingerTest {
         return TestUtils.resolveWorkspacePath(fullPath);
     }
 
-    protected Path getTestPath(String filename) throws IOException {
-        return temporaryFolder.newFolder().toPath().resolve(filename);
-    }
-
-    protected Path getInMemoryTestPath(String filename) throws IOException {
+    protected Path getTestPath(String filename) {
         return createInMemoryFileSystemAndFolder("test").resolve(filename);
     }
 

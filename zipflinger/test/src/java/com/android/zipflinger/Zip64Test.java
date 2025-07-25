@@ -17,15 +17,20 @@ package com.android.zipflinger;
 
 import static java.util.zip.Deflater.NO_COMPRESSION;
 
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class Zip64Test extends AbstractZipflingerTest {
     private static final int ONE_GIB = 1 << 30;
+
+    @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
     public void testZip64Parsing() throws Exception {
@@ -35,7 +40,7 @@ public class Zip64Test extends AbstractZipflingerTest {
 
     @Test
     public void testZip64Writing() throws Exception {
-        Path dst = getTestPath("testZip64Writing.zip");
+        Path dst = getOnDiskTestPath("testZip64Writing.zip");
         byte[] bytes = new byte[ONE_GIB];
         try (ZipArchive archive = new ZipArchive(dst, Zip64.Policy.ALLOW)) {
             for (int i = 0; i < 5; i++) {
@@ -146,5 +151,9 @@ public class Zip64Test extends AbstractZipflingerTest {
                 archive.add(source);
             }
         }
+    }
+
+    private Path getOnDiskTestPath(String filename) throws IOException {
+        return temporaryFolder.newFolder().toPath().resolve(filename);
     }
 }
