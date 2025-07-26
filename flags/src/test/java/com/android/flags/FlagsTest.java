@@ -129,7 +129,7 @@ public class FlagsTest {
     }
 
     @Test
-    public void flagsThrowsExceptionIfFlagsWithDuplicateIdsAreRegisetered() throws Exception {
+    public void flagsThrowsExceptionIfFlagsWithDuplicateIdsAreRegistered() throws Exception {
         Flags flags = new Flags();
         FlagGroup group = new FlagGroup(flags, "test", "Test Group");
         Flag<String> flag1 = new StringFlag(group, "str1", "Unused", "Unused", "Str 1");
@@ -141,6 +141,20 @@ public class FlagsTest {
             Assert.fail();
         } catch (IllegalArgumentException ignored) {
         }
+    }
+
+    @Test
+    public void flagsCanBeRetrievedById() {
+        Flags flags = new Flags();
+        FlagGroup group = new FlagGroup(flags, "test", "Test Group");
+        Flag<String> flag1 = new StringFlag(group, "str1", "Unused", "Unused", "Str 1");
+        Flag<String> flag2 = new StringFlag(group, "str2", "Unused", "Unused", "Str 2");
+
+        Flag<?> got1 = flags.getFlag("test.str1");
+        assertThat(got1).isEqualTo(flag1);
+
+        Flag<?> got3 = flags.getFlag("test.not.present");
+        assertThat(got3).isNull();
     }
 
     @Test

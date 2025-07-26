@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.flags.overrides.DefaultFlagOverrides;
 import com.android.flags.overrides.PropertyOverrides;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -121,6 +122,12 @@ public final class Flags {
                             "Flag \"%s\" shares duplicate ID \"%s\" with flag \"%s\"",
                             flag.getDisplayName(), flag.getId(), existingFlag.getDisplayName()));
         }
+    }
+
+    /** Returns the flag with the given ID, or {@code null} if no such flag exists. */
+    @Nullable
+    public Flag<?> getFlag(String id) {
+        return registeredFlags.get(id);
     }
 
     /** Validates the flags registered with this flags registry. */
