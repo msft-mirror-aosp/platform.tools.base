@@ -2353,7 +2353,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/services/org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
   META-INF/services/org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
   META-INF/services/org.jetbrains.kotlin.resolve.ExternalOverridabilityCondition
-  META-INF/services/org.jetbrains.kotlin.resolve.jvm.jvmSignature.KotlinToJvmSignatureMapper
+  META-INF/services/org.jetbrains.kotlin.resolve.jvm.KotlinToJvmSignatureMapper
   META-INF/services/org.jetbrains.kotlin.util.ModuleVisibilityHelper
   META-INF/services/org/
   META-INF/services/org/jline/
@@ -2462,6 +2462,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/analysis/api/fir/diagnostics/
   org/jetbrains/kotlin/analysis/api/fir/evaluate/
   org/jetbrains/kotlin/analysis/api/fir/modification/
+  org/jetbrains/kotlin/analysis/api/fir/projectStructure/
   org/jetbrains/kotlin/analysis/api/fir/references/
   org/jetbrains/kotlin/analysis/api/fir/scopes/
   org/jetbrains/kotlin/analysis/api/fir/signatures/
@@ -2978,6 +2979,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/library/abi/impl/
   org/jetbrains/kotlin/library/encodings/
   org/jetbrains/kotlin/library/impl/
+  org/jetbrains/kotlin/library/loader/
   org/jetbrains/kotlin/library/metadata/
   org/jetbrains/kotlin/library/metadata/impl/
   org/jetbrains/kotlin/library/metadata/resolver/
