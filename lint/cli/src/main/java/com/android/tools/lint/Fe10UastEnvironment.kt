@@ -296,6 +296,7 @@ private fun configureFe10ProjectEnvironment(
   configureAnalysisApiServices(env, config)
 }
 
+@OptIn(KaImplementationDetail::class)
 private fun configureAnalysisApiServices(
   env: KotlinCoreProjectEnvironment,
   config: Fe10UastEnvironment.Configuration,
