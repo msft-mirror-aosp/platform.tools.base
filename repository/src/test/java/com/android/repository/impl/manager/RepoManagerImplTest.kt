@@ -18,6 +18,7 @@ package com.android.repository.impl.manager
 import com.android.repository.Revision
 import com.android.repository.api.LocalPackage
 import com.android.repository.api.ProgressIndicator
+import com.android.repository.api.ProgressRunner
 import com.android.repository.api.RemotePackage
 import com.android.repository.api.RepoManager
 import com.android.repository.api.RepoManager.RepoLoadedListener
@@ -41,11 +42,16 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.mock
-import kotlin.time.Duration
 
 /** Tests for [RepoManagerImpl]. */
 class RepoManagerImplTest {
@@ -75,7 +81,10 @@ class RepoManagerImplTest {
     assertEquals(4, counter.get())
   }
 
-  // test error causes error callbacks to be called
+  /**
+   * If a synchronous load fails during remote loading, it should invoke its localCallback, its
+   * errorCallback, and throw the exception.
+   */
   @Test
   fun testErrorCallbacks1() {
     val counter = AtomicInteger(0)
@@ -89,7 +98,7 @@ class RepoManagerImplTest {
     val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
-    try {
+    assertThrows(TestLoaderException::class.java) {
       mgr.loadSynchronously(
         cacheExpirationMs = 0,
         onLocalComplete = localCallback,
@@ -98,13 +107,14 @@ class RepoManagerImplTest {
         runner = runner,
         downloader = FakeDownloader(repoRoot.getRoot().resolve("tmp")),
       )
-    } catch (e: Exception) {
-      // expected
     }
     assertThat(counter.get()).isEqualTo(4)
   }
 
-  // test error causes error callbacks to be called
+  /**
+   * If a synchronous load fails during local loading, it should both call its errorCallback and
+   * throw the exception.
+   */
   @Test
   fun testErrorCallbacks2() {
     val counter = AtomicInteger(0)
@@ -118,7 +128,7 @@ class RepoManagerImplTest {
     val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
-    try {
+    assertThrows(TestLoaderException::class.java) {
       mgr.loadSynchronously(
         cacheExpirationMs = 0,
         onLocalComplete = localCallback,
@@ -127,11 +137,154 @@ class RepoManagerImplTest {
         runner = runner,
         downloader = FakeDownloader(repoRoot.root.resolve("tmp")),
       )
-    } catch (_: Exception) {
-      // expected
     }
     assertEquals(2, counter.get())
   }
+
+  /**
+   * If the primary task fails, another task that is sharing its result should also fail and throw
+   * an exception.
+   */
+  @Test
+  fun testExceptionPropagationToPiggybackTasks() {
+    val secondCallStarted = CountDownLatch(1)
+    val finished = CountDownLatch(1)
+    val counter = AtomicInteger(0)
+    val localFactory = TestLoaderFactory(WaitingTestLoader(secondCallStarted, fail = true))
+    val localCallback = RepoLoadedListener { _ -> fail() }
+    val remoteFactory = TestLoaderFactory<RemotePackage>()
+    val errorCallback = Runnable {
+      assertEquals(1, counter.addAndGet(1))
+      finished.countDown()
+    }
+
+    val repoRoot = createInMemoryFileSystemAndFolder("repo")
+    val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
+    val runner = FakeProgressRunner()
+    mgr.load(
+      cacheExpirationMs = 0,
+      onLocalComplete = localCallback,
+      onError = errorCallback,
+      runner = runner,
+      downloader = null,
+    )
+    assertThrows(TestLoaderException::class.java) {
+      // We want to test the variant of loadSynchronously that uses DirectProgressRunner, but we
+      // need a way to control the scheduling, so we use a custom ProgressRunner.
+      mgr.loadSynchronously(
+        cacheExpirationMs = 0,
+        runner =
+          object : ProgressRunner {
+            override fun runAsyncWithProgress(r: ProgressRunner.ProgressRunnable) =
+              throw UnsupportedOperationException()
+
+            override fun runSyncWithProgress(r: ProgressRunner.ProgressRunnable) {
+              runBlocking {
+                secondCallStarted.countDown()
+                r.run(FakeProgressIndicator())
+              }
+            }
+          },
+        downloader = null,
+        settings = null,
+      )
+    }
+
+    finished.await()
+    assertEquals(1, counter.get())
+  }
+
+  /**
+   * If one caller starts a load, and another concurrently starts the same load, then if the first
+   * caller is cancelled, the second caller should not be cancelled, and it should still receive the
+   * result of the load after making its own request.
+   */
+  @Test
+  fun testCancellationPropagationToPiggybackTasks() =
+    runBlocking(Dispatchers.Default) {
+      val loaderInvocationCount = AtomicInteger(0)
+      val firstInvocationStarted = CountDownLatch(1)
+      val firstInvocationCancelled = AtomicBoolean(false)
+      val canPerformLoad = Semaphore(0)
+
+      val fakePackage = FakeLocalPackage("foo")
+      val fakeLoader =
+        object : FakeLoader<LocalPackage>() {
+          override fun run(): Map<String, LocalPackage> {
+            val taskIndex = loaderInvocationCount.incrementAndGet()
+            if (taskIndex == 1) {
+              firstInvocationStarted.countDown()
+            } else {
+              // We shouldn't get here until the first invocation is cancelled
+              assertThat(firstInvocationCancelled.get()).isTrue()
+            }
+            // Wait for permission to proceed.
+            assertTrue(
+              "Loader timed out waiting to proceed",
+              canPerformLoad.tryAcquire(5, TimeUnit.SECONDS),
+            )
+            if (taskIndex == 1) {
+              firstInvocationCancelled.set(true)
+              throw CancellationException()
+            }
+            return mapOf("foo" to fakePackage)
+          }
+        }
+
+      val localFactory = TestLoaderFactory(fakeLoader)
+      val repoRoot = createInMemoryFileSystemAndFolder("repo")
+      val mgr = RepoManagerImpl(repoRoot, localFactory, null)
+      mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
+      val progress = FakeProgressIndicator()
+
+      launch {
+        mgr.loadLocalPackages(progress, 1.seconds)
+        fail("First caller should have been cancelled")
+      }
+
+      // Wait until the loader has been invoked by the first caller
+      assertTrue(
+        "Loader was not started by the first caller",
+        firstInvocationStarted.await(5, TimeUnit.SECONDS),
+      )
+
+      // Second caller, which will piggyback on the first task
+      val secondCallerJob = async { mgr.loadLocalPackages(progress, 2.seconds) }
+      val thirdCallerJob = async { mgr.loadLocalPackages(progress, 3.seconds) }
+
+      // Make sure that we actually created piggyback tasks and not separate loads
+      assertThat(loaderInvocationCount.get()).isEqualTo(1)
+
+      // Unblock the first loader invocation. Its task is cancelled, so its result will be ignored.
+      canPerformLoad.release()
+
+      // Wait a bit so that both second and third caller can fallback; one should create a new task
+      // and the other should piggyback. (We have no way to observe piggyback task creation, so we
+      // have to delay a bit to avoid the second task completing its load before the third task
+      // falls back.)
+      Thread.sleep(1000)
+
+      // The fallback from the second caller should invoke the loader again.
+      // We need to unblock this second invocation as well.
+      canPerformLoad.release()
+
+      // The second caller should complete successfully with the results from the fallback load.
+      secondCallerJob.await().let {
+        assertThat(it).hasSize(1)
+        assertThat(it.first().path).isEqualTo("foo")
+      }
+      thirdCallerJob.await().let {
+        assertThat(it).hasSize(1)
+        assertThat(it.first().path).isEqualTo("foo")
+      }
+      assertThat(mgr.packages.localPackages).containsExactly("foo", fakePackage)
+
+      // The loader should have been invoked twice: once for the original (cancelled) task,
+      // and once for the fallback task. The third job should piggyback on the second rather than
+      // making its own request.
+      assertThat(loaderInvocationCount.get()).isEqualTo(2)
+    }
 
   // test multiple loads at same time only kick off one load, and callbacks are invoked
   @Test
@@ -277,7 +430,10 @@ class RepoManagerImplTest {
     repoManager.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
 
     val loadedPackages = runBlocking {
-      repoManager.loadLocalPackages(indicator = FakeProgressIndicator(), cacheExpiration = Duration.ZERO)
+      repoManager.loadLocalPackages(
+        indicator = FakeProgressIndicator(),
+        cacheExpiration = Duration.ZERO,
+      )
     }
     assertThat(loadedPackages).containsExactly(pkg1, pkg2)
 
@@ -305,10 +461,10 @@ class RepoManagerImplTest {
 
     val loadedPackages = runBlocking {
       repoManager.loadRemotePackages(
-          indicator = FakeProgressIndicator(),
-          cacheExpiration = Duration.ZERO,
-          downloader = FakeDownloader(repoRoot.root.resolve("tmp")),
-          settings = null,
+        indicator = FakeProgressIndicator(),
+        cacheExpiration = Duration.ZERO,
+        downloader = FakeDownloader(repoRoot.root.resolve("tmp")),
+        settings = null,
       )
     }
     assertThat(loadedPackages).containsExactly(pkg1, pkg2)
@@ -534,9 +690,24 @@ class RepoManagerImplTest {
     override fun run(): Map<String, T> {
       assertEquals(target, counter.addAndGet(1))
       if (fail) {
-        throw RuntimeException("expected")
+        throw TestLoaderException()
       }
       return HashMap<String, T>()
     }
   }
+
+  private class WaitingTestLoader<T : RepoPackage>(
+    private val latch: CountDownLatch,
+    private val fail: Boolean,
+  ) : FakeLoader<T>() {
+    override fun run(): Map<String, T> {
+      latch.await()
+      if (fail) {
+        throw TestLoaderException()
+      }
+      return HashMap<String, T>()
+    }
+  }
+
+  private class TestLoaderException : Exception("Simulated exception in loader")
 }
