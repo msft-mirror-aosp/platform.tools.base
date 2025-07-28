@@ -84505,6 +84505,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.junit-bom_5.11.0-M2",
+    pom = "repository/org/junit/junit-bom/5.11.0-M2/junit-bom-5.11.0-M2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/junit-bom/5.11.0-M2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.junit-bom_5.7.0",
     pom = "repository/org/junit/junit-bom/5.7.0/junit-bom-5.7.0.pom",
     repo_root_path = "repository",

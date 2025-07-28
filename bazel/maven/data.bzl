@@ -1178,6 +1178,7 @@ DATA = [
     "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.8.18",
     "org.junit:junit-bom:pom:5.10.0",
     "org.junit:junit-bom:pom:5.10.2",
+    "org.junit:junit-bom:pom:5.11.0-M2",
     "org.junit:junit-bom:pom:5.9.2",
     "org.junit:junit-bom:pom:5.9.3",
     "org.junit.platform:junit-platform-console-standalone:1.12.0",
