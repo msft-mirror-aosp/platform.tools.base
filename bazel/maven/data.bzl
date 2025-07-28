@@ -849,6 +849,7 @@ DATA = [
     "com.jakewharton.timber:timber:5.0.1",  # Dependency of architecture-samples
     "com.jetbrains.intellij.java:java-compiler-ant-tasks:243.22562.145",
     "com.linkedin.testbutler:test-butler-app:1.3.1",
+    "com.openai:openai-java:2.19.1",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
     "com.squareup:kotlinpoet:2.0.0",
