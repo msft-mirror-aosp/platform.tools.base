@@ -44,7 +44,7 @@ enum class BooleanOption(
     override val defaultValue: Boolean,
     val stage: Stage,
     futureStage: FutureStage? = null
-) : Option<Boolean> {
+) : Option<Boolean>, HasFutureStage {
 
     /* -----------
      * STABLE APIs
@@ -1222,7 +1222,7 @@ enum class BooleanOption(
 
     override val status = stage.status
 
-    val futureStage: FutureStage? = when (stage) {
+    override val futureStage: FutureStage? = when (stage) {
         is FeatureStage.SoftlyEnforced -> {
             check(futureStage == null) {
                 "Do not set ${FutureStage::class.simpleName} for property '$propertyName' manually" +

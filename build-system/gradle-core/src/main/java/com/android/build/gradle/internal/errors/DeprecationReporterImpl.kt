@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.errors
 
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.HasFutureStage
 import com.android.build.gradle.options.Option
 import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.build.gradle.options.ProjectOptions
@@ -204,17 +205,18 @@ class DeprecationReporterImpl(
             return
         }
 
+        val futureStage = (option as? HasFutureStage)?.futureStage
+
         val useSimulatedVersionBehavior =
             projectOptions.simulatedAGPVersion != null
-                    && option is BooleanOption
-                    && option.futureStage != null
-                    && option.futureStage.version.agpVersion <= projectOptions.simulatedAGPVersion
+                    && futureStage != null
+                    && futureStage.version.agpVersion <= projectOptions.simulatedAGPVersion
 
         val status =
-            if (useSimulatedVersionBehavior) option.futureStage.stage.status else option.status
+            if (useSimulatedVersionBehavior) futureStage.stage.status else option.status
 
         val defaultValue =
-            if (useSimulatedVersionBehavior) option.futureStage.defaultValue else option.defaultValue
+            if (useSimulatedVersionBehavior) futureStage.defaultValue else option.defaultValue
 
         val defaultValueMessage =
             defaultValue?.let { "\nThe current default is '$it'." } ?: ""
