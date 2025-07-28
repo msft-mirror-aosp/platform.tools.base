@@ -189,6 +189,8 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
       return when {
         casesJoined.isEmpty() -> Type.None
         casesJoined.size == 1 -> casesJoined.first()
+        !casesNow.any { it is Type.Sym.Fix || it.hasFreeRec() } &&
+          casesNow.containsAll(casesPrev) -> now
         else -> {
           val (symsPrev, constantsPrev) = casesPrev.partitionIsInstanceOf<_, Type.Sym<Nothing>>()
           val (symsNow, constantsNow) = casesNow.partitionIsInstanceOf<_, Type.Sym<Nothing>>()

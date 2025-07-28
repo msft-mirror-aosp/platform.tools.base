@@ -95,6 +95,13 @@ class TypeLatticeTest :
         fix { listOf(x["f", Type.Int], it["g"], it["f", Type.String], it["f", Type.Int]["g"]) }
       )
   }
+
+  @Test
+  fun `no excessive widening`() {
+    // `x` and `x ∪ y.f(x)` should get widened to just `x ∪ y.f(x)`, not `μα. x ∪ y.f(α)`
+    val sym = y["f", Type.Application(ClassId.of<List<*>>(), listOf(x))]
+    Truth.assertThat(widen(x, x join sym)).isEqualTo(x join sym)
+  }
 }
 
 class EffectLatticeTest :
