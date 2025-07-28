@@ -107,8 +107,12 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
                 targetName = KotlinMultiplatformAndroidPlugin.ANDROID_TARGET_NAME
                 platformType = KotlinPlatformType.jvm
                 targetFactory = ExternalKotlinTargetDescriptor.TargetFactory { delegate ->
-                    KotlinMultiplatformAndroidLibraryTargetImpl(
-                        delegate, kotlinExtension, androidExtension
+                    dslServices.newInstance(
+                        KotlinMultiplatformAndroidLibraryTargetImpl::class.java,
+                        dslServices,
+                        delegate,
+                        kotlinExtension,
+                        androidExtension
                     )
                 }
                 configureIdeImport {

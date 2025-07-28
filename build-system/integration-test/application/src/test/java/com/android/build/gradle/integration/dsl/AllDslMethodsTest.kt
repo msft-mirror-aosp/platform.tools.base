@@ -21,6 +21,7 @@ import com.android.build.api.dsl.ApplicationDefaultConfig
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.BaselineProfile
 import com.android.build.api.dsl.CompileSdkSpec
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
@@ -356,7 +357,10 @@ private class DslScriptGenerator(
                 )
             }
             JavaVersion::class.java -> { listOf(JavaVersion::class.java.name + ".VERSION_11") }
-            MinSdkVersion::class.java, MaxSdkVersion::class.java, TargetSdkVersion::class.java -> {
+            MinSdkVersion::class.java,
+            MaxSdkVersion::class.java,
+            TargetSdkVersion::class.java,
+            CompileSdkVersion::class.java -> {
                 listOf("null") } // implementation class not visible for testing
             else -> throw RuntimeException(valueType.name)
         }
@@ -460,6 +464,7 @@ private class DslScriptGenerator(
             "public abstract void com.android.build.api.dsl.Ndk.setDebugSymbolLevel(java.lang.String)",
 
             "public abstract void com.android.build.api.dsl.CommonExtension.setCompileSdkPreview(java.lang.String)",
+            "public abstract void com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.setCompileSdkPreview(java.lang.String)",
 
             "public abstract com.android.build.api.dsl.ExternalNativeBuild com.android.build.api.dsl.CommonExtension.getExternalNativeBuild()",
             "public abstract void com.android.build.api.dsl.CommonExtension.externalNativeBuild(kotlin.jvm.functions.Function1)",
@@ -502,6 +507,13 @@ private class DslScriptGenerator(
             "public abstract com.android.build.api.dsl.TargetSdkVersion com.android.build.api.dsl.TargetSdkSpec.preview(java.lang.String)",
             "public abstract void com.android.build.api.dsl.ApplicationBaseFlavor.targetSdk(kotlin.jvm.functions.Function1)",
             "public abstract void com.android.build.api.dsl.CommonExtension.compileSdk(kotlin.jvm.functions.Function1)",
+            "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.preview(java.lang.String)",
+            "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.release(int,kotlin.jvm.functions.Function1)",
+            "public static com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.release\$default(com.android.build.api.dsl.CompileSdk,int,kotlin.jvm.functions.Function1,int,java.lang.Object)",
+            "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.addon(java.lang.String,java.lang.String,int)",
+            "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.preview(java.lang.String)",
+            "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.release(int)",
+            "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.release(int,kotlin.jvm.functions.Function1)",
             "public abstract void com.android.build.api.dsl.Optimization.setEnable(boolean)",
             "public abstract org.gradle.api.provider.SetProperty<java.lang.String> com.android.build.api.dsl.Optimization.getPackageScope()"
         )

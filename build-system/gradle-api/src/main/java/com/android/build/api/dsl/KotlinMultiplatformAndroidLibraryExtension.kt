@@ -36,6 +36,11 @@ interface KotlinMultiplatformAndroidLibraryExtension {
     var minSdkPreview: String?
 
     /**
+     * Configures all aspects regarding minSdk, see [MinSdkSpec] for available options.
+     */
+    fun minSdk(action: MinSdkSpec.() -> Unit)
+
+    /**
      * Specifies the API level to compile your project against. The Android plugin requires you to
      * configure this property.
      *
@@ -58,6 +63,11 @@ interface KotlinMultiplatformAndroidLibraryExtension {
     var compileSdkExtension: Int?
 
     var compileSdkPreview: String?
+
+    /**
+     * Configures all aspects regarding compile Sdk version, see [CompileSdkSpec] for more details.
+     */
+    fun compileSdk(action: CompileSdkSpec.() -> Unit)
 
     /**
      * Includes the specified library to the classpath.

@@ -1400,6 +1400,7 @@ package com.android.build.api.dsl {
   public interface KotlinMultiplatformAndroidLibraryExtension {
     method public void aarMetadata(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AarMetadata,kotlin.Unit> action);
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryAndroidResources,kotlin.Unit> action);
+    method public void compileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkSpec,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void dependencyVariantSelection(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection,kotlin.Unit> action);
     method public com.android.build.api.dsl.AarMetadata getAarMetadata();
     method public com.android.build.api.dsl.LibraryAndroidResources getAndroidResources();
@@ -1421,6 +1422,7 @@ package com.android.build.api.dsl {
     method public String? getTestNamespace();
     method public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
     method public void localDependencySelection(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencySelection,kotlin.Unit> action);
+    method public void minSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization,kotlin.Unit> action);
     method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method public void setBuildToolsVersion(String);

@@ -16,19 +16,27 @@
 
 package com.android.build.api.variant.impl
 
+import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.KotlinMultiplatformAndroidTarget
+import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.gradle.internal.dsl.CompileSdkDelegate
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
+import com.android.build.gradle.internal.dsl.MinSdkDelegate
+import com.android.build.gradle.internal.services.DslServices
+import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinTarget
+import javax.inject.Inject
 
 @OptIn(ExternalKotlinTargetApi::class)
-internal class KotlinMultiplatformAndroidLibraryTargetImpl(
+internal open class KotlinMultiplatformAndroidLibraryTargetImpl @Inject constructor(
+    dslServices: DslServices,
     delegate: Delegate,
     kotlinExtension: KotlinMultiplatformExtension,
     androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl
@@ -59,5 +67,44 @@ internal class KotlinMultiplatformAndroidLibraryTargetImpl(
 
     override fun withJava() {
         enableJavaSources = true
+    }
+
+    private val compileSdkDelegate = CompileSdkDelegate(
+        getCompileSdk = { androidExtension._compileSdk },
+        setCompileSdk = { androidExtension._compileSdk = it },
+        issueReporter = dslServices.issueReporter,
+        dslServices = dslServices
+    )
+
+    open fun compileSdk(action: Action<CompileSdkSpec>) {
+        compileSdkDelegate.compileSdk(action)
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("compileSdk { version = release(value) }")
+    )
+    open fun compileSdk(value: Int) {
+        compileSdkDelegate.compileSdk = value
+    }
+
+    private val minSdkDelegate = MinSdkDelegate(
+        getMinSdk = { androidExtension._minSdk },
+        setMinSdk = { androidExtension._minSdk = it },
+        dslServices = dslServices
+    )
+
+    open fun minSdk(action: Action<MinSdkSpec>) {
+        minSdkDelegate.minSdk(action)
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `minSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("minSdk { version = release(value) }")
+    )
+    open fun minSdk(value: Int) {
+        minSdkDelegate.minSdk = value
     }
 }
