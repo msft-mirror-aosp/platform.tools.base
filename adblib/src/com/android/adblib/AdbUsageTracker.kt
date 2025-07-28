@@ -24,8 +24,11 @@ interface AdbUsageTracker {
         // Info about the connected device
         val deviceInfo: DeviceInfo?,
 
-        // Info about `JdwpProcessPropertiesCollector` success/failure
+        // Info about `UsingJdwpSessionFlowUpdater` success/failure
         val jdwpProcessPropertiesCollector: JdwpProcessPropertiesCollectorEvent? = null,
+
+        // Info about `UsingAppInfoFlowUpdater` success/failure
+        val appInfoProcessPropertiesCollector: AppInfoProcessPropertiesCollectorEvent? = null,
 
         // Info about device state change
         val adbDeviceStateChange: AdbDeviceStateChangeEvent? = null,
@@ -82,6 +85,19 @@ interface AdbUsageTracker {
         val failureType: JdwpProcessPropertiesCollectorFailureType? = null,
         val previouslyFailedCount: Int,
         val previousFailureType: JdwpProcessPropertiesCollectorFailureType? = null
+    )
+
+    enum class AppInfoProcessPropertiesCollectorEventType {
+        TRACK_APP_VALUE_COLLECTED,
+        VM_INFO_VALUE_COLLECTED,
+        TRACK_APP_IO_EXCEPTION,
+        TRACK_APP_OTHER_EXCEPTION,
+        VM_INFO_IO_EXCEPTION,
+        VM_INFO_OTHER_EXCEPTION,
+    }
+
+    data class AppInfoProcessPropertiesCollectorEvent(
+        val eventType: AppInfoProcessPropertiesCollectorEventType,
     )
 
     enum class DeviceState {

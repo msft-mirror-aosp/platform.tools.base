@@ -16,6 +16,7 @@
 package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.AdbUsageTracker
+import com.android.adblib.AdbUsageTracker.AppInfoProcessPropertiesCollectorEventType
 import com.android.adblib.AdbUsageTracker.JdwpProcessPropertiesCollectorEvent
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
@@ -154,6 +155,32 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertTrue(process.device.isAppInfoSupported())
         val properties = process.properties
         assertProcessPropertiesComplete(properties, isFromAppInfo = true)
+    }
+
+    @Test
+    fun processTrackingUsingAppInfoLogsUsageStats() = runBlockingWithTimeout {
+        // Prepare
+        val (_, device, process) = createJdwpProcess(
+            // Note: 36 is required for `app_info` support
+            deviceApi = 36
+        )
+
+        // Act
+        yieldUntil { process.properties.areAllPropertiesInitialized() }
+
+        // Assert
+        // Delay a little to ensure AndroidStudio stats events get logged
+        delay(10)
+        val loggedEvents = (session.host.usageTracker as TestingAdbUsageTracker).loggedEvents
+        assertEquals(2, loggedEvents.size)
+        assertEquals(device.serialNumber, loggedEvents[0].deviceInfo?.serialNumber)
+        assertEquals(device.serialNumber, loggedEvents[1].deviceInfo?.serialNumber)
+
+        val loggedEventTypes =
+            loggedEvents.map { it.appInfoProcessPropertiesCollector?.eventType }.toList()
+        assertEquals(2, loggedEventTypes.size)
+        assertTrue(loggedEventTypes.contains(AppInfoProcessPropertiesCollectorEventType.TRACK_APP_VALUE_COLLECTED))
+        assertTrue(loggedEventTypes.contains(AppInfoProcessPropertiesCollectorEventType.VM_INFO_VALUE_COLLECTED))
     }
 
     @Test
