@@ -1,9 +1,9 @@
 <component name="libraryTable">
   <library name="dexlib2">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/smali/smali-dexlib2/3.0.3/smali-dexlib2-3.0.3.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/smali/smali-util/3.0.3/smali-util-3.0.3.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/smali/smali-baksmali/3.0.3/smali-baksmali-3.0.3.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/smali/smali-dexlib2/3.0.9/smali-dexlib2-3.0.9.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/smali/smali-util/3.0.9/smali-util-3.0.9.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/smali/smali-baksmali/3.0.9/smali-baksmali-3.0.9.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

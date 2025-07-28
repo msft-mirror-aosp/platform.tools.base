@@ -565,13 +565,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.android.tools.smali.smali-baksmali_3.0.3",
-    pom = "repository/com/android/tools/smali/smali-baksmali/3.0.3/smali-baksmali-3.0.3.pom",
+    name = "com.android.tools.smali.smali-baksmali_3.0.9",
+    pom = "repository/com/android/tools/smali/smali-baksmali/3.0.9/smali-baksmali-3.0.9.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/smali/smali-baksmali/3.0.3",
+    repo_path = "com/android/tools/smali/smali-baksmali/3.0.9",
     deps = [
-        "com.android.tools.smali.smali-dexlib2_3.0.3",
-        "com.android.tools.smali.smali-util_3.0.3",
+        "com.android.tools.smali.smali-dexlib2_3.0.9",
+        "com.android.tools.smali.smali-util_3.0.9",
         "com.google.guava.guava_31.1-android",
         "com.beust.jcommander_1.64",
     ],
@@ -582,7 +582,7 @@ maven_import(
     name = "com.android.tools.smali.smali-baksmali",
     classifiers = [],
     jars = [
-        "repository/com/android/tools/smali/smali-baksmali/3.0.3/smali-baksmali-3.0.3.jar"
+        "repository/com/android/tools/smali/smali-baksmali/3.0.9/smali-baksmali-3.0.9.jar"
     ],
     exports = [
         "com.android.tools.smali.smali-dexlib2",
@@ -593,23 +593,22 @@ maven_import(
         "com.beust.jcommander",
     ],
     original_deps = [
-        "com.android.tools.smali.smali-dexlib2_3.0.3",
-        "com.android.tools.smali.smali-util_3.0.3",
+        "com.android.tools.smali.smali-dexlib2_3.0.9",
+        "com.android.tools.smali.smali-util_3.0.9",
         "com.google.guava.guava_31.1-android",
         "com.beust.jcommander_1.64",
     ],
-    pom = "repository/com/android/tools/smali/smali-baksmali/3.0.3/smali-baksmali-3.0.3.pom",
+    pom = "repository/com/android/tools/smali/smali-baksmali/3.0.9/smali-baksmali-3.0.9.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/smali/smali-baksmali/3.0.3",
-    srcjar = "repository/com/android/tools/smali/smali-baksmali/3.0.3/smali-baksmali-3.0.3-sources.jar",
+    repo_path = "com/android/tools/smali/smali-baksmali/3.0.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.android.tools.smali.smali-dexlib2_3.0.3",
-    pom = "repository/com/android/tools/smali/smali-dexlib2/3.0.3/smali-dexlib2-3.0.3.pom",
+    name = "com.android.tools.smali.smali-dexlib2_3.0.9",
+    pom = "repository/com/android/tools/smali/smali-dexlib2/3.0.9/smali-dexlib2-3.0.9.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/smali/smali-dexlib2/3.0.3",
+    repo_path = "com/android/tools/smali/smali-dexlib2/3.0.9",
     deps = [
         "com.google.code.findbugs.jsr305_3.0.2",
         "com.google.guava.guava_31.1-android",
@@ -621,7 +620,7 @@ maven_import(
     name = "com.android.tools.smali.smali-dexlib2",
     classifiers = [],
     jars = [
-        "repository/com/android/tools/smali/smali-dexlib2/3.0.3/smali-dexlib2-3.0.3.jar"
+        "repository/com/android/tools/smali/smali-dexlib2/3.0.9/smali-dexlib2-3.0.9.jar"
     ],
     exports = [
         "com.google.code.findbugs.jsr305",
@@ -633,19 +632,19 @@ maven_import(
         "com.google.code.findbugs.jsr305_3.0.2",
         "com.google.guava.guava_31.1-android",
     ],
-    pom = "repository/com/android/tools/smali/smali-dexlib2/3.0.3/smali-dexlib2-3.0.3.pom",
+    pom = "repository/com/android/tools/smali/smali-dexlib2/3.0.9/smali-dexlib2-3.0.9.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/smali/smali-dexlib2/3.0.3",
+    repo_path = "com/android/tools/smali/smali-dexlib2/3.0.9",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.android.tools.smali.smali-util_3.0.3",
-    pom = "repository/com/android/tools/smali/smali-util/3.0.3/smali-util-3.0.3.pom",
+    name = "com.android.tools.smali.smali-util_3.0.9",
+    pom = "repository/com/android/tools/smali/smali-util/3.0.9/smali-util-3.0.9.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/smali/smali-util/3.0.3",
+    repo_path = "com/android/tools/smali/smali-util/3.0.9",
     deps = [
-        "com.android.tools.smali.smali-dexlib2_3.0.3",
+        "com.android.tools.smali.smali-dexlib2_3.0.9",
         "com.google.code.findbugs.jsr305_3.0.2",
         "com.google.guava.guava_31.1-android",
         "com.beust.jcommander_1.64",
@@ -657,7 +656,7 @@ maven_import(
     name = "com.android.tools.smali.smali-util",
     classifiers = [],
     jars = [
-        "repository/com/android/tools/smali/smali-util/3.0.3/smali-util-3.0.3.jar"
+        "repository/com/android/tools/smali/smali-util/3.0.9/smali-util-3.0.9.jar"
     ],
     deps = [
         "com.android.tools.smali.smali-dexlib2",
@@ -666,14 +665,14 @@ maven_import(
         "com.beust.jcommander",
     ],
     original_deps = [
-        "com.android.tools.smali.smali-dexlib2_3.0.3",
+        "com.android.tools.smali.smali-dexlib2_3.0.9",
         "com.google.code.findbugs.jsr305_3.0.2",
         "com.google.guava.guava_31.1-android",
         "com.beust.jcommander_1.64",
     ],
-    pom = "repository/com/android/tools/smali/smali-util/3.0.3/smali-util-3.0.3.pom",
+    pom = "repository/com/android/tools/smali/smali-util/3.0.9/smali-util-3.0.9.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/smali/smali-util/3.0.3",
+    repo_path = "com/android/tools/smali/smali-util/3.0.9",
     visibility = ["//visibility:public"],
 )
 
