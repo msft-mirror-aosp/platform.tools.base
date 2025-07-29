@@ -30,7 +30,7 @@ import com.android.sdklib.BuildToolInfo
 import com.google.devtools.ksp.gradle.KspExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
-
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 fun GradleBuildDefinition.privacySandboxSdkLibraryProject(
     path: String,
@@ -46,8 +46,8 @@ fun GradleBuildDefinition.privacySandboxSdkLibraryProject(
                 targetCompatibility = JavaVersion.VERSION_1_8
             }
         }
-        legacyKotlin {
-            jvmTarget = "1.8"
+        kotlin {
+            compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
         }
         dependencies {
             implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.10")

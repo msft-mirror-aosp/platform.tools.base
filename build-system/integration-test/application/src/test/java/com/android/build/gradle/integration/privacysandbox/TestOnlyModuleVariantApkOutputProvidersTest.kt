@@ -27,6 +27,7 @@ import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.JavaVersion
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskAction
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
 
@@ -46,8 +47,8 @@ class TestOnlyModuleVariantApkOutputProvidersTest {
                         targetCompatibility = JavaVersion.VERSION_17
                     }
                 }
-                legacyKotlin {
-                    jvmTarget = "17"
+                kotlin {
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
                 }
                 files.add(
                     "src/main/java/com/privacysandboxsdk/consumer/HelloWorld.kt",
@@ -77,8 +78,8 @@ class TestOnlyModuleVariantApkOutputProvidersTest {
                         targetCompatibility = JavaVersion.VERSION_17
                     }
                 }
-                legacyKotlin {
-                    jvmTarget = "17"
+                kotlin {
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
                 }
                 files {
                     setupMinimumManifest()

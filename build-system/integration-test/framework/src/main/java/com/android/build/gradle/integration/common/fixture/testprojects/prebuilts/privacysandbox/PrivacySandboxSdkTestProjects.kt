@@ -38,6 +38,7 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
 import com.google.common.collect.ImmutableList
 import org.gradle.api.JavaVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 /**
  * Kotlin version used for privacy-sandbox tests.
@@ -487,8 +488,8 @@ fun privacySandboxSdkAppLargeSampleProjectWithTestModule(
                         targetCompatibility = JavaVersion.VERSION_17
                     }
                 }
-                legacyKotlin {
-                    jvmTarget = "17"
+                kotlin {
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
                 }
                 dependencies {
                     implementation("androidx.appcompat:appcompat:$ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION")
@@ -567,8 +568,8 @@ fun GradleBuildDefinition.buildExampleSdkConsumerApp(
                 targetCompatibility = JavaVersion.VERSION_17
             }
         }
-        legacyKotlin {
-            jvmTarget = "17"
+        kotlin {
+            compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         }
         dependencies {
             implementation(project(":example-sdk-bundle"))
@@ -1079,8 +1080,8 @@ fun GradleBuildDefinition.buildExampleSdkSandboxSdk(
                 targetCompatibility = JavaVersion.VERSION_17
             }
         }
-        legacyKotlin {
-            jvmTarget = "17"
+        kotlin {
+            compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         }
 
         dependencies {

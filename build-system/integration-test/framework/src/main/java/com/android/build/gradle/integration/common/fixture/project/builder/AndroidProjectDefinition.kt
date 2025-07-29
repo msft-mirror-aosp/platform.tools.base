@@ -20,7 +20,6 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import java.nio.file.Path
 
 /**
@@ -52,9 +51,6 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
 
     /**
      * Method to configure the new kotlin extension.
-     *
-     * When using [PluginType.ANDROID_BUILT_IN_KOTLIN] you must use this instead of
-     * [legacyKotlin]
      */
     fun kotlin(action: KotlinExtension.() -> Unit)
 
@@ -62,13 +58,6 @@ interface AndroidProjectDefinition<ExtensionT>: GradleProjectDefinition {
      * Resets the content of the Kotlin DSL
      */
     fun resetKotlinDsl()
-
-    /**
-     * Method to configure the old Kotlin extension that is added as `android.kotlinOptions`.
-     *
-     * This requires [PluginType.KOTLIN_ANDROID] to be applied
-     */
-    fun legacyKotlin(@Suppress("DEPRECATION") action: KotlinJvmOptions.() -> Unit)
 
     /** the object that allows to add/update/remove files from the project */
     override val files: AndroidProjectFiles
@@ -137,19 +126,6 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
 
     override fun resetKotlinDsl() {
         kotlinDslRecorder.clear()
-    }
-
-    override fun legacyKotlin(@Suppress("DEPRECATION") action: KotlinJvmOptions.() -> Unit) {
-        if (!hasPlugin(PluginType.KOTLIN_ANDROID))
-            throw RuntimeException("Cannot configure legacyKotlin without plugin KOTLIN_ANDROID")
-        @Suppress("DEPRECATION")
-        dslRecorder.runNestedBlock(
-            name = "kotlinOptions",
-            parameters = listOf(),
-            instanceProvider = { DslProxy.createProxy(KotlinJvmOptions::class.java, it) }
-        ) {
-            action(this)
-        }
     }
 
     override fun writeExtension(writer: BuildWriter, location: Path) {
