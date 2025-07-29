@@ -18,12 +18,12 @@ package com.android.tools.idea.wizard.template.impl.activities.common
 import com.android.tools.idea.wizard.template.Language
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
-
+import com.android.tools.idea.wizard.template.common.AGP_VERSION_WITH_BUILT_IN_KOTLIN
 
 fun RecipeExecutor.addAllKotlinDependencies(data: ModuleTemplateData, revision: String = data.projectTemplateData.kotlinVersion) {
     val projectData = data.projectTemplateData
     if (!data.isNewModule && projectData.language == Language.Kotlin
-            && !data.projectTemplateData.agpVersion.isAtLeastIncludingPreviews(9, 0, 0)) {
+            && data.projectTemplateData.agpVersion < AGP_VERSION_WITH_BUILT_IN_KOTLIN) {
         addPlugin("org.jetbrains.kotlin.android", "org.jetbrains.kotlin:kotlin-gradle-plugin", revision)
     }
 }
