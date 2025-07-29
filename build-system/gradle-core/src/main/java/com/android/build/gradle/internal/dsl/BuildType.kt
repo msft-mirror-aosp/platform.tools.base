@@ -103,7 +103,7 @@ abstract class BuildType @Inject constructor(
 
     override var isDebuggable: Boolean
         get() = // Accessing coverage data requires a debuggable package.
-            _isDebuggable || isTestCoverageEnabled
+            _isDebuggable || isTestCoverageEnabled || enableAndroidTestCoverage
         set(value) { _isDebuggable = value }
 
     abstract override var isTestCoverageEnabled: Boolean
