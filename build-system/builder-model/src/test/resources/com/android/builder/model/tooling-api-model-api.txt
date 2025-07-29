@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-f226623883fdfd6c483195367f9644fb67ad5819f0a02491c638d6d3360ed853
+b2534c1647a4e5c63d851d4bb7918752ea97e2181578eff4aa61ae67c410afdc
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -510,6 +510,7 @@ com.android.builder.model.v2.dsl.BuildType.isMinifyEnabled: boolean ()
 com.android.builder.model.v2.dsl.BuildType.isProfileable: boolean ()
 com.android.builder.model.v2.dsl.BuildType.isPseudoLocalesEnabled: boolean ()
 com.android.builder.model.v2.dsl.BuildType.isRenderscriptDebuggable: boolean ()
+com.android.builder.model.v2.dsl.BuildType.isShrinkResources: boolean ()
 com.android.builder.model.v2.dsl.BuildType.isTestCoverageEnabled: boolean ()
 com.android.builder.model.v2.dsl.BuildType.isZipAlignEnabled: boolean ()
 com.android.builder.model.v2.dsl.ClassField implements com.android.builder.model.v2.AndroidModel

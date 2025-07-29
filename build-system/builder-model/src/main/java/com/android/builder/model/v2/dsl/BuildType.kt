@@ -71,4 +71,11 @@ interface BuildType : BaseConfig, AndroidModel {
 
     /** The associated signing config or null if none are set on the build type. */
     val signingConfig: String?
+
+    /**
+     * Whether resource shrinking is enabled for this build type.
+     *
+     * This property is only used when [isMinifyEnabled] is 'true'.
+     */
+    val isShrinkResources: Boolean
 }

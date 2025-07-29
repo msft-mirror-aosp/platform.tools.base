@@ -145,7 +145,8 @@ internal fun DslBuildType.convert(features: BuildFeatureValues) = BuildTypeImpl(
     multiDexEnabled = multiDexEnabled,
     multiDexKeepFile = multiDexKeepFile,
     multiDexKeepProguard = multiDexKeepProguard,
-    isDefault = isDefault
+    isDefault = isDefault,
+    isShrinkResources = isShrinkResources,
 )
 
 internal fun DslSigningConfig.convert() = SigningConfigImpl(
