@@ -118,6 +118,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         UPSIDE_DOWN_CAKE(new AndroidApiLevel(34), 7),
         VANILLA_ICE_CREAM(new AndroidApiLevel(35), 13),
         BAKLAVA(new AndroidApiLevel(36), 17),
+        BAKLAVA_2025Q4(new AndroidApiLevel(36, 1), 19),
         ;
 
         private final AndroidApiLevel myApi;
@@ -326,10 +327,12 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
             if (matcher.matches()) {
                 int majorVersion = Integer.parseInt(matcher.group(1));
                 int minorVersion = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
+                AndroidApiLevel androidApiLevel = new AndroidApiLevel(majorVersion, minorVersion);
                 Integer extensionLevel = matcher.group(5) != null ? Integer.parseInt(matcher.group(5)) : null;
-                boolean isBaseExtension = extensionLevel == null || extensionLevel <= getBaseExtensionLevel(majorVersion);
-                return new AndroidVersion(
-                        majorVersion, minorVersion, null, extensionLevel, isBaseExtension);
+                boolean isBaseExtension =
+                        extensionLevel == null
+                                || extensionLevel <= getBaseExtensionLevel(androidApiLevel);
+                return new AndroidVersion(androidApiLevel, null, extensionLevel, isBaseExtension);
             }
         } catch (NumberFormatException ignore) {}
 

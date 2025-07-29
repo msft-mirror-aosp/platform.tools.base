@@ -77,9 +77,10 @@ class AndroidVersionTest {
 
     @Test
     fun testBaseExtensionLevel() {
-        fun assertBaseExtensionLevel(api: Int) =
+        fun assertBaseExtensionLevel(api: AndroidApiLevel) =
             assertThat(AndroidVersion.getBaseExtensionLevel(api))
                 .named("AndroidVersion.getBaseExtensionLevel(\"%s\")", api)
+        fun assertBaseExtensionLevel(api: Int) = assertBaseExtensionLevel(AndroidApiLevel(api))
         assertBaseExtensionLevel(30).isEqualTo(0)
         assertBaseExtensionLevel(31).isEqualTo(1)
         assertBaseExtensionLevel(32).isEqualTo(1)
@@ -87,6 +88,23 @@ class AndroidVersionTest {
         assertBaseExtensionLevel(34).isEqualTo(7)
         assertBaseExtensionLevel(35).isEqualTo(13)
         assertBaseExtensionLevel(36).isEqualTo(17)
+        assertBaseExtensionLevel(AndroidApiLevel(36, 1)).isEqualTo(19)
+    }
+
+    @Test
+    fun testBaseExtensionDetection() {
+        fun assertFromStringBaseExtension(apiString: String) =
+            assertThat(AndroidVersion.fromString(apiString).isBaseExtension)
+                .named("AndroidVersion.fromString(\"%s\").isBaseExtension", apiString)
+
+        assertFromStringBaseExtension("36.0").isTrue()
+        assertFromStringBaseExtension("36.0-ext16").isTrue()
+        assertFromStringBaseExtension("36.0-ext17").isTrue()
+        assertFromStringBaseExtension("36.0-ext18").isFalse()
+        assertFromStringBaseExtension("36.1").isTrue()
+        assertFromStringBaseExtension("36.1-ext18").isTrue()
+        assertFromStringBaseExtension("36.1-ext19").isTrue()
+        assertFromStringBaseExtension("36.1-ext20").isFalse()
     }
 
 }
