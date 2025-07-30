@@ -31,6 +31,7 @@ import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Project
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -47,6 +48,7 @@ import java.io.FileReader
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
+@Ignore("b/434978016: Emulator script has issues with launching two emulators")
 class TestSuiteDeviceTest {
     companion object {
         @ClassRule
