@@ -73,7 +73,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         LocalRepoLoader sdk =
-                new LocalRepoLoaderImpl(mSdkLocation, mgr, new LegacyLocalRepoLoader(mSdkLocation));
+                new LocalRepoLoaderImpl(mSdkLocation, mgr.getSchemaModules(), new LegacyLocalRepoLoader(mSdkLocation));
         Map<String, LocalPackage> packages = sdk.getPackages(progress);
         progress.assertNoErrorsOrWarnings();
         assertEquals(1, packages.size());
@@ -103,7 +103,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         LocalRepoLoader sdk =
-                new LocalRepoLoaderImpl(mSdkLocation, mgr, new LegacyLocalRepoLoader(mSdkLocation));
+                new LocalRepoLoaderImpl(mSdkLocation, mgr.getSchemaModules(), new LegacyLocalRepoLoader(mSdkLocation));
         Map<String, LocalPackage> packages = sdk.getPackages(progress);
         progress.assertNoErrorsOrWarnings();
         assertEquals(1, packages.size());
@@ -134,7 +134,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         LocalRepoLoader sdk =
-                new LocalRepoLoaderImpl(mSdkLocation, mgr, new LegacyLocalRepoLoader(mSdkLocation));
+                new LocalRepoLoaderImpl(mSdkLocation, mgr.getSchemaModules(), new LegacyLocalRepoLoader(mSdkLocation));
         Map<String, LocalPackage> packages = sdk.getPackages(progress);
         progress.assertNoErrorsOrWarnings();
         assertEquals(1, packages.size());

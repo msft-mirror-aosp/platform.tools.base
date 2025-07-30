@@ -70,7 +70,7 @@ public class LocalRepoLoaderImplTest {
         Path knownPackagesFile = repoRoot.resolve(LocalRepoLoaderImpl.KNOWN_PACKAGES_HASH_FN);
         Files.createDirectories(repoRoot);
         RepoManager mgr = new RepoManagerImpl(repoRoot);
-        LocalRepoLoaderImpl loader = new LocalRepoLoaderImpl(repoRoot, mgr, null);
+        LocalRepoLoaderImpl loader = new LocalRepoLoaderImpl(repoRoot, mgr.getSchemaModules(), null);
         // If there's no file we should think that an update is needed.
         assertTrue(loader.needsUpdate(0, false));
         assertTrue(loader.needsUpdate(Long.MAX_VALUE, false));
@@ -83,7 +83,7 @@ public class LocalRepoLoaderImplTest {
         Path package1 = repoRoot.resolve("foo/package.xml");
         InMemoryFileSystems.recordExistingFile(package1, LOCAL_PACKAGE);
         // loader caches the packages it found, so we need to recreate it
-        loader = new LocalRepoLoaderImpl(repoRoot, mgr, null);
+        loader = new LocalRepoLoaderImpl(repoRoot, mgr.getSchemaModules(), null);
         loader.getPackages(progress);
         assertTrue(Files.exists(knownPackagesFile));
 
@@ -106,7 +106,7 @@ public class LocalRepoLoaderImplTest {
         // check that deep check returns true if there's an unknown package
         InMemoryFileSystems.recordExistingFile(
                 repoRoot.resolve("bar/package.xml"), LOCAL_PACKAGE_2);
-        loader = new LocalRepoLoaderImpl(repoRoot, mgr, null);
+        loader = new LocalRepoLoaderImpl(repoRoot, mgr.getSchemaModules(), null);
         assertTrue(loader.needsUpdate(2000, true));
 
         // now reload and check that update is no longer needed
@@ -116,7 +116,7 @@ public class LocalRepoLoaderImplTest {
         assertFalse(loader.needsUpdate(currentTime + 1000, false));
 
         // remove package and ensure shallow check doesn't catch it
-        loader = new LocalRepoLoaderImpl(repoRoot, mgr, null);
+        loader = new LocalRepoLoaderImpl(repoRoot, mgr.getSchemaModules(), null);
         Files.delete(repoRoot.resolve("bar/package.xml"));
         assertFalse(loader.needsUpdate(currentTime + 1000, false));
 
@@ -142,7 +142,7 @@ public class LocalRepoLoaderImplTest {
                         AbstractPackageOperation.METADATA_FILENAME_PREFIX + "bar/package.xml");
         InMemoryFileSystems.recordExistingFile(package2, LOCAL_PACKAGE_2);
         // loader caches the packages it found, so we need to recreate it
-        LocalRepoLoaderImpl loader = new LocalRepoLoaderImpl(repoRoot, mgr, null);
+        LocalRepoLoaderImpl loader = new LocalRepoLoaderImpl(repoRoot, mgr.getSchemaModules(), null);
         Map<String, LocalPackage> localPackages = loader.getPackages(progress);
         assertEquals(1, localPackages.size());
         assertEquals(package1.getParent(), localPackages.values().iterator().next().getLocation());
@@ -160,7 +160,7 @@ public class LocalRepoLoaderImplTest {
         Path package2 = repoRoot.resolve("foo/icons/package.xml");
         InMemoryFileSystems.recordExistingFile(package2, LOCAL_PACKAGE_2);
 
-        LocalRepoLoaderImpl loader = new LocalRepoLoaderImpl(repoRoot, mgr, null);
+        LocalRepoLoaderImpl loader = new LocalRepoLoaderImpl(repoRoot, mgr.getSchemaModules(), null);
         Map<String, LocalPackage> localPackages = loader.getPackages(progress);
         assertEquals(1, localPackages.size());
         assertEquals(package2.getParent(), localPackages.values().iterator().next().getLocation());

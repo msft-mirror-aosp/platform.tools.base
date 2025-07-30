@@ -57,7 +57,7 @@ class RepoManagerImpl
 internal constructor(
   /** The path under which to look for installed packages. */
   override val localPath: Path?,
-  localFactory: LocalRepoLoaderFactory?,
+  customLocalRepoLoader: LocalRepoLoader?,
   remoteFactory: RemoteRepoLoaderFactory?,
   additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
   /** The [FallbackLocalRepoLoader] to use when loading local packages. */
@@ -111,23 +111,12 @@ internal constructor(
   /** Install/uninstall operations that are currently running. */
   private val inProgressInstalls = mutableMapOf<RepoPackage, PackageOperation>()
 
-  /** A facility for creating [LocalRepoLoader]s. By default, [LocalRepoLoaderFactoryImpl]. */
-  private val localRepoLoaderFactory: LocalRepoLoaderFactory
+  /** Loads packages that are installed locally. */
+  private val localRepoLoader: LocalRepoLoader? = customLocalRepoLoader ?: createLocalRepoLoader()
 
   /** A facility for creating [RemoteRepoLoader]s. By default, [RemoteRepoLoaderFactoryImpl]. */
-  private val remoteRepoLoaderFactory: RemoteRepoLoaderFactory
-
-  /**
-   * @param localPath The base directory of the SDK.
-   * @param localFactory If `null`, [LocalRepoLoaderFactoryImpl] will be used. Can be non-null for
-   *   testing.
-   * @param remoteFactory If `null`, [RemoteRepoLoaderFactoryImpl] will be used. Can be non-null for
-   *   testing.
-   */
-  init {
-    localRepoLoaderFactory = localFactory ?: LocalRepoLoaderFactoryImpl()
-    remoteRepoLoaderFactory = remoteFactory ?: RemoteRepoLoaderFactoryImpl()
-  }
+  private val remoteRepoLoaderFactory: RemoteRepoLoaderFactory =
+    remoteFactory ?: RemoteRepoLoaderFactoryImpl()
 
   /**
    * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
@@ -298,14 +287,9 @@ internal constructor(
 
   @Slow
   override fun reloadLocalIfNeeded(progress: ProgressIndicator) {
-    // TODO: there should be a nice interface whereby we can do this check without creating a
-    // new LocalRepoLoader instance.
-    val local = localRepoLoaderFactory.createLocalRepoLoader()
-    if (local == null) {
-      return
-    }
+    localRepoLoader ?: return
 
-    if (local.needsUpdate(lastLocalRefreshMs, true)) {
+    if (localRepoLoader.needsUpdate(lastLocalRefreshMs, true)) {
       lastLocalRefreshMs = 0
     }
     loadSynchronously(DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null)
@@ -416,16 +400,15 @@ internal constructor(
     AbstractLoadTask<LocalPackage>() {
 
     override suspend fun doLoad(indicator: ProgressIndicator): List<LocalPackage> {
-      val local = localRepoLoaderFactory.createLocalRepoLoader()
       val result: List<LocalPackage>
       if (
-        local != null &&
+        localRepoLoader != null &&
           (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() ||
-            local.needsUpdate(lastLocalRefreshMs, false))
+            localRepoLoader.needsUpdate(lastLocalRefreshMs, false))
       ) {
         fallbackLocalRepoLoader?.refresh()
         indicator.setText("Loading local repository...")
-        val newLocals = local.getPackages(indicator)
+        val newLocals = localRepoLoader.getPackages(indicator)
         val fireListeners = newLocals != packages.localPackages
         result = newLocals.values.toList()
         packages.setLocalPkgInfos(newLocals.values)
@@ -497,26 +480,14 @@ internal constructor(
     }
   }
 
-  internal interface LocalRepoLoaderFactory {
-
-    fun createLocalRepoLoader(): LocalRepoLoader?
-  }
-
   @VisibleForTesting
   interface RemoteRepoLoaderFactory {
 
     fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader
   }
 
-  private inner class LocalRepoLoaderFactoryImpl : LocalRepoLoaderFactory {
-
-    /**
-     * @return A new [LocalRepoLoaderImpl] with our settings, or `null` if we don't have a local
-     *   path set.
-     */
-    override fun createLocalRepoLoader(): LocalRepoLoader? =
-      localPath?.let { LocalRepoLoaderImpl(it, this@RepoManagerImpl, fallbackLocalRepoLoader) }
-  }
+  private fun createLocalRepoLoader(): LocalRepoLoader? =
+    localPath?.let { LocalRepoLoaderImpl(it, schemaModules, fallbackLocalRepoLoader) }
 
   private inner class RemoteRepoLoaderFactoryImpl : RemoteRepoLoaderFactory {
 

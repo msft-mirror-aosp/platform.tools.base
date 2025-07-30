@@ -25,7 +25,6 @@ import com.android.repository.api.RepoManager.RepoLoadedListener
 import com.android.repository.api.RepoPackage
 import com.android.repository.api.RepositorySourceProvider
 import com.android.repository.api.SimpleRepositorySource
-import com.android.repository.impl.manager.RepoManagerImpl.LocalRepoLoaderFactory
 import com.android.repository.impl.manager.RepoManagerImpl.RemoteRepoLoaderFactory
 import com.android.repository.impl.meta.RepositoryPackages
 import com.android.repository.testframework.FakeDownloader
@@ -59,14 +58,14 @@ class RepoManagerImplTest {
   @Test
   fun testLoadOperationsInOrder() {
     val counter = AtomicInteger(0)
-    val localFactory = TestLoaderFactory(OrderTestLoader(1, counter, false))
+    val localLoader = OrderTestLoader<LocalPackage>(1, counter, false)
     val localCallback = RepoLoadedListener { _ -> assertEquals(2, counter.addAndGet(1)) }
     val remoteFactory = TestLoaderFactory(OrderTestLoader(3, counter, false))
     val remoteCallback = RepoLoadedListener { _ -> assertEquals(4, counter.addAndGet(1)) }
     val errorCallback = Runnable { fail() }
 
     val repoRoot = createInMemoryFileSystemAndFolder("repo")
-    val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    val mgr = RepoManagerImpl(repoRoot, localLoader, remoteFactory)
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
     mgr.loadSynchronously(
@@ -88,14 +87,14 @@ class RepoManagerImplTest {
   @Test
   fun testErrorCallbacks1() {
     val counter = AtomicInteger(0)
-    val localFactory = TestLoaderFactory(OrderTestLoader(1, counter, false))
+    val localLoader = OrderTestLoader<LocalPackage>(1, counter, false)
     val localCallback = RepoLoadedListener { _ -> assertEquals(2, counter.addAndGet(1)) }
     val remoteFactory = TestLoaderFactory(OrderTestLoader(3, counter, true))
     val remoteCallback = RepoLoadedListener { _ -> fail() }
     val errorCallback = Runnable { assertEquals(4, counter.addAndGet(1)) }
 
     val repoRoot = createInMemoryFileSystemAndFolder("repo")
-    val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    val mgr = RepoManagerImpl(repoRoot, localLoader, remoteFactory)
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
     assertThrows(TestLoaderException::class.java) {
@@ -118,14 +117,14 @@ class RepoManagerImplTest {
   @Test
   fun testErrorCallbacks2() {
     val counter = AtomicInteger(0)
-    val localFactory = TestLoaderFactory(OrderTestLoader(1, counter, true))
+    val localLoader = OrderTestLoader<LocalPackage>(1, counter, true)
     val localCallback = RepoLoadedListener { _ -> fail() }
     val remoteFactory = TestLoaderFactory(OrderTestLoader(3, counter, false))
     val remoteCallback = RepoLoadedListener { _ -> fail() }
     val errorCallback = Runnable { assertEquals(2, counter.addAndGet(1)) }
 
     val repoRoot = createInMemoryFileSystemAndFolder("repo")
-    val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    val mgr = RepoManagerImpl(repoRoot, localLoader, remoteFactory)
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
     assertThrows(TestLoaderException::class.java) {
@@ -150,7 +149,7 @@ class RepoManagerImplTest {
     val secondCallStarted = CountDownLatch(1)
     val finished = CountDownLatch(1)
     val counter = AtomicInteger(0)
-    val localFactory = TestLoaderFactory(WaitingTestLoader(secondCallStarted, fail = true))
+    val localLoader = WaitingTestLoader<LocalPackage>(secondCallStarted, fail = true)
     val localCallback = RepoLoadedListener { _ -> fail() }
     val remoteFactory = TestLoaderFactory<RemotePackage>()
     val errorCallback = Runnable {
@@ -159,7 +158,7 @@ class RepoManagerImplTest {
     }
 
     val repoRoot = createInMemoryFileSystemAndFolder("repo")
-    val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    val mgr = RepoManagerImpl(repoRoot, localLoader, remoteFactory)
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
     mgr.load(
@@ -232,9 +231,8 @@ class RepoManagerImplTest {
           }
         }
 
-      val localFactory = TestLoaderFactory(fakeLoader)
       val repoRoot = createInMemoryFileSystemAndFolder("repo")
-      val mgr = RepoManagerImpl(repoRoot, localFactory, null)
+      val mgr = RepoManagerImpl(repoRoot, fakeLoader, null)
       mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
       val progress = FakeProgressIndicator()
 
@@ -299,20 +297,19 @@ class RepoManagerImplTest {
     val completeDone = Semaphore(2)
     completeDone.acquire(2)
 
-    val localFactory =
-      TestLoaderFactory(
-        object : FakeLoader<LocalPackage>() {
-          override fun run(): Map<String, LocalPackage> {
-            assertTrue(localStarted.compareAndSet(false, true))
-            try {
-              runLocal.acquire()
-            } catch (_: InterruptedException) {
-              fail()
-            }
-            return emptyMap<String, LocalPackage>()
+    val localLoader =
+      object : FakeLoader<LocalPackage>() {
+        override fun run(): Map<String, LocalPackage> {
+          assertTrue(localStarted.compareAndSet(false, true))
+          try {
+            runLocal.acquire()
+          } catch (_: InterruptedException) {
+            fail()
           }
+          return emptyMap()
         }
-      )
+      }
+
     val localCallback1 = RunningCallback(localCallback1Run)
     val localCallback2 = RunningCallback(localCallback2Run)
     val remoteCallback1 =
@@ -333,7 +330,7 @@ class RepoManagerImplTest {
     val errorCallback = Runnable { fail() }
 
     val repoRoot = createInMemoryFileSystemAndFolder("repo")
-    val mgr = RepoManagerImpl(repoRoot, localFactory, TestLoaderFactory<RepoPackage>())
+    val mgr = RepoManagerImpl(repoRoot, localLoader, TestLoaderFactory<RepoPackage>())
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
     mgr.load(
@@ -365,7 +362,6 @@ class RepoManagerImplTest {
 
   @Test
   fun testLocalLoadNotBlockedOnRemote() {
-    val localFactory = TestLoaderFactory<RepoPackage>()
     val remoteLatch = CountDownLatch(1)
     val remoteCompleted = CountDownLatch(1)
     val remoteFactory =
@@ -378,7 +374,7 @@ class RepoManagerImplTest {
         }
       )
     val repoRoot = createInMemoryFileSystemAndFolder("repo")
-    val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    val mgr = RepoManagerImpl(repoRoot, FakeLoader<LocalPackage>(), remoteFactory)
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
     val localDidRun = AtomicBoolean(false)
@@ -422,11 +418,10 @@ class RepoManagerImplTest {
     val localLoader =
       FakeLoader<LocalPackage>(mapOf<String, LocalPackage>(pkg1.path to pkg1, pkg2.path to pkg2))
 
-    val localFactory = TestLoaderFactory(localLoader)
     // For this test, we don't need a functional remote loader
     val remoteFactory = TestLoaderFactory<RemotePackage>()
 
-    val repoManager = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    val repoManager = RepoManagerImpl(repoRoot, localLoader, remoteFactory)
     repoManager.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
 
     val loadedPackages = runBlocking {
@@ -453,10 +448,9 @@ class RepoManagerImplTest {
       FakeLoader<RemotePackage>(mapOf<String, RemotePackage>(pkg1.path to pkg1, pkg2.path to pkg2))
 
     // For this test, we don't need a functional local loader
-    val localFactory = TestLoaderFactory<LocalPackage>()
     val remoteFactory = TestLoaderFactory(remoteLoader)
 
-    val repoManager = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    val repoManager = RepoManagerImpl(repoRoot, FakeLoader<LocalPackage>(), remoteFactory)
     repoManager.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
 
     val loadedPackages = runBlocking {
@@ -482,18 +476,16 @@ class RepoManagerImplTest {
     val localDidRun = AtomicBoolean(false)
     val remoteDidRun = AtomicBoolean(false)
 
-    val localRunningFactory =
-      TestLoaderFactory(
-        object : RunningLoader<LocalPackage>(localDidRun) {
-          override fun needsUpdate(lastLocalRefreshMs: Long, deepCheck: Boolean): Boolean {
-            return false
-          }
+    val localRunningLoader =
+      object : RunningLoader<LocalPackage>(localDidRun) {
+        override fun needsUpdate(lastLocalRefreshMs: Long, deepCheck: Boolean): Boolean {
+          return false
         }
-      )
+      }
     val remoteRunningFactory = TestLoaderFactory(RunningLoader<RemotePackage>(remoteDidRun))
 
     val repoRoot = createInMemoryFileSystemAndFolder("repo")
-    val mgr = RepoManagerImpl(repoRoot, localRunningFactory, remoteRunningFactory)
+    val mgr = RepoManagerImpl(repoRoot, localRunningLoader, remoteRunningFactory)
     mgr.registerSourceProvider(FakeRepositorySourceProvider(emptyList()))
     val runner = FakeProgressRunner()
     mgr.loadSynchronously(0, null, null, null, runner, null, null)
@@ -548,7 +540,7 @@ class RepoManagerImplTest {
       }
 
     val repoRoot = createInMemoryFileSystemAndFolder("repo")
-    val mgr = RepoManagerImpl(repoRoot, TestLoaderFactory(loader), null)
+    val mgr = RepoManagerImpl(repoRoot, loader, null)
     val runner = FakeProgressRunner()
 
     // First time we should load, despite not being out of date
@@ -610,9 +602,8 @@ class RepoManagerImplTest {
     remote.setRevision(Revision(2))
     remotePackages.put("foo", remote)
 
-    val localFactory = TestLoaderFactory<LocalPackage>(localLoader)
     val remoteFactory = TestLoaderFactory<RemotePackage>(remoteLoader)
-    val mgr = RepoManagerImpl(repoRoot, localFactory, remoteFactory)
+    val mgr = RepoManagerImpl(repoRoot, localLoader, remoteFactory)
 
     val runner = FakeProgressRunner()
     val downloader = FakeDownloader(repoRoot.getRoot().resolve("tmp"))
@@ -671,13 +662,9 @@ class RepoManagerImplTest {
 
   private class TestLoaderFactory<T : RepoPackage>(
     private val loader: FakeLoader<T> = FakeLoader<T>()
-  ) : RemoteRepoLoaderFactory, LocalRepoLoaderFactory {
+  ) : RemoteRepoLoaderFactory {
 
     override fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader {
-      return loader
-    }
-
-    override fun createLocalRepoLoader(): LocalRepoLoader {
       return loader
     }
   }
