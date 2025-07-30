@@ -81,7 +81,7 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create(sdkRoot);
+        RepoManager manager = new RepoManagerImpl(sdkRoot);
         LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
@@ -199,7 +199,7 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create(sdkRoot);
+        RepoManager manager = new RepoManagerImpl(sdkRoot);
         LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
@@ -243,7 +243,7 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create(sdkRoot);
+        RepoManager manager = new RepoManagerImpl(sdkRoot);
         LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");

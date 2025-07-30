@@ -76,9 +76,10 @@ public class SourceInstallListenerTest extends TestCase {
         FakeRepoManager mgr =
                 new FakeRepoManager(
                         sdkRoot,
-                        new RepositoryPackages(ImmutableList.of(local), ImmutableList.of(remote)));
-        mgr.registerSchemaModule(AndroidSdkHandler.getCommonModule());
-        mgr.registerSchemaModule(AndroidSdkHandler.getRepositoryModule());
+                        new RepositoryPackages(ImmutableList.of(local), ImmutableList.of(remote)),
+                        ImmutableList.of(
+                                AndroidSdkHandler.getCommonModule(),
+                                AndroidSdkHandler.getRepositoryModule()));
 
         // Create the archive and register the URL
         FakeDownloader downloader = new FakeDownloader(sdkRoot.getRoot().resolve("tmp"));
@@ -124,9 +125,12 @@ public class SourceInstallListenerTest extends TestCase {
                 new FakeRepoManager(
                         sdkRoot,
                         new RepositoryPackages(
-                                ImmutableList.of(localPlatform, localSource), ImmutableList.of()));
-        mgr.registerSchemaModule(AndroidSdkHandler.getCommonModule());
-        mgr.registerSchemaModule(AndroidSdkHandler.getRepositoryModule());
+                                ImmutableList.of(localPlatform, localSource), ImmutableList.of()),
+                        ImmutableList.of(
+                                AndroidSdkHandler.getCommonModule(),
+                                AndroidSdkHandler.getRepositoryModule()
+                        )
+                );
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
 

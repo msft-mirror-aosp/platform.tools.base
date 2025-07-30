@@ -45,6 +45,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.completeWith
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
+import org.jetbrains.annotations.TestOnly
 import org.w3c.dom.ls.LSResourceResolver
 
 /**
@@ -53,15 +54,19 @@ import org.w3c.dom.ls.LSResourceResolver
  * registered [RepositorySourceProvider]s, using the registered [SchemaModule]s.
  */
 class RepoManagerImpl
-@VisibleForTesting
 internal constructor(
   /** The path under which to look for installed packages. */
   override val localPath: Path?,
   localFactory: LocalRepoLoaderFactory?,
   remoteFactory: RemoteRepoLoaderFactory?,
+  additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
 ) : RepoManager() {
+
+  @TestOnly constructor(localPath: Path?) : this(localPath, null, null, emptyList())
+
   /** The registered [SchemaModule]s. */
-  override val schemaModules = mutableListOf<SchemaModule<*>>()
+  override val schemaModules: Set<SchemaModule<*>> =
+    setOf(commonModule, genericModule) + additionalSchemaModules
 
   /** The [FallbackLocalRepoLoader] to use when loading local packages. */
   private var fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null
@@ -115,12 +120,6 @@ internal constructor(
   private val remoteRepoLoaderFactory: RemoteRepoLoaderFactory
 
   /**
-   * Create a new `RepoManagerImpl`. Before anything can be loaded, at least a local path and/or at
-   * least one [RepositorySourceProvider] must be set.
-   */
-  constructor(localPath: Path?) : this(localPath, localFactory = null, remoteFactory = null)
-
-  /**
    * @param localPath The base directory of the SDK.
    * @param localFactory If `null`, [LocalRepoLoaderFactoryImpl] will be used. Can be non-null for
    *   testing.
@@ -128,8 +127,6 @@ internal constructor(
    *   testing.
    */
   init {
-    registerSchemaModule(commonModule)
-    registerSchemaModule(genericModule)
     localRepoLoaderFactory = localFactory ?: LocalRepoLoaderFactoryImpl()
     remoteRepoLoaderFactory = remoteFactory ?: RemoteRepoLoaderFactoryImpl()
   }
@@ -168,15 +165,6 @@ internal constructor(
   ): List<RepositorySource> =
     sourceProviders.flatMap { it.getSources(downloader, progress, forceRefresh) }
 
-  /**
-   * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
-   * called.
-   */
-  override fun registerSchemaModule(module: SchemaModule<*>) {
-    schemaModules.add(module)
-    markInvalid()
-  }
-
   override fun markInvalid() {
     lastRemoteRefreshMs = 0
     lastLocalRefreshMs = 0
@@ -187,8 +175,7 @@ internal constructor(
   }
 
   override fun getResourceResolver(progress: ProgressIndicator): LSResourceResolver? {
-    val allModules = (schemaModules + commonModule + genericModule).toSet()
-    return SchemaModuleUtil.createResourceResolver(allModules, progress)
+    return SchemaModuleUtil.createResourceResolver(schemaModules, progress)
   }
 
   override fun loadSynchronously(
@@ -373,11 +360,13 @@ internal constructor(
   }
 
   private fun interface LoadTask<T : RepoPackage> {
+
     suspend fun load(indicator: ProgressIndicator): List<T>
   }
 
   /** A task to load the local and remote repos. */
   private abstract inner class AbstractLoadTask<T : RepoPackage> : LoadTask<T> {
+
     /** The time at which this [AbstractLoadTask] was created. */
     val taskCreateTime: Instant = Clock.systemUTC().instant()
 
@@ -445,6 +434,7 @@ internal constructor(
 
   private inner class LocalLoadTask(val cacheExpirationMs: Long) :
     AbstractLoadTask<LocalPackage>() {
+
     override suspend fun doLoad(indicator: ProgressIndicator): List<LocalPackage> {
       val local = localRepoLoaderFactory.createLocalRepoLoader()
       val result: List<LocalPackage>
@@ -528,15 +518,18 @@ internal constructor(
   }
 
   internal interface LocalRepoLoaderFactory {
+
     fun createLocalRepoLoader(): LocalRepoLoader?
   }
 
   @VisibleForTesting
   interface RemoteRepoLoaderFactory {
+
     fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader
   }
 
   private inner class LocalRepoLoaderFactoryImpl : LocalRepoLoaderFactory {
+
     /**
      * @return A new [LocalRepoLoaderImpl] with our settings, or `null` if we don't have a local
      *   path set.
@@ -546,11 +539,13 @@ internal constructor(
   }
 
   private inner class RemoteRepoLoaderFactoryImpl : RemoteRepoLoaderFactory {
+
     override fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader =
       RemoteRepoLoaderImpl(sourceProviders, fallbackRemoteRepoLoader)
   }
 
   companion object {
+
     /** How long we should let a load task run before assuming that it's dead. */
     private val TASK_TIMEOUT = java.time.Duration.ofMinutes(3)
   }

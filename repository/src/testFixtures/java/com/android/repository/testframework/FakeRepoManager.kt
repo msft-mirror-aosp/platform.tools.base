@@ -36,17 +36,19 @@ import kotlin.time.Duration
 import org.w3c.dom.ls.LSResourceResolver
 
 /** A fake [RepoManager], for use in unit tests. */
-class FakeRepoManager(override val localPath: Path?, override val packages: RepositoryPackages) :
-  RepoManager() {
-  constructor(packages: RepositoryPackages) : this(null, packages)
+class FakeRepoManager(
+  override val localPath: Path?,
+  override val packages: RepositoryPackages,
+  additionalSchemaModules: List<SchemaModule<*>>,
+) : RepoManager() {
+  constructor(
+    localPath: Path?,
+    packages: RepositoryPackages,
+  ) : this(localPath, packages, emptyList())
 
-  private val _schemaModules = mutableListOf(commonModule, genericModule)
-  override val schemaModules: List<SchemaModule<*>>
-    get() = _schemaModules
+  constructor(packages: RepositoryPackages) : this(null, packages, emptyList())
 
-  override fun registerSchemaModule(module: SchemaModule<*>) {
-    _schemaModules.add(module)
-  }
+  override val schemaModules = setOf(commonModule, genericModule) + additionalSchemaModules
 
   override fun setFallbackLocalRepoLoader(local: FallbackLocalRepoLoader?) {}
 

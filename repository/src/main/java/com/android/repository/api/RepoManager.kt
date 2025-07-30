@@ -33,9 +33,8 @@ import org.w3c.dom.ls.LSResourceResolver
  * Primary interface for interacting with repository packages.
  *
  * To set up a `RepoManager`:
- * * Pass the path where the repo is installed locally to the constructor.
- * * Register the [SchemaModule]s used to parse the package.xml files and remote repositories used
- *   by this repo using [registerSchemaModule]
+ * * Pass to the constructor: the path where the repo is installed locally, and the [SchemaModule]s
+ *   used to parse the package.xml files and remote repositories used by this repo
  * * If your local repo might contain packages created by a previous system, set a
  *   [FallbackLocalRepoLoader] that can recognize and convert those packages using
  *   [setFallbackLocalRepoLoader].
@@ -51,14 +50,12 @@ import org.w3c.dom.ls.LSResourceResolver
  * To use the loaded packages, get a [RepositoryPackages] object from [packages].
  */
 abstract class RepoManager {
-  /** Register an [SchemaModule] that can be used when parsing XML for this repo. */
-  abstract fun registerSchemaModule(module: SchemaModule<*>)
 
   /**
    * Gets the currently-registered [SchemaModule]s. This probably shouldn't be used except by code
    * within the RepoManager or unit tests.
    */
-  abstract val schemaModules: List<SchemaModule<*>>
+  abstract val schemaModules: Set<SchemaModule<*>>
 
   /**
    * Gets the path to the local repository root. This probably shouldn't be needed except by the
@@ -343,12 +340,6 @@ abstract class RepoManager {
         RepoManager::class.java,
       )
 
-    /** @return A new `RepoManager`. */
-    @JvmStatic
-    fun create(localPath: Path?): RepoManager {
-      return RepoManagerImpl(localPath)
-    }
-
     @JvmStatic
     fun createRepoManager(
       localPath: Path?,
@@ -357,10 +348,9 @@ abstract class RepoManager {
       fallbackLocalRepoLoader: FallbackLocalRepoLoader?,
       fallbackRemoteRepoLoader: FallbackRemoteRepoLoader?,
     ): RepoManager {
-      return RepoManagerImpl(localPath).apply {
+      return RepoManagerImpl(localPath, null, null, schemaModules).apply {
         setFallbackLocalRepoLoader(fallbackLocalRepoLoader)
         setFallbackRemoteRepoLoader(fallbackRemoteRepoLoader)
-        schemaModules.forEach { registerSchemaModule(it) }
         sourceProviders.forEach { registerSourceProvider(it) }
       }
     }
