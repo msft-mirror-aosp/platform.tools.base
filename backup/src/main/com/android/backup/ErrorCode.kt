@@ -22,8 +22,8 @@ enum class ErrorCode {
   TRANSPORT_NOT_SELECTED,
   TRANSPORT_INIT_FAILED,
   GMSCORE_NOT_FOUND,
-  @Suppress("unused") // Will use when testing for GmsCore version is implemented
   GMSCORE_IS_TOO_OLD,
+  GMSCORE_IS_TOO_OLD_NO_PLAY_STORE,
   BACKUP_FAILED,
   RESTORE_FAILED,
   INVALID_BACKUP_FILE,
