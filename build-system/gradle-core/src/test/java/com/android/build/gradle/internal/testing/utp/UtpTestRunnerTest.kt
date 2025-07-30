@@ -130,7 +130,6 @@ class UtpTestRunnerTest {
         }
 
         val runner = UtpTestRunner(
-            null,
             mockProcessExecutor,
             mockWorkerExecutor,
             mockExecutorServiceAdapter,

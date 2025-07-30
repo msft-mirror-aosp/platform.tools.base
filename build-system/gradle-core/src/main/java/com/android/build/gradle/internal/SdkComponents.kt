@@ -496,12 +496,6 @@ abstract class BuildToolsExecutableInput : UsesSdkComponentsBuildService {
     fun adbExecutable(): Provider<RegularFile> =
         sdkLoader().flatMap { it.adbExecutableProvider }
 
-    fun splitSelectExecutable(): Provider<File> =
-        sdkLoader().map {
-            it.sdkLoadStrategy.getSplitSelectExecutable()
-                ?: throw RuntimeException("Cannot find split-select executable from build-tools $buildToolsRevision")
-        }
-
     fun supportBlasLibFolderProvider(): Provider<File> =
         sdkLoader().map {
             it.sdkLoadStrategy.getSupportBlasLibFolder()

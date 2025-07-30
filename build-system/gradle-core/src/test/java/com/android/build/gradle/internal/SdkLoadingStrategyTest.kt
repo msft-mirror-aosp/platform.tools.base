@@ -896,7 +896,6 @@ class SdkLoadingStrategyTest {
         assertThat(sdkDirectLoadingStrategy.getBuildToolsRevision()).isNull()
         assertThat(sdkDirectLoadingStrategy.getAidlExecutable()).isNull()
         assertThat(sdkDirectLoadingStrategy.getCoreLambaStubs()).isNull()
-        assertThat(sdkDirectLoadingStrategy.getSplitSelectExecutable()).isNull()
 
         assertThat(sdkDirectLoadingStrategy.getRenderScriptSupportJar()).isNull()
         assertThat(sdkDirectLoadingStrategy.getSupportNativeLibFolder()).isNull()
@@ -950,8 +949,6 @@ class SdkLoadingStrategyTest {
             buildToolDirectory.resolve(SdkConstants.FN_AIDL))
         assertThat(sdkDirectLoadingStrategy.getCoreLambaStubs()).isEqualTo(
             buildToolDirectory.resolve(SdkConstants.FN_CORE_LAMBDA_STUBS))
-        assertThat(sdkDirectLoadingStrategy.getSplitSelectExecutable()).isEqualTo(
-            buildToolDirectory.resolve(SdkConstants.FN_SPLIT_SELECT))
 
         assertThat(sdkDirectLoadingStrategy.getRenderScriptSupportJar()).isEqualTo(
             RenderScriptProcessor.getSupportJar(buildToolDirectory, true))

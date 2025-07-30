@@ -219,7 +219,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     (getExecutionEnum().get() == ANDROID_TEST_ORCHESTRATOR
                             || getExecutionEnum().get() == ANDROIDX_TEST_ORCHESTRATOR);
             return new UtpTestRunner(
-                    getBuildTools().splitSelectExecutable().getOrNull(),
                     new GradleProcessExecutor(getExecOperations()::exec),
                     workerExecutor,
                     executorServiceAdapter,

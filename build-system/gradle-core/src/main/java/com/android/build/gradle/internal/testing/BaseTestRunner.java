@@ -48,15 +48,12 @@ import java.util.Set;
 /** Common code for {@link TestRunner} implementations. */
 public abstract class BaseTestRunner implements TestRunner {
 
-    @Nullable protected final File splitSelectExec;
     @NonNull protected final ProcessExecutor processExecutor;
     @NonNull protected final ExecutorServiceAdapter executor;
 
     public BaseTestRunner(
-            @Nullable File splitSelectExec,
             @NonNull ProcessExecutor processExecutor,
             @NonNull ExecutorServiceAdapter executor) {
-        this.splitSelectExec = splitSelectExec;
         this.processExecutor = checkNotNull(processExecutor);
         this.executor = executor;
     }
