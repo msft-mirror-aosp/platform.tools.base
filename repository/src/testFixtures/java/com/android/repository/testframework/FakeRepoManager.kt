@@ -105,7 +105,7 @@ class FakeRepoManager(override val localPath: Path?, override val packages: Repo
 
   override fun markLocalCacheInvalid() {}
 
-  override fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean = false
+  override fun reloadLocalIfNeeded(progress: ProgressIndicator) {}
 
   override fun getResourceResolver(progress: ProgressIndicator): LSResourceResolver? = null
 

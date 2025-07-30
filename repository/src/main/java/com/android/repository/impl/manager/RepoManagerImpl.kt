@@ -330,18 +330,18 @@ internal constructor(
       .load(indicator)
 
   @Slow
-  override fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean {
+  override fun reloadLocalIfNeeded(progress: ProgressIndicator) {
     // TODO: there should be a nice interface whereby we can do this check without creating a
     // new LocalRepoLoader instance.
     val local = localRepoLoaderFactory.createLocalRepoLoader()
     if (local == null) {
-      return false
+      return
     }
 
     if (local.needsUpdate(lastLocalRefreshMs, true)) {
       lastLocalRefreshMs = 0
     }
-    return loadSynchronously(DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null)
+    loadSynchronously(DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null)
   }
 
   override fun addLocalChangeListener(listener: RepoLoadedListener) {

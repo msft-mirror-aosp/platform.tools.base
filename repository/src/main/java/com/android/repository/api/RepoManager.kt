@@ -186,16 +186,13 @@ abstract class RepoManager {
     progress: ProgressIndicator,
     downloader: Downloader? = null,
     settings: SettingsController? = null,
-  ): Boolean {
-    val result = AtomicBoolean(true)
+  ) {
     loadSynchronously(
       cacheExpirationMs = cacheExpirationMs,
-      onError = { result.set(false) },
       runner = DirectProgressRunner(progress),
       downloader = downloader,
       settings = settings,
     )
-    return result.get()
   }
 
   abstract suspend fun loadLocalPackages(
@@ -228,10 +225,8 @@ abstract class RepoManager {
    * includes scanning the local repo for packages, but does not involve any reading or parsing of
    * package metadata files. If there have been any changes, or if the cache is older than the
    * default timeout, the local packages will be reloaded.
-   *
-   * @return `true` if the load was successful, `false` otherwise.
    */
-  abstract fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean
+  abstract fun reloadLocalIfNeeded(progress: ProgressIndicator)
 
   /** Gets the currently-loaded [RepositoryPackages]. */
   abstract val packages: RepositoryPackages
