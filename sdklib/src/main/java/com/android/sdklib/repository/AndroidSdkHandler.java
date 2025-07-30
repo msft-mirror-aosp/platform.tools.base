@@ -732,6 +732,7 @@ public final class AndroidSdkHandler {
                 // mark the cached packages invalid if the sources change.
                 userProvider.setRepoManager(result);
             }
+
             return result;
         }
     }

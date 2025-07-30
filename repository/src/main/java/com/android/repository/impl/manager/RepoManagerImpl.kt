@@ -60,6 +60,13 @@ internal constructor(
   localFactory: LocalRepoLoaderFactory?,
   remoteFactory: RemoteRepoLoaderFactory?,
   additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
+  /** The [FallbackLocalRepoLoader] to use when loading local packages. */
+  private val fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null,
+  /**
+   * The [FallbackRemoteRepoLoader] to use if the normal [RemoteRepoLoaderImpl] can't understand a
+   * downloaded repository xml file.
+   */
+  private val fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null,
 ) : RepoManager() {
 
   @TestOnly constructor(localPath: Path?) : this(localPath, null, null, emptyList())
@@ -67,15 +74,6 @@ internal constructor(
   /** The registered [SchemaModule]s. */
   override val schemaModules: Set<SchemaModule<*>> =
     setOf(commonModule, genericModule) + additionalSchemaModules
-
-  /** The [FallbackLocalRepoLoader] to use when loading local packages. */
-  private var fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null
-
-  /**
-   * The [FallbackRemoteRepoLoader] to use if the normal [RemoteRepoLoaderImpl] can't understand a
-   * downloaded repository xml file.
-   */
-  private var fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null
 
   /** The [RepositorySourceProvider]s from which to get [RepositorySource]s to load from. */
   override val sourceProviders = mutableListOf<RepositorySourceProvider>()
@@ -129,24 +127,6 @@ internal constructor(
   init {
     localRepoLoaderFactory = localFactory ?: LocalRepoLoaderFactoryImpl()
     remoteRepoLoaderFactory = remoteFactory ?: RemoteRepoLoaderFactoryImpl()
-  }
-
-  /**
-   * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
-   * called.
-   */
-  override fun setFallbackLocalRepoLoader(fallback: FallbackLocalRepoLoader?) {
-    fallbackLocalRepoLoader = fallback
-    markInvalid()
-  }
-
-  /**
-   * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
-   * called.
-   */
-  override fun setFallbackRemoteRepoLoader(remote: FallbackRemoteRepoLoader?) {
-    fallbackRemoteRepoLoader = remote
-    markInvalid()
   }
 
   /**

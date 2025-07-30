@@ -32,15 +32,15 @@ import org.w3c.dom.ls.LSResourceResolver
 /**
  * Primary interface for interacting with repository packages.
  *
- * To set up a `RepoManager`:
- * * Pass to the constructor: the path where the repo is installed locally, and the [SchemaModule]s
- *   used to parse the package.xml files and remote repositories used by this repo
- * * If your local repo might contain packages created by a previous system, set a
- *   [FallbackLocalRepoLoader] that can recognize and convert those packages using
- *   [setFallbackLocalRepoLoader].
- * * Add [RepositorySourceProvider]s to provide URLs for remotely-available packages.
- * * If some sources might be in a format used by a previous system, set a
- *   [FallbackRemoteRepoLoader] that can read and convert them.
+ * To set up a `RepoManager`, the following are required:
+ * * The path where the repo is installed locally
+ * * The [SchemaModule]s used to parse the package.xml files and remote repositories used by this
+ *   repo
+ * * If your local repo might contain packages created by a previous system, a
+ *   [FallbackLocalRepoLoader] that can recognize and convert those packages
+ * * [RepositorySourceProvider]s to provide URLs for remotely-available packages.
+ * * If some sources might be in a format used by a previous system, a [FallbackRemoteRepoLoader]
+ *   that can read and convert them.
  *
  * To load the local and remote packages, use [load].
  *
@@ -62,9 +62,6 @@ abstract class RepoManager {
    * repository manager and unit tests.
    */
   abstract val localPath: Path?
-
-  /** Sets the [FallbackLocalRepoLoader] to use when scanning the local repository for packages. */
-  abstract fun setFallbackLocalRepoLoader(local: FallbackLocalRepoLoader?)
 
   /**
    * Adds a [RepositorySourceProvider] from which to get [RepositorySource]s from which to download
@@ -92,12 +89,6 @@ abstract class RepoManager {
     progress: ProgressIndicator,
     forceRefresh: Boolean,
   ): List<RepositorySource>
-
-  /**
-   * Sets the [FallbackRemoteRepoLoader] to try when we encounter a remote xml file that the
-   * RepoManager can't read.
-   */
-  abstract fun setFallbackRemoteRepoLoader(remote: FallbackRemoteRepoLoader?)
 
   /**
    * Loads the local and remote repositories asynchronously.
@@ -348,11 +339,15 @@ abstract class RepoManager {
       fallbackLocalRepoLoader: FallbackLocalRepoLoader?,
       fallbackRemoteRepoLoader: FallbackRemoteRepoLoader?,
     ): RepoManager {
-      return RepoManagerImpl(localPath, null, null, schemaModules).apply {
-        setFallbackLocalRepoLoader(fallbackLocalRepoLoader)
-        setFallbackRemoteRepoLoader(fallbackRemoteRepoLoader)
-        sourceProviders.forEach { registerSourceProvider(it) }
-      }
+      return RepoManagerImpl(
+          localPath,
+          null,
+          null,
+          schemaModules,
+          fallbackLocalRepoLoader,
+          fallbackRemoteRepoLoader,
+        )
+        .apply { sourceProviders.forEach { registerSourceProvider(it) } }
     }
   }
 }

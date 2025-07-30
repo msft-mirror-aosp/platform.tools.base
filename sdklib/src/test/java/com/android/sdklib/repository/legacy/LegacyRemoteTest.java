@@ -60,8 +60,6 @@ public class LegacyRemoteTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         FakeSettingsController settings = new FakeSettingsController(false);
-        LegacyRemoteRepoLoader sdk = new LegacyRemoteRepoLoader();
-        mgr.setFallbackRemoteRepoLoader(sdk);
         FakeDownloader downloader = new FakeDownloader(fop.toPath("/tmp"));
         downloader.registerUrl(
                 new URL("http://www.example.com/testRepo2"),

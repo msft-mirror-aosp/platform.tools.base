@@ -16,8 +16,6 @@
 package com.android.repository.testframework
 
 import com.android.repository.api.Downloader
-import com.android.repository.api.FallbackLocalRepoLoader
-import com.android.repository.api.FallbackRemoteRepoLoader
 import com.android.repository.api.LocalPackage
 import com.android.repository.api.PackageOperation
 import com.android.repository.api.ProgressIndicator
@@ -50,8 +48,6 @@ class FakeRepoManager(
 
   override val schemaModules = setOf(commonModule, genericModule) + additionalSchemaModules
 
-  override fun setFallbackLocalRepoLoader(local: FallbackLocalRepoLoader?) {}
-
   override fun registerSourceProvider(provider: RepositorySourceProvider) {}
 
   override val sourceProviders: List<RepositorySourceProvider>
@@ -62,8 +58,6 @@ class FakeRepoManager(
     progress: ProgressIndicator,
     forceRefresh: Boolean,
   ): List<RepositorySource> = emptyList()
-
-  override fun setFallbackRemoteRepoLoader(remote: FallbackRemoteRepoLoader?) {}
 
   override fun load(
     cacheExpirationMs: Long,
