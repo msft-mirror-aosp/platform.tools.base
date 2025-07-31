@@ -48,7 +48,6 @@ function copy_bazel_artifacts() {(
 
 function run_bazel() {
   local target_name="studio-nightly"
-  local version="Nightly $(TZ=America/Los_Angeles date +%Y-%m-%d)"
 
   # Generate a UUID for use as the bazel test invocation id
   local -r invocation_id="$(uuidgen)"
@@ -69,7 +68,6 @@ function run_bazel() {
     --tool_tag=${SCRIPT_NAME} \
     --embed_label="${AS_BUILD_NUMBER}" \
     --//tools/adt/idea/studio:create-nightly-build \
-    --//tools/adt/idea/studio:version-suffix="${version}" \
     -- \
     //tools/adt/idea/studio:android-studio.linux.zip \
     //tools/adt/idea/studio:android-studio.mac.zip \
