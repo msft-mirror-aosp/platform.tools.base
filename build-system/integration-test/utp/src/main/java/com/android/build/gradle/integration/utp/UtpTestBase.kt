@@ -28,9 +28,13 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
+import org.junit.Assume
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameters
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.readText
@@ -40,13 +44,21 @@ import kotlin.io.path.readText
  * executed against both connected check and managed devices to ensure the feature
  * parity.
  */
-abstract class UtpTestBase() {
+@RunWith(Parameterized::class)
+abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
+
+    companion object {
+        @JvmStatic
+        @Parameters(name = "runWithBuiltInPlatform={0}")
+        fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
+
+        const val ANDROIDX_TEST_VERSION = "1.5.0-alpha02"
+    }
 
     lateinit var testTaskName: String
     lateinit var testResultXmlPath: String
     lateinit var testReportPath: String
     lateinit var testResultPbPath: String
-    lateinit var utpProfilePath: String
     lateinit var aggTestResultPbPath: String
     lateinit var testCoverageXmlPath: String
     lateinit var testLogcatPath: String
@@ -314,6 +326,7 @@ abstract class UtpTestBase() {
 
             gradleProperties {
                 add(BooleanOption.USE_ANDROID_X, true)
+                add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
             }
         }
     }
@@ -332,10 +345,6 @@ abstract class UtpTestBase() {
     }
 
     abstract fun selectModule(moduleName: String)
-
-    companion object {
-        const val ANDROIDX_TEST_VERSION = "1.5.0-alpha02"
-    }
 
     private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.enableAndroidTestOrchestrator() {
         android.testOptions.execution = "ANDROIDX_TEST_ORCHESTRATOR"
@@ -395,6 +404,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithCodeCoverage() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
         rule.build.androidApplication().reconfigure { enableCodeCoverage() }
 
@@ -402,7 +414,6 @@ abstract class UtpTestBase() {
 
         assertThat(project.resolve(testReportPath)).exists()
         assertThat(project.resolve(testResultPbPath)).exists()
-        assertThat(project.resolve(utpProfilePath)).exists()
         assertThat(project.resolve(testCoverageXmlPath)).contains(
             """<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">"""
         )
@@ -414,6 +425,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithTestFailures() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         rule.build.androidApplication().reconfigure {
@@ -447,12 +461,14 @@ abstract class UtpTestBase() {
 
         assertThat(project.resolve(testReportPath)).exists()
         assertThat(project.resolve(testResultPbPath)).exists()
-        assertThat(project.resolve(utpProfilePath)).exists()
     }
 
     @Test
     @Throws(Exception::class)
     fun androidTestWithOrchestrator() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         rule.build.androidApplication().reconfigure { enableAndroidTestOrchestrator() }
@@ -461,12 +477,14 @@ abstract class UtpTestBase() {
 
         assertThat(project.resolve(testReportPath)).exists()
         assertThat(project.resolve(testResultPbPath)).exists()
-        assertThat(project.resolve(utpProfilePath)).exists()
     }
 
     @Test
     @Throws(Exception::class)
     fun androidTestWithOrchestratorAndCodeCoverage() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         rule.build.androidApplication().reconfigure {
@@ -478,7 +496,6 @@ abstract class UtpTestBase() {
 
         assertThat(project.resolve(testReportPath)).exists()
         assertThat(project.resolve(testResultPbPath)).exists()
-        assertThat(project.resolve(utpProfilePath)).exists()
         assertThat(project.resolve(testCoverageXmlPath)).contains(
             """<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">"""
         )
@@ -490,6 +507,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestWithLogcat() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         executor.run(testTaskName)
@@ -504,6 +524,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestFromTestOnlyModule() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("test")
 
         executor.run(testTaskName)
@@ -515,6 +538,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun additionalTestOutputWithTestStorageService() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         rule.build.androidApplication().reconfigure {
@@ -572,6 +598,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun additionalTestOutputWithoutTestStorageService() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         rule.build.androidApplication().reconfigure {
@@ -611,6 +640,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun additionalTestOutputWithBenchmarkFiles() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         rule.build.androidApplication().reconfigure {
@@ -677,6 +709,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun additionalTestOutputWithBenchmarkV3Files() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         rule.build.androidApplication().reconfigure {
@@ -746,6 +781,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithDynamicFeature() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("feature")
 
         rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -781,6 +819,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithOrchestratorWithDynamicFeature() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("feature")
 
         rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -796,6 +837,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestWithLogcatWithDynamicFeature() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("feature")
 
         rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -812,6 +856,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("feature")
 
         rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -870,6 +917,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithForceCompilation() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("app")
 
         rule.build.androidApplication().reconfigure { enableForceCompilation() }
@@ -891,6 +941,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("feature")
 
         rule.build.androidApplication().reconfigure {
@@ -919,6 +972,9 @@ abstract class UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun androidTestWithCodeCoverageWithDynamicFeature() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("feature")
 
         rule.build.androidApplication().reconfigure {

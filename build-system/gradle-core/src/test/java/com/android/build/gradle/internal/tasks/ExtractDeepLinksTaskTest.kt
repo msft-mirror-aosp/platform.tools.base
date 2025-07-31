@@ -61,7 +61,7 @@ class ExtractDeepLinksTaskTest {
     }
 
     @Test
-    fun testBasic() {
+    fun testApplicationBasic() {
         val hostPlaceholder = "\${host}"
         val schemePlaceholder = "\${scheme}"
         val appIdPlaceholder = "\${applicationId}"
@@ -81,6 +81,41 @@ class ExtractDeepLinksTaskTest {
             )
         )
         task.forAar.set(false)
+        task.finalNavigationTransformation.set(true)
+        task.applicationId.set("com.example.app")
+        task.navigationJson.set(outputFile)
+        task.taskAction()
+
+        PathSubject.assertThat(outputFile).exists()
+        PathSubject.assertThat(outputFile).contains("my.host.example.com")
+        PathSubject.assertThat(outputFile).contains("myScheme")
+        PathSubject.assertThat(outputFile).contains("com.example.app")
+        PathSubject.assertThat(outputFile).contains("\"mDescription\": \"navigation.xml\"")
+        PathSubject.assertThat(outputFile).doesNotContain(navigationDir.name)
+    }
+
+    @Test
+    fun testLibraryBasic() {
+        val hostPlaceholder = "\${host}"
+        val schemePlaceholder = "\${scheme}"
+        val appIdPlaceholder = "\${applicationId}"
+        File(navigationDir, "navigation.xml").writeText(
+            """
+                <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
+                    <deepLink
+                        app:uri="$schemePlaceholder://$hostPlaceholder/$appIdPlaceholder"/>
+                </navigation>
+            """.trimIndent()
+        )
+        task.navFilesFolders.add(FakeGradleDirectory(navigationDir))
+        task.manifestPlaceholders.putAll(
+            mapOf(
+                "host" to "my.host.example.com",
+                "scheme" to "myScheme"
+            )
+        )
+        task.forAar.set(false)
+        task.finalNavigationTransformation.set(false)
         task.navigationJson.set(outputFile)
         task.taskAction()
 
@@ -88,14 +123,15 @@ class ExtractDeepLinksTaskTest {
         PathSubject.assertThat(outputFile).contains("my.host.example.com")
         PathSubject.assertThat(outputFile).contains("myScheme")
         PathSubject.assertThat(outputFile).contains(appIdPlaceholder)
-        PathSubject.assertThat(outputFile).contains("\"mDescription\": \"navigation.xml\"")
         PathSubject.assertThat(outputFile).doesNotContain(navigationDir.name)
     }
+
 
     @Test
     fun testNoOutputWhenForAarAndNoInputNavigationXmls() {
         task.navFilesFolders.add(FakeGradleDirectory(navigationDir))
         task.forAar.set(true)
+        task.finalNavigationTransformation.set(false)
         task.navigationJson.set(outputFile)
         task.taskAction()
 

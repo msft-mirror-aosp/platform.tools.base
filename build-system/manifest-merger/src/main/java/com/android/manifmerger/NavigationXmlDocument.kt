@@ -170,6 +170,8 @@ class NavigationXmlDocument private constructor(
         }
     }
 
+    fun getXml() = rootElement
+
     /** An exception during the evaluation of a [NavigationXmlDocument].  */
     class NavigationXmlDocumentException(s: String) : RuntimeException(s)
 }

@@ -505,25 +505,12 @@ class FileSystemManager(val device: ConnectedDevice) {
 
     /**
      * Opens a [AdbDeviceSyncServices] session on this [device] for performing one or more file
-     * transfer operation. The returned [AdbDeviceSyncServices] should be
-     * [closed][AdbDeviceSyncServices.close] when not needed anymore.
-     *
-     * @see AdbDeviceServices.sync
-     */
-    suspend fun openSyncServices(): AdbDeviceSyncServices {
-        return device.session.deviceServices.sync(device.selector)
-    }
-
-    /**
-     * Opens a [AdbDeviceSyncServices] session on this [device] for performing one or more file
      * transfer operation in the given [block].
      *
      * @see AdbDeviceServices.sync
      */
     suspend inline fun <R> withSyncServices(block: (AdbDeviceSyncServices) -> R): R {
-        return openSyncServices().use {
-            block(it)
-        }
+        return device.session.deviceServices.withSyncServices(device.selector, block)
     }
 
     /**

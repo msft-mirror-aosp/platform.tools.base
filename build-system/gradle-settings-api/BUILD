@@ -25,6 +25,9 @@ maven_library(
     resources = [":resources"],
     version = BUILD_VERSION,
     visibility = ["//visibility:public"],
+    exports = [
+        "//tools/base/build-system/gradle-common-api",
+    ],
     deps = [
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],

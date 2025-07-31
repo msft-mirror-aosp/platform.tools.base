@@ -69,4 +69,10 @@ interface OptimizationCreationConfig {
     val resourcesShrink: Boolean
 
     val postProcessingFeatures: PostprocessingFeatures?
+
+    /**
+     * New optimization API that enables gradual R8
+     */
+    val applicationOptimizationEnabled: Boolean
+    val includePackages: Provider<Set<String>>
 }

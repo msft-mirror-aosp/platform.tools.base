@@ -1,5 +1,5 @@
-load("//tools/base/build-system/integration-test:integration-test.bzl", "gradle_integration_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
+load("//tools/base/build-system/integration-test:integration-test.bzl", "gradle_integration_test")
 
 maven_repository(
     name = "dagger_prebuilts",
@@ -37,6 +37,7 @@ gradle_integration_test(
         "//tools/analytics-library/protos/src/main/proto",
         "//tools/base/annotations",
         "//tools/base/build-system:gradle-api",
+        "//tools/base/build-system/gradle-common-api",
         "//tools/base/build-system/integration-test/framework",
         "//tools/base/common:tools.common",
         "//tools/base/testutils:tools.testutils",

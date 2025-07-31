@@ -19,10 +19,16 @@ import com.android.adblib.AdbChannel
 import com.android.adblib.AdbServerChannelProvider
 import com.android.adblib.AdbServerConfiguration
 import com.android.adblib.AdbServerController
+import com.android.adblib.DeviceInfo
+import com.android.adblib.DeviceList
+import com.android.adblib.DeviceState
 import com.android.adblib.ProcessRunner.ProcessResult
 import com.android.adblib.testing.FakeAdbSession
+import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.ddmlib.AdbInitOptions
+import com.android.ddmlib.AndroidDebugBridge
+import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.DeviceState.ONLINE
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +36,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
@@ -44,9 +51,13 @@ import java.util.concurrent.TimeUnit
 
 class AdbLibAndroidDebugBridgeTest {
 
-    val config = MutableStateFlow<AdbServerConfiguration>(
+    val config = MutableStateFlow(
         AdbServerConfiguration(
-            null, null, false, false, emptyMap()
+            adbPath = null,
+            serverPort = null,
+            isUserManaged = false,
+            isUnitTest = false,
+            envVars = emptyMap()
         )
     )
 
@@ -380,7 +391,166 @@ class AdbLibAndroidDebugBridgeTest {
         assertEquals(1, adbServerController.channelProvider.createChannelCallCount)
     }
 
+    @Test
+    fun hasInitialDeviceList_isSetToTrueAfterCreateBridge() = runBlockingWithTimeout {
+        // Setup
+        val session = FakeAdbSession()
+
+        val adbServerController = FakeAdbServerController()
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+        // Act
+        val debugBridge = bridge.createBridge()
+
+        // Assert
+        assertNotNull(debugBridge)
+        yieldUntil { bridge.hasInitialDeviceList() }
+
+        // Cleanup
+        bridge.disconnectBridge()
+        bridge.terminate()
+    }
+
+    @Test
+    fun createBridge_triggersNotifyBridgeChangeEvents() = runBlockingWithTimeout {
+        // Setup
+        val session = FakeAdbSession()
+
+        val adbServerController = FakeAdbServerController()
+        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+        val debugBridgeChangeListener = TestDebugBridgeChangeListener()
+        bridge.addDebugBridgeChangeListener(debugBridgeChangeListener)
+
+        // Act / Assert
+        val debugBridge = bridge.createBridge()
+
+        assertEquals(1, debugBridgeChangeListener.bridgeChangedCallCount)
+        assertEquals(debugBridge, debugBridgeChangeListener.lastBridge)
+
+        // Act / Assert
+        bridge.disconnectBridge()
+        bridge.terminate()
+
+        assertEquals(2, debugBridgeChangeListener.bridgeChangedCallCount)
+        assertEquals(null, debugBridgeChangeListener.lastBridge)
+
+        // Cleanup
+        bridge.removeDebugBridgeChangeListener(debugBridgeChangeListener)
+    }
+
+    @Test
+    fun createBridgeWithOsLocationParam_triggersNotifyBridgeChangeEvents() =
+        runBlockingWithTimeout {
+            // Setup
+            val session = FakeAdbSession()
+
+            val adbServerController = FakeAdbServerController()
+            val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
+            val debugBridgeChangeListener = TestDebugBridgeChangeListener()
+            bridge.addDebugBridgeChangeListener(debugBridgeChangeListener)
+
+            // Act / Assert
+            val debugBridge = bridge.createBridge("/path/to/adb", forceNewBridge = false)
+
+            assertEquals(1, debugBridgeChangeListener.bridgeChangedCallCount)
+            assertEquals(debugBridge, debugBridgeChangeListener.lastBridge)
+
+            // Act / Assert
+            bridge.disconnectBridge()
+            bridge.terminate()
+
+            assertEquals(2, debugBridgeChangeListener.bridgeChangedCallCount)
+            assertEquals(null, debugBridgeChangeListener.lastBridge)
+
+            // Cleanup
+            bridge.removeDebugBridgeChangeListener(debugBridgeChangeListener)
+        }
+
+    @Test
+    fun notifyDeviceConnectedAndDisconnected_areTriggeredOnEveryCreateAndDestroy() =
+        runBlockingWithTimeout {
+            // Setup
+            val session = FakeAdbSession()
+            val adbServerController = FakeAdbServerController()
+            val adbLibAndroidDebugBridge =
+                AdbLibAndroidDebugBridge(session, adbServerController, config)
+
+            // This test relies on device change events, dispatched from `IDeviceManager`.
+            // We use the `withPreInitAndroidDebugBridge` helper to
+            // register our test `bridge` as `AndroidDebugBridge.delegate`.
+            // This is necessary because the underlying `IDeviceManager`
+            // will ignore events if the global bridge does not match the bridge instance
+            // that was used to create it.
+            withPreInitAndroidDebugBridge(adbLibAndroidDebugBridge) {
+                session.hostServices.devices =
+                    DeviceList(listOf(DeviceInfo("device1", DeviceState.ONLINE)), emptyList())
+
+                val deviceConnectionListener = TestDeviceChangeListener()
+
+                adbLibAndroidDebugBridge.addDeviceChangeListener(deviceConnectionListener)
+
+                // Act / Assert
+                adbLibAndroidDebugBridge.createBridge()
+
+                yieldUntil { deviceConnectionListener.connectedDeviceEventCount == 1 }
+                assertEquals(
+                    adbLibAndroidDebugBridge.devices.single(),
+                    deviceConnectionListener.lastConnectedDevice
+                )
+
+                // Act / Assert
+                adbLibAndroidDebugBridge.disconnectBridge()
+                adbLibAndroidDebugBridge.terminate()
+
+                yieldUntil { deviceConnectionListener.disconnectedDeviceEventCount == 1 }
+                assertEquals(
+                    deviceConnectionListener.lastDisconnectedDevice,
+                    deviceConnectionListener.lastConnectedDevice
+                )
+
+                // Act / Assert
+                adbLibAndroidDebugBridge.createBridge()
+
+                yieldUntil { deviceConnectionListener.connectedDeviceEventCount == 2 }
+                assertEquals(
+                    adbLibAndroidDebugBridge.devices.single(),
+                    deviceConnectionListener.lastConnectedDevice
+                )
+
+                // Act / Assert
+                adbLibAndroidDebugBridge.disconnectBridge()
+                adbLibAndroidDebugBridge.terminate()
+
+                yieldUntil { deviceConnectionListener.disconnectedDeviceEventCount == 2 }
+                assertEquals(
+                    deviceConnectionListener.lastDisconnectedDevice,
+                    deviceConnectionListener.lastConnectedDevice
+                )
+
+                // Cleanup
+                adbLibAndroidDebugBridge.removeDeviceChangeListener(deviceConnectionListener)
+            }
+        }
+
     // TODO: Add many more tests
+
+    /**
+     * This helper is needed when test code relies on calls to static
+     * AndroidDebugBridge methods.
+     */
+    private suspend fun withPreInitAndroidDebugBridge(
+        adbLibAndroidDebugBridge: AdbLibAndroidDebugBridge,
+        block: suspend AdbLibAndroidDebugBridge.() -> Unit
+    ) {
+        AndroidDebugBridge.preInit(adbLibAndroidDebugBridge)
+        try {
+            adbLibAndroidDebugBridge.block()
+        } finally {
+            AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS)
+            AndroidDebugBridge.terminate()
+            AndroidDebugBridge.resetForTests()
+        }
+    }
 
     private class FakeAdbServerController(
         private val startDelayMs: Long = 0, startedByDefault: Boolean = true
@@ -460,6 +630,56 @@ class AdbLibAndroidDebugBridgeTest {
                     }
                 }
             }
+        }
+    }
+
+    private class TestDebugBridgeChangeListener : AndroidDebugBridge.IDebugBridgeChangeListener {
+
+        var bridgeChangedCallCount = 0
+            private set
+
+        var lastBridge: AndroidDebugBridge? = null
+            private set
+
+        override fun bridgeChanged(bridge: AndroidDebugBridge?) {
+            ++bridgeChangedCallCount
+            lastBridge = bridge
+        }
+    }
+
+    private class TestDeviceChangeListener : AndroidDebugBridge.IDeviceChangeListener {
+
+        var connectedDeviceEventCount: Int = 0
+            private set
+        var lastConnectedDevice: IDevice? = null
+            private set
+
+        var disconnectedDeviceEventCount: Int = 0
+            private set
+        var lastDisconnectedDevice: IDevice? = null
+            private set
+
+        var deviceChangedEventCount: Int = 0
+            private set
+        var lastDeviceChangedDevice: IDevice? = null
+            private set
+        var lastDeviceChangedMask: Int? = null
+            private set
+
+        override fun deviceConnected(device: IDevice) {
+            ++connectedDeviceEventCount
+            lastConnectedDevice = device
+        }
+
+        override fun deviceDisconnected(device: IDevice) {
+            ++disconnectedDeviceEventCount
+            lastDisconnectedDevice = device
+        }
+
+        override fun deviceChanged(device: IDevice, changeMask: Int) {
+            ++deviceChangedEventCount
+            lastDeviceChangedDevice = device
+            lastDeviceChangedMask = changeMask
         }
     }
 }

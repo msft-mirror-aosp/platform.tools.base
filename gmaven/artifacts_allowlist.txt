@@ -49,6 +49,7 @@
   com/android/tools/build:builder-test-api
   com/android/tools/build:gradle
   com/android/tools/build:gradle-api
+  com/android/tools/build:gradle-common-api
   com/android/tools/build:gradle-kotlin
   com/android/tools/build:gradle-settings
   com/android/tools/build:gradle-settings-api
@@ -81,8 +82,6 @@
   com/android/tools:testutils
   com/android/tools/utp:android-device-provider-ddmlib
   com/android/tools/utp:android-device-provider-ddmlib-proto
-  com/android/tools/utp:android-device-provider-gradle
-  com/android/tools/utp:android-device-provider-gradle-proto
   com/android/tools/utp:android-device-provider-profile
   com/android/tools/utp:android-device-provider-profile-proto
   com/android/tools/utp:android-test-plugin-host-additional-test-output

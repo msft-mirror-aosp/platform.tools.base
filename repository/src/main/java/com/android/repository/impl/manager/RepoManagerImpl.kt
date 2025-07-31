@@ -40,8 +40,11 @@ import java.time.Clock
 import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.completeWith
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import org.w3c.dom.ls.LSResourceResolver
 
 /**
@@ -288,7 +291,7 @@ internal constructor(
       if (existingLocalTask == null) {
         return LocalLoadTask(cacheExpirationMs).also { this.task = it }
       } else {
-        return existingLocalTask.newPiggybackTask()
+        return existingLocalTask.newPiggybackTask { getOrCreateLocalLoadTask(cacheExpirationMs) }
       }
     }
 
@@ -305,7 +308,9 @@ internal constructor(
           remoteTasks[remoteTaskKey] = it
         }
       } else {
-        return existingRemoteTask.newPiggybackTask()
+        return existingRemoteTask.newPiggybackTask {
+          getOrCreateRemoteLoadTask(cacheExpirationMs, downloader, settings)
+        }
       }
     }
 
@@ -379,21 +384,42 @@ internal constructor(
     private val result = CompletableDeferred<List<T>>()
 
     override suspend fun load(indicator: ProgressIndicator): List<T> {
-      val wasIndeterminate = indicator.isIndeterminate()
-      indicator.setIndeterminate(false)
-      val result = runCatching { doLoad(indicator) }
-      this.result.completeWith(result)
-      indicator.setIndeterminate(wasIndeterminate)
-      cleanUp()
-      return result.getOrThrow()
+      try {
+        val wasIndeterminate = indicator.isIndeterminate()
+        indicator.setIndeterminate(false)
+        val result = runCatching { doLoad(indicator) }
+        this.result.completeWith(result)
+        indicator.setIndeterminate(wasIndeterminate)
+        return result.getOrThrow()
+      } finally {
+        cleanUp()
+      }
     }
 
     abstract suspend fun doLoad(indicator: ProgressIndicator): List<T>
 
     abstract fun cleanUp()
 
-    /** Returns a LoadTask that simply waits on the result of this LoadTask and returns it. */
-    fun newPiggybackTask(): LoadTask<T> = LoadTask { result.await() }
+    /**
+     * Returns a LoadTask that simply waits on the result of this LoadTask and returns it.
+     *
+     * The problem with sharing the results of an existing task is that the caller of the existing
+     * task may cancel it, even though our caller still wants the result. Our caller may not even
+     * allow cancellation and may not be expecting it. So, if that happens, use [fallback] to create
+     * a fresh LoadTask and use it.
+     */
+    fun newPiggybackTask(fallback: () -> LoadTask<T>): LoadTask<T> = LoadTask { indicator ->
+      try {
+        result.await()
+      } catch (e: CancellationException) {
+        // Two possibilities here: our own caller was cancelled, or the job we're waiting on was
+        // cancelled. We only want to fallback in the latter case.
+        if (indicator.isCanceled || !currentCoroutineContext().isActive) {
+          throw e
+        }
+        fallback().load(indicator)
+      }
+    }
   }
 
   private fun <T : AbstractLoadTask<*>> T.takeIfNotTimedOut(): T? = takeIf {

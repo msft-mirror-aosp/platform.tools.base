@@ -413,4 +413,54 @@ class ForbiddenStudioCallDetectorTest {
                 """,
       )
       .within("src")
+
+  @Test
+  fun testIsEap() {
+    studioLint()
+      .files(
+        java(
+            """
+                    package test.pkg;
+                    import com.intellij.openapi.application.ApplicationManager;
+
+                    public class Test {
+                        public boolean test() {
+                            return ApplicationManager.getApplication().isEAP(); // ERROR
+                        }
+                    }
+                    """
+          )
+          .indented(),
+        java(
+            """
+          package com.intellij.openapi.application;
+          class ApplicationManager {
+            public static Application getApplication() {
+              throw new IllegalStateException();
+            }
+          }
+        """
+          )
+          .indented(),
+        java(
+            """
+          package com.intellij.openapi.application;
+          interface Application {
+            boolean isEAP();
+          }
+        """
+          )
+          .indented(),
+      )
+      .issues(ForbiddenStudioCallDetector.IS_EAP)
+      .run()
+      .expect(
+        """
+          src/test/pkg/Test.java:6: Error: Do not use com.intellij.openapi.application.Application.isEap. Application.isEap depends on the underlying intellij platform prebuilt, rather than the version of Studio released. Instead, consider using a StudioFlag.` [ApplicationManagerIsEap]
+                  return ApplicationManager.getApplication().isEAP(); // ERROR
+                                                             ~~~~~~~
+          1 errors, 0 warnings
+          """
+      )
+  }
 }

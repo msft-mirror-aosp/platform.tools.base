@@ -17,6 +17,7 @@ package com.android.build.api.dsl {
   }
 
   public interface SettingsExtension {
+    method public void compileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkSpec,kotlin.Unit> action);
     method public void compileSdkAddon(String vendor, String name, int version);
     method public void execution(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Execution,kotlin.Unit> action);
     method @org.gradle.api.Incubating public String? getAddOnName();
@@ -33,6 +34,7 @@ package com.android.build.api.dsl {
     method public String getNdkVersion();
     method @org.gradle.api.Incubating public Integer? getTargetSdk();
     method @org.gradle.api.Incubating public String? getTargetSdkPreview();
+    method public void minSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec,kotlin.Unit> action);
     method public void setBuildToolsVersion(String);
     method public void setCompileSdk(Integer?);
     method public void setCompileSdkExtension(Integer?);
@@ -43,6 +45,7 @@ package com.android.build.api.dsl {
     method public void setNdkVersion(String);
     method @org.gradle.api.Incubating public void setTargetSdk(Integer?);
     method @org.gradle.api.Incubating public void setTargetSdkPreview(String?);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract String? addOnName;
     property @org.gradle.api.Incubating public abstract String? addOnVendor;
     property @org.gradle.api.Incubating public abstract Integer? addOnVersion;

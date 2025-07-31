@@ -44,6 +44,7 @@ class CacheabilityTest {
         // Sort alphabetically so it's easier to search
         FROM_CACHE to setOf(
             ":app:bundle${DEBUG_RELEASE}Resources",
+            ":app:compile${DEBUG_RELEASE}NavigationResources",
             ":app:compile${DEBUG_RELEASE}JavaWithJavac",
             ":app:compile${DEBUG_RELEASE}UnitTestJavaWithJavac",
             ":app:compileReleaseArtProfile",
@@ -67,6 +68,7 @@ class CacheabilityTest {
             ":app:process${DEBUG_RELEASE}MainManifest",
             ":app:process${DEBUG_RELEASE}Manifest",
             ":app:process${DEBUG_RELEASE}ManifestForPackage",
+            ":app:process${DEBUG_RELEASE}NavigationResources",
             ":app:process${DEBUG_RELEASE}Resources",
             ":app:test${DEBUG_RELEASE}UnitTest",
         ),

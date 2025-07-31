@@ -77,6 +77,12 @@ interface SettingsExtension {
     val addOnVersion: Int?
 
     /**
+     * Configures all aspects regarding compile Sdk version, see [CompileSdkSpec] for
+     * available options.
+     */
+    fun compileSdk(action: CompileSdkSpec.() -> Unit)
+
+    /**
      * The minimum SDK version.
      * Setting this it will override previous calls of [minSdk] and [minSdkPreview] setters. Only
      * one of [minSdk] and [minSdkPreview] should be set.
@@ -86,6 +92,11 @@ interface SettingsExtension {
     var minSdk: Int?
 
     var minSdkPreview: String?
+
+    /**
+     * Configures all aspects regarding minSdk, see [MinSdkSpec] for available options.
+     */
+    fun minSdk(action: MinSdkSpec.() -> Unit)
 
     /**
      * The target SDK version.
@@ -109,6 +120,10 @@ interface SettingsExtension {
     @set:Incubating
     var targetSdkPreview: String?
 
+    /**
+     * Configures all aspects regarding target sdk, see [TargetSdkSpec] for available options.
+     */
+    fun targetSdk(action: TargetSdkSpec.() -> Unit)
 
     /** Set execution profiles and options for tools. */
     val execution: Execution

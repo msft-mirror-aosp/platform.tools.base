@@ -20,6 +20,7 @@ import com.android.adblib.AdbInputChannel
 import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.TextShellCollector
+import com.android.adblib.withSyncServices
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -45,7 +46,9 @@ internal class PMLegacy(deviceServices: AdbDeviceServices) : PM(deviceServices) 
         streamed = true
 
         // Push APK to device
-        deviceService.sync(device).send(apk, INSTALL_APK_STAGING, RemoteFileMode.DEFAULT, null, null)
+        deviceService.withSyncServices(device) {
+            it.send(apk, INSTALL_APK_STAGING, RemoteFileMode.DEFAULT, null, null)
+        }
 
         // Install
         val parameters = mutableListOf<String>("pm", "install")

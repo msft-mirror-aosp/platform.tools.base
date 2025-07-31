@@ -346,6 +346,18 @@ public class HtmlBuilder {
         return this;
     }
 
+    /**
+     * Adds a bulleted list item.
+     *
+     * @param text the text of the list item, which will be HTML-escaped.
+     */
+    public HtmlBuilder addBulletedItem(@NonNull String text) {
+        mStringBuilder.append("<li>");
+        add(text);
+        mStringBuilder.append("</li>");
+        return this;
+    }
+
     public HtmlBuilder addImage(URL url, @Nullable String altText) {
         String link = "";
         try {

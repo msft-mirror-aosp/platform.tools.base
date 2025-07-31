@@ -96,6 +96,7 @@ public class FakeAdbTestRule extends ExternalResource {
         // Start server execution.
         myServer.start();
         // Test that we obtain 1 device via the ddmlib APIs
+        AndroidDebugBridge.disconnectBridge();
         AndroidDebugBridge.terminate();
         AndroidDebugBridge.enableFakeAdbServerMode(myServer.getPort());
         DdmPreferences.setJdwpProxyPort(getFreePort());

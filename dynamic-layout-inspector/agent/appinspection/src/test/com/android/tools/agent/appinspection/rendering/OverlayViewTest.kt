@@ -26,6 +26,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.inspection.Connection
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
+import com.android.tools.idea.protobuf.ByteString
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -313,7 +314,7 @@ class OverlayViewTest {
         viewModel.setSelectedNodes(drawInstruction1)
         testScheduler.advanceUntilIdle()
 
-        assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(4)
+        assertThat(overlayView.fakeCanvas.drawRectLogs).hasSize(6)
 
         overlayView.fakeCanvas.drawRectLogs.clear()
         overlayView.onDetachedFromWindow()
@@ -527,6 +528,45 @@ class OverlayViewTest {
         root.measure(1000, 2000)
         assertThat(overlayView.measuredWidth).isEqualTo(315)
         assertThat(overlayView.measuredHeight).isEqualTo(210)
+    }
+
+    @Test
+    fun testOverlayImage() = runTest {
+        val connection = object : Connection() {
+            override fun sendEvent(data: ByteArray) {}
+        }
+
+        val testDispatcher = StandardTestDispatcher(testScheduler)
+        val viewModel = OnDeviceRenderingViewModel(this, connection, testDispatcher)
+
+        val context = Context("fake.package.name", Resources(emptyMap<Int, String>()))
+        val root = ViewGroup(context)
+        val overlayView = OverlayView(root = root, scope = this, viewModel = viewModel)
+        overlayView.onAttachedToWindow()
+        testScheduler.advanceUntilIdle()
+
+        overlayView.fakeCanvas.drawRectLogs.clear()
+
+        val byteString = ByteString.copyFrom(ByteArray(1))
+        viewModel.setOverlayImage(byteString)
+        testScheduler.advanceUntilIdle()
+
+        // Check that bitmap is drawn with default alpha
+        assertThat(overlayView.fakeCanvas.drawBitmapLogs).hasSize(1)
+        assertThat(overlayView.fakeCanvas.drawBitmapLogs.last().paint.alpha).isEqualTo(127)
+
+        viewModel.setOverlayAlpha(1f)
+        testScheduler.advanceUntilIdle()
+
+        // Check that bitmap is drawn with new alpha
+        assertThat(overlayView.fakeCanvas.drawBitmapLogs).hasSize(2)
+        assertThat(overlayView.fakeCanvas.drawBitmapLogs.last().paint.alpha).isEqualTo(255)
+
+        viewModel.setOverlayImage(null)
+        testScheduler.advanceUntilIdle()
+
+        // Check that bitmap is not drawn.
+        assertThat(overlayView.fakeCanvas.drawBitmapLogs).hasSize(2)
     }
 }
 

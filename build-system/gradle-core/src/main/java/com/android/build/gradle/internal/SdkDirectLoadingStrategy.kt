@@ -215,7 +215,6 @@ class SdkDirectLoadingStrategy(
 
     fun getAidlExecutable() = getFileFromBuildTool(BuildToolInfo.PathId.AIDL)
     fun getCoreLambaStubs() = getFileFromBuildTool(BuildToolInfo.PathId.CORE_LAMBDA_STUBS)
-    fun getSplitSelectExecutable() = getFileFromBuildTool(BuildToolInfo.PathId.SPLIT_SELECT)
 
     fun getRenderScriptSupportJar() = getBuildToolsInfo()?.let {
         RenderScriptProcessor.getSupportJar(it.location.toFile(), useAndroidX)

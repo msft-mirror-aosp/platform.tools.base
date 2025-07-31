@@ -356,7 +356,7 @@ private fun setupResourceShrinking(
     }
 
     r8CommandBuilder.setAndroidResourceProvider(
-        KeepRulesAndroidResourceProvider(config.mergedNotCompiledResourcesInputDir))
+        KeepRulesAndroidResourceProvider(config.mergedNotCompiledResourcesInputDirs))
     // R8 requires an Android resource consumer to be set
     r8CommandBuilder.setAndroidResourceConsumer { _, _ ->  }
 
@@ -376,14 +376,16 @@ private fun setupResourceShrinking(
 
 /** [AndroidResourceProvider] that provides [KeepRulesAndroidResourceInput]. */
 private class KeepRulesAndroidResourceProvider(
-    private val mergedNotCompiledResourcesInputDir: File
+    private val mergedNotCompiledResourcesInputDirs: List<File>
 ) : AndroidResourceProvider {
 
     override fun getAndroidResources(): List<KeepRulesAndroidResourceInput> {
-        return mergedNotCompiledResourcesInputDir.walk()
+        return mergedNotCompiledResourcesInputDirs.flatMap {
+            it.walk()
                 .filter { it.path.endsWith(DOT_XML) }
                 .map { KeepRulesAndroidResourceInput(it) }
                 .toList()
+        }
     }
 }
 
@@ -587,7 +589,7 @@ data class ToolConfig(
 /** Parameters required for running resource shrinking. */
 data class ResourceShrinkingConfig(
     val linkedResourcesInputFiles: List<File>,
-    val mergedNotCompiledResourcesInputDir: File,
+    val mergedNotCompiledResourcesInputDirs: List<File>,
     val featureLinkedResourcesInputFiles: List<File>,
     val usePreciseShrinking: Boolean,
     val optimizedShrinking: Boolean,

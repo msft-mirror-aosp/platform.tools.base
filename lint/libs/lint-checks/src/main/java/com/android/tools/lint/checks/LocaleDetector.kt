@@ -32,6 +32,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.getMethodName
 import com.intellij.psi.PsiMethod
+import java.util.Locale
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UField
@@ -92,6 +93,7 @@ class LocaleDetector : Detector(), SourceCodeScanner {
     val location = context.getNameLocation(node)
     val message =
       String.format(
+        Locale.US,
         "Implicitly using the default locale is a common source of bugs: " +
           "Use `%1\$s(Locale)` instead. For strings meant to be internal " +
           "use `Locale.ROOT`, otherwise `Locale.getDefault()`.",
@@ -105,6 +107,7 @@ class LocaleDetector : Detector(), SourceCodeScanner {
     val location = context.getNameLocation(node)
     val message =
       String.format(
+        Locale.US,
         "Implicitly using the default locale is a common source of bugs: " +
           "Use `%1\$s(Locale)` instead. For strings meant to be internal " +
           "use `Locale.ROOT`, otherwise `Locale.getDefault()`.",

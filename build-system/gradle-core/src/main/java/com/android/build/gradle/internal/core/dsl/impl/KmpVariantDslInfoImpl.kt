@@ -191,6 +191,12 @@ class KmpVariantDslInfoImpl(
                 }
             }
         }
+        override val applicationOptimizationEnabled: Boolean
+            get() = false
+        override val includePackages: Set<String>
+            get() = setOf()
+        override val keepRuleFiles: Set<File>
+            get() = setOf()
 
         override fun gatherProguardFiles(type: ProguardFileType): Collection<File> {
             return postProcessingOptions.getProguardFiles(type)

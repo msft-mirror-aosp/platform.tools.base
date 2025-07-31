@@ -81,6 +81,7 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
                     "API 'variant.getJavaCompile()' is obsolete and has been replaced with 'variant.getJavaCompileProvider()'.\n" +
                             "${DeprecationReporter.DeprecationTarget.TASK_ACCESS_VIA_VARIANT.getDeprecationTargetMessage()}\n" +
                             "For more information, see https://d.android.com/r/tools/task-configuration-avoidance.\n" +
+                            "\n" +
                             "REASON: Called from: ${project.projectDir}${File.separatorChar}build.gradle:33\n" +
                             "WARNING: Debugging obsolete API calls can take time during configuration. It's recommended to not keep it on at all times.")
             }
@@ -105,6 +106,7 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
                         "API 'variant.getJavaCompile()' is obsolete and has been replaced with 'variant.getJavaCompileProvider()'.\n" +
                                 "${DeprecationReporter.DeprecationTarget.TASK_ACCESS_VIA_VARIANT.getDeprecationTargetMessage()}\n" +
                                 "For more information, see https://d.android.com/r/tools/task-configuration-avoidance.\n" +
+                                "\n" +
                                 "REASON: Called from: ${project.projectDir}${File.separatorChar}build.gradle:33\n" +
                                 "WARNING: Debugging obsolete API calls can take time during configuration. It's recommended to not keep it on at all times.")
                 }
@@ -113,7 +115,22 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
         }
     }
 
+    @Test
+    fun `test disabledApi from command line`() {
+        val result = project.executor()
+            .with(BooleanOption.ENABLE_LEGACY_VARIANT_API, false)
+            .expectFailure()
+            .run("help")
+
+        result.assertErrorContains("API 'applicationVariants' is obsolete.\n" +
+                "It will be removed in version 10.0 of the Android Gradle plugin.\n" +
+                "The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding \n" +
+                "    android.enableLegacyVariantApi=true\n" +
+                "to this project's gradle.properties file.\n" +
+                "For more information, see https://developer.android.com/studio/releases/gradle-plugin-api-updates.")
+    }
 }
+
 
 class TestProjectProvider(
     val name: String,

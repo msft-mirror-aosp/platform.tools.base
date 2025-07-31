@@ -219,9 +219,11 @@ interface VariantDimension {
      */
     fun resValue(type: String, name: String, value: String)
 
+    @Deprecated("Use ApplicationBuildType.optimization instead")
     @get:Incubating
     val optimization: Optimization
 
+    @Deprecated("Use ApplicationBuildType.optimization(action) instead")
     @Incubating
     fun optimization(action: Optimization.() -> Unit)
 }

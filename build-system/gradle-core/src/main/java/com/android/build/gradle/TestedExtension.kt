@@ -6,6 +6,7 @@ import com.android.build.gradle.api.UnitTestVariant
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
+import com.android.build.gradle.options.BooleanOption
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.NamedDomainObjectContainer
@@ -55,11 +56,12 @@ abstract class TestedExtension(
      */
     override val testVariants: DomainObjectSet<TestVariant>
         get() {
-            recordOldVariantApiUsage()
+            recordOldVariantApiUsage("testVariants")
             return testVariantList
         }
 
     fun addTestVariant(testVariant: TestVariant) {
+        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
         testVariantList.add(testVariant)
     }
 
@@ -78,11 +80,12 @@ abstract class TestedExtension(
      */
     override val unitTestVariants: DomainObjectSet<UnitTestVariant>
         get() {
-            recordOldVariantApiUsage()
+            recordOldVariantApiUsage("unitTestVariants")
             return unitTestVariantList
         }
 
     fun addUnitTestVariant(testVariant: UnitTestVariant) {
+        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
         unitTestVariantList.add(testVariant)
     }
 

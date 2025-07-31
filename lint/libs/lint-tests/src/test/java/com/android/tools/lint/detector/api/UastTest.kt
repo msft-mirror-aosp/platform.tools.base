@@ -3416,6 +3416,97 @@ class UastTest : TestCase() {
     }
   }
 
+  // TODO(434109500): likely fixed after Kotlin 2.2.20 (or 2.3) or IJ 2025.3?
+  fun disabled_testRecursiveTypeParameterReturnedAsReifiedInlineReturnType() {
+    // b/434109500
+    val testFiles =
+      arrayOf(
+        bytecode(
+          "libs/lib1.jar",
+          kotlin(
+              "src/test/mock.kt",
+              """
+              package test
+
+              inline fun <reified T : Any> mock(): T = TODO()
+            """,
+            )
+            .indented(),
+          0xd975c9,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgEuNiEBJyLi0uyc/1yU9Pz8xLdyzI
+                9C7h4uNiKUktLhFi881PzvYuUWLQYgAA/KsI7EAAAAA=
+                """,
+          """
+                test/MockKt.class:
+                H4sIAAAAAAAA/2VSXWsTQRQ9M5vmY5PatFZtUj9rhMQHtxVBMKUgrdLFpAUT
+                ApKnyWYaJtmdldnZ4GOe/CH+CUFBQx/9UeLdWEH0Ye6ce8+5hzuX+fHzyzcA
+                z/CIoWxlYr1uHMze2AIYQ3Uq5sILhZ5456OpDKjqMOQiUjBsN1udf/k2w+5h
+                /8X/9aNmq98ntj6Lbai0dxZbP3ofykhqK8evjIlNAUWG/KHSyh4xnDT/MulZ
+                o/Sk7XeuuqfzyFPUaLQIvRN5IdLQHsc6sSYNbGy6wsykabcGFbgouyihwlBq
+                qMZF4/fozGfY/GPWlVaMhRU0HY/mDi2DZaGUBZB2lgFO5AeVoX1C4wMGb7lw
+                XV7kLq8SWi7qdbrr/JTtucXlosp22GO+z08vPxYvP+V51cnanpJdn2WuhWyQ
+                JzNL2zyOx5Jho6O0PEujkTR9MQqpstWJAxEOhFFZflUs9dREC5sawm4vTk0g
+                X6uMqL1NtVWRHKhEkfKl1rEVVtFScACOHFavqdawhjzl9yh7TpiGwbrT/orS
+                O5Zjn7H+PXss7lPME8nh4AHhygqXcQ0blO2tNAU6D1foLhorO/owZLk5hONj
+                y8d1H9u44eMmbvnYQW0IlqCO3SFyCdYS3E5wJ0H+FzyMFPyCAgAA
+                """,
+        ),
+        bytecode(
+          "libs/logging.jar",
+          java(
+              "src/my/logging/LoggingApi.java",
+              """
+              package my.logging;
+
+              public interface LoggingApi<API extends LoggingApi<API>> {
+              }
+            """,
+            )
+            .indented(),
+          0x8f5feed2,
+          """
+                my/logging/LoggingApi.class:
+                H4sIAAAAAAAA/zv1b9c+BgYGWwZOdgYmRgbR3Er9nPz09My8dH0fCO1YkMnO
+                wMLIIJCVWJaon5MIlPFPykpNLmFk4AzOTM9LLCktSmVkMLdxDPC0svLBaoBN
+                CFDS2s7azgfdEGtGBq7g/NKi5FS3zBygMfwITXogtWyMDIwMzAwQwMTACibZ
+                GNjBNAcA5ev/wb4AAAA=
+                """,
+        ),
+        kotlin(
+            """
+            import my.logging.LoggingApi
+            import test.mock
+
+            fun test() {
+              abstract class CustomLoggingApi : LoggingApi<CustomLoggingApi>
+              val logger: CustomLoggingApi = mock()
+            }
+          """
+          )
+          .indented(),
+      )
+
+    val expected =
+      if (useFirUast()) "my.logger.LoggingApi<? extends ".repeat(6) + "java.lang.Object>>>>>>"
+      else "<ErrorType>"
+
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitCallExpression(node: UCallExpression): Boolean {
+            val resolved = node.resolve()
+            assertNotNull(resolved)
+            assertEquals("mock", resolved!!.name)
+            assertEquals(expected, resolved.returnType?.canonicalText)
+            return super.visitCallExpression(node)
+          }
+        }
+      )
+    }
+  }
+
   fun testResolveToInlineInFacadeInLibrary() {
     // b/393435169
     // https://youtrack.jetbrains.com/issue/KTIJ-32941

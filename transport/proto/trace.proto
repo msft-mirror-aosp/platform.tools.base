@@ -266,6 +266,9 @@ message ArtOptions {
   // The mode of tracing can be either sampled or instrumented.
   // Art-based traces can be either.
   TraceMode trace_mode = 3;
+
+  // True if the clock type is dual, otherwise it is wall.
+  bool dual_clock = 4;
 }
 
 // The profiler type of trace being taken. Used to differentiate

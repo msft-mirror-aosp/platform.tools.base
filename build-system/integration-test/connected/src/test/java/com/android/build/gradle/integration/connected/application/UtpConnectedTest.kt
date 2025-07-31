@@ -30,6 +30,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent
 import com.google.wireless.android.sdk.stats.DeviceTestSpanProfile
 import com.google.wireless.android.sdk.stats.TestRun
+import org.junit.Assume
 import org.junit.ClassRule
 import org.junit.Test
 import java.io.Closeable
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Connected tests using UTP test executor.
  */
-class UtpConnectedTest : UtpTestBase() {
+class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBuiltInPlatform) {
     private val connectedAndroidTestWithUtpBenchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtp").setProject("Android Studio Gradle").build()
 
     companion object {
@@ -46,15 +47,12 @@ class UtpConnectedTest : UtpTestBase() {
         @JvmField
         val EMULATOR = getEmulator()
         private const val DEVICE_NAME = "emulator-5554 - 13"
-        private const val EMULATOR_SERIAL = "emulator-5554"
-
         private const val TEST_RESULT_XML = "build/outputs/androidTest-results/connected/debug/TEST-$DEVICE_NAME-_"
         private const val LOGCAT = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/logcat-com.example.android.kotlin.ExampleInstrumentedTest-useAppContext.txt"
         private const val LOGCAT_FOR_DYNAMIC_FEATURE = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/logcat-com.example.android.kotlin.feature.ExampleInstrumentedTest-useAppContext.txt"
         private const val TEST_REPORT = "build/reports/androidTests/connected/debug/com.example.android.kotlin.html"
         private const val TEST_REPORT_FOR_DYNAMIC_FEATURE = "build/reports/androidTests/connected/debug/com.example.android.kotlin.feature.html"
         private const val TEST_RESULT_PB = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/test-result.pb"
-        private const val UTP_PROFILE = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/profiling/${EMULATOR_SERIAL}_profile.pb"
         private const val UTP_LOG = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/utp.0.log"
         private const val AGGREGATED_TEST_RESULT_PB = "build/outputs/androidTest-results/connected/debug/test-result.pb"
         private const val TEST_COV_XML = "build/reports/coverage/androidTest/debug/connected/report.xml"
@@ -72,7 +70,6 @@ class UtpConnectedTest : UtpTestBase() {
             testReportPath = "${moduleName}/$TEST_REPORT"
             testLogcatPath = "${moduleName}/$LOGCAT"
         }
-        utpProfilePath = "${moduleName}/$UTP_PROFILE"
         testResultPbPath = "${moduleName}/$TEST_RESULT_PB"
         aggTestResultPbPath = "${moduleName}/$AGGREGATED_TEST_RESULT_PB"
         testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
@@ -82,11 +79,14 @@ class UtpConnectedTest : UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestWithUtpTestResultListener() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtpTestResultListener").setProject("Android Studio Gradle").build()
         val startTime: Long = System.currentTimeMillis()
         selectModule("app")
         val initScriptPath = TestUtils.resolveWorkspacePath(
-                "tools/adt/idea/utp/addGradleAndroidTestListener.gradle")
+                "tools/adt/idea/utp/resources/utp/addGradleAndroidTestListener.gradle")
 
         var testExecutionStartTime: Long = System.currentTimeMillis()
         val result = executor
@@ -133,11 +133,14 @@ class UtpConnectedTest : UtpTestBase() {
     @Test
     @Throws(Exception::class)
     fun connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled").setProject("Android Studio Gradle").build()
         val startTime: Long = System.currentTimeMillis()
         selectModule("app")
         val initScriptPath = TestUtils.resolveWorkspacePath(
-                "tools/adt/idea/utp/addGradleAndroidTestListener.gradle")
+                "tools/adt/idea/utp/resources/utp/addGradleAndroidTestListener.gradle")
 
         val testExecutionStartTime: Long = System.currentTimeMillis()
         val result = executor
@@ -159,6 +162,9 @@ class UtpConnectedTest : UtpTestBase() {
 
     @Test
     fun connectedAndroidTestShouldUninstallAppsAfterTest() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         selectModule("lib")
 
         executor.run(testTaskName)
@@ -177,6 +183,9 @@ class UtpConnectedTest : UtpTestBase() {
 
     @Test
     fun connectedAndroidTestUtpPerformance() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         val benchmark: Benchmark = Benchmark.Builder("connectedAndroidTestUtpPerformance").setProject("Android Studio Gradle").build()
         val capturer = ProfileCapturer(rule.build.profileDirectory!!.toAbsolutePath(), ".trk") // captures AndroidStudioEvents
 
@@ -220,6 +229,9 @@ class UtpConnectedTest : UtpTestBase() {
 
     @Test
     fun additionalTestOutputWithTestStorageServiceInSecondaryUser() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         SecondaryUser().use {
             additionalTestOutputWithTestStorageService()
         }
@@ -227,6 +239,9 @@ class UtpConnectedTest : UtpTestBase() {
 
     @Test
     fun additionalTestOutputWithoutTestStorageServiceInSecondaryUser() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         SecondaryUser().use {
             additionalTestOutputWithoutTestStorageService()
         }
@@ -234,6 +249,9 @@ class UtpConnectedTest : UtpTestBase() {
 
     @Test
     fun additionalTestOutputWithBenchmarkFilesInSecondaryUser() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
         SecondaryUser().use {
             additionalTestOutputWithBenchmarkFiles()
         }

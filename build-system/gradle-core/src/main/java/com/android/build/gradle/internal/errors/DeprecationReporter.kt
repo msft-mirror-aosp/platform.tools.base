@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.errors
 
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.Option
 import com.android.build.gradle.options.Version
 
@@ -105,7 +106,16 @@ interface DeprecationReporter {
             "To keep using this feature, add the following to your module-level build.gradle files:\n"+
                     "    android.buildFeatures.buildConfig = true\n" +
                     "or from Android Studio, click: `Refactor` > `Migrate BuildConfig to Gradle Build Files`."
-        )
+        ),
+
+        LEGACY_VARIANT_API(
+            Version.VERSION_10_0,
+        "The legacy variant API is disabled by default in AGP 9.0, but can be " +
+                "re-enabled by adding \n" +
+                "    ${BooleanOption.ENABLE_LEGACY_VARIANT_API.propertyName}=true\n" +
+                "to this project's gradle.properties file."
+        ),
+
         ;
 
         fun getDeprecationTargetMessage(): String {
@@ -142,7 +152,26 @@ interface DeprecationReporter {
         newApiElement: String?,
         oldApiElement: String,
         url: String,
-        deprecationTarget: DeprecationTarget)
+        deprecationTarget: DeprecationTarget,
+    ) = reportDeprecatedApi(newApiElement = newApiElement, oldApiElement = oldApiElement, url = url, deprecationTarget = deprecationTarget, requiresOptIn = false)
+
+    /**
+     * Reports a deprecation usage in the DSL/API.
+     *
+     * @param newApiElement the DSL element to use instead, with the name of the class owning it
+     * @param oldApiElement the name of the deprecated element, with the name of the class
+     * owning it.
+     * @param url URL to documentation about the deprecation
+     * @param deprecationTarget when the deprecated element is going to be removed. A line about the
+     * timing is added to the message.
+     */
+    fun reportDeprecatedApi(
+        newApiElement: String?,
+        oldApiElement: String,
+        url: String,
+        deprecationTarget: DeprecationTarget,
+        requiresOptIn: Boolean,
+    )
 
     /**
      * Reports a usage of a removed API in the DSL/API. The API is still present for the time

@@ -19,7 +19,10 @@ import java.io.IOException
 import java.nio.file.attribute.FileTime
 
 /**
- * Sync has a max limit of 64KB for sending/receiving file blocks
+ * Sync has a max limit of 64KB for sending/receiving file blocks.
+ *
+ * In [AdbDeviceSyncServices.send] and [AdbDeviceSyncServices.recv], using buffer of that size
+ * for "large" file transfer gives the most optimal throughput.
  */
 const val SYNC_DATA_MAX = 64 * 1024
 
@@ -28,10 +31,21 @@ const val SYNC_DATA_MAX = 64 * 1024
  * [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
  *
  * The implementation maintains an open connection to the remote device to allow transferring
- * more than one file, so [AutoCloseable.close] should be invoked when the file operations are
+ * more than one file, so [close] should be invoked when the file operations are
  * done.
  */
-interface AdbDeviceSyncServices : AutoCloseable {
+interface AdbDeviceSyncServices : AutoShutdown {
+
+    /**
+     * Flushes all internal buffers, then sends a `QUIT` request to this [AdbDeviceSyncServices],
+     * effectively terminating the sync session.
+     *
+     * Note: Calling this method is required to prevent potential data loss when sending data
+     * to the device: It initiates an orderly shutdown of the underlying communication socket,
+     * allowing for a deterministic acknowledgment that all the data sent to the device has
+     * been received.
+     */
+    override suspend fun shutdown()
 
     /**
      * Sends the contents of an [AdbInputChannel] to file on the remote device (`SEND` command).
@@ -79,9 +93,38 @@ interface AdbDeviceSyncServices : AutoCloseable {
      * @throws IOException if there is an I/O error
      */
     suspend fun stat(remoteFilePath: String) : FileStat?
+
 }
 
-data class FileStat(val remoteFileMode: RemoteFileMode, val size: Int, val lastModified: FileTime)
+/**
+ * Return value of [AdbDeviceSyncServices.stat]
+ */
+data class FileStat(
+    /**
+     * The [RemoteFileMode] of this file system entry
+     */
+    val remoteFileMode: RemoteFileMode,
+    /**
+     * The size (in bytes) of this file system entry
+     */
+    val size: Int,
+    /**
+     * Tne [FileTime] of the last modification of this file system entry
+     */
+    val lastModified: FileTime
+)
+
+/**
+ * Whether this [FileStat] instance contains valid data or is the result of an error
+ * on the device.
+ */
+val FileStat.isError: Boolean
+    get() {
+        // When file is not found `mode`, `size` and `lastModifiedSecs` are all 0
+        return (remoteFileMode.modeBits == 0 &&
+                size == 0 &&
+                lastModified.toMillis() == 0L)
+    }
 
 /**
  * Reports progress about a single remote file transfer.
@@ -105,16 +148,4 @@ interface SyncProgress {
      * Invoked just after the file transfer has successfully finished
      */
     suspend fun transferDone(remotePath: String, totalBytes: Long)
-}
-
-/**
- * Trivial implementation of the [SyncProgress] interface.
- */
-open class SyncProgressAdapter : SyncProgress {
-
-    override suspend fun transferStarted(remotePath: String) {}
-
-    override suspend fun transferProgress(remotePath: String, totalBytesSoFar: Long) {}
-
-    override suspend fun transferDone(remotePath: String, totalBytes: Long) {}
 }

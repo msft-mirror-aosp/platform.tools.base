@@ -21,6 +21,7 @@ import com.android.build.api.variant.CanMinifyCodeBuilder
 import com.android.build.gradle.ProguardFiles
 import com.android.build.gradle.internal.PostprocessingFeatures
 import com.android.build.gradle.internal.ProguardFileType
+import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
@@ -116,6 +117,7 @@ class OptimizationCreationConfigImpl(
 
     override val minifiedEnabled: Boolean
         get() {
+            val minify = minifyCodeBuilder?.isMinifyEnabled ?: false
             return if (component is DeviceTestCreationConfig) {
                 val hasPostprocessingOptions =
                     dslInfo.postProcessingOptions.hasPostProcessingConfiguration()
@@ -130,13 +132,16 @@ class OptimizationCreationConfigImpl(
                 }
             } else if (component.getPartialShrinkingConfig() != null) {
                 true
+            } else if (component is ApplicationCreationConfig) {
+                minify || dslInfo.applicationOptimizationEnabled
             } else {
-                minifyCodeBuilder?.isMinifyEnabled ?: false
+                minify
             }
         }
 
     override val resourcesShrink: Boolean
         get() {
+            val minify = minifyAndroidResourcesBuilder?.shrinkResources ?: false
             return when (component) {
                 is DeviceTestCreationConfig -> {
                     when {
@@ -156,9 +161,19 @@ class OptimizationCreationConfigImpl(
                     }
                 }
 
-                else -> {
-                    minifyAndroidResourcesBuilder?.shrinkResources ?: false
+                is ApplicationCreationConfig -> {
+                    minify || dslInfo.applicationOptimizationEnabled
                 }
+                else -> minify
             }
         }
+
+    override val applicationOptimizationEnabled: Boolean
+        get() = dslInfo.applicationOptimizationEnabled
+
+    override val includePackages: Provider<Set<String>> =
+        internalServices.setPropertyOf(
+            String::class.java,
+            dslInfo.includePackages
+        )
 }

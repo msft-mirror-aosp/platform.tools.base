@@ -60,7 +60,9 @@ class MockBashCommandRunner final : public BashCommandRunner {
                      bool(const std::string& cmd, std::string* output_code));
 };
 
-TEST(ActivityManagerTest, SamplingStart) {
+TEST(ActivityManagerTest, SamplingStart_DualClockEnabled_Api34plus) {
+  DeviceInfoHelper::SetDeviceInfo(
+      DeviceInfo::UPSIDE_DOWN_CAKE);  // API level >= 34
   string trace_path;
   string output_code;
   string cmd;
@@ -74,18 +76,105 @@ TEST(ActivityManagerTest, SamplingStart) {
 
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::SAMPLING,
-                         kTestPackageName, 1000, trace_path, &output_code,
+                         kTestPackageName, 1000, true, trace_path, &output_code,
                          &error_code);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  EXPECT_THAT(cmd, Not(HasSubstr("--clock-type wall")));
   EXPECT_THAT(cmd, HasSubstr("--sampling 1000 "));
   // '--sampling 0' is effectively instrumentation mode.
   EXPECT_THAT(cmd, Not(HasSubstr("--sampling 0 ")));
   EXPECT_THAT(output_code, kMockOutputString);
 }
 
-TEST(ActivityManagerTest, InstrumentStart) {
+TEST(ActivityManagerTest, SamplingStart_DualClockDisabled_Api34plus) {
+  DeviceInfoHelper::SetDeviceInfo(
+      DeviceInfo::UPSIDE_DOWN_CAKE);  // API level >= 34
+  string trace_path;
+  string output_code;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &output_code))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), SetArgPointee<1>(kMockOutputString),
+                      Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  int64_t error_code = 0;
+  manager.StartProfiling(ActivityManager::ProfilingMode::SAMPLING,
+                         kTestPackageName, 1000, false, trace_path,
+                         &output_code, &error_code);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr(kProfileStart));
+  EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  EXPECT_THAT(cmd, HasSubstr("--clock-type wall"));
+  EXPECT_THAT(cmd, HasSubstr("--sampling 1000 "));
+  // '--sampling 0' is effectively instrumentation mode.
+  EXPECT_THAT(cmd, Not(HasSubstr("--sampling 0 ")));
+  EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, SamplingStart_DualClockEnabled_PreApi34) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::TIRAMISU);  // API level < 34
+  string trace_path;
+  string output_code;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &output_code))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), SetArgPointee<1>(kMockOutputString),
+                      Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  int64_t error_code = 0;
+  manager.StartProfiling(ActivityManager::ProfilingMode::SAMPLING,
+                         kTestPackageName, 1000, false, trace_path,
+                         &output_code, &error_code);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr(kProfileStart));
+  EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  // 'clock-type' option is available for API >= 34
+  EXPECT_THAT(cmd, Not(HasSubstr("--clock-type wall")));
+  EXPECT_THAT(cmd, HasSubstr("--sampling 1000 "));
+  // '--sampling 0' is effectively instrumentation mode.
+  EXPECT_THAT(cmd, Not(HasSubstr("--sampling 0 ")));
+  EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, SamplingStart_DualClockDisabled_PreApi34) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::TIRAMISU);  // API level < 34
+  string trace_path;
+  string output_code;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &output_code))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), SetArgPointee<1>(kMockOutputString),
+                      Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  int64_t error_code = 0;
+  manager.StartProfiling(ActivityManager::ProfilingMode::SAMPLING,
+                         kTestPackageName, 1000, false, trace_path,
+                         &output_code, &error_code);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr(kProfileStart));
+  EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  // 'clock-type' option is available for API >= 34
+  EXPECT_THAT(cmd, Not(HasSubstr("--clock-type wall")));
+  EXPECT_THAT(cmd, HasSubstr("--sampling 1000 "));
+  // '--sampling 0' is effectively instrumentation mode.
+  EXPECT_THAT(cmd, Not(HasSubstr("--sampling 0 ")));
+  EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, InstrumentStart_DualClockEnabled_Api34plus) {
+  DeviceInfoHelper::SetDeviceInfo(
+      DeviceInfo::UPSIDE_DOWN_CAKE);  // API level >= 34
   string trace_path;
   string output_code;
   string cmd;
@@ -99,11 +188,88 @@ TEST(ActivityManagerTest, InstrumentStart) {
 
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
-                         kTestPackageName, 1000, trace_path, &output_code,
+                         kTestPackageName, 1000, true, trace_path, &output_code,
                          &error_code);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  EXPECT_THAT(cmd, Not(HasSubstr("--clock-type wall")));
+  EXPECT_THAT(cmd, Not(HasSubstr("--sampling")));
+  EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, InstrumentStart_DualClockDisabled_Api34plus) {
+  DeviceInfoHelper::SetDeviceInfo(
+      DeviceInfo::UPSIDE_DOWN_CAKE);  // API level >= 34
+  string trace_path;
+  string output_code;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &output_code))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), SetArgPointee<1>(kMockOutputString),
+                      Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  int64_t error_code = 0;
+  manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
+                         kTestPackageName, 1000, false, trace_path,
+                         &output_code, &error_code);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr(kProfileStart));
+  EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  EXPECT_THAT(cmd, HasSubstr("--clock-type wall"));
+  EXPECT_THAT(cmd, Not(HasSubstr("--sampling")));
+  EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, InstrumentStart_DualClockEnabled_PreApi34) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::TIRAMISU);  // API level < 34
+  string trace_path;
+  string output_code;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &output_code))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), SetArgPointee<1>(kMockOutputString),
+                      Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  int64_t error_code = 0;
+  manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
+                         kTestPackageName, 1000, true, trace_path, &output_code,
+                         &error_code);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr(kProfileStart));
+  EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  EXPECT_THAT(cmd, Not(HasSubstr("--clock-type wall")));
+  EXPECT_THAT(cmd, Not(HasSubstr("--sampling")));
+  EXPECT_THAT(output_code, kMockOutputString);
+}
+
+TEST(ActivityManagerTest, InstrumentStart_DualClockDisabled_PreApi34) {
+  DeviceInfoHelper::SetDeviceInfo(DeviceInfo::TIRAMISU);  // API level < 34
+  string trace_path;
+  string output_code;
+  string cmd;
+  std::unique_ptr<BashCommandRunner> bash{
+      new MockBashCommandRunner(kAmExecutable)};
+  EXPECT_CALL(*(static_cast<MockBashCommandRunner*>(bash.get())),
+              RunAndReadOutput(testing::A<const string&>(), &output_code))
+      .WillOnce(DoAll(SaveArg<0>(&cmd), SetArgPointee<1>(kMockOutputString),
+                      Return(true)));
+  TestActivityManager manager{std::move(bash)};
+
+  int64_t error_code = 0;
+  manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
+                         kTestPackageName, 1000, false, trace_path,
+                         &output_code, &error_code);
+  EXPECT_THAT(cmd, StartsWith(kAmExecutable));
+  EXPECT_THAT(cmd, HasSubstr(kProfileStart));
+  EXPECT_THAT(cmd, HasSubstr(kTestPackageName));
+  EXPECT_THAT(cmd, Not(HasSubstr("--clock-type wall")));
   EXPECT_THAT(cmd, Not(HasSubstr("--sampling")));
   EXPECT_THAT(output_code, kMockOutputString);
 }
@@ -122,8 +288,8 @@ TEST(ActivityManagerTest, InstrumentSystemServerStart) {
 
   int64_t error_code = 0;
   manager.StartProfiling(ActivityManager::ProfilingMode::INSTRUMENTED,
-                         "system_process", 1000, trace_path, &output_code,
-                         &error_code);
+                         "system_process", 1000, false, trace_path,
+                         &output_code, &error_code);
   EXPECT_THAT(cmd, StartsWith(kAmExecutable));
   EXPECT_THAT(cmd, HasSubstr(kProfileStart));
   EXPECT_THAT(cmd, HasSubstr(" system "));

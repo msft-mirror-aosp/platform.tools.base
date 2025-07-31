@@ -42,6 +42,7 @@ gradlePlugin {
 
 dependencies {
     compileOnly project(':base:gradle-api')
+    compileOnly project(':base:build-system:gradle-common-api')
     compileOnly project(':base:builder-test-api')
     implementation libs.gson
     implementation libs.google_testing_client

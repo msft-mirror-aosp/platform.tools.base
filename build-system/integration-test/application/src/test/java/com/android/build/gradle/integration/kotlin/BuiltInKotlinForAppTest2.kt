@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.truth.PathSubject
 import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
@@ -45,8 +46,8 @@ class BuiltInKotlinForAppTest2 {
         val build = rule.build {
             androidLibrary {
                 applyPlugin(PluginType.KOTLIN_ANDROID)
-                legacyKotlin {
-                    jvmTarget = "1.8"
+                kotlin {
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
                 }
                 files.add(
                     "src/main/java/LibFoo.kt",

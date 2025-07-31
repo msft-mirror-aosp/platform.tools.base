@@ -37,7 +37,6 @@ class SdkLoadingStrategy(
 
     fun getBuildToolsInfo(): BuildToolInfo? = if (directLoad.loadedSuccessfully()) directLoad.getBuildToolsInfo() else fullLoad.getBuildToolsInfo()
     fun getBuildToolsRevision(): Revision? = if (directLoad.loadedSuccessfully()) directLoad.getBuildToolsRevision() else fullLoad.getBuildToolsRevision()
-    fun getSplitSelectExecutable(): File? = if (directLoad.loadedSuccessfully()) directLoad.getSplitSelectExecutable() else fullLoad.getSplitSelectExecutable()
     fun getCoreLambaStubs(): File? = if (directLoad.loadedSuccessfully()) directLoad.getCoreLambaStubs() else fullLoad.getCoreLambaStubs()
 
     fun getRenderScriptSupportJar(): File? = if (directLoad.loadedSuccessfully()) directLoad.getRenderScriptSupportJar() else fullLoad.getRenderScriptSupportJar()

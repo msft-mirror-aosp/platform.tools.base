@@ -18,12 +18,9 @@ package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.api.variant.impl.AndroidVersionImpl
 import com.android.build.gradle.internal.AvdComponentsBuildService
-import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager
-import com.android.build.gradle.internal.ManagedVirtualDeviceLockManager.DeviceLock
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.prefs.AndroidLocationsProvider
 import com.android.testutils.SystemPropertyOverrides
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.Environment
@@ -46,9 +43,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
-import kotlin.concurrent.thread
 import kotlin.io.path.Path
 
 /**
@@ -71,8 +66,6 @@ class ManagedDeviceTestRunnerTest {
     private val mockDslDevice: ManagedVirtualDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val mockUtpTestResultListenerServerMetadata: UtpTestResultListenerServerMetadata = mock()
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
-    private val androidLocations: AndroidLocationsProvider = mock()
-    private val lockManager: ManagedVirtualDeviceLockManager = mock()
     private val emulatorProvider: Provider<Directory> = mock()
     private val emulatorDirectory: Directory = mock()
     private val avdProvider: Provider<Directory> = mock()
@@ -114,9 +107,7 @@ class ManagedDeviceTestRunnerTest {
                 any(),
                 any(),
                 any(),
-                any(),
                 anyOrNull<Int>(),
-                any(),
                 any(),
                 anyOrNull<ShardConfig>(),)).then {
             RunnerConfigProto.RunnerConfig.getDefaultInstance()
@@ -127,9 +118,13 @@ class ManagedDeviceTestRunnerTest {
         whenever(mockUtpConfigFactory.createServerConfigProto())
                 .thenReturn(ServerConfig.getDefaultInstance())
 
-        whenever(mockAvdComponents.lockManager).thenReturn(lockManager)
-        whenever(lockManager.lockAndExecute(any(), any<(DeviceLock)-> UtpTestRunResult>())).then {
-            it.getArgument<(DeviceLock)->UtpTestRunResult>(1)(DeviceLock(it.getArgument<Int>(0)))
+        whenever(mockAvdComponents.runWithAvds(
+            any(), any(),
+            any<(List<String>) -> UtpTestRunResult>())).then {
+            val desiredDeviceCount = it.getArgument<Int>(1)
+            val deviceSerials = List(desiredDeviceCount) { "mockDeviceSerial_$it" }
+            val onDevicesReadyFunc = it.getArgument<(List<String>)->UtpTestRunResult>(2)
+            onDevicesReadyFunc(deviceSerials)
         }
 
         emulatorFolder = temporaryFolderRule.newFolder("emulator")
@@ -186,13 +181,10 @@ class ManagedDeviceTestRunnerTest {
                 useOrchestrator = false,
                 forceCompilation = false,
                 numShards,
-                "auto-no-window",
-                showEmulatorKernelLogging = false,
                 mockAvdComponents,
                 null,
                 false,
                 Level.WARNING,
-                false,
                 false,
                 mockUtpRunProfileManager,
                 mockUtpConfigFactory,
@@ -307,128 +299,5 @@ class ManagedDeviceTestRunnerTest {
         assertThat(utpInvocationCount).isEqualTo(2)
         assertThat(result).isTrue()
         assertThat(File(outputDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
-    }
-
-    @Test
-    fun runUtpBlocksDevicesCorrectly() {
-        // use a real device lock manager to ensure blocking behavior.
-        val avdFolder = temporaryFolderRule.newFolder()
-        whenever(androidLocations.gradleAvdLocation).thenReturn(avdFolder.toPath())
-        val deviceLockManager = ManagedVirtualDeviceLockManager(androidLocations, 1, 0) {}
-        whenever(mockAvdComponents.lockManager).thenReturn(deviceLockManager)
-
-        // contains the list of blocking actions in order.
-        val resultActions = mutableListOf<String>()
-
-        var blockTestsDevice1 = AtomicBoolean(true)
-
-        runInLinuxEnvironment {
-            val firstRun = thread(start = true) {
-                runManagedDeviceTestRunnerForDevice(
-                    "Device1"
-                ) { runnerConfigs, resultsDir ->
-                        resultActions.add("Device1 tests started")
-                        while (blockTestsDevice1.get()) {}
-                        capturedRunnerConfigs = runnerConfigs
-                        TestSuiteResult.getDefaultInstance()
-                            .writeTo(File(resultsDir, TEST_RESULT_PB_FILE_NAME).outputStream())
-
-                        resultActions.add("Device1 tests completed")
-                        runnerConfigs.map {
-                            UtpTestRunResult(
-                                true,
-                                createTestSuiteResult()
-                            )
-                        }
-                    }
-            }
-
-            // wait for tests to "start"
-            firstRun.join(50L)
-
-            // tests will not finish until we unblock them.
-            assertThat(resultActions).containsExactly("Device1 tests started")
-
-            val secondRun = thread(start = true) {
-                runManagedDeviceTestRunnerForDevice(
-                    "Device2"
-                ) { runnerConfigs, resultsDir ->
-                        resultActions.add("Device2 tests started")
-                        capturedRunnerConfigs = runnerConfigs
-                        TestSuiteResult.getDefaultInstance()
-                            .writeTo(File(resultsDir, TEST_RESULT_PB_FILE_NAME).outputStream())
-                        resultActions.add("Device2 tests completed")
-                        runnerConfigs.map {
-                            UtpTestRunResult(
-                                true,
-                                createTestSuiteResult()
-                            )
-                        }
-                    }
-            }
-
-            // give second run time to start if it could.
-            // it shouldn't b/c it should be waiting for device1 to complete.
-            secondRun.join(100L)
-
-            // The second run will be blocked by the device lock and will not have started.
-            assertThat(resultActions).containsExactly("Device1 tests started")
-
-            // unblock device1, should allow device2 to start.
-            blockTestsDevice1.set(false)
-
-            firstRun.join()
-            secondRun.join()
-
-            assertThat(resultActions).containsExactly(
-                "Device1 tests started",
-                "Device1 tests completed",
-                "Device2 tests started",
-                "Device2 tests completed"
-            ).inOrder()
-        }
-    }
-
-    private fun runManagedDeviceTestRunnerForDevice(
-        deviceName: String,
-        runTestsFunc: (
-            List<UtpRunnerConfig>, File
-        ) -> List<UtpTestRunResult>
-    ) {
-        ManagedDeviceTestRunner(
-            mockWorkerExecutor,
-            mockUtpDependencies,
-            jvmExecutable,
-            mockVersionedSdkLoader,
-            mockEmulatorControlConfig,
-            useOrchestrator = false,
-            forceCompilation = false,
-            numShards = null,
-            emulatorGpuFlag = "auto-no-window",
-            showEmulatorKernelLogging = false,
-            mockAvdComponents,
-            installApkTimeout = null,
-            enableEmulatorDisplay = false,
-            utpLoggingLevel = Level.WARNING,
-            targetIsSplitApk = false,
-            uninstallApksAfterTest = false,
-            mockUtpRunProfileManager,
-            mockUtpConfigFactory
-        ) { runnerConfigs, _, _, resultsDir, _ ->
-            runTestsFunc(runnerConfigs, resultsDir)
-        }.runTests(
-            mockDslDevice,
-            deviceName,
-            temporaryFolderRule.newFolder(),
-            mockCoverageOutputDir,
-            mockAdditionalTestOutputDir,
-            "projectPath",
-            "variantName",
-            mockTestData,
-            listOf(),
-            setOf(mockHelperApk),
-            mockLogger,
-            sdkApkSet
-        )
     }
 }

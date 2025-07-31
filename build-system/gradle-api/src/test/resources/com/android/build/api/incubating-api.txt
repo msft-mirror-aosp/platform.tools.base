@@ -716,3 +716,10 @@ https://issuetracker.google.com/392162853
 https://issuetracker.google.com/398918561
   * com.android.build.api.dsl.ManagedVirtualDevice.getTestedAbi: java.lang.String ()
   * com.android.build.api.dsl.ManagedVirtualDevice.setTestedAbi: void (java.lang.String)
+https://issuetracker.google.com/422422985
+  * com.android.build.api.dsl.ApplicationBuildType.getOptimization: com.android.build.api.dsl.Optimization ()
+  * com.android.build.api.dsl.ApplicationBuildType.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization, kotlin.Unit>)
+  * com.android.build.api.dsl.KeepRules.getFiles: org.gradle.api.provider.SetProperty<java.io.File> ()
+  * com.android.build.api.dsl.Optimization.getEnable: boolean ()
+  * com.android.build.api.dsl.Optimization.getPackageScope: org.gradle.api.provider.SetProperty<java.lang.String> ()
+  * com.android.build.api.dsl.Optimization.setEnable: void (boolean)

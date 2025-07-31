@@ -15,7 +15,6 @@
  */
 package com.android.adblib.impl
 
-import com.android.adblib.AdbChannel
 import com.android.adblib.AdbDeviceSyncServices
 import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbOutputChannel
@@ -26,6 +25,8 @@ import com.android.adblib.SyncProgress
 import com.android.adblib.impl.services.AdbServiceRunner
 import com.android.adblib.utils.closeOnException
 import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.nio.channels.ClosedChannelException
 import java.nio.file.attribute.FileTime
 import java.util.concurrent.TimeUnit
 
@@ -38,28 +39,40 @@ internal const val REMOTE_PATH_MAX_LENGTH = 1024
  * Implementation of [AdbDeviceSyncServices]
  */
 internal class AdbDeviceSyncServicesImpl private constructor(
-    serviceRunner: AdbServiceRunner,
-    device: DeviceSelector,
-    private val deviceChannel: AdbChannel
+    private val syncConnection: SyncConnection
 ) : AdbDeviceSyncServices {
+
+    private var isClosed: Boolean = false
+
+    /**
+     * Helper class to handle `QUIT` commands
+     */
+    private val quitHandler = SyncQuitHandler(syncConnection)
 
     /**
      * Helper class to handle `SEND` commands
      */
-    private val sendHandler = SyncSendHandler(serviceRunner, device, deviceChannel)
+    private val sendHandler = SyncSendHandler(syncConnection)
 
     /**
      * Helper class to handle `RECV` commands
      */
-    private val recvHandler = SyncRecvHandler(serviceRunner, device, deviceChannel)
+    private val recvHandler = SyncRecvHandler(syncConnection)
 
     /**
      * Helper class to handle `STAT` commands
      */
-    private val statHandler = SyncStatHandler(serviceRunner, device, deviceChannel)
+    private val statHandler = SyncStatHandler(syncConnection)
+
+    override suspend fun shutdown() {
+        checkNotClosed()
+        quitHandler.quit()
+        syncConnection.shutdown()
+    }
 
     override fun close() {
-        deviceChannel.close()
+        syncConnection.close()
+        isClosed = true
     }
 
     override suspend fun send(
@@ -70,6 +83,7 @@ internal class AdbDeviceSyncServicesImpl private constructor(
         progress: SyncProgress?,
         bufferSize: Int
     ) {
+        checkNotClosed()
         sendHandler.send(
             sourceChannel,
             remoteFilePath,
@@ -86,11 +100,19 @@ internal class AdbDeviceSyncServicesImpl private constructor(
         progress: SyncProgress?,
         bufferSize: Int
     ) {
+        checkNotClosed()
         recvHandler.recv(remoteFilePath, destinationChannel, progress)
     }
 
-    override suspend fun stat(remoteFilePath: String) : FileStat? {
+    override suspend fun stat(remoteFilePath: String): FileStat? {
+        checkNotClosed()
         return statHandler.stat(remoteFilePath)
+    }
+
+    private fun checkNotClosed() {
+        if (isClosed) {
+            throw ClosedChannelException().initCause(IOException("${AdbDeviceSyncServices::class.simpleName} has been closed"))
+        }
     }
 
     companion object {
@@ -102,6 +124,8 @@ internal class AdbDeviceSyncServicesImpl private constructor(
         suspend fun open(
             serviceRunner: AdbServiceRunner,
             device: DeviceSelector,
+            readAheadBufferSize: Int,
+            writeBackBufferSize: Int,
             timeout: Long,
             unit: TimeUnit
         ): AdbDeviceSyncServices {
@@ -118,8 +142,17 @@ internal class AdbDeviceSyncServicesImpl private constructor(
                     serviceRunner.sendAdbServiceRequest(channel, workBuffer, shortServiceDescription, tracker)
                     serviceRunner.consumeOkayFailResponse(device, shortServiceDescription, channel, workBuffer, tracker)
 
-                    // Now that everything is setup, returns the instance
-                    AdbDeviceSyncServicesImpl(serviceRunner, device, channel)
+                    // Now that everything is set up, returns the instance
+                    val syncConnection = SyncConnection(
+                        device = device,
+                        serviceRunner = serviceRunner,
+                        workBuffer = workBuffer,
+                        deviceChannel = channel,
+                        readAheadBufferSize = readAheadBufferSize,
+                        writeBackBufferSize = writeBackBufferSize
+                    )
+
+                    AdbDeviceSyncServicesImpl(syncConnection)
                 }
             }
         }

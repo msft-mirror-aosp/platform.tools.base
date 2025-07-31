@@ -218,7 +218,6 @@ class AvdManagerTest {
             snapshotHandler.checkSnapshotLoadable(
                 any(),
                 any<File>(),
-                any(),
                 any<ILogger>(),
                 any()))
             // first return false to force generation, then return true to assert success.
@@ -230,13 +229,12 @@ class AvdManagerTest {
             "device1",
             "Pixel 2")
 
-        manager.loadSnapshotIfNeeded("device1", "auto-no-window")
+        manager.loadSnapshotIfNeeded("device1")
 
         verify(snapshotHandler)
             .generateSnapshot(
                 any(),
                 any<File>(),
-                any(),
                 any<com.android.sdklib.internal.avd.AvdManager>(),
                 any<ILogger>())
     }
@@ -247,7 +245,6 @@ class AvdManagerTest {
             snapshotHandler.checkSnapshotLoadable(
                 any(),
                 any<File>(),
-                any(),
                 any<ILogger>(),
                 any()))
             .thenReturn(true)
@@ -258,13 +255,12 @@ class AvdManagerTest {
             "device1",
             "Pixel 2")
 
-        manager.loadSnapshotIfNeeded("device1", "auto-no-window")
+        manager.loadSnapshotIfNeeded("device1")
 
         verify(snapshotHandler, times(0))
             .generateSnapshot(
                 any(),
                 any<File>(),
-                any(),
                 any<com.android.sdklib.internal.avd.AvdManager>(),
                 any<ILogger>())
     }

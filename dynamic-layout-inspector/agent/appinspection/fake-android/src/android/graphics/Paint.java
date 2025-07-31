@@ -16,6 +16,8 @@
 
 package android.graphics;
 
+import androidx.annotation.VisibleForTesting;
+
 import java.util.Objects;
 
 public class Paint {
@@ -24,6 +26,7 @@ public class Paint {
     private int color = 0;
     private Style style = Style.FILL;
     private float strokeWidth = 0f;
+    @VisibleForTesting int alpha = 0;
 
     public Paint() {}
 
@@ -65,6 +68,14 @@ public class Paint {
 
     public float measureText(String text) {
         return 0f;
+    }
+
+    public void setAlpha(int a) {
+        alpha = a;
+    }
+
+    public int getAlpha() {
+        return alpha;
     }
 
     public static class FontMetrics {

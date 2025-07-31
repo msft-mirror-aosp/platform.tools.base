@@ -263,7 +263,9 @@ open class ApplicationVariantImpl @Inject constructor(
     private val internalTestSuites = mutableMapOf<String, TestSuiteCreationConfig>()
 
     override val shrinkingWithDynamicFeatures: Boolean
-        get() = optimizationCreationConfig.minifiedEnabled && global.hasDynamicFeatures
+        get() = (optimizationCreationConfig.minifiedEnabled
+                || optimizationCreationConfig.applicationOptimizationEnabled)
+                && global.hasDynamicFeatures
 
     private fun createVersionNameProperty(): Property<String> =
         internalServices.newPropertyBackingDeprecatedApi(

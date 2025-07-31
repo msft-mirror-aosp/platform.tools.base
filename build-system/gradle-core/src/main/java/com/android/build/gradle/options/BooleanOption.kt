@@ -211,6 +211,14 @@ enum class BooleanOption(
     ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Supported),
 
     /**
+     * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
+     */
+    ENABLE_LEGACY_VARIANT_API("android.enableLegacyVariantApi", true, FeatureStage.Supported,
+        FutureStage(false, FeatureStage.Supported, Version.VERSION_9_0)
+    ),
+
+
+    /**
      * Enables R8 full mode
      * (https://r8.googlesource.com/r8/+/refs/heads/8.8/compatibility-faq.md#r8-full-mode).
      *
@@ -584,6 +592,21 @@ enum class BooleanOption(
     ),
 
     /**
+     * Switches Android Test execution from the Unified Test Platform (UTP) to the experimental
+     * direct-to-AGP implementation.
+     */
+    ANDROID_BUILTIN_TEST_PLATFORM(
+        "android.experimental.androidTest.builtin_test_platform",
+        false,
+        FeatureStage.Experimental,
+        futureStage = FutureStage(
+            defaultValue = true,
+            stage = FeatureStage.SoftlyEnforced(VERSION_10_0),
+            version = Version.VERSION_9_0
+        ),
+    ),
+
+    /**
      * Temporary workaround to continue using R8 param of --main-dex-list
      */
     R8_MAIN_DEX_LIST_DISALLOWED(
@@ -626,6 +649,9 @@ enum class BooleanOption(
             version = Version.VERSION_9_0
         )
     ),
+
+    /** Enables R8 gradual support */
+    R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
@@ -1067,6 +1093,7 @@ enum class BooleanOption(
         )
     ),
 
+
     /* ----------------
      * REMOVED FEATURES
      */
@@ -1182,6 +1209,7 @@ enum class BooleanOption(
         false,
         FeatureStage.Removed(Version.VERSION_8_11)
     ),
+
     ; // end of enums
 
     override val status = stage.status

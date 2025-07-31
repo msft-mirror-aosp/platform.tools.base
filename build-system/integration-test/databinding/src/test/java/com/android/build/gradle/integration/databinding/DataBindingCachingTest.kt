@@ -60,6 +60,7 @@ class DataBindingCachingTest(private val withKotlin: Boolean) {
         ":clean" to UP_TO_DATE,
         ":compileDebugJavaWithJavac" to FROM_CACHE,
         ":createDebugCompatibleScreenManifests" to DID_WORK, /** Intentionally not cacheable. See [com.android.build.gradle.tasks.CompatibleScreensManifest] */
+        ":compileDebugNavigationResources" to FROM_CACHE,
         ":dataBindingGenBaseClassesDebug" to FROM_CACHE,
         ":dataBindingMergeDependencyArtifactsDebug" to DID_WORK, /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.databinding.DataBindingMergeDependencyArtifactsTask] */
         ":dataBindingTriggerDebug" to DID_WORK, /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.databinding.DataBindingTriggerTask] */
@@ -76,6 +77,7 @@ class DataBindingCachingTest(private val withKotlin: Boolean) {
         ":processDebugMainManifest" to FROM_CACHE,
         ":processDebugManifest" to FROM_CACHE,
         ":processDebugManifestForPackage" to FROM_CACHE,
+        ":processDebugNavigationResources" to FROM_CACHE,
         ":processDebugResources" to FROM_CACHE
     ).plus(
         if (withKotlin) {

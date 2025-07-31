@@ -85,7 +85,7 @@ class TestLabGradlePluginTest {
         AndroidPluginVersion(8, 1),
         AndroidPluginVersion(8, 2),
         AndroidPluginVersion(8, 2, 0).alpha(9),
-        AndroidPluginVersion(9, 0),
+        AndroidPluginVersion(9, 1),
       )
     val supportedVersions =
       listOf(

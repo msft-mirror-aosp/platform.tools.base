@@ -180,6 +180,14 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                 command.interceptTouchEventsCommand,
                 callback
             )
+            Command.SpecializedCase.DRAW_OVERLAY_COMMAND -> handleDrawOverlayCommand(
+                command.drawOverlayCommand,
+                callback
+            )
+            Command.SpecializedCase.SET_OVERLAY_ALPHA_COMMAND -> handleSetOverlayAlphaCommand(
+                command.setOverlayAlphaCommand,
+                callback
+            )
             else -> error("Unexpected view inspector command case: ${command.specializedCase}")
         }
     }
@@ -243,6 +251,31 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         onDeviceRenderingViewModel.setInterceptTouchEvents(interceptTouchEventsCommand.intercept)
         callback.reply {
             LayoutInspectorViewProtocol.InterceptTouchEventsResponse.newBuilder().build()
+        }
+    }
+
+    private fun handleDrawOverlayCommand(
+        drawOverlayCommand: LayoutInspectorViewProtocol.DrawOverlayCommand,
+        callback: CommandCallback
+    ) {
+        if (!drawOverlayCommand.image.isEmpty) {
+            onDeviceRenderingViewModel.setOverlayImage(drawOverlayCommand.image)
+        }
+        else {
+            onDeviceRenderingViewModel.setOverlayImage(null)
+        }
+        callback.reply {
+            LayoutInspectorViewProtocol.DrawOverlayCommand.newBuilder().build()
+        }
+    }
+
+    private fun handleSetOverlayAlphaCommand(
+        setOverlayAlphaCommand: LayoutInspectorViewProtocol.SetOverlayAlphaCommand,
+        callback: CommandCallback
+    ) {
+        onDeviceRenderingViewModel.setOverlayAlpha(setOverlayAlphaCommand.alpha)
+        callback.reply {
+            LayoutInspectorViewProtocol.DrawOverlayCommand.newBuilder().build()
         }
     }
 

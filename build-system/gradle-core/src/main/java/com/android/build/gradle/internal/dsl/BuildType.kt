@@ -20,6 +20,7 @@ import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.Ndk
+import com.android.build.api.dsl.Optimization
 import com.android.build.api.dsl.PostProcessing
 import com.android.build.api.dsl.Shaders
 import com.android.build.api.dsl.TestBuildType
@@ -33,10 +34,12 @@ import com.android.builder.core.ComponentType
 import com.android.builder.errors.IssueReporter
 import com.android.builder.internal.ClassFieldImpl
 import com.android.builder.model.BaseConfig
+import com.google.common.base.MoreObjects
 import com.google.common.base.Preconditions
 import com.google.common.collect.Iterables
 import org.gradle.api.Action
 import org.gradle.api.Incubating
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
@@ -52,8 +55,9 @@ import javax.inject.Inject
 abstract class DeclarativeBuildType @Inject constructor(
     private val name: String,
     private val dslServices: DslServices,
-    private val componentType: ComponentType
-) : BuildType(name, dslServices, componentType) {
+    private val componentType: ComponentType,
+    objectFactory: ObjectFactory
+) : BuildType(name, dslServices, componentType, objectFactory) {
 
     val dependencies: BuildTypeDependenciesExtension by lazy {
         dslServices.newInstance(BuildTypeDependenciesExtension::class.java)
@@ -69,7 +73,8 @@ abstract class DeclarativeBuildType @Inject constructor(
 abstract class BuildType @Inject constructor(
     private val name: String,
     private val dslServices: DslServices,
-    private val componentType: ComponentType
+    private val componentType: ComponentType,
+    private val objectFactory: ObjectFactory
 ) :
     AbstractBuildType(), CoreBuildType, Serializable,
     VariantDimensionBinaryCompatibilityFix,
@@ -109,6 +114,21 @@ abstract class BuildType @Inject constructor(
     abstract override var isPseudoLocalesEnabled: Boolean
 
     abstract override var isJniDebuggable: Boolean
+
+    @get:Incubating
+    override val optimization: Optimization = dslServices.newDecoratedInstance(
+        OptimizationImpl::class.java, dslServices, objectFactory
+    )
+
+    @Incubating
+    override fun optimization(action: Optimization.() -> Unit) {
+        action(optimization)
+    }
+
+    @Incubating
+    fun optimization(action: Action<Optimization>) {
+        action.execute(optimization)
+    }
 
     override var isRenderscriptDebuggable: Boolean
         get() {

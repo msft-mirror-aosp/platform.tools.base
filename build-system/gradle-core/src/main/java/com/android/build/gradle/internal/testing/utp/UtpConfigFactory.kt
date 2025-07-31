@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.testing.utp
 import com.android.build.api.instrumentation.StaticTestData
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_DEVICE_PROVIDER_DDMLIB
-import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_DEVICE_PROVIDER_GRADLE
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_DRIVER_INSTRUMENTATION
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_ADDITIONAL_TEST_OUTPUT_PLUGIN
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_COVERAGE_PLUGIN
@@ -32,7 +31,6 @@ import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_
 import com.android.builder.testing.api.DeviceConnector
 import com.android.sdklib.BuildToolInfo
 import com.android.tools.utp.plugins.deviceprovider.ddmlib.proto.AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
-import com.android.tools.utp.plugins.deviceprovider.gradle.proto.GradleManagedAndroidDeviceProviderProto.GradleManagedAndroidDeviceProviderConfig
 import com.android.tools.utp.plugins.host.additionaltestoutput.proto.AndroidAdditionalTestOutputConfigProto.AndroidAdditionalTestOutputConfig
 import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstallerConfigProto.AndroidApkInstallerConfig
 import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstallerConfigProto.InstallableApk.InstallOption.ForceCompilation
@@ -197,6 +195,7 @@ class UtpConfigFactory {
      */
     fun createRunnerConfigProtoForManagedDevice(
         device: UtpManagedDevice,
+        deviceSerialNumber: String,
         testData: StaticTestData,
         targetApkConfigBundle: TargetApkConfigBundle,
         additionalInstallOptions: Iterable<String>,
@@ -211,17 +210,14 @@ class UtpConfigFactory {
         useOrchestrator: Boolean,
         forceCompilation: Boolean,
         testResultListenerServerMetadata: UtpTestResultListenerServerMetadata,
-        emulatorGpuFlag: String,
-        showEmulatorKernelLogging: Boolean,
         installApkTimeout: Int?,
         extractedSdkApks: List<List<Path>>,
-        uninstallApksAfterTest: Boolean,
         shardConfig: ShardConfig? = null,
     ): RunnerConfigProto.RunnerConfig {
         return RunnerConfigProto.RunnerConfig.newBuilder().apply {
             addDevice(
                 createGradleManagedDevice(
-                    device, utpDependencies, emulatorGpuFlag, showEmulatorKernelLogging
+                    deviceSerialNumber, utpDependencies,
                 )
             )
             addTestFixture(
@@ -234,11 +230,11 @@ class UtpConfigFactory {
                     additionalTestOutputDir?.let {
                         findAdditionalTestOutputDirectoryOnManagedDevice(device, testData)
                     },
-                    coverageOutputDir, installApkTimeout, shardConfig, uninstallApksAfterTest,
+                    coverageOutputDir, installApkTimeout, shardConfig, uninstallApksAfterTest = false,
                     extractedSdkApks, reinstallIncompatibleApksBeforeTest = true,
                 )
             )
-            singleDeviceExecutor = createSingleDeviceExecutor(device.id, shardConfig)
+            singleDeviceExecutor = createSingleDeviceExecutor(deviceSerialNumber, shardConfig)
             addTestResultListener(
                 createTestResultListener(
                     utpDependencies,
@@ -246,7 +242,7 @@ class UtpConfigFactory {
                     testResultListenerServerMetadata.clientCert,
                     testResultListenerServerMetadata.clientPrivateKey,
                     testResultListenerServerMetadata.serverCert,
-                    device.id
+                    device.id,
                 )
             )
         }.build()
@@ -271,17 +267,17 @@ class UtpConfigFactory {
             deviceIdBuilder.apply {
                 id = device.serialNumber
             }
-            provider = createLocalDeviceProvider(device, uninstallIncompatibleApks, utpDependencies)
+            provider = createLocalDeviceProvider(device.serialNumber, uninstallIncompatibleApks, utpDependencies)
         }.build()
     }
 
     private fun createLocalDeviceProvider(
-        device: DeviceConnector,
+        deviceSerialNumber: String,
         uninstallIncompatibleApks: Boolean,
         utpDependencies: UtpDependencies
     ): ExtensionProto.Extension {
         val localConfig = LocalAndroidDeviceProvider.newBuilder().apply {
-            serial = device.serialNumber
+            serial = deviceSerialNumber
         }.build()
         return ANDROID_DEVICE_PROVIDER_DDMLIB.toExtensionProto(
             utpDependencies, DdmlibAndroidDeviceProviderConfig::newBuilder
@@ -292,46 +288,16 @@ class UtpConfigFactory {
     }
 
     private fun createGradleManagedDevice(
-        managedDevice: UtpManagedDevice,
+        deviceSerialNumber: String,
         utpDependencies: UtpDependencies,
-        emulatorGpuFlag: String,
-        showEmulatorKernelLogging: Boolean,
     ): DeviceProto.Device {
         return DeviceProto.Device.newBuilder().apply {
             deviceIdBuilder.apply {
-                id = managedDevice.id
+                id = deviceSerialNumber
             }
-            provider = createGradleDeviceProvider(
-                managedDevice, utpDependencies, emulatorGpuFlag, showEmulatorKernelLogging
-            )
+            provider = createLocalDeviceProvider(
+                deviceSerialNumber, uninstallIncompatibleApks = false, utpDependencies)
         }.build()
-    }
-
-    private fun createGradleDeviceProvider(
-        deviceInfo: UtpManagedDevice,
-        utpDependencies: UtpDependencies,
-        emulatorGpuFlag: String,
-        showEmulatorKernelLogging: Boolean,
-    ): ExtensionProto.Extension {
-        return ANDROID_DEVICE_PROVIDER_GRADLE.toExtensionProto(
-            utpDependencies, GradleManagedAndroidDeviceProviderConfig::newBuilder
-        ) {
-            managedDeviceBuilder.apply {
-                avdFolder = Any.pack(PathProto.Path.newBuilder().apply {
-                    path = deviceInfo.avdFolder
-                }.build())
-                avdName = deviceInfo.avdName
-                avdId = deviceInfo.id
-                enableDisplay = deviceInfo.displayEmulator
-                emulatorPath = Any.pack(PathProto.Path.newBuilder().apply {
-                    path = deviceInfo.emulatorPath
-                }.build())
-                gradleDslDeviceName = deviceInfo.deviceName
-                emulatorGpu = emulatorGpuFlag
-                this.showEmulatorKernelLogging = showEmulatorKernelLogging
-            }
-            adbServerPort = DEFAULT_ADB_SERVER_PORT
-        }
     }
 
     /**

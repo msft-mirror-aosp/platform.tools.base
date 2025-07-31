@@ -55,7 +55,8 @@ class MessageRewriteTest {
                 .expectFailure()
                 .run("assembleDebug")
             checkPathInOutput(
-                    FileUtils.join("app", "src", "main", "res", "layout", "main.xml"), result.stderr)
+                FileUtils.join("app", "src", "main", "res", "layout", "main.xml"),
+                result.stdout)
         }
     }
 

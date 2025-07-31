@@ -16,102 +16,187 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.Execution
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.SettingsExtension
+import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.MinSdkVersion
+import com.android.build.api.dsl.TargetSdkSpec
+import com.android.build.api.dsl.TargetSdkVersion
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
-internal open class SettingsExtensionImpl @Inject constructor(objectFactory: ObjectFactory): SettingsExtension {
+internal open class SettingsExtensionImpl @Inject constructor(
+    private val objectFactory: ObjectFactory
+): SettingsExtension {
 
-    private var _compileSdk: Int? = null
+    protected var _compileSdk: CompileSdkVersion? = null
+
     override var compileSdk: Int?
-        get() = _compileSdk
+        get() {
+            return if (_compileSdk?.addonName != null
+                || _compileSdk?.vendorName != null
+                || _compileSdk?.codeName != null)
+            {
+                return null
+            } else {
+                _compileSdk?.apiLevel
+            }
+        }
         set(value) {
-            _compileSdk = value
-            _compileSdkPreview = null
-            _addOnVendor = null
-            _addOnName = null
-            _addOnVersion = null
+            compileSdk { version = value?.let { release(it) } }
         }
 
-    private var _compileSdkExtension: Int? = null
     override var compileSdkExtension: Int?
-        get() = _compileSdkExtension
+        get() = _compileSdk?.sdkExtension
         set(value) {
-            _compileSdkExtension = value
-            _compileSdkPreview = null
-            _addOnVendor = null
-            _addOnName = null
-            _addOnVersion = null
+            compileSdk {
+                _compileSdk?.apiLevel?.let { apiLevel ->
+                    version = release(apiLevel) {
+                        sdkExtension = value
+                        minorApiLevel = _compileSdk?.minorApiLevel
+                    }
+                }
+            }
         }
 
-    private var _compileSdkPreview: String? = null
     override var compileSdkPreview: String?
-        get() = _compileSdkPreview
+        get() = _compileSdk?.codeName
         set(value) {
-            _compileSdkPreview = value
-            _compileSdk = null
-            _compileSdkExtension = null
-            _addOnVendor = null
-            _addOnName = null
-            _addOnVersion = null
+            compileSdk {
+                version = value?.let { preview(value) }
+            }
         }
-
 
     override fun compileSdkAddon(vendor: String, name: String, version: Int) {
-        _addOnVendor = vendor
-        _addOnName = name
-        _addOnVersion = version
-        _compileSdk = null
-        _compileSdkExtension = null
-        _compileSdkPreview = null
+        compileSdk {
+            this.version = addon(vendor = vendor, name = name, version)
+        }
     }
 
-    private var _addOnVendor: String? = null
-    private var _addOnName: String? = null
-    private var _addOnVersion: Int? = null
+    override fun compileSdk(action: CompileSdkSpec.() -> Unit) {
+        createCompileSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(_compileSdk, it.version) {
+                _compileSdk = it
+            }
+        }
+    }
+
+    open fun compileSdk(action: Action<CompileSdkSpec>) {
+        createCompileSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(_compileSdk, it.version) {
+                _compileSdk = it
+            }
+        }
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("compileSdk { version = release(value) }")
+    )
+    open fun compileSdk(value: Int) {
+        compileSdk { version = release(value) }
+    }
 
     override val addOnVendor: String?
-        get() = _addOnVendor
+        get() = _compileSdk?.vendorName
+
     override val addOnName: String?
-        get() = _addOnName
+        get() = _compileSdk?.addonName
+
     override val addOnVersion: Int?
-        get() = _addOnVersion
+        get() {
+            return if (_compileSdk?.addonName != null || _compileSdk?.vendorName != null) {
+                _compileSdk?.apiLevel
+            } else null
+        }
 
-    private var _minSdk: Int? = null
+    protected var _minSdk: MinSdkVersion? = null
+
     override var minSdk: Int?
-        get() = _minSdk
+        get() = _minSdk?.apiLevel
         set(value) {
-            _minSdk = value
-            _minSdkPreview = null
+            minSdk { version = value?.let { release(value) } }
         }
 
-    private var _minSdkPreview: String? = null
     override var minSdkPreview: String?
-        get() = _minSdkPreview
+        get() = _minSdk?.codeName
         set(value) {
-            _minSdkPreview = value
-            _minSdk = null
+            minSdk { version = value?.let { preview(value) } }
         }
 
-    private var _targetSdk: Int? = null
+    override fun minSdk(action: MinSdkSpec.() -> Unit) {
+        createMinSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(_minSdk, it.version) {
+                _minSdk = it
+            }
+        }
+    }
+
+    open fun minSdk(action: Action<MinSdkSpec>) {
+        createMinSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(_minSdk, it.version) {
+                _minSdk = it
+            }
+        }
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `minSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("minSdk { version = release(value) }")
+    )
+    open fun minSdk(value: Int) {
+        minSdk { version = release(value) }
+    }
+
+    protected var _targetSdk: TargetSdkVersion? = null
 
     override var targetSdk: Int?
-        get() = _targetSdk
+        get() = _targetSdk?.apiLevel
         set(value) {
-            _targetSdk = value
-            _targetSdkPreview = null
+            targetSdk { version = value?.let { release(value) } }
         }
-
-    private var _targetSdkPreview: String? = null
 
     override var targetSdkPreview: String?
-        get() = _targetSdkPreview
+        get() = _targetSdk?.codeName
         set(value) {
-            _targetSdkPreview = value
-            _targetSdk = null
+            targetSdk { version = value?.let { preview(value) } }
         }
+
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        createTargetSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(_targetSdk, it.version) {
+                _targetSdk = it
+            }
+        }
+    }
+
+    open fun targetSdk(action: Action<TargetSdkSpec>) {
+        createTargetSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(_targetSdk, it.version) {
+                _targetSdk = it
+            }
+        }
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `targetSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("targetSdk { version = release(value) }")
+    )
+    open fun targetSdk(value: Int) {
+        targetSdk { version = release(value) }
+    }
 
     override val execution: Execution = objectFactory.newInstance(
         ExecutionImpl::class.java, objectFactory
@@ -128,4 +213,31 @@ internal open class SettingsExtensionImpl @Inject constructor(objectFactory: Obj
     override var ndkVersion: String = SdkConstants.NDK_VERSION
     override var ndkPath: String? = null
     override var buildToolsVersion: String = SdkConstants.BUILD_TOOLS_VERSION
+
+    private fun createMinSdkSpec(): SettingsMinSdkSpecImpl {
+        return objectFactory.newInstance(SettingsMinSdkSpecImpl::class.java).also {
+            it.version = _minSdk
+        }
+    }
+
+    private fun createTargetSdkSpec(): SettingsTargetSdkSpecImpl {
+        return objectFactory.newInstance(SettingsTargetSdkSpecImpl::class.java).also {
+            it.version = _targetSdk
+        }
+    }
+
+    private fun createCompileSdkSpec(): SettingsCompileSdkSpecImpl {
+        return objectFactory.newInstance(SettingsCompileSdkSpecImpl::class.java).also {
+            it.version = _compileSdk
+        }
+    }
+
+    /**
+     * This function makes calling sdk block without doing `version = xx` has not effects
+     */
+    fun <T> updateIfChanged(oldValue: T?, newValue: T?, setter: (T?) -> Unit) {
+        if (oldValue != newValue) {
+            setter(newValue)
+        }
+    }
 }

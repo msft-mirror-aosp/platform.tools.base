@@ -23,6 +23,7 @@ import com.android.utils.GrabProcessOutput
 import com.android.utils.GrabProcessOutput.IProcessOutput
 import com.android.utils.ILogger
 import java.io.IOException
+import java.util.concurrent.TimeoutException
 
 sealed interface SdCard {
   fun configEntries(): Map<String, String>
@@ -142,13 +143,16 @@ fun createSdCard(
             }
           }
         },
+        null, null
       )
 
     if (status == 0) {
       return true
     }
-  } catch (e: InterruptedException) {
+  } catch (_: InterruptedException) {
     logger.warning("Interrupted")
+  } catch (_: TimeoutException) {
+    logger.warning("Timeout")
   }
   for (error in errorOutput) {
     logger.warning("%1\$s", error)

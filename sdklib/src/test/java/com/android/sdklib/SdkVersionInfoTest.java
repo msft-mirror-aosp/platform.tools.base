@@ -29,7 +29,6 @@ import static com.android.sdklib.SdkVersionInfo.getVersion;
 import static com.android.sdklib.SdkVersionInfo.getVersionString;
 import static com.android.sdklib.SdkVersionInfo.underlinesToCamelCase;
 
-import com.android.testutils.TestUtils;
 import junit.framework.TestCase;
 
 public class SdkVersionInfoTest extends TestCase {
@@ -114,7 +113,10 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("UpsideDownCake", getCodeName(34));
         assertEquals("VanillaIceCream", getCodeName(35));
         assertEquals("Baklava", getCodeName(36));
-        assertNull("getCodeName for future versions should return null", getCodeName(37)); // Deliberately hardcoded to ensure this test gets looked at when adding new codenames.
+        assertNull(
+                "getCodeName for future versions should return null",
+                getCodeName(37)); // Deliberately hardcoded to ensure this test gets looked at when
+        // adding new codenames.
 
         // make sure all known codenames are non-null
         for (int i = 3; i <= HIGHEST_KNOWN_API; i++) {
@@ -167,7 +169,7 @@ public class SdkVersionInfoTest extends TestCase {
     public void testAllNewStableApisBaseExtensionLevelDefined() {
         // When new stable APIs are added, we need to add their base extension level.
         for (int i = 33; i <= HIGHEST_KNOWN_STABLE_API; i++) {
-            assertTrue(AndroidVersion.getBaseExtensionLevel(i) > 0);
+            assertTrue(AndroidVersion.getBaseExtensionLevel(new AndroidApiLevel(i)) > 0);
         }
     }
 }

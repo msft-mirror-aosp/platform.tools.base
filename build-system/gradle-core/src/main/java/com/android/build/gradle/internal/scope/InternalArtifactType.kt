@@ -202,6 +202,11 @@ InternalArtifactType<T : FileSystemLocation>(
         "res/pngs",
     ), Replaceable
 
+    object UPDATED_NAVIGATION_XML: InternalArtifactType<Directory>(
+        DIRECTORY,
+        Category.GENERATED
+    ), Replaceable
+
     object NESTED_RESOURCES_VALIDATION_REPORT: InternalArtifactType<RegularFile>(FILE)
 
     // File containing map between a source set identifier and an absolute resource sourceset path
@@ -219,6 +224,8 @@ InternalArtifactType<T : FileSystemLocation>(
     object OPTIMIZED_PROCESSED_RES: InternalArtifactType<Directory>(DIRECTORY), Replaceable, ContainsMany
     // package resources for aar publishing.
     object PACKAGED_RES: InternalArtifactType<Directory>(DIRECTORY), Replaceable
+    // package resources for aar publishing.
+    object COMPILED_NAVIGATION_RES: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     // R.txt output for libraries - contains mock resource IDs used only at compile time.
     object COMPILE_SYMBOL_LIST: InternalArtifactType<RegularFile>(FILE), Replaceable
     // Synthetic artifacts

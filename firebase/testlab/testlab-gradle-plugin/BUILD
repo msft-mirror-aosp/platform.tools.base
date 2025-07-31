@@ -36,6 +36,7 @@ FTL_GRADLE_PLUGIN_SOURCE_FILES = [
     "//tools/base/build-system/builder-model:agp_gradle_build_files",
     "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-api:agp_gradle_build_files",
+    "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",
@@ -124,6 +125,7 @@ kotlin_library(
     ],
     deps = [
         "//tools/base/build-system:gradle-api",
+        "//tools/base/build-system/gradle-common-api",
         "//tools/base/build-system/gradle-core",
     ],
 )
@@ -143,6 +145,7 @@ kotlin_library(
         "//tools/base/build-system:gradle-api",
         "//tools/base/build-system/builder-model",
         "//tools/base/build-system/builder-test-api:tools.builder-test-api",
+        "//tools/base/build-system/gradle-common-api",
         "//tools/base/build-system/gradle-core",
         "//tools/base/utp/android-test-plugin-host-device-info-proto",
         "@maven//:com.google.apis.google-api-services-storage",

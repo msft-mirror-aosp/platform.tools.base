@@ -15,6 +15,10 @@
  */
 package com.android.zipflinger;
 
+import static com.android.testutils.file.InMemoryFileSystems.createInMemoryFileSystemAndFolder;
+
+import com.android.testutils.OsType;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,10 +31,11 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -808,17 +813,21 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testFullFileSource() throws Exception {
+        Path dir = createInMemoryFileSystemAndFolder("test");
         // Create an executable file
-        Path execFilePath = getTestPath("x.exe");
+        Path execFilePath = dir.resolve("x.exe");
         Files.createFile(execFilePath);
-        execFilePath.toFile().setExecutable(true);
+        if (OsType.getHostOs() != OsType.WINDOWS) {
+            Files.setPosixFilePermissions(
+                    execFilePath, EnumSet.of(PosixFilePermission.OWNER_EXECUTE));
+        }
 
         // Create a symbolic link
-        Path symbFilePath = getTestPath("symb");
+        Path symbFilePath = dir.resolve("symb");
         Files.createSymbolicLink(symbFilePath, execFilePath);
 
         // Create an archive dst containing both + a followed symbolic link
-        Path dst = getTestPath("testFullFileSource.zip");
+        Path dst = dir.resolve("testFullFileSource.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             FullFileSource fs = new FullFileSource(execFilePath, "x", Deflater.NO_COMPRESSION);
             archive.add(fs);
@@ -856,16 +865,20 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
     @Test
     public void testZipMergingAttributes() throws Exception {
         // Create an executable file
-        Path execFilePath = getTestPath("x.exe");
+        Path dir = createInMemoryFileSystemAndFolder("test");
+        Path execFilePath = dir.resolve("x.exe");
         Files.createFile(execFilePath);
-        execFilePath.toFile().setExecutable(true);
+        if (OsType.getHostOs() != OsType.WINDOWS) {
+            Files.setPosixFilePermissions(
+                    execFilePath, EnumSet.of(PosixFilePermission.OWNER_EXECUTE));
+        }
 
         // Create a symbolic link
-        Path symbFilePath = getTestPath("symb");
+        Path symbFilePath = dir.resolve("symb");
         Files.createSymbolicLink(symbFilePath, execFilePath);
 
         // Create an archive src containing both + a followed symbolic link
-        Path src = getTestPath("testZipMergingAttributesSrc.zip");
+        Path src = dir.resolve("testZipMergingAttributesSrc.zip");
         try (ZipArchive archive = new ZipArchive(src)) {
             FullFileSource fs = new FullFileSource(execFilePath, "x", Deflater.NO_COMPRESSION);
             archive.add(fs);
@@ -883,7 +896,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
         }
 
         // Transfer entries from one archive to an archive "dst"
-        Path dst = getTestPath("testZipMergingAttributesDst.zip");
+        Path dst = dir.resolve("testZipMergingAttributesDst.zip");
         try (ZipArchive archive = new ZipArchive(dst)) {
             ZipSource zipSource = ZipSource.selectAll(src);
            archive.add(zipSource);
@@ -1178,19 +1191,19 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testDirectory() throws Exception {
-        Path cwd = temporaryFolder.newFolder().toPath();
-        final String newFolderName = "newFolder/";
-        Path newFolder = Paths.get(cwd.toString(), newFolderName);
+        Path cwd = createInMemoryFileSystemAndFolder("test");
+        String newFolderName = "newFolder";
+        Path newFolder = cwd.resolve(newFolderName);
         Files.createDirectories(newFolder);
 
-        Path archPath = getTestPath("testDirectory.zip");
+        Path archPath = cwd.resolve("testDirectory.zip");
         try (ZipArchive archive = new ZipArchive(archPath)) {
             archive.add(Sources.dir(cwd.relativize(newFolder).toString()));
         }
 
         try (ZipRepo repo = new ZipRepo(archPath)) {
             Map<String, Entry> entries = repo.getEntries();
-            Entry entry = entries.get(newFolderName);
+            Entry entry = entries.get(newFolderName + '/');
             Assert.assertNotNull("Directory Entry not found", entry);
             Assert.assertTrue("Directory entry test1", entry.isDirectory());
         }
@@ -1206,7 +1219,7 @@ public class ZipFlingerTest extends AbstractZipflingerTest {
 
     @Test
     public void testDoubleDirectoryAdd() throws Exception {
-        Path cwd = temporaryFolder.newFolder().toPath();
+        Path cwd = createInMemoryFileSystemAndFolder("test");
         Path archPath = getTestPath("testDirectory.zip");
         String dirName = Source.directoryName("dir");
         try (ZipArchive archive = new ZipArchive(archPath)) {

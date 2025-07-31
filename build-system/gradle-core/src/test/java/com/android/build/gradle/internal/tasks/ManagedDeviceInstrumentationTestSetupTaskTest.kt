@@ -26,17 +26,9 @@ import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl
 import com.android.build.gradle.options.StringOption
 import com.android.repository.Revision
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.eq
 import com.android.testutils.SystemPropertyOverrides
 import com.android.utils.Environment
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.assertThrows
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.internal.TaskOutputsInternal
@@ -45,16 +37,23 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.services.BuildServiceRegistration
 import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Assert.assertThrows
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.mockito.Answers.CALLS_REAL_METHODS
 import org.mockito.Answers.RETURNS_DEEP_STUBS
-import org.mockito.Mock
+import org.mockito.junit.MockitoJUnit
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
 
 class ManagedDeviceInstrumentationTestSetupTaskTest {
     private lateinit var mockVersionedSdkLoader: VersionedSdkLoader
@@ -121,7 +120,6 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         doReturn(realPropertyFor("aosp")).whenever(task).systemImageVendor
         doReturn(realEmptyPropertyFor<String>()).whenever(task).testedAbi
         doReturn(realPropertyFor("Pixel 2")).whenever(task).hardwareProfile
-        doReturn(realPropertyFor("auto-no-window")).whenever(task).emulatorGpuFlag
         doReturn(realPropertyFor("someDeviceName")).whenever(task).managedDeviceName
         doReturn(realPropertyFor(true)).whenever(task).require64Bit
 
@@ -176,8 +174,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
             )
         verify(avdService)
             .ensureLoadableSnapshot(
-                "dev29_default_x86_64_Pixel_2",
-                "auto-no-window"
+                "dev29_default_x86_64_Pixel_2"
             )
         verifyNoMoreInteractions(avdService)
     }
@@ -457,7 +454,6 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 val sdkMinorVersion = mockEmptyProperty<Int>()
                 val systemImageVendor = mockEmptyProperty<String>()
                 val hardwareProfile = mockEmptyProperty<String>()
-                val emulatorGpuFlag = mockEmptyProperty<String>()
                 val managedDeviceName = mockEmptyProperty<String>()
                 val require64Bit = mockEmptyProperty<Boolean>()
 
@@ -470,7 +466,6 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 whenever(task.sdkMinorVersion).thenReturn(sdkMinorVersion)
                 whenever(task.systemImageVendor).thenReturn(systemImageVendor)
                 whenever(task.hardwareProfile).thenReturn(hardwareProfile)
-                whenever(task.emulatorGpuFlag).thenReturn(emulatorGpuFlag)
                 whenever(task.managedDeviceName).thenReturn(managedDeviceName)
                 whenever(task.require64Bit).thenReturn(require64Bit)
 
@@ -511,10 +506,6 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 verify(hardwareProfile).set("Pixel 3")
                 verify(hardwareProfile).disallowChanges()
                 verifyNoMoreInteractions(hardwareProfile)
-
-                verify(emulatorGpuFlag).set("auto-no-window")
-                verify(emulatorGpuFlag).disallowChanges()
-                verifyNoMoreInteractions(emulatorGpuFlag)
 
                 verify(managedDeviceName).set("testName")
                 verify(managedDeviceName).disallowChanges()
@@ -576,7 +567,6 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 val sdkMinorVersion = mockEmptyProperty<Int>()
                 val systemImageVendor = mockEmptyProperty<String>()
                 val hardwareProfile = mockEmptyProperty<String>()
-                val emulatorGpuFlag = mockEmptyProperty<String>()
                 val managedDeviceName = mockEmptyProperty<String>()
                 val require64Bit = mockEmptyProperty<Boolean>()
 
@@ -589,7 +579,6 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 whenever(task.sdkMinorVersion).thenReturn(sdkMinorVersion)
                 whenever(task.systemImageVendor).thenReturn(systemImageVendor)
                 whenever(task.hardwareProfile).thenReturn(hardwareProfile)
-                whenever(task.emulatorGpuFlag).thenReturn(emulatorGpuFlag)
                 whenever(task.managedDeviceName).thenReturn(managedDeviceName)
                 whenever(task.require64Bit).thenReturn(require64Bit)
 
@@ -630,10 +619,6 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
                 verify(hardwareProfile).set("Pixel 3")
                 verify(hardwareProfile).disallowChanges()
                 verifyNoMoreInteractions(hardwareProfile)
-
-                verify(emulatorGpuFlag).set("auto-no-window")
-                verify(emulatorGpuFlag).disallowChanges()
-                verifyNoMoreInteractions(emulatorGpuFlag)
 
                 verify(managedDeviceName).set("testName")
                 verify(managedDeviceName).disallowChanges()

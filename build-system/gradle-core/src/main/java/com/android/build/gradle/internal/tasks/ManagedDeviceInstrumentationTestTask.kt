@@ -24,7 +24,6 @@ import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
-import com.android.build.gradle.internal.computeManagedDeviceEmulatorMode
 import com.android.build.gradle.internal.dsl.EmulatorControl
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -37,10 +36,10 @@ import com.android.build.gradle.internal.test.recordOkInstrumentedTestRun
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.testing.TestData
+import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager
-import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.createEmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.maybeCreateUtpConfigurations
 import com.android.build.gradle.internal.testing.utp.resolveDependencies
@@ -127,12 +126,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
         @get: Internal
         abstract val utpLoggingLevel: Property<Level>
 
-        @get: Input
-        abstract val emulatorGpuFlag: Property<String>
-
-        @get:Input
-        abstract val showEmulatorKernelLoggingFlag: Property<Boolean>
-
         @get:Input
         @get: Optional
         abstract val installApkTimeout: Property<Int>
@@ -143,10 +136,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
         @get: Input
         @get: Optional
         abstract val getTargetIsSplitApk: Property<Boolean>
-
-        @get: Input
-        @get: Optional
-        abstract val getKeepInstalledApks: Property<Boolean>
 
         fun createTestRunner(
             workerExecutor: WorkerExecutor,
@@ -168,14 +157,11 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                 useOrchestrator,
                 forceCompilation.get(),
                 numShards,
-                emulatorGpuFlag.get(),
-                showEmulatorKernelLoggingFlag.get(),
                 avdComponents.get(),
                 installApkTimeout.getOrNull(),
                 enableEmulatorDisplay.get(),
                 utpLoggingLevel.get(),
                 getTargetIsSplitApk.getOrElse(false),
-                !getKeepInstalledApks.get(),
                 utpRunProfileManager
             )
         }
@@ -478,19 +464,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                     .resolveDependencies(task.project.configurations)
             task.testRunnerFactory.getTargetIsSplitApk.setDisallowChanges(
                     testedConfig?.componentType?.isDynamicFeature ?: false
-            )
-
-            task.testRunnerFactory.getKeepInstalledApks.setDisallowChanges(
-                    projectOptions.get(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN)
-            )
-
-            task.testRunnerFactory.emulatorGpuFlag.setDisallowChanges(
-                computeManagedDeviceEmulatorMode(creationConfig.services.projectOptions)
-            )
-
-            task.testRunnerFactory.showEmulatorKernelLoggingFlag.setDisallowChanges(
-                creationConfig.services.projectOptions[
-                        BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING]
             )
 
             val infoLoggingEnabled =

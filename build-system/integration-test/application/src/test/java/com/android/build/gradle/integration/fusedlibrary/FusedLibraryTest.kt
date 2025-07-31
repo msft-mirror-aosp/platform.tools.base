@@ -183,6 +183,27 @@ class FusedLibraryTest {
         }
     }
 
+    @Test
+    fun checkSourcesCauseError() {
+        val build = rule.build {
+            fusedLibrary(":fusedLib1") {
+                files {
+                    // No sources are permitted in the Fused Library
+                    add(
+                        "src/main/java/com/fused/library/NotAllowed.java",
+                        ""
+                    )
+                }
+            }
+        }
+
+        val failure = build.executor.expectFailure().run(":fusedLib1:assemble")
+        failure.assertErrorContains(
+            "Fused Library modules do not allow sources. Only dependencies are allowed.\n" +
+                "   Recommended Action: Ensure any sources added to `:fusedLib1` are moved to an " +
+                    "Android Library that is a dependency of `:fusedLib1`")
+    }
+
     companion object {
         private const val FUSED_LIBRARY_GROUP = "my-company"
         private const val FUSED_LIBRARY_ARTIFACT_NAME = "my-fused-library"

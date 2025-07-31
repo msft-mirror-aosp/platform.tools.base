@@ -26,7 +26,7 @@ enum class Category {
   Folder,
   Service,
   UiComponent,
-  Automotive,
+  Car,
   XML,
   Wear,
   TV,
@@ -45,7 +45,7 @@ enum class FormFactor(val displayName: String) {
   Mobile("Phone and Tablet"),
   Wear("Wear OS"),
   Tv("Television"),
-  Automotive("Automotive"),
+  Car("Car"),
   XR("XR"),
   Generic("Generic");
 

@@ -257,7 +257,11 @@ class FakeAdbDeviceServices(override val session: AdbSession) : AdbDeviceService
         TODO("Not yet implemented")
     }
 
-    override suspend fun sync(device: DeviceSelector): AdbDeviceSyncServices {
+    override suspend fun sync(
+        device: DeviceSelector,
+        readAheadBufferSize: Int,
+        writeBackBufferSize: Int
+    ): AdbDeviceSyncServices {
         TODO("Not yet implemented")
     }
 

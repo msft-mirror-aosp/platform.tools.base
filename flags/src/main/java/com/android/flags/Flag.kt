@@ -155,21 +155,25 @@ class MendelFlag constructor(
     }
 }
 
-class BooleanFlag constructor(
+object DEFAULT_BOOLEAN_FLAG_VALUE: FlagDefault<Boolean>("BooleanFlag always default to false") {
+    override fun get(): Boolean = false
+}
+
+/**
+ * a flag with a boolean value.
+ *
+ * Unlike other flags this does not receive a default value. The default value is automatically
+ * false.
+ *
+ * To change the default value, you need to add the flag id (group.name) to
+ * tools/adt/idea/android-common/flags/resources/feature_flags.txt.
+ */
+class BooleanFlag(
     group: FlagGroup,
     name: String,
     displayName: String,
     description: String,
-    default: FlagDefault<Boolean>,
-) : Flag<Boolean>(group, name, displayName, description, default, Converter) {
-
-    constructor(
-        group: FlagGroup,
-        name: String,
-        displayName: String,
-        description: String,
-        defaultValue: Boolean,
-    ) : this(group, name, displayName, description, StaticFlagDefault(defaultValue))
+) : Flag<Boolean>(group, name, displayName, description, DEFAULT_BOOLEAN_FLAG_VALUE, Converter) {
 
     object Converter : ValueConverter<Boolean> {
         override fun serialize(value: Boolean) = value.toString()

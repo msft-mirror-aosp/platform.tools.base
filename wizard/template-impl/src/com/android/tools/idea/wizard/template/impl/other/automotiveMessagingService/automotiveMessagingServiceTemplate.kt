@@ -39,8 +39,8 @@ val automotiveMessagingServiceTemplate
     description = "Create a service that sends notifications compatible with Android Auto"
     minApi = 21
 
-    category = Category.Automotive
-    formFactor = FormFactor.Automotive
+    category = Category.Car
+    formFactor = FormFactor.Car
     screens = listOf(WizardUiContext.MenuEntry, WizardUiContext.NewModule)
 
     val serviceName = stringParameter {

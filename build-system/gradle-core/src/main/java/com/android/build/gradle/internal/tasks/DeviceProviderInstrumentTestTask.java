@@ -16,6 +16,20 @@
 
 package com.android.build.gradle.internal.tasks;
 
+import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
+
 import static com.android.build.gradle.internal.testing.utp.EmulatorControlConfigKt.createEmulatorControlConfig;
 import static com.android.builder.core.BuilderConstants.CONNECTED;
 import static com.android.builder.core.BuilderConstants.DEVICE;
@@ -57,6 +71,7 @@ import com.android.build.gradle.internal.testing.SimpleTestRunnable;
 import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
 import com.android.build.gradle.internal.testing.TestRunner;
+import com.android.build.gradle.internal.testing.androidtest.AndroidTestUtilsKt;
 import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig;
 import com.android.build.gradle.internal.testing.utp.UtpDependencies;
 import com.android.build.gradle.internal.testing.utp.UtpDependencyUtilsKt;
@@ -111,20 +126,6 @@ import org.gradle.internal.logging.ConsoleRenderer;
 import org.gradle.process.ExecOperations;
 import org.gradle.work.DisableCachingByDefault;
 import org.gradle.workers.WorkerExecutor;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
 
 /** Run instrumentation tests for a given variant */
 @DisableCachingByDefault
@@ -218,7 +219,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     (getExecutionEnum().get() == ANDROID_TEST_ORCHESTRATOR
                             || getExecutionEnum().get() == ANDROIDX_TEST_ORCHESTRATOR);
             return new UtpTestRunner(
-                    getBuildTools().splitSelectExecutable().getOrNull(),
                     new GradleProcessExecutor(getExecOperations()::exec),
                     workerExecutor,
                     executorServiceAdapter,
@@ -275,6 +275,16 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     @Nullable private UtpTestResultListener utpTestResultListener;
 
+    /**
+     * Sets a listener to receive live updates on test execution progress.
+     *
+     * <p><b>Note:</b> This method is a hook for Android Studio and is called via reflection to
+     * monitor test results in real time. It is intentionally marked as {@code @SuppressWarnings("unused")}.
+     *
+     * @param utpTestResultListener The listener instance for receiving test results, or {@code null}
+     * to clear it.
+     */
+    @SuppressWarnings("unused")
     public void setUtpTestResultListener(@Nullable UtpTestResultListener utpTestResultListener) {
         this.utpTestResultListener = utpTestResultListener;
     }
@@ -292,32 +302,36 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     @Override
     protected void doTaskAction() throws DeviceException, IOException, ExecutionException {
-        run(
-                getDeviceProviderFactory(),
-                getBuddyApks().getFiles(),
-                getResultsDir().get().getAsFile(),
-                getAdditionalTestOutputEnabled().get(),
-                getAdditionalTestOutputDir().get().getAsFile(),
-                getCoverageDirectory().get().getAsFile(),
-                getTestRunnerFactory(),
-                getReportsDir().getAsFile().get(),
-                getCodeCoverageEnabled().get(),
-                getAnalyticsService().get(),
-                getIgnoreFailures(),
-                getLogger(),
-                getTestData().get(),
-                getTargetSerials(),
-                getProjectPath().get(),
-                getInstallOptions().getOrElse(ImmutableList.of()),
-                testsFound(),
-                getWorkerExecutor(),
-                getPrivacySandboxSdkApksFiles().getFiles(),
-                getExecutorServiceAdapter(),
-                utpTestResultListener,
-                dependencies);
+        if (getRunWithBuiltInPlatform().get()) {
+            AndroidTestUtilsKt.runAndroidTest(getWorkerExecutor());
+        } else {
+            run(
+                    getDeviceProviderFactory(),
+                    getBuddyApks().getFiles(),
+                    getResultsDir().get().getAsFile(),
+                    getAdditionalTestOutputEnabled().get(),
+                    getAdditionalTestOutputDir().get().getAsFile(),
+                    getCoverageDirectory().get().getAsFile(),
+                    getTestRunnerFactory(),
+                    getReportsDir().getAsFile().get(),
+                    getCodeCoverageEnabled().get(),
+                    getAnalyticsService().get(),
+                    getIgnoreFailures(),
+                    getLogger(),
+                    getTestData().get(),
+                    getTargetSerials(),
+                    getProjectPath().get(),
+                    getInstallOptions().getOrElse(ImmutableList.of()),
+                    testsFound(),
+                    getWorkerExecutor(),
+                    getPrivacySandboxSdkApksFiles().getFiles(),
+                    getExecutorServiceAdapter(),
+                    utpTestResultListener,
+                    dependencies);
+        }
     }
 
-    static void run(
+    private static void run(
             DeviceProviderFactory deviceProviderFactory,
             Set<File> buddyApkFiles,
             File resultsOutputDir,
@@ -437,7 +451,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         }
     }
 
-    public static Boolean runTestsWithTestRunner(
+    private static Boolean runTestsWithTestRunner(
             TestRunner testRunner,
             @NonNull String projectPath,
             @NonNull StaticTestData staticTestData,
@@ -649,6 +663,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @PathSensitive(PathSensitivity.ABSOLUTE)
     @Optional
     public abstract ConfigurableFileCollection getPrivacySandboxSdkApksFiles();
+
+    @Input
+    public abstract Property<Boolean> getRunWithBuiltInPlatform();
 
     public static class CreationAction
             extends VariantTaskCreationAction<
@@ -1007,6 +1024,10 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 task.getPrivacySandboxSdkApksFiles().setFrom(testData.getPrivacySandboxSdkApks());
             }
             task.getPrivacySandboxSdkApksFiles().disallowChanges();
+
+            task.getRunWithBuiltInPlatform().set(
+                    projectOptions.getProvider(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM));
+            task.getRunWithBuiltInPlatform().disallowChanges();
         }
     }
 }

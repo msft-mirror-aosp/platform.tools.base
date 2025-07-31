@@ -28,7 +28,6 @@ import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.computeAvdName
-import com.android.build.gradle.internal.computeManagedDeviceEmulatorMode
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.services.getBuildService
@@ -53,6 +52,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -96,11 +96,19 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     @get:Nested
     abstract val deviceProviderFactory: DeviceProviderFactory
 
+    /**
+     * Specifies the target devices for test execution using a comma-separated list of serial numbers.
+     *
+     * When this property is set, tests will run only on the devices corresponding to the given
+     * serials. If this property is not provided or is null, tests will be executed on all currently
+     * connected and online devices.
+     */
+    @get:Input
+    @get:Optional
+    abstract val androidDeviceSerials: Property<String>
+
     @get:Nested
     abstract val managedDevices: ListProperty<ManagedVirtualDevice>
-
-    @get:Input
-    abstract val emulatorGpuFlag: Property<String>
 
     @get:Internal
     abstract val avdService: Property<AvdComponentsBuildService>
@@ -141,8 +149,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     private fun provisionConnectedDevicesAndExecute(onDevicesReady: (onlineDeviceSerials: List<String>) -> Unit) {
         val deviceProvider = deviceProviderFactory.getDeviceProvider(
             buildTools.adbExecutable(),
-            // TODO: Read ANDROID_SERIAL at configuration phase and make it a task input.
-            System.getenv("ANDROID_SERIAL")
+            androidDeviceSerials.orNull,
         )
         try {
             deviceProvider.use {
@@ -173,7 +180,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             return
         }
         val avdName = computeAvdName(iterator.next())
-        avdService.get().runWithAvd(avdName, emulatorGpuFlag.get()) { onlineDeviceSerial ->
+        avdService.get().runWithAvd(avdName) { onlineDeviceSerial ->
             onlineDeviceSerials += onlineDeviceSerial
             provisionManagedDevicesAndExecute(iterator, onlineDeviceSerials, onDevicesReady)
         }
@@ -264,15 +271,14 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 }
             }
 
+            task.androidDeviceSerials.setDisallowChanges(
+                task.project.providers.environmentVariable("ANDROID_SERIAL"))
+
             val localDevices = creationConfig.global.androidTestOptions.managedDevices.localDevices
             testSuiteTarget.targetDevices.forEach {
                 task.managedDevices.add(localDevices.getByName(it) as ManagedVirtualDevice)
             }
             task.managedDevices.disallowChanges()
-
-            task.emulatorGpuFlag.setDisallowChanges(
-                computeManagedDeviceEmulatorMode(creationConfig.services.projectOptions)
-            )
 
             val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
             junitEngineSpec.inputs.forEach { inputParameter: AgpTestSuiteInputParameters ->

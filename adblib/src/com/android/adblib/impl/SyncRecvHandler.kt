@@ -15,36 +15,24 @@
  */
 package com.android.adblib.impl
 
-import com.android.adblib.AdbChannel
 import com.android.adblib.AdbOutputChannel
 import com.android.adblib.AdbProtocolErrorException
-import com.android.adblib.AdbSessionHost
-import com.android.adblib.DeviceSelector
 import com.android.adblib.SyncProgress
 import com.android.adblib.adbLogger
-import com.android.adblib.impl.services.AdbServiceRunner
 import com.android.adblib.utils.AdbProtocolUtils
 import com.android.adblib.withPrefix
 import kotlinx.coroutines.withContext
-import java.nio.ByteOrder
 
 /**
  * Implementation of the `RECV` protocol of the `SYNC` command
  *
  * See [SYNC.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT)
  */
-internal class SyncRecvHandler(
-    private val serviceRunner: AdbServiceRunner,
-    private val device: DeviceSelector,
-    private val deviceChannel: AdbChannel
-) {
+internal class SyncRecvHandler(private val connection: SyncConnection) {
 
-    private val logger = adbLogger(host).withPrefix("device:$device,sync:RECV - ")
+    private val syncRequestId: String = "RECV"
 
-    private val host: AdbSessionHost
-        get() = serviceRunner.host
-
-    private val workBuffer = serviceRunner.newResizableBuffer().order(ByteOrder.LITTLE_ENDIAN)
+    private val logger = adbLogger(connection.session).withPrefix("device:${connection.device},sync:$syncRequestId - ")
 
     /**
      * See (SYNC.TXT)[https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT]
@@ -70,7 +58,7 @@ internal class SyncRecvHandler(
         destinationChannel: AdbOutputChannel,
         progress: SyncProgress?
     ) {
-        withContext(host.ioDispatcher) {
+        withContext(connection.session.ioDispatcher) {
             logger.info { "\"$remoteFilePath\" -> $destinationChannel" }
 
             if (remoteFilePath.length > REMOTE_PATH_MAX_LENGTH) {
@@ -93,19 +81,7 @@ internal class SyncRecvHandler(
 
     private suspend fun startRecvRequest(remoteFilePath: String, progress: SyncProgress?) {
         progress?.transferStarted(remoteFilePath)
-
-        logger.debug { "sending \"RECV\" command to device $device" }
-        // Bytes 0-3: 'RECV'
-        // Bytes 4-7: request size (little endian)
-        // Bytes 8-xx: An utf-8 string with the remote file path
-        workBuffer.clear()
-        workBuffer.appendString("RECV", AdbProtocolUtils.ADB_CHARSET)
-        val lengthPos = workBuffer.position
-        workBuffer.appendInt(0) // Set later
-        workBuffer.appendString(remoteFilePath, AdbProtocolUtils.ADB_CHARSET)
-        workBuffer.setInt(lengthPos, workBuffer.position - 8)
-
-        deviceChannel.writeExactly(workBuffer.forChannelWrite())
+        connection.startSyncRequest(syncRequestId, remoteFilePath)
     }
 
     private suspend fun receiveFileContents(
@@ -115,9 +91,8 @@ internal class SyncRecvHandler(
     ): Long {
         var totalBytesSoFar = 0L
         while (true) {
-            workBuffer.clear()
-            deviceChannel.readExactly(workBuffer.forChannelRead(8))
-            val buffer = workBuffer.afterChannelRead()
+            val buffer = connection.readExactly(8)
+
             // We can receive either 'DATA' or 'DONE' or 'FAIL'
             // https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/client/file_sync_client.cpp;l=1102;bpv=1;bpt=1
             when {
@@ -140,9 +115,9 @@ internal class SyncRecvHandler(
                     val chunkLength = buffer.getInt() // Consume length
 
                     // Read chunk from channel
-                    workBuffer.clear()
-                    deviceChannel.readExactly(workBuffer.forChannelRead(chunkLength))
-                    destinationChannel.writeExactly(workBuffer.afterChannelRead())
+                    connection.readExactly(chunkLength).also { chunkBuffer ->
+                        destinationChannel.writeExactly(chunkBuffer)
+                    }
 
                     totalBytesSoFar += chunkLength
                     progress?.transferProgress(remoteFilePath, totalBytesSoFar)
@@ -157,17 +132,9 @@ internal class SyncRecvHandler(
                 //
                 // See https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=257;drc=fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f
                 AdbProtocolUtils.isFail(buffer) -> {
-                    buffer.getInt() // Consume 'FAIL'
-                    val length = buffer.getInt() // Consume length
-                    serviceRunner.readSyncFailMessageAndThrow(
-                        device,
-                        "sync-recv('$remoteFilePath')",
-                        deviceChannel,
-                        workBuffer,
-                        length,
-                        TimeoutTracker.INFINITE
-                    )
+                    connection.readSyncFailMessageAndThrow("sync-recv('$remoteFilePath')", buffer)
                 }
+
                 else -> {
                     val contents = AdbProtocolUtils.bufferToByteDumpString(buffer)
                     val errorMessage =

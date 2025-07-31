@@ -39,7 +39,8 @@ class FakeDeprecationReporter: DeprecationReporter {
         newApiElement: String?,
         oldApiElement: String,
         url: String,
-        deprecationTarget: DeprecationReporter.DeprecationTarget
+        deprecationTarget: DeprecationReporter.DeprecationTarget,
+        requiresOptIn: Boolean,
     ) {
         warnings.add(oldApiElement)
     }

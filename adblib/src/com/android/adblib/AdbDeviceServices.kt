@@ -308,13 +308,26 @@ interface AdbDeviceServices {
      * an instance of [AdbDeviceSyncServices] that allows performing one or more file
      * transfer operation with a device.
      *
-     * The [AdbDeviceSyncServices] instance should be [closed][AutoCloseable.close]
-     * when no longer in use, to ensure the underlying connection to the device is
-     * closed.
+     * The [AdbDeviceSyncServices] instance should be [shut down][AutoShutdown.shutdown] and
+     * [closed][java.lang.AutoCloseable.close] when no longer in use, to ensure the underlying
+     * connection to the device is closed.
+     *
+     * Note: Use [withSyncServices] to ensure deterministic [shut down][AutoShutdown.shutdown]
+     * behavior.
      *
      * @param [device] the [DeviceSelector] corresponding to the target device
+     * @param [readAheadBufferSize] the size of the internal buffer used to read data from the
+     * underlying socket connection. A value less than or equal to `zero` disables buffering.
+     * @param [writeBackBufferSize] the size of the internal buffer used to write data to the
+     * underlying socket connection. A value less than or equal to `zero` disables buffering.
+     * Note that using write back buffering **requires** calling [AdbDeviceSyncServices.shutdown]
+     * when sending data to the device to prevent data loss.
      */
-    suspend fun sync(device: DeviceSelector): AdbDeviceSyncServices
+    suspend fun sync(
+        device: DeviceSelector,
+        readAheadBufferSize: Int = session.property(AdbLibProperties.DEFAULT_SYNC_CONNECTION_BUFFER_SIZE),
+        writeBackBufferSize: Int = session.property(AdbLibProperties.DEFAULT_SYNC_CONNECTION_BUFFER_SIZE)
+    ): AdbDeviceSyncServices
 
     /**
      * Returns the [list][ReverseSocketList] of all
@@ -902,6 +915,21 @@ fun AdbDeviceServices.abbCommand(device: DeviceSelector, args: List<String>): Ab
 }
 
 /**
+ * Opens a [AdbDeviceSyncServices] session on this [device] for performing one or more file
+ * transfer operation in the given [block].
+ *
+ * @see AdbDeviceServices.sync
+ */
+suspend inline fun <R> AdbDeviceServices.withSyncServices(
+    device: DeviceSelector,
+    block: (AdbDeviceSyncServices) -> R
+): R {
+    return sync(device).useShutdown {
+        block(it)
+    }
+}
+
+/**
  * Uploads a single file to a remote device transferring the contents of [sourceChannel].
  *
  * @see [AdbDeviceSyncServices.send]
@@ -915,7 +943,7 @@ suspend fun AdbDeviceServices.syncSend(
     progress: SyncProgress? = null,
     bufferSize: Int = SYNC_DATA_MAX
 ) {
-    sync(device).use {
+    withSyncServices(device) {
         it.send(
             sourceChannel,
             remoteFilePath,
@@ -967,7 +995,7 @@ suspend fun AdbDeviceServices.syncRecv(
     progress: SyncProgress? = null,
     bufferSize: Int = SYNC_DATA_MAX
 ) {
-    sync(device).use {
+    withSyncServices(device) {
         it.recv(
             remoteFilePath,
             destinationChannel,
@@ -1010,7 +1038,7 @@ suspend fun AdbDeviceServices.syncStat(
     device: DeviceSelector,
     remoteFilePath: String
 ): FileStat? {
-    return sync(device).use {
+    return withSyncServices(device) {
         it.stat(remoteFilePath)
     }
 }

@@ -20,6 +20,7 @@ import com.android.SdkConstants
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.gradle.internal.component.ApkCreationConfig
+import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction

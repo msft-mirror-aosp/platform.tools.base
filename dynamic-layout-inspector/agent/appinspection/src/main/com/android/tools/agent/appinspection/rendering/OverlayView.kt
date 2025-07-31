@@ -16,6 +16,7 @@
 
 package com.android.tools.agent.appinspection.rendering
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -74,6 +75,7 @@ class OverlayView(
     val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
     }
+    val overlayPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     /** Holds the screen coordinates of this [OverlayView]. Updated in onLayout. */
     private val currentScreenLocation = intArrayOf(0, 0)
@@ -162,6 +164,20 @@ class OverlayView(
                     interceptTouchEvents = intercept
                 }
             }
+
+            launch {
+                viewModel.overlayImage.collect { bitmap ->
+                    Log.w(SPAM_LOG_TAG, "OverlayView $rootId received overlay: $bitmap")
+                    postInvalidate()
+                }
+            }
+
+            launch {
+                viewModel.overlayAlpha.collect { alpha ->
+                    Log.w(SPAM_LOG_TAG, "OverlayView $rootId received overlay alpha: $alpha")
+                    postInvalidate()
+                }
+            }
         }
     }
 
@@ -207,10 +223,19 @@ class OverlayView(
         super.onDraw(canvas)
 
         // The rendering order matters.
+        paintOverlay(canvas)
         recomposingRectangles.forEach { it.paint(canvas, recomposingRectPaint) }
         visibleRectangles.forEach { it.paint(canvas, visibleRectPaint) }
         hoveredRectangle.forEach { it.paint(canvas, hoveredRectPaint) }
         selectedRectangles.forEach { it.paint(canvas, selectedRectPaint) }
+    }
+
+    private fun paintOverlay(canvas: Canvas) {
+        viewModel.overlayImage.value?.let { bitmap ->
+            overlayPaint.setAlpha((viewModel.overlayAlpha.value * 255).toInt())
+            val dst = Rect(0, 0, width, height)
+            canvas.drawBitmap(bitmap, null, dst, overlayPaint)
+        }
     }
 
     private fun DrawInstruction.paint(canvas: Canvas, paint: Paint) {

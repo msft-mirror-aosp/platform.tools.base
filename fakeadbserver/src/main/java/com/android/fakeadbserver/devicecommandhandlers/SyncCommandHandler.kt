@@ -62,6 +62,7 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
                 "SEND" -> handleSendProtocol(device, input, output)
                 "RECV" -> handleRecvProtocol(device, input, output)
                 "STAT" -> handleStatProtocol(device, input, output)
+                "QUIT" -> handleQuitProtocol(socket)
                 else -> throwUnsupportedRequest(output, syncRequest)
             }
         }
@@ -136,6 +137,10 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
         writeInt32(output, fileState?.permission ?: 0)
         writeInt32(output, fileState?.bytes?.size ?: 0)
         writeInt32(output, fileState?.modifiedDate ?: 0)
+    }
+
+    private fun handleQuitProtocol(socket: Socket) {
+        socket.shutdownOutput()
     }
 
     private fun readSyncRequest(input: InputStream): String {

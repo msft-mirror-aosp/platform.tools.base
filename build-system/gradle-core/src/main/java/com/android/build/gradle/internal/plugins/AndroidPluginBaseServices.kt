@@ -169,7 +169,8 @@ abstract class AndroidPluginBaseServices(
                 BuildAnalyzerConfiguratorService.RegistrationAction(
                     project
                 ).execute().get(),
-                buildFeatures.configurationCache.active.get()
+                buildFeatures.configurationCacheActive(),
+                buildFeatures.projectIsolationActive(),
             ).execute()
         }
         configuratorService.getProjectBuilder(project.path)?.let {

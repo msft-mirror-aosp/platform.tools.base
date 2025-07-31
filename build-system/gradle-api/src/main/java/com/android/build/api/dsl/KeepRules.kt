@@ -1,6 +1,8 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
+import org.gradle.api.provider.SetProperty
+import java.io.File
 
 /**
  * DSL object for external library dependencies keep rules configurations.
@@ -33,4 +35,10 @@ interface KeepRules {
      */
     @Incubating
     fun ignoreFromAllExternalDependencies(ignore: Boolean)
+
+    /**
+     * Keep rules files set
+     */
+    @get:Incubating
+    val files: SetProperty<File>
 }

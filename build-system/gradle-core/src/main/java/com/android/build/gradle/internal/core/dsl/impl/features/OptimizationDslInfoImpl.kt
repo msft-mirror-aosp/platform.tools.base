@@ -36,6 +36,7 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import java.io.File
+import com.android.builder.core.ComponentTypeImpl.BASE_APK
 
 class OptimizationDslInfoImpl(
     private val componentType: ComponentType,
@@ -74,6 +75,15 @@ class OptimizationDslInfoImpl(
 
     override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
         get() = mergedOptimization.ignoreFromAllExternalDependenciesInBaselineProfile
+
+    override val applicationOptimizationEnabled: Boolean
+        get() = mergedOptimization.enable && componentType == BASE_APK
+
+    override val includePackages: Set<String>
+        get() = if (componentType == BASE_APK) mergedOptimization.packageScope else setOf()
+
+    override val keepRuleFiles: Set<File>
+        get() = mergedOptimization.keepRuleFiles
 
     override fun getProguardFiles(into: ListProperty<RegularFile>) {
         val result: MutableList<File> = ArrayList(gatherProguardFiles(ProguardFileType.EXPLICIT))
@@ -126,6 +136,7 @@ class OptimizationDslInfoImpl(
             result.addAll((flavor as com.android.build.gradle.internal.dsl.ProductFlavor).getProguardFiles(type))
         }
         result.addAll(postProcessingOptions.getProguardFiles(type))
+        if (type == ProguardFileType.EXPLICIT) result.addAll(keepRuleFiles)
         return result
     }
 

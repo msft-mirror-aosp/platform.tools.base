@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.CompileSdkSpec
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.DependencyVariantSelection
 import com.android.build.api.dsl.HasConfigurableValue
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder
@@ -24,6 +26,8 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
 import com.android.build.api.dsl.LibraryAndroidResources
 import com.android.build.api.dsl.DependencySelection
+import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.internal.coverage.JacocoOptions
@@ -35,8 +39,8 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.LibraryRequest
 import com.android.builder.core.ToolsRevisionUtils
-import com.android.builder.core.apiVersionFromString
 import com.android.builder.signing.DefaultSigningConfig
+import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
@@ -99,34 +103,67 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         SigningConfig::class.java, BuilderConstants.DEBUG, dslServices
     )
 
-    internal val minSdkVersion: MutableAndroidVersion
-        get() = mutableMinSdk?.sanitize()?.let { MutableAndroidVersion(it.apiLevel, it.codename) }
-            ?: MutableAndroidVersion(1)
+    internal abstract var _compileSdk: CompileSdkVersion?
 
-    private var mutableMinSdk: MutableAndroidVersion? = null
+    private val compileSdkDelegate = CompileSdkDelegate(
+        getCompileSdk = { _compileSdk },
+        setCompileSdk = { _compileSdk = it },
+        issueReporter = dslServices.issueReporter,
+        dslServices = dslServices
+    )
+
+    override var compileSdk: Int?
+        get() = compileSdkDelegate.compileSdk
+        set(value) {
+            compileSdkDelegate.compileSdk = value
+        }
+
+    override fun compileSdk(action: CompileSdkSpec.() -> Unit) {
+        compileSdkDelegate.compileSdk(action)
+    }
+
+    override var compileSdkPreview: String?
+        get() = compileSdkDelegate.compileSdkPreview
+        set(value) {
+            compileSdkDelegate.compileSdkPreview = value
+        }
+
+    override var compileSdkExtension: Int?
+        get() = compileSdkDelegate.compileSdkExtension
+        set(value) {
+            compileSdkDelegate.compileSdkExtension = value
+        }
+
+    internal abstract var _minSdk: MinSdkVersion?
+
+    private val minSdkDelegate = MinSdkDelegate(
+        getMinSdk = { _minSdk },
+        setMinSdk = { _minSdk = it },
+        dslServices = dslServices
+    )
+
+    internal val minSdkVersion: MutableAndroidVersion
+        get() {
+            return MutableAndroidVersion(_minSdk?.apiLevel, _minSdk?.codeName).sanitize().let {
+                MutableAndroidVersion(it.apiLevel, it.codename)
+            }
+        }
 
     override var minSdk: Int?
-        get() = mutableMinSdk?.api
+        get() = minSdkDelegate.minSdk
         set(value) {
-            val min =
-                mutableMinSdk ?: MutableAndroidVersion(null, null).also {
-                    mutableMinSdk = it
-                }
-            min.codename = null
-            min.api = value
+            minSdkDelegate.minSdk = value
         }
 
     override var minSdkPreview: String?
-        get() = mutableMinSdk?.codename
+        get() = minSdkDelegate.minSdkPreview
         set(value) {
-            val apiVersion = apiVersionFromString(value)
-            val min =
-                mutableMinSdk ?: MutableAndroidVersion(null, null).also {
-                    mutableMinSdk = it
-                }
-            min.codename = apiVersion?.codename
-            min.api = apiVersion?.apiLevel
+            minSdkDelegate.minSdkPreview = value
         }
+
+    override fun minSdk(action: MinSdkSpec.() -> Unit) {
+        minSdkDelegate.minSdk(action)
+    }
 
     override val testCoverage = dslServices.newInstance(JacocoOptions::class.java)
 

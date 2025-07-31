@@ -44,6 +44,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":app:checkDebugAarMetadata",
                             ":app:checkDebugDuplicateClasses",
                             ":app:compileDebugJavaWithJavac",
+                            ":app:compileDebugNavigationResources",
                             ":app:compressDebugAssets",
                             ":app:createDebugApkListingFileRedirect",
                             ":app:createDebugCompatibleScreenManifests",
@@ -71,6 +72,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":app:processDebugMainManifest",
                             ":app:processDebugManifest",
                             ":app:processDebugManifestForPackage",
+                            ":app:processDebugNavigationResources",
                             ":app:processDebugResources",
                             ":app:validateSigningDebug",
                             ":app:writeDebugAppMetadata",
@@ -104,6 +106,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":lib:prepareDebugArtProfile",
                             ":lib:prepareLintJarForPublish",
                             ":lib:processDebugManifest",
+                            ":lib:processDebugNavigationResources",
                             ":lib:syncDebugLibJars",
                             ":lib:writeDebugAarMetadata",
                         )

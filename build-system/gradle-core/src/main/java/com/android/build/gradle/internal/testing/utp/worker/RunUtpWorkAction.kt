@@ -74,7 +74,7 @@ abstract class RunUtpWorkAction @Inject constructor(
                             logger.info(line)
                         }
                     }
-                }
+                }, null, null
             )
 
             process.waitFor()

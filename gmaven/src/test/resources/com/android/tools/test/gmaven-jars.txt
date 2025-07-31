@@ -611,6 +611,7 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/test/report/style.css
   com/android/build/gradle/internal/testFixtures/
   com/android/build/gradle/internal/testing/
+  com/android/build/gradle/internal/testing/androidtest/
   com/android/build/gradle/internal/testing/utp/
   com/android/build/gradle/internal/testing/utp/worker/
   com/android/build/gradle/internal/testsuites/
@@ -681,6 +682,17 @@ com/android/tools/build/gradle-api
   com/android/build/api/variant/
   com/android/build/gradle/
   com/android/build/gradle/api/
+
+com/android/tools/build/gradle-common-api
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/gradle-common-api.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/build/
+  com/android/build/api/
+  com/android/build/api/dsl/
 
 com/android/tools/build/gradle-kotlin
   META-INF/
@@ -2353,7 +2365,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/services/org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
   META-INF/services/org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
   META-INF/services/org.jetbrains.kotlin.resolve.ExternalOverridabilityCondition
-  META-INF/services/org.jetbrains.kotlin.resolve.jvm.jvmSignature.KotlinToJvmSignatureMapper
+  META-INF/services/org.jetbrains.kotlin.resolve.jvm.KotlinToJvmSignatureMapper
   META-INF/services/org.jetbrains.kotlin.util.ModuleVisibilityHelper
   META-INF/services/org/
   META-INF/services/org/jline/
@@ -2462,6 +2474,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/analysis/api/fir/diagnostics/
   org/jetbrains/kotlin/analysis/api/fir/evaluate/
   org/jetbrains/kotlin/analysis/api/fir/modification/
+  org/jetbrains/kotlin/analysis/api/fir/projectStructure/
   org/jetbrains/kotlin/analysis/api/fir/references/
   org/jetbrains/kotlin/analysis/api/fir/scopes/
   org/jetbrains/kotlin/analysis/api/fir/signatures/
@@ -2978,6 +2991,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/library/abi/impl/
   org/jetbrains/kotlin/library/encodings/
   org/jetbrains/kotlin/library/impl/
+  org/jetbrains/kotlin/library/loader/
   org/jetbrains/kotlin/library/metadata/
   org/jetbrains/kotlin/library/metadata/impl/
   org/jetbrains/kotlin/library/metadata/resolver/
@@ -4251,35 +4265,6 @@ com/android/tools/utp/android-device-provider-ddmlib-proto
   com/android/tools/utp/plugins/deviceprovider/
   com/android/tools/utp/plugins/deviceprovider/ddmlib/
   com/android/tools/utp/plugins/deviceprovider/ddmlib/proto/
-
-com/android/tools/utp/android-device-provider-gradle
-  META-INF/
-  META-INF/MANIFEST.MF
-  META-INF/android-device-provider-gradle.kotlin_module
-  META-INF/services/
-  META-INF/services/com.google.testing.platform.api.device.DeviceProvider
-  com/
-  com/android/
-  com/android/tools/
-  com/android/tools/utp/
-  com/android/tools/utp/plugins/
-  com/android/tools/utp/plugins/deviceprovider/
-  com/android/tools/utp/plugins/deviceprovider/gradle/
-
-com/android/tools/utp/android-device-provider-gradle-proto
-  META-INF/
-  META-INF/MANIFEST.MF
-  NOTICE
-  com/
-  com/android/
-  com/android/tools/
-  com/android/tools/utp/
-  com/android/tools/utp/plugins/
-  com/android/tools/utp/plugins/deviceprovider/
-  com/android/tools/utp/plugins/deviceprovider/gradle/
-  com/android/tools/utp/plugins/deviceprovider/gradle/proto/
-  gradle_managed_android_device_provider_config.proto
-  gradle_managed_device_config.proto
 
 com/android/tools/utp/android-device-provider-profile
   META-INF/

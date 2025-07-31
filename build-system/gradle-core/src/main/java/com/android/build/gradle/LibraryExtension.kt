@@ -32,6 +32,7 @@ import com.android.build.gradle.internal.dsl.LibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.LibraryRequest
 import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
@@ -139,11 +140,12 @@ open class LibraryExtension(
      */
     val libraryVariants: DefaultDomainObjectSet<LibraryVariant>
         get() {
-            recordOldVariantApiUsage()
+            recordOldVariantApiUsage("libraryVariants")
             return libraryVariantList as DefaultDomainObjectSet<LibraryVariant>
         }
 
     override fun addVariant(variant: BaseVariant) {
+        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
         libraryVariantList.add(variant as LibraryVariant)
     }
 

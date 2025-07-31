@@ -57,6 +57,15 @@ internal object AdbLibProperties {
     )
 
     /**
+     * The default size (in bytes) for in-memory buffers when sending or receiving data
+     * over an [AdbDeviceSyncServices] connection.
+     */
+    val DEFAULT_SYNC_CONNECTION_BUFFER_SIZE  = AdbSessionHost.IntProperty(
+        name = "$NAME_PREFIX.default.sync.connection.buffer.size",
+        defaultValue = DEFAULT_BUFFER_SIZE
+    )
+
+    /**
      * This property is used to control `AsynchronousSocketChannel` `SO_KEEPALIVE` option.
      *
      * Enabling `SO_KEEPALIVE` for long-running connections (e.g., those created by

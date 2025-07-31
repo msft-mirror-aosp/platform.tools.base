@@ -20,14 +20,21 @@ import com.android.build.api.dsl.BaselineProfile
 import com.android.build.api.dsl.KeepRules
 import com.android.build.api.dsl.Optimization
 import com.android.build.gradle.internal.services.DslServices
+import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.SetProperty
 import javax.inject.Inject
 
 abstract class OptimizationImpl@Inject constructor(
-    dslService: DslServices
+    dslService: DslServices,
+    internal val objectFactory: ObjectFactory
 ) : Optimization {
 
     abstract val keepRules: KeepRules
     abstract val baselineProfile: BaselineProfile
+
+    abstract override var enable: Boolean
+    override val packageScope: SetProperty<String> =
+        objectFactory.setProperty(String::class.java).convention(listOf("**"))
 
     override fun keepRules(action: KeepRules.() -> Unit) {
         action.invoke(keepRules)
@@ -51,6 +58,14 @@ abstract class OptimizationImpl@Inject constructor(
         (baselineProfile as BaselineProfileImpl).ignoreFrom.clear()
         (baselineProfile as BaselineProfileImpl).ignoreFrom.addAll(
                 (that.baselineProfile as BaselineProfileImpl).ignoreFrom)
+
+        enable = that.enable
+
+        packageScope.empty()
+        packageScope.addAll(that.packageScope)
+
+        keepRules.files.empty()
+        keepRules.files.addAll(that.keepRules.files)
 
     }
 }

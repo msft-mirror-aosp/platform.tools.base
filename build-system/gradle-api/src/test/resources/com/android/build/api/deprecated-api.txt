@@ -23,6 +23,8 @@ Deprecated from AGP 8.13.0
   * com.android.build.api.dsl.PostProcessing.setTestProguardFiles: void (java.util.List<?>)
   * com.android.build.api.dsl.PostProcessing.testProguardFile: void (java.lang.Object)
   * com.android.build.api.dsl.PostProcessing.testProguardFiles: void (java.lang.Object[])
+  * com.android.build.api.dsl.VariantDimension.getOptimization: com.android.build.api.dsl.Optimization ()
+  * com.android.build.api.dsl.VariantDimension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization, kotlin.Unit>)
 Deprecated from AGP 8.12.0
   * com.android.build.api.dsl.BaseFlavor.getMinSdkPreview: java.lang.String ()
   * com.android.build.api.dsl.BaseFlavor.setMinSdkPreview: void (java.lang.String)

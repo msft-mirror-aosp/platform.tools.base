@@ -457,6 +457,7 @@ ANDROID_GRADLE_PLUGIN_SOURCE_FILES = [
     "//tools/base/build-system/builder-r8:agp_gradle_build_files",
     "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-api:agp_gradle_build_files",
+    "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",
     "//tools/base/build-system/gradle-core:agp_gradle_build_files",
     "//tools/base/build-system/gradle-kotlin:agp_gradle_build_files",
     "//tools/base/build-system/gradle-settings:agp_gradle_build_files",
@@ -562,7 +563,6 @@ maven_repository(
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/signflinger",
         "//tools/base/utp/android-device-provider-ddmlib-proto",
-        "//tools/base/utp/android-device-provider-gradle-proto",
         "//tools/base/utp/android-device-provider-profile-proto",
         "//tools/base/utp/android-test-plugin-host-additional-test-output-proto",
         "//tools/base/utp/android-test-plugin-host-apk-installer-proto",
@@ -661,6 +661,7 @@ gradle_test(
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-api:agp_gradle_test_files",
+        "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",
         "//tools/base/common:agp_gradle_build_files",
         "//tools/buildSrc:agp_gradle_build_files",
         "//tools/buildSrc/base:agp_gradle_build_files",
@@ -747,6 +748,7 @@ gradle_test(
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-api:agp_gradle_metalava_test_files",
+        "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",
         "//tools/base/common:agp_gradle_build_files",
         "//tools/buildSrc:agp_gradle_build_files",
         "//tools/buildSrc/base:agp_gradle_build_files",
@@ -765,6 +767,35 @@ gradle_test(
 )
 
 gradle_test(
+    name = "android_gradle_plugin_gradle_common_api_metalava_test",
+    build_file = "//tools:agp_gradle_build_root_build_file",
+    # keep sorted
+    data = [
+        ":agp_gradle_build_files",
+        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
+        "//tools:agp_gradle_build_files",
+        "//tools/base/build-system/builder-model:agp_gradle_build_files",
+        "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
+        "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",
+        "//tools/base/build-system/gradle-common-api:agp_gradle_metalava_test_files",
+        "//tools/base/common:agp_gradle_build_files",
+        "//tools/buildSrc:agp_gradle_build_files",
+        "//tools/buildSrc/base:agp_gradle_build_files",
+    ],
+    gradle_properties = GRADLE_PROPERTIES,
+    # keep sorted
+    repos = [
+        ":android_gradle_plugin_gradle_api_test_repository",
+        ":metalava_tool",
+        "//tools/base:agp_artifacts",
+        "//tools/base:agp_dependencies",
+    ],
+    tasks = [":base:build-system:gradle-common-api:metalavaTest"],
+    test_output_dir = "build/base/build-system/gradle-common-api/build/test-results/metalavaTest",
+    visibility = ["//visibility:public"],
+)
+
+gradle_test(
     name = "android_gradle_plugin_gradle_settings_api_metalava_test",
     build_file = "//tools:agp_gradle_build_root_build_file",
     # keep sorted
@@ -774,6 +805,7 @@ gradle_test(
         "//tools:agp_gradle_build_files",
         "//tools/base/build-system/builder-model:agp_gradle_build_files",
         "//tools/base/build-system/builder-test-api:agp_gradle_build_files",
+        "//tools/base/build-system/gradle-common-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-settings-api:agp_gradle_build_files",
         "//tools/base/build-system/gradle-settings-api:agp_gradle_metalava_test_files",
         "//tools/base/common:agp_gradle_build_files",

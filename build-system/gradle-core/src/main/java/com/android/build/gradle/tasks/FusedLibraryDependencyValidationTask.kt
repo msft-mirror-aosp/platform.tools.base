@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.SdkConstants
+import com.android.SdkConstants.FD_SOURCES
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
@@ -32,13 +34,18 @@ import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
+import java.io.File
 
 /**
  * Intended to prevent building a fused library in an invalid state due to misconfiguration
@@ -61,6 +68,14 @@ abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask()
     abstract val ignoreFailures: Property<Boolean>
 
     /**
+     * As sources may or may not exist, a file collection avoids configuration cache issues if
+     * there is not a source directory.
+     */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val srcDir: ConfigurableFileCollection
+
+    /**
      * Output directory to for the task to report up-to-date, contents will always be empty.
      *
      * Output is optional as a dependency is explicitly added for some maven-publish plugin tasks.
@@ -71,7 +86,24 @@ abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask()
 
     override fun doTaskAction() {
         if (ignoreFailures.get()) return
+        checkNoSrcFiles(srcDir.files.firstOrNull(), projectPath.get())
         checkDependencies(resolvedIncludeDependencies.get())
+    }
+
+    /**
+     * Informs users who try to add files to src/ that source files are not permitted.
+     *
+     * This should eventually be replaced by a check in Studio.
+     */
+    private fun checkNoSrcFiles(srcDir: File?, projectPath: String) {
+        if (srcDir == null) return
+        if (srcDir.exists() && srcDir.walkBottomUp().any(File::isFile)) {
+            error(
+                "Fused Library modules do not allow sources. Only dependencies are allowed.\n " +
+                        "Recommended Action: Ensure any sources added to `$projectPath` are moved " +
+                        "to an Android Library that is a dependency of `$projectPath`"
+            )
+        }
     }
 
     /**
@@ -302,6 +334,7 @@ abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask()
                         .getValue(creationConfig.experimentalProperties.get())
                 }
             )
+            task.srcDir.from(task.project.layout.projectDirectory.dir(SdkConstants.FD_SOURCES))
         }
     }
 }

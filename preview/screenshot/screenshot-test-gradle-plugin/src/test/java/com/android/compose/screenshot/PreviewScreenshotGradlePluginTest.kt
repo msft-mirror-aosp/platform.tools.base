@@ -85,24 +85,26 @@ class PreviewScreenshotGradlePluginTest {
                 AndroidPluginVersion(8, 11, 0).alpha(1),
                 AndroidPluginVersion(8, 12, 0).alpha(1),
                 AndroidPluginVersion(8, 13, 0).alpha(1),
-        )
+                AndroidPluginVersion(9, 0, 0).alpha(1),
+                AndroidPluginVersion(9, 0, Int.MAX_VALUE),
+            )
         val unsupportedVersionsTooNew = listOf(
-            AndroidPluginVersion(9, 0, 0).alpha(1),
-            AndroidPluginVersion(9, 0),
+            AndroidPluginVersion(9, 1, 0).alpha(1),
+            AndroidPluginVersion(9, 1),
         )
         unsupportedVersionsTooOld.forEach {
             val e = assertThrows(IllegalStateException::class.java) {
                 applyScreenshotPlugin(it)
             }
             assertThat(e).hasMessageThat()
-                    .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 8.13.")
+                    .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 9.0.")
         }
         unsupportedVersionsTooNew.forEach {
             val e = assertThrows(IllegalStateException::class.java) {
                 applyScreenshotPlugin(it)
             }
             assertThat(e).hasMessageThat()
-                .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 8.13.")
+                .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 9.0.")
         }
         supportedVersions.forEach {
             applyScreenshotPlugin(it)

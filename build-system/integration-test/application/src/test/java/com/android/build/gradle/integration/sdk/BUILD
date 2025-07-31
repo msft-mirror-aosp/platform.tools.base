@@ -37,6 +37,7 @@ gradle_integration_test(
         "//tools/base/build-system/builder-model",
         "//tools/base/build-system/builder-test-api:tools.builder-test-api",
         "//tools/base/build-system/gradle-api",
+        "//tools/base/build-system/gradle-common-api",
         "//tools/base/build-system/gradle-core",
         "//tools/base/build-system/integration-test/framework",
         "//tools/base/common:tools.common",

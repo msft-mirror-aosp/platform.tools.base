@@ -35,7 +35,6 @@ import java.util.logging.Level
  * Runs Android Instrumentation tests using UTP (Unified Test Platform).
  */
 class UtpTestRunner @JvmOverloads constructor(
-        splitSelectExec: File?,
         processExecutor: ProcessExecutor,
         private val workerExecutor: WorkerExecutor,
         executor: ExecutorServiceAdapter,
@@ -61,7 +60,7 @@ class UtpTestRunner @JvmOverloads constructor(
                 utpTestResultListener, utpDependencies)
         },
 )
-    : BaseTestRunner(splitSelectExec, processExecutor, executor) {
+    : BaseTestRunner(processExecutor, executor) {
 
     override fun scheduleTests(
             projectName: String,

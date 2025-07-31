@@ -27,6 +27,7 @@ maven_library(
     version = BUILD_VERSION,
     visibility = ["//visibility:public"],
     exports = [
+        "//tools/base/build-system/gradle-common-api",
         "@maven//:org.ow2.asm.asm",
     ],
     deps = [

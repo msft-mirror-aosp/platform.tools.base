@@ -44,7 +44,7 @@ ActivityManager::ActivityManager()
 
 bool ActivityManager::StartProfiling(
     const ProfilingMode profiling_mode, const string &app_package_name,
-    int sampling_interval_us, const string &trace_path,
+    int sampling_interval_us, bool dual_clock, const string &trace_path,
     std::string *error_string, int64_t *error_code, bool is_startup_profiling) {
   Trace trace("CPU:StartProfiling ART");
   std::lock_guard<std::mutex> lock(profiled_lock_);
@@ -60,6 +60,11 @@ bool ActivityManager::StartProfiling(
     // Run command via actual am.
     std::ostringstream parameters;
     parameters << "profile start ";
+    if (DeviceInfo::feature_level() >= DeviceInfo::UPSIDE_DOWN_CAKE &&
+        !dual_clock) {
+      parameters << "--clock-type wall"
+                 << " ";
+    }
     if (profiling_mode == ActivityManager::SAMPLING) {
       // A sample interval in microseconds is required after '--sampling'.
       // Note that '--sampling 0' would direct ART into instrumentation mode.

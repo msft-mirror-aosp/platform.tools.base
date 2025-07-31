@@ -26,7 +26,9 @@ class SimpleManagedDeviceTest {
         .from { simpleGMDProject() }
 
     private val executor: GradleTaskExecutor
-        get() = rule.build.executor.withCustomAndroidSdk(customAndroidSdkRule)
+        get() = rule.build.executor
+            .withCustomAndroidSdk(customAndroidSdkRule)
+            .withEnableInfoLogging(false)
 
     private fun assertTestReportExists() {
         val reportDir = FileUtils.join(

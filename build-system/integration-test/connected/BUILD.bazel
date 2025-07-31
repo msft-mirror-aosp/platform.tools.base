@@ -30,6 +30,7 @@ TEST_DEPS = [
     "//tools/base/build-system/builder-model",
     "//tools/base/build-system/builder-test-api:tools.builder-test-api",
     "//tools/base/build-system/gradle-api",
+    "//tools/base/build-system/gradle-common-api",
     "//tools/base/build-system/gradle-core",
     "//tools/base/build-system/integration-test/framework",
     "//tools/base/build-system/integration-test/framework/src/main/proto",
@@ -784,13 +785,25 @@ gradle_connected_test(
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
     avd = ":avd",
     data = TEST_DATA + [
-        "//tools/adt/idea/utp:addGradleAndroidTestListener",
+        "//tools/adt/idea/utp:resources/utp/addGradleAndroidTestListener.gradle",
     ],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
     shard_count = 2,
     deps = TEST_DEPS + [
         "//tools/base/build-system/integration-test/utp",
+    ],
+)
+
+gradle_connected_test(
+    name = "TestSuiteDeviceTest",
+    srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
+    avd = ":avd",
+    data = TEST_DATA,
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = TEST_MAVEN_REPOS,
+    deps = TEST_DEPS + [
+        "@maven//:org.junit.platform.junit-platform-engine",
     ],
 )
 

@@ -72,6 +72,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
@@ -239,6 +240,14 @@ abstract class R8Task @Inject constructor(
     @get:Input
     @get:Optional
     abstract val partialShrinkingConfig: Property<PartialShrinkingConfig>
+
+    @get:Input
+    @get:Optional
+    abstract val partialShrinkingEnabled: Property<Boolean>
+
+    @get:Input
+    @get:Optional
+    abstract val gradualShrinkingPackages: SetProperty<String>
 
     @get:ServiceReference
     abstract val r8D8ThreadPoolBuildService: Property<R8D8ThreadPoolBuildService>
@@ -592,7 +601,14 @@ abstract class R8Task @Inject constructor(
                 task.resourceShrinkingParams.enabled.setDisallowChanges(false)
             }
 
+            task.partialShrinkingEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
             task.partialShrinkingConfig.setDisallowChanges(creationConfig.getPartialShrinkingConfig())
+
+            if (creationConfig.services.projectOptions[BooleanOption.R8_GRADUAL_API]
+                && creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
+            ) {
+                task.gradualShrinkingPackages.set(creationConfig.optimizationCreationConfig.includePackages)
+            }
             task.packageList.setDisallowChanges(
                 creationConfig.artifacts.get(InternalArtifactType.MERGED_PACKAGES_FOR_R8)
             )
@@ -781,21 +797,23 @@ abstract class R8Task @Inject constructor(
     // Merge creation config included/excluded patterns with package.txt with merged R8 packages
     private fun aggregatePartialShrinkingConfig(): PartialShrinkingConfig? {
         val creationConfig = partialShrinkingConfig.orNull
-        return if (packageList.isPresent) {
-            val packages = loadR8AllowedPackages()
-            val updatedPackages = creationConfig?.includedPatterns?.split(",")?.let {
-                packages + it
-            } ?: packages
-            PartialShrinkingConfig(
+
+        val packages = loadR8AllowedPackages() + (gradualShrinkingPackages.orNull ?: listOf())
+        val includePatterns = creationConfig?.includedPatterns?.split(",") ?: listOf()
+        if (packages.isNotEmpty() || includePatterns.isNotEmpty() || partialShrinkingEnabled.orNull == true) {
+            val updatedPackages = packages + includePatterns
+
+            return PartialShrinkingConfig(
                 updatedPackages.joinToString(","),
                 creationConfig?.excludedPatterns
             )
-        } else creationConfig
+        }
+        return null
     }
 
     private fun loadR8AllowedPackages(): List<String> {
-        val packageFile = packageList.get()
-        return packageFile.asFile.readLines()
+        val packageFile = packageList.orNull
+        return packageFile?.asFile?.readLines() ?: listOf()
     }
 
     companion object {

@@ -34,10 +34,7 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
-import com.android.build.gradle.internal.utils.parseTargetHash
-import com.android.build.gradle.internal.utils.updateIfChanged
 import com.android.build.gradle.internal.utils.validateNamespaceValue
-import com.android.build.gradle.internal.utils.validatePreviewTargetValue
 import com.android.builder.core.LibraryRequest
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.errors.IssueReporter
@@ -151,176 +148,63 @@ abstract class CommonExtensionImpl<
             }
         }
 
+    protected abstract var _compileSdk: CompileSdkVersion?
+
+    private val compileSdkDelegate = CompileSdkDelegate(
+        getCompileSdk = { _compileSdk },
+        setCompileSdk = { _compileSdk = it },
+        issueReporter = dslServices.issueReporter,
+        dslServices = dslServices
+    )
+
     override var compileSdkVersion: String?
-        get() {
-            val version = _compileSdk
-            return CompileSdkVersionImpl(
-                apiLevel = version?.apiLevel,
-                minorApiLevel = version?.minorApiLevel,
-                sdkExtension = version?.sdkExtension,
-                codeName = version?.codeName,
-                addonName = version?.addonName,
-                vendorName = version?.vendorName,
-            ).toHash()
-        }
+        get() = compileSdkDelegate.compileSdkVersion
         set(value) {
-            parseAndSetCompileSdkVersion(value)
+            compileSdkDelegate.compileSdkVersion = value
         }
-
-    private fun parseAndSetCompileSdkVersion(value: String?) {
-        // then set the other values
-        _compileSdk = null
-
-        if (value == null) {
-            return
-        }
-
-        val compileData = parseTargetHash(value)
-
-        if (compileData.isAddon()) {
-            compileSdk {
-                version = addon(
-                    vendor = compileData.vendorName!!,
-                    name = compileData.addonName!!,
-                    version = compileData.apiLevel!!
-                )
-            }
-        } else {
-            if (compileData.codeName != null) {
-                compileSdk {
-                    version = preview(compileData.codeName)
-                }
-            } else {
-                compileData.apiLevel?.let { apiLevel ->
-                    compileSdk {
-                        version = release(apiLevel) {
-                            minorApiLevel = compileData.minorApiLevel
-                            sdkExtension = compileData.sdkExtension
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     override var compileSdk: Int?
-        get() {
-            val isAddonOrPreview = CompileSdkVersionImpl(
-                vendorName = _compileSdk?.vendorName,
-                addonName = _compileSdk?.addonName,
-            ).isAddon() || _compileSdk?.codeName != null
-            return if (!isAddonOrPreview) _compileSdk?.apiLevel else null
-        }
+        get() = compileSdkDelegate.compileSdk
         set(value) {
-            compileSdk { version = value?.let { release(it) } }
+            compileSdkDelegate.compileSdk = value
         }
 
     override var compileSdkExtension: Int?
-        get() = _compileSdk?.sdkExtension
+        get() = compileSdkDelegate.compileSdkExtension
         set(value) {
-            compileSdk {
-                _compileSdk?.apiLevel?.let { apiLevel ->
-                    version = release(apiLevel) {
-                        sdkExtension = value
-                        minorApiLevel = _compileSdk?.minorApiLevel
-                    }
-                }
-            }
+            compileSdkDelegate.compileSdkExtension = value
         }
 
     override var compileSdkPreview: String?
-        get() = _compileSdk?.codeName
+        get() = compileSdkDelegate.compileSdkPreview
         set(value) {
-            if (value == null) {
-                if (_compileSdk?.codeName != null) {
-                    _compileSdk = null
-                }
-                return
-            }
-
-            // then set the values
-            _compileSdk = null
-
-            val previewValue = validatePreviewTargetValue(value)
-            if (previewValue != null) {
-                compileSdk { version = preview(value) }
-            } else {
-                if (value.toIntOrNull() != null) {
-                    dslServices.issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        RuntimeException("Invalid integer value for compileSdkPreview ($value). Use compileSdk instead")
-                    )
-                } else {
-                    val expected = if (value.startsWith("android-")) value.substring(8) else "S"
-                    dslServices.issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        RuntimeException("Invalid value for compileSdkPreview (\"$value\"). Value must be a platform preview name (e.g. \"$expected\")")
-                    )
-                }
-            }
+            compileSdkDelegate.compileSdkPreview = value
         }
 
     override var compileSdkMinor: Int?
-        get() = _compileSdk?.minorApiLevel
+        get() = compileSdkDelegate.compileSdkMinor
         set(value) {
-            _compileSdk?.apiLevel?.let { apiLevel ->
-                compileSdk {
-                    version = release(apiLevel) {
-                        minorApiLevel = value
-                        sdkExtension = version?.sdkExtension
-                    }
-                }
-                if (apiLevel < 36 && _compileSdk?.minorApiLevel != null) {
-                    dslServices.issueReporter.reportError(
-                        IssueReporter.Type.GENERIC,
-                        RuntimeException("Minor versions are only supported for API 36 and above.")
-                    )
-                    compileSdk {
-                        version = release(apiLevel) {
-                            minorApiLevel = null
-                            sdkExtension = version?.sdkExtension
-                        }
-                    }
-                }
-            }
+            compileSdkDelegate.compileSdkMinor = value
         }
 
     override fun compileSdkAddon(vendor: String, name: String, version: Int) {
-        compileSdk { this.version = addon(vendor, name, version) }
+       compileSdkDelegate.compileSdkAddon(vendor, name, version)
     }
 
-    protected abstract var _compileSdk: CompileSdkVersion?
-
     override fun compileSdk(action: CompileSdkSpec.() -> Unit) {
-        createCompileSdkSpec().also {
-            action.invoke(it)
-            updateIfChanged(_compileSdk, it.version) {
-                _compileSdk = it
-            }
-        }
+        compileSdkDelegate.compileSdk(action)
     }
 
     override fun compileSdk(action: Action<CompileSdkSpec>) {
-        createCompileSdkSpec().also {
-            action.execute(it)
-            updateIfChanged(_compileSdk, it.version) {
-                _compileSdk = it
-            }
-        }
-    }
-
-    private fun createCompileSdkSpec(): CompileSdkSpecImpl {
-        return dslServices.newDecoratedInstance(CompileSdkSpecImpl::class.java, dslServices).also {
-            it.version = _compileSdk
-        }
+        compileSdkDelegate.compileSdk(action)
     }
 
     override fun compileSdkVersion(apiLevel: Int) {
-        compileSdk { version = release(apiLevel) }
+        compileSdkDelegate.compileSdkVersion(apiLevel)
     }
 
     override fun compileSdkVersion(version: String) {
-        parseAndSetCompileSdkVersion(version)
+        compileSdkDelegate.compileSdkVersion(version)
     }
 
     override val composeOptions: ComposeOptionsImpl =

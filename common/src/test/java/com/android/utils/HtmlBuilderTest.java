@@ -44,6 +44,13 @@ public class HtmlBuilderTest extends TestCase {
         assertEquals("<U>This is underlined.</U>", builder.getHtml());
     }
 
+
+    public void testAddBulletedItem() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.addBulletedItem("This is bulleted item.");
+        assertEquals("<li>This is bulleted item.</li>", builder.getHtml());
+    }
+
     public void testAddItalic() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addItalic("This is italic");
@@ -91,8 +98,8 @@ public class HtmlBuilderTest extends TestCase {
     public void testAddTable() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.beginTable().addTableRow(true, "Header1", "Header2")
-          .addTableRow("Data1", "Data2")
-          .endTable();
+                .addTableRow("Data1", "Data2")
+                .endTable();
         assertEquals(
                 "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Data1</td><td>Data2</td></tr></table>",
                 builder.getHtml());
@@ -102,8 +109,8 @@ public class HtmlBuilderTest extends TestCase {
         HtmlBuilder builder = new HtmlBuilder();
         builder.beginTable("valign=\"top\"").addTableRow("Data1", "Data2").endTable();
         assertEquals(
-          "<table><tr><td valign=\"top\">Data1</td><td valign=\"top\">Data2</td></tr></table>",
-          builder.getHtml());
+                "<table><tr><td valign=\"top\">Data1</td><td valign=\"top\">Data2</td></tr></table>",
+                builder.getHtml());
     }
 
     public void testAddDiv() {
@@ -115,7 +122,7 @@ public class HtmlBuilderTest extends TestCase {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<div style=\"padding: 10px; text-color: gray\">Hello</div>",
                      builder.beginDiv("padding: 10px; text-color: gray").add("Hello").endDiv()
-                       .getHtml());
+                             .getHtml());
     }
 
     public void testAddParagraph() {
@@ -143,13 +150,13 @@ public class HtmlBuilderTest extends TestCase {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<span style=\"padding: 10px; text-color: gray\">Hello</span>",
                      builder.beginSpan("padding: 10px; text-color: gray").add("Hello").endSpan()
-                       .getHtml());
+                             .getHtml());
     }
 
     public void testColoredText() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<FONT color=\"#804020\">This is a test</FONT>",
-                builder.coloredText(new Color(128, 64, 32), "This is a test").getHtml());
+                     builder.coloredText(new Color(128, 64, 32), "This is a test").getHtml());
     }
 
     public void testAddImage() throws IOException {
@@ -191,8 +198,8 @@ public class HtmlBuilderTest extends TestCase {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addHeading("Welcome to Android Studio!", "black");
         assertEquals(
-          "<font style=\"font-weight:bold; color:black;\">Welcome to Android Studio!</font>",
-          builder.getHtml());
+                "<font style=\"font-weight:bold; color:black;\">Welcome to Android Studio!</font>",
+                builder.getHtml());
     }
 
     public void testTable() {
@@ -215,8 +222,8 @@ public class HtmlBuilderTest extends TestCase {
                     .endTable();
             assertEquals(
                     "<table><tr><td align=\"vtop\">Header1</td><td"
-                        + " align=\"vtop\">Header2</td></tr><tr><td align=\"vtop\">Data1</td><td"
-                        + " align=\"vtop\">Data2</td></tr></table>",
+                    + " align=\"vtop\">Header2</td></tr><tr><td align=\"vtop\">Data1</td><td"
+                    + " align=\"vtop\">Data2</td></tr></table>",
                     builder.getHtml());
         }
 
@@ -228,8 +235,8 @@ public class HtmlBuilderTest extends TestCase {
                     .endTable();
             assertEquals(
                     "<table style=\"white-space: nowrap;\"><tr><td align=\"vtop\">Header1</td><td"
-                        + " align=\"vtop\">Header2</td></tr><tr><td align=\"vtop\">Data1</td><td"
-                        + " align=\"vtop\">Data2</td></tr></table>",
+                    + " align=\"vtop\">Header2</td></tr><tr><td align=\"vtop\">Data1</td><td"
+                    + " align=\"vtop\">Data2</td></tr></table>",
                     builder.getHtml());
         }
     }

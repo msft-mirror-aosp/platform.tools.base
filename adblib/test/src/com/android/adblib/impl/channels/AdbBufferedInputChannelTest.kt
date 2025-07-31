@@ -32,6 +32,7 @@ import org.junit.Test
 import org.junit.rules.ExpectedException
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
@@ -51,7 +52,24 @@ class AdbBufferedInputChannelTest {
     }
 
     @Test
-    fun readConsumesAsManyBytesAsPossible(): Unit = runBlockingWithTimeout {
+    fun readShouldReadBufferSizeFromUnderlyingChannel(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val input = TestingInputChannel(length = 1_000, throwOnEOF = false)
+        val bufferedChannel = channelFactory.createBufferedInputChannel(input, 1_000)
+
+        // Act
+        val byteCount = bufferedChannel.read(ByteBuffer.allocate(10))
+
+        // Assert
+        Assert.assertEquals(10, byteCount)
+        Assert.assertEquals(1000, input.offset)
+        Assert.assertEquals(1, input.readCounter)
+    }
+
+    @Test
+    fun readShouldConsumeAsManyBytesAsPossibleFromTheUnderlyingChannel(): Unit = runBlockingWithTimeout {
         // Prepare
         val session = registerCloseable(TestingAdbSession())
         val channelFactory = AdbChannelFactoryImpl(session)
@@ -71,6 +89,7 @@ class AdbBufferedInputChannelTest {
             2,
             input.readCounter
         )
+        Assert.assertEquals(1000, input.offset)
         Assert.assertEquals(11, counts.size)
         repeat(counts.size - 1) { index ->
             Assert.assertEquals(100, counts[index])
@@ -79,7 +98,29 @@ class AdbBufferedInputChannelTest {
     }
 
     @Test
-    fun readWorksWithManyReads(): Unit = runBlockingWithTimeout {
+    fun readWithLargeBufferSkipsBuffering(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val input = TestingInputChannel(length = 1_000, throwOnEOF = false)
+        val bufferedChannel = channelFactory.createBufferedInputChannel(input, 100)
+
+        // Act
+        val count1 = bufferedChannel.read(ByteBuffer.allocate(10))
+        val count2 = bufferedChannel.read(ByteBuffer.allocate(90))
+        val count3 = bufferedChannel.read(ByteBuffer.allocate(200))
+
+        // Assert
+        Assert.assertEquals(10, count1)
+        Assert.assertEquals(90, count2)
+        Assert.assertEquals(200, count3)
+        Assert.assertEquals("There should be only 2 reads on the channel:" +
+                                    "one read of 100 bytes (buffer size) then one read of " +
+                                    "200 bytes (the large read)", 2, input.readCounter)
+    }
+
+    @Test
+    fun readShouldWorkWithManyReads(): Unit = runBlockingWithTimeout {
         // Prepare
         val session = registerCloseable(TestingAdbSession())
         val channelFactory = AdbChannelFactoryImpl(session)
@@ -97,30 +138,30 @@ class AdbBufferedInputChannelTest {
     }
 
     @Test
-    fun exceptionFromInputChannelIsNotReportedToReaderIfReaderStopsReading(): Unit =
-        runBlockingWithTimeout {
-            // Prepare
-            val session = registerCloseable(TestingAdbSession())
-            val channelFactory = AdbChannelFactoryImpl(session)
-            val input = TestingInputChannel(length = 1_000, throwOnEOF = true)
-            val bufferedChannel = channelFactory.createBufferedInputChannel(input, 1_000)
+    fun readShouldNotMakeBufferedChannelReadTooMuchFromUnderlyingChannel(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val input = TestingInputChannel(length = 1_000, throwOnEOF = true)
+        val bufferedChannel = channelFactory.createBufferedInputChannel(input, 1_000)
 
-            // Act
-            val counts = (0 until 10)
-                .map {
-                    val buffer = ByteBuffer.allocate(100)
-                    bufferedChannel.read(buffer)
-                }.toList()
+        // Act: If buffered channel were to read more than 1_000 bytes, an IOException would be
+        // throws from the underlying `TestingInputChannel.read`.
+        val counts = (0 until 10)
+            .map {
+                val buffer = ByteBuffer.allocate(100)
+                bufferedChannel.read(buffer)
+            }.toList()
 
-            // Assert
-            Assert.assertEquals(10, counts.size)
-            repeat(counts.size) { index ->
-                Assert.assertEquals(100, counts[index])
-            }
+        // Assert
+        Assert.assertEquals(10, counts.size)
+        repeat(counts.size) { index ->
+            Assert.assertEquals(100, counts[index])
         }
+    }
 
     @Test
-    fun exceptionFromInputChannelIsReportedToReader(): Unit = runBlockingWithTimeout {
+    fun readShouldThrowIfUnderlyingChannelThrows(): Unit = runBlockingWithTimeout {
         // Prepare
         val session = registerCloseable(TestingAdbSession())
         val channelFactory = AdbChannelFactoryImpl(session)
@@ -128,19 +169,64 @@ class AdbBufferedInputChannelTest {
         val bufferedChannel = channelFactory.createBufferedInputChannel(input, 1_000)
 
         // Act
-        val buffer = ByteBuffer.allocate(100)
         repeat(10) {
-            buffer.clear()
-            bufferedChannel.read(buffer)
+            bufferedChannel.read(ByteBuffer.allocate(100))
         }
 
         exceptionRule.expect(IOException::class.java)
         exceptionRule.expectMessage("My input channel exception")
-        buffer.clear()
-        bufferedChannel.read(buffer)
+        bufferedChannel.read(ByteBuffer.allocate(100))
 
         // Assert
         Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun readThrowsAfterClose(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val input = TestingInputChannel(length = 1_000, throwOnEOF = false)
+        val bufferedChannel = channelFactory.createBufferedInputChannel(input, 16)
+
+        // Act
+        bufferedChannel.close()
+
+        // Assert
+        exceptionRule.expect(ClosedChannelException::class.java)
+        bufferedChannel.read(ByteBuffer.allocate(10))
+    }
+
+    @Test
+    fun readExactlyShouldReadBufferSizeFromUnderlyingChannel(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val input = TestingInputChannel(length = 1_000, throwOnEOF = false)
+        val bufferedChannel = channelFactory.createBufferedInputChannel(input, 1_000)
+
+        // Act
+        bufferedChannel.readExactly(ByteBuffer.allocate(1_000))
+
+        // Assert
+        Assert.assertEquals(1000, input.offset)
+        Assert.assertEquals(1, input.readCounter)
+    }
+
+    @Test
+    fun readExactlyThrowsAfterClose(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val input = TestingInputChannel(length = 1_000, throwOnEOF = false)
+        val bufferedChannel = channelFactory.createBufferedInputChannel(input, 16)
+
+        // Act
+        bufferedChannel.close()
+
+        // Assert
+        exceptionRule.expect(ClosedChannelException::class.java)
+        bufferedChannel.readExactly(ByteBuffer.allocate(10))
     }
 
     @Test
@@ -190,24 +276,34 @@ class AdbBufferedInputChannelTest {
     }
 
     @Test
-    fun canControlCloseInputChannelReadBehavior(): Unit = runBlockingWithTimeout {
+    fun closeInputChannelIsTrueByDefault(): Unit = runBlockingWithTimeout {
         // Prepare
         val session = registerCloseable(TestingAdbSession())
         val channelFactory = AdbChannelFactoryImpl(session)
-        val input1 = TestingInputChannel(length = 1_000, readDelay = Duration.ofSeconds(10))
-        val input2 = TestingInputChannel(length = 1_000, readDelay = Duration.ofSeconds(10))
-        val bufferedChannel1 = channelFactory.createBufferedInputChannel(input1, 1_000)
-        val bufferedChannel2 =
-            channelFactory.createBufferedInputChannel(input1, 1_000, closeInputChannel = false)
+        val input = TestingInputChannel(length = 1_000, readDelay = Duration.ofSeconds(10))
+        val bufferedChannel = channelFactory.createBufferedInputChannel(input, 1_000)
 
         // Act
-        bufferedChannel1.close()
-        bufferedChannel2.close()
+        bufferedChannel.close()
 
         // Assert
-        // The default behavior is for inputChannel to be closed when BufferedInputChannel is closed
-        Assert.assertTrue(input1.closed)
-        Assert.assertFalse(input2.closed)
+        Assert.assertTrue(input.closed)
+    }
+
+    @Test
+    fun closeInputChannelCanBeOverriddenToFalse(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val session = registerCloseable(TestingAdbSession())
+        val channelFactory = AdbChannelFactoryImpl(session)
+        val input = TestingInputChannel(length = 1_000, readDelay = Duration.ofSeconds(10))
+        val bufferedChannel =
+            channelFactory.createBufferedInputChannel(input, 1_000, closeInputChannel = false)
+
+        // Act
+        bufferedChannel.close()
+
+        // Assert
+        Assert.assertFalse(input.closed)
     }
 
     private class TestingInputChannel(
