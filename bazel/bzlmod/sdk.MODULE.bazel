@@ -81,6 +81,14 @@ http_archive(
     url = "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-35_r06.zip",
 )
 
+http_archive(
+    name = "system_image_android-35PlayStore_default_x86_64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "1fb5e5fd1c4b1b54bfe5558f6f361d6c10e13786acff630153e0542df356dfe6",
+    strip_prefix = "x86_64",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis_playstore/x86_64-35_r09.zip",
+)
+
 # Sdk components when needed by Gradle Managed Devices
 http_file(
     name = "emulator_zip",
