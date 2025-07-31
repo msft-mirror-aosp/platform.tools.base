@@ -342,7 +342,6 @@ abstract class RepoManager {
       return RepoManagerImpl(
           localPath,
           null,
-          null,
           schemaModules,
           fallbackLocalRepoLoader,
           fallbackRemoteRepoLoader,

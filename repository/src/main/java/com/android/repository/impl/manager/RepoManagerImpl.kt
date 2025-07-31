@@ -52,24 +52,44 @@ import org.w3c.dom.ls.LSResourceResolver
  * Main implementation of [RepoManager]. Loads local and remote [RepoPackage]s synchronously and
  * asynchronously into a [RepositoryPackages] instance from the given local path and from the
  * registered [RepositorySourceProvider]s, using the registered [SchemaModule]s.
+ *
+ * @property localPath the path under which to look for installed packages.
+ * @property localRepoLoader the implementation of local package loading
+ * @property fallbackRemoteRepoLoader the [FallbackRemoteRepoLoader] to use if the normal
+ *   [RemoteRepoLoaderImpl] can't understand a downloaded repository xml file
  */
 class RepoManagerImpl
 internal constructor(
-  /** The path under which to look for installed packages. */
   override val localPath: Path?,
-  customLocalRepoLoader: LocalRepoLoader?,
+  val localRepoLoader: LocalRepoLoader?,
   remoteFactory: RemoteRepoLoaderFactory?,
   additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
-  /** The [FallbackLocalRepoLoader] to use when loading local packages. */
-  private val fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null,
-  /**
-   * The [FallbackRemoteRepoLoader] to use if the normal [RemoteRepoLoaderImpl] can't understand a
-   * downloaded repository xml file.
-   */
   private val fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null,
 ) : RepoManager() {
 
-  @TestOnly constructor(localPath: Path?) : this(localPath, null, null, emptyList())
+  /** Constructor for production use, using the standard LocalRepoLoader implementation. */
+  constructor(
+    localPath: Path?,
+    remoteFactory: RemoteRepoLoaderFactory?,
+    additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
+    fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null,
+    fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null,
+  ) : this(
+    localPath = localPath,
+    localRepoLoader =
+      localPath?.let {
+        LocalRepoLoaderImpl(
+          it,
+          setOf(commonModule, genericModule) + additionalSchemaModules,
+          fallbackLocalRepoLoader,
+        )
+      },
+    remoteFactory = remoteFactory,
+    additionalSchemaModules = additionalSchemaModules,
+    fallbackRemoteRepoLoader = fallbackRemoteRepoLoader,
+  )
+
+  @TestOnly constructor(localPath: Path?) : this(localPath, null)
 
   /** The registered [SchemaModule]s. */
   override val schemaModules: Set<SchemaModule<*>> =
@@ -110,9 +130,6 @@ internal constructor(
 
   /** Install/uninstall operations that are currently running. */
   private val inProgressInstalls = mutableMapOf<RepoPackage, PackageOperation>()
-
-  /** Loads packages that are installed locally. */
-  private val localRepoLoader: LocalRepoLoader? = customLocalRepoLoader ?: createLocalRepoLoader()
 
   /** A facility for creating [RemoteRepoLoader]s. By default, [RemoteRepoLoaderFactoryImpl]. */
   private val remoteRepoLoaderFactory: RemoteRepoLoaderFactory =
@@ -406,7 +423,6 @@ internal constructor(
           (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() ||
             localRepoLoader.needsUpdate(lastLocalRefreshMs, false))
       ) {
-        fallbackLocalRepoLoader?.refresh()
         indicator.setText("Loading local repository...")
         val newLocals = localRepoLoader.getPackages(indicator)
         val fireListeners = newLocals != packages.localPackages
@@ -485,9 +501,6 @@ internal constructor(
 
     fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader
   }
-
-  private fun createLocalRepoLoader(): LocalRepoLoader? =
-    localPath?.let { LocalRepoLoaderImpl(it, schemaModules, fallbackLocalRepoLoader) }
 
   private inner class RemoteRepoLoaderFactoryImpl : RemoteRepoLoaderFactory {
 

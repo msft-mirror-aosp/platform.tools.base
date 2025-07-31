@@ -118,6 +118,9 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
     @Override
     @NonNull
     public Map<String, LocalPackage> getPackages(@NonNull ProgressIndicator progress) {
+        if (mFallback != null) {
+            mFallback.refresh();
+        }
         Set<Path> possiblePackageDirs = collectPackages();
         Map<String, LocalPackage> packages = parsePackages(possiblePackageDirs, progress);
         if (!packages.isEmpty()) {
