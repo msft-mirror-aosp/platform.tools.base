@@ -33,12 +33,12 @@ function copy_bazel_artifacts() {(
   mkdir -p ${artifacts_dir}
   local -r bin_dir="$("${BAZEL}" info ${CONFIG_OPTIONS} bazel-bin)"
 
-  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.linux.zip ${artifacts_dir}
-  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.win.zip ${artifacts_dir}
-  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.mac.zip ${artifacts_dir}
-  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.mac_arm.zip ${artifacts_dir}
-  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio_build_manifest.textproto ${artifacts_dir}/android-studio_build_manifest.textproto
-  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio_update_message.html ${artifacts_dir}/android-studio_update_message.html
+  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.nightly.linux.zip ${artifacts_dir}/android-studio.linux.zip
+  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.nightly.win.zip ${artifacts_dir}/android-studio.win.zip
+  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.nightly.mac.zip ${artifacts_dir}/android-studio.mac.zip
+  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.nightly.mac_arm.zip ${artifacts_dir}/android-studio.mac_arm.zip
+  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.nightly_build_manifest.textproto ${artifacts_dir}/android-studio_build_manifest.textproto
+  cp -a ${bin_dir}/tools/adt/idea/studio/android-studio.nightly_update_message.html ${artifacts_dir}/android-studio_update_message.html
   cp -a ${bin_dir}/tools/adt/idea/studio/updater_deploy.jar ${artifacts_dir}/android-studio-updater.jar
   cp -a ${bin_dir}/tools/adt/idea/native/installer/android-studio-bundle-data.zip ${artifacts_dir}
   cp -a ${bin_dir}/tools/vendor/google/adrt/android-studio-cros-skeleton.zip ${artifacts_dir}
@@ -67,14 +67,13 @@ function run_bazel() {
     --build_metadata=ab_target="${target_name}" \
     --tool_tag=${SCRIPT_NAME} \
     --embed_label="${AS_BUILD_NUMBER}" \
-    --//tools/adt/idea/studio:create-nightly-build \
     -- \
-    //tools/adt/idea/studio:android-studio.linux.zip \
-    //tools/adt/idea/studio:android-studio.mac.zip \
-    //tools/adt/idea/studio:android-studio.mac_arm.zip \
-    //tools/adt/idea/studio:android-studio.win.zip \
-    //tools/adt/idea/studio:android-studio_build_manifest.textproto \
-    //tools/adt/idea/studio:android-studio_update_message.html \
+    //tools/adt/idea/studio:android-studio.nightly.linux.zip \
+    //tools/adt/idea/studio:android-studio.nightly.mac.zip \
+    //tools/adt/idea/studio:android-studio.nightly.mac_arm.zip \
+    //tools/adt/idea/studio:android-studio.nightly.win.zip \
+    //tools/adt/idea/studio:android-studio.nightly_build_manifest.textproto \
+    //tools/adt/idea/studio:android-studio.nightly_update_message.html \
     //tools/adt/idea/native/installer:android-studio-bundle-data \
     //tools/vendor/google/adrt:android-studio-cros-skeleton.zip \
     //tools/vendor/google/adrt:android-studio-nsis-prebuilt.zip \
