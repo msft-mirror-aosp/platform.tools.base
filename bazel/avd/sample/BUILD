@@ -18,3 +18,20 @@ java_test(
         "@maven//:junit.junit",
     ],
 )
+
+java_test(
+    name = "MultipleEmulatorTest",
+    srcs = ["MultipleEmulatorTest.java"],
+    data = [
+        "//prebuilts/studio/sdk:platform-tools",
+        "//tools/base/bazel/avd:default_avd",
+    ],
+    tags = [
+        "noci:studio-win",
+    ],
+    test_class = "MultipleEmulatorTest",
+    deps = [
+        "//tools/base/bazel/avd:emulator_rule",
+        "@maven//:junit.junit",
+    ],
+)

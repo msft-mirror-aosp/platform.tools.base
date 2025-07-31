@@ -56,9 +56,10 @@ def _avd_impl(ctx):
     # Generates an AVD snapshot by running the AVD's launcher.
     ctx.actions.run(
         inputs = runfiles.files,
-        arguments = [emulator.path, "create-snapshot", "5554"],
+        arguments = ["create-snapshot", "5554"],
         outputs = [snapshot_output],
         executable = launcher,
+        execution_requirements = {"cpu:2": ""},
         progress_message = "Creating AVD snapshot for " + str(ctx.label),
     )
     runfiles = runfiles.merge(ctx.runfiles(files = [snapshot_output]))
@@ -88,14 +89,10 @@ _avd = rule(
     executable = True,
 )
 
-def _avd_macro_impl(name, **kwargs):
+def _avd_macro_impl(name, target_compatible_with, **kwargs):
     _avd(
         name = name,
-        target_compatible_with = select({
-            "@platforms//os:osx": [],
-            "@platforms//os:linux": [],
-            "//conditions:default": ["@platforms//:incompatible"],
-        }),
+        target_compatible_with = target_compatible_with,
         **kwargs
     )
 
@@ -103,6 +100,6 @@ avd = macro(
     implementation = _avd_macro_impl,
     inherit_attrs = _avd,
     attrs = {
-        "target_compatible_with": None,
+        "target_compatible_with": attr.label_list(mandatory = True),
     },
 )

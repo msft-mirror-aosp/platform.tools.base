@@ -20,7 +20,6 @@ def gradle_connected_test(
         data,
         maven_repos,
         avd = "//tools/base/bazel/avd:default_avd",
-        emulator_binary_path = "prebuilts/studio/sdk/linux/emulator/emulator",
         maven_artifacts = [],
         runtime_deps = [],
         tags = [],
@@ -31,7 +30,6 @@ def gradle_connected_test(
         script_path = "$(rootpath %s)" % avd
         jvm_flags = jvm_flags + [
             "-DEMULATOR_SCRIPT_PATH=%s" % script_path,
-            "-DEMULATOR_BINARY_PATH=%s" % emulator_binary_path,
         ]
     if maven_artifacts:
         repo_name = name + ".mavenRepo"

@@ -58,18 +58,21 @@ TEST_DEPS = [
 avd(
     name = "avd_34",
     image = "@system_image_android-34_aosp_atd_x86_64//:x86_64-android-34AospAtd-images",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 # For tests that needs to be updated in order to support API 33 devices.
 avd(
     name = "avd_32",
     image = "@system_image_android-32_aosp_atd_x86_64//:x86_64-android-32AospAtd-images",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 # For tests that require 32-bit x86 support.
 avd(
     name = "avd_default_30",
     image = "@system_image_android-30_default_x86_64//:x86_64-android-30-images",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 #keep sorted

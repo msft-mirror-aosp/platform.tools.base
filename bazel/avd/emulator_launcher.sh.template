@@ -1,41 +1,98 @@
 #!/bin/bash
 
-# This template is used to generate a script that can be used to launch or kill
-# an emulator:
-#   <target_name> [kill | create-snapshot] port
-# Where port is the ADB port to open and kill is supplied to kill the emulator
-# on the supplied port.
+# =================================================================================
+# Emulator Snapshot and Launch Script
+#
+# This script is a self-contained utility to create emulator snapshots and to
+# launch emulators from those snapshots for fast startup. It's designed for Bazel test targets.
+#
+# It operates in three modes:
+#
+# 1. Create Snapshot:
+#    create-snapshot <port>
+#    - Creates an AVD, boots it, and saves a snapshot for future use.
+#
+# 2. Launch from Snapshot:
+#    <port>
+#    - Launches a read-only emulator instance from a pre-existing snapshot.
+#      The port number doesn't have to match the one used for snapshot creation.
+#
+# 3. Kill Emulator:
+#    kill <port>
+#    - Kills the running emulator instance on the specified port.
+#
+# Note: The `%...%` values are placeholders that are replaced by a build
+# system (e.g., Bazel) when this script is generated.
+# =================================================================================
 
-# The path to the source.properties inside the system image.
-if [ -f "%source_properties_short_path%" ]; then
-    source_properties_path="%source_properties_short_path%"
-elif [ -f "%source_properties_path%" ]; then
-    source_properties_path="%source_properties_path%"
+# --- Argument Parsing ---
+
+if [ "$#" -eq 0 ] || [ "$#" -gt 2 ]; then
+    echo "Usage: $0 <port>                (to launch)" >&2
+    echo "   or: $0 create-snapshot <port> (to create a snapshot)" >&2
+    echo "   or: $0 kill <port>              (to kill an emulator)" >&2
+    exit 1
+fi
+
+# Default to 'launch' mode if only one argument is given.
+if [ "$1" = "create-snapshot" ] || [ "$1" = "kill" ]; then
+  readonly mode="$1"
+  readonly port="$2"
 else
-  echo "No system image directory found"
+  readonly mode="launch"
+  readonly port="$1"
+fi
+
+# Validate that port is a number
+if ! [[ "$port" =~ ^[0-9]+$ ]]; then
+    echo "Error: Invalid or missing port number '$port'." >&2
+    exit 1
+fi
+
+# --- System Image and Path Configuration ---
+
+# Locate the source.properties file for the system image.
+# The build system provides two possible paths.
+if [ -f "%source_properties_short_path%" ]; then
+  source_properties_path="%source_properties_short_path%"
+elif [ -f "%source_properties_path%" ]; then
+  source_properties_path="%source_properties_path%"
+else
+  echo "Error: System image's source.properties file not found." >&2
   exit 1
 fi
 
 emulator_path="%emulator_path%"
 
+# The target directory where the snapshot will be stored or read from.
 snapshot_dir_path="%snapshot_dir_path%"
 snapshot_dir_short_path="%snapshot_dir_short_path%"
 
-# Boot time might vary depending on API level. The value below was tested
-# with API level 33 (TiramisuPrivacySandbox). 200 is default unless the
-# variable is set.
-emulator_boot_timeout=${EMULATOR_BOOT_TIMEOUT:-200}
-echo "timeout is $emulator_boot_timeout"
 
+# --- Environment and Timeout Setup ---
+
+# Set the emulator boot timeout. Default is 200s, but can be overridden.
+# When launching from a snapshot, this value is reduced significantly.
+emulator_boot_timeout=${EMULATOR_BOOT_TIMEOUT:-200}
+echo "Initial emulator boot timeout is $emulator_boot_timeout seconds."
+
+# --- Timeouts for wait loops ---
+readonly kill_wait_timeout=60       # 1 minute to wait for `kill` command
+readonly lock_wait_timeout=60       # 1 minute to wait for AVD initialization lock
+readonly snapshot_save_timeout=120  # 2 minutes to wait for snapshot to save
+
+# Determine the host operating system to locate the correct SDK tools.
 if [ "$(uname)" = "Darwin" ]; then
   OS_DIR_NAME=darwin
 elif [ "$(uname)" = "Linux" ]; then
   OS_DIR_NAME=linux
 else
-  OS_DIR_NAME=windows
+  echo "Error: Windows is not supported."
+  exit 1
 fi
 
-# Set environment variables.
+# Set up an isolated Android environment to avoid conflicts with the user's
+# local setup. All paths are relative to the current working directory.
 export HOME=$(pwd)
 export ANDROID_PREFS_ROOT=$HOME
 export ANDROID_HOME=$HOME/prebuilts/studio/sdk/$OS_DIR_NAME
@@ -43,70 +100,111 @@ export ANDROID_USER_HOME=$HOME/.android
 export ANDROID_EMULATOR_HOME=$ANDROID_USER_HOME
 export ANDROID_AVD_HOME=$ANDROID_EMULATOR_HOME/avd
 
-# Relevant binaries.
+# --- Binary Paths ---
 emulator="$emulator_path"
-adb=prebuilts/studio/sdk/$OS_DIR_NAME/platform-tools/adb
+adb="prebuilts/studio/sdk/$OS_DIR_NAME/platform-tools/adb"
 
 additional_emulator_args=()
 
-# Kill the emulator if requested. This is needed to kill the emulator for
-# local development.
-if [ "$2" = "kill" ]; then
-  port=$3
-  echo "Killing emulator-$port"
-  $adb -s emulator-$port emu kill 2> /dev/null
 
-  # Wait for the emulator to disconnect.
+# --- Command Handling: Kill ---
+
+# Handle the 'kill' command to terminate a running emulator.
+if [ "$mode" = "kill" ]; then
+  echo "Killing emulator on port $port (emulator-$port)..."
+  $adb -s "emulator-$port" emu kill &>/dev/null
+
+  # Wait for the emulator to fully disconnect from ADB.
+  echo "Waiting for emulator-$port to go offline..."
+  kill_start_time=$SECONDS
   while true; do
-    # Update adb to make sure it knows the emulator is killed.
-    $adb reconnect 2>&1
-    output=$($adb -s emulator-$port get-state 2> /dev/null)
+    # `reconnect` ensures ADB's device list is up-to-date.
+    $adb reconnect &>/dev/null
+    # Check the device state. An empty output means the device is offline.
+    output=$($adb -s "emulator-$port" get-state 2>/dev/null)
     if [ -z "$output" ]; then
+      echo "Emulator emulator-$port is offline."
       break
     fi
-    echo "Emulator state=$output"
+
+    if [ $((SECONDS - kill_start_time)) -gt "$kill_wait_timeout" ]; then
+        echo "Error: Timed out after $kill_wait_timeout seconds waiting for emulator-$port to go offline." >&2
+        exit 1
+    fi
+
+    echo "Emulator state is still '$output'. Waiting..."
     sleep 1
   done
   exit $?
 fi
 
-# Clear emulator files.
-rm -rf .android 2> /dev/null
-mkdir .android 2> /dev/null
 
-# Generate keys to be injected into emulator to allow authorization for user builds.
-$adb keygen $ANDROID_EMULATOR_HOME/adbkey
+# --- AVD and ADB Setup ---
 
-# Read system image properties.
-api_level="$(cat $source_properties_path | sed -rn 's/AndroidVersion.ApiLevel=(.*)/\1/p')"
-abi_type="$(cat $source_properties_path | sed -rn 's/SystemImage.Abi=(.*)/\1/p')"
-if [ -z "$api_level" ]; then
-  echo "No API level found"
-  exit 1
-fi
-if [ -z "$abi_type" ]; then
-  echo "No ABI type found"
-  exit 1
+# Create the .android directory if it's missing.
+if [ ! -d "$ANDROID_USER_HOME" ]; then
+  echo "Creating isolated Android user directory at $ANDROID_USER_HOME."
+  mkdir -p "$ANDROID_USER_HOME"
 fi
 
-if [ "$abi_type" = "arm64-v8a" ]; then
-    # On arm64 emulator, hw.cpu.arch is different from abi.type.
+# Generate an ADB key if one doesn't exist. This key is injected into the
+# emulator to authorize the ADB connection for user/debug builds.
+if [ ! -f "$ANDROID_EMULATOR_HOME/adbkey" ]; then
+  echo "ADB key not found. Generating new key at $ANDROID_EMULATOR_HOME/adbkey."
+  $adb keygen "$ANDROID_EMULATOR_HOME/adbkey"
+fi
+
+# --- Command Handling: Create Snapshot vs. Launch ---
+
+if [ "$mode" = "create-snapshot" ]; then
+  # --- Mode: Create Snapshot ---
+  echo "Starting snapshot creation process for target dir: $(pwd)/$snapshot_dir_path"
+
+  additional_emulator_args+=("-no-snapshot-load" "-verbose" "-show-kernel")
+
+  # Read API level and ABI type from the system image's source.properties file.
+  echo "Reading properties from $source_properties_path..."
+  if [ "$(uname)" = "Darwin" ]; then
+    api_level="$(sed -En 's/AndroidVersion.ApiLevel=(.*)/\1/p' "$source_properties_path")"
+    abi_type="$(sed -En 's/SystemImage.Abi=(.*)/\1/p' "$source_properties_path")"
+  else
+    api_level="$(sed -rn 's/AndroidVersion.ApiLevel=(.*)/\1/p' "$source_properties_path")"
+    abi_type="$(sed -rn 's/SystemImage.Abi=(.*)/\1/p' "$source_properties_path")"
+  fi
+
+  if [ -z "$api_level" ]; then
+    echo "Error: Could not parse API level from source.properties." >&2
+    exit 1
+  fi
+  if [ -z "$abi_type" ]; then
+    echo "Error: Could not parse ABI type from source.properties." >&2
+    exit 1
+  fi
+  echo "Found API level: $api_level, ABI type: $abi_type"
+
+  # The emulator's `hw.cpu.arch` property sometimes differs from the ABI type.
+  # Adjust for arm64.
+  if [ "$abi_type" = "arm64-v8a" ]; then
     hw_cpu_arch="arm64"
-else
+  else
     hw_cpu_arch="$abi_type"
-fi
+  fi
 
-# Create an AVD named "emu" with hardware properties from pixel.
-echo "Creating AVD with API level $api_level and ABI type $abi_type"
-system_image_dir=$(pwd)/$(dirname "$source_properties_path")
-mkdir -p $ANDROID_AVD_HOME/emu.avd
-cat > $ANDROID_AVD_HOME/emu.ini << EOF
+  # Create an AVD named "emu" using properties for a generic Pixel device.
+  echo "Creating AVD 'emu' with API $api_level ($abi_type)..."
+  system_image_dir=$(pwd)/$(dirname "$source_properties_path")
+  mkdir -p "$ANDROID_AVD_HOME/emu.avd"
+
+  # Create the main AVD configuration file (emu.ini).
+  cat >"$ANDROID_AVD_HOME/emu.ini" <<EOF
 avd.ini.encoding=UTF-8
 path=$ANDROID_AVD_HOME/emu.avd
 path.rel=avd/emu.avd
 target=android-$api_level
 EOF
-cat > $ANDROID_AVD_HOME/emu.avd/config.ini << EOF
+
+  # Create the detailed hardware configuration file (config.ini).
+  cat >"$ANDROID_AVD_HOME/emu.avd/config.ini" <<EOF
 PlayStore.enabled=false
 abi.type=$abi_type
 avd.ini.encoding=UTF-8
@@ -129,87 +227,207 @@ hw.sensors.proximity=yes
 hw.trackBall=no
 image.sysdir.1=$system_image_dir
 EOF
-
-if [ "$2" = "create-snapshot" ]; then
-  port=$3
-  echo "Create snapshot image to $(pwd)/$snapshot_dir_path"
 else
-  port=$2
+  # --- Mode: Launch from Snapshot ---
+  # Add emulator flags for running from a read-only snapshot.
   additional_emulator_args+=("-read-only" "-no-snapshot-save" "-force-snapshot-load")
 
-  # Copy snapshot image if exists.
-  if [ -d "$snapshot_dir_short_path" ]; then
-      echo "Copying snapshot to $ANDROID_AVD_HOME/emu.avd"
-      rm -r "$ANDROID_AVD_HOME/emu.avd"
+  # Verify that the snapshot directory exists before proceeding.
+  if [ ! -d "$snapshot_dir_short_path" ]; then
+    echo "Error: Snapshot not found at '$snapshot_dir_short_path'." >&2
+    echo "Please run this script with the 'create-snapshot' command first." >&2
+    exit 1
+  fi
+
+  # --- Atomically Copy Snapshot ---
+  # First, ensure the parent AVD directory exists.
+  mkdir -p "$ANDROID_AVD_HOME"
+
+  # This prevents race conditions when multiple tests launch emulators concurrently.
+  lock_dir="$ANDROID_AVD_HOME/emu.avd.initialization.lock"
+
+  # The trap ensures the lock directory is removed when the script exits,
+  # for any reason (success, failure, or interrupt). This prevents stale locks.
+  trap 'rmdir "$lock_dir" 2>/dev/null' EXIT
+
+  if mkdir "$lock_dir" 2>/dev/null; then
+    # --- LOCK ACQUIRED ---
+    # This process is the first one here. It will perform the copy.
+    if [[ ! -d "$ANDROID_AVD_HOME/emu.avd" ]]; then
+      echo "Copying snapshot to $ANDROID_AVD_HOME/emu.avd..."
+
       cp -RL "$snapshot_dir_short_path/emu.avd" "$ANDROID_AVD_HOME/emu.avd"
       chmod -R +w "$ANDROID_AVD_HOME/emu.avd"
-      grep -rl "__PLACEHOLDER_EXTERNAL__" "$ANDROID_AVD_HOME/emu.avd" | xargs sed -i "s#__PLACEHOLDER_EXTERNAL__#$HOME/..#g"
-      grep -rl "__PLACEHOLDER_HOME__" "$ANDROID_AVD_HOME/emu.avd" | xargs sed -i "s#__PLACEHOLDER_HOME__#$HOME#g"
+
+      # The snapshot contains absolute paths that must be updated.
+      echo "Relocating paths in snapshot..."
+      for file in $(grep -rl "__PLACEHOLDER_EXTERNAL__" "$ANDROID_AVD_HOME/emu.avd"); do
+          if [ "$(uname)" = "Darwin" ]; then
+              sed -i '' "s#__PLACEHOLDER_EXTERNAL__#$HOME/..#g" "$file"
+          else
+              sed -i "s#__PLACEHOLDER_EXTERNAL__#$HOME/..#g" "$file"
+          fi
+      done
+      for file in $(grep -rl "__PLACEHOLDER_HOME__" "$ANDROID_AVD_HOME/emu.avd"); do
+          if [ "$(uname)" = "Darwin" ]; then
+              sed -i '' "s#__PLACEHOLDER_HOME__#$HOME#g" "$file"
+          else
+              sed -i "s#__PLACEHOLDER_HOME__#$HOME#g" "$file"
+          fi
+      done
+
+      # The emulator requires emu.ini to be in the parent `avd` directory.
+      # We stored it inside the snapshot for portability; now we move it to the correct location.
+      mv "$ANDROID_AVD_HOME/emu.avd/emu.ini" "$ANDROID_AVD_HOME/emu.ini"
+    fi
+    # The 'trap' will automatically release the lock on exit.
+  else
+    # --- LOCK FAILED ---
+    # Another process holds the lock. Wait for the result to appear.
+    echo "Another process is handling the snapshot copy. Waiting..."
+
+    # Wait until the final emu.ini file appears. This is the last step of the
+    # setup process, so its presence guarantees the AVD is fully ready.
+    lock_wait_start_time=$SECONDS
+    while [[ ! -f "$ANDROID_AVD_HOME/emu.ini" ]]; do
+      # If the lock disappears but the AVD never appears,
+      # it means the other process failed. We should exit.
+      if [[ ! -d "$lock_dir" ]]; then
+        echo "Error: Lock-holding process failed to create the AVD." >&2
+        exit 1
+      fi
+
+      if [ $((SECONDS - lock_wait_start_time)) -gt "$lock_wait_timeout" ]; then
+        echo "Error: Timed out after $lock_wait_timeout seconds waiting for AVD initialization." >&2
+        exit 1
+      fi
+
+      sleep 1
+    done
+    echo "AVD directory is now available."
   fi
+
+  # With a snapshot, the emulator should boot very quickly.
+  echo "Snapshot is ready. Reducing boot timeout to 30 seconds."
+  emulator_boot_timeout=30
 fi
 
-# Launch the emulator.
-echo "Launching emulator-$port"
+
+# --- Emulator Launch and Boot-wait Loop ---
+
+echo "Attempting to launch emulator on port $port (emulator-$port)..."
 boot_complete=false
-# Try to launch the emulator. Keep relaunching if it takes too long.
-for i in 1 2 3
-do
+
+# Try to launch the emulator up to 3 times.
+for i in 1 2 3; do
   start_time=$SECONDS
-  # ModemSimulator doesn't work in bazel sandbox due to not available ports
-  # MultiDisplay is not used, generates some red herring error messages
-  $emulator @emu\
-    -port $port\
-    -delay-adb\
-    -no-window\
-    -gpu swiftshader_indirect\
-    -feature -ModemSimulator\
-    -feature -MultiDisplay\
+  # Launch the emulator in the background with common flags for headless CI environments.
+  # ModemSimulator and MultiDisplay are disabled to prevent unnecessary errors/ports.
+  $emulator @emu \
+    -port "$port" \
+    -delay-adb \
+    -no-window \
+    -gpu swiftshader_indirect \
+    -feature -ModemSimulator \
+    -feature -MultiDisplay \
     "${additional_emulator_args[@]}" \
     2>&1 &
   emu_pid=$!
+  echo "Emulator process started with PID $emu_pid (Attempt $i)."
 
-  # Wait for the emulator to boot.
-  echo "Waiting for emulator to boot"
+  # Wait for the emulator to finish booting.
+  echo "Waiting for emulator-$port to boot..."
 
-  # kill -0 $emu_pid doesn't send any signal but it checks if the process is still alive.
+  # Poll the emulator state until it's fully booted or the timeout is reached.
+  # `kill -0 $emu_pid` checks if the process is still running without sending a signal.
   while kill -0 $emu_pid 2>/dev/null; do
-    output=$($adb -s emulator-$port shell getprop sys.boot_completed 2>&1)
+    output=$($adb -s "emulator-$port" shell getprop sys.boot_completed 2>&1)
+    elapsed_time=$((SECONDS - start_time))
+
+    # Check for ADB authorization issues.
     if [[ $output == *"unauthorized"* ]]; then
-        echo "Emulator requires authentication"
-        exit 1
+      echo "Error: Emulator requires ADB authorization. This should not happen with a correctly generated adbkey." >&2
+      kill -9 $emu_pid
+      exit 1
     fi
-    if [ "$output" = "1" ]; then
-      echo "Emulator booted in $elapsed_time seconds"
+
+    # '1' indicates the boot process is complete.
+    if [ "${output:0:1}" = "1" ]; then
+      echo "Emulator booted successfully in $elapsed_time seconds."
       boot_complete=true
       break
     fi
-    elapsed_time=$(( SECONDS - start_time ))
+
     if [ "$elapsed_time" -gt "$emulator_boot_timeout" ]; then
+      echo "Emulator did not boot within the $emulator_boot_timeout second timeout."
       break
     fi
     sleep 1
   done
+
   if [ "$boot_complete" = true ]; then
     break
   fi
-  echo "Emulator failed to come online in $emulator_boot_timeout seconds. Retrying $i ..."
-  kill -9 $emu_pid 2> /dev/null
-done
-if [ "$boot_complete" = true ]; then
-  echo "Emulator boot complete"
 
-  if [ "$2" = "create-snapshot" ]; then
-      $adb -s emulator-$port emu kill
-      wait $emu_pid
-      echo "Emulator process finished"
-      snapshot_from="$ANDROID_AVD_HOME/emu.avd"
-      echo "Copying snapshot to $snapshot_dir_path"
-      mkdir -p "$snapshot_dir_path"
-      mv "$snapshot_from" "$snapshot_dir_path"
-      grep -rl "$HOME/external" --include="*.ini" "$snapshot_dir_path" | xargs sed -i "s#$HOME/external#__PLACEHOLDER_EXTERNAL__#g"
-      grep -rl "$HOME" --include="*.ini" "$snapshot_dir_path" | xargs sed -i "s#$HOME#__PLACEHOLDER_HOME__#g"
+  echo "Emulator-$port failed to come online. Killing PID $emu_pid and retrying..."
+  kill -9 $emu_pid 2>/dev/null
+  sleep 2
+done
+
+
+# --- Finalization ---
+
+if [ "$boot_complete" = true ]; then
+  echo "Emulator-$port is online and ready."
+
+  # If in 'create-snapshot' mode, kill the emulator gracefully to save the snapshot,
+  # then move the AVD data to the final snapshot directory.
+  if [ "$mode" = "create-snapshot" ]; then
+    echo "Saving snapshot..."
+    $adb -s "emulator-$port" emu kill
+
+    echo "Waiting for emulator process to terminate gracefully..."
+    shutdown_start_time=$SECONDS
+    while kill -0 $emu_pid 2>/dev/null; do
+        if [ $((SECONDS - shutdown_start_time)) -gt "$snapshot_save_timeout" ]; then
+            echo "Warning: Emulator did not shut down gracefully within $snapshot_save_timeout seconds. Forcing kill." >&2
+            kill -9 $emu_pid 2>/dev/null
+            break
+        fi
+        sleep 1
+    done
+
+    wait $emu_pid
+    echo "Emulator process finished. Finalizing snapshot..."
+
+    # For portability, copy the emu.ini file into the AVD directory.
+    # This makes the snapshot self-contained. It will be moved back out during launch.
+    cp "$ANDROID_AVD_HOME/emu.ini" "$ANDROID_AVD_HOME/emu.avd/emu.ini"
+
+    snapshot_from="$ANDROID_AVD_HOME/emu.avd"
+    echo "Moving AVD data from $snapshot_from to $snapshot_dir_path..."
+    mkdir -p "$snapshot_dir_path"
+    mv "$snapshot_from" "$snapshot_dir_path"
+
+    # Make the snapshot relocatable by replacing absolute paths with placeholders.
+    echo "Replacing absolute paths in snapshot with placeholders..."
+    for file in $(grep -rl "$HOME/external" --include="*.ini" "$snapshot_dir_path"); do
+      if [ "$(uname)" = "Darwin" ]; then
+        sed -i '' "s#$HOME/external#__PLACEHOLDER_EXTERNAL__#g" "$file"
+      else
+        sed -i "s#$HOME/external#__PLACEHOLDER_EXTERNAL__#g" "$file"
+      fi
+    done
+    for file in $(grep -rl "$HOME" --include="*.ini" "$snapshot_dir_path"); do
+      if [ "$(uname)" = "Darwin" ]; then
+        sed -i '' "s#$HOME#__PLACEHOLDER_HOME__#g" "$file"
+      else
+        sed -i "s#$HOME#__PLACEHOLDER_HOME__#g" "$file"
+      fi
+    done
+    echo "Snapshot created successfully at $snapshot_dir_path."
   fi
 else
-  echo "Emulator boot failed"
+  echo "Error: Emulator failed to boot after all retries." >&2
   exit 1
 fi

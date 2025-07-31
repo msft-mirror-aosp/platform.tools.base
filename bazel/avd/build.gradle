@@ -1,9 +1,12 @@
 apply plugin: 'com.android.tools.java-library'
 
-dependencies {
-    implementation libs.junit
-}
-
 sourceSets {
     main.java.srcDir 'src'
+    sample.java.srcDir 'sample'
+}
+
+dependencies {
+    implementation libs.junit
+    sampleImplementation sourceSets.main.output
+    sampleImplementation libs.junit
 }

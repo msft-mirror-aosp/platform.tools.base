@@ -26,7 +26,7 @@ import org.junit.Test;
 public class EmulatorTest {
 
     private static final String ADB =
-            String.format("prebuilts/studio/sdk/%s/platform-tools/adb", Emulator.getOsDirName());
+            String.format("prebuilts/studio/sdk/%s/platform-tools/adb", getOsDirName());
 
     /**
      * Path to the executable that the avd rule generates.
@@ -78,5 +78,18 @@ public class EmulatorTest {
         }
 
         return res;
+    }
+
+    private static String getOsDirName() {
+        String os = System.getProperty("os.name");
+        if (os.startsWith("Mac OS")) {
+            return "darwin";
+        } else if (os.startsWith("Windows")) {
+            return "windows";
+        } else if (os.startsWith("Linux")) {
+            return "linux";
+        } else {
+            throw new RuntimeException("Unsupported os.name: " + os);
+        }
     }
 }

@@ -29,9 +29,6 @@ import org.junit.rules.ExternalResource
  */
 private val EMULATOR_SCRIPT = System.getProperty("EMULATOR_SCRIPT_PATH")
 
-/** Path to the actual emulator binary run by the script. */
-private val EMULATOR_BINARY = System.getProperty("EMULATOR_BINARY_PATH")
-
 /**
  * Port at which to open the emulator.
  *
@@ -46,7 +43,7 @@ private const val PORT = 5554
  */
 fun getEmulator(): ExternalResource {
     if (TestUtils.runningFromBazel()) {
-        return Emulator(EMULATOR_SCRIPT, EMULATOR_BINARY, PORT)
+        return Emulator(EMULATOR_SCRIPT, PORT)
     } else {
         // Don't manage the emulator when running from Gradle for now
         return object : ExternalResource() {}
