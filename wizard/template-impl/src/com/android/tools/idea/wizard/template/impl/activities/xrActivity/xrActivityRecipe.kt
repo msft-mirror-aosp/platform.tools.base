@@ -40,17 +40,16 @@ fun RecipeExecutor.xrActivityRecipe(
   addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-runtime-compose:+")
   addDependency(mavenCoordinate = "androidx.lifecycle:lifecycle-viewmodel-compose:+")
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
-  addDependency(mavenCoordinate = "androidx.compose.runtime:runtime:1.8.0-alpha06")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData, composeBomVersion = "2025.04.01")
+  addComposeDependencies(moduleData, composeBomVersion = "2025.07.00")
 
+  addDependency(mavenCoordinate = "androidx.compose.runtime:runtime")
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 
-  addDependency(mavenCoordinate = "androidx.compose.material3:material3:1.0.0-alpha01")
-  addDependency(mavenCoordinate = "androidx.xr.compose:compose:1.0.0-alpha04", )
-  addDependency(mavenCoordinate = "androidx.xr.runtime:runtime:1.0.0-alpha04")
-  addDependency(mavenCoordinate = "androidx.xr.scenecore:scenecore:1.0.0-alpha04")
+  addDependency(mavenCoordinate = "androidx.xr.compose:compose:1.0.0-alpha05", )
+  addDependency(mavenCoordinate = "androidx.xr.runtime:runtime:1.0.0-alpha05")
+  addDependency(mavenCoordinate = "androidx.xr.scenecore:scenecore:1.0.0-alpha05")
 
   generateManifest(
     moduleData = moduleData,
