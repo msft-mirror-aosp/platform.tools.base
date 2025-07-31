@@ -1,5 +1,5 @@
-load("//tools/base/build-system/integration-test:integration-test.bzl", "single_gradle_integration_test", "single_gradle_integration_test_per_source")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
+load("//tools/base/build-system/integration-test:integration-test.bzl", "single_gradle_integration_test", "single_gradle_integration_test_per_source")
 
 # A gradle connected test
 #
@@ -16,10 +16,10 @@ load("//tools/base/bazel:maven.bzl", "maven_repository")
 def gradle_connected_test(
         name,
         srcs,
-        avd,
         deps,
         data,
         maven_repos,
+        avd = "//tools/base/bazel/avd:default_avd",
         emulator_binary_path = "prebuilts/studio/sdk/linux/emulator/emulator",
         maven_artifacts = [],
         runtime_deps = [],

@@ -63,6 +63,6 @@ class EmulatorConnectionTest {
     companion object {
         @ClassRule
         @JvmField
-        val emulator = Emulator("tools/base/ddmlib/avd", 5554)
+        val emulator = Emulator("tools/base/bazel/avd/default_avd", 5554)
     }
 }

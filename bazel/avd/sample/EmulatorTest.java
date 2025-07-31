@@ -34,7 +34,7 @@ public class EmulatorTest {
      * <p>The executable is the script that starts and stops emulators and must be used to launch
      * the emulator.
      */
-    private static final String DEVICE = "tools/base/bazel/avd/sample/emulator_test_device";
+    private static final String DEVICE = "tools/base/bazel/avd/default_avd";
 
     /**
      * Port at which to open the emulator.

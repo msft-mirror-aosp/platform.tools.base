@@ -54,8 +54,6 @@ TEST_DEPS = [
     "@maven//:org.jetbrains.kotlin.kotlin-test",
 ]
 
-avd(name = "avd")
-
 # For tests that needs to run on API 34 devices.
 avd(
     name = "avd_34",
@@ -178,7 +176,6 @@ single_gradle_connected_test_per_source(
 gradle_connected_test(
     name = "AdditionalTestOutputOverrideConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/additionalTestOutputOverride"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -198,7 +195,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "AnnotationProcessorConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -238,7 +234,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "CmakeJniLibConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/nativebuild/",
-    avd = ":avd",
     data = TEST_DATA + [
         "//prebuilts/studio/sdk:cmake",
         "//prebuilts/studio/sdk:ndk",
@@ -253,7 +248,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "ComposeHelloWorldConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/composeHelloWorld"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS + [
@@ -304,7 +298,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "CustomTestedApksTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/testing/",
-    avd = ":avd",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -325,7 +318,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "DataBindingExternalArtifactDependencyConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/databinding/",
-    avd = ":avd",
     data = TEST_DATA + [
         "//tools/data-binding:integration-test-projects",
         "//tools/data-binding:integration-test-projects-support",
@@ -342,7 +334,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "DataBindingIntegrationTestAppsConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/databinding/",
-    avd = ":avd",
     data = TEST_DATA + [
         "//tools/data-binding:integration-test-projects",
         "//tools/data-binding:integration-test-projects-support",
@@ -379,7 +370,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "DynamicFeatureConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/feature/",
-    avd = ":avd",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -450,7 +440,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "KotlinAppConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/kotlinApp"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -470,7 +459,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "LibMinifyLibDepConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/libMinifyLibDep"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -510,7 +498,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MinifyConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/minify"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -530,7 +517,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MinifyInstrumentLibConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/libMinifyLibDep"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -540,7 +526,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MlModelBindingConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA + [
         "//prebuilts/tools/common/mlkit/testData",
         "//tools/base/build-system/integration-test:test-projects/mlModelBinding",
@@ -593,7 +578,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "NdkConnectedCheckTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/ndk/",
-    avd = ":avd",
     data = TEST_DATA + [
         "//prebuilts/studio/sdk:cmake",
         "//prebuilts/studio/sdk:ndk",
@@ -681,7 +665,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "ResValueTypeConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -772,7 +755,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "JourneysConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS + ["//tools/base/journeys:journeys_maven_repo_for_integration_test"],
     maven_repos = TEST_MAVEN_REPOS,
@@ -783,7 +765,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "UtpConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA + [
         "//tools/adt/idea/utp:resources/utp/addGradleAndroidTestListener.gradle",
     ],
@@ -798,7 +779,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "TestSuiteDeviceTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -810,7 +790,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "KotlinMultiplatformAndroidConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/kotlinMultiplatform"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -830,7 +809,6 @@ gradle_connected_test(
 gradle_connected_test(
     name = "InstallProfilesPerDeviceApiConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/basic"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,

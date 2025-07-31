@@ -3,7 +3,6 @@ load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "java_proto_library")
-load("//tools/base/bazel/avd:avd.bzl", "avd")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
 
 # managed by go/iml_to_build
@@ -207,8 +206,6 @@ kotlin_test(
     ],
 )
 
-avd(name = "avd")
-
 java_proto_library(
     name = "am-instrumentation-data-proto",
     srcs = glob(["src/main/proto/instrumentation-data.proto"]),
@@ -232,8 +229,8 @@ iml_module(
         "noci:studio-win",
     ],
     test_data = [
-        ":avd",
         "//prebuilts/studio/sdk:platform-tools",
+        "//tools/base/bazel/avd:default_avd",
     ],
     # do not sort: must match IML order
     test_deps = [
