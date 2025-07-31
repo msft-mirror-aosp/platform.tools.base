@@ -81,7 +81,6 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AnchorTaskNames
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
-import com.android.build.gradle.internal.tasks.ExportConsumerProguardFilesTask.Companion.checkProguardFiles
 import com.android.build.gradle.internal.tasks.ExtractPrivacySandboxCompatApks
 import com.android.build.gradle.internal.tasks.GenerateAdditionalApkSplitForDeploymentViaApk
 import com.android.build.gradle.internal.tasks.getPublishedCustomLintChecks
@@ -706,19 +705,10 @@ class ModelBuilder<ExtensionT : CommonExtension>(
     }
 
     private fun checkProguardFiles(component: VariantCreationConfig) {
-        // We check for default files unless it's a base module, which can include default files.
-        val isBaseModule = component.componentType.isBaseModule
-        val isDynamicFeature = component.componentType.isDynamicFeature
-        if (!isBaseModule) {
-            checkProguardFiles(
-                project.layout.buildDirectory,
-                isDynamicFeature,
-                component.optimizationCreationConfig.consumerProguardFilePaths
-            ) { errorMessage: String -> variantModel
-                .syncIssueReporter
-                .reportError(IssueReporter.Type.GENERIC, errorMessage)
-            }
-        }
+        // force calculation of the lazy consumerProguardFiles so possible errors are reported
+        // but do not resolve the providers as it contains tasks' dependencies.
+        @Suppress("NoOp")
+        component.optimizationCreationConfig.consumerProguardFiles
     }
 
     private fun buildAndroidDslModel(project: Project): AndroidDsl {

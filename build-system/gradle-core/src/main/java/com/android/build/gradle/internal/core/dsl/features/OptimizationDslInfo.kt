@@ -64,7 +64,7 @@ interface OptimizationDslInfo {
 
     val keepRuleFiles: Set<File>
 
-    fun getProguardFiles(into: ListProperty<RegularFile>)
+    fun getProguardFiles(into: ListProperty<RegularFile>) {}
 
-    fun gatherProguardFiles(type: ProguardFileType): Collection<File>
+    fun gatherProguardFiles(type: ProguardFileType, into: MutableList<RegularFile>)
 }

@@ -2665,6 +2665,11 @@ package com.android.build.api.variant {
     property public abstract boolean isMinifyEnabled;
   }
 
+  @org.gradle.api.Incubating public interface CanProduceConsumerProguardFiles {
+    method @org.gradle.api.Incubating public org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> getConsumerProguardFiles();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> consumerProguardFiles;
+  }
+
   @org.gradle.api.Incubating public interface CodeTransparency {
     method @org.gradle.api.Incubating public void setSigningConfig(com.android.build.api.dsl.SigningConfig signingConfig);
   }
@@ -3087,7 +3092,7 @@ package com.android.build.api.variant {
   public interface LibraryAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.LibraryExtension,com.android.build.api.variant.LibraryVariantBuilder,com.android.build.api.variant.LibraryVariant> {
   }
 
-  public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
+  public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.CanProduceConsumerProguardFiles com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
     method public com.android.build.api.variant.Renderscript? getRenderscript();
     property public abstract com.android.build.api.variant.Renderscript? renderscript;
   }

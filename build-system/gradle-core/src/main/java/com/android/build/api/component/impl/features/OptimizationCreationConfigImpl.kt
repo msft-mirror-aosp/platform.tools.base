@@ -31,10 +31,12 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.ModuleMetadata
 import com.android.build.gradle.internal.tasks.getPartialShrinkingConfig
+import com.android.builder.errors.IssueReporter
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import java.io.File
+import kotlin.collections.forEach
 
 class OptimizationCreationConfigImpl(
     private val component: ConsumableCreationConfig,
@@ -48,19 +50,16 @@ class OptimizationCreationConfigImpl(
     override val proguardFiles: ListProperty<RegularFile> by lazy(LazyThreadSafetyMode.NONE) {
         internalServices.listPropertyOf(RegularFile::class.java) {
             if (component is TestCreationConfig) {
-                val projectDir = internalServices.projectInfo.projectDirectory
-                it.addAll(
-                    dslInfo.gatherProguardFiles(ProguardFileType.TEST).map { file ->
-                        projectDir.file(file.absolutePath)
-                    }
-                )
+                val testProguardFiles = mutableListOf< RegularFile>()
+                dslInfo.gatherProguardFiles(ProguardFileType.TEST, testProguardFiles)
+                it.addAll(testProguardFiles)
             } else {
                 dslInfo.getProguardFiles(it)
             }
         }
     }
 
-    override val consumerProguardFiles: Provider<List<RegularFile>> by lazy(LazyThreadSafetyMode.NONE) {
+    override val consumerProguardFiles: ListProperty<RegularFile> by lazy(LazyThreadSafetyMode.NONE) {
         val consumerProguardFilePaths: List<File> = consumerProguardFilePaths
         val consumerProguardFilesProperty: ListProperty<RegularFile> =
             internalServices.listPropertyOf(RegularFile::class.java) { list ->
@@ -69,27 +68,51 @@ class OptimizationCreationConfigImpl(
                 }
             }
 
-        val defaultProguardFiles: Set<File> = ProguardFiles.KNOWN_FILE_NAMES.map {
-            ProguardFiles.getDefaultProguardFile(it, internalServices.projectInfo.buildDirectory)
-        }.toSet()
+        val isBaseModule = component.componentType.isBaseModule
+        val isDynamicFeature = component.componentType.isDynamicFeature
+
+        val buildDirectory = internalServices.projectInfo.buildDirectory
+        val defaultProguardFiles: Map<File, String> = ProguardFiles.KNOWN_FILE_NAMES.associateBy {
+            ProguardFiles.getDefaultProguardFile(it, buildDirectory)
+        }
+
+        // check for the default files location and potentially issue an error
+        if (!isBaseModule) {
+            consumerProguardFilePaths.forEach {
+                defaultProguardFiles[it]?.let { fileName ->
+                    val errorMessage = if (isDynamicFeature) {
+                        "Default file $fileName should not be specified in this module. It can be specified in the base module instead."
+                    } else {
+                        "Default file $fileName should not be used as a consumer configuration file."
+                    }
+
+                    internalServices.issueReporter.reportError(
+                        IssueReporter.Type.GENERIC,
+                        errorMessage
+                    )
+                }
+            }
+        }
 
         // If default Proguard files are used, we need to attach task dependencies (see b/295666695)
-        if (consumerProguardFilePaths.any { it in defaultProguardFiles }) {
+        val result: Provider<List<RegularFile>> = if (consumerProguardFilePaths.any { it in defaultProguardFiles }) {
             component.global.globalArtifacts.get(InternalArtifactType.DEFAULT_PROGUARD_FILES)
                 .zip(consumerProguardFilesProperty) { _, right -> right }
         } else {
             consumerProguardFilesProperty
         }
+        internalServices.listPropertyOf(RegularFile::class.java) {
+            it.set(result)
+        }
     }
 
-    override val consumerProguardFilePaths: List<File> by lazy(LazyThreadSafetyMode.NONE) {
-        buildList {
-            addAll(dslInfo.gatherProguardFiles(ProguardFileType.CONSUMER))
-            // We include proguardFiles if we're in a dynamic-feature module.
-            if (component.componentType.isDynamicFeature) {
-                addAll(dslInfo.gatherProguardFiles(ProguardFileType.EXPLICIT))
-            }
+    private val consumerProguardFilePaths: List<File> by lazy(LazyThreadSafetyMode.NONE) {
+        val consumerProguardFiles = mutableListOf<RegularFile>()
+        dslInfo.gatherProguardFiles(ProguardFileType.CONSUMER, consumerProguardFiles)
+        if (component.componentType.isDynamicFeature) {
+            dslInfo.gatherProguardFiles(ProguardFileType.EXPLICIT, consumerProguardFiles)
         }
+        consumerProguardFiles.map { it.asFile }
     }
 
     override val ignoreFromInKeepRules: Provider<List<String>> =

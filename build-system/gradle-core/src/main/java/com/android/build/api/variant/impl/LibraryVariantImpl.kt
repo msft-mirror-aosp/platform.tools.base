@@ -27,6 +27,7 @@ import com.android.build.api.variant.HasUnitTest
 import com.android.build.api.variant.LibraryVariant
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.TestedComponentPackaging
+import com.android.build.gradle.internal.ProguardFileType
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -49,6 +50,8 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.core.BuilderConstants
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import com.android.build.gradle.internal.utils.parseTargetHash
@@ -155,6 +158,10 @@ open class LibraryVariantImpl @Inject constructor(
 
     override val packaging: TestedComponentPackaging by lazy {
         TestedComponentPackagingImpl(dslInfo.packaging, internalServices)
+    }
+
+    override val consumerProguardFiles: ListProperty<RegularFile> by lazy {
+        optimizationCreationConfig.consumerProguardFiles
     }
 
     // ---------------------------------------------------------------------------------------------

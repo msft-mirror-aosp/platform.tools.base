@@ -28,7 +28,8 @@ interface LibraryVariant : Variant,
     HasHostTests,
     HasUnitTest,
     HasTestFixtures,
-    CanMinifyCode {
+    CanMinifyCode,
+    CanProduceConsumerProguardFiles {
 
     /**
      * Variant specific settings for the renderscript compiler. This will return null when

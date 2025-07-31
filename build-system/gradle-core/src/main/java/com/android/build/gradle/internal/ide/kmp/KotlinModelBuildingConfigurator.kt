@@ -212,7 +212,7 @@ object KotlinModelBuildingConfigurator {
                 optimizationCreationConfig.proguardFiles.get().map { it.asFile.convert() }
             )
             .addAllConsumerProguardFiles(
-                optimizationCreationConfig.consumerProguardFilePaths.map { it.convert() }
+                optimizationCreationConfig.consumerProguardFiles.get().map { it.asFile.convert() }
             )
             .setMinificationEnabled(
                 optimizationCreationConfig.minifiedEnabled

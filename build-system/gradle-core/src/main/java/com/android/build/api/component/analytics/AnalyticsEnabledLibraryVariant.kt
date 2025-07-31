@@ -26,7 +26,9 @@ import com.android.build.api.variant.TestFixtures
 import com.android.build.api.variant.TestedComponentPackaging
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import org.gradle.api.file.RegularFile
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.ListProperty
 import javax.inject.Inject
 
 open class AnalyticsEnabledLibraryVariant @Inject constructor(
@@ -150,5 +152,12 @@ open class AnalyticsEnabledLibraryVariant @Inject constructor(
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
                 VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE
             return userVisiblePackaging
+        }
+
+    override val consumerProguardFiles: ListProperty<RegularFile>
+        get() {
+            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+                VariantPropertiesMethodType.CONSUMER_PROGUARD_FILES_VALUE
+            return delegate.consumerProguardFiles
         }
 }

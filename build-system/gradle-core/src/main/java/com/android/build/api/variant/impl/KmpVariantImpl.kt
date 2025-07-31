@@ -137,6 +137,9 @@ open class KmpVariantImpl @Inject constructor(
     override val proguardFiles: ListProperty<RegularFile>
         get() = optimizationCreationConfig.proguardFiles
 
+    override val consumerProguardFiles: ListProperty<RegularFile>
+        get() = optimizationCreationConfig.consumerProguardFiles
+
     override val deviceTests: Map<String, DeviceTest>
         get() = internalDeviceTests
 

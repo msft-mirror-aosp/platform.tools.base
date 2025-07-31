@@ -683,3 +683,6 @@ https://issuetracker.google.com/422422985
   * com.android.build.api.dsl.Optimization.getEnable: boolean ()
   * com.android.build.api.dsl.Optimization.getPackageScope: org.gradle.api.provider.SetProperty<java.lang.String> ()
   * com.android.build.api.dsl.Optimization.setEnable: void (boolean)
+https://issuetracker.google.com/438803230
+  * com.android.build.api.variant.CanProduceConsumerProguardFiles
+  * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
