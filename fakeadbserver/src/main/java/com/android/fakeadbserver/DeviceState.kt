@@ -48,7 +48,7 @@ class DeviceState internal constructor(
 ) {
 
     val clientChangeHub = ClientStateChangeHub()
-    private val mFiles: MutableMap<String, DeviceFileState> = HashMap()
+    private val fileSystemProvider: DeviceFileSystemProvider = DeviceFileSystemProvider()
     private val mLogcatMessages: MutableList<String> = ArrayList()
 
     /** PID -> [ProcessState]  */
@@ -103,12 +103,11 @@ class DeviceState internal constructor(
         transportId,
         config.isRoot,
         config.maxSpeedMbps,
-        config.negotiatedSpeedMbps,
+        config.negotiatedSpeedMbps
     ) {
-        config.files.forEach(Consumer { fileState: DeviceFileState ->
-            mFiles[fileState.path] =
-                fileState
-        })
+        fileSystemProvider.withFileSystem { fileSystem ->
+            fileSystem.copyFrom(config.fileSystem)
+        }
         mLogcatMessages.addAll(config.logcatMessages)
         mDeviceStatus = config.deviceStatus
         config.processes
@@ -160,38 +159,27 @@ class DeviceState internal constructor(
     }
 
     fun createFile(file: DeviceFileState) {
-        synchronized(mFiles) { mFiles.put(file.path, file) }
+        fileSystemProvider.withFileSystem { fileSystem ->
+            fileSystem.createFile(file)
+        }
     }
 
     fun getFile(filepath: String): DeviceFileState? {
-        synchronized(mFiles) { return mFiles[filepath] }
+        return fileSystemProvider.withFileSystem { fileSystem ->
+            fileSystem.getFile(filepath)
+        }
     }
 
     fun getFileEntries(directoryPath: String): List<DeviceFileState> {
-        fun fileIsDirectoryEntry(directoryPath: String, filePath: String): Boolean {
-            val index = filePath.lastIndexOf("/")
-            return when {
-                index <= 0 -> directoryPath.isEmpty()
-                else -> {
-                    val fileDir = filePath.substring(0, index)
-                    fileDir == directoryPath
-                }
-            }
-        }
-
-        return synchronized(mFiles) {
-            // We don't have a "true" notion of directory implemented, so just go through all
-            // files and look for the files that are directly under `directoryPath`
-            mFiles.filter {
-                fileIsDirectoryEntry(directoryPath, it.key)
-            }.map {
-                it.value
-            }
+        return fileSystemProvider.withFileSystem { fileSystem ->
+            fileSystem.getDirectoryFiles(directoryPath)
         }
     }
 
     fun deleteFile(filepath: String) {
-        synchronized(mFiles) { mFiles.remove(filepath) }
+        return fileSystemProvider.withFileSystem { fileSystem ->
+            fileSystem.deleteFile(filepath)
+        }
     }
 
     fun startClient(
@@ -404,23 +392,27 @@ class DeviceState internal constructor(
         synchronized(mProcessStates) { return ArrayList(mProcessStates.values) }
     }
 
-    val config: DeviceStateConfig
+    internal val config: DeviceStateConfig
         get() = DeviceStateConfig(
-            deviceId,
-            ArrayList(mFiles.values),
-            ArrayList(mLogcatMessages),
-            ArrayList(mProcessStates.values),
-            hostConnectionType,
-            manufacturer,
-            model,
-            buildVersionRelease,
-            buildVersionSdk,
-            cpuAbi,
-            properties,
-            mDeviceStatus,
-            isRoot,
-            maxSpeedMbps,
-            negotiatedSpeedMbps,
+            serialNumber = deviceId,
+            fileSystem = DeviceFileSystem().also {
+                fileSystemProvider.withFileSystem { fileSystem ->
+                    it.copyFrom(fileSystem)
+                }
+            },
+            logcatMessages = ArrayList(mLogcatMessages),
+            processes = ArrayList(mProcessStates.values),
+            hostConnectionType = hostConnectionType,
+            manufacturer = manufacturer,
+            model = model,
+            buildVersionRelease = buildVersionRelease,
+            buildVersionSdk = buildVersionSdk,
+            cpuAbi = cpuAbi,
+            properties = properties,
+            deviceStatus = mDeviceStatus,
+            isRoot = isRoot,
+            maxSpeedMbps = maxSpeedMbps,
+            negotiatedSpeedMbps = negotiatedSpeedMbps,
         )
 
     fun setActivityManager(newActivityManager: Service?) {
