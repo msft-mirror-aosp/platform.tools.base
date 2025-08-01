@@ -1,24 +1,31 @@
 Breakpoint: File1.kt:24 - tests.multifile.MultiFileInline.start()
 ====== Local Variables ==================================================
-0  [26-26]    [1-20]    : i$iv                          : int
-1  [23-26]    [2-20]    : $i$f$function1                : int
-2  [24-26]    [4-20]    : s$iv                          : java.lang.String
+0  [26-26]    [1-25]    : i$iv                          : int
+1  [23-26]    [2-25]    : $i$f$function1                : int
+2  [24-26]    [4-25]    : s$iv                          : java.lang.String
 
 Breakpoint: File2.kt:24 - tests.multifile.MultiFileInline.start()
 ====== Local Variables ==================================================
-0  [26-26]    [1-20]    : i$iv                          : int
-1  [23-26]    [2-20]    : $i$f$function1                : int
-2  [24-26]    [4-20]    : s$iv                          : java.lang.String
-3  [23-26]    [8-19]    : $i$f$function2                : int
-4  [24-26]    [9-19]    : x$iv$iv                       : int
+0  [26-26]    [1-25]    : i$iv                          : int
+1  [23-26]    [2-25]    : $i$f$function1                : int
+2  [24-26]    [4-25]    : s$iv                          : java.lang.String
+3  [25-26]    [8-24]    : s$iv$iv                       : java.lang.String
+4  [25-26]    [9-24]    : i$iv$iv                       : int
+5  [23-26]    [10-24]   : $i$f$function2                : int
+6  [24-26]    [11-24]   : x$iv$iv                       : int
 
 Breakpoint: MultiFileInline.kt:30 - tests.multifile.MultiFileInline.start()
 ====== Local Variables ==================================================
-0  [26-26]    [1-20]    : i$iv                          : int
-1  [23-26]    [2-20]    : $i$f$function1                : int
-2  [24-26]    [4-20]    : s$iv                          : java.lang.String
-3  [23-26]    [8-19]    : $i$f$function2                : int
-4  [24-26]    [9-19]    : x$iv$iv                       : int
-5  [25-31]    [14-18]   : this_$iv$iv$iv                : tests.multifile.MultiFileInline
-6  [30-31]    [15-18]   : $i$f$file0                    : int
+0  [26-26]    [1-25]    : i$iv                          : int
+1  [23-26]    [2-25]    : $i$f$function1                : int
+2  [24-26]    [4-25]    : s$iv                          : java.lang.String
+3  [25-26]    [8-24]    : s$iv$iv                       : java.lang.String
+4  [25-26]    [9-24]    : i$iv$iv                       : int
+5  [23-26]    [10-24]   : $i$f$function2                : int
+6  [24-26]    [11-24]   : x$iv$iv                       : int
+7  [25-31]    [16-23]   : this_$iv$iv$iv                : tests.multifile.MultiFileInline
+8  [25-31]    [17-23]   : x$iv$iv$iv                    : int
+9  [25-31]    [18-23]   : i$iv$iv$iv                    : int
+10 [25-31]    [19-23]   : s$iv$iv$iv                    : java.lang.String
+11 [30-31]    [20-23]   : $i$f$file0                    : int
 
