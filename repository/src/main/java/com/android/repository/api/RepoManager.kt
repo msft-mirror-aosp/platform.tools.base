@@ -24,7 +24,6 @@ import com.android.repository.impl.meta.RepositoryPackages
 import com.google.common.annotations.VisibleForTesting
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.runBlocking
@@ -273,6 +272,7 @@ abstract class RepoManager {
 
   /** Callback for when repository load is completed/partially completed. */
   fun interface RepoLoadedListener {
+
     /**
      * @param packages The packages that have been loaded so far. When this listener is used in the
      *   `onLocalComplete` argument to [load] `packages` will only include local packages.
@@ -285,6 +285,7 @@ abstract class RepoManager {
    * MoreExecutors.directExecutor()).
    */
   protected class DirectProgressRunner(private val progress: ProgressIndicator) : ProgressRunner {
+
     // This class is only for use in loadSynchronously; this method is unneeded.
     override fun runAsyncWithProgress(r: ProgressRunnable) = throw UnsupportedOperationException()
 
@@ -294,6 +295,7 @@ abstract class RepoManager {
   }
 
   companion object {
+
     /**
      * After loading the repository, this is the amount of time that must pass before we consider it
      * to be stale and need to be reloaded.
@@ -345,6 +347,22 @@ abstract class RepoManager {
     @JvmStatic
     fun create(localPath: Path?): RepoManager {
       return RepoManagerImpl(localPath)
+    }
+
+    @JvmStatic
+    fun createRepoManager(
+      localPath: Path?,
+      schemaModules: List<SchemaModule<*>>,
+      sourceProviders: List<RepositorySourceProvider>,
+      fallbackLocalRepoLoader: FallbackLocalRepoLoader?,
+      fallbackRemoteRepoLoader: FallbackRemoteRepoLoader?,
+    ): RepoManager {
+      return RepoManagerImpl(localPath).apply {
+        setFallbackLocalRepoLoader(fallbackLocalRepoLoader)
+        setFallbackRemoteRepoLoader(fallbackRemoteRepoLoader)
+        schemaModules.forEach { registerSchemaModule(it) }
+        sourceProviders.forEach { registerSourceProvider(it) }
+      }
     }
   }
 }
