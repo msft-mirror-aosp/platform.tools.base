@@ -68,6 +68,14 @@ class DeviceFileState(
         Directory
     }
 
+    internal fun toDotFile(): DeviceFileState {
+        return DeviceFileState(".", permission, modifiedDate, bytes, kind)
+    }
+
+    internal fun toDotDotFile(): DeviceFileState {
+        return DeviceFileState("..", permission, modifiedDate, bytes, kind)
+    }
+
     companion object {
         private fun modeBitsFromPosixFilePermissions(posixPermissions: Array<out PosixFilePermission>): Int {
             var modeBits = 0

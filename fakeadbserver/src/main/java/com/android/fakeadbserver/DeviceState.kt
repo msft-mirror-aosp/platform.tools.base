@@ -48,7 +48,8 @@ class DeviceState internal constructor(
 ) {
 
     val clientChangeHub = ClientStateChangeHub()
-    private val fileSystemProvider: DeviceFileSystemProvider = DeviceFileSystemProvider()
+    @PublishedApi
+    internal val fileSystemProvider: DeviceFileSystemProvider = DeviceFileSystemProvider()
     private val mLogcatMessages: MutableList<String> = ArrayList()
 
     /** PID -> [ProcessState]  */
@@ -158,26 +159,33 @@ class DeviceState internal constructor(
         }
     }
 
+    /**
+     * Provides thread-safe access to the [DeviceFileSystem]
+     */
+    inline fun <R> withFileSystem(block : (DeviceFileSystem) -> R): R {
+        return fileSystemProvider.withFileSystem(block)
+    }
+
     fun createFile(file: DeviceFileState) {
-        fileSystemProvider.withFileSystem { fileSystem ->
+        return withFileSystem { fileSystem ->
             fileSystem.createFile(file)
         }
     }
 
     fun getFile(filepath: String): DeviceFileState? {
-        return fileSystemProvider.withFileSystem { fileSystem ->
+        return withFileSystem { fileSystem ->
             fileSystem.getFile(filepath)
         }
     }
 
-    fun getFileEntries(directoryPath: String): List<DeviceFileState> {
-        return fileSystemProvider.withFileSystem { fileSystem ->
+    fun getDirectoryFiles(directoryPath: String): List<DeviceFileState> {
+        return withFileSystem { fileSystem ->
             fileSystem.getDirectoryFiles(directoryPath)
         }
     }
 
     fun deleteFile(filepath: String) {
-        return fileSystemProvider.withFileSystem { fileSystem ->
+        return withFileSystem { fileSystem ->
             fileSystem.deleteFile(filepath)
         }
     }

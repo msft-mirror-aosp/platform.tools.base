@@ -758,7 +758,7 @@ class AdbDeviceSyncServicesTest {
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
         val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
 
-        listOf(".", "..", ".foo", "bar.blah").map { fileName ->
+        listOf(".foo", "bar.blah").map { fileName ->
             val filePath = "/sdcard/foo/$fileName"
             val fileBytes = createFileBytes(1_000)
             val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
@@ -1115,7 +1115,7 @@ class AdbDeviceSyncServicesTest {
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
         val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
 
-        listOf(".", "..", ".foo", "bar.blah").map { fileName ->
+        listOf(".foo", "bar.blah").map { fileName ->
             val filePath = "/sdcard/foo/$fileName"
             val fileBytes = createFileBytes(1_000)
             val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)

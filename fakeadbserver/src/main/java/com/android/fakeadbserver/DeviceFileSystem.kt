@@ -16,6 +16,7 @@
 package com.android.fakeadbserver
 
 import java.io.IOException
+import java.lang.AssertionError
 
 /**
  * In-memory simulation of the file system of an Android device.
@@ -67,7 +68,11 @@ class DeviceFileSystem {
             throw IOException("Directory does not exist")
         }
 
-        return entries.filter {
+        return listOf(
+            entry.toDotFile(),
+            // Note: ".." from "/" points to "/"
+            entry.getParentOrRoot().toDotDotFile()
+        ) + entries.filter {
             it.key.parentPath == npath
         }.map {
             it.value
@@ -109,6 +114,15 @@ class DeviceFileSystem {
                 entries[path] = it
             }
         }
+    }
+
+    private fun DeviceFileState.getParentOrRoot(): DeviceFileState {
+        val npath = NormalizedPath.fromString(path).parentPath ?: NormalizedPath.root
+        return entries[npath] ?: internalError("Parent entry of '$npath' does not exist")
+    }
+
+    private fun internalError(message: String): Nothing {
+        throw AssertionError("FakeAdb File System Internal Error: $message")
     }
 
     private fun normalizePath(path: String): NormalizedPath {
@@ -157,6 +171,8 @@ class DeviceFileSystem {
         }
 
         companion object {
+            val root = NormalizedPath("/")
+
             fun fromString(path: String): NormalizedPath {
                 if (path.isEmpty()) {
                     throw IOException("Invalid file path: $path")

@@ -171,7 +171,7 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
      */
     private fun handleListProtocol(device: DeviceState, input: InputStream, output: OutputStream) {
         val path = readRecvHeader(input)
-        val fileStates = device.getFileEntries(path)
+        val fileStates = device.getDirectoryFiles(path)
         fileStates.forEach { fileState ->
             writeDentEntry(output, id = "DENT", fileState = fileState)
         }
@@ -192,7 +192,7 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
      */
     private fun handleListV2Protocol(device: DeviceState, input: InputStream, output: OutputStream) {
         val path = readRecvHeader(input)
-        val fileStates = device.getFileEntries(path)
+        val fileStates = device.getDirectoryFiles(path)
         fileStates.forEach { fileState ->
             writeDentV2Entry(output, id = "DNT2", fileState = fileState)
         }
