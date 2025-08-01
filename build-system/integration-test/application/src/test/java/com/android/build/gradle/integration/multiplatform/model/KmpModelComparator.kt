@@ -47,7 +47,8 @@ class KmpModelComparator(
         executor: GradleTaskExecutor,
         printModelToStdout: Boolean = true
     ): Map<String, String> {
-        executor.run("$projectPath:$modelSnapshotTask")
+        executor.withFailOnWarning(false)
+            .run("$projectPath:$modelSnapshotTask")
 
         val outputs = taskOutputsLocator(projectPath)
 

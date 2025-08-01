@@ -1,0 +1,469 @@
+[
+  {
+    "type": "DependsOn",
+    "coordinates": {
+      "project": {
+        "buildName": ":",
+        "buildPath": ":",
+        "projectPath": ":kmpFirstLib",
+        "projectName": "kmpFirstLib"
+      },
+      "sourceSetName": "commonTest"
+    },
+    "extras": {
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeDependsOnDependencyResolver"
+    }
+  },
+  {
+    "type": "Friend",
+    "coordinates": {
+      "project": {
+        "buildName": ":",
+        "buildPath": ":",
+        "projectPath": ":kmpFirstLib",
+        "projectName": "kmpFirstLib"
+      },
+      "sourceSetName": "androidMain"
+    },
+    "extras": {
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeFriendSourceDependencyResolver"
+    }
+  },
+  {
+    "type": "Friend",
+    "coordinates": {
+      "project": {
+        "buildName": ":",
+        "buildPath": ":",
+        "projectPath": ":kmpFirstLib",
+        "projectName": "kmpFirstLib"
+      },
+      "sourceSetName": "commonMain"
+    },
+    "extras": {
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeFriendSourceDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/libs/local.aar"
+    ],
+    "coordinates": {
+      "group": "\u003cfile\u003e",
+      "module": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local-api.jar",
+      "capabilities": [],
+      "attributes": {}
+    },
+    "extras": {
+      "kotlin.Boolean;isOpaqueFileDependencyKey": true,
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "local.aar -\u003e local-api.jar (local.aar)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
+      "com.android.kotlin.multiplatform.models.DependencyInfo;android-dependency-model": {
+        "library": {
+          "type": "ANDROID_LIBRARY",
+          "libraryInfo": {
+            "componentInfo": {
+              "productFlavors": {},
+              "attributes": {},
+              "capabilities": [],
+              "isTestFixtures": false
+            },
+            "group": "__local_aars__",
+            "name": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/libs/local.aar",
+            "version": "unspecified"
+          },
+          "artifact": {
+            "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/libs/local.aar"
+          },
+          "androidLibraryData": {
+            "manifest": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/AndroidManifest.xml"
+            },
+            "compileJarFiles": [
+              {
+                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/jars/classes.jar"
+              }
+            ],
+            "runtimeJarFiles": [
+              {
+                "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/jars/classes.jar"
+              }
+            ],
+            "resFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/res"
+            },
+            "resStaticLibrary": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/res.apk"
+            },
+            "assetsFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/assets"
+            },
+            "jniFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/jni"
+            },
+            "aidlFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/aidl"
+            },
+            "renderscriptFolder": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/rs"
+            },
+            "proguardRules": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/proguard.txt"
+            },
+            "externalAnnotations": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/annotations.zip"
+            },
+            "publicResources": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/public.txt"
+            },
+            "symbolFile": {
+              "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/local/R.txt"
+            }
+          },
+          "srcJars": []
+        }
+      }
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/libs/local.jar"
+    ],
+    "coordinates": {
+      "group": "\u003cfile\u003e",
+      "module": "kmpFirstLib/libs/local.jar",
+      "capabilities": [],
+      "attributes": {}
+    },
+    "extras": {
+      "kotlin.Boolean;isOpaqueFileDependencyKey": true,
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "local.jar -\u003e local.jar (local.jar)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/org/jetbrains/kotlin/kotlin-test-junit/{KOTLIN_VERSION_FOR_TESTS}/kotlin-test-junit-{KOTLIN_VERSION_FOR_TESTS}.jar"
+    ],
+    "coordinates": {
+      "group": "org.jetbrains.kotlin",
+      "module": "kotlin-test-junit",
+      "version": "{KOTLIN_VERSION_FOR_TESTS}",
+      "capabilities": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "name": "kotlin-test-junit",
+          "version": "{KOTLIN_VERSION_FOR_TESTS}"
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "name": "kotlin-test-framework-impl",
+          "version": "{KOTLIN_VERSION_FOR_TESTS}"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kotlin-test-junit-{KOTLIN_VERSION_FOR_TESTS}.jar -\u003e kotlin-test-junit-{KOTLIN_VERSION_FOR_TESTS}.jar (org.jetbrains.kotlin:kotlin-test-junit:{KOTLIN_VERSION_FOR_TESTS})",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/org/jetbrains/kotlin/kotlin-test/{KOTLIN_VERSION_FOR_TESTS}/kotlin-test-{KOTLIN_VERSION_FOR_TESTS}.jar"
+    ],
+    "coordinates": {
+      "group": "org.jetbrains.kotlin",
+      "module": "kotlin-test",
+      "version": "{KOTLIN_VERSION_FOR_TESTS}",
+      "capabilities": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "name": "kotlin-test",
+          "version": "{KOTLIN_VERSION_FOR_TESTS}"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kotlin-test-{KOTLIN_VERSION_FOR_TESTS}.jar -\u003e kotlin-test-{KOTLIN_VERSION_FOR_TESTS}.jar (org.jetbrains.kotlin:kotlin-test:{KOTLIN_VERSION_FOR_TESTS})",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{KOTLIN_VERSION_FOR_TESTS}/kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar"
+    ],
+    "coordinates": {
+      "group": "org.jetbrains.kotlin",
+      "module": "kotlin-stdlib",
+      "version": "{KOTLIN_VERSION_FOR_TESTS}",
+      "capabilities": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "name": "kotlin-stdlib",
+          "version": "{KOTLIN_VERSION_FOR_TESTS}"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar -\u003e kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar (org.jetbrains.kotlin:kotlin-stdlib:{KOTLIN_VERSION_FOR_TESTS})",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/com/google/guava/guava/19.0/guava-19.0.jar"
+    ],
+    "coordinates": {
+      "group": "com.google.guava",
+      "module": "guava",
+      "version": "19.0",
+      "capabilities": [
+        {
+          "group": "com.google.guava",
+          "name": "guava",
+          "version": "19.0"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "guava-19.0.jar -\u003e guava-19.0.jar (com.google.guava:guava:19.0)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
+      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
+        "{LOCAL_REPO}/com/google/guava/guava/19.0/guava-19.0-sources.jar"
+      ]
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+    ],
+    "coordinates": {
+      "group": "org.jetbrains",
+      "module": "annotations",
+      "version": "13.0",
+      "capabilities": [
+        {
+          "group": "org.jetbrains",
+          "name": "annotations",
+          "version": "13.0"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "annotations-13.0.jar -\u003e annotations-13.0.jar (org.jetbrains:annotations:13.0)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
+      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
+        "{LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0-sources.jar"
+      ]
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/junit/junit/4.13.2/junit-4.13.2.jar"
+    ],
+    "coordinates": {
+      "group": "junit",
+      "module": "junit",
+      "version": "4.13.2",
+      "capabilities": [
+        {
+          "group": "junit",
+          "name": "junit",
+          "version": "4.13.2"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "junit-4.13.2.jar -\u003e junit-4.13.2.jar (junit:junit:4.13.2)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
+      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
+        "{LOCAL_REPO}/junit/junit/4.13.2/junit-4.13.2-sources.jar"
+      ]
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
+    ],
+    "coordinates": {
+      "group": "org.hamcrest",
+      "module": "hamcrest-core",
+      "version": "1.3",
+      "capabilities": [
+        {
+          "group": "org.hamcrest",
+          "name": "hamcrest-core",
+          "version": "1.3"
+        }
+      ],
+      "attributes": {
+        "artifactType": "android-classes-jar",
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "hamcrest-core-1.3.jar -\u003e hamcrest-core-1.3.jar (org.hamcrest:hamcrest-core:1.3)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
+      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
+        "{LOCAL_REPO}/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3-sources.jar"
+      ]
+    }
+  },
+  {
+    "type": "Regular",
+    "coordinates": {
+      "buildName": ":",
+      "buildPath": ":",
+      "projectPath": ":androidLib",
+      "projectName": "androidLib"
+    },
+    "extras": {
+      "com.android.kotlin.multiplatform.models.DependencyInfo;android-dependency-model": {
+        "library": {
+          "type": "PROJECT",
+          "projectInfo": {
+            "componentInfo": {
+              "buildType": "release",
+              "productFlavors": {
+                "mode": "modetwo",
+                "type": "typeone"
+              },
+              "attributes": {
+                "com.android.build.api.attributes.AgpVersionAttr": "{AGP_Version}",
+                "com.android.build.gradle.internal.attributes.VariantAttr": "typeoneModetwoRelease",
+                "org.gradle.libraryelements": "jar",
+                "org.gradle.usage": "java-api"
+              },
+              "capabilities": [
+                "Kotlin Multiplatform.:androidLib:unspecified"
+              ],
+              "isTestFixtures": false
+            },
+            "buildId": ":",
+            "projectPath": ":androidLib"
+          },
+          "lintJar": {
+            "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/androidLib/build/intermediates/lint_publish_jar/global/prepareLintJarForPublish/lint.jar"
+          },
+          "srcJars": []
+        }
+      },
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "com.android.build.gradle.internal.ide.kmp.resolvers.ProjectDependencyResolver"
+    }
+  },
+  {
+    "type": "Regular",
+    "coordinates": {
+      "buildName": ":",
+      "buildPath": ":",
+      "projectPath": ":kmpSecondLib",
+      "projectName": "kmpSecondLib"
+    },
+    "extras": {
+      "com.android.kotlin.multiplatform.models.DependencyInfo;android-dependency-model": {
+        "library": {
+          "type": "PROJECT",
+          "projectInfo": {
+            "componentInfo": {
+              "productFlavors": {},
+              "attributes": {
+                "com.android.build.api.attributes.AgpVersionAttr": "{AGP_Version}",
+                "org.gradle.category": "library",
+                "org.gradle.jvm.environment": "android",
+                "org.gradle.libraryelements": "jar",
+                "org.gradle.usage": "java-api",
+                "org.jetbrains.kotlin.platform.type": "jvm"
+              },
+              "capabilities": [
+                "Kotlin Multiplatform.:kmpSecondLib:unspecified"
+              ],
+              "isTestFixtures": false
+            },
+            "buildId": ":",
+            "projectPath": ":kmpSecondLib"
+          },
+          "lintJar": {
+            "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpSecondLib/build/intermediates/lint_publish_jar/global/prepareLintJarForPublish/lint.jar"
+          },
+          "srcJars": []
+        }
+      },
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "com.android.build.gradle.internal.ide.kmp.resolvers.ProjectDependencyResolver"
+    }
+  },
+  {
+    "type": "Regular",
+    "coordinates": {
+      "buildName": ":",
+      "buildPath": ":",
+      "projectPath": ":kmpJvmOnly",
+      "projectName": "kmpJvmOnly"
+    },
+    "extras": {
+      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;artifactsClasspath": [
+        "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpJvmOnly/build/libs/kmpJvmOnly-jvm.jar"
+      ],
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "com.android.build.gradle.internal.ide.kmp.resolvers.ProjectDependencyResolver"
+    }
+  }
+]
