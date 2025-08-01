@@ -74713,10 +74713,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.jvm-abi-gen_2.1.10",
-    pom = "repository/org/jetbrains/kotlin/jvm-abi-gen/2.1.10/jvm-abi-gen-2.1.10.pom",
+    name = "org.jetbrains.kotlin.jvm-abi-gen_2.2.0",
+    pom = "repository/org/jetbrains/kotlin/jvm-abi-gen/2.2.0/jvm-abi-gen-2.2.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/jvm-abi-gen/2.1.10",
+    repo_path = "org/jetbrains/kotlin/jvm-abi-gen/2.2.0",
     visibility = ["//visibility:public"],
 )
 
@@ -76261,21 +76261,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler_2.1.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.1.10/kotlin-compiler-2.1.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.1.10",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.1.10",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.1.10",
-        "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
-        "org.jetbrains.intellij.deps.trove4j_1.0.20200330",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.6.4",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-compiler_2.2.20-Beta1",
     pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.2.20-Beta1/kotlin-compiler-2.2.20-Beta1.pom",
     repo_root_path = "repository",
@@ -76333,12 +76318,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin_2.1.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.1.10/kotlin-compose-compiler-plugin-2.1.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin_2.2.0",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.2.0/kotlin-compose-compiler-plugin-2.2.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.1.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.2.0",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -79488,14 +79473,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.1.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.1.10/kotlin-script-runtime-2.1.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.1.10",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-script-runtime_2.2.20-Beta1",
     pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.2.20-Beta1/kotlin-script-runtime-2.2.20-Beta1.pom",
     repo_root_path = "repository",
@@ -80466,10 +80443,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-serialization-compiler-plugin_2.1.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.1.10/kotlin-serialization-compiler-plugin-2.1.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-serialization-compiler-plugin_2.2.0",
+    pom = "repository/org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.2.0/kotlin-serialization-compiler-plugin-2.2.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.1.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.2.0",
     visibility = ["//visibility:public"],
 )
 
