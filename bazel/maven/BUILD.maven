@@ -67075,6 +67075,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.typesafe.config_1.4.3",
+    pom = "repository/com/typesafe/config/1.4.3/config-1.4.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/typesafe/config/1.4.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.vladsch.flexmark.flexmark-ext-autolink_0.64.8",
     pom = "repository/com/vladsch/flexmark/flexmark-ext-autolink/0.64.8/flexmark-ext-autolink-0.64.8.pom",
     repo_root_path = "repository",
@@ -68550,6 +68558,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "io.ktor.ktor-events-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-events-jvm/3.1.3/ktor-events-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-events-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-utils-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "io.ktor.ktor-events_2.3.2",
     pom = "repository/io/ktor/ktor-events/2.3.2/ktor-events-2.3.2.pom",
     repo_root_path = "repository",
@@ -68560,6 +68582,22 @@ maven_artifact(
         "io.ktor.ktor-utils_2.3.2",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.22",
         "org.jetbrains.kotlinx.atomicfu_0.19.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-http-cio-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-http-cio-jvm/3.1.3/ktor-http-cio-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-http-cio-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "io.ktor.ktor-network-jvm_3.1.3",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-http-jvm_3.1.3",
+        "io.ktor.ktor-io-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -68577,6 +68615,21 @@ maven_artifact(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.1",
         "io.ktor.ktor-utils-jvm_2.3.2",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-http-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-http-jvm/3.1.3/ktor-http-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-http-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-utils-jvm_3.1.3",
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.8.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -68612,6 +68665,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "io.ktor.ktor-io-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-io-jvm/3.1.3/ktor-io-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-io-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "org.jetbrains.kotlinx.kotlinx-io-core-jvm_0.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "io.ktor.ktor-io_2.3.2",
     pom = "repository/io/ktor/ktor-io/2.3.2/ktor-io-2.3.2.pom",
     repo_root_path = "repository",
@@ -68620,6 +68687,20 @@ maven_artifact(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.1",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.22",
         "org.jetbrains.kotlinx.atomicfu_0.19.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-network-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-network-jvm/3.1.3/ktor-network-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-network-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-utils-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -68638,6 +68719,20 @@ maven_artifact(
         "io.ktor.ktor-http-jvm_2.3.2",
         "io.ktor.ktor-websockets-jvm_2.3.2",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-serialization-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-serialization-jvm/3.1.3/ktor-serialization-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-serialization-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-websockets-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -68728,6 +68823,90 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "io.ktor.ktor-server-cio-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-server-cio-jvm/3.1.3/ktor-server-cio-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-server-cio-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-server-core-jvm_3.1.3",
+        "io.ktor.ktor-http-cio-jvm_3.1.3",
+        "io.ktor.ktor-websockets-jvm_3.1.3",
+        "io.ktor.ktor-network-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-server-core-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-server-core-jvm/3.1.3/ktor-server-core-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-server-core-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "com.typesafe.config_1.4.3",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-utils-jvm_3.1.3",
+        "io.ktor.ktor-http-jvm_3.1.3",
+        "io.ktor.ktor-serialization-jvm_3.1.3",
+        "io.ktor.ktor-events-jvm_3.1.3",
+        "io.ktor.ktor-http-cio-jvm_3.1.3",
+        "io.ktor.ktor-websockets-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-reflect_2.1.20",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+        "org.fusesource.jansi.jansi_2.4.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-server-sse-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-server-sse-jvm/3.1.3/ktor-server-sse-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-server-sse-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-server-core-jvm_3.1.3",
+        "io.ktor.ktor-sse-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-server-websockets-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-server-websockets-jvm/3.1.3/ktor-server-websockets-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-server-websockets-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-server-core-jvm_3.1.3",
+        "io.ktor.ktor-websockets-jvm_3.1.3",
+        "io.ktor.ktor-websocket-serialization-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-sse-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-sse-jvm/3.1.3/ktor-sse-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-sse-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-utils-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "io.ktor.ktor-utils-jvm_2.3.2",
     pom = "repository/io/ktor/ktor-utils-jvm/2.3.2/ktor-utils-jvm-2.3.2.pom",
     repo_root_path = "repository",
@@ -68740,6 +68919,21 @@ maven_artifact(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.1",
         "io.ktor.ktor-io-jvm_2.3.2",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-utils-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-utils-jvm/3.1.3/ktor-utils-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-utils-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-io-jvm_3.1.3",
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.8.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -68777,6 +68971,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "io.ktor.ktor-websocket-serialization-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-websocket-serialization-jvm/3.1.3/ktor-websocket-serialization-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-websocket-serialization-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-serialization-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "io.ktor.ktor-websocket-serialization_2.3.2",
     pom = "repository/io/ktor/ktor-websocket-serialization/2.3.2/ktor-websocket-serialization-2.3.2.pom",
     repo_root_path = "repository",
@@ -68804,6 +69012,21 @@ maven_artifact(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.1",
         "io.ktor.ktor-http-jvm_2.3.2",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.ktor.ktor-websockets-jvm_3.1.3",
+    pom = "repository/io/ktor/ktor-websockets-jvm/3.1.3/ktor-websockets-jvm-3.1.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/ktor/ktor-websockets-jvm/3.1.3",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.16",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "io.ktor.ktor-utils-jvm_3.1.3",
+        "io.ktor.ktor-http-jvm_3.1.3",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -71801,6 +72024,15 @@ maven_artifact(
     deps = [
         "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.21.1",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.fusesource.jansi.jansi_2.4.1",
+    pom = "repository/org/fusesource/jansi/jansi/2.4.1/jansi-2.4.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/jansi/jansi/2.4.1",
+    parent = "org.fusesource.fusesource-pom_1.12",
     visibility = ["//visibility:public"],
 )
 
@@ -82703,6 +82935,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.atomicfu-jvm_0.29.0",
+    pom = "repository/org/jetbrains/kotlinx/atomicfu-jvm/0.29.0/atomicfu-jvm-0.29.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/atomicfu-jvm/0.29.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.atomicfu_0.17.0",
     pom = "repository/org/jetbrains/kotlinx/atomicfu/0.17.0/atomicfu-0.17.0.pom",
     repo_root_path = "repository",
@@ -82742,6 +82985,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlinx/atomicfu/0.23.2",
     deps = [
         "org.jetbrains.kotlinx.atomicfu-jvm_0.23.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.atomicfu_0.29.0",
+    pom = "repository/org/jetbrains/kotlinx/atomicfu/0.29.0/atomicfu-0.29.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/atomicfu/0.29.0",
+    deps = [
+        "org.jetbrains.kotlinx.atomicfu-jvm_0.29.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82897,6 +83151,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2/kotlinx-coroutines-bom-1.10.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.6.1",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.6.1/kotlinx-coroutines-bom-1.6.1.pom",
     repo_root_path = "repository",
@@ -82978,6 +83240,19 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-common/1.3.6",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.3.71",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2/kotlinx-coroutines-core-jvm-1.10.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2",
+    deps = [
+        "org.jetbrains.annotations_23.0.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -83607,6 +83882,29 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-io-bytestring-jvm_0.7.0",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-io-bytestring-jvm/0.7.0/kotlinx-io-bytestring-jvm-0.7.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-io-bytestring-jvm/0.7.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-io-core-jvm_0.7.0",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-io-core-jvm/0.7.0/kotlinx-io-core-jvm-0.7.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-io-core-jvm/0.7.0",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-io-bytestring-jvm_0.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-metadata-jvm_0.1.0",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-metadata-jvm/0.1.0/kotlinx-metadata-jvm-0.1.0.pom",
     repo_root_path = "repository",
@@ -83676,6 +83974,14 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.8.0/kotlinx-serialization-bom-1.8.0.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-bom/1.8.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.8.1",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.8.1/kotlinx-serialization-bom-1.8.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-bom/1.8.1",
     visibility = ["//visibility:public"],
 )
 
@@ -83751,6 +84057,18 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
         "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.8.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.8.1",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.8.1/kotlinx-serialization-core-jvm-1.8.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.8.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.8.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -88579,6 +88897,13 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/eclipse/sisu/sisu-inject/0.3.5",
     parent = "org.sonatype.oss.oss-parent_9",
+)
+
+maven_artifact(
+    name = "org.fusesource.fusesource-pom_1.12",
+    pom = "repository/org/fusesource/fusesource-pom/1.12/fusesource-pom-1.12.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/fusesource-pom/1.12",
 )
 
 maven_artifact(
