@@ -118,6 +118,9 @@ interface PreviewScreenshotTestEngineInput {
 }
 
 fun PreviewScreenshotTestEngineInput.copyJvmArgsTo(addJvmArgFunc: (String) -> Unit) {
+    //Force the locale to en-US to ensure consistent resource parsing.
+    addJvmArgFunc("-Duser.language=en")
+    addJvmArgFunc("-Duser.country=US")
     if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
         // Required by LayoutLib.
         addJvmArgFunc("-Djava.security.manager=allow")
