@@ -16979,17 +16979,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "androidx.collection.collection-jvm_1.5.0-beta01",
-    pom = "repository/androidx/collection/collection-jvm/1.5.0-beta01/collection-jvm-1.5.0-beta01.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/collection/collection-jvm/1.5.0-beta01",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "androidx.collection.collection-ktx_1.1.0",
     pom = "repository/androidx/collection/collection-ktx/1.1.0/collection-ktx-1.1.0.pom",
     repo_root_path = "repository",
@@ -30449,18 +30438,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "androidx.lifecycle.lifecycle-common-jvm_2.9.0-alpha08",
-    pom = "repository/androidx/lifecycle/lifecycle-common-jvm/2.9.0-alpha08/lifecycle-common-jvm-2.9.0-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/lifecycle/lifecycle-common-jvm/2.9.0-alpha08",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.8.1",
-        "org.jspecify.jspecify_1.0.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "androidx.lifecycle.lifecycle-common_2.0.0",
     pom = "repository/androidx/lifecycle/lifecycle-common/2.0.0/lifecycle-common-2.0.0.pom",
     repo_root_path = "repository",
@@ -30705,19 +30682,6 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
         "org.jetbrains.kotlinx.atomicfu_0.17.0",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "androidx.lifecycle.lifecycle-common_2.9.0-alpha08",
-    pom = "repository/androidx/lifecycle/lifecycle-common/2.9.0-alpha08/lifecycle-common-2.9.0-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/lifecycle/lifecycle-common/2.9.0-alpha08",
-    deps = [
-        "androidx.annotation.annotation_1.8.1",
-        "androidx.lifecycle.lifecycle-common-jvm_2.9.0-alpha08",
-        "org.jetbrains.kotlinx.atomicfu_0.17.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -31762,19 +31726,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "androidx.lifecycle.lifecycle-runtime-desktop_2.9.0-alpha08",
-    pom = "repository/androidx/lifecycle/lifecycle-runtime-desktop/2.9.0-alpha08/lifecycle-runtime-desktop-2.9.0-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/lifecycle/lifecycle-runtime-desktop/2.9.0-alpha08",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.8.1",
-        "androidx.lifecycle.lifecycle-common_2.9.0-alpha08",
-        "androidx.arch.core.core-common_2.2.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "androidx.lifecycle.lifecycle-runtime-ktx-android_2.8.2",
     pom = "repository/androidx/lifecycle/lifecycle-runtime-ktx-android/2.8.2/lifecycle-runtime-ktx-android-2.8.2.pom",
     repo_root_path = "repository",
@@ -32617,17 +32568,6 @@ maven_artifact(
         "androidx.annotation.annotation-jvm_1.8.0",
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "androidx.lifecycle.lifecycle-viewmodel-desktop_2.9.0-alpha08",
-    pom = "repository/androidx/lifecycle/lifecycle-viewmodel-desktop/2.9.0-alpha08/lifecycle-viewmodel-desktop-2.9.0-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/lifecycle/lifecycle-viewmodel-desktop/2.9.0-alpha08",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.8.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -34230,14 +34170,6 @@ maven_artifact(
     deps = [
         "androidx.core.core_1.0.0",
     ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "androidx.performance.performance-annotation-jvm_1.0.0-alpha01",
-    pom = "repository/androidx/performance/performance-annotation-jvm/1.0.0-alpha01/performance-annotation-jvm-1.0.0-alpha01.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/performance/performance-annotation-jvm/1.0.0-alpha01",
     visibility = ["//visibility:public"],
 )
 
@@ -66176,31 +66108,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.intellij.platform.kotlinx-coroutines-bom_1.8.0-intellij-13",
-    pom = "repository/com/intellij/platform/kotlinx-coroutines-bom/1.8.0-intellij-13/kotlinx-coroutines-bom-1.8.0-intellij-13.pom",
-    repo_root_path = "repository",
-    repo_path = "com/intellij/platform/kotlinx-coroutines-bom/1.8.0-intellij-13",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-11",
     pom = "repository/com/intellij/platform/kotlinx-coroutines-core-jvm/1.8.0-intellij-11/kotlinx-coroutines-core-jvm-1.8.0-intellij-11.pom",
     repo_root_path = "repository",
     repo_path = "com/intellij/platform/kotlinx-coroutines-core-jvm/1.8.0-intellij-11",
     deps = [
         "com.intellij.platform.kotlinx-coroutines-bom_1.8.0-intellij-11",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-13",
-    pom = "repository/com/intellij/platform/kotlinx-coroutines-core-jvm/1.8.0-intellij-13/kotlinx-coroutines-core-jvm-1.8.0-intellij-13.pom",
-    repo_root_path = "repository",
-    repo_path = "com/intellij/platform/kotlinx-coroutines-core-jvm/1.8.0-intellij-13",
-    deps = [
-        "com.intellij.platform.kotlinx-coroutines-bom_1.8.0-intellij-13",
     ],
     visibility = ["//visibility:public"],
 )
@@ -72360,19 +72273,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.androidx.lifecycle.lifecycle-runtime-compose-desktop_2.9.0-alpha04",
-    pom = "repository/org/jetbrains/androidx/lifecycle/lifecycle-runtime-compose-desktop/2.9.0-alpha04/lifecycle-runtime-compose-desktop-2.9.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/androidx/lifecycle/lifecycle-runtime-compose-desktop/2.9.0-alpha04",
-    deps = [
-        "androidx.lifecycle.lifecycle-common-jvm_2.9.0-alpha08",
-        "androidx.lifecycle.lifecycle-runtime-desktop_2.9.0-alpha08",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.7.1",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.androidx.lifecycle.lifecycle-runtime-compose_2.8.4",
     pom = "repository/org/jetbrains/androidx/lifecycle/lifecycle-runtime-compose/2.8.4/lifecycle-runtime-compose-2.8.4.pom",
     repo_root_path = "repository",
@@ -72459,23 +72359,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.compose.animation.animation-core-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/animation/animation-core-desktop/1.8.0-alpha04/animation-core-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/animation/animation-core-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-unit-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
-        "org.jetbrains.kotlinx.atomicfu-jvm_0.23.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.compose.animation.animation-core_1.7.3",
     pom = "repository/org/jetbrains/compose/animation/animation-core/1.7.3/animation-core-1.7.3.pom",
     repo_root_path = "repository",
@@ -72529,23 +72412,6 @@ maven_artifact(
         "org.jetbrains.compose.ui.ui-util-desktop_1.7.3",
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.24",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.24",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.compose.animation.animation-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/animation/animation-desktop/1.8.0-alpha04/animation-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/animation/animation-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "org.jetbrains.compose.animation.animation-core-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.foundation.foundation-layout-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-geometry-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -72650,14 +72516,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.compose.components.components-resources-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/components/components-resources-desktop/1.8.0-alpha04/components-resources-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/components/components-resources-desktop/1.8.0-alpha04",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.compose.components.components-resources_1.7.3",
     pom = "repository/org/jetbrains/compose/components/components-resources/1.7.3/components-resources-1.7.3.pom",
     repo_root_path = "repository",
@@ -72668,14 +72526,6 @@ maven_artifact(
         "org.jetbrains.compose.foundation.foundation_1.7.3",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.8.0",
     ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.compose.components.components-resources_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/components/components-resources/1.8.0-alpha04/components-resources-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/components/components-resources/1.8.0-alpha04",
     visibility = ["//visibility:public"],
 )
 
@@ -72724,26 +72574,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.compose.foundation.foundation-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/foundation/foundation-desktop/1.8.0-alpha04/foundation-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/foundation/foundation-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "androidx.performance.performance-annotation-jvm_1.0.0-alpha01",
-        "org.jetbrains.compose.animation.animation-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.foundation.foundation-layout-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-text-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
-        "org.jetbrains.kotlinx.atomicfu-jvm_0.23.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.compose.foundation.foundation-layout-desktop_1.7.1",
     pom = "repository/org/jetbrains/compose/foundation/foundation-layout-desktop/1.7.1/foundation-layout-desktop-1.7.1.pom",
     repo_root_path = "repository",
@@ -72773,21 +72603,6 @@ maven_artifact(
         "org.jetbrains.compose.ui.ui-util-desktop_1.7.3",
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.24",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.24",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.compose.foundation.foundation-layout-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/foundation/foundation-layout-desktop/1.8.0-alpha04/foundation-layout-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/foundation/foundation-layout-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -72877,20 +72692,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/runtime/runtime-desktop/1.8.0-alpha04/runtime-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/runtime/runtime-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "androidx.performance.performance-annotation-jvm_1.0.0-alpha01",
-        "org.jetbrains.kotlinx.atomicfu-jvm_0.23.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.compose.runtime.runtime-saveable-desktop_1.7.1",
     pom = "repository/org/jetbrains/compose/runtime/runtime-saveable-desktop/1.7.1/runtime-saveable-desktop-1.7.1.pom",
     repo_root_path = "repository",
@@ -72910,18 +72711,6 @@ maven_artifact(
     deps = [
         "org.jetbrains.compose.runtime.runtime-desktop_1.7.3",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.24",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.compose.runtime.runtime-saveable-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/runtime/runtime-saveable-desktop/1.8.0-alpha04/runtime-saveable-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/runtime/runtime-saveable-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -72965,20 +72754,6 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.24",
         "org.jetbrains.kotlinx.atomicfu_0.23.2",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.8.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.compose.ui.ui-backhandler-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/ui/ui-backhandler-desktop/1.8.0-alpha04/ui-backhandler-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/ui/ui-backhandler-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "org.jetbrains.androidx.lifecycle.lifecycle-runtime-compose-desktop_2.9.0-alpha04",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -73042,32 +72817,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.compose.ui.ui-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/ui/ui-desktop/1.8.0-alpha04/ui-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/ui/ui-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "androidx.lifecycle.lifecycle-common-jvm_2.9.0-alpha08",
-        "androidx.lifecycle.lifecycle-runtime-desktop_2.9.0-alpha08",
-        "androidx.lifecycle.lifecycle-viewmodel-desktop_2.9.0-alpha08",
-        "androidx.performance.performance-annotation-jvm_1.0.0-alpha01",
-        "org.jetbrains.androidx.lifecycle.lifecycle-runtime-compose-desktop_2.9.0-alpha04",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.runtime.runtime-saveable-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-backhandler-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-geometry-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-graphics-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-text-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-unit-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
-        "org.jetbrains.kotlinx.atomicfu-jvm_0.23.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.compose.ui.ui-geometry-desktop_1.7.1",
     pom = "repository/org/jetbrains/compose/ui/ui-geometry-desktop/1.7.1/ui-geometry-desktop-1.7.1.pom",
     repo_root_path = "repository",
@@ -73091,18 +72840,6 @@ maven_artifact(
         "org.jetbrains.compose.ui.ui-util-desktop_1.7.3",
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.24",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.24",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.compose.ui.ui-geometry-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/ui/ui-geometry-desktop/1.8.0-alpha04/ui-geometry-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/ui/ui-geometry-desktop/1.8.0-alpha04",
-    deps = [
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -73157,22 +72894,6 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.24",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.24",
         "org.jetbrains.skiko.skiko-awt_0.8.18",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.compose.ui.ui-graphics-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/ui/ui-graphics-desktop/1.8.0-alpha04/ui-graphics-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/ui/ui-graphics-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-geometry-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-unit-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -73283,25 +73004,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.compose.ui.ui-text-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/ui/ui-text-desktop/1.8.0-alpha04/ui-text-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/ui/ui-text-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "androidx.collection.collection-jvm_1.5.0-beta01",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.runtime.runtime-saveable-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-geometry-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-graphics-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-unit-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
-        "org.jetbrains.kotlinx.atomicfu-jvm_0.23.2",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.compose.ui.ui-text_1.7.3",
     pom = "repository/org/jetbrains/compose/ui/ui-text/1.7.3/ui-text-1.7.3.pom",
     repo_root_path = "repository",
@@ -73364,20 +73066,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.compose.ui.ui-unit-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/ui/ui-unit-desktop/1.8.0-alpha04/ui-unit-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/ui/ui-unit-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.1",
-        "org.jetbrains.compose.runtime.runtime-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-geometry-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.compose.ui.ui-unit_1.7.3",
     pom = "repository/org/jetbrains/compose/ui/ui-unit/1.7.3/ui-unit-1.7.3.pom",
     repo_root_path = "repository",
@@ -73413,17 +73101,6 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.24",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.24",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.compose.ui.ui-util-desktop_1.8.0-alpha04",
-    pom = "repository/org/jetbrains/compose/ui/ui-util-desktop/1.8.0-alpha04/ui-util-desktop-1.8.0-alpha04.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/compose/ui/ui-util-desktop/1.8.0-alpha04",
-    deps = [
-        "androidx.collection.collection-jvm_1.5.0-beta01",
     ],
     visibility = ["//visibility:public"],
 )
@@ -73707,22 +73384,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.jewel.jewel-foundation_0.28.0-251.26137",
-    pom = "repository/org/jetbrains/jewel/jewel-foundation/0.28.0-251.26137/jewel-foundation-0.28.0-251.26137.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-foundation/0.28.0-251.26137",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-13",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.skiko.skiko-awt_0.9.2",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.9.2",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.8.0-alpha04",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.jewel.jewel-ide-laf-bridge-241_0.27.0",
     pom = "repository/org/jetbrains/jewel/jewel-ide-laf-bridge-241/0.27.0/jewel-ide-laf-bridge-241-0.27.0.pom",
     repo_root_path = "repository",
@@ -73759,64 +73420,6 @@ maven_artifact(
         "org.jetbrains.skiko.skiko-awt-runtime-all_0.8.18",
         "org.jetbrains.skiko.skiko-awt_0.8.18",
         "org.jetbrains.compose.foundation.foundation-desktop_1.7.3",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-int-ui-standalone-241_0.27.0",
-    pom = "repository/org/jetbrains/jewel/jewel-int-ui-standalone-241/0.27.0/jewel-int-ui-standalone-241-0.27.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-int-ui-standalone-241/0.27.0",
-    deps = [
-        "org.jetbrains.jewel.jewel-ui-241_0.27.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-int-ui-standalone-242_0.27.0",
-    pom = "repository/org/jetbrains/jewel/jewel-int-ui-standalone-242/0.27.0/jewel-int-ui-standalone-242-0.27.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-int-ui-standalone-242/0.27.0",
-    deps = [
-        "org.jetbrains.jewel.jewel-ui-242_0.27.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-int-ui-standalone_0.28.0-243.27100",
-    pom = "repository/org/jetbrains/jewel/jewel-int-ui-standalone/0.28.0-243.27100/jewel-int-ui-standalone-0.28.0-243.27100.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-int-ui-standalone/0.28.0-243.27100",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-11",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.8.18",
-        "org.jetbrains.skiko.skiko-awt_0.8.18",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.jewel.jewel-ui_0.28.0-243.27100",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.7.3",
-        "org.jetbrains.jewel.jewel-foundation_0.28.0-243.27100",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-int-ui-standalone_0.28.0-251.26137",
-    pom = "repository/org/jetbrains/jewel/jewel-int-ui-standalone/0.28.0-251.26137/jewel-int-ui-standalone-0.28.0-251.26137.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-int-ui-standalone/0.28.0-251.26137",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-13",
-        "org.jetbrains.skiko.skiko-awt_0.9.2",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.9.2",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.jewel.jewel-ui_0.28.0-251.26137",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.8.0-alpha04",
-        "org.jetbrains.jewel.jewel-foundation_0.28.0-251.26137",
     ],
     visibility = ["//visibility:public"],
 )
@@ -73860,25 +73463,6 @@ maven_artifact(
         "org.jetbrains.skiko.skiko-awt-runtime-all_0.8.18",
         "org.jetbrains.skiko.skiko-awt_0.8.18",
         "org.jetbrains.compose.foundation.foundation-desktop_1.7.3",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-markdown-core_0.28.0-251.26137",
-    pom = "repository/org/jetbrains/jewel/jewel-markdown-core/0.28.0-251.26137/jewel-markdown-core-0.28.0-251.26137.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-markdown-core/0.28.0-251.26137",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-13",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.jewel.jewel-ui_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-foundation_0.28.0-251.26137",
-        "org.commonmark.commonmark_0.24.0",
-        "org.jetbrains.skiko.skiko-awt_0.9.2",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.9.2",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.8.0-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -73969,25 +73553,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.jewel.jewel-markdown-extensions-gfm-alerts_0.28.0-251.26137",
-    pom = "repository/org/jetbrains/jewel/jewel-markdown-extensions-gfm-alerts/0.28.0-251.26137/jewel-markdown-extensions-gfm-alerts-0.28.0-251.26137.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-markdown-extensions-gfm-alerts/0.28.0-251.26137",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-13",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.jewel.jewel-markdown-core_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-ui_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-foundation_0.28.0-251.26137",
-        "org.jetbrains.skiko.skiko-awt_0.9.2",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.9.2",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.8.0-alpha04",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.jewel.jewel-markdown-extensions-gfm-tables_0.28.0-243.27100",
     pom = "repository/org/jetbrains/jewel/jewel-markdown-extensions-gfm-tables/0.28.0-243.27100/jewel-markdown-extensions-gfm-tables-0.28.0-243.27100.pom",
     repo_root_path = "repository",
@@ -74002,26 +73567,6 @@ maven_artifact(
         "org.jetbrains.skiko.skiko-awt-runtime-all_0.8.18",
         "org.jetbrains.skiko.skiko-awt_0.8.18",
         "org.jetbrains.compose.foundation.foundation-desktop_1.7.3",
-        "org.commonmark.commonmark-ext-gfm-tables_0.24.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-markdown-extensions-gfm-tables_0.28.0-251.26137",
-    pom = "repository/org/jetbrains/jewel/jewel-markdown-extensions-gfm-tables/0.28.0-251.26137/jewel-markdown-extensions-gfm-tables-0.28.0-251.26137.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-markdown-extensions-gfm-tables/0.28.0-251.26137",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-13",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.jewel.jewel-markdown-core_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-ui_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-foundation_0.28.0-251.26137",
-        "org.jetbrains.skiko.skiko-awt_0.9.2",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.9.2",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.8.0-alpha04",
         "org.commonmark.commonmark-ext-gfm-tables_0.24.0",
     ],
     visibility = ["//visibility:public"],
@@ -74074,74 +73619,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.jewel.jewel-markdown-int-ui-standalone-styling-241_0.27.0",
-    pom = "repository/org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-241/0.27.0/jewel-markdown-int-ui-standalone-styling-241-0.27.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-241/0.27.0",
-    deps = [
-        "org.jetbrains.jewel.jewel-markdown-core-241_0.27.0",
-        "org.jetbrains.jewel.jewel-int-ui-standalone-241_0.27.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-markdown-int-ui-standalone-styling-242_0.27.0",
-    pom = "repository/org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-242/0.27.0/jewel-markdown-int-ui-standalone-styling-242-0.27.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling-242/0.27.0",
-    deps = [
-        "org.jetbrains.jewel.jewel-markdown-core-242_0.27.0",
-        "org.jetbrains.jewel.jewel-int-ui-standalone-242_0.27.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-markdown-int-ui-standalone-styling_0.28.0-243.27100",
-    pom = "repository/org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling/0.28.0-243.27100/jewel-markdown-int-ui-standalone-styling-0.28.0-243.27100.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling/0.28.0-243.27100",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-11",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.jewel.jewel-markdown-core_0.28.0-243.27100",
-        "org.jetbrains.jewel.jewel-ui_0.28.0-243.27100",
-        "org.jetbrains.jewel.jewel-foundation_0.28.0-243.27100",
-        "org.jetbrains.jewel.jewel-int-ui-standalone_0.28.0-243.27100",
-        "org.jetbrains.jewel.jewel-markdown-extensions-gfm-alerts_0.28.0-243.27100",
-        "org.jetbrains.jewel.jewel-markdown-extensions-gfm-tables_0.28.0-243.27100",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.8.18",
-        "org.jetbrains.skiko.skiko-awt_0.8.18",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.7.3",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-markdown-int-ui-standalone-styling_0.28.0-251.26137",
-    pom = "repository/org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling/0.28.0-251.26137/jewel-markdown-int-ui-standalone-styling-0.28.0-251.26137.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-markdown-int-ui-standalone-styling/0.28.0-251.26137",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-13",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.jewel.jewel-markdown-core_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-ui_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-foundation_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-int-ui-standalone_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-markdown-extensions-gfm-alerts_0.28.0-251.26137",
-        "org.jetbrains.jewel.jewel-markdown-extensions-gfm-tables_0.28.0-251.26137",
-        "org.jetbrains.skiko.skiko-awt_0.9.2",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.9.2",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.8.0-alpha04",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.jewel.jewel-ui-241_0.27.0",
     pom = "repository/org/jetbrains/jewel/jewel-ui-241/0.27.0/jewel-ui-241-0.27.0.pom",
     repo_root_path = "repository",
@@ -74180,25 +73657,6 @@ maven_artifact(
         "org.jetbrains.compose.components.components-resources_1.7.3",
         "org.jetbrains.compose.components.components-resources-desktop_1.7.3",
         "org.jetbrains.compose.foundation.foundation-desktop_1.7.3",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.jewel.jewel-ui_0.28.0-251.26137",
-    pom = "repository/org/jetbrains/jewel/jewel-ui/0.28.0-251.26137/jewel-ui-0.28.0-251.26137.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/jewel/jewel-ui/0.28.0-251.26137",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
-        "com.intellij.platform.kotlinx-coroutines-core-jvm_1.8.0-intellij-13",
-        "org.jetbrains.annotations_24.0.0",
-        "org.jetbrains.skiko.skiko-awt_0.9.2",
-        "org.jetbrains.skiko.skiko-awt-runtime-all_0.9.2",
-        "org.jetbrains.jewel.jewel-foundation_0.28.0-251.26137",
-        "org.jetbrains.compose.components.components-resources_1.8.0-alpha04",
-        "org.jetbrains.compose.components.components-resources-desktop_1.8.0-alpha04",
-        "org.jetbrains.compose.foundation.foundation-desktop_1.8.0-alpha04",
     ],
     visibility = ["//visibility:public"],
 )
@@ -84479,14 +83937,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.skiko.skiko-awt-runtime-all_0.9.2",
-    pom = "repository/org/jetbrains/skiko/skiko-awt-runtime-all/0.9.2/skiko-awt-runtime-all-0.9.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/skiko/skiko-awt-runtime-all/0.9.2",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.skiko.skiko-awt-runtime-linux-arm64_0.8.18",
     pom = "repository/org/jetbrains/skiko/skiko-awt-runtime-linux-arm64/0.8.18/skiko-awt-runtime-linux-arm64-0.8.18.pom",
     repo_root_path = "repository",
@@ -84607,14 +84057,6 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.skiko.skiko-awt_0.9.2",
-    pom = "repository/org/jetbrains/skiko/skiko-awt/0.9.2/skiko-awt-0.9.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/skiko/skiko-awt/0.9.2",
     visibility = ["//visibility:public"],
 )
 
