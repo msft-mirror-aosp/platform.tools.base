@@ -295,6 +295,7 @@ public class MavenRepository {
                 return;
             }
 
+
             // get the jars for all the variants specified in the gradle module file
             if (moduleFile != null) {
                 String moduleContent = Files.readString(moduleFile.toPath());
@@ -307,38 +308,65 @@ public class MavenRepository {
                 // e.g. for url = kotlin-gradle-plugin-1.8.0-Beta-gradle71.jar
                 // classifier = gradle71
                 for (String url : urls) {
-                    String fileExtension = url.substring(url.lastIndexOf(".") + 1);
-                    String prefix = artifact.getArtifactId() + "-" + artifact.getVersion();
-                    String suffix = "." + fileExtension;
+                    String filename = new File(url).getName();
+                    String fileExtension = filename.substring(filename.lastIndexOf(".") + 1);
 
-                    String gradleVariant = removeSuffix(removePrefix(url, prefix), suffix);
-                    // if it's the main variant or javadoc variant, skip it
-                    if (gradleVariant.length() == 0 || gradleVariant.contains("javadoc")) {
-                        continue;
-                    }
-                    // only download sources for our API modules eg.
-                    // 'com.android.tools.build:gradle-api:8.1.0'
-                    if (gradleVariant.contains("sources") && !isApiModule(artifact)) {
-                        continue;
+                    String gradleVariant;
+                    String classifier;
+                    String version;
+                    if (url.startsWith("../")) {
+                        // Handle relative URLs. Going to the parent means the URL overrides the
+                        // version of the artifact.
+                        // "../32.1.1-android/guava-32.1.1-android.jar" ->
+                        // "guava-32.1.1-android.jar"
+                        //    artifactId = guava
+                        //    version = 32.1.1-android
+                        version = url.split("/")[1];
+
+                        // For now, we assume that classifier is not overridden.
+                        classifier = "";
+                    } else {
+                        // Handle simple URLs that are just filenames. We can use current artifact
+                        // version. E.g.,
+                        // "kotlin-stdlib-2.0.21-all.jar -> "kotlin-stdlib-2.0.21-all.jar"
+                        String prefix = artifact.getArtifactId() + "-" + artifact.getVersion();
+                        String suffix = "." + fileExtension;
+
+                        gradleVariant = removeSuffix(removePrefix(filename, prefix), suffix);
+
+                        // if it's the main variant or javadoc variant, skip it
+                        if (gradleVariant.length() == 0 || gradleVariant.contains("javadoc")) {
+                            continue;
+                        }
+                        // only download sources for our API modules eg.
+                        // 'com.android.tools.build:gradle-api:8.1.0'
+                        if (gradleVariant.contains("sources") && !isApiModule(artifact)) {
+                            continue;
+                        }
+
+                        version = artifact.getVersion();
+                        // e.g., -all, -versionMetadata, -gradle71
+                        classifier = removePrefix(gradleVariant, "-");
                     }
 
                     Artifact jarArtifact =
                             new DefaultArtifact(
                                     artifact.getGroupId(),
                                     artifact.getArtifactId(),
-                                    gradleVariant.substring(1),
+                                    classifier,
                                     fileExtension,
-                                    artifact.getVersion());
+                                    version);
 
                     requests.add(new ArtifactRequest(jarArtifact, repositories, null));
                 }
                 // Batch resolve variants
                 if (!requests.isEmpty()) {
+                    // Ignore return value. Failure to resolve throws.
                     system.resolveArtifacts(session, requests);
                 }
             }
         } catch (Exception e) {
-            // do nothing
+            throw new RuntimeException(e);
         }
     }
 

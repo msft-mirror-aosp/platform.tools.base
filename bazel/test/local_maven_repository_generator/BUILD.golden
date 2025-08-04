@@ -102,6 +102,27 @@ maven_import(
 )
 
 maven_artifact(
+    name = "com.google.example.bb_1",
+    pom = "repository/com/google/example/bb/1/bb-1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/example/bb/1",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.google.example.bb",
+    classifiers = [],
+    jars = [
+        "repository/com/google/example/bb/1/bb-1.jar"
+    ],
+    original_deps = [],
+    pom = "repository/com/google/example/bb/1/bb-1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/example/bb/1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.example.c_2",
     pom = "repository/com/google/example/c/2/c-2.pom",
     repo_root_path = "repository",
