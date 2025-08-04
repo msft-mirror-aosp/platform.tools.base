@@ -22,7 +22,6 @@ import com.android.ddmlib.MultiLineReceiver
 import com.android.ddmlib.SyncException
 import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -57,10 +56,7 @@ class AdblibIDeviceWrapperTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     @JvmField
     @Rule

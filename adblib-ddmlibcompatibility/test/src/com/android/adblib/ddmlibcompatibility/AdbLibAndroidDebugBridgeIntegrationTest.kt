@@ -22,7 +22,6 @@ import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice.PROP_DEVICE_DENSITY
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -46,10 +45,7 @@ import java.util.concurrent.TimeUnit
  */
 class AdbLibAndroidDebugBridgeIntegrationTest {
 
-    private val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    private val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val useAdbLibAndroidDebugBridgeRule =
         UseAdbLibAndroidDebugBridgeRule({ fakeAdbRule.fakeAdb.port }, { fakeAdbRule.adbSession })

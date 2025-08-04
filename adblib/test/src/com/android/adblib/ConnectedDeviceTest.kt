@@ -23,7 +23,6 @@ import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.testingutils.TimeWaitSocketsThrottler
 import com.android.adblib.testingutils.asAdbInputChannel
 import com.android.fakeadbserver.DeviceFileState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -65,10 +64,7 @@ class ConnectedDeviceTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     @JvmField
     @Rule

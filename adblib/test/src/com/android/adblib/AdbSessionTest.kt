@@ -18,7 +18,6 @@ package com.android.adblib
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CoroutineScope
@@ -50,10 +49,7 @@ class AdbSessionTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
     private val session get() = fakeAdbRule.adbSession

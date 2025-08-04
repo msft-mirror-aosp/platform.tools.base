@@ -46,9 +46,7 @@ class TrackAppStateFlowTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     @JvmField
     @Rule

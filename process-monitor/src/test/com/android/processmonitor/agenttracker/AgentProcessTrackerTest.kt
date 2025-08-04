@@ -21,7 +21,6 @@ import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.DeviceState.HostConnectionType.USB
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.processmonitor.agenttracker.AgentProcessTracker.Companion.AGENT_PATH
 import com.android.processmonitor.common.ProcessEvent.ProcessAdded
 import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
@@ -50,7 +49,6 @@ internal class AgentProcessTrackerTest {
         installDefaultCommandHandlers()
         installDeviceHandler(agentHandler)
         installDeviceHandler(makeAgentDirHandler)
-        installDeviceHandler(SyncCommandHandler())
     }
     private val logger = FakeAdbLoggerFactory().logger
     private val agentSourcePath = TestResources.getDirectory("/agent").toPath()

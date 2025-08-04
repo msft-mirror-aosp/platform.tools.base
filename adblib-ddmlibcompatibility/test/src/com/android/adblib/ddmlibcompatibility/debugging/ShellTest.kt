@@ -24,7 +24,6 @@ import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.MultiLineReceiver
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -43,10 +42,7 @@ class ShellTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
 

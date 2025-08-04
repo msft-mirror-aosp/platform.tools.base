@@ -29,7 +29,6 @@ import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -44,10 +43,7 @@ open class AdbLibToolsTestBase {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     protected val fakeAdb get() = fakeAdbRule.fakeAdb
     protected val session get() = fakeAdbRule.adbSession

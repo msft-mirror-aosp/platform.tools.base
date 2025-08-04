@@ -9,7 +9,6 @@ import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.idevicemanager.IDeviceManagerListener
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import org.junit.Assert.assertArrayEquals
@@ -24,10 +23,7 @@ class AdbLibIDeviceManagerTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
     private val bridge = AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")

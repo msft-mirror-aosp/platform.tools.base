@@ -23,7 +23,6 @@ import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.MdnsService
 import com.android.fakeadbserver.ServiceType
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.FaultyVersionCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
@@ -51,10 +50,7 @@ class AdbHostServicesTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
     private val hostServices get() = fakeAdbRule.adbSession.hostServices

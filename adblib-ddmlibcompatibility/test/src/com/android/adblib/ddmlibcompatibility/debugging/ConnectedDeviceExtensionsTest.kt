@@ -23,7 +23,6 @@ import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -37,10 +36,7 @@ class ConnectedDeviceExtensionsTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
 

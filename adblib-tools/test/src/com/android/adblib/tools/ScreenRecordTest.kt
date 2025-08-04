@@ -43,9 +43,7 @@ class ScreenRecordTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
     private val deviceServices get() = fakeAdbRule.adbSession.deviceServices

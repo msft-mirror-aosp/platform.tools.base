@@ -23,7 +23,6 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
-import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.testingutils.TimeWaitSocketsThrottler
 import com.android.adblib.testingutils.asAdbInputChannel
 import com.android.adblib.testingutils.setTestLoggerMinLevel
@@ -34,7 +33,6 @@ import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.ProfileableProcessState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -74,7 +72,6 @@ import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.PosixFilePermission.OWNER_READ
 import java.nio.file.attribute.PosixFilePermission.OWNER_WRITE
 import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.regex.Matcher
@@ -90,10 +87,7 @@ class AdbDeviceServicesTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
     private val deviceServices get() = fakeAdbRule.adbSession.deviceServices
