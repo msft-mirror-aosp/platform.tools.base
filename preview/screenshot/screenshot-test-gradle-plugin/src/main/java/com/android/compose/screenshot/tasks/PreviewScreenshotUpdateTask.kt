@@ -19,13 +19,13 @@ package com.android.compose.screenshot.tasks
 import com.android.compose.screenshot.services.AnalyticsService
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
-@CacheableTask
+@DisableCachingByDefault
 abstract class PreviewScreenshotUpdateTask : JavaExec() {
     @get:Nested
     abstract val testEngineInput: PreviewScreenshotTestEngineInput
