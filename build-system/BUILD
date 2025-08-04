@@ -426,6 +426,7 @@ maven_repository(
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",
         "@maven//:org.junit.junit-bom_5.10.2",
+        "@maven//:org.junit.junit-bom_5.11.0-M2",
     ],
     visibility = ["//prebuilts/studio/buildbenchmarks:__subpackages__"],
 )
@@ -631,6 +632,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",
         "@maven//:org.jetbrains.markdown",
         "@maven//:org.junit.junit-bom_5.10.2",
+        "@maven//:org.junit.junit-bom_5.11.0-M2",
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",
         "@maven//:org.mockito.mockito-core",
