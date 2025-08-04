@@ -198,7 +198,7 @@ class SvgGradientNode extends SvgNode {
         writer.write(System.lineSeparator());
         writer.write(indent);
         writer.write(INDENT_UNIT);
-        writer.write("<gradient ");
+        writer.write("<gradient");
 
         // TODO: Fix matrix transformations that include skew element and SVGs that define scale before rotate.
         // Additionally skew transformations have not been tested.
