@@ -39,13 +39,9 @@ class TransportServiceImpl final
                           const proto::VersionRequest* request,
                           proto::VersionResponse* response) override;
 
-  grpc::Status GetFile(grpc::ServerContext* context,
-                       const proto::BytesRequest* request,
-                       proto::FileResponse* response) override;
-
-  grpc::Status GetBytesInChunks(
-      grpc::ServerContext* context, const proto::BytesRequest* request,
-      grpc::ServerWriter<proto::BytesInChunksResponse>* response) override;
+  grpc::Status GetBytes(grpc::ServerContext* context,
+                        const proto::BytesRequest* request,
+                        proto::BytesResponse* response) override;
 
   grpc::Status GetAgentStatus(grpc::ServerContext* context,
                               const proto::AgentStatusRequest* request,
@@ -64,12 +60,6 @@ class TransportServiceImpl final
                               proto::GetEventGroupsResponse* response) override;
 
  private:
-  grpc::Status ValidateAndGetCanonicalPath(const std::string& id,
-                                           std::string* canonical_path);
-  grpc::Status StreamFile(
-      const std::string& file_path, const std::string& id,
-      grpc::ServerWriter<proto::BytesInChunksResponse>* writer);
-
   // The daemon this service talks to.
   Daemon* daemon_;
 };

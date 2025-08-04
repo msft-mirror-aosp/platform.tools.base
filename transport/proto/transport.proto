@@ -33,12 +33,7 @@ service TransportService {
 
   // Query for cached byte data associated with some ID. Other services may
   // return an ID which can be used to fetch data using this central cache.
-  rpc GetFile(BytesRequest) returns (FileResponse) {}
-
-  // Given an ID for a capture, streams the contents of the capture file from
-  // the device to the client in chunks. This is an efficient way to transfer
-  // large files over the network.
-  rpc GetBytesInChunks(BytesRequest) returns (stream BytesInChunksResponse) {}
+  rpc GetBytes(BytesRequest) returns (BytesResponse) {}
 
   // Studio-side only: gets the currently connected devices.
   // TODO: replace with command in the new pipeline.
@@ -106,17 +101,10 @@ message BytesRequest {
   string id = 2;
 }
 
-message FileResponse {
-  // The path to a file on the server that holds the byte contents from a cache,
-  // or an empty string ("") if no data was found associated with the cache key
-  // used to fetch it or the data was removed after some timeout.
-  string file_path = 1;
-}
-
-message BytesInChunksResponse {
-  // A portion of the requested data. Assembling all chunks in the response
-  // stream should reconstruct the requested data.
-  bytes chunk = 1;
+message BytesResponse {
+  // Byte contents from a cache, or "" if no data was found associated with the
+  // cache key used to fetch it, or if the data was removed after some timeout.
+  bytes contents = 1;
 }
 
 message GetDevicesRequest {}

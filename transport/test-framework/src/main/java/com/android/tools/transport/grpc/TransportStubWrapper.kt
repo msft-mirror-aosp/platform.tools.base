@@ -42,6 +42,6 @@ class TransportStubWrapper(val transportStub: TransportServiceBlockingStub) {
         if (id.isBlank()) return ""
 
         val bytesRequest = Transport.BytesRequest.newBuilder().setId(id).build()
-        return transportStub.getFile(bytesRequest).filePath
+        return transportStub.getBytes(bytesRequest).contents.toStringUtf8()
     }
 }
