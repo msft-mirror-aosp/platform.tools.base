@@ -37,6 +37,7 @@ def _avd_impl(ctx):
         output = launcher,
         is_executable = True,
         substitutions = {
+            "%avd_name%": ctx.attr.name,
             "%source_properties_path%": source_properties.path,
             "%source_properties_short_path%": source_properties.short_path,
             "%snapshot_dir_path%": snapshot_output.path,

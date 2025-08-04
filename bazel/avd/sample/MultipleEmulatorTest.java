@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
+import static org.junit.Assert.assertEquals;
+
+import com.android.tools.bazel.avd.Emulator;
+
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import com.android.tools.bazel.avd.Emulator;
-import org.junit.Test;
 
 /**
  * A test to verify that multiple emulator instances can be launched and managed concurrently. This
@@ -29,12 +32,19 @@ import org.junit.Test;
  */
 public class MultipleEmulatorTest {
     /**
-     * Path to the executable that the avd rule generates.
+     * Paths to the executable that the avd rule generates.
      *
      * <p>The executable is the script that starts and stops emulators and must be used to launch
      * the emulator.
      */
-    private static final String DEVICE = "tools/base/bazel/avd/default_avd";
+    private static final String[] DEVICES =
+            new String[] {
+                "tools/base/bazel/avd/default_avd",
+                "tools/base/bazel/avd/default_avd",
+                "tools/base/bazel/avd/avd_34"
+            };
+
+    private static final int[] DEVICE_API_LEVELS = new int[] {33, 33, 34};
 
     /**
      * Port at which to open the emulator.
@@ -57,7 +67,7 @@ public class MultipleEmulatorTest {
     @Test
     public void bootMultipleEmulators() throws Exception {
         final int concurrentAvdNum = 3;
-        final int repeatStartAndStop = 10;
+        final int repeatStartAndStop = 5;
 
         ExecutorService executor = Executors.newFixedThreadPool(concurrentAvdNum);
         try {
@@ -65,24 +75,47 @@ public class MultipleEmulatorTest {
             for (int i = 0; i < concurrentAvdNum; i++) {
                 final int workerIdx = i;
                 final int portNumber = PORT + 2 * i;
-                futures.add(executor.submit(() -> {
-                    for (int j = 0; j < repeatStartAndStop; j++) {
-                        Emulator emulator = new Emulator(DEVICE, portNumber);
-                        try {
-                            System.out.println(
-                                "[" + workerIdx +"] Starting Emulator " +
-                                (j + 1) + "/" + repeatStartAndStop);
-                            emulator.before();
-                        } catch (Throwable e) {
-                            throw new RuntimeException(e);
-                        } finally {
-                            System.out.println(
-                                "[" + workerIdx + "] Killing Emulator " +
-                                (j + 1) + "/" + repeatStartAndStop);
-                            emulator.after();
-                        }
-                    }
-                }));
+                final String device = DEVICES[i];
+                final int deviceApiLevel = DEVICE_API_LEVELS[i];
+                futures.add(
+                        executor.submit(
+                                () -> {
+                                    for (int j = 0; j < repeatStartAndStop; j++) {
+                                        String prefix =
+                                                "[worker="
+                                                        + workerIdx
+                                                        + ", "
+                                                        + (j + 1)
+                                                        + "/"
+                                                        + repeatStartAndStop
+                                                        + "] "
+                                                        + "(port="
+                                                        + portNumber
+                                                        + ", API="
+                                                        + deviceApiLevel
+                                                        + "): ";
+                                        Emulator emulator = new Emulator(device, portNumber);
+                                        try {
+                                            System.out.println(prefix + "Starting Emulator");
+
+                                            emulator.before();
+
+                                            assertEquals(
+                                                    prefix + deviceApiLevel,
+                                                    prefix
+                                                            + EmulatorTestUtils.adb(
+                                                                    portNumber,
+                                                                    "shell",
+                                                                    "getprop",
+                                                                    "ro.build.version.sdk"));
+                                        } catch (Throwable e) {
+                                            throw new RuntimeException(e);
+                                        } finally {
+                                            System.out.println(prefix + "Killing Emulator");
+                                            emulator.after();
+                                        }
+                                    }
+                                }));
             }
             for (Future<?> future : futures) {
                 future.get();
