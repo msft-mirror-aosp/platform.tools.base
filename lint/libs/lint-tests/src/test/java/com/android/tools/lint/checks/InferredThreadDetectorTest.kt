@@ -863,6 +863,400 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testRecursion_accum_virtual() {
+    lint()
+      .files(
+        java(
+            """
+          package test.pkg;
+
+          public class Test {
+              interface Thing {
+                  Thing nextThing();
+              }
+
+              boolean helper(Thing thing) {
+                  if (new Random().nextBoolean()) {
+                      return helper(thing.nextThing());
+                  } else {
+                      return false;
+                  }
+              }
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testPolymorphicRecursion() {
+    lint()
+      .files(
+        kotlin(
+            """
+          package test.pkg
+          import androidx.annotation.AnyThread
+          import androidx.annotation.UiThread
+
+          sealed interface LList<out T> {
+            object Empty: LList<Nothing>
+            class Cons<out T>(val first: T, val rest: LList<T>): LList<T>
+          }
+
+          fun<S, T> LList<S>.map(f: (S) -> T): LList<T> =
+            when (this) {
+              is LList.Empty -> LList.Empty
+              is LList.Cons -> LList.Cons(f(first), rest.map(f))
+            }
+
+          sealed interface Nested<out T> {
+            object Empty: Nested<Nothing>
+            class Cons<out T>(val first: T, val rest: Nested<LList<T>>): Nested<T>
+          }
+
+          fun<S, T> Nested<S>.map(f: (S) -> T): Nested<T> =
+            when (this) {
+              is Nested.Empty -> Nested.Empty
+              is Nested.Cons -> Nested.Cons(f(first), rest.map { it.map(f) })
+            }
+
+          @UiThread fun ui(n: Int): String = n.toString()
+
+          @AnyThread fun f(c: LList<Int>) = c.map(::ui)
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/test/pkg/LList.kt:29: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+          @AnyThread fun f(c: LList<Int>) = c.map(::ui)
+                                              ~~~~~~~~~
+          1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testOpenRecursiveCallback() {
+    lint()
+      .files(
+        kotlin(
+            """
+          // Example from minimizing
+          // androidx.compose.foundation.lazy.layout.CacheWindowLogic.scheduleNextItemIfNeeded
+
+          interface Scope {
+            fun schedule(work: (Int) -> Unit)
+          }
+
+          fun Scope.g(n: Int) {
+            f()
+          }
+
+          fun Scope.f() {
+            schedule { n -> g(n) }
+          }
+
+          // Self-contained example of same recursive pattern, reusing standard interface
+          fun f(handle: (() -> Unit) -> Unit) {
+            handle { f(handle) }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testInterpreter_bigStep() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.AnyThread
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+
+          /******************************
+           *  Syntax
+           ******************************/
+          sealed interface Prim: Exp, Val, HostVal {
+            object Add1: Prim
+            object IsInt: Prim
+            object IsProc: Prim
+          }
+          sealed interface Exp
+          class App(val fn: Exp, val arg: Exp): Exp
+          class Lam(val param: String, val body: Exp): Exp
+          class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
+          class Num(val unboxed: Int): Exp, Val, HostVal
+          class Var(val name: String): Exp
+
+          /******************************
+           * Runtime
+           ******************************/
+          sealed interface Env<out T> {
+            object Mt: Env<Nothing>
+            class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
+          }
+          sealed interface Val
+          class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
+          private operator fun<T> Env<T>.get(x: String): T = when (this) {
+            is Env.Cons -> if (key == x) value else rest[x]
+            is Env.Mt -> throw LookupException()
+          }
+          private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
+
+          /******************************
+           * Direct big-step interpreter
+           ******************************/
+          fun Exp.eval(): Val = ev(Env.Mt)
+
+          @WorkerThread
+          private fun Exp.ev(env: Env<Val>): Val = when (this) {
+            is Lam -> Clo(param, body, env)
+            is Var -> env[name]
+            is App -> fn.ev(env).ap(arg.ev(env))
+            is If0 -> (if (cnd.ev(env).isZero()) thn else els).ev(env)
+            is Num -> this
+            is Prim -> this
+          }
+
+          @AnyThread
+          private fun Val.ap(x: Val): Val = when (this) {
+            is Clo -> body.ev(Env.Cons(param, x, env))
+            is Prim -> primAp(x)
+            is Num -> throw MisApplication()
+          }
+          private fun Prim.primAp(x: Val): Val = when (this) {
+            Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
+            Prim.IsInt -> Num(if (x is Num) 0 else 1)
+            Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/Prim.kt:52: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            is Clo -> body.ev(Env.Cons(param, x, env))
+                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testInterpreter_cekMachine() {
+    lint()
+      .files(
+        kotlin(
+            """
+
+           /******************************
+            *  Syntax
+            ******************************/
+           sealed interface Prim: Exp, Val, HostVal {
+             object Add1: Prim
+             object IsInt: Prim
+             object IsProc: Prim
+           }
+           sealed interface Exp
+           class App(val fn: Exp, val arg: Exp): Exp
+           class Lam(val param: String, val body: Exp): Exp
+           class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
+           class Num(val unboxed: Int): Exp, Val, HostVal
+           class Var(val name: String): Exp
+
+           /******************************
+            * Runtime
+            ******************************/
+           sealed interface Env<out T> {
+             object Mt: Env<Nothing>
+             class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
+           }
+           sealed interface Val
+           class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
+           private operator fun<T> Env<T>.get(x: String): T = when (this) {
+             is Env.Cons -> if (key == x) value else rest[x]
+             is Env.Mt -> throw LookupException()
+           }
+           private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
+           private fun Prim.primAp(x: Val): Val = when (this) {
+             Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
+             Prim.IsInt -> Num(if (x is Num) 0 else 1)
+             Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
+           }
+
+           /******************************
+            * CEK machine
+            ******************************/
+           sealed interface State
+           sealed class Ongoing(val kont: K): State {
+             class Ev(val control: Exp, val env: Env<Val>, kont: K): Ongoing(kont)
+             class Co(val ans: Val, kont: K): Ongoing(kont)
+           }
+           class Ans(val ans: Val): State
+           sealed interface K {
+             object Mt: K
+             class Fn(val arg: Exp, val env: Env<Val>, val rest: K): K
+             class Ar(val fn: Val, val rest: K): K
+             class If(val thn: Exp, val els: Exp, val env: Env<Val>, val rest: K): K
+           }
+           private fun Ongoing.step(): State = when (this) {
+             is Ongoing.Ev -> when (control) {
+               is Lam -> Ongoing.Co(Clo(control.param, control.body, env), kont)
+               is Var -> Ongoing.Co(env[control.name], kont)
+               is App -> Ongoing.Ev(control.fn, env, K.Fn(control.arg, env, kont))
+               is If0 -> Ongoing.Ev(control.cnd, env, K.If(control.thn, control.els, env, kont))
+               is Num -> Ongoing.Co(control, kont)
+               is Prim -> Ongoing.Co(control, kont)
+             }
+             is Ongoing.Co -> when (kont) {
+               is K.Mt -> Ans(ans)
+               is K.Fn -> Ongoing.Ev(kont.arg, kont.env, K.Ar(ans, kont.rest))
+               is K.Ar -> when (kont.fn) {
+                 is Clo -> Ongoing.Ev(kont.fn.body, Env.Cons(kont.fn.param, ans, kont.fn.env), kont.rest)
+                 is Prim -> Ongoing.Co(kont.fn.primAp(ans), kont.rest)
+                 is Num -> throw MisApplication()
+               }
+               is K.If -> Ongoing.Ev(if (ans.isZero()) kont.thn else kont.els, kont.env, kont.rest)
+             }
+           }
+           fun evalStep(e: Exp): Val {
+             tailrec fun run(s: Ongoing): Val = when (val s1 = s.step()) {
+               is Ans -> s1.ans
+               is Ongoing -> run(s1)
+             }
+             return run(Ongoing.Ev(e, Env.Mt, K.Mt))
+           }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testInterpreter_compilation() {
+    lint()
+      .files(
+        kotlin(
+            """
+           import androidx.annotation.AnyThread
+           import androidx.annotation.UiThread
+           import androidx.annotation.WorkerThread
+
+           /******************************
+            *  Syntax
+            ******************************/
+           sealed interface Prim: Exp, Val, HostVal {
+             object Add1: Prim
+             object IsInt: Prim
+             object IsProc: Prim
+           }
+           sealed interface Exp
+           class App(val fn: Exp, val arg: Exp): Exp
+           class Lam(val param: String, val body: Exp): Exp
+           class If0(val cnd: Exp, val thn: Exp, val els: Exp): Exp
+           class Num(val unboxed: Int): Exp, Val, HostVal
+           class Var(val name: String): Exp
+
+           /******************************
+            * Runtime
+            ******************************/
+           sealed interface Env<out T> {
+             object Mt: Env<Nothing>
+             class Cons<out T>(val key: String, val value: T, val rest: Env<T>): Env<T>
+           }
+           sealed interface Val
+           class Clo(val param: String, val body: Exp, val env: Env<Val>): Val
+           private operator fun<T> Env<T>.get(x: String): T = when (this) {
+             is Env.Cons -> if (key == x) value else rest[x]
+             is Env.Mt -> throw LookupException()
+           }
+           private fun<T> T.isZero(): Boolean = this is Num && unboxed == 0
+           private fun Prim.primAp(x: Val): Val = when (this) {
+             Prim.Add1 -> if (x is Num) Num(x.unboxed + 1) else throw MisAdd1()
+             Prim.IsInt -> Num(if (x is Num) 0 else 1)
+             Prim.IsProc -> Num(if (x is Clo || x is Prim) 0 else 1)
+           }
+
+           /******************************
+            * Compile then run
+            ******************************/
+           @WorkerThread
+           fun Exp.evalComp(): HostVal = comp()(Env.Mt)
+
+           sealed interface HostVal
+           private fun interface Proc: HostVal, (HostVal) -> HostVal
+
+           @AnyThread
+           private fun Exp.comp(): (Env<HostVal>) -> HostVal = when (this) {
+             is Lam -> {
+               val c = body.comp()
+               val x = param
+               fun(env) = Proc { v -> c(Env.Cons(x, v, env)) }
+             }
+             is Var -> {
+               val name = name
+               fun(env) = env[name]
+             }
+             is App -> {
+               val fn = fn.comp()
+               val arg = arg.comp()
+               fun(env): HostVal {
+                 val f = fn(env)
+                 val v = arg(env)
+                 return when (f) {
+                   is Proc -> f(v)
+                   is Prim -> when (f) {
+                     Prim.Add1 -> if (v is Num) Num(v.unboxed + 1) else throw MisAdd1()
+                     Prim.IsInt -> Num(if (v is Num) 0 else 1)
+                     Prim.IsProc -> Num(if (v is Proc) 0 else 1)
+                   }
+                   is Num -> throw MisApplication()
+                 }
+               }
+             }
+             is If0 -> {
+               val cnd = cnd.comp()
+               val thn = thn.comp()
+               val els = els.comp()
+               fun(env) = (if (cnd(env).isZero()) thn else els)(env)
+             }
+             is Num -> fun(_) = this
+             is Prim -> fun(_) = this
+           }
+           class LookupException: Exception()
+           class MisApplication: Exception()
+           class MisAdd1: Exception()
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
+  }
+
   // TODO(b/390023468)
   fun `test submethod inconsistent with assumption on unannotated supermethod eventually noticed`() {
     lint()
