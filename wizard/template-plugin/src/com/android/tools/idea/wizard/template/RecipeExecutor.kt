@@ -15,6 +15,7 @@
  */
 package com.android.tools.idea.wizard.template
 
+import com.android.sdklib.AndroidVersion
 import com.intellij.openapi.module.Module
 import java.io.File
 
@@ -258,6 +259,12 @@ interface RecipeExecutor {
    * @param name the name of the library to use
    */
   fun useLibrary(name: String)
+
+  /**
+   * Adds `compileSdk` element in form of block or property to the build file.
+   * It adds block for new AGP versions.
+   */
+  fun addCompileSdk(androidVersion: AndroidVersion)
 }
 
 enum class SourceSetType {
