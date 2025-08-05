@@ -552,6 +552,20 @@ enum class BooleanOption(
         )
     ),
 
+    /**
+     * Setting custom shader path is required with `glslc.dir` property
+     */
+    CUSTOM_SHADER_PATH_REQUIRED(
+        "android.custom.shader.path.required",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_10_0
+        )
+    ),
+
     // Flag should only be used in test.
     TEST_SIMULATE_AGP_VERSION_BEHAVIOR(
         "android.testSimulateAgpVersionBehavior",
