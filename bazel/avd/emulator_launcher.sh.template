@@ -230,7 +230,7 @@ EOF
 else
   # --- Mode: Launch from Snapshot ---
   # Add emulator flags for running from a read-only snapshot.
-  additional_emulator_args+=("-read-only" "-no-snapshot-save" "-force-snapshot-load")
+  additional_emulator_args+=("-read-only" "-no-snapshot-save")
 
   # Verify that the snapshot directory exists before proceeding.
   if [ ! -d "$snapshot_dir_short_path" ]; then
