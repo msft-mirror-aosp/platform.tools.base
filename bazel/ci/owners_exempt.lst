@@ -1612,6 +1612,7 @@ tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/apk/debuggi
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/concurrency/CoroutinesTestUtils.kt
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/concurrency/FlowTestUtils.kt
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/concurrency/FutureTestUtilsKt.kt
+tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/diagnostics/ExceptionTestUtils.java
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/editors/strings/Utils.java
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/fonts/FontTestUtils.java
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/gradle/dsl/model/dependencies/ExpectedModuleDependency.java
@@ -1630,9 +1631,13 @@ tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/projectsyst
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/rendering/NoSecurityManagerRenderService.kt
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/rendering/RenderTestRule.java
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/rendering/RenderTestUtil.java
+tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/rendering/TestRenderingUtils.java
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/rendering/tokens/FakeBuildSystemFilePreviewServices.kt
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/res/ResourcesTestsUtil.kt
+tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/run/activity/launch/EmptyTestConsoleView.kt
+tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/run/configuration/execution/TestUtils.kt
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/run/deployment/liveedit/tokens/FakeBuildSystemLiveEditServices.kt
+tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/run/editor/NoApksProvider.java
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/testartifacts/AndroidGradleTestConfigurationTestingUtil.kt
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/testartifacts/TestConfigurationTesting.java
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/testing/AgpIntegrationTestUtil.kt
@@ -1705,6 +1710,7 @@ tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/testing/swi
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/testing/ui/FakeActionPopupMenu.kt
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/testing/ui/FileOpenCaptureRule.kt
 tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/testing/ui/UiTestUtil.kt
+tools/adt/idea/android-test-framework/testSrc/com/android/tools/idea/util/ToolWindowUtils.kt
 tools/adt/idea/android-test-framework/testSrc/org/jetbrains/android/AndroidFacetProjectDescriptor.kt
 tools/adt/idea/android-test-framework/testSrc/org/jetbrains/android/AndroidTempDirTestFixture.kt
 tools/adt/idea/android-test-framework/testSrc/org/jetbrains/android/AndroidTestBase.java
@@ -4525,7 +4531,6 @@ tools/adt/idea/android/testSrc/com/android/tools/idea/ddms/DeviceNamePropertiesF
 tools/adt/idea/android/testSrc/com/android/tools/idea/ddms/DeviceNamePropertiesTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/ddms/DevicePropertyUtilTest.java
 tools/adt/idea/android/testSrc/com/android/tools/idea/ddms/DeviceRendererTest.java
-tools/adt/idea/android/testSrc/com/android/tools/idea/diagnostics/ExceptionTestUtils.java
 tools/adt/idea/android/testSrc/com/android/tools/idea/diagnostics/VirtualizationDetectorTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/editors/liveedit/LiveEditApplicationConfigurationTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/editors/liveedit/LiveEditIssueNotificationActionTest.kt
@@ -4553,15 +4558,11 @@ tools/adt/idea/android/testSrc/com/android/tools/idea/observable/constraints/Con
 tools/adt/idea/android/testSrc/com/android/tools/idea/progress/StudioProgressManagerAdapterTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/rendering/BuildListenerTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/rendering/StudioLayoutlibContextTest.kt
-tools/adt/idea/android/testSrc/com/android/tools/idea/rendering/TestRenderingUtils.java
 tools/adt/idea/android/testSrc/com/android/tools/idea/res/AndroidManifestClassPsiElementFinderTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/res/AppLanguageServiceImplTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/run/LaunchTaskRunnerTest.kt
-tools/adt/idea/android/testSrc/com/android/tools/idea/run/activity/launch/EmptyTestConsoleView.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/run/configuration/execution/ApplicationDeployerImplTest.kt
-tools/adt/idea/android/testSrc/com/android/tools/idea/run/configuration/execution/TestUtils.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/run/deployment/liveedit/ComposeRuntimeTestUtil.kt
-tools/adt/idea/android/testSrc/com/android/tools/idea/run/editor/NoApksProvider.java
 tools/adt/idea/android/testSrc/com/android/tools/idea/sdk/wizard/AehdWizardControllerTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/sdk/wizard/SetupSdkApplicationServiceTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/serverflags/OverridePropertyParserTest.kt
@@ -4594,7 +4595,6 @@ tools/adt/idea/android/testSrc/com/android/tools/idea/util/FileExtensionsTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/util/FuzzUtils.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/util/NonBlockingReadActionUtilTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/util/SyncUtilTest.kt
-tools/adt/idea/android/testSrc/com/android/tools/idea/util/ToolWindowUtils.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/util/ZipUtilTest.kt
 tools/adt/idea/android/testSrc/com/android/tools/idea/welcome/SdkLocationUtilsTest.java
 tools/adt/idea/android/testSrc/com/android/tools/idea/welcome/install/AndroidSdkTest.kt
