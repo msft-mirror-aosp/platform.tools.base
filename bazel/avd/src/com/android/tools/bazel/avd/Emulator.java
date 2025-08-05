@@ -39,9 +39,11 @@ public final class Emulator extends ExternalResource {
 
     @Override
     public void before() throws Throwable {
+        long startTime = System.currentTimeMillis();
         System.out.println("Starting emulator (" + port + ")");
         exec(scriptPath, port);
-        System.out.println("Emulator started (" + port + ")");
+        long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
+        System.out.println("Emulator started after " + elapsedTime + " seconds (" + port + ")");
     }
 
     @Override
