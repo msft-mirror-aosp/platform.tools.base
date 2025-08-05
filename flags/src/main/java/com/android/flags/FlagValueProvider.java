@@ -20,11 +20,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 /**
- * Interface which represents a read-only mapping of flag to value overrides.
+ * A Provider of flag value.
  *
- * @see FlagOverrides
+ * @see FlagValueContainer for a mutable version
  */
-public interface ImmutableFlagOverrides {
+public interface FlagValueProvider {
     @Nullable
     String get(@NonNull Flag<?> flag);
 }

@@ -189,11 +189,11 @@ public class FlagTest {
         Flag<String> stringFlag = new StringFlag(group, "string", "Mango", "Mango", "hello");
         Flag<Colors> enumFlag = new EnumFlag<>(group, "enum", "Mango", "Mango", Colors.ORANGE);
 
-        assertThat(boolFlag.isOverridden()).isFalse();
-        assertThat(intFlag.isOverridden()).isFalse();
-        assertThat(longFlag.isOverridden()).isFalse();
-        assertThat(stringFlag.isOverridden()).isFalse();
-        assertThat(enumFlag.isOverridden()).isFalse();
+        assertThat(boolFlag.isUserOverridden()).isFalse();
+        assertThat(intFlag.isUserOverridden()).isFalse();
+        assertThat(longFlag.isUserOverridden()).isFalse();
+        assertThat(stringFlag.isUserOverridden()).isFalse();
+        assertThat(enumFlag.isUserOverridden()).isFalse();
 
         boolFlag.override(true);
         intFlag.override(456);
@@ -201,22 +201,22 @@ public class FlagTest {
         stringFlag.override("goodbye");
         enumFlag.override(Colors.INDIGO);
 
-        assertThat(flags.getOverrides().get(boolFlag)).isEqualTo("true");
-        assertThat(flags.getOverrides().get(intFlag)).isEqualTo("456");
-        assertThat(flags.getOverrides().get(longFlag)).isEqualTo("60");
-        assertThat(flags.getOverrides().get(stringFlag)).isEqualTo("goodbye");
-        assertThat(flags.getOverrides().get(enumFlag)).isEqualTo("INDIGO");
+        assertThat(flags.getUserOverrides().get(boolFlag)).isEqualTo("true");
+        assertThat(flags.getUserOverrides().get(intFlag)).isEqualTo("456");
+        assertThat(flags.getUserOverrides().get(longFlag)).isEqualTo("60");
+        assertThat(flags.getUserOverrides().get(stringFlag)).isEqualTo("goodbye");
+        assertThat(flags.getUserOverrides().get(enumFlag)).isEqualTo("INDIGO");
         assertThat(boolFlag.get()).isTrue();
         assertThat(intFlag.get()).isEqualTo(456);
         assertThat(longFlag.get()).isEqualTo(60L);
         assertThat(stringFlag.get()).isEqualTo("goodbye");
         assertThat(enumFlag.get()).isEqualTo(Colors.INDIGO);
 
-        assertThat(boolFlag.isOverridden()).isTrue();
-        assertThat(intFlag.isOverridden()).isTrue();
-        assertThat(longFlag.isOverridden()).isTrue();
-        assertThat(stringFlag.isOverridden()).isTrue();
-        assertThat(enumFlag.isOverridden()).isTrue();
+        assertThat(boolFlag.isUserOverridden()).isTrue();
+        assertThat(intFlag.isUserOverridden()).isTrue();
+        assertThat(longFlag.isUserOverridden()).isTrue();
+        assertThat(stringFlag.isUserOverridden()).isTrue();
+        assertThat(enumFlag.isUserOverridden()).isTrue();
 
         boolFlag.clearOverride();
         intFlag.clearOverride();
@@ -224,11 +224,11 @@ public class FlagTest {
         stringFlag.clearOverride();
         enumFlag.clearOverride();
 
-        assertThat(boolFlag.isOverridden()).isFalse();
-        assertThat(intFlag.isOverridden()).isFalse();
-        assertThat(longFlag.isOverridden()).isFalse();
-        assertThat(stringFlag.isOverridden()).isFalse();
-        assertThat(enumFlag.isOverridden()).isFalse();
+        assertThat(boolFlag.isUserOverridden()).isFalse();
+        assertThat(intFlag.isUserOverridden()).isFalse();
+        assertThat(longFlag.isUserOverridden()).isFalse();
+        assertThat(stringFlag.isUserOverridden()).isFalse();
+        assertThat(enumFlag.isUserOverridden()).isFalse();
         assertThat(boolFlag.get()).isFalse();
         assertThat(intFlag.get()).isEqualTo(123);
         assertThat(longFlag.get()).isEqualTo(30L);

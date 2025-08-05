@@ -18,13 +18,14 @@ package com.android.flags.overrides;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.flags.Flag;
-import com.android.flags.ImmutableFlagOverrides;
+import com.android.flags.FlagValueProvider;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 /** Read-only collection of override values backed by a set of Java properties. */
-public final class PropertyOverrides implements ImmutableFlagOverrides {
+public final class PropertyOverrides implements FlagValueProvider {
     private final Properties properties;
     /**
      * We create a cache of properties that we've already fetched, since {@link Properties} is a

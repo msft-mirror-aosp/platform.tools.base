@@ -18,7 +18,7 @@ package com.android.flags;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.android.flags.overrides.DefaultFlagOverrides;
+import com.android.flags.overrides.InMemoryFlagValueContainer;
 import com.android.flags.overrides.PropertyOverrides;
 
 import org.junit.Assert;
@@ -73,20 +73,20 @@ public class FlagsTest {
         Flag<TestingEnum> flagEnum =
                 new EnumFlag(group, "enum", "Unused", "Unused", TestingEnum.FOO);
 
-        flags.getOverrides().put(flagInt, "456");
-        flags.getOverrides().put(flagBool, "true");
-        flags.getOverrides().put(flagStr, "Manual override");
-        flags.getOverrides().put(flagEnum, "bar");
+        flags.getUserOverrides().put(flagInt, "456");
+        flags.getUserOverrides().put(flagBool, "true");
+        flags.getUserOverrides().put(flagStr, "Manual override");
+        flags.getUserOverrides().put(flagEnum, "bar");
 
         assertThat(flagInt.get()).isEqualTo(456);
         assertThat(flagBool.get()).isEqualTo(true);
         assertThat(flagStr.get()).isEqualTo("Manual override");
         assertThat(flagEnum.get()).isEqualTo(TestingEnum.BAR);
 
-        flags.getOverrides().remove(flagInt);
-        flags.getOverrides().remove(flagBool);
-        flags.getOverrides().remove(flagStr);
-        flags.getOverrides().remove(flagEnum);
+        flags.getUserOverrides().remove(flagInt);
+        flags.getUserOverrides().remove(flagBool);
+        flags.getUserOverrides().remove(flagStr);
+        flags.getUserOverrides().remove(flagEnum);
 
         assertThat(flagInt.get()).isEqualTo(10);
         assertThat(flagBool.get()).isEqualTo(false);
@@ -105,16 +105,16 @@ public class FlagsTest {
         FlagGroup group = new FlagGroup(flags, "test", "Test Group");
         Flag<String> flagStr = new StringFlag(group, "str", "Unused", "Unused", "Default value");
 
-        flags.getOverrides().put(flagStr, "Manual override");
+        flags.getUserOverrides().put(flagStr, "Manual override");
         assertThat(flagStr.get()).isEqualTo("Manual override");
 
-        flags.getOverrides().remove(flagStr);
+        flags.getUserOverrides().remove(flagStr);
         assertThat(flagStr.get()).isEqualTo("Property override");
     }
 
     @Test
     public void canSpecifyCustomUserOveriddes() throws Exception {
-        DefaultFlagOverrides customMutableOverrides = new DefaultFlagOverrides();
+        InMemoryFlagValueContainer customMutableOverrides = new InMemoryFlagValueContainer();
         Flags flags = new Flags(customMutableOverrides);
         FlagGroup group = new FlagGroup(flags, "test", "Test Group");
         Flag<String> flagStr = new StringFlag(group, "str", "Unused", "Unused", "Default value");

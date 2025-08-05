@@ -19,7 +19,7 @@ package com.android.flags;
 import com.android.annotations.NonNull;
 
 /**
- * Interface which represents a mutable mapping of flag to value overrides.
+ * A mutable container of flag values.
  *
  * <p>{@link Flag}s are immutable, which makes defining them a thread-safe operation. However, we
  * still want the ability to override a flag's default value, as this will allow us to run
@@ -27,9 +27,9 @@ import com.android.annotations.NonNull;
  * keeping flags immutable while storing their value overrides separately. This interface is the
  * contract for any class that wants to serve that role.
  *
- * @see Flags#getOverrides()
+ * @see Flags#getUserOverrides()
  */
-public interface FlagOverrides extends ImmutableFlagOverrides {
+public interface FlagValueContainer extends FlagValueProvider {
     /** Clear all overrides in this collection. */
     void clear();
 

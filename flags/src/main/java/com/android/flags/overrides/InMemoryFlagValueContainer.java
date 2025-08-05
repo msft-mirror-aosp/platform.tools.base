@@ -19,12 +19,17 @@ package com.android.flags.overrides;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.flags.Flag;
-import com.android.flags.FlagOverrides;
+import com.android.flags.FlagValueContainer;
+
 import java.util.HashMap;
 import java.util.Map;
 
-/** Default, map-backed implementation for a collection of flag overrides. */
-public final class DefaultFlagOverrides implements FlagOverrides {
+/**
+ * Default, map-backed implementation for a collection of flag overrides.
+ *
+ * <p>The values are never serialized anywhere.
+ */
+public final class InMemoryFlagValueContainer implements FlagValueContainer {
     private final Map<Flag<?>, String> overrides = new HashMap<>();
 
     @Override

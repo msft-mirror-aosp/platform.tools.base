@@ -2,13 +2,14 @@ package com.android.flags;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.android.flags.overrides.DefaultFlagOverrides;
+import com.android.flags.overrides.InMemoryFlagValueContainer;
+
 import org.junit.Test;
 
-public class FlagOverridesTest {
+public class FlagValueContainerTest {
     @Test
     public void testAddingAndRemovingOverrides() throws Exception {
-        FlagOverrides flagOverrides = new DefaultFlagOverrides();
+        FlagValueContainer flagOverrides = new InMemoryFlagValueContainer();
 
         Flags flags = new Flags(flagOverrides);
         FlagGroup group = new FlagGroup(flags, "test", "Dummy");
