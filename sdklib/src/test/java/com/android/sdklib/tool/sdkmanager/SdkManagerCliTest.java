@@ -18,6 +18,8 @@ package com.android.sdklib.tool.sdkmanager;
 
 import static com.android.repository.testframework.FakePackage.FakeRemotePackage;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -33,6 +35,7 @@ import com.android.repository.api.License;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
+import com.android.repository.impl.manager.LocalRepoLoaderImpl;
 import com.android.repository.impl.manager.RemoteRepoLoader;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.CommonFactory;
@@ -42,7 +45,6 @@ import com.android.repository.testframework.FakeDownloader;
 import com.android.repository.testframework.FakeLoader;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.FakeRepoManager;
-import com.android.repository.testframework.FakeRepositorySourceProvider;
 import com.android.repository.testframework.FakeSettingsController;
 import com.android.repository.util.InstallerUtil;
 import com.android.sdklib.repository.AndroidSdkHandler;
@@ -52,6 +54,7 @@ import com.android.utils.PathUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -87,14 +90,18 @@ public class SdkManagerCliTest {
 
         RemoteRepoLoader loader = createRemoteRepo();
 
-        RepoManager repoManager = new RepoManagerImpl(mSdkLocation, progress -> loader, ImmutableList.of(), null, null);
+        RepoManager repoManager = new RepoManagerImpl(
+            mSdkLocation,
+            new LocalRepoLoaderImpl(
+                 mSdkLocation,
+                 ImmutableSet.of(RepoManager.getCommonModule(), RepoManager.getGenericModule()),
+                 null),
+            loader,
+            ImmutableList.of());
 
         createLocalRepo(repoManager);
 
         mSdkHandler = new AndroidSdkHandler(mSdkLocation, null, repoManager);
-
-        // Doesn't actually need to provide anything, since the remote loader gets them directly.
-        repoManager.registerSourceProvider(new FakeRepositorySourceProvider(null));
     }
 
     private void createLocalRepo(@NonNull RepoManager repoManager) throws IOException {

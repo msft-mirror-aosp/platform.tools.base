@@ -25,12 +25,15 @@ import com.android.repository.api.RepoPackage;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SettingsController;
 
+import java.util.List;
 import java.util.Map;
 
 /**
  * A facility for loading {@link RepoPackage}s that are available for download.
  */
 public interface RemoteRepoLoader {
+
+    List<RepositorySourceProvider> getSourceProviders();
 
     /**
      * Fetches the remote packages.

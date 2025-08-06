@@ -63,12 +63,6 @@ abstract class RepoManager {
    */
   abstract val localPath: Path?
 
-  /**
-   * Adds a [RepositorySourceProvider] from which to get [RepositorySource]s from which to download
-   * lists of available repository packages.
-   */
-  abstract fun registerSourceProvider(provider: RepositorySourceProvider)
-
   @get:VisibleForTesting abstract val sourceProviders: List<RepositorySourceProvider>
 
   /**
@@ -340,13 +334,12 @@ abstract class RepoManager {
       fallbackRemoteRepoLoader: FallbackRemoteRepoLoader?,
     ): RepoManager {
       return RepoManagerImpl(
-          localPath,
-          null,
-          schemaModules,
-          fallbackLocalRepoLoader,
-          fallbackRemoteRepoLoader,
-        )
-        .apply { sourceProviders.forEach { registerSourceProvider(it) } }
+        localPath,
+        sourceProviders,
+        schemaModules,
+        fallbackLocalRepoLoader,
+        fallbackRemoteRepoLoader,
+      )
     }
   }
 }

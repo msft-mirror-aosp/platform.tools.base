@@ -34,7 +34,6 @@ import com.android.repository.api.SchemaModule
 import com.android.repository.api.SettingsController
 import com.android.repository.impl.meta.RepositoryPackages
 import com.android.repository.impl.meta.SchemaModuleUtil
-import com.google.common.annotations.VisibleForTesting
 import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
@@ -55,22 +54,35 @@ import org.w3c.dom.ls.LSResourceResolver
  *
  * @property localPath the path under which to look for installed packages.
  * @property localRepoLoader the implementation of local package loading
- * @property fallbackRemoteRepoLoader the [FallbackRemoteRepoLoader] to use if the normal
- *   [RemoteRepoLoaderImpl] can't understand a downloaded repository xml file
+ * @property remoteRepoLoader the implementation of remote package loading
  */
 class RepoManagerImpl
 internal constructor(
   override val localPath: Path?,
   val localRepoLoader: LocalRepoLoader?,
-  remoteFactory: RemoteRepoLoaderFactory?,
+  val remoteRepoLoader: RemoteRepoLoader,
   additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
-  private val fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null,
 ) : RepoManager() {
 
-  /** Constructor for production use, using the standard LocalRepoLoader implementation. */
+  /**
+   * Constructor for production use, using the standard local and remote loaders.
+   *
+   * @param localPath the path under which to look for installed packages.
+   * @param sourceProviders the [RepositorySourceProvider]s which [RemoteRepoLoaderImpl] will use to
+   *   load remote repositories.
+   * @param additionalSchemaModules schema modules to use to parse XML files, in addition to the
+   *   always-included [commonModule] and [genericModule]
+   * @param fallbackLocalRepoLoader the [FallbackLocalRepoLoader] to use if the normal
+   *   [LocalRepoLoaderImpl] does not find the expected package.xml. This will detect packages in
+   *   the legacy XML format, and also manually installed packages, and create a package.xml file
+   *   for them.
+   * @param fallbackRemoteRepoLoader the [FallbackRemoteRepoLoader] to use if the normal
+   *   [RemoteRepoLoaderImpl] can't understand a downloaded repository xml file. (This is currently
+   *   used for parsing the old repository XML format.)
+   */
   constructor(
     localPath: Path?,
-    remoteFactory: RemoteRepoLoaderFactory?,
+    sourceProviders: List<RepositorySourceProvider>,
     additionalSchemaModules: List<SchemaModule<*>> = emptyList(),
     fallbackLocalRepoLoader: FallbackLocalRepoLoader? = null,
     fallbackRemoteRepoLoader: FallbackRemoteRepoLoader? = null,
@@ -84,19 +96,19 @@ internal constructor(
           fallbackLocalRepoLoader,
         )
       },
-    remoteFactory = remoteFactory,
+    remoteRepoLoader = RemoteRepoLoaderImpl(sourceProviders, fallbackRemoteRepoLoader),
     additionalSchemaModules = additionalSchemaModules,
-    fallbackRemoteRepoLoader = fallbackRemoteRepoLoader,
   )
 
-  @TestOnly constructor(localPath: Path?) : this(localPath, null)
+  @TestOnly constructor(localPath: Path?) : this(localPath, emptyList())
 
   /** The registered [SchemaModule]s. */
   override val schemaModules: Set<SchemaModule<*>> =
     setOf(commonModule, genericModule) + additionalSchemaModules
 
   /** The [RepositorySourceProvider]s from which to get [RepositorySource]s to load from. */
-  override val sourceProviders = mutableListOf<RepositorySourceProvider>()
+  override val sourceProviders
+    get() = remoteRepoLoader.sourceProviders
 
   /** The loaded packages. */
   override val packages = RepositoryPackages()
@@ -130,19 +142,6 @@ internal constructor(
 
   /** Install/uninstall operations that are currently running. */
   private val inProgressInstalls = mutableMapOf<RepoPackage, PackageOperation>()
-
-  /** A facility for creating [RemoteRepoLoader]s. By default, [RemoteRepoLoaderFactoryImpl]. */
-  private val remoteRepoLoaderFactory: RemoteRepoLoaderFactory =
-    remoteFactory ?: RemoteRepoLoaderFactoryImpl()
-
-  /**
-   * {@inheritDoc} This calls [.markInvalid], so a complete load will occur the next time [.load] is
-   * called.
-   */
-  override fun registerSourceProvider(provider: RepositorySourceProvider) {
-    sourceProviders.add(provider)
-    markInvalid()
-  }
 
   override fun getSources(
     downloader: Downloader?,
@@ -341,7 +340,6 @@ internal constructor(
   }
 
   private fun interface LoadTask<T : RepoPackage> {
-
     suspend fun load(indicator: ProgressIndicator): List<T>
   }
 
@@ -465,13 +463,9 @@ internal constructor(
     }
 
     private fun loadRemote(indicator: ProgressIndicator): List<RemotePackage> {
-      if (
-        !sourceProviders.isEmpty() &&
-          lastRemoteRefreshMs + cacheExpirationMs <= System.currentTimeMillis()
-      ) {
-        val remoteLoader = remoteRepoLoaderFactory.createRemoteRepoLoader(indicator)
+      if (lastRemoteRefreshMs + cacheExpirationMs <= System.currentTimeMillis()) {
         val remotes =
-          remoteLoader.fetchPackages(indicator.createSubProgress(.75), downloader, settings)
+          remoteRepoLoader.fetchPackages(indicator.createSubProgress(.75), downloader, settings)
         indicator.setText("Computing updates...")
         indicator.setFraction(0.75)
         val fireListeners = remotes != packages.remotePackages
@@ -496,20 +490,7 @@ internal constructor(
     }
   }
 
-  @VisibleForTesting
-  interface RemoteRepoLoaderFactory {
-
-    fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader
-  }
-
-  private inner class RemoteRepoLoaderFactoryImpl : RemoteRepoLoaderFactory {
-
-    override fun createRemoteRepoLoader(progress: ProgressIndicator): RemoteRepoLoader =
-      RemoteRepoLoaderImpl(sourceProviders, fallbackRemoteRepoLoader)
-  }
-
   companion object {
-
     /** How long we should let a load task run before assuming that it's dead. */
     private val TASK_TIMEOUT = java.time.Duration.ofMinutes(3)
   }

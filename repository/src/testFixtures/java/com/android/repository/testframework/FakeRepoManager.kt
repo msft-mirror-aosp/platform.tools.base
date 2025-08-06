@@ -48,8 +48,6 @@ class FakeRepoManager(
 
   override val schemaModules = setOf(commonModule, genericModule) + additionalSchemaModules
 
-  override fun registerSourceProvider(provider: RepositorySourceProvider) {}
-
   override val sourceProviders: List<RepositorySourceProvider>
     get() = emptyList()
 
