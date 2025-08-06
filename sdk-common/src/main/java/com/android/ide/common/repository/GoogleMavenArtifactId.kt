@@ -157,6 +157,7 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   NAVIGATION_COMMON("android.arch.navigation", "navigation-common"),
   ANDROIDX_NAVIGATION_COMMON("androidx.navigation", "navigation-common"),
   NAVIGATION_COMMON_KTX("android.arch.navigation", "navigation-common-ktx"),
+  ANDROIDX_NAVIGATION_COMMON_ANDROID("androidx.navigation", "navigation-common-android"),
   ANDROIDX_NAVIGATION_COMMON_KTX("androidx.navigation", "navigation-common-ktx"),
   NAVIGATION_FRAGMENT("android.arch.navigation", "navigation-fragment"),
   ANDROIDX_NAVIGATION_FRAGMENT("androidx.navigation", "navigation-fragment"),
