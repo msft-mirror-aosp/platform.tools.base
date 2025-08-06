@@ -20,11 +20,22 @@ import org.junit.rules.ExternalResource
 
 /** Rule for ensuring tests using AndroidSdkHandler are hermetic. */
 class AndroidSdkHandlerRule : ExternalResource() {
+  private var isRuleInstalled = false
+
   override fun before() {
-    AndroidSdkHandler.reset()
+    isRuleInstalled = true
+    after()
   }
+
+  var instanceProvider: AndroidSdkHandler.InstanceProvider
+    get() = AndroidSdkHandler.instanceProvider
+    set(value) {
+      check(isRuleInstalled) { "Rule is not installed in the test" }
+      AndroidSdkHandler.instanceProvider = value
+    }
 
   override fun after() {
     AndroidSdkHandler.reset()
+    AndroidSdkHandler.instanceProvider = AndroidSdkHandler.DefaultInstanceProvider
   }
 }
