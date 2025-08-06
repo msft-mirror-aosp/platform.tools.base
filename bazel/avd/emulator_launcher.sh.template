@@ -232,6 +232,16 @@ else
   # Add emulator flags for running from a read-only snapshot.
   additional_emulator_args+=("-read-only" "-no-snapshot-save")
 
+  if [ "$(uname)" = "Linux" ]; then
+    # Add `-force-snapshot-load` to prevent the emulator from deleting the
+    # default snapshot on a failed boot.
+    #
+    # This flag is currently enabled only on Linux because the emulator version
+    # on the studio-mac, studio-mac-arm build bots is too old and does not support it.
+    # It should be enabled for macOS once the emulator is updated.
+    additional_emulator_args+=("-force-snapshot-load")
+  fi
+
   # Verify that the snapshot directory exists before proceeding.
   if [ ! -d "$snapshot_dir_short_path" ]; then
     echo "Error: Snapshot not found at '$snapshot_dir_short_path'." >&2
