@@ -16,7 +16,15 @@
 
 package com.android.tools.bazel.avd;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.junit.rules.ExternalResource;
 
@@ -57,26 +65,73 @@ public final class Emulator extends ExternalResource {
         }
     }
 
+    /**
+     * Executes a command and prefixes each line of its output with a timestamp.
+     *
+     * @param cmd The command and its arguments to execute.
+     * @throws Exception if the command exits with a non-zero status code, or if there's an
+     * interruption while waiting for the process to complete.
+     */
     private static void exec(String... cmd) throws Exception {
         String testOutputDir = System.getenv("TEST_UNDECLARED_OUTPUTS_DIR");
-        ProcessBuilder processBuilder = new ProcessBuilder().command(cmd);
-
         File outputFile = null;
+
+        // Determine the output destination: a new log file or standard output.
         if (testOutputDir != null && !testOutputDir.isEmpty()) {
-            // If the output directory is specified, redirect stdout and stderr to a log file.
-             outputFile = File.createTempFile(
-                "emulator_output_", ".log", new File(testOutputDir));
-            processBuilder.redirectErrorStream(true); // Merges stderr into stdout
-            processBuilder.redirectOutput(outputFile);
-        } else {
-            // Otherwise, inherit the I/O streams of the current process.
-            processBuilder.inheritIO();
+            outputFile = File.createTempFile("emulator_output_", ".log", new File(testOutputDir));
         }
 
-        int exitCode = processBuilder.start().waitFor();
-        if (exitCode != 0) {
-            throw new Exception(String.format(
-                "Emulator script exited with code: %d, logFile: %s", exitCode, outputFile));
+        ProcessBuilder pb = new ProcessBuilder().command(cmd);
+        pb.redirectErrorStream(true); // Merge stdout and stderr into a single stream.
+
+        Process process = pb.start();
+
+        try (Writer writer = (outputFile != null)
+                ? new PrintWriter(new FileWriter(outputFile))
+                : new PrintWriter(System.out)) {
+
+            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            // A dedicated thread reads the process's output stream. This prevents the
+            // process buffer from filling up, which could cause a deadlock.
+            Thread readerThread = new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String timestamp = LocalDateTime.now().format(formatter);
+                        // Write the timestamped line to the designated writer (file or console).
+                        writer.write(String.format("[%s] %s%n", timestamp, line));
+                        writer.flush();
+                    }
+                } catch (IOException e) {
+                    // This can happen if the process is terminated abruptly. It's generally
+                    // safe to ignore as the process is ending anyway.
+                }
+            });
+
+            readerThread.start();
+
+            try {
+                // Wait for the external process to complete.
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    throw new Exception(
+                            String.format(
+                                    "Emulator script exited with code: %d, logFile: %s",
+                                    exitCode, outputFile));
+                }
+            } finally {
+                // The launcher script exits, but the emulator process it starts continues
+                // to run. This keeps the script's stdout stream open, so we must interrupt
+                // the reader thread to prevent it from blocking indefinitely.
+                readerThread.interrupt();
+            }
+        } finally {
+            // Ensure the process is destroyed if the main thread was interrupted.
+            if (process.isAlive()) {
+                process.destroyForcibly();
+            }
         }
     }
 }
