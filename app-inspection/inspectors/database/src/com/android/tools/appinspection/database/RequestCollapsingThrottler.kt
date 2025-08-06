@@ -17,9 +17,13 @@ package com.android.tools.appinspection.database
 
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Runnable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Throttler implementation ensuring that events are run not more frequently that specified

@@ -198,7 +198,6 @@ class InvalidationTest {
     hooks.entryHookFor(rawQueryMethodSignature).onEntry(null, listOf(null, "select * from t1"))
     val unsupportedCursor = closeablesRule.register(UnsupportedCursorType())
     hooks.exitHookFor(rawQueryMethodSignature).onExit(unsupportedCursor)
-    Unit
   }
 
   private fun cursorForQuery(query: String): SQLiteCursor {

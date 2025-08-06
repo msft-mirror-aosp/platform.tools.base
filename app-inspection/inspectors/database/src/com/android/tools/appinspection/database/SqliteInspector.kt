@@ -31,6 +31,8 @@ import android.database.sqlite.SQLiteException
 import android.database.sqlite.SQLiteStatement
 import android.os.Build
 import android.os.CancellationSignal
+import android.os.Process
+import android.os.UserManager
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.inspection.ArtTooling.EntryHook
@@ -39,6 +41,7 @@ import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.bundled.BundledSQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockCommand
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockResponse
@@ -80,7 +83,7 @@ import com.android.tools.appinspection.database.EntryExitMatchingHookRegistry.On
 import com.android.tools.appinspection.database.SqliteInspectionExecutors.submit
 import com.android.tools.appinspection.database.Utils.isDatabase
 import com.android.tools.appinspection.database.androidx.AndroidXDatabase
-import com.android.tools.appinspection.database.androidx.SQLiteConnectionWrapper
+import com.android.tools.appinspection.database.androidx.SQLiteStatementWrapper
 import com.android.tools.appinspection.database.framework.FrameworkDatabase
 import com.android.tools.idea.protobuf.ByteString
 import java.io.PrintWriter
@@ -88,6 +91,7 @@ import java.io.StringWriter
 import java.util.*
 import java.util.concurrent.Executor
 import java.util.concurrent.Future
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 import kotlin.text.RegexOption.IGNORE_CASE
 import kotlin.time.Duration.Companion.seconds
@@ -126,6 +130,11 @@ private val SQLITE_STATEMENT_EXECUTE_METHODS_SIGNATURES: List<String> =
 
 private const val ANDROIDX_DRIVER_OPEN_SIG =
   "open(Ljava/lang/String;I)Landroidx/sqlite/SQLiteConnection;"
+
+private const val ANDROIDX_CONNECTION_CLOSE_SIG = "close()V"
+
+private const val ANDROIDX_CONNECTION_PREPARE_SIG =
+  "prepare(Ljava/lang/String;)Landroidx/sqlite/SQLiteStatement;"
 
 private val INVALIDATION_MIN_INTERVAL = 1.seconds
 
@@ -264,7 +273,8 @@ internal class SqliteInspector(
     registerAndroidXHooks(hookRegistry)
 
     // Check for database instances in memory
-    for (instance in environment.artTooling().findInstances(SQLiteDatabase::class.java)) {
+    val artTooling = environment.artTooling()
+    for (instance in artTooling.findInstances(SQLiteDatabase::class.java)) {
       val database = FrameworkDatabase(instance)
       /* the race condition here will be handled by mDatabaseRegistry */
       if (instance.isOpen) {
@@ -273,11 +283,20 @@ internal class SqliteInspector(
         onDatabaseClosed(database)
       }
     }
+    artTooling.findInstances(BundledSQLiteConnection::class.java).forEach { sqlConnection ->
+      val file = sqlConnection.getDatabasePath()
+
+      val database = AndroidXDatabase(sqlConnection, file)
+      if (database.isOpen()) {
+        onDatabaseOpened(database)
+      }
+    }
+
     if (command.forceOpen) {
       databaseRegistry.enableForceOpen()
     }
     // Check for database instances on disk
-    for (instance in environment.artTooling().findInstances(Application::class.java)) {
+    for (instance in artTooling.findInstances(Application::class.java)) {
       for (name in instance.databaseList()) {
         val path = instance.getDatabasePath(name)
         if (path.isDatabase()) {
@@ -294,22 +313,11 @@ internal class SqliteInspector(
     registerFrameworkInvalidationHooks(hookRegistry)
   }
 
-  /**
-   * With the AndroidX API's we only hook [BundledSQLiteDriver.open](String, Int).
-   *
-   * The rest is accomplished with [SQLiteConnectionWrapper] &
-   * [com.android.tools.appinspection.database.androidx.SQLiteStatementWrapper]. This is not only
-   * easier but using hooks is not actually possible because the AndroidX classes lack the
-   * information required for the hooks to work.
-   *
-   * For example, the [SQLiteConnection.close] hook needs access to the database file path which is
-   * not available in the hook context as it not provided by the [SQLiteConnection] object.
-   *
-   * TODO(b/399911644): Investigate using Wrappers instead of Hooks for Framework as well.
-   */
   private fun registerAndroidXHooks(hookRegistry: EntryExitMatchingHookRegistry) {
     try {
       registerAndroidXOpenHooks(hookRegistry)
+      registerAndroidXCloseHooks(hookRegistry)
+      registerAndroidXInvalidationHooks(hookRegistry)
     } catch (_: NoClassDefFoundError) {
       Log.i(TAG, "App does not use AndroidX Sqlite APIs")
     }
@@ -442,21 +450,12 @@ internal class SqliteInspector(
     }
     val onExitCallback =
       OnExitCallback<BundledSQLiteDriver, SQLiteConnection> { _, args, result ->
-        val sqliteConnection = result ?: return@OnExitCallback null
+        val sqliteConnection = result as? BundledSQLiteConnection ?: return@OnExitCallback null
         val path = args[0] as String
         val flags = args[1] as Int
 
-        val onClose: (SQLiteConnectionWrapper) -> Unit = {
-          val database = AndroidXDatabase(it, path, flags)
-          when (it.isOpen()) {
-            true -> databaseRegistry.notifyReleaseReference(database)
-            false -> databaseRegistry.notifyAllDatabaseReferencesReleased(database)
-          }
-        }
-        val invalidate = { throttler.submitRequest() }
-        val wrapper = SQLiteConnectionWrapper(sqliteConnection, onClose, invalidate)
         try {
-          onDatabaseOpened(AndroidXDatabase(wrapper, path, flags))
+          onDatabaseOpened(AndroidXDatabase(sqliteConnection, path, flags))
         } catch (exception: Throwable) {
           connection.sendEvent(
             createErrorOccurredEvent(
@@ -470,7 +469,7 @@ internal class SqliteInspector(
               .toByteArray()
           )
         }
-        wrapper
+        sqliteConnection
       }
     hookRegistry.registerHook(ANDROIDX_DRIVER_OPEN_SIG, entryHook, onExitCallback)
   }
@@ -581,6 +580,43 @@ internal class SqliteInspector(
       ->
       if (trackedCursors.containsKey(thisObject)) {
         throttler.submitRequest()
+      }
+    }
+  }
+
+  private fun registerAndroidXCloseHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+    val databasePath = AtomicReference<String?>(null)
+    // We need to hook both entry and exit hooks because we need to extract the database path from
+    // the connection
+    // before is closes, and we need the connection to closed when we call onDatabaseClosed
+    hookRegistry.registerHook<BundledSQLiteConnection, Unit>(
+      ANDROIDX_CONNECTION_CLOSE_SIG,
+      { connection, _ ->
+        if (connection is BundledSQLiteConnection) {
+          databasePath.set(connection.getDatabasePath())
+        }
+      },
+    ) { connection, _, _ ->
+      val path = databasePath.get()
+      if (connection != null && path != null) {
+        onDatabaseClosed(AndroidXDatabase(connection, path))
+      }
+    }
+  }
+
+  private fun registerAndroidXInvalidationHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+    hookRegistry.registerHook<BundledSQLiteConnection, androidx.sqlite.SQLiteStatement>(
+      ANDROIDX_CONNECTION_PREPARE_SIG
+    ) { _, args, result ->
+      // if the prepared statement is not a SELECT, we wrap it with a wrapper that triggers
+      // invalidation when step() is
+      // called
+      val statement = result ?: return@registerHook null
+      val sql = args.firstOrNull() as? String ?: return@registerHook statement
+      val type = DatabaseUtils.getSqlStatementType(sql)
+      when {
+        type == DatabaseUtils.STATEMENT_SELECT -> statement
+        else -> SQLiteStatementWrapper(statement) { throttler.submitRequest() }
       }
     }
   }
@@ -873,8 +909,22 @@ internal class SqliteInspector(
   }
 
   private fun onDatabaseOpened(database: Database) {
-    roomInvalidationRegistry.invalidateCache()
-    databaseRegistry.notifyDatabaseOpened(database)
+    try {
+      roomInvalidationRegistry.invalidateCache()
+      databaseRegistry.notifyDatabaseOpened(database)
+    } catch (exception: Throwable) {
+      connection.sendEvent(
+        createErrorOccurredEvent(
+            "Unhandled Exception while processing an onDatabaseAdded " +
+              "event: " +
+              exception.message,
+            stackTraceFromException(exception),
+            null,
+            ErrorCode.ERROR_ISSUE_WITH_PROCESSING_NEW_DATABASE_CONNECTION,
+          )
+          .toByteArray()
+      )
+    }
   }
 
   private fun onDatabaseClosed(database: Database) {
@@ -895,6 +945,27 @@ internal class SqliteInspector(
           .build()
       )
       .build()
+  }
+
+  private fun SQLiteConnection.getDatabasePath(): String {
+    val application = environment.artTooling().findInstances(Application::class.java).firstOrNull()
+    val file =
+      prepare("SELECT file FROM pragma_database_list() WHERE name = 'main'").use {
+        it.step()
+        val filename = it.getText(0)
+        // The Application database path is under "/data/user/<user>" but pragma_database_list
+        // returns "/data/data"
+        // paths, so we need to get the user id and change the path so it matches.
+        val user =
+          application
+            ?.getSystemService(UserManager::class.java)
+            ?.getSerialNumberForUser(Process.myUserHandle())
+        when (user) {
+          null -> filename
+          else -> filename.replace("/data/data/", "/data/user/$user/")
+        }
+      }
+    return file
   }
 
   /**
