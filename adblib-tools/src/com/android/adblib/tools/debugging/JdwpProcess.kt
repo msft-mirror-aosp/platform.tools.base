@@ -16,6 +16,7 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbLogger
+import com.android.adblib.AdbSocketChannel
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
@@ -27,6 +28,7 @@ import com.android.adblib.tools.debugging.impl.JdwpProcessViewHierarchyImpl
 import com.android.adblib.tools.debugging.packets.JdwpPacketBuilders
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.utils.runAlongOtherScope
+import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
@@ -121,15 +123,29 @@ suspend fun JdwpProcess.executeGarbageCollector(progress: JdwpCommandProgress? =
  * [JdwpProcessProperties.isWaitingForDebugger] state.
  */
 suspend fun JdwpProcess.resumeProcess() {
-    val logger = adbLogger()
+    val logger = adbLogger().withProcessPrefix(this.device, pid).withPrefix("resumeProcess() - ")
     val externalDispatchers = externalJdwpProcessCommandDispatcherList()
-    if (externalDispatchers.isNotEmpty()) {
-        externalDispatchers.forEach {
-            logger.debug { "Forwarding `resumeProcess` call to '$it'" }
-            it.executeCommand(ResumeJdwpProcess(pid))
+    when {
+        device.isAppInfoSupported() -> {
+            // When using `app_info`, we can resume the process from any session, as there should
+            // no active JDWP connection, since no session should be using a JDWP connection to
+            // collect JdwpProcessProperties
+            resumeProcessImpl()
         }
-    } else {
-        resumeProcessImpl()
+        externalDispatchers.isEmpty() -> {
+            // If there are no external command dispatchers installed, we resume the process
+            // directly from this session
+            resumeProcessImpl()
+        }
+        else -> {
+            // If there are external dispatchers, forward the command to all of them so the
+            // process is resumed by the one and only one implementation that has an active
+            // JDWP connection on the process
+            externalDispatchers.forEach {
+                logger.debug { "Forwarding `resumeProcess` call to '$it'" }
+                it.executeCommand(ResumeJdwpProcess(pid))
+            }
+        }
     }
 }
 
@@ -138,7 +154,7 @@ suspend fun JdwpProcess.resumeProcess() {
  * [JdwpProcessProperties.isWaitingForDebugger] state.
  */
 internal suspend fun JdwpProcess.resumeProcessImpl() {
-    val logger = adbLogger()
+    val logger = adbLogger().withProcessPrefix(this.device, pid).withPrefix("resumeProcessImpl() - ")
 
     // Note: we need to use `runAlongOtherScope` because we are waiting on a value from a
     // `StateFlow` and `StateFlows` never end.
