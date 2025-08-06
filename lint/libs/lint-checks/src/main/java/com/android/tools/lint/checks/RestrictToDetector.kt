@@ -52,6 +52,7 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.ULiteralExpression
 import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.UTypeReferenceExpression
@@ -135,7 +136,15 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     var isCompose = false
 
     //noinspection AndroidLintExternalAnnotations
-    val annotations = this.uAnnotations
+    val annotations =
+      if (this is UField) {
+        // https://youtrack.jetbrains.com/issue/KTIJ-33663
+        // Technically, @VisibleForTesting is not applicable to field, hence dropped.
+        // To keep the old behavior, examine the annotations at the source level.
+        this.sourceAnnotations
+      } else {
+        this.uAnnotations
+      }
 
     for (annotation in annotations) {
       val name = annotation.qualifiedName ?: continue

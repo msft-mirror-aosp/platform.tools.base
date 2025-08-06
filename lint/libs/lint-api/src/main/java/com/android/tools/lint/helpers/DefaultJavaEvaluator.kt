@@ -57,6 +57,7 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UDeclaration
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.getContainingUFile
 import org.jetbrains.uast.kotlin.psi.UastFakeLightMethodBase
@@ -131,7 +132,15 @@ open class DefaultJavaEvaluator(
       // Therefore, call into UAST to get the full Kotlin annotations, but also
       // merge in external annotations and inherited annotations from the class
       // files, and pick unique.
-      val annotations = owner.uAnnotations
+      val annotations =
+        if (owner is UField) {
+          // https://youtrack.jetbrains.com/issue/KTIJ-33663
+          // Some annotations without field use-site target have been modeled in UField.
+          // Instead, we introduced a new one to retrieve all source-level annotations.
+          owner.sourceAnnotations
+        } else {
+          owner.uAnnotations
+        }
       val mergeAnnotations =
         getAnnotations(owner.javaPsi as? PsiModifierListOwner, inHierarchy, owner)
       if (annotations.isNotEmpty()) {

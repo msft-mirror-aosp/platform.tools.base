@@ -235,7 +235,6 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
   }
 
   fun testAnnotationTargets_regularProperty() {
-    // TODO: https://youtrack.jetbrains.com/issue/KT-76431
     // b/406850340
     // https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
     // @property use-site is not visible to Java
@@ -271,13 +270,7 @@ src/test/pkg/Anno.kt:6: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
 src/test/pkg/Anno.kt:8: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @set:Anno
   ~~~~~~~~~
-src/test/pkg/Anno.kt:10: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
-  @property:Anno
-  ~~~~~~~~~~~~~~
-src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
-  @Anno
-  ~~~~~
-0 errors, 4 warnings
+0 errors, 2 warnings
         """
       )
   }
