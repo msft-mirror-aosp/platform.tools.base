@@ -16,7 +16,7 @@
 
 package com.android.tools.lint.client.api
 
-import com.android.tools.lint.detector.api.Detector.UastScanner
+import com.android.tools.lint.detector.api.SourceCodeScanner
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UArrayAccessExpression
 import org.jetbrains.uast.UBinaryExpression
@@ -76,7 +76,7 @@ import org.jetbrains.uast.visitor.UastVisitor
 /**
  * The [UElementHandler] is similar to a [UastVisitor], but it is used to only visit a single
  * element. Detectors tell lint which types of elements they want to be called for by invoking
- * [UastScanner.getApplicableUastTypes].
+ * [SourceCodeScanner.getApplicableUastTypes].
  *
  * If you want to actually perform a full file visitor iteration you should implement the link
  * [visitFile] and then create a [UastVisitor] and then invoke that on `file.accept(visitor)`.
