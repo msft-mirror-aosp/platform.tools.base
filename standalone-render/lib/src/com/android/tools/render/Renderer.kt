@@ -118,6 +118,7 @@ class Renderer(
 
                 override suspend fun <X> executeReadAndWriteAction(
                     constraints: Array<out ReadConstraint>,
+                    runWriteActionOnEdt: Boolean,
                     action: ReadAndWriteScope.() -> ReadResult<X>
                 ): X {
                     throw UnsupportedOperationException()
