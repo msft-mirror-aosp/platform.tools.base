@@ -271,14 +271,14 @@ else
 
       # The snapshot contains absolute paths that must be updated.
       echo "Relocating paths in snapshot..."
-      for file in $(grep -rl "__PLACEHOLDER_EXTERNAL__" "$ANDROID_AVD_HOME/emu.avd"); do
+      for file in $(grep -rl "__PLACEHOLDER_EXTERNAL__" --include="*.ini" "$ANDROID_AVD_HOME/emu.avd"); do
           if [ "$(uname)" = "Darwin" ]; then
               sed -i '' "s#__PLACEHOLDER_EXTERNAL__#$HOME/..#g" "$file"
           else
               sed -i "s#__PLACEHOLDER_EXTERNAL__#$HOME/..#g" "$file"
           fi
       done
-      for file in $(grep -rl "__PLACEHOLDER_HOME__" "$ANDROID_AVD_HOME/emu.avd"); do
+      for file in $(grep -rl "__PLACEHOLDER_HOME__" --include="*.ini" "$ANDROID_AVD_HOME/emu.avd"); do
           if [ "$(uname)" = "Darwin" ]; then
               sed -i '' "s#__PLACEHOLDER_HOME__#$HOME#g" "$file"
           else
