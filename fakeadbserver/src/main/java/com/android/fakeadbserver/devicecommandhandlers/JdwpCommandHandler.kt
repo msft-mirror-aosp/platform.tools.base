@@ -138,13 +138,6 @@ class JdwpCommandHandler : DeviceCommandHandler("jdwp") {
                 }
             }
         }
-        // The JDWP session started, change the process state to `not waiting for debugger`
-        // if needed
-        if (client.getWaitingForDebuggerAndReset()) {
-            // The process state has changed, make sure `track-app-info` sends an updated list
-            // if needed.
-            device.clientChangeHub.appProcessListChanged()
-        }
         try {
             jdwpLoop(device, client, iStream, oStream, socketScope)
         } finally {
@@ -207,6 +200,7 @@ class JdwpCommandHandler : DeviceCommandHandler("jdwp") {
 
         var running = true
         val jdwpHandlerOutput = JdwpHandlerOutput(oStream)
+        var jdwpPacketCount = 0
         while (running) {
             running = try {
                 val packet = readFrom(iStream)
@@ -216,6 +210,16 @@ class JdwpCommandHandler : DeviceCommandHandler("jdwp") {
                         .getOrDefault(ddmPacket.chunkType, defaultDdmHandler)
                         .handlePacket(device, client, ddmPacket, jdwpHandlerOutput, socketScope)
                 } else {
+                    if (jdwpPacketCount++ == 0) {
+                        // On the very first JDWP packet in the JDWP session, reset the
+                        // `isWaitingForDebugger` to `false` and notify
+                        if (client.getWaitingForDebuggerAndReset()) {
+                            // The process state has changed, make sure `track-app-info` sends an updated list
+                            // if needed.
+                            device.clientChangeHub.appProcessListChanged()
+                        }
+                    }
+
                     val commandId = JdwpCommandId(packet.cmdSet, packet.cmd)
                     jdwpPacketHandlers
                         .getOrDefault(commandId, defaultJdwpHandler)

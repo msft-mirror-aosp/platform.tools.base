@@ -179,13 +179,15 @@ class HeloHandler : DdmPacketHandler {
     }
 
     private fun sendWait(client: ClientState, jdwpHandlerOutput: JdwpHandlerOutput) {
-        val waitPayload = ByteArray(1)
-        val waitPacket = DdmPacket.createCommand(
-            client.nextDdmsCommandId(),
-            DdmPacket.encodeChunkType("WAIT"),
-            waitPayload
-        )
-        waitPacket.write(jdwpHandlerOutput)
+        if (client.waitingForDebugger) {
+            val waitPayload = ByteArray(1)
+            val waitPacket = DdmPacket.createCommand(
+                client.nextDdmsCommandId(),
+                DdmPacket.encodeChunkType("WAIT"),
+                waitPayload
+            )
+            waitPacket.write(jdwpHandlerOutput)
+        }
     }
 
     companion object {

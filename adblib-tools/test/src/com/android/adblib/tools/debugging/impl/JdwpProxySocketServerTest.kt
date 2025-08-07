@@ -185,7 +185,11 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
 
         // Act
-        attachDebuggerSession(process)
+        attachDebuggerSession(process).also { jdwpSession ->
+            // See b/437364295: We currently don't need to send a JDWP packet to resume
+            // the process, but we really should.
+            //sendVmVersionPacket(jdwpSession)
+        }
         yieldUntil {
             process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached &&
               !process.properties.isWaitingForDebugger.getOrDefault(false)
@@ -218,7 +222,10 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
 
         // Act
-        attachDebuggerSession(process)
+        attachDebuggerSession(process).also { jdwpSession ->
+            // We need to send a JDWP packet so that the Art VM (FakeAdb really) resumes the process
+            sendVmVersionPacket(jdwpSession)
+        }
         yieldUntil {
             process.jdwpProxySocketServer.proxyStatus.isExternalDebuggerAttached &&
               !process.properties.isWaitingForDebugger.getOrDefault(false)
