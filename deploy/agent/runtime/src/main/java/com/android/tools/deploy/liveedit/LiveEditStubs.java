@@ -22,11 +22,9 @@ import static com.android.tools.deploy.instrument.ReflectionHelpers.getDeclaredF
 import android.app.Activity;
 
 import com.android.annotations.VisibleForTesting;
-import com.android.tools.deploy.liveedit.BytecodeValidator.UnsupportedChange;
 
-import java.util.ArrayList;
+import java.lang.reflect.Field;
 import java.util.Collection;
-import java.util.List;
 
 @SuppressWarnings("unused") // Used by native instrumentation code.
 public final class LiveEditStubs {
@@ -54,44 +52,19 @@ public final class LiveEditStubs {
         }
     }
 
-    public static UnsupportedChange[] addClasses(
+    public static void addClasses(
             byte[][] primaryClasses, byte[][] proxyClasses, boolean structuralRedefinition) {
         // Process all main classes
-        List<UnsupportedChange> errors = new ArrayList<>();
         for (byte[] primaryClass : primaryClasses) {
             Interpretable primary = new Interpretable(primaryClass);
-            List err =
-                    BytecodeValidator.validateBytecode(
-                            primary, context.getClassLoader(), structuralRedefinition);
-            errors.addAll(err);
-            if (err.isEmpty()) {
-                addClass(primary.getInternalName(), primary, false);
-            }
-        }
-
-        if (!errors.isEmpty()) {
-            return errors.toArray(new UnsupportedChange[0]);
+            addClass(primary.getInternalName(), primary, false);
         }
 
         // Process all support classes
         for (byte[] proxyBytes : proxyClasses) {
             Interpretable proxy = new Interpretable(proxyBytes);
-
-            LiveEditClass clazz = context.getClass(proxy.getInternalName());
-            if (clazz == null) {
-                context.addClass(proxy.getInternalName(), proxy, true);
-                continue;
-            }
-
-            RiskyChange changeType = clazz.checkForRiskyChange(proxy);
-            if (changeType != RiskyChange.NONE) {
-                ComposeSupport.addRiskyChange(proxy.getInternalName(), changeType);
-            }
-
-            clazz.updateBytecode(proxy, true);
+            addClass(proxy.getInternalName(), proxy, true);
         }
-
-        return new UnsupportedChange[0];
     }
 
     public static void addClass(String internalName, Interpretable bytecode, boolean isProxyClass) {
@@ -111,19 +84,19 @@ public final class LiveEditStubs {
     // Everything in the following section is called from the dex prologue created by StubTransform.
     // None of this code is or should be called from any other context.
 
-    // The key format is based on what slicer passes as the first parameter to an EntryHook
-    // callback.
-    // The format can be found in tools/slicer/instrumentation.cc in the MethodLabel method.
-    // TODO: We need to centralize which LiveEdit component "owns" this key format.
-    public static boolean shouldInterpretMethod(
-            String internalClassName, String methodName, String methodDesc) {
-        // TODO(noahz): Consider removing this method.
-        return true;
+    // Bytecode retrieval for static methods
+    public static Object getClassBytecode(String internalClassName) {
+        return context.getClass(internalClassName).getLatestBytecode();
+    }
+
+    // Bytecode retrieval for instance methods
+    public static Object getInstanceBytecode(String internalClassName, Object instance) {
+        return updateInstanceBytecode(internalClassName, instance);
     }
 
     public static Object doStub(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        // Second parameter is the this pointer, or null if static
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        // Second parameter is the 'this' pointer, or null if static
         Object thisObject = parameters[1];
 
         // Other parameters are the method arguments, if any
@@ -132,66 +105,135 @@ public final class LiveEditStubs {
             System.arraycopy(parameters, 2, arguments, 0, arguments.length);
         }
 
-        return context.getClass(internalClassName)
-                .invokeDeclaredMethod(methodName, methodDesc, thisObject, arguments);
+        Interpretable bytecode = (Interpretable) interpretable;
+        MethodBodyEvaluator evaluator =
+                new MethodBodyEvaluator(context, bytecode, methodName, methodDesc);
+        return evaluator.eval(thisObject, bytecode.getInternalName(), arguments);
     }
 
     public static Object stubL(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        return doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        return doStub(interpretable, methodName, methodDesc, parameters);
     }
 
     public static byte stubB(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        Object value = doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        Object value = doStub(interpretable, methodName, methodDesc, parameters);
         return value != null ? (byte) value : 0;
     }
 
     public static short stubS(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        Object value = doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        Object value = doStub(interpretable, methodName, methodDesc, parameters);
         return value != null ? (short) value : 0;
     }
 
     public static int stubI(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        Object value = doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        Object value = doStub(interpretable, methodName, methodDesc, parameters);
         return value != null ? (int) value : 0;
     }
 
     public static long stubJ(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        Object value = doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        Object value = doStub(interpretable, methodName, methodDesc, parameters);
         return value != null ? (long) value : 0;
     }
 
     public static float stubF(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        Object value = doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        Object value = doStub(interpretable, methodName, methodDesc, parameters);
         return value != null ? (float) value : 0;
     }
 
     public static double stubD(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        Object value = doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        Object value = doStub(interpretable, methodName, methodDesc, parameters);
         return value != null ? (double) value : 0;
     }
 
     public static boolean stubZ(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        Object value = doStub(internalClassName, methodName, methodDesc, parameters);
-        return value != null ? (boolean) value : false;
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        Object value = doStub(interpretable, methodName, methodDesc, parameters);
+        return value != null && (boolean) value;
     }
 
     public static char stubC(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        Object value = doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        Object value = doStub(interpretable, methodName, methodDesc, parameters);
         return value != null ? (char) value : 0;
     }
 
     public static void stubV(
-            String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        doStub(internalClassName, methodName, methodDesc, parameters);
+            Object interpretable, String methodName, String methodDesc, Object[] parameters) {
+        doStub(interpretable, methodName, methodDesc, parameters);
+    }
+
+    public static void stubConstructor(String internalClassName, Object instance) {
+        updateInstanceBytecode(internalClassName, instance);
+    }
+
+    /**
+     * Given a type and an object instance, attempts to update the instance's Live Edit bytecode for
+     * the type. The stored bytecode is updated if the new bytecode is considered compatible with
+     * the current stored bytecode; if no bytecode has been assigned to the instance, compatibility
+     * is checked with the class bytes from the APK instead. Compatibility is checked using {@link
+     * BytecodeValidator}. If the new bytecode is incompatible with the existing bytecode, the
+     * instance continues to hold the existing bytecode.
+     *
+     * @param internalClassName the class type to check the bytecode for. It may be a supertype of
+     *     {@code instance.getClass()}
+     * @param instance the instance to update the bytecode on
+     * @return the stored bytecode after the update. May be null if the Live Edited bytecode was
+     *     incompatible with the existing APK class.
+     */
+    private static Object updateInstanceBytecode(String internalClassName, Object instance) {
+        String className = internalClassName.replace('/', '.');
+        Class<?> clazz;
+        try {
+            clazz = Class.forName(className, false, instance.getClass().getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new LiveEditException("Unexpected missing class; possible classloader issue?", e);
+        }
+
+        Field field;
+        try {
+            field = clazz.getDeclaredField("$liveEditBytecode");
+            field.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            throw new LiveEditException("Live Edit bytecode field was missing", e);
+        }
+
+        Interpretable instanceBytecode;
+        try {
+            instanceBytecode = (Interpretable) field.get(instance);
+        } catch (IllegalAccessException e) {
+            throw new LiveEditException("Could not access Live Edit bytecode field", e);
+        }
+
+        Interpretable latestBytecode = context.getClass(internalClassName).getLatestBytecode();
+        if (latestBytecode == instanceBytecode) {
+            return instanceBytecode;
+        }
+
+        boolean updateIsCompatible;
+        if (instanceBytecode != null) {
+            updateIsCompatible =
+                    BytecodeValidator.checkCompatibleUpdate(instanceBytecode, latestBytecode);
+        } else {
+            updateIsCompatible = BytecodeValidator.checkCompatibleUpdate(clazz, latestBytecode);
+        }
+
+        if (!updateIsCompatible) {
+            return instanceBytecode;
+        }
+
+        try {
+            field.set(instance, latestBytecode);
+        } catch (IllegalAccessException e) {
+            throw new LiveEditException("Error updating Live Edit bytecode field", e);
+        }
+        return latestBytecode;
     }
 
     private static class AndroidLogger implements Log.Logger {

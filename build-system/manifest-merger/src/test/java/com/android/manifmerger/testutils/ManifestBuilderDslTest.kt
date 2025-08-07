@@ -90,6 +90,7 @@ class ManifestBuilderDslTest {
         try {
             val mergingReport =
                 ManifestMerger2.newMerger(appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                    .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                     .merge()
             assertThat(mergingReport.result).isEqualTo(MergingReport.Result.ERROR)
             assertThat(mergingReport.getMergedDocument(MergedManifestKind.MERGED)).isNull()
@@ -120,6 +121,7 @@ class ManifestBuilderDslTest {
             val mergingReport =
                 ManifestMerger2.newMerger(tmpFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
                     .withFeatures(ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
+                    .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                     .merge()
             Assert.assertEquals(MergingReport.Result.WARNING, mergingReport.result)
             // ensure tools annotation removal.
@@ -154,6 +156,7 @@ class ManifestBuilderDslTest {
         val mockLog = MockLog()
         val mergingReport =
             ManifestMerger2.newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING) // b/428152369 Lenient manifest handling until tests adapter for AGP 9.0 requirements.
                 .merge()
         Assert.assertTrue(mergingReport.result.isSuccess)
         val xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED))

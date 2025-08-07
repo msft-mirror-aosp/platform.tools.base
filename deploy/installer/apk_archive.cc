@@ -16,13 +16,13 @@
 
 #include "tools/base/deploy/installer/apk_archive.h"
 
-#include <iostream>
-
 #include <fcntl.h>
 #include <libgen.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+
 #include <cstring>
+#include <iostream>
 
 #include "tools/base/deploy/common/event.h"
 #include "tools/base/deploy/common/io.h"
@@ -34,9 +34,7 @@ ApkArchive::ApkArchive(const std::string& path) : start_(nullptr), size_(0) {
   ready_ = Prepare(path);
 }
 
-ApkArchive::~ApkArchive() {
-  munmap(start_, size_);
-}
+ApkArchive::~ApkArchive() { munmap(start_, size_); }
 
 ApkArchive::Location ApkArchive::GetSignatureLocation(
     size_t offset_to_cdrecord) noexcept {
@@ -82,7 +80,8 @@ uint8_t* ApkArchive::FindEndOfCDRecord() const noexcept {
   return nullptr;
 }
 
-ApkArchive::Location ApkArchive::FindCDRecord(const uint8_t* cursor) noexcept {
+ApkArchive::Location ApkArchive::FindCDRecord(const uint8_t* cursor) const
+    noexcept {
   struct ecdr_t {
     uint8_t signature[4];
     uint16_t diskNumber;
@@ -103,7 +102,7 @@ ApkArchive::Location ApkArchive::FindCDRecord(const uint8_t* cursor) noexcept {
   return location;
 }
 
-ApkArchive::Location ApkArchive::GetCDLocation() noexcept {
+ApkArchive::Location ApkArchive::GetCDLocation() const noexcept {
   constexpr int cdRecordFileHeaderSignature = 0x02014b50;
   Location location;
 
@@ -174,6 +173,45 @@ Dump ApkArchive::ExtractMetadata() noexcept {
     dump.signature = ReadMetadata(sigLoc);
   }
   return dump;
+}
+
+std::vector<ApkArchive::Entry> ApkArchive::GetEntries() const noexcept {
+  std::vector<Entry> result;
+  if (!ready_) {
+    ErrEvent("Unable to GetUncomressedDexFiles (not ready)");
+    return result;
+  }
+
+  Location cdLoc = GetCDLocation();
+  if (!cdLoc.valid) {
+    return result;
+  }
+
+  CDFHRecord* cdfhRecord;
+  uint8_t* cdStart = start_ + cdLoc.offset;
+  for (uint8_t* cursor = cdStart; cursor < cdStart + cdLoc.size;
+       cursor += cdfhRecord->Size()) {
+    cdfhRecord = reinterpret_cast<CDFHRecord*>(cursor);
+    if (cdfhRecord->signature != CDFHRecord::SIGNATURE) {
+      return result;
+    }
+
+    uint8_t* cdfhDataStart = cursor + sizeof(CDFHRecord);
+    std::string_view name(reinterpret_cast<const char*>(cdfhDataStart),
+                          cdfhRecord->fileNameLength);
+    uint8_t* lfhRecordStart = start_ + cdfhRecord->relativeOffsetOfLocalHeader;
+    auto* lfhRecord = reinterpret_cast<LFHRecord*>(lfhRecordStart);
+    if (lfhRecord->signature != LFHRecord::SIGNATURE) {
+      continue;
+    }
+
+    uint8_t* lfhDataStart = lfhRecordStart + sizeof(LFHRecord) +
+                            lfhRecord->fileNameLength +
+                            lfhRecord->extraFieldLength;
+    result.push_back({lfhRecord, name, lfhDataStart});
+  }
+
+  return result;
 }
 
 }  // namespace deploy

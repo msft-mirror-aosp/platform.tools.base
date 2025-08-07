@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.options.StringOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import org.gradle.testing.jacoco.plugins.JacocoPlugin
 import org.junit.Rule
 import org.junit.Test
 
@@ -62,7 +63,7 @@ class JacocoVersionTest {
         )
         var generatedJacocoReportHtml = generatedJacocoReport.readLines().joinToString("\n")
         var generatedCoverageReportHtml = generatedCoverageReport.readLines().joinToString("\n")
-        val jacocoVersion = JacocoOptions.DEFAULT_VERSION
+        val jacocoVersion = JacocoPlugin.DEFAULT_JACOCO_VERSION // from Gradle
         Truth.assertThat(generatedJacocoReportHtml).contains("JaCoCo</a> $jacocoVersion")
         Truth.assertThat(generatedCoverageReportHtml).contains("JaCoCo</a> $jacocoVersion")
 

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
+
 package com.android.build.api.variant.impl
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
@@ -40,6 +42,7 @@ open class KotlinMultiplatformAndroidCompilationImpl(
     // This is a workaround for non-removable parametrization for compiler options, it should be
     // safe to cast as the type will always be KotlinJvmCompilerOptions
     @Suppress("UNCHECKED_CAST")
+    @Deprecated("To configure compilation compiler options use 'compileTaskProvider':\ncompilation.compileTaskProvider.configure{\n    compilerOptions {}\n}")
     override val compilerOptions
         get() = super.compilerOptions as HasCompilerOptions<KotlinJvmCompilerOptions>
 

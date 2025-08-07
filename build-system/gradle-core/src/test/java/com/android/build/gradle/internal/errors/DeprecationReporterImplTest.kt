@@ -17,7 +17,11 @@
 package com.android.build.gradle.internal.errors
 
 import com.android.build.gradle.internal.fixtures.FakeProviderFactory
+import com.android.build.gradle.internal.fixtures.FakeProviderFactory.Companion.factory
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.build.gradle.options.FeatureStage
+import com.android.build.gradle.options.FutureStage
+import com.android.build.gradle.options.HasFutureStage
 import com.android.build.gradle.options.Option
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.Version
@@ -32,8 +36,10 @@ class DeprecationReporterImplTest {
     enum class FakeOption(
         override val propertyName: String,
         override val defaultValue: Boolean?,
-        override val status: Option.Status
-    ) : Option<Boolean?> {
+        override val status: Option.Status,
+        override val futureStage: FutureStage? = null
+    ) : Option<Boolean?>, HasFutureStage {
+
         EXPERIMENTAL("android.experimental.option", false, Option.Status.EXPERIMENTAL),
         DEPRECATED(
             "android.deprecated.option",
@@ -50,10 +56,20 @@ class DeprecationReporterImplTest {
             false,
             Option.Status.Removed(Version.VERSION_8_0, "Extra message.")
         ),
+        /** An option to test the transition from an experimental to a deprecated status. */
+        EXPERIMENTAL_WITH_PLANNED_DEPRECATION(
+            "android.experimentalWithPlannedDeprecation.option",
+            false,
+            Option.Status.EXPERIMENTAL,
+            FutureStage(
+                false,
+                FeatureStage.Deprecated(DeprecationReporter.DeprecationTarget.VERSION_10_0),
+                Version.VERSION_9_0
+            )
+        )
         ;
         override fun parse(value: Any): Boolean = parseBoolean(propertyName, value)
     }
-
     private val issueReporter = FakeSyncIssueReporter()
     private val reporter =
         DeprecationReporterImpl(issueReporter, ProjectOptions(ImmutableMap.of(), FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of())), "")
@@ -184,6 +200,43 @@ class DeprecationReporterImplTest {
             """
                 The option setting 'android.deprecated.optional.option=true' is deprecated.
                 It will be removed in version 8.0 of the Android Gradle plugin.
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `test option state change behavior - experimental`() {
+        reporter.reportOptionIssuesIfAny(FakeOption.EXPERIMENTAL_WITH_PLANNED_DEPRECATION, true)
+
+        assertThat(issueReporter.errors).isEmpty()
+        assertThat(issueReporter.warnings).containsExactly(
+            "The option setting 'android.experimentalWithPlannedDeprecation.option=true' is experimental.\n" + "The current default is 'false'."
+        )
+    }
+
+    @Test
+    fun `test option state change behavior - deprecated`() {
+        val futureReporter = DeprecationReporterImpl(
+            issueReporter, ProjectOptions(
+                ImmutableMap.of(),
+                FakeProviderFactory(
+                    factory, ImmutableMap.of(
+                        "android.simulateAgpVersionBehavior", "10.0.0"
+                    )
+                ),
+            ), ""
+        )
+
+        futureReporter.reportOptionIssuesIfAny(
+            FakeOption.EXPERIMENTAL_WITH_PLANNED_DEPRECATION, true
+        )
+
+        assertThat(issueReporter.errors).isEmpty()
+        assertThat(issueReporter.warnings).containsExactly(
+            """
+            The option setting 'android.experimentalWithPlannedDeprecation.option=true' is deprecated.
+            The current default is 'false'.
+            It will be removed in version 10.0 of the Android Gradle plugin.
             """.trimIndent()
         )
     }

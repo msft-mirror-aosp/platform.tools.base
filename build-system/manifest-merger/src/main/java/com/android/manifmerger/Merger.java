@@ -187,6 +187,10 @@ public class Merger {
             if ("--out".equals(selector)) {
                 outFile = new File(value);
             }
+            if ("--lenientUsesSdkInManifestHandling".equals(selector)) {
+                invoker.withFeatures(
+                        ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING);
+            }
         }
         try {
             MergingReport merge = invoker.merge();

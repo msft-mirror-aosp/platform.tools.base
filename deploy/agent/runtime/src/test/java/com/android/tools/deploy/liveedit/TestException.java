@@ -18,10 +18,12 @@ package com.android.tools.deploy.liveedit;
 import static com.android.tools.deploy.liveedit.Utils.buildClass;
 
 import com.android.tools.deploy.interpreter.HoudiniConfiguration;
-import java.lang.reflect.Method;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+
+import java.lang.reflect.Method;
 
 public class TestException {
 
@@ -160,7 +162,11 @@ public class TestException {
 
     public Object stubbedMethod(
             String internalClassName, String methodName, String methodDesc, Object[] parameters) {
-        return LiveEditStubs.stubL(internalClassName, methodName, methodDesc, parameters);
+        return LiveEditStubs.stubL(
+                LiveEditStubs.getClassBytecode(internalClassName),
+                methodName,
+                methodDesc,
+                parameters);
     }
 
     @org.junit.Test
@@ -191,7 +197,7 @@ public class TestException {
         }
 
         Assert.assertEquals(
-                "stubX method count unexpected " + clazz.getCanonicalName(), 10, subXCount);
+                "stubX method count unexpected " + clazz.getCanonicalName(), 11, subXCount);
     }
 
     static int getNextLineNumber() {

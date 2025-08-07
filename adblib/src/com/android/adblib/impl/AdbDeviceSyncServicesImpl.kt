@@ -16,14 +16,25 @@
 package com.android.adblib.impl
 
 import com.android.adblib.AdbDeviceSyncServices
+import com.android.adblib.AdbDeviceSyncServices.ListOptions
+import com.android.adblib.AdbDeviceSyncServices.ListV2Options
+import com.android.adblib.AdbDeviceSyncServices.StatV2Options
 import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbOutputChannel
 import com.android.adblib.DeviceSelector
+import com.android.adblib.DirectoryEntry
+import com.android.adblib.DirectoryEntryV2
 import com.android.adblib.FileStat
+import com.android.adblib.FileStatV2
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.SyncProgress
 import com.android.adblib.impl.services.AdbServiceRunner
 import com.android.adblib.utils.closeOnException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.nio.channels.ClosedChannelException
@@ -63,6 +74,21 @@ internal class AdbDeviceSyncServicesImpl private constructor(
      * Helper class to handle `STAT` commands
      */
     private val statHandler = SyncStatHandler(syncConnection)
+
+    /**
+     * Helper class to handle `STA2` commands
+     */
+    private val statV2Handler = SyncStatV2Handler(syncConnection)
+
+    /**
+     * Helper class to handle `LIST` commands
+     */
+    private val listHandler = SyncListHandler(syncConnection)
+
+    /**
+     * Helper class to handle `LIS2` commands
+     */
+    private val listV2Handler = SyncListV2Handler(syncConnection)
 
     override suspend fun shutdown() {
         checkNotClosed()
@@ -104,10 +130,62 @@ internal class AdbDeviceSyncServicesImpl private constructor(
         recvHandler.recv(remoteFilePath, destinationChannel, progress)
     }
 
-    override suspend fun stat(remoteFilePath: String): FileStat? {
+    override suspend fun stat(remoteFilePath: String) : FileStat? {
         checkNotClosed()
         return statHandler.stat(remoteFilePath)
     }
+
+    override suspend fun statV2(remoteFilePath: String, options: StatV2Options) : FileStatV2 {
+        checkNotClosed()
+        return if (options.fallbackToStatV1 && !syncConnection.canUseStatV2()) {
+            statHandler.stat(remoteFilePath)?.toFileStatV2() ?: defaultErrorFileStatV2
+        } else {
+            statV2Handler.statV2(remoteFilePath)
+        }
+    }
+
+    override fun list(remoteFilePath: String, options: ListOptions): Flow<DirectoryEntry> = flow {
+        checkNotClosed()
+        emitAll(listHandler.list(remoteFilePath, options))
+    }.flowOn(syncConnection.session.ioDispatcher)
+
+    override fun listV2(remoteFilePath: String, options: ListV2Options): Flow<DirectoryEntryV2> = flow {
+        checkNotClosed()
+        if (options.fallbackToListV1 && !syncConnection.canUseListV2()) {
+            emitAll(listHandler.list(remoteFilePath, options.toListOptions()).map { entry ->
+                entry.toDirectoryEntryV2()
+            })
+        } else {
+            emitAll(listV2Handler.listV2(remoteFilePath, options))
+        }
+    }.flowOn(syncConnection.session.ioDispatcher)
+
+    private fun ListV2Options.toListOptions(): ListOptions {
+        return ListOptions(
+            skipDotEntries = this.skipDotEntries
+        )
+    }
+
+    private fun DirectoryEntry.toDirectoryEntryV2(): DirectoryEntryV2 {
+        return DirectoryEntryV2(
+            fileName = this.fileName,
+            fileStat = this.fileStat.toFileStatV2()
+        )
+    }
+
+    private fun FileStat.toFileStatV2() = FileStatV2(
+        errno = 0,
+        mode = remoteFileMode,
+        size = size.toLong(),
+        lastModifiedTime = lastModified,
+        lastAccessTime = zeroFileTime,
+        creationTime = zeroFileTime,
+        dev = 0,
+        inode = 0,
+        nlink = 0,
+        uid = 0,
+        gid = 0,
+    )
 
     private fun checkNotClosed() {
         if (isClosed) {
@@ -116,6 +194,21 @@ internal class AdbDeviceSyncServicesImpl private constructor(
     }
 
     companion object {
+        internal val zeroFileTime = FileTime.from(0, TimeUnit.MILLISECONDS)
+
+        internal val defaultErrorFileStatV2 = FileStatV2(
+            errno = 2 /* 2 == ENOENT == "No such file or directory" */,
+            mode = RemoteFileMode.fromModeBits(0),
+            size = 0,
+            lastModifiedTime = zeroFileTime,
+            lastAccessTime = zeroFileTime,
+            creationTime = zeroFileTime,
+            dev = 0,
+            inode = 0,
+            nlink = 0,
+            uid = 0,
+            gid = 0,
+        )
 
         /**
          * Returns a fully initialized instance of [AdbDeviceSyncServices], after successfully

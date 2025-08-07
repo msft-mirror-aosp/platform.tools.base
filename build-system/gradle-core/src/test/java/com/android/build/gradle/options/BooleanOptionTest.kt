@@ -156,11 +156,15 @@ class BooleanOptionTest {
 
     @Test
     fun `check softly-enforced and enforced features have default value 'true'`() {
+        val ignoreList = listOf(
+            BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST
+        )
         checkViolatingProjectOptions(
             violatingOptions = BooleanOption.entries.filter {
                 (it.stage is FeatureStage.SoftlyEnforced || it.stage is FeatureStage.Enforced)
                         && !it.defaultValue
             },
+            ignoreList = ignoreList,
             requirement = "Softly-enforced and enforced features must have default value `true`."
         )
     }

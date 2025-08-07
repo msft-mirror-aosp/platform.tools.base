@@ -151,7 +151,7 @@ public class BasicInstallerTest extends TestCase {
                 new String(
                         ByteStreams.toByteArray(
                                 getClass().getResourceAsStream("/testPackage.xml"))));
-        RepoManager mgr = new RepoManagerImpl(root);
+
         FakeDownloader downloader = new FakeDownloader(root.getRoot().resolve("tmp"));
         URL repoUrl = new URL("http://example.com/myrepo.xml");
 
@@ -172,12 +172,8 @@ public class BasicInstallerTest extends TestCase {
         ByteArrayInputStream is = new ByteArrayInputStream(baos.toByteArray());
         downloader.registerUrl(archiveUrl, is);
 
-        // Register a source provider to get the repo
-        mgr.registerSourceProvider(
-                new ConstantSourceProvider(
-                        repoUrl.toString(),
-                        "fake provider",
-                        ImmutableList.of(RepoManager.getGenericModule())));
+        RepoManager mgr = createRepoManager(root, repoUrl);
+
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
@@ -250,7 +246,6 @@ public class BasicInstallerTest extends TestCase {
                 new String(
                         ByteStreams.toByteArray(
                                 getClass().getResourceAsStream("/testPackage.xml"))));
-        RepoManager mgr = new RepoManagerImpl(root);
         FakeDownloader downloader = new FakeDownloader(root.getRoot().resolve("tmp"));
         URL repoUrl = new URL("http://example.com/myrepo.xml");
 
@@ -272,11 +267,7 @@ public class BasicInstallerTest extends TestCase {
         downloader.registerUrl(archiveUrl, is);
 
         // Register a source provider to get the repo
-        mgr.registerSourceProvider(
-                new ConstantSourceProvider(
-                        repoUrl.toString(),
-                        "fake provider",
-                        ImmutableList.of(RepoManager.getGenericModule())));
+        RepoManager mgr = createRepoManager(root, repoUrl);
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
@@ -373,7 +364,6 @@ public class BasicInstallerTest extends TestCase {
                 new String(
                         ByteStreams.toByteArray(
                                 getClass().getResourceAsStream("/testPackage2-lowerVersion.xml"))));
-        RepoManager mgr = new RepoManagerImpl(root);
 
         // Create the archive and register the repo to be downloaded.
         FakeDownloader downloader = new FakeDownloader(root.getRoot().resolve("tmp"));
@@ -392,12 +382,7 @@ public class BasicInstallerTest extends TestCase {
         ByteArrayInputStream is = new ByteArrayInputStream(baos.toByteArray());
         downloader.registerUrl(archiveUrl, is);
 
-        // Register the source provider
-        mgr.registerSourceProvider(
-                new ConstantSourceProvider(
-                        repoUrl.toString(),
-                        "fake provider",
-                        ImmutableList.of(RepoManager.getGenericModule())));
+        RepoManager mgr = createRepoManager(root, repoUrl);
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
@@ -461,7 +446,6 @@ public class BasicInstallerTest extends TestCase {
 
     public void testExistingDownload() throws Exception {
         Path root = InMemoryFileSystems.createInMemoryFileSystemAndFolder("repo");
-        RepoManager mgr = new RepoManagerImpl(root);
         FakeDownloader downloader =
                 new FakeDownloader(root.getRoot().resolve("tmp")) {
                     @Override
@@ -524,13 +508,9 @@ public class BasicInstallerTest extends TestCase {
         // The repo we're going to download
         downloader.registerUrl(repoUrl, repo.getBytes());
 
-        // Register a source provider to get the repo
-        mgr.registerSourceProvider(
-                new ConstantSourceProvider(
-                        repoUrl.toString(),
-                        "fake provider",
-                        ImmutableList.of(RepoManager.getGenericModule())));
+        RepoManager mgr = createRepoManager(root, repoUrl);
         FakeProgressRunner runner = new FakeProgressRunner();
+
 
         // Load
         mgr.loadSynchronously(
@@ -618,4 +598,23 @@ public class BasicInstallerTest extends TestCase {
         assertEquals("Test package 2", newPkg.getDisplayName());
         assertEquals(new Revision(4, 5, 6), newPkg.getVersion());
     }
+
+    /**
+     * Creates a RepoManager that serves a repository with the given root URL, using the production
+     * RemoteRepoLoader. Note that a FakeDownloader that serves the URL must be used in the load
+     * calls.
+     */
+    private static @NonNull RepoManager createRepoManager(Path root, URL repoUrl) {
+        return RepoManager.createRepoManager(
+            root,
+            ImmutableList.of(),
+            ImmutableList.of(
+                new ConstantSourceProvider(
+                    repoUrl.toString(),
+                    "fake provider",
+                    ImmutableList.of(RepoManager.getGenericModule()))),
+            null,
+            null);
+    }
+
 }

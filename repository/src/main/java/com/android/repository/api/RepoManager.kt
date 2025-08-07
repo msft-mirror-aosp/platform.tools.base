@@ -24,7 +24,6 @@ import com.android.repository.impl.meta.RepositoryPackages
 import com.google.common.annotations.VisibleForTesting
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.runBlocking
@@ -33,16 +32,15 @@ import org.w3c.dom.ls.LSResourceResolver
 /**
  * Primary interface for interacting with repository packages.
  *
- * To set up a `RepoManager`:
- * * Pass the path where the repo is installed locally to the constructor.
- * * Register the [SchemaModule]s used to parse the package.xml files and remote repositories used
- *   by this repo using [registerSchemaModule]
- * * If your local repo might contain packages created by a previous system, set a
- *   [FallbackLocalRepoLoader] that can recognize and convert those packages using
- *   [setFallbackLocalRepoLoader].
- * * Add [RepositorySourceProvider]s to provide URLs for remotely-available packages.
- * * If some sources might be in a format used by a previous system, set a
- *   [FallbackRemoteRepoLoader] that can read and convert them.
+ * To set up a `RepoManager`, the following are required:
+ * * The path where the repo is installed locally
+ * * The [SchemaModule]s used to parse the package.xml files and remote repositories used by this
+ *   repo
+ * * If your local repo might contain packages created by a previous system, a
+ *   [FallbackLocalRepoLoader] that can recognize and convert those packages
+ * * [RepositorySourceProvider]s to provide URLs for remotely-available packages.
+ * * If some sources might be in a format used by a previous system, a [FallbackRemoteRepoLoader]
+ *   that can read and convert them.
  *
  * To load the local and remote packages, use [load].
  *
@@ -52,29 +50,18 @@ import org.w3c.dom.ls.LSResourceResolver
  * To use the loaded packages, get a [RepositoryPackages] object from [packages].
  */
 abstract class RepoManager {
-  /** Register an [SchemaModule] that can be used when parsing XML for this repo. */
-  abstract fun registerSchemaModule(module: SchemaModule<*>)
 
   /**
    * Gets the currently-registered [SchemaModule]s. This probably shouldn't be used except by code
    * within the RepoManager or unit tests.
    */
-  abstract val schemaModules: List<SchemaModule<*>>
+  abstract val schemaModules: Set<SchemaModule<*>>
 
   /**
    * Gets the path to the local repository root. This probably shouldn't be needed except by the
    * repository manager and unit tests.
    */
   abstract val localPath: Path?
-
-  /** Sets the [FallbackLocalRepoLoader] to use when scanning the local repository for packages. */
-  abstract fun setFallbackLocalRepoLoader(local: FallbackLocalRepoLoader?)
-
-  /**
-   * Adds a [RepositorySourceProvider] from which to get [RepositorySource]s from which to download
-   * lists of available repository packages.
-   */
-  abstract fun registerSourceProvider(provider: RepositorySourceProvider)
 
   @get:VisibleForTesting abstract val sourceProviders: List<RepositorySourceProvider>
 
@@ -96,12 +83,6 @@ abstract class RepoManager {
     progress: ProgressIndicator,
     forceRefresh: Boolean,
   ): List<RepositorySource>
-
-  /**
-   * Sets the [FallbackRemoteRepoLoader] to try when we encounter a remote xml file that the
-   * RepoManager can't read.
-   */
-  abstract fun setFallbackRemoteRepoLoader(remote: FallbackRemoteRepoLoader?)
 
   /**
    * Loads the local and remote repositories asynchronously.
@@ -186,16 +167,13 @@ abstract class RepoManager {
     progress: ProgressIndicator,
     downloader: Downloader? = null,
     settings: SettingsController? = null,
-  ): Boolean {
-    val result = AtomicBoolean(true)
+  ) {
     loadSynchronously(
       cacheExpirationMs = cacheExpirationMs,
-      onError = { result.set(false) },
       runner = DirectProgressRunner(progress),
       downloader = downloader,
       settings = settings,
     )
-    return result.get()
   }
 
   abstract suspend fun loadLocalPackages(
@@ -228,10 +206,8 @@ abstract class RepoManager {
    * includes scanning the local repo for packages, but does not involve any reading or parsing of
    * package metadata files. If there have been any changes, or if the cache is older than the
    * default timeout, the local packages will be reloaded.
-   *
-   * @return `true` if the load was successful, `false` otherwise.
    */
-  abstract fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean
+  abstract fun reloadLocalIfNeeded(progress: ProgressIndicator)
 
   /** Gets the currently-loaded [RepositoryPackages]. */
   abstract val packages: RepositoryPackages
@@ -278,6 +254,7 @@ abstract class RepoManager {
 
   /** Callback for when repository load is completed/partially completed. */
   fun interface RepoLoadedListener {
+
     /**
      * @param packages The packages that have been loaded so far. When this listener is used in the
      *   `onLocalComplete` argument to [load] `packages` will only include local packages.
@@ -290,6 +267,7 @@ abstract class RepoManager {
    * MoreExecutors.directExecutor()).
    */
   protected class DirectProgressRunner(private val progress: ProgressIndicator) : ProgressRunner {
+
     // This class is only for use in loadSynchronously; this method is unneeded.
     override fun runAsyncWithProgress(r: ProgressRunnable) = throw UnsupportedOperationException()
 
@@ -299,6 +277,7 @@ abstract class RepoManager {
   }
 
   companion object {
+
     /**
      * After loading the repository, this is the amount of time that must pass before we consider it
      * to be stale and need to be reloaded.
@@ -346,10 +325,21 @@ abstract class RepoManager {
         RepoManager::class.java,
       )
 
-    /** @return A new `RepoManager`. */
     @JvmStatic
-    fun create(localPath: Path?): RepoManager {
-      return RepoManagerImpl(localPath)
+    fun createRepoManager(
+      localPath: Path?,
+      schemaModules: List<SchemaModule<*>>,
+      sourceProviders: List<RepositorySourceProvider>,
+      fallbackLocalRepoLoader: FallbackLocalRepoLoader?,
+      fallbackRemoteRepoLoader: FallbackRemoteRepoLoader?,
+    ): RepoManager {
+      return RepoManagerImpl(
+        localPath,
+        sourceProviders,
+        schemaModules,
+        fallbackLocalRepoLoader,
+        fallbackRemoteRepoLoader,
+      )
     }
   }
 }

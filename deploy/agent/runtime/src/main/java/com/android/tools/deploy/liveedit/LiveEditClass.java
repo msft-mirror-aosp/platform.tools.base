@@ -19,11 +19,9 @@ package com.android.tools.deploy.liveedit;
 import com.android.deploy.asm.Type;
 
 import java.lang.reflect.Proxy;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class LiveEditClass {
@@ -53,6 +51,7 @@ class LiveEditClass {
         this.interfaces = new HashSet<>();
         this.staticFields = new HashMap<>();
         this.supertypes = new HashSet<>();
+
         updateBytecode(bytecode, isProxyClass);
     }
 
@@ -69,6 +68,13 @@ class LiveEditClass {
         }
         this.isProxyClass = isProxyClass;
         this.bytecode = bytecode;
+    }
+
+    /**
+     * @return the latest bytecode for this class
+     */
+    public Interpretable getLatestBytecode() {
+        return bytecode;
     }
 
     public boolean isProxyClass() {
@@ -139,61 +145,6 @@ class LiveEditClass {
         }
     }
 
-    public RiskyChange checkForRiskyChange(Interpretable bytecode) {
-        if (this.bytecode == null) {
-            return RiskyChange.NONE;
-        }
-
-        if (!this.bytecode.getSuperName().equals(bytecode.getSuperName())) {
-            Log.v(
-                    "live.deploy",
-                    String.format(
-                            "Super of %s has changed; proxy objects may need to be recreated.\n"
-                                    + "\t%s -> %s",
-                            this.bytecode.getInternalName(),
-                            this.bytecode.getSuperName(),
-                            bytecode.getSuperName()));
-            return RiskyChange.SUPER_CHANGE;
-        }
-
-        if (!Arrays.equals(this.bytecode.getInterfaces(), bytecode.getInterfaces())) {
-            Log.v(
-                    "live.deploy",
-                    String.format(
-                            "Interfaces of %s have changed; proxy objects may need to be"
-                                    + " recreated.\n"
-                                    + "\told: %s\n"
-                                    + "\tnew: %s",
-                            this.bytecode.getInternalName(),
-                            Arrays.stream(this.bytecode.getInterfaces())
-                                    .sorted()
-                                    .collect(Collectors.joining(", ")),
-                            Arrays.stream(bytecode.getInterfaces())
-                                    .sorted()
-                                    .collect(Collectors.joining(", "))));
-            return RiskyChange.INTERFACE_CHANGE;
-        }
-
-        if (!this.bytecode.getFieldNames().equals(bytecode.getFieldNames())) {
-            Log.v(
-                    "live.deploy",
-                    String.format(
-                            "Fields of %s have changed; proxy objects may need to be recreated.\n"
-                                    + "\told: %s\n"
-                                    + "\tnew: %s",
-                            this.bytecode.getInternalName(),
-                            this.bytecode.getFieldNames().stream()
-                                    .sorted()
-                                    .collect(Collectors.joining(", ")),
-                            bytecode.getFieldNames().stream()
-                                    .sorted()
-                                    .collect(Collectors.joining(", "))));
-            return RiskyChange.FIELD_CHANGE;
-        }
-
-        return RiskyChange.NONE;
-    }
-
     private void computeProxyTypeInformation(Interpretable bytecode)
             throws ClassNotFoundException, SecurityException {
         interfaces.clear();
@@ -228,9 +179,5 @@ class LiveEditClass {
 
     private Class<?> classForName(String internalName) throws ClassNotFoundException {
         return Class.forName(internalName.replace('/', '.'), true, context.getClassLoader());
-    }
-
-    public Interpretable getBytecode() {
-        return bytecode;
     }
 }

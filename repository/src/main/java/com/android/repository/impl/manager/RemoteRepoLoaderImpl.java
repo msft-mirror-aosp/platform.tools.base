@@ -31,6 +31,7 @@ import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class RemoteRepoLoaderImpl implements RemoteRepoLoader {
     /**
      * The {@link RepositorySourceProvider}s to load from.
      */
-    private final Collection<RepositorySourceProvider> mSourceProviders;
+    private final ImmutableList<RepositorySourceProvider> mSourceProviders;
 
     /**
      * Constructor
@@ -82,8 +83,13 @@ public class RemoteRepoLoaderImpl implements RemoteRepoLoader {
      */
     public RemoteRepoLoaderImpl(@NonNull Collection<RepositorySourceProvider> sources,
             @Nullable FallbackRemoteRepoLoader fallback) {
-        mSourceProviders = sources;
+        mSourceProviders = ImmutableList.copyOf(sources);
         mFallback = fallback;
+    }
+
+    @Override
+    public ImmutableList<RepositorySourceProvider> getSourceProviders() {
+        return mSourceProviders;
     }
 
     @Override
@@ -103,6 +109,9 @@ public class RemoteRepoLoaderImpl implements RemoteRepoLoader {
             sources.addAll(
                     provider.getSources(
                             downloader, progress.createSubProgress(progressMax), false));
+        }
+        if (sources.isEmpty()) {
+            return new HashMap<>();
         }
 
         // In the context below we are not concerned that much about the precise progress reporting, because

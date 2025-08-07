@@ -21,15 +21,33 @@ class DeviceFileState(
     val path: String,
     /** UNIX-style permissions bits */
     val permission: Int,
+    /** a "time_t", i.e. number of seconds since the start of the unix epoch */
     val modifiedDate: Int,
-    val bytes: ByteArray
+    val bytes: ByteArray,
+    val kind: Kind = Kind.File
 ) {
     constructor(
         path: String,
         permissions: Array<out PosixFilePermission>,
         modifiedDate: Int,
-        bytes: ByteArray
-    ) : this(path, modeBitsFromPosixFilePermissions(permissions), modifiedDate, bytes)
+        bytes: ByteArray,
+        kind: Kind = Kind.File
+    ) : this(path, modeBitsFromPosixFilePermissions(permissions), modifiedDate, bytes, kind)
+
+    val uid: Int
+        get() = 100
+
+    val gid: Int
+        get() = 110
+
+    val inode: Long
+        get() = path.hashCode().toLong()
+
+    val dev: Long
+        get() = 200
+
+    val nlink: Int
+        get() = 0
 
     fun isOwnerWritable(): Boolean =
         (permission and (2 shl 6)) > 0
@@ -43,6 +61,19 @@ class DeviceFileState(
 
     override fun hashCode(): Int {
         return path.hashCode()
+    }
+
+    enum class Kind {
+        File,
+        Directory
+    }
+
+    internal fun toDotFile(): DeviceFileState {
+        return DeviceFileState(".", permission, modifiedDate, bytes, kind)
+    }
+
+    internal fun toDotDotFile(): DeviceFileState {
+        return DeviceFileState("..", permission, modifiedDate, bytes, kind)
     }
 
     companion object {

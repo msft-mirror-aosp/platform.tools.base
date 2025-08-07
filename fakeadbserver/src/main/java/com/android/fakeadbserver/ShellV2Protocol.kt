@@ -112,7 +112,7 @@ class ShellV2Protocol(private val socket: Socket) {
     fun writeExitCode(exitCode: Int) {
         val packet = Packet(PacketKind.EXIT_CODE, byteArrayOf(exitCode.toByte()))
         writePacket(packet)
-        socket.shutdownOrderly()
+        socket.shutdownGracefully()
     }
 
     class Packet(val kind: PacketKind, val bytes: ByteArray)
@@ -156,20 +156,4 @@ class ShellV2Protocol(private val socket: Socket) {
         }
         return buffer
     }
-}
-
-private fun Socket.shutdownOrderly() {
-    shutdownOutput()
-
-    // TODO: See b/228517909, we read input stream until EOF is reached
-    // to ensure the all the data sent to the socket is received by the other side
-    // of the socket.
-    val bytes = ByteArray(16)
-    val inputStream = getInputStream()
-    while (inputStream.read(bytes, 0, bytes.size) >= 0) {
-        // Keep reading
-    }
-
-    // Close the socket
-    close()
 }

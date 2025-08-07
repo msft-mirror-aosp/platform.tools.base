@@ -1,5 +1,6 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
+load("//tools/base/bazel/avd:avd.bzl", "avd")
 
 exports_files([
     "emulator_launcher.sh.template",
@@ -16,6 +17,20 @@ java_library(
     deps = [
         "@maven//:junit.junit",
     ],
+)
+
+avd(
+    name = "default_avd",
+    image = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-33_default_arm64//:arm64-android-33-images",
+        "//conditions:default": "@system_image_android-33_aosp_atd_x86_64//:x86_64-android-33AospAtd-images",
+    }),
+    target_compatible_with = select({
+        "@platforms//os:osx": [],
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
 )
 
 # managed by go/iml_to_build

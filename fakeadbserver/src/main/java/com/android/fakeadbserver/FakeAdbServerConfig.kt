@@ -41,7 +41,7 @@ class FakeAdbServerConfig {
  */
 data class DeviceStateConfig(
     val serialNumber: String,
-    val files: ArrayList<DeviceFileState>,
+    val fileSystem: DeviceFileSystem,
     val logcatMessages: ArrayList<String>,
     val processes: ArrayList<ProcessState>,
     val hostConnectionType: HostConnectionType,

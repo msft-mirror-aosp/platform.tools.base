@@ -12,7 +12,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/deploy_asm4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../../bazel-bin/tools/base/deploy/agent/runtime/asm.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -53,15 +53,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../../prebuilts/tools/common/m2/repository/com/squareup/javapoet/1.13.0/javapoet-1.13.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/deploy_asm4.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

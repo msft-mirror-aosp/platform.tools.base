@@ -19,6 +19,9 @@ import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.fakeandroid.FakeAndroidDriver;
 import com.android.tools.fakeandroid.ProcessRunner;
 import com.android.tools.idea.protobuf.InvalidProtocolBufferException;
+
+import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +35,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import org.junit.rules.TemporaryFolder;
 
 /**
  * A unity class for setting up a minimal Activity running inside FakeAndroid as well as the a
@@ -59,8 +61,10 @@ public class AgentTestBase {
 
     protected static final int RETURN_VALUE_TIMEOUT = 1000;
 
+    protected static final String STRUCTURAL_REDEFINITION = "-Xopaque-jni-ids:true";
+
     protected static final Collection<String> ALL_ART_FLAGS =
-            Arrays.asList(null, "-Xopaque-jni-ids:true");
+            Arrays.asList(null, STRUCTURAL_REDEFINITION);
 
     protected FakeAndroidDriver android;
 

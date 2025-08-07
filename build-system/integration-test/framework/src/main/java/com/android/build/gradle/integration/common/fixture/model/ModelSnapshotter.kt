@@ -364,9 +364,9 @@ fun Any?.toNormalizedStrings(normalizer: FileNormalizer): Any = when (this) {
 /** Replaces versions of common dependencies (e.g., APG, KGP, Gradle) with placeholders. */
 fun String.normalizeVersionsOfCommonDependencies(): String {
     return this
-        .replace(ANDROID_GRADLE_PLUGIN_VERSION, "{AGP_Version}")
-        .replace(KOTLIN_VERSION_FOR_TESTS, "{KOTLIN_VERSION_FOR_TESTS}")
-        .replace(GRADLE_TEST_VERSION, "{GRADLE_VERSION}")
+        .replace(ANDROID_GRADLE_PLUGIN_VERSION.toVersionRegex(), "{AGP_Version}")
+        .replace(KOTLIN_VERSION_FOR_TESTS.toVersionRegex(), "{KOTLIN_VERSION_FOR_TESTS}")
+        .replace(GRADLE_TEST_VERSION.toVersionRegex(), "{GRADLE_VERSION}")
         .replace(
             "org.gradle.jvm.version>${Runtime.version().feature()}",
             "org.gradle.jvm.version>{Java_Version}"
@@ -376,3 +376,10 @@ fun String.normalizeVersionsOfCommonDependencies(): String {
             "org.gradle.jvm.version -> {Java_Version}"
         )
 }
+
+/**
+ * Turns version string like "8.1" to a regex matching precisely that, and not 0.8.1 or 8.10.
+ * It will not falsely match what is followed by a full stop and a digit (1.2 will not replace part of 1.2.3),
+ * but will match when followed by a full stop and a letter (1.2.jar will be accepted).
+ */
+private fun String.toVersionRegex(): Regex = Regex("\\b(?<!\\.)" + replace(".", "\\.") + "(?!\\.\\d)")

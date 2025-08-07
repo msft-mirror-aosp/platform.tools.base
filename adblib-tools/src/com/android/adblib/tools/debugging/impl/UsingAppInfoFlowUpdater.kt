@@ -15,6 +15,10 @@
  */
 package com.android.adblib.tools.debugging.impl
 
+import com.android.adblib.AdbSession
+import com.android.adblib.AdbUsageTracker
+import com.android.adblib.AdbUsageTracker.AppInfoProcessPropertiesCollectorEvent
+import com.android.adblib.AdbUsageTracker.AppInfoProcessPropertiesCollectorEventType
 import com.android.adblib.AmCapabilitiesResult
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
@@ -28,6 +32,7 @@ import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.impl.UsingAppInfoFlowUpdater.Companion.VmInfoRetriever.VmInfo
 import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
+import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withDevicePrefix
@@ -50,6 +55,9 @@ import java.io.IOException
 internal class UsingAppInfoFlowUpdater(
     private val process: JdwpProcess
 ) : JdwpProcessPropertiesFlowUpdater {
+
+    private val session: AdbSession
+        get() = device.session
 
     private val device: ConnectedDevice
         get() = process.device
@@ -80,40 +88,53 @@ internal class UsingAppInfoFlowUpdater(
 
     private suspend fun collectTrackAppUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
         logger.debug { "Monitoring process properties using `track-app` service" }
-        device.trackApp.stateFlow
-            .map {
-                // Find process entry with `pid`
-                it.firstOrNull { appProcessEntry ->
-                    appProcessEntry.pid == pid
+        try {
+            device.trackApp.stateFlow
+                .map {
+                    // Find process entry with `pid`
+                    it.firstOrNull { appProcessEntry ->
+                        appProcessEntry.pid == pid
+                    }
                 }
-            }
-            .filterNotNull()
-            .collect { appProcessEntry ->
-                assert(appProcessEntry.pid == pid)
-                logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
-                stateFlow.update { properties ->
-                    properties.copy(
-                        processName = optionalValueFactory.optionalOrErrorIfNull(appProcessEntry.processName) { processName ->
-                            optionalValueFactory.ofFilteredFakeName(processName)
-                        }.orElse(properties.processName),
-                        packageNames = optionalValueFactory.optionalOrErrorIfNull(appProcessEntry.packageNames) { packageNames ->
-                            optionalValueFactory.ofFilteredFakeNames(packageNames)
-                        }.orElse(properties.packageNames),
-                        userId = optionalValueFactory.optionalOrErrorIfNull(appProcessEntry.userId32) { userId32 ->
-                            optionalValueFactory.of(userId32)
-                        }.orElse(properties.userId),
-                        instructionSet = optionalValueFactory.ofInstructionSet(appProcessEntry.instructionSet)
-                            .orElse(properties.instructionSet),
-                        isWaitingForDebugger = optionalValueFactory.optionalOrErrorIfNull(
-                            appProcessEntry.waitingForDebugger
-                        ) { waitingForDebugger ->
-                            optionalValueFactory.of(waitingForDebugger)
-                        }.orElse(properties.isWaitingForDebugger),
-                        isNativeDebuggable = optionalValueFactory.of(false),
-                        jvmFlags = optionalValueFactory.ofJvmFlags(legacyJvmFlags())
-                    )
+                .filterNotNull()
+                .collect { appProcessEntry ->
+                    assert(appProcessEntry.pid == pid)
+                    logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
+                    stateFlow.update { properties ->
+                        properties.copy(
+                            processName = optionalValueFactory.optionalOrErrorIfNull(appProcessEntry.processName) { processName ->
+                                optionalValueFactory.ofFilteredFakeName(processName)
+                            }.orElse(properties.processName),
+                            packageNames = optionalValueFactory.optionalOrErrorIfNull(
+                                appProcessEntry.packageNames
+                            ) { packageNames ->
+                                optionalValueFactory.ofFilteredFakeNames(packageNames)
+                            }.orElse(properties.packageNames),
+                            userId = optionalValueFactory.optionalOrErrorIfNull(appProcessEntry.userId32) { userId32 ->
+                                optionalValueFactory.of(userId32)
+                            }.orElse(properties.userId),
+                            instructionSet = optionalValueFactory.ofInstructionSet(appProcessEntry.instructionSet)
+                                .orElse(properties.instructionSet),
+                            isWaitingForDebugger = optionalValueFactory.optionalOrErrorIfNull(
+                                appProcessEntry.waitingForDebugger
+                            ) { waitingForDebugger ->
+                                optionalValueFactory.of(waitingForDebugger)
+                            }.orElse(properties.isWaitingForDebugger),
+                            isNativeDebuggable = optionalValueFactory.of(false),
+                            jvmFlags = optionalValueFactory.ofJvmFlags(legacyJvmFlags())
+                        )
+                    }
+                    logUsage(AppInfoProcessPropertiesCollectorEventType.TRACK_APP_VALUE_COLLECTED)
                 }
+        } catch (throwable: Throwable) {
+            throwable.rethrowCancellation()
+            val eventType = when (throwable) {
+                is IOException -> AppInfoProcessPropertiesCollectorEventType.TRACK_APP_IO_EXCEPTION
+                else -> AppInfoProcessPropertiesCollectorEventType.TRACK_APP_OTHER_EXCEPTION
             }
+            logUsage(eventType)
+            throw throwable
+        }
     }
 
     private suspend fun collectVmInfo(stateFlow: AtomicStateFlow<JdwpProcessProperties>) {
@@ -127,6 +148,7 @@ internal class UsingAppInfoFlowUpdater(
                             features = optionalValueFactory.ofFeatures(vmInfo.features).orElse(it.features)
                         )
                     }
+                    logUsage(AppInfoProcessPropertiesCollectorEventType.VM_INFO_VALUE_COLLECTED)
                 }
             } ?: run {
                 // This should not happen, because if we were able to retrieve the device
@@ -139,6 +161,12 @@ internal class UsingAppInfoFlowUpdater(
             }
         } catch (throwable: Throwable) {
             logger.logIOCompletionErrors(throwable)
+            throwable.rethrowCancellation()
+            val eventType = when (throwable) {
+                is IOException -> AppInfoProcessPropertiesCollectorEventType.VM_INFO_IO_EXCEPTION
+                else -> AppInfoProcessPropertiesCollectorEventType.VM_INFO_OTHER_EXCEPTION
+            }
+            logUsage(eventType)
             stateFlow.update {
                 it.copy(
                     vmIdentifier = optionalValueFactory.ofError<String>("Error collecting VM identifier from device capabilities").orElse(it.vmIdentifier),
@@ -146,6 +174,20 @@ internal class UsingAppInfoFlowUpdater(
                 )
             }
         }
+    }
+
+    private suspend fun logUsage(
+        eventType: AppInfoProcessPropertiesCollectorEventType
+    ) {
+        val deviceInfo = AdbUsageTracker.DeviceInfo.createFrom(device)
+        session.host.usageTracker.logUsage(
+            AdbUsageTracker.Event(
+                deviceInfo = deviceInfo,
+                appInfoProcessPropertiesCollector = AppInfoProcessPropertiesCollectorEvent(
+                    eventType = eventType
+                )
+            )
+        )
     }
 
     /**

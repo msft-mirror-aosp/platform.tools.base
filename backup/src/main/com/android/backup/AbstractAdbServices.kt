@@ -27,6 +27,7 @@ import com.android.backup.ErrorCode.BMGR_ERROR_RESTORE
 import com.android.backup.ErrorCode.CANNOT_ENABLE_BMGR
 import com.android.backup.ErrorCode.DEVICE_DISCONNECTED
 import com.android.backup.ErrorCode.GMSCORE_IS_TOO_OLD
+import com.android.backup.ErrorCode.GMSCORE_IS_TOO_OLD_NO_PLAY_STORE
 import com.android.backup.ErrorCode.GMSCORE_NOT_FOUND
 import com.android.backup.ErrorCode.PLAY_STORE_NOT_INSTALLED
 import com.android.backup.ErrorCode.RESTORE_FAILED
@@ -207,10 +208,21 @@ abstract class AbstractAdbServices(
     val versionString = versionMatch.getGroup("version")
     val version = versionString.toIntOrNull() ?: 0
     if (version < minGmsVersion) {
-      throw BackupException(
-        GMSCORE_IS_TOO_OLD,
-        "Google Services version is too old ($versionString).  Min version is $minGmsVersion",
-      )
+      when (isPlayStoreInstalled()) {
+        true ->
+          throw BackupException(
+            GMSCORE_IS_TOO_OLD,
+            "The version of Google Play services installed on the device hasn't" +
+              " been auto updated yet. To manually update, open the Google Play store on the" +
+              " device and update manually. You may need to sign into an account.",
+          )
+        false ->
+          throw BackupException(
+            GMSCORE_IS_TOO_OLD_NO_PLAY_STORE,
+            "The version of Google Play services installed on the device is not supported." +
+              " Please use a device with an image that includes the Google Play store.",
+          )
+      }
     }
   }
 

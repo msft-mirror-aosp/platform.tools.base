@@ -18,15 +18,19 @@ package com.android.tools.deployer;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.fakeandroid.FakeAndroidDriver;
 import com.android.tools.fakeandroid.ProcessRunner;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class LiveEditTestBase extends AgentTestBase {
 
@@ -54,8 +58,9 @@ public class LiveEditTestBase extends AgentTestBase {
         }
     }
 
-    public LiveEditTestBase(String artFlag) {
-        super(artFlag);
+    // Live Edit requires structural redefinition for instrumentation
+    public LiveEditTestBase() {
+        super(STRUCTURAL_REDEFINITION);
     }
 
     @Before
@@ -108,8 +113,30 @@ public class LiveEditTestBase extends AgentTestBase {
                 return content.toByteArray();
             }
             Assert.fail("Cannot find " + name + " in " + location.PATH);
-            return null;
+            return new byte[0];
         }
+    }
+
+    protected static Map<String, byte[]> getInnerClassBytes(
+            String parent, CompileClassLocation location) throws IOException {
+        HashMap<String, byte[]> classes = new HashMap<>();
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(location.PATH))) {
+            for (ZipEntry entry = zis.getNextEntry(); entry != null; entry = zis.getNextEntry()) {
+                if (!entry.getName().startsWith(parent) || !entry.getName().contains("$")) {
+                    continue;
+                }
+
+                byte[] buffer = new byte[1024];
+                ByteArrayOutputStream content = new ByteArrayOutputStream();
+
+                int len;
+                while ((len = zis.read(buffer)) > 0) {
+                    content.write(buffer, 0, len);
+                }
+                classes.put(entry.getName().replace(".class", ""), content.toByteArray());
+            }
+        }
+        return classes;
     }
 
     protected static class LiveEditClient extends InstallServerTestClient implements AutoCloseable {

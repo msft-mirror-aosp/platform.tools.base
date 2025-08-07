@@ -20,10 +20,11 @@ import static com.android.tools.deploy.liveedit.ProxyTestClasses.ModifyStatic;
 import static com.android.tools.deploy.liveedit.ProxyTestClasses.Pythagorean;
 import static com.android.tools.deploy.liveedit.Utils.buildClass;
 
-import java.util.HashMap;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.HashMap;
 
 public class ProxyEvalTest {
     static {
@@ -69,7 +70,7 @@ public class ProxyEvalTest {
         Assert.assertEquals(
                 actual,
                 LiveEditStubs.stubJ(
-                        driverName,
+                        LiveEditStubs.getClassBytecode(driverName),
                         "liveEditedMethod",
                         "(JJ)J",
                         new Object[] {null, null, 6L, 8L}));
@@ -89,7 +90,7 @@ public class ProxyEvalTest {
         Assert.assertEquals(
                 16,
                 LiveEditStubs.stubJ(
-                        driverName,
+                        LiveEditStubs.getClassBytecode(driverName),
                         "liveEditedMethod",
                         "(JJ)J",
                         new Object[] {null, null, 6L, 8L}));
@@ -102,7 +103,7 @@ public class ProxyEvalTest {
         Assert.assertEquals(
                 actual,
                 LiveEditStubs.stubJ(
-                        driverName,
+                        LiveEditStubs.getClassBytecode(driverName),
                         "liveEditedMethod",
                         "(JJ)J",
                         new Object[] {null, null, 6L, 8L}));
@@ -119,7 +120,12 @@ public class ProxyEvalTest {
         LiveEditStubs.addClass(driverName, new Interpretable(getNewClassData(driverName)), false);
 
         Assert.assertEquals(
-                1, LiveEditStubs.stubI(driverName, "callsAddedMethod", "()I", new Object[2]));
+                1,
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(driverName),
+                        "callsAddedMethod",
+                        "()I",
+                        new Object[2]));
     }
 
     // Test that modifications to static methods of proxied classes are interpreted.
@@ -132,13 +138,23 @@ public class ProxyEvalTest {
         LiveEditStubs.addClass(implName, new Interpretable(buildClass(ModifyStatic.class)), true);
 
         Assert.assertEquals(
-                0, LiveEditStubs.stubI(driverName, "liveEditedMethod", "()I", new Object[2]));
+                0,
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(driverName),
+                        "liveEditedMethod",
+                        "()I",
+                        new Object[2]));
 
         LiveEditStubs.addClass(driverName, new Interpretable(getNewClassData(driverName)), false);
         LiveEditStubs.addClass(implName, new Interpretable(getNewClassData(implName)), true);
 
         Assert.assertEquals(
-                5, LiveEditStubs.stubI(driverName, "liveEditedMethod", "()I", new Object[2]));
+                5,
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(driverName),
+                        "liveEditedMethod",
+                        "()I",
+                        new Object[2]));
     }
 
     private byte[] getNewClassData(String name) throws Exception {

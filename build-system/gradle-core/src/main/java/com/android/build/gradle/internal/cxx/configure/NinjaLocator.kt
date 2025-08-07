@@ -27,8 +27,9 @@ import com.android.utils.cxx.os.getEnvironmentPaths
 /**
  * Method for locating ninja.exe. The search order is:
  * 1) Folder of CMake.exe, if present
- * 2) Other CMake SDK folders, if present
- * 3) Environment PATH
+ * 2) Environment PATH
+ * 3) Other CMake SDK folders, if present
+ * See b/326411158 for a discussion about the nuances of this order.
  */
 @VisibleForTesting
 fun findNinjaPathLogic(
@@ -43,17 +44,19 @@ fun findNinjaPathLogic(
         }
     }
 
+    for (environmentPath in getEnvironmentPaths()) {
+        getNinjaPathIfExists(environmentPath)?.let {
+            return it
+        }
+    }
+
     for (sdkFolder in getSdkCmakeFolders()) {
         getNinjaPathIfExists(sdkFolder)?.let {
             return it
         }
     }
 
-    for (environmentPath in getEnvironmentPaths()) {
-        getNinjaPathIfExists(environmentPath)?.let {
-            return it
-        }
-    }
+
 
     // Error if there is no match
     errorln(

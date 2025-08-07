@@ -81,8 +81,8 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create(sdkRoot);
-        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
+        RepoManager manager = new RepoManagerImpl(sdkRoot);
+        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager.getSchemaModules(), null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
         progress.assertNoErrorsOrWarnings();
@@ -199,8 +199,8 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create(sdkRoot);
-        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
+        RepoManager manager = new RepoManagerImpl(sdkRoot);
+        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager.getSchemaModules(), null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
         assertEquals(new Revision(3), p.getVersion());
@@ -243,8 +243,8 @@ public class LocalRepoTest extends TestCase {
                                 + "</repo:repository>")
                         .getBytes(StandardCharsets.UTF_8));
 
-        RepoManager manager = RepoManager.create(sdkRoot);
-        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager, null);
+        RepoManager manager = new RepoManagerImpl(sdkRoot);
+        LocalRepoLoader localLoader = new LocalRepoLoaderImpl(sdkRoot, manager.getSchemaModules(), null);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
         assertEquals(new Revision(3), p.getVersion());

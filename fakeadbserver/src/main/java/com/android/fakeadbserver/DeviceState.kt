@@ -48,7 +48,8 @@ class DeviceState internal constructor(
 ) {
 
     val clientChangeHub = ClientStateChangeHub()
-    private val mFiles: MutableMap<String, DeviceFileState> = HashMap()
+    @PublishedApi
+    internal val fileSystemProvider: DeviceFileSystemProvider = DeviceFileSystemProvider()
     private val mLogcatMessages: MutableList<String> = ArrayList()
 
     /** PID -> [ProcessState]  */
@@ -103,12 +104,11 @@ class DeviceState internal constructor(
         transportId,
         config.isRoot,
         config.maxSpeedMbps,
-        config.negotiatedSpeedMbps,
+        config.negotiatedSpeedMbps
     ) {
-        config.files.forEach(Consumer { fileState: DeviceFileState ->
-            mFiles[fileState.path] =
-                fileState
-        })
+        fileSystemProvider.withFileSystem { fileSystem ->
+            fileSystem.copyFrom(config.fileSystem)
+        }
         mLogcatMessages.addAll(config.logcatMessages)
         mDeviceStatus = config.deviceStatus
         config.processes
@@ -159,16 +159,35 @@ class DeviceState internal constructor(
         }
     }
 
+    /**
+     * Provides thread-safe access to the [DeviceFileSystem]
+     */
+    inline fun <R> withFileSystem(block : (DeviceFileSystem) -> R): R {
+        return fileSystemProvider.withFileSystem(block)
+    }
+
     fun createFile(file: DeviceFileState) {
-        synchronized(mFiles) { mFiles.put(file.path, file) }
+        return withFileSystem { fileSystem ->
+            fileSystem.createFile(file)
+        }
     }
 
     fun getFile(filepath: String): DeviceFileState? {
-        synchronized(mFiles) { return mFiles[filepath] }
+        return withFileSystem { fileSystem ->
+            fileSystem.getFile(filepath)
+        }
+    }
+
+    fun getDirectoryFiles(directoryPath: String): List<DeviceFileState> {
+        return withFileSystem { fileSystem ->
+            fileSystem.getDirectoryFiles(directoryPath)
+        }
     }
 
     fun deleteFile(filepath: String) {
-        synchronized(mFiles) { mFiles.remove(filepath) }
+        return withFileSystem { fileSystem ->
+            fileSystem.deleteFile(filepath)
+        }
     }
 
     fun startClient(
@@ -381,23 +400,27 @@ class DeviceState internal constructor(
         synchronized(mProcessStates) { return ArrayList(mProcessStates.values) }
     }
 
-    val config: DeviceStateConfig
+    internal val config: DeviceStateConfig
         get() = DeviceStateConfig(
-            deviceId,
-            ArrayList(mFiles.values),
-            ArrayList(mLogcatMessages),
-            ArrayList(mProcessStates.values),
-            hostConnectionType,
-            manufacturer,
-            model,
-            buildVersionRelease,
-            buildVersionSdk,
-            cpuAbi,
-            properties,
-            mDeviceStatus,
-            isRoot,
-            maxSpeedMbps,
-            negotiatedSpeedMbps,
+            serialNumber = deviceId,
+            fileSystem = DeviceFileSystem().also {
+                fileSystemProvider.withFileSystem { fileSystem ->
+                    it.copyFrom(fileSystem)
+                }
+            },
+            logcatMessages = ArrayList(mLogcatMessages),
+            processes = ArrayList(mProcessStates.values),
+            hostConnectionType = hostConnectionType,
+            manufacturer = manufacturer,
+            model = model,
+            buildVersionRelease = buildVersionRelease,
+            buildVersionSdk = buildVersionSdk,
+            cpuAbi = cpuAbi,
+            properties = properties,
+            deviceStatus = mDeviceStatus,
+            isRoot = isRoot,
+            maxSpeedMbps = maxSpeedMbps,
+            negotiatedSpeedMbps = negotiatedSpeedMbps,
         )
 
     fun setActivityManager(newActivityManager: Service?) {
@@ -582,11 +605,14 @@ class DeviceState internal constructor(
             if (api >= 24) {
                 features.add("cmd")
                 features.add("shell_v2")
+            }
+            if (api >= 26) {
                 features.add("stat_v2")
             }
             if (api >= 30) {
                 features.add("abb")
                 features.add("abb_exec")
+                features.add("ls_v2")
             }
             if (api >= 31) {
                 features.add("track_app")

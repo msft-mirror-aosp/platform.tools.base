@@ -489,9 +489,9 @@ maven_repository(
 maven_repository(
     name = "kotlin_dependencies_for_built_in_kapt_tests",
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.1.20",
-        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.1.20",
-        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.1.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.2.0",
+        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.2.0",
     ],
     visibility = [":__subpackages__"],
 )
@@ -1184,8 +1184,10 @@ maven_repository(
         "@maven//:org.codehaus.mojo.animal-sniffer-annotations_1.19",
         "@maven//:org.jacoco.org.jacoco.agent_0.7.4.201502262128",
         "@maven//:org.jacoco.org.jacoco.agent_0.8.12",
+        "@maven//:org.jacoco.org.jacoco.agent_0.8.13",
         "@maven//:org.jacoco.org.jacoco.agent_0.8.7",
         "@maven//:org.jacoco.org.jacoco.ant_0.8.12",
+        "@maven//:org.jacoco.org.jacoco.ant_0.8.13",
         "@maven//:org.jacoco.org.jacoco.ant_0.8.7",
         "@maven//:org.javassist.javassist_3.26.0-GA",
         "@maven//:org.jdeferred.jdeferred-android-aar_1.2.2",
@@ -1207,6 +1209,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.6.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core_1.6.3",
         "@maven//:org.mockito.mockito-core_5.12.0",
+        "@maven//:org.ow2.asm.asm-bom_9.7",
         "@maven//:org.robolectric.android-all-instrumented_9-robolectric-4913185-2-i4",
         "@maven//:org.robolectric.robolectric_4.8.2",
         "@maven//:org.tensorflow.tensorflow-lite-metadata_0.2.0",

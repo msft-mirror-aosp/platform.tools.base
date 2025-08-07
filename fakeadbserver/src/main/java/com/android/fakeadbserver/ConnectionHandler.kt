@@ -23,6 +23,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.net.Socket
 import java.nio.channels.SocketChannel
 import java.util.Locale
 import java.util.Optional
@@ -416,3 +417,23 @@ internal class ConnectionHandler(private val mServer: FakeAdbServer, socket: Soc
     }
 }
 
+/**
+ * "Graceful"" shutdown of a socket: shutdown the output then read the input until EOF.
+ * Closing a socket this way ensures the socket peer has received all the data sent
+ * from this side of the socket.
+ */
+internal fun Socket.shutdownGracefully() {
+    shutdownOutput()
+
+    // TODO: See b/228517909, we read input stream until EOF is reached
+    // to ensure the all the data sent to the socket is received by the other side
+    // of the socket.
+    val bytes = ByteArray(16)
+    val inputStream = getInputStream()
+    while (inputStream.read(bytes, 0, bytes.size) >= 0) {
+        // Keep reading
+    }
+
+    // Close the socket
+    close()
+}

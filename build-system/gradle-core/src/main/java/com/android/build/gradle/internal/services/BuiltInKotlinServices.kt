@@ -48,7 +48,6 @@ import com.android.builder.errors.IssueReporter.Type
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
@@ -291,7 +290,7 @@ private fun initBuiltInKaptSupport(project: Project) {
 
 internal fun ComponentCreationConfig.createKotlinCompilation(
     baseVariant: BaseVariant,
-): KotlinCompilation<KotlinJvmOptions> {
+): KotlinCompilation<Any> {
     val kotlinServices = services.builtInKotlinServices
 
     // TODO(b/409528883): Use KGP API to create a KotlinCompilation instance once it is

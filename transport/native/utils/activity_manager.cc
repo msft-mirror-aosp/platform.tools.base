@@ -62,8 +62,7 @@ bool ActivityManager::StartProfiling(
     parameters << "profile start ";
     if (DeviceInfo::feature_level() >= DeviceInfo::UPSIDE_DOWN_CAKE &&
         !dual_clock) {
-      parameters << "--clock-type wall"
-                 << " ";
+      parameters << "--clock-type wall ";
     }
     if (profiling_mode == ActivityManager::SAMPLING) {
       // A sample interval in microseconds is required after '--sampling'.

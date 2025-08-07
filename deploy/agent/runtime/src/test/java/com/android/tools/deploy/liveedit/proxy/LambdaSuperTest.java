@@ -41,7 +41,12 @@ public class LambdaSuperTest {
     public void testSuspend() throws Exception {
         int actual = LambdasKt.testSuspend();
         Assert.assertEquals(
-                actual, LiveEditStubs.stubI(TEST_CLASS, "testSuspend", "()I", new Object[2]));
+                actual,
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(TEST_CLASS),
+                        "testSuspend",
+                        "()I",
+                        new Object[2]));
     }
 
     @Test
@@ -49,7 +54,11 @@ public class LambdaSuperTest {
         int actual = LambdasKt.testRestrictedSuspend();
         Assert.assertEquals(
                 actual,
-                LiveEditStubs.stubI(TEST_CLASS, "testRestrictedSuspend", "()I", new Object[2]));
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(TEST_CLASS),
+                        "testRestrictedSuspend",
+                        "()I",
+                        new Object[2]));
     }
 
     @Test
@@ -59,7 +68,7 @@ public class LambdaSuperTest {
         Function1<Continuation<? super Integer>, Object> actual =
                 (Function1<Continuation<? super Integer>, Object>)
                         LiveEditStubs.stubL(
-                                TEST_CLASS,
+                                LiveEditStubs.getClassBytecode(TEST_CLASS),
                                 "returnSuspendLambda",
                                 "()Lkotlin/jvm/functions/Function1;",
                                 new Object[2]);
@@ -76,7 +85,7 @@ public class LambdaSuperTest {
         Function2<Restricts, Continuation<? super Integer>, Object> actual =
                 (Function2<Restricts, Continuation<? super Integer>, Object>)
                         LiveEditStubs.stubL(
-                                TEST_CLASS,
+                                LiveEditStubs.getClassBytecode(TEST_CLASS),
                                 "returnRestrictedSuspendLambda",
                                 "()Lkotlin/jvm/functions/Function2;",
                                 new Object[2]);
@@ -90,14 +99,24 @@ public class LambdaSuperTest {
     public void testAsyncAwait() throws Exception {
         int actual = LambdasKt.testAsyncAwait();
         Assert.assertEquals(
-                actual, LiveEditStubs.stubI(TEST_CLASS, "testAsyncAwait", "()I", new Object[2]));
+                actual,
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(TEST_CLASS),
+                        "testAsyncAwait",
+                        "()I",
+                        new Object[2]));
     }
 
     @Test
     public void testLaunchJoin() throws Exception {
         int actual = LambdasKt.testLaunchJoin();
         Assert.assertEquals(
-                actual, LiveEditStubs.stubI(TEST_CLASS, "testLaunchJoin", "()I", new Object[2]));
+                actual,
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(TEST_CLASS),
+                        "testLaunchJoin",
+                        "()I",
+                        new Object[2]));
     }
 
     @Test
@@ -105,7 +124,11 @@ public class LambdaSuperTest {
         int expected = LambdasKt.testFunctionReference();
         Assert.assertEquals(
                 expected,
-                LiveEditStubs.stubI(TEST_CLASS, "testFunctionReference", "()I", new Object[2]));
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(TEST_CLASS),
+                        "testFunctionReference",
+                        "()I",
+                        new Object[2]));
     }
 
     @Test
@@ -115,7 +138,7 @@ public class LambdaSuperTest {
         Function0<Integer> actual =
                 (Function0<Integer>)
                         LiveEditStubs.stubL(
-                                TEST_CLASS,
+                                LiveEditStubs.getClassBytecode(TEST_CLASS),
                                 "returnFunctionReference",
                                 "()Lkotlin/jvm/functions/Function0;",
                                 new Object[2]);
@@ -131,7 +154,11 @@ public class LambdaSuperTest {
         int expected = LambdasKt.testAdaptedReference();
         Assert.assertEquals(
                 expected,
-                LiveEditStubs.stubI(TEST_CLASS, "testAdaptedReference", "()I", new Object[2]));
+                LiveEditStubs.stubI(
+                        LiveEditStubs.getClassBytecode(TEST_CLASS),
+                        "testAdaptedReference",
+                        "()I",
+                        new Object[2]));
     }
 
     @Test
@@ -141,7 +168,7 @@ public class LambdaSuperTest {
         Function0<Integer> actual =
                 (Function0<Integer>)
                         LiveEditStubs.stubL(
-                                TEST_CLASS,
+                                LiveEditStubs.getClassBytecode(TEST_CLASS),
                                 "returnAdaptedReference",
                                 "()Lkotlin/jvm/functions/Function0;",
                                 new Object[2]);
@@ -162,7 +189,7 @@ public class LambdaSuperTest {
         String[] actual =
                 (String[])
                         LiveEditStubs.stubL(
-                                TEST_CLASS,
+                                LiveEditStubs.getClassBytecode(TEST_CLASS),
                                 "testProperThreading",
                                 "()[Ljava/lang/String;",
                                 new Object[2]);

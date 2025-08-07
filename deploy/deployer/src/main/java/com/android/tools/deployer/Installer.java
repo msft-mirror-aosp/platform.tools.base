@@ -112,6 +112,27 @@ public abstract class Installer {
         return response;
     }
 
+    public Deploy.FindDexResponse findDex(String packageName, String classSignature)
+            throws IOException {
+        Deploy.FindDexRequest.Builder dexRequestBuilder = Deploy.FindDexRequest.newBuilder();
+        dexRequestBuilder.setPackageName(packageName);
+        dexRequestBuilder.setClassSignature(classSignature);
+
+        // Sending large DEX files over the wire can cause
+        // high response latency.
+        long fileSizeLimit = 100 * 1024 * 1024; // 100MB
+        dexRequestBuilder.setDexFileSizeLimit(fileSizeLimit);
+
+        Deploy.InstallerRequest.Builder reqBuilder =
+                buildRequest("finddex").setFindDexRequest(dexRequestBuilder);
+        Deploy.InstallerRequest req = reqBuilder.build();
+        Deploy.InstallerResponse resp = send(req, Timeouts.CMD_FIND_DEX_MS);
+        if (!resp.hasFindDexResponse()) {
+            errorAsymetry(req, resp);
+        }
+        return resp.getFindDexResponse();
+    }
+
     public Deploy.SwapResponse swap(Deploy.SwapRequest swapRequest) throws IOException {
         Deploy.InstallerRequest.Builder reqBuilder = buildRequest("swap");
         reqBuilder.setSwapRequest(swapRequest);

@@ -29,7 +29,6 @@ import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.SchemaModule;
@@ -88,18 +87,10 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
     private static final ImmutableSet<String> RESOURCE_CACHE_DIRS =
             ImmutableSet.of("fonts", "icons", "skins");
 
-    /**
-     * Cache of found packages.
-     */
-    private Map<String, LocalPackage> mPackages = null;
-
-    /** Set of directories we think probably have packages in them. */
-    private Set<Path> mPackageRoots = null;
-
     /** Directory under which we look for packages. */
     private final Path mRoot;
 
-    private final RepoManager mRepoManager;
+    private final ImmutableSet<SchemaModule<?>> mSchemaModules;
 
     /**
      * If we can't find a package in a directory, we ask mFallback to find one. If it does, we write
@@ -111,33 +102,33 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
      * Constructor. Probably should only be used within repository framework.
      *
      * @param root The root directory under which we'll look for packages.
-     * @param manager A RepoManager, notably containing the {@link SchemaModule}s we'll use for
-     *     reading and writing {@link LocalPackage}s
+     * @param schemaModules the {@link SchemaModule}s we'll use for reading and writing {@link LocalPackage}s
      * @param fallback The {@link FallbackLocalRepoLoader} we'll use if we can't find a package in a
      *     directory.
      */
     public LocalRepoLoaderImpl(
             @NonNull Path root,
-            @NonNull RepoManager manager,
+            @NonNull Set<SchemaModule<?>> schemaModules,
             @Nullable FallbackLocalRepoLoader fallback) {
         mRoot = root;
-        mRepoManager = manager;
+        mSchemaModules = ImmutableSet.copyOf(schemaModules);
         mFallback = fallback;
     }
 
     @Override
     @NonNull
     public Map<String, LocalPackage> getPackages(@NonNull ProgressIndicator progress) {
-        if (mPackages == null) {
-            Set<Path> possiblePackageDirs = collectPackages();
-            mPackages = parsePackages(possiblePackageDirs, progress);
-            if (!mPackages.isEmpty()) {
-                writeHashFile(getLocalPackagesHash());
-                progress.logVerbose("SDK Manager found the following installed packages: " +
-                        mPackages.keySet().stream().sorted().collect(joining(" ")));
-            }
+        if (mFallback != null) {
+            mFallback.refresh();
         }
-        return Collections.unmodifiableMap(mPackages);
+        Set<Path> possiblePackageDirs = collectPackages();
+        Map<String, LocalPackage> packages = parsePackages(possiblePackageDirs, progress);
+        if (!packages.isEmpty()) {
+            writeHashFile(getLocalPackagesHash(possiblePackageDirs));
+            progress.logVerbose("SDK Manager found the following installed packages: " +
+                                packages.keySet().stream().sorted().collect(joining(" ")));
+        }
+        return Collections.unmodifiableMap(packages);
     }
 
     /**
@@ -209,12 +200,9 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
     /** Gets a sorted set of all paths that might contain packages. */
     @NonNull
     private Set<Path> collectPackages() {
-        if (mPackageRoots == null) {
-            Set<Path> dirs = Sets.newTreeSet();
-            collectPackages(dirs, mRoot, 0);
-            mPackageRoots = dirs;
-        }
-        return mPackageRoots;
+        Set<Path> dirs = Sets.newTreeSet();
+        collectPackages(dirs, mRoot, 0);
+        return dirs;
     }
 
     /**
@@ -309,9 +297,9 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
             CommonFactory factory = p.createFactory();
             SchemaModuleUtil.marshal(
                     factory.generateRepository(repo),
-                    mRepoManager.getSchemaModules(),
+                    mSchemaModules,
                     fos,
-                    mRepoManager.getResourceResolver(progress),
+                    SchemaModuleUtil.createResourceResolver(mSchemaModules, progress),
                     progress,
                     false);
         } catch (IOException e) {
@@ -332,7 +320,7 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
                         (Repository)
                                 SchemaModuleUtil.unmarshal(
                                         stream,
-                                        mRepoManager.getSchemaModules(),
+                                        mSchemaModules,
                                         false,
                                         progress,
                                         packageXml.getFileName().toString());
@@ -387,18 +375,19 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
      *         is required).
      */
     private boolean updateKnownPackageHashFileIfNecessary() {
+        Set<Path> packages = collectPackages();
         Path knownPackagesHashFile = getKnownPackagesHashFile(false);
         if (knownPackagesHashFile != null) {
             byte[] buf = null;
             // If we haven't updated any package more recently than the file, check the file
             // contents as well before updating. Otherwise we'll always update the file.
-            if (getLatestPackageUpdateTime() <= getLastModifiedTime(knownPackagesHashFile)) {
+            if (getLatestPackageUpdateTime(packages) <= getLastModifiedTime(knownPackagesHashFile)) {
                 try {
                     buf = CancellableFileIo.readAllBytes(knownPackagesHashFile);
                 } catch (IOException ignore) {
                 }
             }
-            byte[] localPackagesHash = getLocalPackagesHash();
+            byte[] localPackagesHash = getLocalPackagesHash(packages);
             if (!Arrays.equals(buf, localPackagesHash)) {
                 writeHashFile(localPackagesHash);
                 // Even if writing the hash file fails, we still know that we're out of date and
@@ -406,7 +395,7 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
                 return true;
             }
         } else {
-            writeHashFile(getLocalPackagesHash());
+            writeHashFile(getLocalPackagesHash(packages));
             return true;
         }
         return false;
@@ -453,10 +442,9 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
      * directories paths themselves.
      */
     @NonNull
-    private byte[] getLocalPackagesHash() {
-        Set<Path> dirs = collectPackages();
+    private byte[] getLocalPackagesHash(Set<Path> packages) {
         Hasher digester = Hashing.md5().newHasher();
-        for (Path f : dirs) {
+        for (Path f : packages) {
             digester.putBytes(f.toAbsolutePath().toString().getBytes(UTF_8));
         }
         return digester.hash().asBytes();
@@ -465,9 +453,9 @@ public final class LocalRepoLoaderImpl implements LocalRepoLoader {
     /**
      * Finds the latest update timestamp of a {@code package.xml} file under {@link #mRoot}.
      */
-    private long getLatestPackageUpdateTime() {
+    private long getLatestPackageUpdateTime(Set<Path> packages) {
         long latest = 0;
-        for (Path f : collectPackages()) {
+        for (Path f : packages) {
             long t = getLastModifiedTime(f.resolve(PACKAGE_XML_FN));
             latest = Math.max(t, latest);
         }

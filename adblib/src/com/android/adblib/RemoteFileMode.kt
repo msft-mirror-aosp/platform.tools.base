@@ -32,6 +32,36 @@ class RemoteFileMode private constructor(
     val modeBits: Int
 ) {
 
+    val isRegularFile: Boolean
+        get() = isFileType(S_IFREG)
+
+    val isDirectory: Boolean
+        get() = isFileType(S_IFDIR)
+
+    val isSymbolicLink: Boolean
+        get() = isFileType(S_IFLNK)
+
+    val isBlockDevice: Boolean
+        get() = isFileType(S_IFBLK)
+
+    val isSocket: Boolean
+        get() = isFileType(S_IFSOCK)
+
+    val isCharacterDevice: Boolean
+        get() = isFileType(S_IFCHR)
+
+    val isFifo: Boolean
+        get() = isFileType(S_IFIFO)
+
+    val hasStickyBit: Boolean
+        get() = (modeBits and S_ISVTX) != 0
+
+    val hasSetUserIddBit: Boolean
+        get() = (modeBits and S_ISUID) != 0
+
+    val hasSetGroupIdBit: Boolean
+        get() = (modeBits and S_ISGID) != 0
+
     override fun equals(other: Any?): Boolean {
         return (other is RemoteFileMode) && (modeBits == other.modeBits)
     }
@@ -41,8 +71,39 @@ class RemoteFileMode private constructor(
     }
 
     override fun toString(): String {
-        return "${javaClass.simpleName}(${modeBits.toString(8)})"
+        return "${javaClass.simpleName}(\"$longFormatString\")"
     }
+
+    /**
+     * `ls -l` permission style string, e.g. "-rw-rw-rw-"
+     */
+    val longFormatString: String
+        get() {
+            return "$fileTypePrefix$posixString"
+        }
+
+    /**
+     * -	Regular File	Standard file
+     * d	Directory	Folder containing files
+     * l	Symbolic Link	Pointer to another file
+     * c	Character Device	Terminal, keyboard, etc.
+     * b	Block Device	Hard disk, CD-ROM, etc.
+     * p	Pipe (FIFO)	Inter-process communication
+     * s	Socket	Network communication link
+     */
+    val fileTypePrefix: Char
+        get() {
+            return when {
+                isRegularFile -> '-'
+                isDirectory -> 'd'
+                isSymbolicLink-> 'l'
+                isCharacterDevice-> 'c'
+                isBlockDevice-> 'b'
+                isFifo-> 'p'
+                isSocket-> 's'
+                else -> '?'
+            }
+        }
 
     /**
      * The string representation (e.g. "rwxr-x---") corresponding to this instance
@@ -60,7 +121,56 @@ class RemoteFileMode private constructor(
             return modeBitsToPosixPermissions(modeBits)
         }
 
+    private fun isFileType(value: Int): Boolean = (modeBits and S_IFMT) == value
+
     companion object {
+
+        /** (0170000) bitmask for the file type bitfields */
+        private const val S_IFMT = 0xF000
+        /** (0140000) socket */
+        private const val S_IFSOCK = 0xC000
+        /** (0120000) symbolic link */
+        private const val S_IFLNK = 0xA000
+        /** (0100000) regular file */
+        private const val S_IFREG = 0x8000
+        /** (0060000) block device */
+        private const val S_IFBLK = 0x6000
+        /** (0040000) directory */
+        private const val S_IFDIR = 0x4000
+        /** (0020000) character device */
+        private const val S_IFCHR = 0x2000
+        /** (0010000) fifo */
+        private const val S_IFIFO = 0x1000
+        /** (0004000) set UID bit */
+        private const val S_ISUID = 0x800
+        /** (0002000) set GID bit (see below) */
+        private const val S_ISGID = 0x400
+        /** (0001000) sticky bit (see below) */
+        private const val S_ISVTX = 0x200
+        /** (00700) mask for file owner permissions */
+        private const val S_IRWXU = 0x1C0
+        /** (00400) owner has read permission */
+        private const val S_IRUSR = 0x100
+        /** (00200) owner has write permission */
+        private const val S_IWUSR = 0x80
+        /** (00100) owner has execute permission */
+        private const val S_IXUSR = 0x40
+        /** (00070) mask for group permissions */
+        private const val S_IRWXG = 0x38
+        /** (00040) group has read permission */
+        private const val S_IRGRP = 0x20
+        /** (00020) group has write permission */
+        private const val S_IWGRP = 0x10
+        /** (00010) group has execute permission */
+        private const val S_IXGRP = 0x08
+        /** (00007) mask for permissions for others (not in group) */
+        private const val S_IRWXO = 0x07
+        /** (00004) others have read permission */
+        private const val S_IROTH = 0x04
+        /** (00002) others have write permission */
+        private const val S_IWOTH = 0x02
+        /** (00001) others have execute permission */
+        private const val S_IXOTH = 0x01
 
         /**
          * Default permissions, to be used as fallback ("rw-r--r--")

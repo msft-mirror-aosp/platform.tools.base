@@ -16,8 +16,6 @@
 package com.android.repository.testframework
 
 import com.android.repository.api.Downloader
-import com.android.repository.api.FallbackLocalRepoLoader
-import com.android.repository.api.FallbackRemoteRepoLoader
 import com.android.repository.api.LocalPackage
 import com.android.repository.api.PackageOperation
 import com.android.repository.api.ProgressIndicator
@@ -36,21 +34,19 @@ import kotlin.time.Duration
 import org.w3c.dom.ls.LSResourceResolver
 
 /** A fake [RepoManager], for use in unit tests. */
-class FakeRepoManager(override val localPath: Path?, override val packages: RepositoryPackages) :
-  RepoManager() {
-  constructor(packages: RepositoryPackages) : this(null, packages)
+class FakeRepoManager(
+  override val localPath: Path?,
+  override val packages: RepositoryPackages,
+  additionalSchemaModules: List<SchemaModule<*>>,
+) : RepoManager() {
+  constructor(
+    localPath: Path?,
+    packages: RepositoryPackages,
+  ) : this(localPath, packages, emptyList())
 
-  private val _schemaModules = mutableListOf(commonModule, genericModule)
-  override val schemaModules: List<SchemaModule<*>>
-    get() = _schemaModules
+  constructor(packages: RepositoryPackages) : this(null, packages, emptyList())
 
-  override fun registerSchemaModule(module: SchemaModule<*>) {
-    _schemaModules.add(module)
-  }
-
-  override fun setFallbackLocalRepoLoader(local: FallbackLocalRepoLoader?) {}
-
-  override fun registerSourceProvider(provider: RepositorySourceProvider) {}
+  override val schemaModules = setOf(commonModule, genericModule) + additionalSchemaModules
 
   override val sourceProviders: List<RepositorySourceProvider>
     get() = emptyList()
@@ -60,8 +56,6 @@ class FakeRepoManager(override val localPath: Path?, override val packages: Repo
     progress: ProgressIndicator,
     forceRefresh: Boolean,
   ): List<RepositorySource> = emptyList()
-
-  override fun setFallbackRemoteRepoLoader(remote: FallbackRemoteRepoLoader?) {}
 
   override fun load(
     cacheExpirationMs: Long,
@@ -105,7 +99,7 @@ class FakeRepoManager(override val localPath: Path?, override val packages: Repo
 
   override fun markLocalCacheInvalid() {}
 
-  override fun reloadLocalIfNeeded(progress: ProgressIndicator): Boolean = false
+  override fun reloadLocalIfNeeded(progress: ProgressIndicator) {}
 
   override fun getResourceResolver(progress: ProgressIndicator): LSResourceResolver? = null
 

@@ -1,23 +1,11 @@
 load("@rules_java//java:defs.bzl", "java_test")
-load("//tools/base/bazel/avd:avd.bzl", "DEFAULT_AVD_IMAGE", "avd")
-
-# This test demonstrates running an emulator on RBE and using it for a Java
-# test.
-avd(
-    name = "emulator_test_device",
-    image = select({
-        # For now, we tie the choice of Emulator ABI to the host ABI. However, we should split this.
-        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-33_default_arm64//:arm64-android-33-images",
-        "//conditions:default": DEFAULT_AVD_IMAGE,
-    }),
-)
 
 java_test(
     name = "emulator_test",
     srcs = ["EmulatorTest.java"],
     data = [
-        ":emulator_test_device",
         "//prebuilts/studio/sdk:platform-tools",
+        "//tools/base/bazel/avd:default_avd",
     ],
     tags = [
         "ci:studio-mac-arm",
@@ -25,6 +13,23 @@ java_test(
         "noci:studio-win",
     ],
     test_class = "EmulatorTest",
+    deps = [
+        "//tools/base/bazel/avd:emulator_rule",
+        "@maven//:junit.junit",
+    ],
+)
+
+java_test(
+    name = "MultipleEmulatorTest",
+    srcs = ["MultipleEmulatorTest.java"],
+    data = [
+        "//prebuilts/studio/sdk:platform-tools",
+        "//tools/base/bazel/avd:default_avd",
+    ],
+    tags = [
+        "noci:studio-win",
+    ],
+    test_class = "MultipleEmulatorTest",
     deps = [
         "//tools/base/bazel/avd:emulator_rule",
         "@maven//:junit.junit",

@@ -15,6 +15,9 @@
  */
 package com.android.adblib
 
+import com.android.adblib.AdbDeviceSyncServices.ListOptions
+import com.android.adblib.AdbDeviceSyncServices.ListV2Options
+import com.android.adblib.AdbDeviceSyncServices.StatV2Options
 import com.android.adblib.impl.channels.AdbInputStreamChannel
 import com.android.adblib.impl.channels.AdbOutputStreamChannel
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
@@ -27,6 +30,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.toList
 import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.Rule
@@ -35,6 +39,7 @@ import org.junit.rules.ExpectedException
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
 import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.PosixFilePermission.OWNER_READ
 import java.nio.file.attribute.PosixFilePermission.OWNER_WRITE
@@ -60,7 +65,7 @@ class AdbDeviceSyncServicesTest {
     private val adbSession get() = fakeAdbRule.adbSession
 
     @Test
-    fun testSyncSendFileWorks(): Unit = runBlockingWithTimeout {
+    fun testSendFileWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -98,7 +103,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendEmptyFileWorks(): Unit = runBlockingWithTimeout {
+    fun testSendEmptyFileWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -136,7 +141,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendWithTimeoutWorks(): Unit = runBlockingWithTimeout {
+    fun testSendWithTimeoutWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -180,7 +185,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendRethrowsProgressException(): Unit = runBlockingWithTimeout {
+    fun testSendRethrowsProgressException(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -213,7 +218,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendTwoFilesInSameSessionWorks(): Unit = runBlockingWithTimeout {
+    fun testSendTwoFilesInSameSessionWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -278,7 +283,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendFileWithNoDateSetsModifiedDateToCurrentTime(): Unit = runBlockingWithTimeout {
+    fun testSendFileWithNoDateSetsModifiedDateToCurrentTime(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -315,7 +320,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncRecvFileWorks(): Unit = runBlockingWithTimeout {
+    fun testRecvFileWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -355,7 +360,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncRecvTwoFileInSameSessionWorks(): Unit = runBlockingWithTimeout {
+    fun testRecvTwoFileInSameSessionWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -424,7 +429,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncSendThenRecvFileInSameSessionWorks(): Unit = runBlockingWithTimeout {
+    fun testSendThenRecvFileInSameSessionWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -481,7 +486,7 @@ class AdbDeviceSyncServicesTest {
      * This test tries do download a file that does not exist on the device
      */
     @Test
-    fun testSyncRecvFileThrowsExceptionIfFileDoesNotExist(): Unit = runBlockingWithTimeout {
+    fun testRecvFileThrowsExceptionIfFileDoesNotExist(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -507,7 +512,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncRecvRethrowsProgressException(): Unit = runBlockingWithTimeout {
+    fun testRecvRethrowsProgressException(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -548,7 +553,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncRecvRethrowsOutputChannelException(): Unit = runBlockingWithTimeout {
+    fun testRecvRethrowsOutputChannelException(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -591,7 +596,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncStatFileWorks(): Unit = runBlockingWithTimeout {
+    fun testStatFileWorks(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -622,7 +627,7 @@ class AdbDeviceSyncServicesTest {
     }
 
     @Test
-    fun testSyncStatFileReturnsNullIfNoFile(): Unit = runBlockingWithTimeout {
+    fun testStatFileReturnsNullIfNoFile(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)
         val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
@@ -636,6 +641,505 @@ class AdbDeviceSyncServicesTest {
 
         // Assert
         Assert.assertNull(fileStat)
+    }
+
+    @Test
+    fun testListWorks(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        (1..9).forEach { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+            fakeDevice.createFile(
+                DeviceFileState(
+                    filePath,
+                    fileMode.modeBits,
+                    (fileDate.toMillis() / 1_000).toInt(),
+                    fileBytes
+                )
+            )
+        }
+
+        // Act
+        val entries = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.list("/sdcard/foo").toList()
+        }
+
+        // Assert
+        Assert.assertEquals(9, entries.size)
+        entries.sortedBy { it.fileName } .forEachIndexed { index, entry ->
+            Assert.assertEquals("bar.bin_${index + 1}", entry.fileName)
+            Assert.assertEquals(1_000, entry.fileStat.size)
+            Assert.assertEquals("rw-------", entry.fileStat.remoteFileMode.posixString)
+        }
+    }
+
+    @Test
+    fun testListFlowCanBeCollectedMultipleTimes(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        (1..9).forEach { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+            fakeDevice.createFile(
+                DeviceFileState(
+                    filePath,
+                    fileMode.modeBits,
+                    (fileDate.toMillis() / 1_000).toInt(),
+                    fileBytes
+                )
+            )
+        }
+
+        // Act
+        val entriesList = withSyncServices(deviceSelector) { syncServices ->
+            listOf(
+                syncServices.list("/sdcard/foo").toList(),
+                syncServices.list("/sdcard/foo").toList(),
+                syncServices.list("/sdcard/foo").toList(),
+            )
+        }
+
+        // Assert
+        entriesList.forEach { entries ->
+            Assert.assertEquals(9, entries.size)
+            entries.sortedBy { it.fileName }.forEachIndexed { index, entry ->
+                Assert.assertEquals("bar.bin_${index + 1}", entry.fileName)
+                Assert.assertEquals(1_000, entry.fileStat.size)
+                Assert.assertEquals("rw-------", entry.fileStat.remoteFileMode.posixString)
+            }
+        }
+    }
+
+    @Test
+    fun testListSkipsDotAndDotDot(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, sdk = 20)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+
+        listOf(".", "..", ".foo", "bar.blah").map { fileName ->
+            val filePath = "/sdcard/foo/$fileName"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            DeviceFileState(
+                filePath,
+                fileMode.modeBits,
+                (fileDate.toMillis() / 1_000).toInt(),
+                fileBytes
+            ).also {
+                fakeDevice.createFile(it)
+            }
+        }
+
+        // Act
+        val entries = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.list(remoteFilePath = "/sdcard/foo").toList()
+        }
+
+        // Assert
+        Assert.assertEquals(2, entries.size)
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == ".foo"  })
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == "bar.blah"  })
+    }
+
+    @Test
+    fun testListAllowsListingDotAndDotDot(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, sdk = 20)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+
+        listOf(".foo", "bar.blah").map { fileName ->
+            val filePath = "/sdcard/foo/$fileName"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            DeviceFileState(
+                filePath,
+                fileMode.modeBits,
+                (fileDate.toMillis() / 1_000).toInt(),
+                fileBytes
+            ).also {
+                fakeDevice.createFile(it)
+            }
+        }
+
+        // Act
+        val entries = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.list(
+                remoteFilePath = "/sdcard/foo",
+                options = ListOptions(skipDotEntries = false)).toList()
+        }
+
+        // Assert
+        Assert.assertEquals(4, entries.size)
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == "."  })
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == ".."  })
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == ".foo"  })
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == "bar.blah"  })
+    }
+
+    @Test
+    fun testListFlowThrowsAfterSyncServicesIsClosed(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        (1..9).forEach { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+            fakeDevice.createFile(
+                DeviceFileState(
+                    filePath,
+                    fileMode.modeBits,
+                    (fileDate.toMillis() / 1_000).toInt(),
+                    fileBytes
+                )
+            )
+        }
+
+        // Act
+        val flow = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.list("/sdcard/foo")
+        }
+
+        // Assert
+        exceptionRule.expect(ClosedChannelException::class.java)
+        flow.collect {  }
+        Assert.fail() // Should not be reached
+    }
+
+    @Test
+    fun testStatV2FileWorks(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val filePath = "/sdcard/foo/bar.bin"
+        val fileBytes = createFileBytes(128_000)
+        val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+        val fileState = DeviceFileState(
+            filePath,
+            fileMode.modeBits,
+            (fileDate.toMillis() / 1_000).toInt(),
+            fileBytes
+        )
+        fakeDevice.createFile(
+            fileState
+        )
+
+        // Act
+        val fileStat = withSyncServices(deviceSelector) {
+            it.statV2(filePath)
+        }
+
+        // Assert
+        Assert.assertEquals(0, fileStat.errno)
+        Assert.assertEquals(fileMode, fileStat.mode)
+        Assert.assertEquals(128_000, fileStat.size)
+        Assert.assertEquals(fileDate, fileStat.lastModifiedTime)
+        Assert.assertEquals(fileDate, fileStat.creationTime)
+        Assert.assertEquals(fileDate, fileStat.lastAccessTime)
+        Assert.assertEquals(fileState.uid, fileStat.uid)
+        Assert.assertEquals(fileState.gid, fileStat.gid)
+        Assert.assertEquals(fileState.inode, fileStat.inode)
+        Assert.assertEquals(fileState.dev, fileStat.dev)
+        Assert.assertEquals(fileState.nlink, fileStat.nlink)
+    }
+
+    @Test
+    fun testStatV2FileReturnsErrorEntryIfNoFile(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val filePath = "/sdcard/foo/bar.bin"
+
+        // Act
+        val fileStat = withSyncServices(deviceSelector) {
+            it.statV2(filePath)
+        }
+
+        // Assert
+        Assert.assertEquals(2, fileStat.errno)
+        Assert.assertEquals(0, fileStat.mode.modeBits)
+        Assert.assertEquals(0, fileStat.size)
+        Assert.assertEquals(FileTime.fromMillis(0), fileStat.lastModifiedTime)
+        Assert.assertEquals(FileTime.fromMillis(0), fileStat.creationTime)
+        Assert.assertEquals(FileTime.fromMillis(0), fileStat.lastAccessTime)
+        Assert.assertEquals(0, fileStat.uid)
+        Assert.assertEquals(0, fileStat.gid)
+        Assert.assertEquals(0, fileStat.inode)
+        Assert.assertEquals(0, fileStat.dev)
+        Assert.assertEquals(0, fileStat.nlink)
+    }
+
+    @Test
+    fun testStatV2FileFallsBackToV1OnOlderDevices(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, 20)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val filePath = "/sdcard/foo/bar.bin"
+        val fileBytes = createFileBytes(128_000)
+        val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+        val fileState = DeviceFileState(
+            filePath,
+            fileMode.modeBits,
+            (fileDate.toMillis() / 1_000).toInt(),
+            fileBytes
+        )
+        fakeDevice.createFile(
+            fileState
+        )
+
+        // Act
+        val fileStat = withSyncServices(deviceSelector) {
+            it.statV2(filePath)
+        }
+
+        // Assert
+        Assert.assertEquals(0, fileStat.errno)
+        Assert.assertEquals(fileMode, fileStat.mode)
+        Assert.assertEquals(128_000, fileStat.size)
+        Assert.assertEquals(fileDate, fileStat.lastModifiedTime)
+        Assert.assertEquals(FileTime.fromMillis(0), fileStat.creationTime)
+        Assert.assertEquals(FileTime.fromMillis(0), fileStat.lastAccessTime)
+        Assert.assertEquals(0, fileStat.uid)
+        Assert.assertEquals(0, fileStat.gid)
+        Assert.assertEquals(0, fileStat.inode)
+        Assert.assertEquals(0, fileStat.dev)
+        Assert.assertEquals(0, fileStat.nlink)
+    }
+
+    @Test
+    fun testStatV2ThrowsOnOlderDeviceWithoutFallback(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, 20)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        val filePath = "/sdcard/foo/bar.bin"
+        val fileBytes = createFileBytes(128_000)
+        val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+        val fileState = DeviceFileState(
+            filePath,
+            fileMode.modeBits,
+            (fileDate.toMillis() / 1_000).toInt(),
+            fileBytes
+        )
+        fakeDevice.createFile(
+            fileState
+        )
+
+        // Act
+        withSyncServices(deviceSelector) {
+            exceptionRule.expect(AdbDeviceFailResponseException::class.java)
+            it.statV2(filePath, StatV2Options(fallbackToStatV1 = false))
+        }
+
+        // Assert
+        Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun testListV2Works(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+
+        val fileStates = (1..9).map { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            DeviceFileState(
+                filePath,
+                fileMode.modeBits,
+                (fileDate.toMillis() / 1_000).toInt(),
+                fileBytes
+            ).also {
+                fakeDevice.createFile(it)
+            }
+        }
+
+        // Act
+        val options = ListV2Options(fallbackToListV1 = false)
+        val entries = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.listV2(remoteFilePath = "/sdcard/foo", options = options).toList()
+        }
+
+        // Assert
+        Assert.assertEquals(9, entries.size)
+        entries.sortedBy { it.fileName } .forEachIndexed { index, entry ->
+            val fileState = fileStates[index]
+            Assert.assertEquals("bar.bin_${index + 1}", entry.fileName)
+            Assert.assertEquals(0, entry.fileStat.errno)
+            Assert.assertEquals(1_000, entry.fileStat.size)
+            Assert.assertEquals(fileDate, entry.fileStat.lastModifiedTime)
+            Assert.assertEquals(fileDate, entry.fileStat.lastAccessTime)
+            Assert.assertEquals(fileDate, entry.fileStat.creationTime)
+            Assert.assertEquals("rw-------", entry.fileStat.mode.posixString)
+            Assert.assertEquals(fileState.uid, entry.fileStat.uid)
+            Assert.assertEquals(fileState.gid, entry.fileStat.gid)
+            Assert.assertEquals(fileState.inode, entry.fileStat.inode)
+            Assert.assertEquals(fileState.dev, entry.fileStat.dev)
+            Assert.assertEquals(fileState.nlink, entry.fileStat.nlink)
+        }
+    }
+
+    @Test
+    fun testListV2FallsBackToListV1OnOlderDevice(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, sdk = 20)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+
+        (1..9).map { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            DeviceFileState(
+                filePath,
+                fileMode.modeBits,
+                (fileDate.toMillis() / 1_000).toInt(),
+                fileBytes
+            ).also {
+                fakeDevice.createFile(it)
+            }
+        }
+
+        // Act
+        val entries = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.listV2(remoteFilePath = "/sdcard/foo").toList()
+        }
+
+        // Assert
+        Assert.assertEquals(9, entries.size)
+        entries.sortedBy { it.fileName } .forEachIndexed { index, entry ->
+            Assert.assertEquals("bar.bin_${index + 1}", entry.fileName)
+            Assert.assertEquals(0, entry.fileStat.errno)
+            Assert.assertEquals(1_000, entry.fileStat.size)
+            Assert.assertEquals(fileDate, entry.fileStat.lastModifiedTime)
+            Assert.assertEquals(FileTime.fromMillis(0), entry.fileStat.lastAccessTime)
+            Assert.assertEquals(FileTime.fromMillis(0), entry.fileStat.creationTime)
+            Assert.assertEquals("rw-------", entry.fileStat.mode.posixString)
+            Assert.assertEquals(0, entry.fileStat.uid)
+            Assert.assertEquals(0, entry.fileStat.gid)
+            Assert.assertEquals(0, entry.fileStat.inode)
+            Assert.assertEquals(0, entry.fileStat.dev)
+            Assert.assertEquals(0, entry.fileStat.nlink)
+        }
+    }
+
+    @Test
+    fun testListV2ThrowsOnOlderDeviceWithoutFallback(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, sdk = 20)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+
+        (1..9).map { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            DeviceFileState(
+                filePath,
+                fileMode.modeBits,
+                (fileDate.toMillis() / 1_000).toInt(),
+                fileBytes
+            ).also {
+                fakeDevice.createFile(it)
+            }
+        }
+
+        // Act
+        withSyncServices(deviceSelector) { syncServices ->
+            val options = ListV2Options(fallbackToListV1 = false)
+            exceptionRule.expect(AdbDeviceFailResponseException::class.java)
+            syncServices.listV2(remoteFilePath = "/sdcard/foo", options).toList()
+        }
+
+        // Assert
+        Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun testListV2SkipsDotAndDotDot(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, sdk = 20)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+
+        listOf(".", "..", ".foo", "bar.blah").map { fileName ->
+            val filePath = "/sdcard/foo/$fileName"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            DeviceFileState(
+                filePath,
+                fileMode.modeBits,
+                (fileDate.toMillis() / 1_000).toInt(),
+                fileBytes
+            ).also {
+                fakeDevice.createFile(it)
+            }
+        }
+
+        // Act
+        val entries = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.listV2(remoteFilePath = "/sdcard/foo").toList()
+        }
+
+        // Assert
+        Assert.assertEquals(2, entries.size)
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == ".foo"  })
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == "bar.blah"  })
+    }
+
+    @Test
+    fun testListV2AllowsListingDotAndDotDot(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb, sdk = 20)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+        val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+
+        listOf(".foo", "bar.blah").map { fileName ->
+            val filePath = "/sdcard/foo/$fileName"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            DeviceFileState(
+                filePath,
+                fileMode.modeBits,
+                (fileDate.toMillis() / 1_000).toInt(),
+                fileBytes
+            ).also {
+                fakeDevice.createFile(it)
+            }
+        }
+
+        // Act
+        val entries = withSyncServices(deviceSelector) { syncServices ->
+            syncServices.listV2(remoteFilePath = "/sdcard/foo", options = ListV2Options(skipDotEntries = false)).toList()
+        }
+
+        // Assert
+        Assert.assertEquals(4, entries.size)
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == "."  })
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == ".."  })
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == ".foo"  })
+        Assert.assertNotNull(entries.firstOrNull { it.fileName == "bar.blah"  })
     }
 
     open class TestSyncProgress : SyncProgress {

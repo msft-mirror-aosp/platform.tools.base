@@ -27,7 +27,9 @@ kotlin {
     }
 
     compilations.getByName("deviceTest") {
-        kotlinOptions.languageVersion = "1.8"
+        compileTaskProvider.configure {
+            compilerOptions.languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0)
+        }
     }
 
     localDependencySelection {

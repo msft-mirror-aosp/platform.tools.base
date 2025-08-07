@@ -24,10 +24,12 @@ import com.android.deploy.asm.commons.TryCatchBlockSorter;
 import com.android.deploy.asm.tree.FieldNode;
 import com.android.deploy.asm.tree.MethodNode;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 // A class parsed from JVM bytecode. Contains a map of method descriptor to method nodes that is
 // used by LiveEditClass to
@@ -35,7 +37,7 @@ import java.util.Set;
 class Interpretable extends ClassVisitor {
     private String filename;
     private String superName;
-    private String[] interfaces;
+    private Set<String> interfaces;
     private String internalName;
 
     private final Map<String, MethodNode> declaredMethods;
@@ -65,7 +67,7 @@ class Interpretable extends ClassVisitor {
             final String[] interfaces) {
         this.internalName = name;
         this.superName = superName;
-        this.interfaces = interfaces;
+        this.interfaces = Arrays.stream(interfaces).collect(Collectors.toSet());
     }
 
     @Override
@@ -108,7 +110,7 @@ class Interpretable extends ClassVisitor {
         return superName;
     }
 
-    public String[] getInterfaces() {
+    public Set<String> getInterfaces() {
         return interfaces;
     }
 

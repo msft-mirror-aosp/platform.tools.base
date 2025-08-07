@@ -34,18 +34,4 @@ class StubTransform : public Transform {
   void Apply(std::shared_ptr<ir::DexFile> dex_ir) const override;
 };
 
-class Print : public slicer::Transformation {
- public:
-  virtual bool Apply(lir::CodeIr* code_ir) override;
-};
-
-class HookToStub : public slicer::Transformation {
- public:
-  virtual bool Apply(lir::CodeIr* code_ir) override;
-
- private:
-  void BuildStub(lir::CodeIr* code_ir, lir::Bytecode* first_instr,
-                 lir::Bytecode* invoke_static);
-};
-
 }  // namespace deploy

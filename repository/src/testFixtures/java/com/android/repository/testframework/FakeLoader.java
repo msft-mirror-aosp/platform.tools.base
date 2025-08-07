@@ -23,11 +23,14 @@ import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoPackage;
+import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SettingsController;
 import com.android.repository.impl.manager.LocalRepoLoader;
 import com.android.repository.impl.manager.RemoteRepoLoader;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,6 +42,7 @@ import java.util.Map;
 public class FakeLoader<T extends RepoPackage> implements LocalRepoLoader, RemoteRepoLoader {
 
     private final Map<String, T> mPackages;
+    private final List<RepositorySourceProvider> mSourceProviders = new ArrayList<>();
 
     public FakeLoader() {
         mPackages = new HashMap<>();
@@ -58,6 +62,11 @@ public class FakeLoader<T extends RepoPackage> implements LocalRepoLoader, Remot
     @Override
     public boolean needsUpdate(long lastLocalRefreshMs, boolean deepCheck) {
         return true;
+    }
+
+    @Override
+    public List<RepositorySourceProvider> getSourceProviders() {
+        return mSourceProviders;
     }
 
     @NonNull

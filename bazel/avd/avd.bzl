@@ -56,16 +56,15 @@ def _avd_impl(ctx):
     # Generates an AVD snapshot by running the AVD's launcher.
     ctx.actions.run(
         inputs = runfiles.files,
-        arguments = [emulator.path, "create-snapshot", "5554"],
+        arguments = ["create-snapshot", "5554"],
         outputs = [snapshot_output],
         executable = launcher,
+        execution_requirements = {"cpu:2": ""},
         progress_message = "Creating AVD snapshot for " + str(ctx.label),
     )
     runfiles = runfiles.merge(ctx.runfiles(files = [snapshot_output]))
 
     return [DefaultInfo(runfiles = runfiles)]
-
-DEFAULT_AVD_IMAGE = "@system_image_android-33_aosp_atd_x86_64//:x86_64-android-33AospAtd-images"
 
 _avd = rule(
     implementation = _avd_impl,
@@ -81,7 +80,7 @@ _avd = rule(
             default = "//prebuilts/studio/sdk:platform-tools",
         ),
         "image": attr.label(
-            default = DEFAULT_AVD_IMAGE,
+            mandatory = True,
         ),
         "platform": attr.label(
             default = "//prebuilts/studio/sdk:platforms/latest",
@@ -90,10 +89,10 @@ _avd = rule(
     executable = True,
 )
 
-def _avd_macro_impl(name, **kwargs):
+def _avd_macro_impl(name, target_compatible_with, **kwargs):
     _avd(
         name = name,
-        target_compatible_with = ["@platforms//os:linux"],
+        target_compatible_with = target_compatible_with,
         **kwargs
     )
 
@@ -101,6 +100,6 @@ avd = macro(
     implementation = _avd_macro_impl,
     inherit_attrs = _avd,
     attrs = {
-        "target_compatible_with": None,
+        "target_compatible_with": attr.label_list(mandatory = True),
     },
 )

@@ -19,17 +19,18 @@ import com.android.repository.Revision;
 import com.android.repository.api.Channel;
 import com.android.repository.api.ConstantSourceProvider;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.UpdatablePackage;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.testframework.FakeDownloader;
-import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.FakeProgressRunner;
 import com.android.repository.testframework.FakeSettingsController;
 import com.android.sdklib.repository.AndroidSdkHandler;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.google.common.collect.ImmutableList;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import junit.framework.TestCase;
 
@@ -38,30 +39,17 @@ import junit.framework.TestCase;
  */
 public class LegacyRemoteTest extends TestCase {
 
-    public static final String ANDROID_FOLDER = "/android-home";
-
     public void testLegacyRemoteSdk() throws Exception {
         MockFileOp fop = new MockFileOp();
-        final AndroidSdkHandler handler = new AndroidSdkHandler(null, fop.toPath(ANDROID_FOLDER));
-        FakeProgressIndicator progress = new FakeProgressIndicator();
-        RepoManager mgr = handler.getRepoManagerAndLoadSynchronously(progress);
-        progress.assertNoErrorsOrWarnings();
-        mgr.getSourceProviders().clear();
-        progress.assertNoErrorsOrWarnings();
 
-        mgr.registerSourceProvider(
-                new ConstantSourceProvider("http://www.example.com/testRepo", "Repo",
-                        ImmutableList.of(AndroidSdkHandler.getRepositoryModule(),
-                                RepoManager.getGenericModule())));
-        mgr.registerSourceProvider(
-                new ConstantSourceProvider("http://www.example.com/testRepo2", "Repo2",
-                        ImmutableList.of(AndroidSdkHandler.getRepositoryModule(),
-                                RepoManager.getGenericModule())));
-        progress.assertNoErrorsOrWarnings();
-
+        List<RepositorySourceProvider> sourceProviders = ImmutableList.of(
+            new ConstantSourceProvider("http://www.example.com/testRepo", "Repo",
+                ImmutableList.of(AndroidSdkHandler.getRepositoryModule(), RepoManager.getGenericModule())),
+            new ConstantSourceProvider("http://www.example.com/testRepo2", "Repo2",
+                ImmutableList.of(AndroidSdkHandler.getRepositoryModule(), RepoManager.getGenericModule())));
+        RepoManager mgr = RepoManager.createRepoManager(
+                null, AndroidSdkHandler.getAllModules(), sourceProviders, null, new LegacyRemoteRepoLoader());
         FakeSettingsController settings = new FakeSettingsController(false);
-        LegacyRemoteRepoLoader sdk = new LegacyRemoteRepoLoader();
-        mgr.setFallbackRemoteRepoLoader(sdk);
         FakeDownloader downloader = new FakeDownloader(fop.toPath("/tmp"));
         downloader.registerUrl(
                 new URL("http://www.example.com/testRepo2"),

@@ -45,12 +45,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.xr.compose.platform.LocalHasXrSpatialFeature
+import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterEdge
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
@@ -98,8 +97,8 @@ fun MySpatialContent(onRequestHomeSpaceMode: () -> Unit) {
             )
         }
         Orbiter(
-            position = OrbiterEdge.Top,
-            offset = EdgeOffset.inner(offset = 20.dp),
+            position = ContentEdge.Top,
+            offset = 20.dp,
             alignment = Alignment.End,
             shape = SpatialRoundedCornerShape(CornerSize(28.dp))
         ) {
@@ -120,7 +119,7 @@ fun My2DContent(onRequestFullSpaceMode: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             MainContent(modifier = Modifier.padding(48.dp))
-            if (LocalHasXrSpatialFeature.current) {
+            if (LocalSession.current != null) {
                 FullSpaceModeIconButton(
                     onClick = onRequestFullSpaceMode,
                     modifier = Modifier.padding(32.dp)

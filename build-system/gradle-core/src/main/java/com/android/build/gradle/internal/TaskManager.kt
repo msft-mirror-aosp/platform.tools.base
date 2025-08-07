@@ -208,7 +208,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
@@ -219,7 +218,6 @@ import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import java.io.File
 import java.util.Locale
-import java.util.concurrent.Callable
 
 /**
  * Abstract class containing tasks creation logic that is shared between variants and components.
@@ -1046,7 +1044,7 @@ abstract class TaskManager(
     // Similar to SubpluginEnvironment.addSubpluginOptions in KGP
     private fun addSubpluginOptionsForBuiltInKotlin(
         creationConfig: ComponentCreationConfig,
-        kotlinCompilation: KotlinCompilation<KotlinJvmOptions>,
+        kotlinCompilation: KotlinCompilation<Any>,
         kaptGenerateStubsTaskProvider: TaskProvider<out KaptGenerateStubs>?
     ) {
         val appliedSubplugins =

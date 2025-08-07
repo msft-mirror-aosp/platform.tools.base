@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.options
 
-import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
@@ -45,7 +44,7 @@ enum class BooleanOption(
     override val defaultValue: Boolean,
     val stage: Stage,
     futureStage: FutureStage? = null
-) : Option<Boolean> {
+) : Option<Boolean>, HasFutureStage {
 
     /* -----------
      * STABLE APIs
@@ -721,6 +720,15 @@ enum class BooleanOption(
         FeatureStage.SoftlyEnforced(VERSION_9_0)
     ),
 
+    /**
+     * When enabled, the <uses-sdk> tag in AndroidManifest.xml will generate build errors.
+     */
+    DISALLOW_USES_SDK_IN_MANIFEST(
+        "android.usesSdkInManifest.disallowed",
+        false,
+        FeatureStage.SoftlyEnforced(VERSION_9_0)
+    ),
+
     /* -------------------
      * DEPRECATED FEATURES
      */
@@ -1214,7 +1222,7 @@ enum class BooleanOption(
 
     override val status = stage.status
 
-    val futureStage: FutureStage? = when (stage) {
+    override val futureStage: FutureStage? = when (stage) {
         is FeatureStage.SoftlyEnforced -> {
             check(futureStage == null) {
                 "Do not set ${FutureStage::class.simpleName} for property '$propertyName' manually" +

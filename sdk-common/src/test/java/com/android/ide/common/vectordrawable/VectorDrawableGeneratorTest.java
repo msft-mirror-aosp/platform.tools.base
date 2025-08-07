@@ -36,6 +36,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -99,6 +100,7 @@ public class VectorDrawableGeneratorTest extends TestCase {
                 assertTrue(errorLog.contains(expectedError));
             }
             xmlContent = outStream.toString();
+            checkNoTrailingSpaces(xmlContent);
             if (xmlContent.isEmpty()) {
                 if (expectedError == null) {
                     fail("Empty XML file.");
@@ -143,6 +145,19 @@ public class VectorDrawableGeneratorTest extends TestCase {
         }
 
         return errorLog;
+    }
+
+    private void checkNoTrailingSpaces(@NonNull String xmlContent) throws Exception {
+        String[] lines = xmlContent.split("(\r|\n|\r\n)+");
+        Arrays.stream(lines).forEach(line -> {
+            assertEquals("Unexpected trailing whitespace in: \"" + line + "\"", 0, trailingWhiteSpaces(line));
+        });
+    }
+
+    private int trailingWhiteSpaces(@NonNull String line) {
+        int index = line.length() - 1;
+        while (index >= 0 && Character.isWhitespace(line.charAt(index))) index--;
+        return line.length() - 1 - index;
     }
 
     /** Checks SVG conversion and returns contents of the error log. */

@@ -57,8 +57,8 @@ bool PrimeClass(jvmtiEnv* jvmti, JNIEnv* jni, const std::string& class_name) {
   return true;
 }
 
-jobjectArray UpdateClassBytecode(JNIEnv* jni, JniClass* live_edit_stubs,
-                                 const proto::LiveEditRequest& req) {
+void UpdateClassBytecode(JNIEnv* jni, JniClass* live_edit_stubs,
+                         const proto::LiveEditRequest& req) {
   // Build an array of array of byte containing the target classes bytecode.
   jobjectArray arrayClasses = jni->NewObjectArray(
       req.target_classes_size(), jni->FindClass("[B"), nullptr);
@@ -85,11 +85,9 @@ jobjectArray UpdateClassBytecode(JNIEnv* jni, JniClass* live_edit_stubs,
 
   jboolean structual_redefinition = req.structural_redefinition();
   // Send everything for validation.
-  return (jobjectArray)live_edit_stubs->CallStaticObjectMethod(
-      "addClasses",
-      "([[B[[BZ)[Lcom/"
-      "android/tools/deploy/liveedit/BytecodeValidator$UnsupportedChange;",
-      arrayClasses, arraySupportClasses, structual_redefinition);
+  live_edit_stubs->CallStaticVoidMethod("addClasses", "([[B[[BZ)V",
+                                        arrayClasses, arraySupportClasses,
+                                        structual_redefinition);
 }
 
 void SetDebugMode(JNIEnv* jni, bool debugMode) {
@@ -170,46 +168,7 @@ proto::AgentLiveEditResponse LiveEdit(jvmtiEnv* jvmti, JNIEnv* jni,
   live_edit_stubs.CallStaticVoidMethod("init", "(Ljava/lang/ClassLoader;)V",
                                        app_loader);
 
-  jobjectArray errors = UpdateClassBytecode(jni, &live_edit_stubs, req);
-  auto err_count = jni->GetArrayLength(errors);
-
-  // Must stay in sync with the enum in BytecodeValidator.UnsupportedChange
-  static std::unordered_map<std::string, proto::UnsupportedChange::Type>
-      type_map(
-          {{"ADDED_METHOD", proto::UnsupportedChange::ADDED_METHOD},
-           {"REMOVED_METHOD", proto::UnsupportedChange::REMOVED_METHOD},
-           {"ADDED_CLASS", proto::UnsupportedChange::ADDED_CLASS},
-           {"ADDED_FIELD", proto::UnsupportedChange::ADDED_FIELD},
-           {"REMOVED_FIELD", proto::UnsupportedChange::REMOVED_FIELD},
-           {"MODIFIED_FIELD", proto::UnsupportedChange::MODIFIED_FIELD},
-           {"MODIFIED_SUPER", proto::UnsupportedChange::MODIFIED_SUPER},
-           {"ADDED_INTERFACE", proto::UnsupportedChange::ADDED_INTERFACE},
-           {"REMOVED_INTERFACE", proto::UnsupportedChange::REMOVED_INTERFACE}});
-
-  if (err_count > 0) {
-    resp.set_status(proto::AgentLiveEditResponse::UNSUPPORTED_CHANGE);
-    for (int i = 0; i < err_count; ++i) {
-      JniObject error(jni, jni->GetObjectArrayElement(errors, i));
-      auto proto = resp.add_errors();
-      proto->set_class_name(
-          error.GetJniObjectField("className", "Ljava/lang/String;")
-              .ToString());
-      proto->set_target_name(
-          error.GetJniObjectField("targetName", "Ljava/lang/String;")
-              .ToString());
-      proto->set_file_name(
-          error.GetJniObjectField("fileName", "Ljava/lang/String;").ToString());
-      proto->set_line_number(error.GetIntField("lineNumber", "I"));
-
-      // The type field in the proto defaults to UNKNOWN if no value is found.
-      auto type = type_map.find(
-          error.GetJniObjectField("type", "Ljava/lang/String;").ToString());
-      if (type != type_map.end()) {
-        proto->set_type(type->second);
-      }
-    }
-    return resp;
-  }
+  UpdateClassBytecode(jni, &live_edit_stubs, req);
 
   bool hasNewlyPrimedClass = false;
   for (auto& target_class : req.target_classes()) {

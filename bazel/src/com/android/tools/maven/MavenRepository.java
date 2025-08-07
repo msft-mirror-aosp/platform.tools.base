@@ -59,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a Maven repository customized such that it can:
@@ -279,12 +280,27 @@ public class MavenRepository {
         return s;
     }
 
+    private final Set<String> processedModules = new ConcurrentHashMap<>().newKeySet();
+
     private void getVariantJars(File moduleFile, Artifact artifact) {
         try {
+            String moduleKey =
+                    artifact.getGroupId()
+                            + ":"
+                            + artifact.getArtifactId()
+                            + ":"
+                            + artifact.getVersion();
+            // If we've already processed this module (e.g., for a different variant), skip it.
+            if (!processedModules.add(moduleKey)) {
+                return;
+            }
+
             // get the jars for all the variants specified in the gradle module file
             if (moduleFile != null) {
                 String moduleContent = Files.readString(moduleFile.toPath());
                 Set<String> urls = GradleMetadataJsonReader.readVariantUrls(moduleContent);
+
+                List<ArtifactRequest> requests = new ArrayList<>();
 
                 // The module file does not contain coordinates for each variant's artifact
                 // This code attempts to extract the classfier from the url provided
@@ -314,8 +330,11 @@ public class MavenRepository {
                                     fileExtension,
                                     artifact.getVersion());
 
-                    ArtifactRequest request = new ArtifactRequest(jarArtifact, repositories, null);
-                    system.resolveArtifact(session, request).getArtifact();
+                    requests.add(new ArtifactRequest(jarArtifact, repositories, null));
+                }
+                // Batch resolve variants
+                if (!requests.isEmpty()) {
+                    system.resolveArtifacts(session, requests);
                 }
             }
         } catch (Exception e) {

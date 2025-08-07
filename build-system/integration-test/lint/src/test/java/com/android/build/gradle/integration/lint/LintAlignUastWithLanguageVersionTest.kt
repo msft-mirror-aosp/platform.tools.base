@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.testutils.TestUtils
 import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
@@ -612,9 +613,7 @@ class SourceSetsLanguageVersion: GenericCallback {
             ?: throw RuntimeException("Missing key for SourceSetsLanguageVersion callback")
 
         project.tasks.withType(KotlinCompile::class.java).configureEach {
-            it.kotlinOptions {
-                languageVersion = version
-            }
+            it.compilerOptions.languageVersion.set(KotlinVersion.fromVersion(version))
         }
     }
 }

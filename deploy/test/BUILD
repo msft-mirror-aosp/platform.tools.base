@@ -80,6 +80,11 @@ deployer_test(
     srcs = ["java/com/android/tools/deployer/LiveEditAccessorTest.java"],
 )
 
+deployer_test(
+    name = "LiveEditBytecodeVersioningTest",
+    srcs = ["java/com/android/tools/deployer/LiveEditBytecodeVersioningTest.java"],
+)
+
 java_test(
     name = "D8DexSplitterTest",
     srcs = ["java/com/android/tools/deployer/D8DexSplitterTest.java"],

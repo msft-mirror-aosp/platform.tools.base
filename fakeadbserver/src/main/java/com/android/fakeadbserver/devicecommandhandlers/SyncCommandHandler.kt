@@ -18,6 +18,7 @@ package com.android.fakeadbserver.devicecommandhandlers
 import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
+import com.android.fakeadbserver.shutdownGracefully
 import kotlinx.coroutines.CoroutineScope
 import java.io.EOFException
 import java.io.IOException
@@ -62,10 +63,38 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
                 "SEND" -> handleSendProtocol(device, input, output)
                 "RECV" -> handleRecvProtocol(device, input, output)
                 "STAT" -> handleStatProtocol(device, input, output)
+                "LIST" -> handleListProtocol(device, input, output)
+
+                "STA2" -> {
+                    if (!device.features.contains("stat_v2")) {
+                        closeSocketWithUnknownCommand(socket, syncRequest)
+                        break
+                    }
+                    handleStatV2Protocol(device, input, output)
+                }
+                "LIS2" -> {
+                    if (!device.features.contains("ls_v2")) {
+                        closeSocketWithUnknownCommand(socket, syncRequest)
+                        break
+                    }
+                    handleListV2Protocol(device, input, output)
+                }
+
                 "QUIT" -> handleQuitProtocol(socket)
-                else -> throwUnsupportedRequest(output, syncRequest)
+                else -> {
+                    closeSocketWithUnknownCommand(socket, syncRequest)
+                    break
+                }
             }
         }
+    }
+
+    private fun closeSocketWithUnknownCommand(
+        socket: Socket,
+        syncRequest: String
+    ) {
+        writeUnsupportedSyncRequest(socket.outputStream, syncRequest)
+        socket.shutdownGracefully()
     }
 
     /**
@@ -94,7 +123,8 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
                     break
                 }
                 else -> {
-                    throwUnsupportedRequest(output, sendRequest)
+                    writeUnsupportedSyncRequest(output, sendRequest)
+                    break
                 }
             }
         }
@@ -128,19 +158,138 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
     }
 
     /**
-     * Response is four int32s: id, mode, size, time
+     * Response is a "STAT" entry
      */
     private fun handleStatProtocol(device: DeviceState, input: InputStream, output: OutputStream) {
         val path = readRecvHeader(input)
         val fileState = device.getFile(path)
-        writeStat(output)
-        writeInt32(output, fileState?.permission ?: 0)
-        writeInt32(output, fileState?.bytes?.size ?: 0)
-        writeInt32(output, fileState?.modifiedDate ?: 0)
+        writeStatEntry(output, id = "STAT", fileState = fileState)
+    }
+
+    /**
+     * Response is a sequence of "DENT" entries ("STAT" + filename) followed by a "DONE" entry
+     */
+    private fun handleListProtocol(device: DeviceState, input: InputStream, output: OutputStream) {
+        val path = readRecvHeader(input)
+        val fileStates = device.getDirectoryFiles(path)
+        fileStates.forEach { fileState ->
+            writeDentEntry(output, id = "DENT", fileState = fileState)
+        }
+        writeDentEntry(output, id = "DONE", fileState = null)
+    }
+
+    /**
+     * Response is a "STA2" entry
+     */
+    private fun handleStatV2Protocol(device: DeviceState, input: InputStream, output: OutputStream) {
+        val path = readRecvHeader(input)
+        val fileState = device.getFile(path)
+        writeStatV2Entry(output, id = "STA2", fileState = fileState)
+    }
+
+    /**
+     * Response is a series of "DNT2" entries following by a "DONE" entry
+     */
+    private fun handleListV2Protocol(device: DeviceState, input: InputStream, output: OutputStream) {
+        val path = readRecvHeader(input)
+        val fileStates = device.getDirectoryFiles(path)
+        fileStates.forEach { fileState ->
+            writeDentV2Entry(output, id = "DNT2", fileState = fileState)
+        }
+        writeDentV2Entry(output, id = "DONE", fileState = null)
     }
 
     private fun handleQuitProtocol(socket: Socket) {
         socket.shutdownOutput()
+    }
+
+    private val DeviceFileState.fileName: String
+        get() = path.substringAfterLast("/")
+
+    private fun writeStatEntry(output: OutputStream, id: String, fileState: DeviceFileState?) {
+        // 1. A four-byte sync response e.g. "STAT"
+        // 2. A four-byte integer representing file mode.
+        // 3. A four-byte integer representing file size.
+        // 4. A four-byte integer representing last modified time.
+        writeEntryId(output, id) // 1
+        if (fileState == null) {
+            writeInt32(output, 0) // file mode = 0
+            writeInt32(output, 0) // file size = 0
+            writeInt32(output, 0) // last modified time = 0
+        } else {
+            writeInt32(output, fileState.permission) // 2
+            writeInt32(output, fileState.bytes.size) // 3
+            writeInt32(output, fileState.modifiedDate) // 4
+        }
+    }
+
+    private fun writeDentEntry(output: OutputStream, id: String, fileState: DeviceFileState?) {
+        // 1. A four-byte sync response e.g. "DENT"
+        // 2. A four-byte integer representing file mode.
+        // 3. A four-byte integer representing file size.
+        // 4. A four-byte integer representing last modified time.
+        // 5. A four-byte integer representing file name length.
+        // 6. length number of bytes containing an utf-8 string representing the file name.
+        writeStatEntry(output, id, fileState)
+        writeLengthPrefixedFileName(output, fileState)
+    }
+
+    private fun writeStatV2Entry(output: OutputStream, id: String, fileState: DeviceFileState?) {
+        //     struct __attribute__((packed)) sync_dent_v2 {
+        //  0    uint32_t id;     /* "STA2" */
+        //  4    uint32_t error;  /* Linux `errno` of the `stat` call */
+        //  8    uint64_t dev;    /* ID of device containing file */
+        // 16    uint64_t ino;    /* Inode number */
+        // 24    uint32_t mode;   /* File type and mode */
+        // 28    uint32_t nlink;  /* Number of hard links */
+        // 32    uint32_t uid;    /* User ID of owner */
+        // 36    uint32_t gid;    /* Group ID of owner */
+        // 40    uint64_t size;   /* Total size, in bytes */
+        // 48    int64_t atime;   /* Time of last access */
+        // 56    int64_t mtime;   /* Time of last modification */
+        // 64    int64_t ctime;   /* Time of last status change */
+        // 72   };
+        writeEntryId(output, id)
+        if (fileState == null) {
+            writeInt32(output, 2) // error = "ENOENT"
+            writeInt64(output, 0) // dev
+            writeInt64From32(output, 0) // inode
+            writeInt32(output, 0) // mode
+            writeInt32(output, 0) // nlink
+            writeInt32(output, 0) // uid
+            writeInt32(output, 0) // gid
+            writeInt64From32(output, 0) // size
+            writeInt64From32(output, 0) // atime
+            writeInt64From32(output, 0) // mtime
+            writeInt64From32(output, 0) // ctime
+        } else {
+            writeInt32(output, 0) // error
+            writeInt64(output, fileState.dev) // dev
+            writeInt64(output, fileState.inode) // inode
+            writeInt32(output, fileState.permission) // mode
+            writeInt32(output, fileState.nlink) // nlink
+            writeInt32(output, fileState.uid) // uid
+            writeInt32(output, fileState.gid) // gid
+            writeInt64From32(output, fileState.bytes.size) // size
+            writeTimeSpec64(output, fileState.modifiedDate) // atime
+            writeTimeSpec64(output, fileState.modifiedDate) // mtime
+            writeTimeSpec64(output, fileState.modifiedDate) // ctime
+        }
+    }
+
+    private fun writeDentV2Entry(output: OutputStream, id: String, fileState: DeviceFileState?) {
+        writeStatV2Entry(output, id, fileState)
+        writeLengthPrefixedFileName(output, fileState)
+    }
+
+    private fun writeLengthPrefixedFileName(output: OutputStream, fileState: DeviceFileState?) {
+        if (fileState == null) {
+            writeInt32(output, 0)
+        } else {
+            val filePathBytes = fileState.fileName.toByteArray(UTF_8)
+            writeInt32(output, filePathBytes.size)
+            output.write(filePathBytes)
+        }
     }
 
     private fun readSyncRequest(input: InputStream): String {
@@ -218,16 +367,17 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
         output.write(bytes, offset, count)
     }
 
-    private fun writeDone(stream: OutputStream) {
-        stream.write("DONE".toByteArray(UTF_8))
+    private fun writeDone(output: OutputStream) {
+        writeEntryId(output, "DONE")
     }
 
-    private fun writeData(stream: OutputStream) {
-        stream.write("DATA".toByteArray(UTF_8))
+    private fun writeData(output: OutputStream) {
+        writeEntryId(output, "DATA")
     }
 
-    private fun writeStat(stream: OutputStream) {
-        stream.write("STAT".toByteArray(UTF_8))
+    private fun writeEntryId(output: OutputStream, id: String) {
+        assert(id.length == 4)
+        output.write(id.toByteArray(UTF_8))
     }
 
     private fun readInt32(input: InputStream): Int {
@@ -242,10 +392,25 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
         output.write(bytes)
     }
 
-    private fun throwUnsupportedRequest(output: OutputStream, syncRequest: String) {
-        val message = "Unsupported sync request '${syncRequest}'"
+    private fun writeInt64From32(output: OutputStream, value: Int) {
+        writeInt64(output, value.toLong())
+    }
+
+    private fun writeInt64(output: OutputStream, value: Long) {
+        // Note: This could be way more efficient, but fake adb is for testing only
+        val bytes = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(value).array()
+        output.write(bytes)
+    }
+
+    private fun writeTimeSpec64(output: OutputStream, value: Int) {
+        writeInt32(output, value) // seconds
+        writeInt32(output, 0)  // nanos
+    }
+
+    private fun writeUnsupportedSyncRequest(output: OutputStream, syncRequest: String) {
+        // See https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/daemon/file_sync_service.cpp;l=845
+        val message = "unknown command $syncRequest"
         sendSyncFail(output, message)
-        throw IOException(message)
     }
 
     private fun readExactly(input: InputStream, len: Int): ByteArray {

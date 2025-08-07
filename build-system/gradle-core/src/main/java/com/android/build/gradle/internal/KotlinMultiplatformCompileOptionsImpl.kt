@@ -19,6 +19,7 @@ package com.android.build.gradle.internal
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import org.gradle.api.JavaVersion
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 
 /**
  * Implementation of [CompileOptions] that is based on kotlin multiplatform APIs for internal use.
@@ -62,7 +63,8 @@ internal class KotlinMultiplatformCompileOptionsImpl(
     fun initFromCompilation(
         compilation: KotlinMultiplatformAndroidCompilation
     ) {
-        compilation.compilerOptions.options.jvmTarget.orNull?.let {
+        @Suppress("DEPRECATION_ERROR") // TODO(b/435359310): Remove this suppression
+        (compilation.compilerOptions as org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<KotlinJvmCompilerOptions>).options.jvmTarget.orNull?.let {
             _targetCompatibility = JavaVersion.toVersion(it.target)
             _sourceCompatibility = JavaVersion.toVersion(it.target)
         }

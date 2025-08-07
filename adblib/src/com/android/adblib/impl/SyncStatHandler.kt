@@ -39,21 +39,13 @@ internal class SyncStatHandler(private val connection: SyncConnection) {
     suspend fun stat(remoteFilePath: String) : FileStat? {
         return withContext(connection.session.ioDispatcher) {
             connection.startSyncRequest(syncRequestId, remoteFilePath)
-
-            // See https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SYNC.TXT
-            // 1. A four-byte sync response id "DENT" (or "DONE" if no more entries)
-            // 2. A four-byte integer representing file mode (or 0 if no more entries)
-            // 3. A four-byte integer representing file size (or 0 if no more entries)
-            // 4. A four-byte integer representing last modified time (or 0 if no more entries)
-            val buffer = connection.readExactly(SyncConnection.Constants.STAT_BUFFER_SIZE)
-            connection.parseStatBuffer(syncRequestId, SyncConnection.Constants.STAT_ID, buffer)
-                .let { fileStat ->
-                    if (fileStat.isError) {
-                        null
-                    } else {
-                        fileStat
-                    }
+            connection.readFileStat(syncRequestId).let { fileStat ->
+                if (fileStat.isError) {
+                    null
+                } else {
+                    fileStat
                 }
+            }
         }
     }
 }

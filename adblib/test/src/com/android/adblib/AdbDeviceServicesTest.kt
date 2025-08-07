@@ -2227,6 +2227,42 @@ class AdbDeviceServicesTest {
     }
 
     @Test
+    fun testSyncListWorks(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeDevice(fakeAdb)
+        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+
+        (1..9).forEach { index ->
+            val filePath = "/sdcard/foo/bar.bin_$index"
+            val fileBytes = createFileBytes(1_000)
+            val fileMode = RemoteFileMode.fromPosixPermissions(OWNER_READ, OWNER_WRITE)
+            val fileDate = FileTime.from(1_000_000, TimeUnit.SECONDS)
+            fakeDevice.createFile(
+                DeviceFileState(
+                    filePath,
+                    fileMode.modeBits,
+                    (fileDate.toMillis() / 1_000).toInt(),
+                    fileBytes
+                )
+            )
+        }
+
+        // Act
+        val entries = deviceServices.syncList(
+            device = deviceSelector,
+            remoteFilePath = "/sdcard/foo"
+        ).toList()
+
+        // Assert
+        Assert.assertEquals(9, entries.size)
+        entries.sortedBy { it.fileName } .forEachIndexed { index, entry ->
+            Assert.assertEquals("bar.bin_${index + 1}", entry.fileName)
+            Assert.assertEquals(1_000, entry.fileStat.size)
+            Assert.assertEquals("rw-------", entry.fileStat.remoteFileMode.posixString)
+        }
+    }
+
+    @Test
     fun testReverseForward(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeDevice(fakeAdb)

@@ -60,6 +60,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -68,6 +69,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Android SDK interface to {@link RepoManager}. Ensures that the proper android sdk-specific
@@ -238,13 +240,29 @@ public final class AndroidSdkHandler {
      *
      * @see #AndroidSdkHandler(Path, Path)
      */
-    @VisibleForTesting
+    @TestOnly
     public AndroidSdkHandler(
             @Nullable Path localPath,
             @Nullable Path androidFolder,
             @NonNull RepoManager repoManager) {
         this(localPath, androidFolder);
         mRepoManager = repoManager;
+    }
+
+    /**
+     * Don't use this either, unless you're in a unit test and need to specify a custom {@link
+     * RepoManager} and {@link LocalSourceProvider}.
+     *
+     * @see #AndroidSdkHandler(Path, Path)
+     */
+    @TestOnly
+    public AndroidSdkHandler(
+            @Nullable Path localPath,
+            @Nullable Path androidFolder,
+            @NonNull RepoManager repoManager,
+            @Nullable LocalSourceProvider userSourceProvider) {
+        this(localPath, androidFolder, repoManager);
+        mUserSourceProvider = userSourceProvider;
     }
 
     /**
@@ -515,6 +533,7 @@ public final class AndroidSdkHandler {
                 AndroidSdkHandler.getRepositoryModule(),
                 AndroidSdkHandler.getAddonModule(),
                 AndroidSdkHandler.getSysImgModule(),
+                AndroidSdkHandler.getCommonModule(),
                 RepoManager.getCommonModule(),
                 RepoManager.getGenericModule());
     }
@@ -533,7 +552,7 @@ public final class AndroidSdkHandler {
     public LocalSourceProvider getUserSourceProvider(@NonNull ProgressIndicator progress) {
         synchronized (lock) {
             if (mUserSourceProvider == null && mAndroidFolder != null) {
-                mUserSourceProvider = RepoConfig.createUserSourceProvider(mAndroidFolder);
+                mUserSourceProvider = createUserSourceProvider(mAndroidFolder);
                 if (mRepoManager != null) {
                     // If the RepoManager was already created by getSdkManager, this is already set.
                     // If this method is called before getSdkManager, it will be set when
@@ -545,6 +564,16 @@ public final class AndroidSdkHandler {
             }
             return mUserSourceProvider;
         }
+    }
+
+    /** Creates a customizable {@link RepositorySourceProvider}. */
+    @NonNull
+    public static LocalSourceProvider createUserSourceProvider(@NonNull Path androidFolder) {
+        return new LocalSourceProvider(
+                androidFolder.resolve(LOCAL_ADDONS_FILENAME),
+                ImmutableList.of(SYS_IMG_MODULE, ADDON_MODULE),
+                ImmutableList.of(
+                        SYS_IMG_MODULE, ADDON_MODULE, REPOSITORY_MODULE, COMMON_MODULE));
     }
 
     /**
@@ -637,16 +666,6 @@ public final class AndroidSdkHandler {
             }
         }
 
-        /** Creates a customizable {@link RepositorySourceProvider}. */
-        @NonNull
-        public static LocalSourceProvider createUserSourceProvider(@NonNull Path androidFolder) {
-            return new LocalSourceProvider(
-                    androidFolder.resolve(LOCAL_ADDONS_FILENAME),
-                    ImmutableList.of(SYS_IMG_MODULE, ADDON_MODULE),
-                    ImmutableList.of(
-                            SYS_IMG_MODULE, ADDON_MODULE, REPOSITORY_MODULE, COMMON_MODULE));
-        }
-
         @NonNull
         private static String getAddonListUrl(@NonNull ProgressIndicator progress) {
             return getBaseUrl(progress) + DEFAULT_SITE_LIST_FILENAME_PATTERN;
@@ -682,37 +701,36 @@ public final class AndroidSdkHandler {
         public RepoManager createRepoManager(
                 @Nullable Path localLocation,
                 @Nullable LocalSourceProvider userProvider) {
-            RepoManager result = RepoManager.create(localLocation);
-
-            // Create the schema modules etc. if they haven't been already.
-            result.registerSchemaModule(ADDON_MODULE);
-            result.registerSchemaModule(REPOSITORY_MODULE);
-            result.registerSchemaModule(SYS_IMG_MODULE);
-            result.registerSchemaModule(COMMON_MODULE);
-
-            result.registerSourceProvider(mRepositorySourceProvider);
+            List<RepositorySourceProvider> sourceProviders = new ArrayList<>();
+            sourceProviders.add(mRepositorySourceProvider);
             if (mPrevRepositorySourceProvider != null) {
-                result.registerSourceProvider(mPrevRepositorySourceProvider);
+                sourceProviders.add(mPrevRepositorySourceProvider);
             }
             String customSourceUrl = System.getProperty(CUSTOM_SOURCE_PROPERTY);
             if (customSourceUrl != null && !customSourceUrl.isEmpty()) {
-                result.registerSourceProvider(
+                sourceProviders.add(
                         new ConstantSourceProvider(
-                                customSourceUrl, "Custom Provider", result.getSchemaModules()));
+                                customSourceUrl, "Custom Provider", getAllModules()));
             }
-            result.registerSourceProvider(mAddonsListSourceProvider);
+            sourceProviders.add(mAddonsListSourceProvider);
             if (userProvider != null) {
-                result.registerSourceProvider(userProvider);
+                sourceProviders.add(userProvider);
+            }
+
+            RepoManager result =
+                RepoManager.createRepoManager(
+                    localLocation,
+                    getAllModules(),
+                    sourceProviders,
+                    // If we have a local sdk path set, set up the old-style loader so we can parse
+                    // any legacy packages.
+                    localLocation != null ? new LegacyLocalRepoLoader(localLocation) : null,
+                    new LegacyRemoteRepoLoader());
+
+            if (userProvider != null) {
                 // The customizable source provider needs a handle on the repo manager, so it can
                 // mark the cached packages invalid if the sources change.
                 userProvider.setRepoManager(result);
-            }
-            result.setFallbackRemoteRepoLoader(new LegacyRemoteRepoLoader());
-
-            if (localLocation != null) {
-                // If we have a local sdk path set, set up the old-style loader so we can parse
-                // any legacy packages.
-                result.setFallbackLocalRepoLoader(new LegacyLocalRepoLoader(localLocation));
             }
 
             return result;

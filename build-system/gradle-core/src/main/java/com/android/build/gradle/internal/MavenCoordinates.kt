@@ -67,7 +67,7 @@ enum class MavenCoordinates (val group: String, val artifact: String,  val defau
     ORG_JETBRAINS_KOTLIN_KOTLIN_COMPILER_EMBEDDABLE(
         "org.jetbrains.kotlin",
         "kotlin-compiler-embeddable",
-        "2.1.20"
+        "2.2.0"
     ),
     ORG_JETBRAINS_KOTLIN_KOTLIN_STDLIB(
         "org.jetbrains.kotlin",

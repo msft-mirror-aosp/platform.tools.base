@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+#include "tools/base/deploy/installer/records.h"
+
 namespace deploy {
 
 struct Dump {
@@ -48,11 +50,22 @@ class ApkArchive {
   ~ApkArchive();
   Dump ExtractMetadata() noexcept;
 
+  struct Entry {
+    LFHRecord* lfh;
+    std::string_view name;
+    uint8_t* payload;
+
+    inline size_t PayloadSize() const { return lfh->compressedSize; }
+  };
+
+  // Returns file entries of a the APK archive.
+  std::vector<Entry> GetEntries() const noexcept;
+
  private:
   std::unique_ptr<std::string> ReadMetadata(Location loc) const noexcept;
 
   // Retrieve the location of the Central Directory Record.
-  Location GetCDLocation() noexcept;
+  Location GetCDLocation() const noexcept;
 
   // Retrieve the location of the signature block starting from Central
   // Directory Record
@@ -64,7 +77,7 @@ class ApkArchive {
   uint8_t* FindEndOfCDRecord() const noexcept;
 
   // Find Central Directory Record, starting from the end of the file.
-  Location FindCDRecord(const uint8_t* cursor) noexcept;
+  Location FindCDRecord(const uint8_t* cursor) const noexcept;
 
   // Open apk and mmap it.
   bool Prepare(const std::string& path) noexcept;

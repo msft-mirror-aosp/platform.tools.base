@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 // LiveEditRestrictedSuspendLambda.
 public final class ProxyClassHandler implements InvocationHandler {
     private final LiveEditContext context;
+    private final VersionedBytecode bytecode;
 
     private final Type type;
     private final Class<?> superclass;
@@ -65,10 +66,12 @@ public final class ProxyClassHandler implements InvocationHandler {
 
         this.fields = new HashMap<>(defaultFieldValues);
         this.fields.putAll(defaultFieldValues);
+
+        this.bytecode = new VersionedBytecode(context.getClass(type.getInternalName()));
     }
 
     Map<String, Object> getSourceLocationInfo() {
-        ProxySourceLocation location = ProxySourceLocation.findSourceLocation(currentBytecode());
+        ProxySourceLocation location = ProxySourceLocation.findSourceLocation(bytecode.get());
         if (location != null) {
             return location.asMap();
         }
@@ -133,7 +136,7 @@ public final class ProxyClassHandler implements InvocationHandler {
      * proxy interface (see Proxies.java)
      */
     public boolean implementsMethod(String name, String desc) {
-        return currentBytecode().getMethod(name, desc) != null;
+        return bytecode.get().getMethod(name, desc) != null;
     }
 
     /**
@@ -146,7 +149,7 @@ public final class ProxyClassHandler implements InvocationHandler {
      * proxy interface (see Proxies.java)
      */
     public Object invokeMethod(Object instance, String name, String desc, Object[] args) {
-        Interpretable bytecode = currentBytecode();
+        Interpretable bytecode = this.bytecode.get();
         MethodBodyEvaluator evaluator = new MethodBodyEvaluator(context, bytecode, name, desc);
         return evaluator.eval(instance, bytecode.getInternalName(), args);
     }
@@ -197,10 +200,22 @@ public final class ProxyClassHandler implements InvocationHandler {
         }
     }
 
-    // Placeholder until we implement bytecode versioning; first step in decoupling proxy handlers
-    // (implicitly versioned & instanced) from LiveEditClass (not versioned; stores all bytecode and
-    // implicitly represents the latest version)
-    private Interpretable currentBytecode() {
-        return context.getClass(type.getInternalName()).getBytecode();
+    // Wrapper class to ensure that the class bytecode always is checked for updates before use.
+    private static final class VersionedBytecode {
+        private final LiveEditClass clazz;
+        private Interpretable bytecode;
+
+        VersionedBytecode(LiveEditClass clazz) {
+            this.clazz = clazz;
+            this.bytecode = clazz.getLatestBytecode();
+        }
+
+        Interpretable get() {
+            Interpretable latest = clazz.getLatestBytecode();
+            if (latest != bytecode && BytecodeValidator.checkCompatibleUpdate(bytecode, latest)) {
+                bytecode = latest;
+            }
+            return bytecode;
+        }
     }
 }
