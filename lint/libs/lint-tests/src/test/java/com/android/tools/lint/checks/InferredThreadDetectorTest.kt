@@ -1725,6 +1725,56 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testTypeParamInstantiation() {
+    lint()
+      .files(
+        java(
+            """
+            import androidx.annotation.UiThread;
+            import androidx.annotation.WorkerThread;
+
+            class Test {
+              interface Box<T> {
+                T unbox();
+              }
+
+              static<T> T indirectlyUnbox(Box<T> b) {
+                  return b.unbox();
+              }
+
+              static class Worker {
+                  @WorkerThread void work() { }
+              }
+
+              @UiThread static void ui(Box<Worker> b) {
+                  indirectlyUnbox(b).work();
+              }
+
+              /* TODO b/437405527
+              interface WorkerBox extends Box<Worker> { }
+              @UiThread static void ui1(WorkerBox b) {
+                  indirectlyUnbox(b).work();
+              }
+              */
+            }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/Test.java:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                indirectlyUnbox(b).work();
+                                   ~~~~~~
+          1 error
+        """
+          .trimIndent()
+      )
+  }
+
   /* Old tests from [ThreadDetectorTest] */
 
   fun testThreading() {

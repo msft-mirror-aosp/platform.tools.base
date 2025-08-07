@@ -130,9 +130,35 @@ internal data class Env<out FX>(
 
     internal fun <FX> bindParams(
       typeLattice: Lattice<Type<FX>>,
+      typeBounds: TypeBounds<FX>,
       params: List<Type<FX>>,
       args: List<Type<FX>>,
-    ): Env<FX> = empty.unify(typeLattice, params, args)
+    ): Env<FX> {
+      var env = empty.unify(typeLattice, params, args)
+      for ((param, arg) in params zip args) {
+        if (param !is Type.Sym.Param) continue
+        val bounds = typeBounds[param.name] ?: continue
+
+        fun unify(arg: Type.Application<FX>) = { bound: Type.Application<FX> ->
+          if (bound.constructor == arg.constructor)
+            for ((x, y) in bound.args zip arg.args) env = env.unify(typeLattice, x, y)
+        }
+
+        fun unify(arg: Type.Union<FX>) = { bound: Type.Application<FX> ->
+          for (rhs in arg.cases) if (rhs is Type.Application) unify(rhs)(bound)
+        }
+
+        val unifyWithArg: (Type.Application<FX>) -> Unit =
+          when (arg) {
+            is Type.Application -> unify(arg)
+            is Type.Union -> unify(arg)
+            else -> continue
+          }
+
+        for (bound in bounds) if (bound is Type.Application) unifyWithArg(bound)
+      }
+      return env
+    }
   }
 }
 

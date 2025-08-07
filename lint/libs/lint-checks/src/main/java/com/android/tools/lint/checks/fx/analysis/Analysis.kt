@@ -38,6 +38,7 @@ import com.android.tools.lint.checks.fx.result.PsiClassAdapter
 import com.android.tools.lint.checks.fx.result.PsiTypeAdapter
 import com.android.tools.lint.checks.fx.result.Result
 import com.android.tools.lint.checks.fx.result.Type
+import com.android.tools.lint.checks.fx.result.TypeBounds
 import com.android.tools.lint.checks.fx.result.TypeEffectConstraintLattice
 import com.android.tools.lint.checks.fx.result.at
 import com.android.tools.lint.checks.fx.result.errorSetLattice
@@ -1050,7 +1051,7 @@ internal open class Analysis<FX : Any>(
                 is Inapplicable -> effectLattice.bottom
               // throw IllegalStateException("Applying abstract method $method")
               }
-            apply(rec, methodDefn.domains, t, methodFx, args)
+            apply(rec, methodDefn.initEnvironment.types, methodDefn.domains, t, methodFx, args)
           }
         }
       is Type.Lambda -> {
@@ -1059,20 +1060,21 @@ internal open class Analysis<FX : Any>(
         // If the functional interface is something like `suspend () -> _`, `args` may have the
         // explicit one for the kontinuation
         val truncatedArgs = (listOf(method) + args).subList(0, xs.size)
-        apply(rec, xs, t, fx, truncatedArgs)
+        apply(rec, persistentMapOf(), xs, t, fx, truncatedArgs)
       }
     }
 
   /** Instantiate polymorphic [methodType] and [methodFx] at [args] */
   private fun apply(
     rec: (Point<FX>) -> Ans<FX>,
+    typeBounds: TypeBounds<FX>,
     methodParams: List<Type<FX>>,
     methodType: Type<FX>,
     methodFx: Effect<FX>,
     args: List<Type<FX>>,
   ): InstAns<FX> {
     val (fxBound, fxSyms, constraints) = methodFx
-    val env = Env.bindParams(typeLattice, methodParams, args)
+    val env = Env.bindParams(typeLattice, typeBounds, methodParams, args)
     val appT = env.instType(rec, methodType)
     val (appConstraint, constraintFails) = env.instConstraint(rec, constraints)
     val appFx =
