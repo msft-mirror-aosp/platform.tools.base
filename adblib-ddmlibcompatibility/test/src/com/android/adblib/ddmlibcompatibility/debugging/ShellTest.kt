@@ -16,21 +16,16 @@
 package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.AdbDeviceFailResponseException
-import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
-import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.isOnline
-import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
+import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.MultiLineReceiver
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -232,19 +227,7 @@ class ShellTest {
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        return waitForOnlineConnectedDevice(fakeAdbRule.adbSession, serialNumber)
-    }
-
-    private suspend fun waitForOnlineConnectedDevice(
-        session: AdbSession,
-        serialNumber: String
-    ): ConnectedDevice {
-        return session.connectedDevicesTracker.connectedDevices
-            .mapNotNull { connectedDevices ->
-                connectedDevices.firstOrNull { device ->
-                    device.isOnline && device.serialNumber == serialNumber
-                }
-            }.first()
+        return fakeAdbRule.adbSession.waitForOnlineConnectedDevice(serialNumber)
     }
 }
 
