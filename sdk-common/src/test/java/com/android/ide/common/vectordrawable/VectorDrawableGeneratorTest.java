@@ -149,9 +149,14 @@ public class VectorDrawableGeneratorTest extends TestCase {
 
     private void checkNoTrailingSpaces(@NonNull String xmlContent) throws Exception {
         String[] lines = xmlContent.split("(\r|\n|\r\n)+");
-        Arrays.stream(lines).forEach(line -> {
-            assertEquals("Unexpected trailing whitespace in: \"" + line + "\"", 0, trailingWhiteSpaces(line));
-        });
+        Arrays.stream(lines)
+                .forEach(
+                        line -> {
+                            assertEquals(
+                                    "Unexpected trailing whitespace in: \"" + line + "\"",
+                                    0,
+                                    trailingWhiteSpaces(line));
+                        });
     }
 
     private int trailingWhiteSpaces(@NonNull String line) {
@@ -289,7 +294,8 @@ public class VectorDrawableGeneratorTest extends TestCase {
     public void testParseError() throws Exception {
         checkSvgConversionAndContainsError(
                 "test_parse_error",
-                "ERROR: Element type \"path\" must be followed by either attribute specifications, \">\" or \"/>\".");
+                "ERROR: Element type \"path\" must be followed by either attribute specifications,"
+                        + " \">\" or \"/>\".");
     }
 
     public void testSvgLineToMoveTo() throws Exception {
@@ -591,9 +597,11 @@ public class VectorDrawableGeneratorTest extends TestCase {
     public void testSvgDefsUseCircularDependency() throws Exception {
         checkSvgConversionAndContainsError(
                 "test_defs_use_circular_dependency",
-                "ERROR @ line 6: Circular dependency of <use> nodes: hhh -> hhh\n" +
-                "ERROR @ line 9: Circular dependency of <use> nodes: ccc -> ddd (line 11) -> eee (line 10) -> ccc\n" +
-                "ERROR @ line 12: Circular dependency of <use> nodes: ggg -> fff (line 8) -> ggg");
+                "ERROR @ line 6: Circular dependency of <use> nodes: hhh -> hhh\n"
+                    + "ERROR @ line 9: Circular dependency of <use> nodes: ccc -> ddd (line 11) ->"
+                    + " eee (line 10) -> ccc\n"
+                    + "ERROR @ line 12: Circular dependency of <use> nodes: ggg -> fff (line 8) ->"
+                    + " ggg");
     }
 
     public void testSvgUnsupportedElement() throws Exception {
@@ -853,6 +861,23 @@ public class VectorDrawableGeneratorTest extends TestCase {
 
     public void testSvgGradientLinearHref() throws Exception {
         checkSvgConversion("test_gradient_linear_href");
+    }
+
+    public void testSvgGradientLinearUnsupportedColor() throws Exception {
+        String testFileName = "test_gradient_linear_unsupported_color";
+        String incomingFileName = testFileName + ".svg";
+        Path parentDir =
+                TestResources.getDirectory(getClass(), "/testData/vectordrawable").toPath();
+        Path incomingFile = parentDir.resolve(incomingFileName);
+
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        String errorLog = Svg2Vector.parseSvgToXml(incomingFile, outStream);
+        String xmlContent = outStream.toString();
+
+        assertFalse("VectorDrawable XML should not be empty", xmlContent.isEmpty());
+        assertTrue(
+                "Expected warning about unsupported color",
+                errorLog.contains("Unsupported color value ?android:color/white"));
     }
 
     public void testSvgGradientTransform() throws Exception {

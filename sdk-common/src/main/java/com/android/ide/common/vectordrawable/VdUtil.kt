@@ -54,6 +54,7 @@ private const val ALPHA_MASK = 0xFF shl 24
  *
  * @param color the color value string
  * @return the integer color value
+ * @throws IllegalArgumentException if [color] is not in a valid format
  */
 fun parseColorValue(color: String): Int {
   require(color.startsWith("#")) { "Invalid color value $color" }

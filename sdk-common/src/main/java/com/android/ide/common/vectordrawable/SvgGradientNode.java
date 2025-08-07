@@ -21,7 +21,11 @@ import static com.android.utils.DecimalUtils.trimInsignificantZeros;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.vectordrawable.PathParser.ParseMode;
+
 import com.google.common.collect.ImmutableMap;
+
+import org.w3c.dom.Element;
+
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
@@ -34,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.w3c.dom.Element;
 
 /** Represents an SVG gradient that is referenced by a SvgLeafNode. */
 class SvgGradientNode extends SvgNode {
@@ -389,8 +392,13 @@ class SvgGradientNode extends SvgNode {
                 logWarning("Unsupported opacity value");
                 opacity = 1;
             }
-            int color1 = VdPath.applyAlpha(parseColorValue(color), opacity);
-            color = String.format("#%08X", color1);
+            int color1;
+            try {
+                color1 = VdPath.applyAlpha(parseColorValue(color), opacity);
+                color = String.format("#%08X", color1);
+            } catch (IllegalArgumentException e) {
+                logWarning("Unsupported color value " + color);
+            }
 
             writer.write(indent);
             writer.write("<item android:offset=\"");
