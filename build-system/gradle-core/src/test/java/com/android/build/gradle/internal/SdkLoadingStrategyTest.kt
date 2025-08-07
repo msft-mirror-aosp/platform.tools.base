@@ -30,7 +30,6 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.BuildToolInfo
 import com.google.common.truth.Truth.assertThat
-import org.gradle.api.internal.provider.DefaultProviderFactory
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -942,7 +941,7 @@ class SdkLoadingStrategyTest {
               assertThat(sdkDirectLoadingStrategy.getApiVersionsFile()).isNull()
         }
 
-        val buildToolDirectory = sdkRoot.resolve("build-tools/35.0.0")
+        val buildToolDirectory = sdkRoot.resolve("build-tools/${SdkConstants.CURRENT_BUILD_TOOLS_VERSION}")
         assertThat(sdkDirectLoadingStrategy.getBuildToolsRevision()).isEqualTo(
             ToolsRevisionUtils.MIN_BUILD_TOOLS_REV)
         assertThat(sdkDirectLoadingStrategy.getAidlExecutable()).isEqualTo(

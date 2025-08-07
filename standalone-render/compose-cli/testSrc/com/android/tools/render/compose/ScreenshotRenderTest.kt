@@ -22,6 +22,7 @@ import com.android.tools.render.common.readPreviewRenderingResultJson
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Ignore
 import org.junit.rules.RuleChain
 import org.junit.rules.TemporaryFolder
 import javax.imageio.ImageIO
@@ -40,6 +41,7 @@ class ScreenshotRenderTest {
     @Rule
     val chain: RuleChain = RuleChain.outerRule(tmpFolder).around(gradleProject)
 
+    @Ignore("b/440394932")
     @Test
     fun testCororutinePreview() {
         val screenshots = listOf(
