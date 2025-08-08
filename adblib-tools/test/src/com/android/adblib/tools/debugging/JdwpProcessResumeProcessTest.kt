@@ -15,16 +15,16 @@
  */
 package com.android.adblib.tools.debugging
 
-import com.android.adblib.AdbLogger
 import com.android.adblib.AdbSession
 import com.android.adblib.SOCKET_CONNECT_TIMEOUT_MS
+import com.android.adblib.serialNumber
 import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
-import com.android.adblib.testingutils.setTestLoggerMinLevel
 import com.android.adblib.tools.AdbLibToolsProperties
+import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
 import com.android.adblib.tools.debugging.processinventory.installProcessInventoryJdwpProcessCommandDispatcherFactory
@@ -34,17 +34,15 @@ import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
-import kotlinx.coroutines.flow.Flow
+import java.net.InetSocketAddress
+import java.time.Duration
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import java.net.InetSocketAddress
-import java.time.Duration
 
 class JdwpProcessResumeProcessTest {
 
@@ -58,7 +56,6 @@ class JdwpProcessResumeProcessTest {
     @Rule
     val closeables = CloseablesRule()
 
-    @Ignore("Will be enabled when FakeAbdServer handles WAIT packet correctly")
     @Test
     fun testJdwpProcessResumeWorksWithJdwpPropertiesCollector(): Unit = runBlockingWithTimeout {
         // Prepare
@@ -72,42 +69,64 @@ class JdwpProcessResumeProcessTest {
             Duration.ofSeconds(5)
         )
 
-        // Act: create 2 adb sessions with one device
+        // Accelerate JDWP properties collection to make test faster
+        fakeAdbRule.host.setPropertyValue(
+            AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT,
+            Duration.ofMillis(20)
+        )
+
+        // Act: create 2 adb sessions with one device, and call `resumeProcess`
         val jdwpProcessList = createDeviceAndProcessInAdbSessions(
             deviceApiLevel = 30 /* ensure fake device does not support app_info */,
             adbSessions = createTwoSession()
         )
 
-        val processAndPropertiesFlows = jdwpProcessList.map { jdwpProcess ->
-            jdwpProcess.jdwpPropertiesCollector.stateFlow.map { properties ->
-                Pair(jdwpProcess, properties)
-            }
-        }
-        // With JDWP properties collector, only one of the processes will ever have
-        // the `isWaitingForDebugger` set to true, because only one JDWP session can be
-        // active at a time
-        val waitingProcessAndProperties = combine(processAndPropertiesFlows) { processAndPropertiesArray ->
-            // Find any process that has `isWaitingForDebugger` set to `true`
-            processAndPropertiesArray.firstOrNull { (_, jdwpProperties) ->
-                jdwpProperties.isWaitingForDebugger.isValue(true)
-            }
-        }.firstNotNull()
-
-        // Calls `resumeProcess` on any jdwp process that is **not** `isWaitingJdwpProcess`,
-        // so that we force a dispatch to the inventory server
-        jdwpProcessList.filter { jdwpProcess  ->
-            jdwpProcess !== waitingProcessAndProperties.first
-        }.forEach {
-            it.resumeProcess()
+        // All processes should reach `isWaitingForDebugger`==`false` (since the Process Inventory
+        // server is active)
+        combine(jdwpProcessList.map { it.jdwpPropertiesCollector.stateFlow }) {
+            it.toList()
+        }.first {
+            it.all { jdwpProcessProperties -> jdwpProcessProperties.isWaitingForDebugger.isValue(true) }
         }
 
-        // Assert: All processes should now be in the `isWaitingForDebugger` == false
+        // Call `resumeProcess` on the JdwpProcess that does **not** have a JDWP connection open
+        // (We could call on any process, but picking one makes the test more deterministic)
+        val processWithActivationCountFlow = jdwpProcessList.map { jdwpProcess ->
+            (jdwpProcess as AbstractJdwpProcess).jdwpSessionActivationCount.map {
+                Pair(jdwpProcess, it)
+            }
+        }
+        // Find the first process that has an `activationCount == 0`.
+        // Note: We cannot directly check for "0", as there is retry behavior, so we need
+        // to "wait" for the flow values to have a value of "0".
+        // We know there will be one at some point because 1) only one has a value of "1"
+        // consistently, and 2) the other ones retry only every 5 seconds, so there is plenty
+        // of time to find a value of "0" for those.
+        val processWithNoJdwpConnectionOpen = combine(processWithActivationCountFlow) {
+            it.toList()
+        }.first {
+            it.firstOrNull { (_, activationCount) -> activationCount == 0 } != null
+        }.first().first
+
+        processWithNoJdwpConnectionOpen.resumeProcess()
+
+        // Assert
         Assert.assertEquals(2, jdwpProcessList.size)
-        jdwpProcessList.forEach { jdwpProcess ->
-            jdwpProcess.jdwpPropertiesCollector.stateFlow.first {
-                it.isWaitingForDebugger.isValue(false).also {
-                    println("$jdwpProcess - $it")
-                }
+
+        // The `Client` process (in FakeAdb) should have been resumed
+        jdwpProcessList.first().also { jdwpProcess ->
+            val client = fakeAdbRule.fakeAdb.device(jdwpProcess.device.serialNumber).getClient(jdwpProcess.pid)
+            Assert.assertNotNull(client)
+            Assert.assertFalse(client!!.waitingForDebugger)
+        }
+
+        // All processes should reach `isWaitingForDebugger`==`false` (since the Process Inventory
+        // server is active)
+        combine(jdwpProcessList.map { it.jdwpPropertiesCollector.stateFlow }) {
+            it.toList()
+        }.first {
+            it.all { jdwpProcessProperties ->
+                jdwpProcessProperties.isWaitingForDebugger.isValue(false)
             }
         }
     }
@@ -179,6 +198,13 @@ class JdwpProcessResumeProcessTest {
             val process = connectedDevice.jdwpProcessTracker.processesFlow.mapNotNull { processList ->
                 processList.firstOrNull { it.pid == pid }
             }.first()
+
+            if (!connectedDevice.isAppInfoSupported()) {
+                // Ensure JDWP properties collection and external command dispatcher are started
+                process.jdwpPropertiesCollector.stateFlow.first {
+                    it.packageName.hasValue
+                }
+            }
             process
         }
 
@@ -224,7 +250,6 @@ class JdwpProcessResumeProcessTest {
     }
 
     private fun AdbSession.setupForTest() {
-        this.host.setTestLoggerMinLevel(AdbLogger.Level.DEBUG)
         val sessionId = this.hashCode()
         val config = TestServerConfig(sessionId)
         val server = ProcessInventoryServerConnection.create(this, config).also {
@@ -257,10 +282,6 @@ class JdwpProcessResumeProcessTest {
 
     private fun <T : AutoCloseable> registerCloseable(item: T): T {
         return closeables.register(item)
-    }
-
-    private suspend fun <T : Any> Flow<T?>.firstNotNull(): T {
-        return checkNotNull(this.first { it != null })
     }
 
     private fun <T: Any> OptionalValue<T>.isValue(value: T): Boolean {

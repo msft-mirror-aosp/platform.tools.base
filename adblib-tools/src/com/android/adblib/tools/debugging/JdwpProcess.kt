@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbLogger
-import com.android.adblib.AdbSocketChannel
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
@@ -30,6 +29,7 @@ import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.utils.runAlongOtherScope
 import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
+import kotlin.use
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -154,7 +154,7 @@ suspend fun JdwpProcess.resumeProcess() {
  * [JdwpProcessProperties.isWaitingForDebugger] state.
  */
 internal suspend fun JdwpProcess.resumeProcessImpl() {
-    val logger = adbLogger().withProcessPrefix(this.device, pid).withPrefix("resumeProcessImpl() - ")
+    val logger = adbLogger().withPrefix("resumeProcessImpl() - ")
 
     // Note: we need to use `runAlongOtherScope` because we are waiting on a value from a
     // `StateFlow` and `StateFlows` never end.
@@ -167,14 +167,74 @@ internal suspend fun JdwpProcess.resumeProcessImpl() {
     logger.debug { "isWaitingForDebugger = $isWaitingForDebugger" }
 
     if (isWaitingForDebugger) {
-        logger.debug { "Opening JDWP connection to the process to resume its execution" }
-        withJdwpSession {
-            // Sends an "VM_ID_SIZES" command packet and wait for the reply. The Android VM (Art)
-            // considers this as a signal to "resume" the JDWP process execution.
-            val idSizesCommand = JdwpPacketBuilders.Commands.vmIdSizes(nextPacketId())
-            sendAndReceiveCommand(idSizesCommand)
+        if (device.isAppInfoSupported()) {
+            // If `app_info` is supported, we can open a direct JDWP connection to the
+            // process (via the `jdwp:` service) to resume the process. `app_info` tracks the
+            // `isWaitingForDebugger` status from the Art VM on the device, so there is no
+            // need to go through the JDWP Proxy Server.
+            resumeProcessUsingDirectJdwpConnection()
+        } else {
+            // If `app_info` is **not** supported, we need to open a JDWP connection to
+            // the process through the JDWP Proxy Server so that it can see the process is
+            // resumed by inspecting the JDWP packets. This is required as the Art VM
+            // does not have the capability to inform us the process has been resumed.
+            resumeProcessUsingJdwpProxySocketServer()
         }
         logger.debug { "Process execution should now be resumed" }
+    }
+}
+
+private suspend fun JdwpProcess.resumeProcessUsingDirectJdwpConnection() {
+    require(device.isAppInfoSupported()) {
+        "This method should only be called if the device supports `app_info`"
+    }
+    val logger = adbLogger().withPrefix("resumeProcessUsingDirectJdwpConnection() - ")
+    logger.debug { "Opening direct JDWP connection to resume process execution" }
+    withJdwpSession {
+        // Sends an "VM_ID_SIZES" command packet and wait for the reply. The Android VM (Art)
+        // considers this as a signal to "resume" the JDWP process execution.
+        val idSizesCommand = JdwpPacketBuilders.Commands.vmIdSizes(nextPacketId())
+        sendAndReceiveCommand(idSizesCommand)
+    }
+}
+
+private suspend fun JdwpProcess.resumeProcessUsingJdwpProxySocketServer() {
+    require(!device.isAppInfoSupported()) {
+        "This method should not be called if the device supports `app_info`"
+    }
+    val logger = adbLogger().withPrefix("resumeProcessUsingJdwpProxySocketServer() - ")
+    logger.debug { "Opening JDWP connection to JDWP Proxy Server to resume process execution" }
+
+    // Wait for JDWP proxy server to be ready.
+    val status = jdwpProxySocketServer.proxyStatusFlow.first { it.socketAddress.hasValue }
+
+    // Connect to JDWP Proxy server and send a `ID_SIZES` jdwp packet
+    device.session.channelFactory.connectSocket(status.socketAddress.getOrThrow()).use { socket ->
+        logger.debug { "Connection to Debugger proxy successfully established: $socket" }
+        JdwpSession.wrapSocketChannel(
+            device = device,
+            channel = socket,
+            pid = pid,
+            nextPacketIdBase = 100
+        ).use { jdwpSession ->
+            logger.debug { "jdwp session opened successfully = $jdwpSession" }
+            // Sends an "VM_ID_SIZES" command packet and wait for the reply. The Android VM (Art)
+            // considers this as a signal to "resume" the JDWP process execution.
+            val idSizesCommand =
+                JdwpPacketBuilders.Commands.vmIdSizes(jdwpSession.nextPacketId())
+            jdwpSession.sendPacket(idSizesCommand)
+            logger.verbose { "jdwp session packet sent: $idSizesCommand" }
+
+            // Wait for reply to the VM_ID_SIZES command packet, as an indicator the process
+            // has been resumed by the Art VM.
+            while (true) {
+                val reply = jdwpSession.receivePacket()
+                logger.verbose { "jdwp session packet received: $reply" }
+                if (reply.isReply && reply.id == idSizesCommand.id) {
+                    break
+                }
+            }
+        }
     }
 }
 
