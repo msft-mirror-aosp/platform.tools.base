@@ -50,6 +50,7 @@ public class ApkAnalyzerImplTest {
     private ByteArrayOutputStream baos;
     private AaptInvoker aaptInvoker;
     private Path apk;
+    private Path multidexContainerApk;
 
     @Before
     public void setUp() throws Exception {
@@ -62,6 +63,7 @@ public class ApkAnalyzerImplTest {
         PrintStream ps = new PrintStream(baos);
         aaptInvoker = mock(AaptInvoker.class);
         apk = TestResources.getFile("/test.apk").toPath();
+        multidexContainerApk = TestResources.getFile("/test-multidex-container.apk").toPath();
         impl = new ApkAnalyzerImpl(ps, aaptInvoker);
     }
 
@@ -392,9 +394,38 @@ public class ApkAnalyzerImplTest {
     }
 
     @Test
+    public void dexPackagesMultidexContainerTest() throws IOException {
+        impl.dexPackages(multidexContainerApk, null, null, null, null, false, false, null);
+        assertEquals(
+                "P d 4\t6\t296\t<TOTAL>\n"
+                        + "C d 2\t2\t136\tMain\n"
+                        + "M d 1\t1\t38\tMain <init>()\n"
+                        + "M d 1\t1\t58\tMain void main(java.lang.String[])\n"
+                        + "C d 2\t2\t128\tSecond\n"
+                        + "M d 1\t1\t46\tSecond <init>()\n"
+                        + "M d 1\t1\t42\tSecond java.lang.String getSecond()\n"
+                        + "P r 0\t2\t32\tjava\n"
+                        + "P r 0\t1\t24\tjava.lang\n"
+                        + "C r 0\t1\t16\tjava.lang.Object\n"
+                        + "M r 0\t1\t16\tjava.lang.Object <init>()\n"
+                        + "C r 0\t0\t8\tjava.lang.System\n"
+                        + "F r 0\t0\t8\tjava.lang.System java.io.PrintStream out\n"
+                        + "P r 0\t1\t8\tjava.io\n"
+                        + "C r 0\t1\t8\tjava.io.PrintStream\n"
+                        + "M r 0\t1\t8\tjava.io.PrintStream void println(java.lang.String)\n",
+                baos.toString());
+    }
+
+    @Test
     public void dexReferencesTest() throws IOException {
         impl.dexReferences(apk, null);
         assertEquals("classes.dex\t7\n", baos.toString());
+    }
+
+    @Test
+    public void dexReferencesMultidexContainerTest() throws IOException {
+        impl.dexReferences(multidexContainerApk, null);
+        assertEquals("classes.dex\t6\nclasses.dex/2\t3\n", baos.toString());
     }
 
     @Test
@@ -469,6 +500,12 @@ public class ApkAnalyzerImplTest {
     public void dexListTest() throws IOException {
         impl.dexList(apk);
         assertEquals("classes.dex\n", baos.toString());
+    }
+
+    @Test
+    public void dexListMultidexContainerTest() throws IOException {
+        impl.dexList(multidexContainerApk);
+        assertEquals("classes.dex\nclasses.dex/2\n", baos.toString());
     }
 
     @Test

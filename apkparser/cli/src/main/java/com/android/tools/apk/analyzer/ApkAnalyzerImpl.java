@@ -21,7 +21,6 @@ import com.android.ide.common.xml.AndroidManifestParser;
 import com.android.ide.common.xml.ManifestData;
 import com.android.tools.apk.analyzer.dex.DexDisassembler;
 import com.android.tools.apk.analyzer.dex.DexFileStats;
-import com.android.tools.apk.analyzer.dex.DexFiles;
 import com.android.tools.apk.analyzer.dex.DexReferences;
 import com.android.tools.apk.analyzer.dex.DexViewFilters;
 import com.android.tools.apk.analyzer.dex.PackageTreeCreator;
@@ -39,14 +38,16 @@ import com.android.tools.apk.analyzer.internal.SigUtils;
 import com.android.tools.proguard.ProguardMap;
 import com.android.tools.proguard.ProguardSeedsMap;
 import com.android.tools.proguard.ProguardUsagesMap;
+import com.android.tools.smali.dexlib2.DexFileFactory;
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.iface.reference.Reference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableTypeReference;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceFile;
 import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceValue;
@@ -72,6 +73,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -81,7 +83,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
@@ -395,14 +396,11 @@ public class ApkAnalyzerImpl {
         ProguardMappings proguardMappings =
                 getProguardMappings(proguardFolderPath, proguardMapFilePath, null, null);
 
-        try (ArchiveContext archiveContext = Archives.open(apk)) {
-            Collection<Path> dexPaths =
-                    getDexFilesFrom(archiveContext.getArchive().getContentRoot());
-
+        try {
             boolean dexFound = false;
-            for (Path dexPath : dexPaths) {
-                DexDisassembler disassembler =
-                        new DexDisassembler(DexFiles.getDexFile(dexPath), proguardMappings.map);
+            for (DexBackedDexFile dexFile :
+                    getSelectedDexFiles(apk, /* dexFilePaths= */ null).values()) {
+                DexDisassembler disassembler = new DexDisassembler(dexFile, proguardMappings.map);
                 if (method == null) {
                     try {
                         out.println(disassembler.disassembleClass(fqcn));
@@ -459,13 +457,8 @@ public class ApkAnalyzerImpl {
                         proguardUsagesFilePath);
         boolean deobfuscateNames = proguardMappings.map != null;
 
-        try (ArchiveContext archiveContext = Archives.open(apk)) {
-            Collection<Path> dexPaths = getSelectedDexFiles(dexFilePaths, archiveContext);
-            Map<Path, DexBackedDexFile> dexFiles = Maps.newHashMapWithExpectedSize(dexPaths.size());
-            for (Path dexPath : dexPaths) {
-                dexFiles.put(dexPath, DexFiles.getDexFile(dexPath));
-            }
-
+        try {
+            Map<Path, DexBackedDexFile> dexFiles = getSelectedDexFiles(apk, dexFilePaths);
             PackageTreeCreator treeCreator =
                     new PackageTreeCreator(proguardMappings, deobfuscateNames, false);
             DexPackageNode rootNode = treeCreator.constructPackageTree(dexFiles);
@@ -631,13 +624,12 @@ public class ApkAnalyzerImpl {
     }
 
     public void dexReferences(@NotNull Path apk, @Nullable List<String> dexFilePaths) {
-        try (ArchiveContext archiveContext = Archives.open(apk)) {
-            Collection<Path> dexPaths = getSelectedDexFiles(dexFilePaths, archiveContext);
-            for (Path dexPath : dexPaths) {
-                DexFileStats stats =
-                        DexFileStats.create(Collections.singleton(DexFiles.getDexFile(dexPath)));
-                out.printf("%s\t%d", dexPath.getFileName().toString(), stats.referencedMethodCount)
-                        .println();
+        try {
+            for (Map.Entry<Path, DexBackedDexFile> entry :
+                    getSelectedDexFiles(apk, dexFilePaths).entrySet()) {
+                DexFileStats stats = DexFileStats.create(Collections.singleton(entry.getValue()));
+                String normalizedDexPath = entry.getKey().toString().replace('\\', '/');
+                out.printf("%s\t%d", normalizedDexPath, stats.referencedMethodCount).println();
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -661,13 +653,8 @@ public class ApkAnalyzerImpl {
                         proguardSeedsFilePath,
                         proguardUsagesFilePath);
         boolean deobfuscateNames = proguardMappings.map != null;
-        try (ArchiveContext archiveContext = Archives.open(apk)) {
-            Collection<Path> dexPaths = getSelectedDexFiles(dexFilePaths, archiveContext);
-            Map<Path, DexBackedDexFile> dexFiles = Maps.newHashMapWithExpectedSize(dexPaths.size());
-            for (Path dexPath : dexPaths) {
-                dexFiles.put(dexPath, DexFiles.getDexFile(dexPath));
-            }
-
+        try {
+            Map<Path, DexBackedDexFile> dexFiles = getSelectedDexFiles(apk, dexFilePaths);
             PackageTreeCreator treeCreator =
                     new PackageTreeCreator(proguardMappings, deobfuscateNames, false);
             DexPackageNode rootNode = treeCreator.constructPackageTree(dexFiles);
@@ -741,24 +728,9 @@ public class ApkAnalyzerImpl {
         }
     }
 
-    @NotNull
-    private static Collection<Path> getSelectedDexFiles(
-            @Nullable List<String> dexFilePaths, @NotNull ArchiveContext archiveContext) {
-        if (dexFilePaths == null || dexFilePaths.isEmpty()) {
-            return getDexFilesFrom(archiveContext.getArchive().getContentRoot());
-        } else {
-            return dexFilePaths.stream()
-                    .map(dexFile -> archiveContext.getArchive().getContentRoot().resolve(dexFile))
-                    .collect(Collectors.toList());
-        }
-    }
-
     public void dexList(@NotNull Path apk) {
-        try (ArchiveContext archiveContext = Archives.open(apk)) {
-            getDexFilesFrom(archiveContext.getArchive().getContentRoot())
-                    .stream()
-                    .map(path -> path.getFileName().toString())
-                    .forEachOrdered(out::println);
+        try {
+            loadDexContainer(apk).getDexEntryNames().stream().forEachOrdered(out::println);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -1052,23 +1024,46 @@ public class ApkAnalyzerImpl {
         return BinaryXmlParser.formatValue(value, stringPoolChunk);
     }
 
-    public void setHumanReadableFlag(boolean humanReadableFlag) {
-        this.humanReadableFlag = humanReadableFlag;
+    /**
+     * Loads a list of dex entry paths and dex files from the given APK.
+     *
+     * @param apk the APK file path
+     * @param dexFilePaths a list of dex file paths to select, or null to select all found dex files
+     * @return a map of dex entry paths (possibly logical for multi-container .dex) to dex files
+     */
+    @NotNull
+    private static Map<Path, DexBackedDexFile> getSelectedDexFiles(
+            @NotNull Path apk, @Nullable List<String> dexFilePaths) throws IOException {
+        MultiDexContainer<? extends DexBackedDexFile> container = loadDexContainer(apk);
+
+        Collection<String> dexEntryNames =
+                (dexFilePaths == null || dexFilePaths.isEmpty())
+                        ? container.getDexEntryNames()
+                        : dexFilePaths;
+
+        // Preserve ordering of the returned map relative to the listed entries.
+        ImmutableMap.Builder<Path, DexBackedDexFile> dexFilesBuilder = ImmutableMap.builder();
+        for (String dexEntryName : dexEntryNames) {
+            MultiDexContainer.DexEntry<? extends DexBackedDexFile> entry =
+                    container.getEntry(dexEntryName);
+            if (entry == null) {
+                throw new IllegalArgumentException(
+                        String.format("Dex entry '%s' not found in APK '%s'", dexEntryName, apk));
+            }
+            dexFilesBuilder.put(Paths.get(dexEntryName), entry.getDexFile());
+        }
+        return dexFilesBuilder.build();
     }
 
     @NotNull
-    private static List<Path> getDexFilesFrom(Path dir) {
-        try (Stream<Path> stream = Files.list(dir)) {
-            return stream.filter(
-                    path ->
-                            Files.isRegularFile(path)
-                                    && path.getFileName()
-                                    .toString()
-                                    .endsWith(".dex"))
-                    .collect(Collectors.toList());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    private static MultiDexContainer<? extends DexBackedDexFile> loadDexContainer(@NotNull Path p)
+            throws IOException {
+        // Use a null opcodes parameter to try loading the latest dex version supported by smali.
+        return DexFileFactory.loadDexContainer(p.toFile(), /* opcodes= */ null);
+    }
+
+    public void setHumanReadableFlag(boolean humanReadableFlag) {
+        this.humanReadableFlag = humanReadableFlag;
     }
 
     @NotNull
