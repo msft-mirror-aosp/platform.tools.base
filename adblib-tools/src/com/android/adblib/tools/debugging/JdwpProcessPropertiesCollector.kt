@@ -15,7 +15,10 @@
  */
 package com.android.adblib.tools.debugging
 
+import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.property
+import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl
 import kotlinx.coroutines.flow.StateFlow
 
@@ -68,3 +71,17 @@ val JdwpProcess.propertiesFlow: StateFlow<JdwpProcessProperties>
  */
 val JdwpProcess.properties: JdwpProcessProperties
     get() = propertiesFlow.value
+
+/**
+ * Similar to [isAppInfoSupported], but also checks
+ * [PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE]
+ */
+internal suspend fun ConnectedDevice.useAppInfoForProcessProperties(): Boolean {
+    return cache.getOrPutSuspending(useAppInfoKey) {
+        session.property(PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE)
+                && isAppInfoSupported()
+    }
+}
+
+private val useAppInfoKey = CoroutineScopeCache.Key<Boolean>("useAppInfoKey")
+

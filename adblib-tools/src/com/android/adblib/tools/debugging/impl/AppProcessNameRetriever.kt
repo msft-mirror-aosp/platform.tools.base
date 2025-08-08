@@ -17,17 +17,15 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
-import com.android.adblib.property
 import com.android.adblib.selector
 import com.android.adblib.shellCommand
-import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE
 import com.android.adblib.tools.debugging.AppProcess
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.getOrNull
-import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.tools.debugging.scope
+import com.android.adblib.tools.debugging.useAppInfoForProcessProperties
 import com.android.adblib.withProcessPrefix
 import com.android.adblib.withTextCollector
 import kotlinx.coroutines.delay
@@ -45,10 +43,7 @@ internal class AppProcessNameRetriever(private val process: AppProcess) {
     private val logger = adbLogger(process.device.session).withProcessPrefix(device, process.pid)
 
     suspend fun retrieve(retryCount: Int, retryDelay: Duration): String {
-        val useAppInfo =
-            device.session.property(PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE) &&
-                    device.isAppInfoSupported()
-        return if (useAppInfo) {
+        return if (device.useAppInfoForProcessProperties()) {
             retrieveProcessNameUsingAppProcessEntryFlow()
         } else {
             process.jdwpProcess?.let {

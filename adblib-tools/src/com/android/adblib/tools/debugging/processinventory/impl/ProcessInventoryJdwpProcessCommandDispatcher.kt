@@ -21,8 +21,6 @@ import com.android.adblib.generateUniqueUUID
 import com.android.adblib.tools.debugging.ExternalJdwpProcessCommandDispatcher
 import com.android.adblib.tools.debugging.ExternalJdwpProcessCommandDispatcher.ProcessCommand
 import com.android.adblib.tools.debugging.JdwpProcess
-import com.android.adblib.tools.debugging.impl.JdwpProcessImpl
-import com.android.adblib.tools.debugging.jdwpPropertiesCollector
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection.ConnectionForDevice
 import com.android.adblib.tools.debugging.processinventory.protos.ProcessInventoryServerProto
@@ -30,7 +28,6 @@ import com.android.adblib.tools.debugging.processinventory.protos.ProcessInvento
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
 import com.android.adblib.tools.debugging.resumeProcessImpl
 import com.android.adblib.utils.logIOCompletionErrors
-import com.android.adblib.utils.runAlongOtherScope
 import com.android.adblib.withProcessPrefix
 import com.google.protobuf.TextFormat
 import kotlinx.coroutines.CompletableDeferred
@@ -152,7 +149,7 @@ internal class ProcessInventoryJdwpProcessCommandDispatcher(
                         ProcessInventoryServerProto.ProcessCommand.CommandCase.RESUME_JDWP_PROCESS -> {
                             // We want to execute the command only if this process instances is
                             // holding on the JDWP session *and* the process is waiting
-                            process.resumeProcessIfJdwpSessionHolder()
+                            process.resumeProcessImpl.resumeProcessIfJdwpSessionHolder()
                         }
 
                         else -> {
@@ -171,41 +168,6 @@ internal class ProcessInventoryJdwpProcessCommandDispatcher(
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * Calls [resumeProcessImpl] on this [JdwpProcess] if this process is currently holding onto
-     * the JDWP connection to the process on the Android device.
-     * * Returns whether [resumeProcessImpl] was actually called
-     */
-    private suspend fun JdwpProcess.resumeProcessIfJdwpSessionHolder(): Boolean {
-        val process = this as? JdwpProcessImpl ?: return false
-
-        // Note: we need to use `runAlongOtherScope` because 1) we are waiting on a value from a
-        // `StateFlow` and 2) `StateFlows` never end.
-        val isWaitingForDebugger = runAlongOtherScope(process.scope) {
-            // Wait for the "isWaitingForDebugger" property
-            process.jdwpPropertiesCollector.stateFlow.first { props ->
-                props.isWaitingForDebugger.hasValue
-            }.isWaitingForDebugger.getOrThrow()
-        }
-
-        return if (isWaitingForDebugger) {
-            if (process.jdwpSessionActivationCount.value > 0) {
-                logger.debug {
-                    "Resuming this JDWP process instance because it holds the " +
-                            "JDWP session and `isWaitingForDebugger` is `true`"
-                }
-                process.resumeProcessImpl()
-                true
-            } else {
-                logger.debug { "Skipping resume because JDWP session is not active" }
-                false
-            }
-        } else {
-            logger.debug { "Skipping resume: `isWaitingForDebugger` is false" }
-            false
         }
     }
 

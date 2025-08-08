@@ -32,7 +32,6 @@ import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.flow
 import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.getOrNull
-import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
@@ -43,6 +42,7 @@ import com.android.adblib.tools.debugging.properties
 import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.toByteArray
+import com.android.adblib.tools.debugging.useAppInfoForProcessProperties
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
@@ -152,7 +152,7 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         yieldUntil { process.properties.areAllPropertiesInitialized() }
 
         // Assert
-        assertTrue(process.device.isAppInfoSupported())
+        assertTrue(process.device.useAppInfoForProcessProperties())
         val properties = process.properties
         assertProcessPropertiesComplete(properties, isFromAppInfo = true)
     }

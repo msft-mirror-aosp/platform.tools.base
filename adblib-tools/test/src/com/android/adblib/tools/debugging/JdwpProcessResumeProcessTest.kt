@@ -199,7 +199,7 @@ class JdwpProcessResumeProcessTest {
                 processList.firstOrNull { it.pid == pid }
             }.first()
 
-            if (!connectedDevice.isAppInfoSupported()) {
+            if (!connectedDevice.useAppInfoForProcessProperties()) {
                 // Ensure JDWP properties collection and external command dispatcher are started
                 process.jdwpPropertiesCollector.stateFlow.first {
                     it.packageName.hasValue
