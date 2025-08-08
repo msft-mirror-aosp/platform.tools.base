@@ -28,8 +28,9 @@ import kotlinx.coroutines.flow.StateFlow
  */
 internal interface SharedJdwpSessionProvider : AutoCloseable {
     /**
-     * Tracks the # of activations of the [SharedJdwpSession], i.e. the number of active
-     * calls to [withSharedJdwpSession].
+     * Tracks the number of active calls to [withSharedJdwpSession], or, more precisely,
+     * the number of [withSharedJdwpSession] callers that have received a [SharedJdwpSession]
+     * that had a successful JDWP handshake.
      */
     val activationCount: StateFlow<Int>
 

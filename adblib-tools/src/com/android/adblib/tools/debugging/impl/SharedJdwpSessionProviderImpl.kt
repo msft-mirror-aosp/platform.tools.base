@@ -19,7 +19,6 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.utils.ReferenceCountedFactory
-import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.flow.StateFlow
 
@@ -37,17 +36,24 @@ internal class SharedJdwpSessionProviderImpl(
         get() = withSharedJdwpSessionTracker.activationCount
 
     override suspend fun <R> withSharedJdwpSession(block: suspend (SharedJdwpSession) -> R): R {
-        return withSharedJdwpSessionTracker.track {
-
-            logger.verbose { "withSharedJdwpSession(): enter" }
-            try {
-                sharedJdwpSessionRef.withResource { session ->
-                    session.openIfNeeded()
+        logger.verbose { "withSharedJdwpSession(): enter" }
+        return try {
+            sharedJdwpSessionRef.withResource { session ->
+                // We first open the JDWP connection and ensure the JDWP handshake is successful
+                // before increment the `activationCount`. The reason we wait for the handshake
+                // before considering the session "active" is that some version of Art/Android
+                // don't allow opening a JDWP connection when there is already one active, while
+                // some other version allow opening multiple JDWP connection but only process
+                // the JDWP handshake on a single one.
+                // By waiting for the JDWP handshake to be successful, we ensure our
+                // `activationCount` value is consistent across different versions of Art/Android.
+                session.openAndHandshakeIfNeeded()
+                withSharedJdwpSessionTracker.track {
                     block(session)
                 }
-            } finally {
-                logger.verbose { "withSharedJdwpSession(): exit" }
             }
+        } finally {
+            logger.verbose { "withSharedJdwpSession(): exit" }
         }
     }
 

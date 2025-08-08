@@ -469,10 +469,10 @@ internal class JdwpProcessManagerImpl(
         }
 
         override suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T {
-            return withJdwpSessionTracker.track {
-                // Get the SharedJdwpSession of the delegate process, then wrap it to call "block"
-                deferredDelegateProcess.await().withJdwpSession {
-                    logger.debug { "Acquired delegate process JDWP session, calling 'block'" }
+            // Get the SharedJdwpSession of the delegate process, then wrap it to call "block"
+            return deferredDelegateProcess.await().withJdwpSession {
+                logger.debug { "Acquired delegate process JDWP session, calling 'block'" }
+                withJdwpSessionTracker.track {
                     SharedJdwpSessionDelegate(device, this).block()
                 }
             }

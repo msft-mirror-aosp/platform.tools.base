@@ -15,16 +15,20 @@
  */
 package com.android.adblib.tools.debugging.impl
 
+import com.android.adblib.AdbSession
 import com.android.adblib.AdbUsageTracker
 import com.android.adblib.AdbUsageTracker.AppInfoProcessPropertiesCollectorEventType
 import com.android.adblib.AdbUsageTracker.JdwpProcessPropertiesCollectorEvent
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.InstructionSet
+import com.android.adblib.SOCKET_CONNECT_TIMEOUT_MS
+import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProvider
+import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.testingutils.TestingAdbUsageTracker
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpProcessProperties
@@ -44,8 +48,10 @@ import com.android.adblib.tools.debugging.sendDdmsExit
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.debugging.useAppInfoForProcessProperties
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
+import com.android.adblib.tools.testutils.areAllPropertiesExceptWaitingForDebuggerInitialized
 import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
+import com.android.adblib.waitForDevice
 import com.android.fakeadbserver.ClientState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -60,6 +66,8 @@ import org.junit.Test
 import java.nio.ByteBuffer
 import java.time.Duration
 import java.time.Instant
+import kotlin.math.max
+import kotlinx.coroutines.async
 
 class JdwpProcessTest : AdbLibToolsTestBase() {
 
@@ -258,6 +266,77 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
 
         // Assert: The JDWP session should still be in-use, since we received a `WAIT` packet
         assertTrue(process.jdwpSessionActivationCount.value >= 1)
+    }
+
+    @Test
+    fun jdwpProcessActivationCountReflectsSuccessfulJdwpSessionHandshakeApi24() = runBlockingWithTimeout {
+        // See `JdwpCommandHandler` in FakeAdbServer
+        // On API < 28 and API >= 35, we return EOF right away.
+        // On API >= 28 and API < 35, we wait until the previous session is released
+        jdwpProcessActivationCountReflectsSuccessfulJdwpSessionHandshakeImpl(deviceApi = 24)
+    }
+
+    @Test
+    fun jdwpProcessActivationCountReflectsSuccessfulJdwpSessionHandshakeApi30() = runBlockingWithTimeout {
+        // See `JdwpCommandHandler` in FakeAdbServer
+        // On API < 28 and API >= 35, we return EOF right away.
+        // On API >= 28 and API < 35, we wait until the previous session is released
+        jdwpProcessActivationCountReflectsSuccessfulJdwpSessionHandshakeImpl(deviceApi = 30)
+    }
+
+    @Test
+    fun jdwpProcessActivationCountReflectsSuccessfulJdwpSessionHandshakeApi36() = runBlockingWithTimeout {
+        // See `JdwpCommandHandler` in FakeAdbServer
+        // On API < 28 and API >= 35, we return EOF right away.
+        // On API >= 28 and API < 35, we wait until the previous session is released
+        jdwpProcessActivationCountReflectsSuccessfulJdwpSessionHandshakeImpl(deviceApi = 36)
+    }
+
+    fun jdwpProcessActivationCountReflectsSuccessfulJdwpSessionHandshakeImpl(deviceApi: Int) = runBlockingWithTimeout {
+        // Prepare
+        setHostPropertyValue(
+            session.host,
+            AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT,
+            Duration.ofMillis(0) // short delay for tests
+        )
+        setHostPropertyValue(
+            session.host,
+            AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE,
+            false
+        )
+        setHostPropertyValue(
+            session.host,
+            AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
+            Duration.ofSeconds(60) // long timeout
+        )
+
+        val (_, _, process) = createJdwpProcess(deviceApi = deviceApi, waitForDebugger = false)
+        val processImplList = listOf(process) + (1..8).map {
+            val session2 = createSessionClone(fakeAdbRule)
+            val device2 = session2.connectedDevicesTracker.waitForDevice(process.device.serialNumber)
+            JdwpProcessImpl(device2, process.pid)
+        }
+
+        // Act: start property collector for both processes
+        val maxActivationCount = IntArray(processImplList.size)
+        val jobs = processImplList.mapIndexed { index, jdwpProcessImpl ->
+            async {
+                jdwpProcessImpl.jdwpSessionActivationCount.collect { count ->
+                    maxActivationCount[index] = max(maxActivationCount[index], count)
+                }
+            }
+        }
+        // Only one of the process should be able to get all its properties
+        yieldUntil {
+            processImplList.any {
+                it.properties.areAllPropertiesExceptWaitingForDebuggerInitialized()
+            }
+        }
+
+        // Assert: The JDWP session should still be in-use, since we received a `WAIT` packet
+        jobs.forEach { it.cancel() }
+        assertEquals(1, maxActivationCount.max())
+        assertEquals(1, maxActivationCount.count { it != 0 })
     }
 
     @Test
@@ -568,6 +647,17 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertFalse(properties.isNativeDebuggable.getOrDefault(false))
         assertTrue(properties.features.getOrDefault(emptyList()).isEmpty())
         assertFalse(properties.areAllPropertiesInitialized())
+    }
+
+    private fun createSessionClone(fakeAdbRule: FakeAdbServerProviderRule): AdbSession {
+        val host = fakeAdbRule.host
+        return AdbSession.create(
+            host,
+            fakeAdbRule.createChannelProvider(),
+            Duration.ofMillis(SOCKET_CONNECT_TIMEOUT_MS)
+        ).also {
+            registerCloseable(it)
+        }
     }
 
     private fun timeoutExceeded(waitTime: Duration, timeout: Duration): Boolean {

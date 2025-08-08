@@ -24,6 +24,16 @@ import com.android.adblib.tools.debugging.OptionalValue
  */
 internal fun JdwpProcessProperties.areAllPropertiesInitialized(): Boolean {
     @Suppress("DEPRECATION")
+    return areAllPropertiesExceptWaitingForDebuggerInitialized() &&
+            !isWaitingForDebugger.isEmpty
+}
+
+/**
+ * For testing only: check that all [OptionalValue] of this [JdwpProcessProperties] are either
+ * [OptionalValue.empty] or [OptionalValue.isError].
+ */
+internal fun JdwpProcessProperties.areAllPropertiesExceptWaitingForDebuggerInitialized(): Boolean {
+    @Suppress("DEPRECATION")
     return !processName.isEmpty &&
             !userId.isEmpty &&
             !packageName.isEmpty &&
@@ -31,6 +41,5 @@ internal fun JdwpProcessProperties.areAllPropertiesInitialized(): Boolean {
             !instructionSet.isEmpty &&
             !jvmFlags.isEmpty &&
             !isNativeDebuggable.isEmpty &&
-            !features.isEmpty &&
-            !isWaitingForDebugger.isEmpty
+            !features.isEmpty
 }

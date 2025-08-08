@@ -28,7 +28,6 @@ import com.android.adblib.tools.debugging.JdwpSession
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.SharedJdwpSessionFilter
 import com.android.adblib.tools.debugging.SharedJdwpSessionMonitor
-import com.android.adblib.tools.debugging.impl.SharedJdwpSessionImpl.ScopedPayloadProvider.ScopedAdbRewindableInputChannel
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.impl.EphemeralJdwpPacket
 import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
@@ -48,6 +47,10 @@ import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
+import java.io.EOFException
+import java.nio.ByteBuffer
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
@@ -65,10 +68,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.io.EOFException
-import java.nio.ByteBuffer
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.TimeUnit
 
 /**
  * Implementation of [SharedJdwpSession] over an underlying [JdwpSession]
@@ -141,11 +140,12 @@ internal class SharedJdwpSessionImpl(
     private val jdwpFilter = SharedJdwpSessionFilterEngine(this)
 
     /**
-     * Opens the underlying JDWP session if needed.
+     * Opens the underlying JDWP session and perform the JDWP handshake "if needed", i.e.
+     * only the first time this method is called.
      *
      * Note: This method is thread-safe
      */
-    suspend fun openIfNeeded() {
+    internal suspend fun openAndHandshakeIfNeeded() {
         throwIfClosed()
         jdwpSessionMutex.withLock {
             jdwpSession ?: run {
@@ -156,6 +156,8 @@ internal class SharedJdwpSessionImpl(
                     }
                 }
             }
+        }.also {
+            it.waitForHandshake()
         }
     }
 
