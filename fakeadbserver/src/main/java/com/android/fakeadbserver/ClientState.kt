@@ -46,6 +46,15 @@ class ClientState internal constructor(
     var sendWaitCommandAfterHelo: Duration? = null
 
     /**
+     * Amount of time to wait before resetting [waitingForDebugger] once a JDWP connection
+     * is open.
+     *
+     * See b/437438918: The debugger thread on the Art VM has a 200 millis spin loop delay
+     * before resuming a process.
+     */
+    var delayBeforeResettingWaitForDebugger: Duration = Duration.ofMillis(0)
+
+    /**
      * Set of DDMS features for this process.
      *
      * See [HandleFEAT source code](https://cs.android.com/android/platform/superproject/+/android13-release:frameworks/base/core/java/android/ddm/DdmHandleHello.java;l=107)
@@ -107,6 +116,10 @@ class ClientState internal constructor(
     @Synchronized
     fun getWaitingForDebuggerAndReset(): Boolean {
         return waitingForDebugger.also {
+            // See b/437438918: The Art VM Debugger thread has a 200 millis spin loop delay
+            // before resetting the "waiting for debugger" flag to "false". We simulate
+            // the behavior here.
+            Thread.sleep(delayBeforeResettingWaitForDebugger.toMillis())
             waitingForDebugger = false
         }
     }

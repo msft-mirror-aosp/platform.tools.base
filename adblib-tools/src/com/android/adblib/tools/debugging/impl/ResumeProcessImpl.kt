@@ -17,11 +17,14 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.property
+import com.android.adblib.tools.AdbLibToolsProperties.RESUME_PROCESS_DELAY_BEFORE_CLOSING_JDWP_SESSION
 import com.android.adblib.tools.debugging.ExternalJdwpProcessCommandDispatcher
 import com.android.adblib.tools.debugging.ExternalJdwpProcessCommandDispatcher.ProcessCommand.ResumeJdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpSession
+import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.adbLogger
 import com.android.adblib.tools.debugging.externalJdwpProcessCommandDispatcherList
 import com.android.adblib.tools.debugging.jdwpPropertiesCollector
@@ -31,6 +34,7 @@ import com.android.adblib.tools.debugging.resumeProcess
 import com.android.adblib.tools.debugging.sendAndReceiveCommand
 import com.android.adblib.tools.debugging.useAppInfoForProcessProperties
 import com.android.adblib.utils.runAlongOtherScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 /**
@@ -158,6 +162,11 @@ internal class ResumeProcessImpl(private val process: JdwpProcess) {
             // considers this as a signal to "resume" the JDWP process execution.
             val idSizesCommand = JdwpPacketBuilders.Commands.vmIdSizes(nextPacketId())
             sendAndReceiveCommand(idSizesCommand)
+
+            // See b/437438918: The debugger thread on Art VM has a 200 millis spin loop
+            // delay that can make it miss resetting the "waiting for debugger" flag if
+            // the JDWP connection is closed quickly after processing the first JDWP packet.
+            waitForProcessToResumeWhileJdwpSessionIsOpen()
         }
     }
 
@@ -196,7 +205,38 @@ internal class ResumeProcessImpl(private val process: JdwpProcess) {
                         break
                     }
                 }
+
+                // See b/437438918: The debugger thread on Art VM has a 200 millis spin loop
+                // delay that can make it miss resetting the "waiting for debugger" flag if
+                // the JDWP connection is closed quickly after processing the first JDWP packet.
+                waitForProcessToResumeWhileJdwpSessionIsOpen()
             }
         }
+    }
+
+    /**
+     * Waits for [JdwpProcessProperties.isWaitingForDebugger] to be `false`.
+     */
+    private suspend fun waitForProcessToResumeWhileJdwpSessionIsOpen() {
+        // Note: Use the process scope to ensure prompt cancellation if the process is terminated
+        runAlongOtherScope(process.scope) {
+            if (!device.useAppInfoForProcessProperties()) {
+                // If **not** using `app_info`, [JdwpProcessProperties.isWaitingForDebugger] may
+                // be updated to `false` too early or a little late, because the value is updated by
+                // the [JdwpProxySocketServer], not by the Art VM.
+                // So, the only "reliable" wait is to wait for some amount of time
+                delay(device.session.property(RESUME_PROCESS_DELAY_BEFORE_CLOSING_JDWP_SESSION).toMillis())
+            }
+
+            // Whether we use `app_info` or local JDWP connection or Process Inventory Server,
+            // `isWaitingForDebugger` should always end up with a `false` value.
+            process.jdwpPropertiesCollector.stateFlow.first { props ->
+                props.isWaitingForDebugger.isValue(false)
+            }
+        }
+    }
+
+    private fun <T: Any> OptionalValue<T>.isValue(value: T): Boolean {
+        return this.hasValue && this.getOrThrow() == value
     }
 }

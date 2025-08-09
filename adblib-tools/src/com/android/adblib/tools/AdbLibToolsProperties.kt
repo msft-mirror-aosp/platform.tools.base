@@ -18,13 +18,13 @@ package com.android.adblib.tools
 import com.android.adblib.AdbDeviceServices
 import com.android.adblib.AdbFeatures
 import com.android.adblib.AdbSessionHost
-import com.android.adblib.ConnectedDevice
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
 import com.android.adblib.tools.debugging.impl.AppProcessImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessManager
+import com.android.adblib.tools.debugging.impl.ResumeProcessImpl
 import java.time.Duration
 
 /**
@@ -127,7 +127,7 @@ object AdbLibToolsProperties {
     )
 
     /**
-     * Whether to use [ConnectedDevice.trackApp] when collecting JDWP process properties,
+     * Whether to use [trackApp] when collecting JDWP process properties,
      * if the [AdbFeatures.APP_INFO] feature is supported by the device.
      */
     val PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE = AdbSessionHost.BooleanProperty(
@@ -182,4 +182,11 @@ object AdbLibToolsProperties {
         defaultValue = 128
     )
 
+    /**
+     * See [ResumeProcessImpl.resumeProcessImpl]
+     */
+    val RESUME_PROCESS_DELAY_BEFORE_CLOSING_JDWP_SESSION = AdbSessionHost.DurationProperty(
+        name = "$NAME_PREFIX.resume.process.delay.before.closing.jdwp.session",
+        defaultValue = Duration.ofMillis(1_000)
+    )
 }

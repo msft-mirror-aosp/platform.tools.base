@@ -266,7 +266,14 @@ class JdwpProcessResumeProcessTest {
             it.addFeature("feat1")
             it.addFeature("feat2")
             it.addFeature("feat3")
+            // Decrease default delays related to b/437438918 to make tests finish faster
+            it.delayBeforeResettingWaitForDebugger = Duration.ofMillis(5)
+            fakeAdbRule.host.setPropertyValue(
+                AdbLibToolsProperties.RESUME_PROCESS_DELAY_BEFORE_CLOSING_JDWP_SESSION,
+                Duration.ofMillis(20)
+            )
         }
+
     }
 
     private fun createSessionClone(fakeAdbRule: FakeAdbServerProviderRule): AdbSession {
