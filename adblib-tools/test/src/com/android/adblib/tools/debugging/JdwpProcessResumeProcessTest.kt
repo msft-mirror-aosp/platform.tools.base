@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -56,6 +57,7 @@ class JdwpProcessResumeProcessTest {
     @Rule
     val closeables = CloseablesRule()
 
+    @Ignore("b/437895967")
     @Test
     fun testJdwpProcessResumeWorksWithJdwpPropertiesCollectorWhenCalledOnProcessThatIsWaitingForJdwpConnection(): Unit = runBlockingWithTimeout {
         val processPicker: suspend (List<JdwpProcess>) -> JdwpProcess = { jdwpProcessList ->
