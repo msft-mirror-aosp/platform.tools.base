@@ -31,6 +31,8 @@ import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.repository.IdDisplay
 import java.awt.Component
 import java.nio.file.Path
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
   LocalEmulatorProvisionerPlugin.AvdManager {
@@ -42,6 +44,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
       properties = avdInfo.properties + (ConfigKey.DISPLAY_NAME to avdInfo.displayName + " Edited")
     )
   }
+  override val runningAvdsFlow: StateFlow<Map<Path, RunningAvd>> = MutableStateFlow(mapOf())
 
   override suspend fun rescanAvds(): List<AvdInfo> = synchronized(avds) { avds.toList() }
 

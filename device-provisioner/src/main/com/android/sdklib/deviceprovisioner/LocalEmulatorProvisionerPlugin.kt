@@ -145,6 +145,9 @@ internal constructor(
    */
   interface AvdManager {
 
+    /** A flow of all currently running emulator processes keyed by AVD data folders. */
+    val runningAvdsFlow: StateFlow<Map<Path, RunningAvd>>
+
     suspend fun rescanAvds(): List<AvdInfo>
 
     /** Prompts the user to create an AVD. Returns true if an AVD was created. */
