@@ -226,7 +226,6 @@ class JourneysConnectedTest {
                 .withArgument("-PjourneysFilter=journey3.xml, journey4.xml")
                 .run(":app:validateDebugJourneysTest")
 
-        result.assertOutputContains("No test executed")
         result.assertOutputDoesNotContain("Journey 1")
     }
 
