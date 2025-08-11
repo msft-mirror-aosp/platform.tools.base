@@ -160,6 +160,35 @@ maven_import(
 )
 
 maven_artifact(
+    name = "com.google.example.cc_1",
+    pom = "repository/com/google/example/cc/1/cc-1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/example/cc/1",
+    deps = [
+        "com.google.example.d_2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.google.example.cc",
+    classifiers = [],
+    jars = [
+        "repository/com/google/example/cc/1/cc-1.jar"
+    ],
+    exports = [
+        "com.google.example.d",
+    ],
+    original_deps = [
+        "com.google.example.d_2",
+    ],
+    pom = "repository/com/google/example/cc/1/cc-1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/example/cc/1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.example.d_2",
     pom = "repository/com/google/example/d/2/d-2.pom",
     repo_root_path = "repository",

@@ -16,11 +16,6 @@
 
 package com.android.tools.maven;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.apache.maven.repository.internal.DefaultVersionRangeResolver;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -35,6 +30,12 @@ import org.eclipse.aether.version.VersionConstraint;
 import org.eclipse.aether.version.VersionRange;
 import org.eclipse.aether.version.VersionScheme;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Resolves maven version ranges (e.g., [15.0, 19.0)) into actual versions (e.g., listOf(15.0, 16.0,
  * 17.0)).
@@ -45,6 +46,7 @@ import org.eclipse.aether.version.VersionScheme;
  * the filesystem to load all the available versions.
  */
 public class CustomVersionRangeResolver extends DefaultVersionRangeResolver {
+
     private final boolean verbose;
 
     public CustomVersionRangeResolver(boolean verbose) {
@@ -71,13 +73,17 @@ public class CustomVersionRangeResolver extends DefaultVersionRangeResolver {
             // When there is a range, the DefaultVersionRangeResolver refers to a
             // maven-metadata.xml file to identify which versions exist. We don't have such
             // manifest files, so we need a workaround.
-
             VersionRange.Bound lower = versionConstraint.getRange().getLowerBound();
             VersionRange.Bound upper = versionConstraint.getRange().getUpperBound();
             if (verbose) {
                 String lowerRange = lower.isInclusive() ? "[" : "(" + lower.getVersion().toString();
-                String upperRange =
-                        upper.getVersion().toString() + (upper.isInclusive() ? "]" : ")");
+                String upperRange;
+                // Some maven artifacts have dependencies with open upper ranges like [10.0,).
+                if (upper != null) {
+                    upperRange = upper.getVersion().toString() + (upper.isInclusive() ? "]" : ")");
+                } else {
+                    upperRange = ")";
+                }
                 System.out.printf(
                         "Resolving ranged artifact: %s ; ranges = %s, %s\n",
                         request.getArtifact(), lowerRange, upperRange);
@@ -91,7 +97,9 @@ public class CustomVersionRangeResolver extends DefaultVersionRangeResolver {
             // resolved:
             //     androidx.navigation:navigation-safe-args-gradle-plugin:jar:2.3.1 ->
             //         androidx.navigation:navigation-safe-args-generator:jar:[2.3.1]
-            if (lower.getVersion() == upper.getVersion()) {
+            // Some maven artifacts have dependencies with open upper ranges like [10.0,),
+            // hence we check for upper not equal to null first.
+            if (lower != null && lower.equals(upper)) {
                 result.setVersionConstraint(versionConstraint);
                 result.addVersion(versionConstraint.getRange().getLowerBound().getVersion());
                 return result;
