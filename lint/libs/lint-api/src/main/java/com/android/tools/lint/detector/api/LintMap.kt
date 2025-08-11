@@ -200,6 +200,8 @@ class LintMap : Iterable<String> {
   /** Is this map non-empty? */
   fun isNotEmpty(): Boolean = !isEmpty()
 
+  override fun toString() = "[${map.asSequence().joinToString { (k, v) -> "$k ↦ $v" }}]"
+
   companion object {
     /**
      * Returns the internal map. This is **only** intended for use by lint to be able to persist and
