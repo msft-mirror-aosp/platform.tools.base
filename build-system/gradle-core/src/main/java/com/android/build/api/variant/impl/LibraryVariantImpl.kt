@@ -51,7 +51,6 @@ import com.android.builder.core.BuilderConstants
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import com.android.build.gradle.internal.utils.parseTargetHash
 import javax.inject.Inject
 
 open class LibraryVariantImpl @Inject constructor(
@@ -128,15 +127,9 @@ open class LibraryVariantImpl @Inject constructor(
 
     override val aarMetadata: AarMetadata =
         internalServices.newInstance(AarMetadata::class.java).also {
-            it.minCompileSdk.set(
-                dslInfo.aarMetadata.minCompileSdk
-                    ?: parseTargetHash(global.compileSdkHashString).apiLevel
-                    ?: DEFAULT_MIN_COMPILE_SDK_VERSION
-            )
+            it.minCompileSdk.set(dslInfo.aarMetadata.minCompileSdk ?: DEFAULT_MIN_COMPILE_SDK_VERSION)
             it.minCompileSdkExtension.set(
-                dslInfo.aarMetadata.minCompileSdkExtension
-                    ?: parseTargetHash(global.compileSdkHashString).sdkExtension
-                    ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
+                dslInfo.aarMetadata.minCompileSdkExtension ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
             )
             it.minAgpVersion.set(
                 dslInfo.aarMetadata.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION

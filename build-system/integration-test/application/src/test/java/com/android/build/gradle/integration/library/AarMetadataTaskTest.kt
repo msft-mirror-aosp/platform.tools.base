@@ -19,7 +19,6 @@ import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicBuilds.Companion.HELLO_WORLD_LIBRARY
 import com.android.build.gradle.integration.common.output.AarMetadataSubject
@@ -41,7 +40,7 @@ class AarMetadataTaskTest {
             aarMetadata {
                 formatVersion().isEqualTo("1.0")
                 metadataVersion().isEqualTo("1.0")
-                minCompileSdk().isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION.toString())
+                minCompileSdk().isEqualTo("1")
                 minAgpVersion().isEqualTo("1.0.0")
                 minCompileSdkExtension().isEqualTo("0")
                 coreLibraryDesugaringEnabled().isEqualTo("false")
@@ -82,17 +81,6 @@ class AarMetadataTaskTest {
                 minCompileSdkExtension().isEqualTo("2")
                 coreLibraryDesugaringEnabled().isEqualTo("true")
                 desugarJdkLibId().isEqualTo("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
-            }
-        }
-    }
-
-    @Test
-    fun testDsl_minCompileSdk_fallback() {
-        // We do not explicitly set minCompileSdkVersion, so it should fall back to compileSdk.
-        rule.build.executor.run(":lib:assembleDebug")
-        rule.build.androidLibrary().assertAar(AarSelector.DEBUG) {
-            aarMetadata {
-                minCompileSdk().isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION.toString())
             }
         }
     }
