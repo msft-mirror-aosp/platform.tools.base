@@ -100,6 +100,27 @@ iml_module(
 )
 
 # managed by go/iml_to_build
+iml_module(
+    name = "studio.android.sdktools.lint.cli.uast.test",
+    iml_files = ["android.sdktools.lint.cli.uast.test.iml"],
+    # do not sort: must match IML order
+    test_deps = [
+        "//tools/base/lint/cli:studio.android.sdktools.lint.cli",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:mockito",
+        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
+        "@intellij//:intellij-sdk",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:kotlin-test",
+        "//tools/base/lint/libs/lint-tests:studio.android.sdktools.lint.testinfrastructure",
+        "//tools/base/lint:studio.android.sdktools.lint-api",
+    ],
+    test_friends = ["//tools/base/lint/cli:studio.android.sdktools.lint.cli"],
+    test_srcs = ["src/test/java"],
+    visibility = ["//visibility:public"],
+)
+
+# managed by go/iml_to_build
 jvm_import(
     name = "lint-cli-psi-prebuilts",
     # do not sort: must match IML order
