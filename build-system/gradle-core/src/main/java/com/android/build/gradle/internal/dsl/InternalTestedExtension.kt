@@ -25,9 +25,8 @@ interface InternalTestedExtension<BuildFeaturesT : com.android.build.api.dsl.Bui
         BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : com.android.build.api.dsl.DefaultConfig,
         ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
-        AndroidResourcesT : com.android.build.api.dsl.AndroidResources,
         InstallationT: com.android.build.api.dsl.Installation>
     : TestedExtension,
-    InternalCommonExtension<BuildFeaturesT, BuildTypeT, DefaultConfigT, ProductFlavorT, AndroidResourcesT, InstallationT> {
+    InternalCommonExtension<BuildFeaturesT, BuildTypeT, DefaultConfigT, ProductFlavorT, InstallationT> {
     fun testFixtures(action: Action<TestFixtures>)
 }

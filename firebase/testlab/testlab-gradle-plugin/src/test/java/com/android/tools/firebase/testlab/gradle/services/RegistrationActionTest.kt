@@ -44,7 +44,7 @@ class RegistrationActionTest {
 
   @Mock(answer = Answers.RETURNS_MOCKS) lateinit var androidManagedDevices: ManagedDevices
 
-  @Mock lateinit var androidExtension: CommonExtension<*, *, *, *, *, *>
+  @Mock lateinit var androidExtension: CommonExtension<*, *, *, *, *>
 
   @Mock lateinit var mockAndroidTestOptions: TestOptions
 

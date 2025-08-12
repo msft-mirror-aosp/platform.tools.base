@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestAndroidResources
 import com.android.build.api.dsl.TestBuildFeatures
 import com.android.build.api.dsl.TestBuildType
@@ -25,6 +24,7 @@ import com.android.build.api.dsl.TestInstallation
 import com.android.build.api.dsl.TestProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
+import org.gradle.api.Action
 import javax.inject.Inject
 
 /** Internal implementation of the 'new' DSL interface */
@@ -40,7 +40,6 @@ abstract class TestExtensionImpl @Inject constructor(
             TestBuildType,
             TestDefaultConfig,
             TestProductFlavor,
-            TestAndroidResources,
             TestInstallation>(
         dslServices,
         dslContainers
@@ -54,6 +53,14 @@ abstract class TestExtensionImpl @Inject constructor(
 
     override val androidResources: TestAndroidResources
         = dslServices.newDecoratedInstance(TestAndroidResourcesImpl::class.java, dslServices)
+
+    override fun androidResources(action: TestAndroidResources.() -> Unit) {
+        action(androidResources)
+    }
+
+    override fun androidResources(action: Action<TestAndroidResources>) {
+        action.execute(androidResources)
+    }
 
     override val installation: TestInstallation
         = dslServices.newDecoratedInstance(TestInstallationImpl::class.java, dslServices)

@@ -26,6 +26,7 @@ import com.android.build.api.dsl.Prefab
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.options.BooleanOption
+import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import javax.inject.Inject
 import java.util.function.Supplier
@@ -44,7 +45,6 @@ abstract class LibraryExtensionImpl @Inject constructor(
             LibraryBuildType,
             LibraryDefaultConfig,
             LibraryProductFlavor,
-            LibraryAndroidResources,
             LibraryInstallation>(
         dslServices,
         dslContainers
@@ -79,6 +79,14 @@ abstract class LibraryExtensionImpl @Inject constructor(
         dslServices,
         dslServices.projectOptions[BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES]
     )
+
+    override fun androidResources(action: LibraryAndroidResources.() -> Unit) {
+        action.invoke(androidResources)
+    }
+
+    override fun androidResources(action: Action<LibraryAndroidResources>) {
+        action.execute(androidResources)
+    }
 
     override val installation: LibraryInstallation
         = dslServices.newDecoratedInstance(LibraryInstallationImpl::class.java, dslServices)

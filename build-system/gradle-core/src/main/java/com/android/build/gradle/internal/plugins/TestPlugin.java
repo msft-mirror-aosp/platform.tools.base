@@ -79,7 +79,6 @@ public class TestPlugin
                 TestBuildType,
                 TestDefaultConfig,
                 TestProductFlavor,
-                TestAndroidResources,
                 TestInstallation,
                 com.android.build.api.dsl.TestExtension,
                 TestAndroidComponentsExtension,
@@ -113,7 +112,6 @@ public class TestPlugin
                     TestBuildType,
                     TestDefaultConfig,
                     TestProductFlavor,
-                    TestAndroidResources,
                     TestInstallation,
                     com.android.build.api.dsl.TestExtension>
             createExtension(

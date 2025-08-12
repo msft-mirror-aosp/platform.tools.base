@@ -50,7 +50,6 @@ abstract class CommonExtensionImpl<
         BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
-        AndroidResourcesT : AndroidResources,
         InstallationT : Installation>(
             protected val dslServices: DslServices,
             dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
@@ -59,7 +58,6 @@ abstract class CommonExtensionImpl<
         BuildTypeT,
         DefaultConfigT,
         ProductFlavorT,
-        AndroidResourcesT,
         InstallationT> {
 
     private val sourceSetManager = dslContainers.sourceSetManager
@@ -100,14 +98,6 @@ abstract class CommonExtensionImpl<
 
     override fun aaptOptions(action: Action<AaptOptions>) {
         action.execute(aaptOptions)
-    }
-
-    override fun androidResources(action: AndroidResourcesT.() -> Unit) {
-        action(androidResources)
-    }
-
-    override fun androidResources(action: Action<AndroidResourcesT>) {
-        action.execute(androidResources)
     }
 
     override fun installation(action: InstallationT.() -> Unit) {

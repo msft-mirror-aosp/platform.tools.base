@@ -31,7 +31,6 @@ interface ApplicationExtension :
             ApplicationBuildType,
             ApplicationDefaultConfig,
             ApplicationProductFlavor,
-            ApplicationAndroidResources,
             ApplicationInstallation>,
     ApkExtension,
     TestedExtension {
@@ -69,7 +68,19 @@ interface ApplicationExtension :
      */
     fun publishing(action: ApplicationPublishing.() -> Unit)
 
+    /**
+     * Specifies options related to the processing of Android Resources.
+     *
+     * For more information about the properties you can configure in this block, see [ApplicationAndroidResources].
+     */
     override val androidResources: ApplicationAndroidResources
+
+    /**
+     * Specifies options related to the processing of Android Resources.
+     *
+     * For more information about the properties you can configure in this block, see [ApplicationAndroidResources].
+     */
+    fun androidResources(action: ApplicationAndroidResources.() -> Unit)
 
     override val installation: ApplicationInstallation
 

@@ -33,7 +33,6 @@ interface CommonExtension<
         BuildTypeT : BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : ProductFlavor,
-        AndroidResourcesT : AndroidResources,
         InstallationT: Installation> {
 
     /**
@@ -59,14 +58,7 @@ interface CommonExtension<
      *
      * For more information about the properties you can configure in this block, see [AndroidResources].
      */
-    val androidResources: AndroidResourcesT
-
-    /**
-     * Specifies options related to the processing of Android Resources.
-     *
-     * For more information about the properties you can configure in this block, see [AndroidResources].
-     */
-    fun androidResources(action: AndroidResourcesT.() -> Unit)
+    val androidResources: AndroidResources
 
     /**
      * Specifies options for the

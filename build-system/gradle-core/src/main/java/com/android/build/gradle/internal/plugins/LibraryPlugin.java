@@ -78,7 +78,6 @@ public class LibraryPlugin
                 com.android.build.api.dsl.LibraryBuildType,
                 com.android.build.api.dsl.LibraryDefaultConfig,
                 com.android.build.api.dsl.LibraryProductFlavor,
-                com.android.build.api.dsl.LibraryAndroidResources,
                 com.android.build.api.dsl.LibraryInstallation,
                 LibraryExtension,
                 LibraryAndroidComponentsExtension,
@@ -118,7 +117,6 @@ public class LibraryPlugin
                     com.android.build.api.dsl.LibraryBuildType,
                     com.android.build.api.dsl.LibraryDefaultConfig,
                     com.android.build.api.dsl.LibraryProductFlavor,
-                    com.android.build.api.dsl.LibraryAndroidResources,
                     com.android.build.api.dsl.LibraryInstallation,
                     LibraryExtension>
             createExtension(

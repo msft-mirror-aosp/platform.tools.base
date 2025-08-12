@@ -112,7 +112,7 @@ abstract class AndroidComponentsExtensionImpl<
             )
         }
 
-        if (extension is CommonExtension<*, *, *, *, *, *>) {
+        if (extension is CommonExtension<*, *, *, *, *>) {
             dslExtension.buildTypeExtensionType?.let {
                 extension.buildTypes.configureEach { buildType ->
                     buildType.extensions.add(
@@ -235,7 +235,7 @@ abstract class AndroidComponentsExtensionImpl<
     }
 
     open fun registerConfigurations(lowercaseAffix: String, useLegacyPrefix: Boolean) {
-        if (extension is CommonExtension<*, *, *, *, *, *>) {
+        if (extension is CommonExtension<*, *, *, *, *>) {
             extension.sourceSets
                 .configureEach { sourceSet ->
                     val configurationName =

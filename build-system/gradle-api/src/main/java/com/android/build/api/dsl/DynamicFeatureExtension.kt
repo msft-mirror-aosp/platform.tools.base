@@ -29,10 +29,22 @@ interface DynamicFeatureExtension :
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
             DynamicFeatureProductFlavor,
-            DynamicFeatureAndroidResources,
             DynamicFeatureInstallation>,
     ApkExtension,
     TestedExtension {
+
+    /**
+     * Specifies options related to the processing of Android Resources.
+     *
+     * For more information about the properties you can configure in this block, see [DynamicFeatureAndroidResources].
+     */
+    override val androidResources: DynamicFeatureAndroidResources
+    /**
+     * Specifies options related to the processing of Android Resources.
+     *
+     * For more information about the properties you can configure in this block, see [DynamicFeatureAndroidResources].
+     */
+    fun androidResources(action: DynamicFeatureAndroidResources.() -> Unit)
 
     val privacySandbox: PrivacySandbox
     fun privacySandbox(action: PrivacySandbox.() -> Unit)

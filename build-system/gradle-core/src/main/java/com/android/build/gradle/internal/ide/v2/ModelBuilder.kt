@@ -150,14 +150,12 @@ class ModelBuilder<
         BuildTypeT : BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : ProductFlavor,
-        AndroidResourcesT : AndroidResources,
         InstallationT : Installation,
         ExtensionT : CommonExtension<
                 BuildFeaturesT,
                 BuildTypeT,
                 DefaultConfigT,
                 ProductFlavorT,
-                AndroidResourcesT,
                 InstallationT>>(
     private val project: Project,
     private val variantModel: VariantModel,
@@ -768,7 +766,7 @@ class ModelBuilder<
                 } else null
 
         val extensionImpl =
-            extension as? CommonExtensionImpl<*, *, *, *, *, *>
+            extension as? CommonExtensionImpl<*, *, *, *, *>
                 ?: throw RuntimeException("Wrong extension provided to v2 ModelBuilder")
         val compileSdkVersion = extensionImpl.compileSdkVersion ?: "unknown"
 

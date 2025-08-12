@@ -84,7 +84,6 @@ public class AppPlugin
                 ApplicationBuildType,
                 ApplicationDefaultConfig,
                 ApplicationProductFlavor,
-                ApplicationAndroidResources,
                 ApplicationInstallation,
                 com.android.build.api.dsl.ApplicationExtension,
                 ApplicationAndroidComponentsExtension,
@@ -125,7 +124,6 @@ public class AppPlugin
                     ApplicationBuildType,
                     ApplicationDefaultConfig,
                     ApplicationProductFlavor,
-                    ApplicationAndroidResources,
                     ApplicationInstallation,
                     ApplicationExtension>
             createExtension(

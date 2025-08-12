@@ -34,8 +34,9 @@ interface InternalDynamicFeatureExtension :
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
             DynamicFeatureProductFlavor,
-            DynamicFeatureAndroidResources,
             DynamicFeatureInstallation> {
+
+    fun androidResources(action: Action<DynamicFeatureAndroidResources>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

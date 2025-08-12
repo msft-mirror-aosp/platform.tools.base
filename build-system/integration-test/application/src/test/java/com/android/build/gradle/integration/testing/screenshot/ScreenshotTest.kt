@@ -78,7 +78,7 @@ class ScreenshotTest {
     @Rule
     val temporaryFolder = TemporaryFolder()
 
-    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.setupProject(addEmptyJarToClassPath: Boolean = true) {
+    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*>>.setupProject(addEmptyJarToClassPath: Boolean = true) {
         setupProjectNoScreenshotTestSource()
 
         if (addEmptyJarToClassPath) {
@@ -184,7 +184,7 @@ class ScreenshotTest {
         }
     }
 
-    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.setupProjectNoScreenshotTestSource() {
+    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*>>.setupProjectNoScreenshotTestSource() {
         applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.KOTLIN_VERSION_FOR_TESTS)
         applyPlugin(
             PluginType.Custom(

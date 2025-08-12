@@ -25,6 +25,7 @@ import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.gradle.internal.dsl.decorator.ApplicationInstallationImpl
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
+import org.gradle.api.Action
 import javax.inject.Inject
 
 /** Internal implementation of the 'new' DSL interface */
@@ -41,7 +42,6 @@ abstract class ApplicationExtensionImpl @Inject constructor(
             ApplicationBuildType,
             ApplicationDefaultConfig,
             ApplicationProductFlavor,
-            ApplicationAndroidResources,
             ApplicationInstallation>(
         dslServices,
         dslContainers
@@ -53,6 +53,14 @@ abstract class ApplicationExtensionImpl @Inject constructor(
 
     override val androidResources: ApplicationAndroidResources =
         dslServices.newDecoratedInstance(ApplicationAndroidResourcesImpl::class.java, dslServices)
+
+    override fun androidResources(action: ApplicationAndroidResources.() -> Unit) {
+        action(androidResources)
+    }
+
+    override fun androidResources(action: Action<ApplicationAndroidResources>) {
+        action.execute(androidResources)
+    }
 
     override val installation: ApplicationInstallation =
         dslServices.newDecoratedInstance(ApplicationInstallationImpl::class.java, dslServices)

@@ -32,7 +32,6 @@ interface LibraryExtension :
         LibraryBuildType,
         LibraryDefaultConfig,
         LibraryProductFlavor,
-        LibraryAndroidResources,
         LibraryInstallation>,
     TestedExtension {
     // TODO(b/140406102)
@@ -40,6 +39,20 @@ interface LibraryExtension :
     /** Aidl files to package in the aar. */
     @get:Incubating
     val aidlPackagedList: MutableCollection<String>?
+
+    /**
+     * Specifies options related to the processing of Android Resources.
+     *
+     * For more information about the properties you can configure in this block, see [LibraryAndroidResources].
+     */
+    override val androidResources: LibraryAndroidResources
+
+    /**
+     * Specifies options related to the processing of Android Resources.
+     *
+     * For more information about the properties you can configure in this block, see [LibraryAndroidResources].
+     */
+    fun androidResources(action: LibraryAndroidResources.() -> Unit)
 
     /**
      * container of Prefab options

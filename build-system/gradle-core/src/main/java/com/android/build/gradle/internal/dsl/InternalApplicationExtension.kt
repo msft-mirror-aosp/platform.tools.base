@@ -36,7 +36,6 @@ interface InternalApplicationExtension :
                 ApplicationBuildType,
                 ApplicationDefaultConfig,
                 ApplicationProductFlavor,
-                ApplicationAndroidResources,
                 ApplicationInstallation> {
     override val dynamicFeatures: MutableSet<String>
     fun setDynamicFeatures(dynamicFeatures: Set<String>)
@@ -44,6 +43,7 @@ interface InternalApplicationExtension :
     fun setAssetPacks(assetPacks: Set<String>)
 
     // See GroovyBlockInExtensionsTest
+    fun androidResources(action: Action<ApplicationAndroidResources>)
     fun bundle(action: Action<BundleOptions>)
     fun dependenciesInfo(action: Action<DependenciesInfo>)
     fun publishing(action: Action<ApplicationPublishing>)

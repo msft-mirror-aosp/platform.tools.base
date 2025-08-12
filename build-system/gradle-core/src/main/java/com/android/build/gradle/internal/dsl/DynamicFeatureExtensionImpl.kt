@@ -24,6 +24,7 @@ import com.android.build.api.dsl.DynamicFeatureInstallation
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
+import org.gradle.api.Action
 import javax.inject.Inject
 
 abstract class DynamicFeatureExtensionImpl @Inject constructor(
@@ -39,7 +40,6 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
             DynamicFeatureProductFlavor,
-            DynamicFeatureAndroidResources,
             DynamicFeatureInstallation>(
         dslServices,
         dslContainers
@@ -50,6 +50,12 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
         dslServices.newInstance(DynamicFeatureBuildFeaturesImpl::class.java)
     override val androidResources: DynamicFeatureAndroidResources
         = dslServices.newDecoratedInstance(DynamicFeatureAndroidResourcesImpl::class.java, dslServices)
+    override fun androidResources(action: DynamicFeatureAndroidResources.() -> Unit) {
+        action(androidResources)
+    }
+    override fun androidResources(action: Action<DynamicFeatureAndroidResources>) {
+        action.execute(androidResources)
+    }
     override val installation: DynamicFeatureInstallation
         = dslServices.newDecoratedInstance(DynamicFeatureInstallationImpl::class.java, dslServices)
 }

@@ -34,7 +34,8 @@ interface InternalTestExtension :
                 TestBuildType,
                 TestDefaultConfig,
                 TestProductFlavor,
-                TestAndroidResources,
                 TestInstallation> {
+
+    fun androidResources(action: Action<TestAndroidResources>)
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

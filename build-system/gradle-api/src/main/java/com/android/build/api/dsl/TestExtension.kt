@@ -29,9 +29,23 @@ interface TestExtension :
             TestBuildType,
             TestDefaultConfig,
             TestProductFlavor,
-            TestAndroidResources,
             TestInstallation> {
     // TODO(b/140406102)
+
+    /**
+     * Specifies options related to the processing of Android Resources.
+     *
+     * For more information about the properties you can configure in this block, see [TestAndroidResources].
+     */
+    override val androidResources: TestAndroidResources
+
+    /**
+     * Specifies options related to the processing of Android Resources.
+     *
+     * For more information about the properties you can configure in this block, see [TestAndroidResources].
+     */
+    fun androidResources(action: TestAndroidResources.() -> Unit)
+
     /**
      * The Gradle path of the project that this test project tests.
      */
