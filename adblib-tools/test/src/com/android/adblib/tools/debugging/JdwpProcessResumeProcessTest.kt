@@ -36,12 +36,12 @@ import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import java.net.InetSocketAddress
 import java.time.Duration
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -49,15 +49,12 @@ class JdwpProcessResumeProcessTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     @JvmField
     @Rule
     val closeables = CloseablesRule()
 
-    @Ignore("b/437895967")
     @Test
     fun testJdwpProcessResumeWorksWithJdwpPropertiesCollectorWhenCalledOnProcessThatIsWaitingForJdwpConnection(): Unit = runBlockingWithTimeout {
         val processPicker: suspend (List<JdwpProcess>) -> JdwpProcess = { jdwpProcessList ->
@@ -74,8 +71,8 @@ class JdwpProcessResumeProcessTest {
             }
             val processWithNoJdwpConnectionOpen = combine(processWithActivationCountFlow) {
                 it.toList()
-            }.first {
-                it.firstOrNull { (_, activationCount) -> activationCount == 0 } != null
+            }.mapNotNull {
+                it.firstOrNull { (_, activationCount) -> activationCount == 0 }
             }.first().first
 
             processWithNoJdwpConnectionOpen
@@ -95,8 +92,8 @@ class JdwpProcessResumeProcessTest {
             }
             val processWithJdwpConnectionOpen = combine(processWithActivationCountFlow) {
                 it.toList()
-            }.first {
-                it.firstOrNull { (_, activationCount) -> activationCount > 0 } != null
+            }.mapNotNull { it ->
+                it.firstOrNull { (_, activationCount) -> activationCount > 0 }
             }.first().first
 
             processWithJdwpConnectionOpen
@@ -170,13 +167,16 @@ class JdwpProcessResumeProcessTest {
             adbSessions = createTwoSession()
         )
 
-        // All processes should reach `isWaitingForDebugger`==`false` (since the Process Inventory
+        // All processes should reach `isWaitingForDebugger`==`true` (since the Process Inventory
         // server is active)
         combine(jdwpProcessList.map { it.jdwpPropertiesCollector.stateFlow }) {
             it.toList()
         }.first {
             it.all { jdwpProcessProperties -> jdwpProcessProperties.isWaitingForDebugger.isValue(true) }
         }
+        // TODO(b/438199018): Remove this delay that is currently needed to
+        //  allow the process property updates to stop propagating through InventoryServer
+        delay(100)
 
         // We can now call `resumeProcess`
         pickProcess(jdwpProcessList).resumeProcess()
