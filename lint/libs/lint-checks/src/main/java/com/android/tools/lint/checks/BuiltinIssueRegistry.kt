@@ -387,6 +387,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           PropertyFileDetector.PROXY_PASSWORD,
           ProviderPermissionDetector.PROVIDER_READ_PERMISSION_ONLY,
           PublicKeyCredentialDetector.ISSUE,
+          PurposeDeclarationDetector.MISSING_PURPOSE,
           PxUsageDetector.DP_ISSUE,
           PxUsageDetector.IN_MM_ISSUE,
           PxUsageDetector.PX_ISSUE,

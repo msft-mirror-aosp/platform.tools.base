@@ -217,6 +217,8 @@ public final class SdkConstants {
     public static final String FN_INTENT_ACTIONS_ACTIVITY = "activity_actions.txt";
     /** Intent broadcast actions list file */
     public static final String FN_INTENT_ACTIONS_BROADCAST = "broadcast_actions.txt";
+    /** Permission versions XML file */
+    public static final String FN_PERMISSION_VERSIONS = "permission-versions.xml";
     /** Intent service actions list file */
     public static final String FN_INTENT_ACTIONS_SERVICE = "service_actions.txt";
     /** Intent category list file */
@@ -1128,6 +1130,7 @@ public final class SdkConstants {
     public static final String TAG_PROPERTY = "property";
     public static final String TAG_PROVIDER = "provider";
     public static final String TAG_PURPOSE = "purpose";
+    public static final String TAG_VALID_PURPOSE = "valid-purpose";
     public static final String TAG_GRANT_PERMISSION = "grant-uri-permission";
     public static final String TAG_PATH_PERMISSION = "path-permission";
     public static final String TAG_ACTION = "action";
@@ -1314,6 +1317,8 @@ public final class SdkConstants {
     public static final String ATTR_PERMISSION = "permission";
     public static final String ATTR_PROCESS = "process";
     public static final String ATTR_MIN_SDK_VERSION = "minSdkVersion";
+    public static final String ATTR_MAX_SDK_VERSION = "maxSdkVersion";
+    public static final String ATTR_PURPOSE = "purpose";
     public static final String ATTR_TARGET_SDK_VERSION = "targetSdkVersion";
     public static final String ATTR_ICON = "icon";
     public static final String ATTR_RESOURCE = "resource";
