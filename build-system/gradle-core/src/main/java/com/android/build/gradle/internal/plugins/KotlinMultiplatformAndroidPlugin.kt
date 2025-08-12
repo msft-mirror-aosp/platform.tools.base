@@ -43,6 +43,7 @@ import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.KmpVariantImpl
 import com.android.build.api.variant.impl.KotlinMultiplatformAndroidCompilationImpl
 import com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTargetImpl
+import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.DependencyConfigurator
 import com.android.build.gradle.internal.SdkComponentsBuildService
@@ -64,6 +65,7 @@ import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryEx
 import com.android.build.gradle.internal.dsl.DependencySelectionImpl
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl
+import com.android.build.gradle.internal.getManagedDeviceAvdFolder
 import com.android.build.gradle.internal.ide.dependencies.LibraryDependencyCacheBuildService
 import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
 import com.android.build.gradle.internal.ide.v2.GlobalSyncService
@@ -77,6 +79,7 @@ import com.android.build.gradle.internal.scope.KotlinMultiplatformHostTestBuildF
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
+import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.ClassesHierarchyBuildService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.DslServicesImpl
@@ -90,6 +93,7 @@ import com.android.build.gradle.internal.services.TaskCreationServicesImpl
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.services.VariantServicesImpl
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
+import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.KmpTaskManager
 import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.createSigningOverride
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -203,6 +207,26 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         )
 
         BasePlugin.createAndroidJdkImageConfiguration(project, versionedSdkLoaderService)
+
+        AvdComponentsBuildService.RegistrationAction(
+            project,
+            projectServices.projectOptions,
+            getManagedDeviceAvdFolder(
+                project.objects,
+                project.providers,
+                getBuildService(
+                    project.gradle.sharedServices,
+                    AndroidLocationsBuildService::class.java,
+                ).get()
+            ),
+            dslServices.sdkComponents,
+            project.providers.provider {
+                getCompileSdkVersion()
+            },
+            project.providers.provider {
+                getBuildToolsVersion()
+            },
+        ).execute()
     }
 
     override fun configureExtension(project: Project) {
