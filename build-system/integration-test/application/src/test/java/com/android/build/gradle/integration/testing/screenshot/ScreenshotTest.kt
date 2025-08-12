@@ -41,6 +41,7 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -848,5 +849,69 @@ class ScreenshotTest {
         val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
         assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.newImagePath=")
+    }
+
+    @Ignore("b/360220857: R class files are not loaded for non-main source set for rendering")
+    @Test
+    fun runPreviewScreenshotTestWithCustomFontShouldLoadCustomFonts() {
+        val build = rule.build {
+            androidApplication {
+                files {
+                    add(
+                        "src/main/res/font/my_custom_font.ttf",
+                        this.javaClass.getResourceAsStream("/fonts/test_font.ttf")!!
+                            .readAllBytes()
+                    )
+                    add(
+                        "src/main/java/com/ExampleWithFont.kt",
+                        """
+                    package pkg.name
+
+                    import androidx.compose.material.Text
+                    import androidx.compose.runtime.Composable
+                    import androidx.compose.ui.text.font.Font
+                    import androidx.compose.ui.text.font.FontFamily
+                    import androidx.compose.ui.text.font.FontWeight
+                    import pkg.name.app.R
+
+                    private val customFontFamily = FontFamily(
+                        Font(R.font.my_custom_font, FontWeight.Normal)
+                    )
+
+
+                    @Composable
+                    fun SimpleComposableWithFont(text: String = "Hello World") {
+                        Text(text, fontFamily = customFontFamily)
+                    }
+                    """.trimIndent()
+                    )
+                    add(
+                        "src/screenshotTest/java/com/ExampleWithFontTest.kt",
+                        """
+                    package pkg.name
+
+                    import androidx.compose.ui.tooling.preview.Preview
+                    import androidx.compose.ui.tooling.preview.PreviewParameter
+                    import androidx.compose.runtime.Composable
+                    import com.android.tools.screenshot.PreviewTest
+
+                    class ExampleWithFontTest {
+                        @PreviewTest
+                        @Preview(name = "simpleComposable", showBackground = true)
+                        @Composable
+                        fun simpleComposableWithFontTest() {
+                            SimpleComposableWithFont()
+                        }
+                    }""".trimIndent()
+                    )
+                }
+            }
+        }
+        val appProject = build.androidApplication()
+        updateReferenceImage()
+
+        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+        result.assertOutputDoesNotContain("Could not load font")
     }
 }
