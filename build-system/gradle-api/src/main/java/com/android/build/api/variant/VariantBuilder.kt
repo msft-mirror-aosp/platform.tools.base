@@ -119,7 +119,8 @@ interface VariantBuilder: ComponentBuilder {
      * by default.
      */
     @Deprecated(
-        "Will be removed in AGP 9.0 - " +
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in AGP 10.0 - " +
                 "Use (variantBuilder as HasHostTestsBuilder).hostTests.get(HostTestBuilder.UNIT_TEST_TYPE).enable",
     ) // b/368607542
     var unitTestEnabled: Boolean
@@ -129,7 +130,8 @@ interface VariantBuilder: ComponentBuilder {
      * by default.
      */
     @Deprecated(
-        "Will be removed in AGP 9.0 - " +
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in AGP 10.0 - " +
             "Use (variantBuilder as HasHostTestsBuilder).hostTests.get(HostTestBuilder.UNIT_TEST_TYPE).enable",
     ) // b/368607542
     var enableUnitTest: Boolean

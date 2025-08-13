@@ -17,6 +17,7 @@
 package com.example.buildsrc.plugin
 
 import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.HasUnitTest
 import com.android.build.api.instrumentation.FramesComputationMode
 import com.android.build.api.instrumentation.InstrumentationScope
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -77,7 +78,7 @@ class InstrumentationPlugin : Plugin<Project> {
                     instrumentedAnnotationDescriptor
                 )
             }
-            it.unitTest?.instrumentation?.transformClassesWith(
+            (it as? HasUnitTest)?.unitTest?.instrumentation?.transformClassesWith(
                     AnnotationAddingClassVisitorFactory::class.java,
                     InstrumentationScope.PROJECT
             ) { params ->
@@ -112,7 +113,7 @@ class InstrumentationPlugin : Plugin<Project> {
                 )
                 params.interfaceInternalName.setDisallowChanges(instrumentedInterfaceInternalName)
             }
-            it.unitTest?.instrumentation?.transformClassesWith(
+            (it as? HasUnitTest)?.unitTest?.instrumentation?.transformClassesWith(
                     InterfaceAddingClassVisitorFactory::class.java,
                     InstrumentationScope.PROJECT
             ) { params ->
