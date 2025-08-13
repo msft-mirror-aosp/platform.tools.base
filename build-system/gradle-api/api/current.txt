@@ -3399,7 +3399,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.Packaging packaging;
     property public abstract org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> proguardFiles;
     property @Deprecated public abstract com.android.build.api.variant.AndroidVersion targetSdkVersion;
-    property @Deprecated public com.android.build.api.component.UnitTest? unitTest;
+    property @Deprecated public abstract com.android.build.api.component.UnitTest? unitTest;
   }
 
   public interface VariantBuilder extends com.android.build.api.variant.ComponentBuilder {
@@ -3420,14 +3420,14 @@ package com.android.build.api.variant {
     method @Deprecated public void setTargetSdk(Integer?);
     method @Deprecated public void setTargetSdkPreview(String?);
     method @Deprecated public void setUnitTestEnabled(boolean);
-    property @Deprecated public boolean enableUnitTest;
+    property @Deprecated public abstract boolean enableUnitTest;
     property public abstract Integer? maxSdk;
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;
     property public abstract int renderscriptTargetApi;
     property @Deprecated public Integer? targetSdk;
     property @Deprecated public String? targetSdkPreview;
-    property @Deprecated public boolean unitTestEnabled;
+    property @Deprecated public abstract boolean unitTestEnabled;
   }
 
   public interface VariantExtension {

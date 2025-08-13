@@ -16,8 +16,6 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.variant.HasHostTestsBuilder
-import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.GeneratesApkBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
@@ -78,17 +76,17 @@ abstract class AnalyticsEnabledVariantBuilder(
         }
 
     override var unitTestEnabled: Boolean
-        get() = (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable ?: false
+        get() = delegate.enableUnitTest
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
-            (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
+            delegate.enableUnitTest = value
         }
 
     override var enableUnitTest: Boolean
-        get() = (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable ?: false
+        get() = delegate.enableUnitTest
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
-            (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
+            delegate.enableUnitTest = value
         }
 
     override fun <T: Any> registerExtension(type: Class<out T>, instance: T) {

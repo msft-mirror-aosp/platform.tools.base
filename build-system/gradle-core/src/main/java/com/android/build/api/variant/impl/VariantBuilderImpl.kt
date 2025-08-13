@@ -150,13 +150,13 @@ abstract class VariantBuilderImpl(
         get() = hostTests[HostTestBuilder.UNIT_TEST_TYPE]
                 ?: throw RuntimeException("Invalid component, no unit test defined")
 
-    @Deprecated("Will be removed in AGP 10.0 - Use (variantBuilder as HasHostTestsBuilder).get(HasHostTestsBuilder.UNIT_TEST_TYPE).enable")
+    @Deprecated("Will be removed in AGP 9.0 - Use (variantBuilder as HasHostTestsBuilder).get(HasHostTestsBuilder.UNIT_TEST_TYPE).enable")
     override var enableUnitTest: Boolean
         get() = unitTest.enable
         set(value) {
             unitTest.enable = value
         }
-    @Deprecated("Will be removed in AGP 10.0 - Use (variantBuilder as HasHostTestsBuilder).get(HasHostTestsBuilder.UNIT_TEST_TYPE).enable")
+    @Deprecated("Will be removed in AGP 9.0 - Use (variantBuilder as HasHostTestsBuilder).get(HasHostTestsBuilder.UNIT_TEST_TYPE).enable")
     override var unitTestEnabled: Boolean
         get() = unitTest.enable
         set(value) {

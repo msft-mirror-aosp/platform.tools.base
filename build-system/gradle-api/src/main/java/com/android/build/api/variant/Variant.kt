@@ -109,9 +109,8 @@ interface Variant : Component, HasAndroidResources {
      * Variant's [UnitTest], or null if the unit tests for this variant are disabled.
      */
     @get:Deprecated(
-        level = DeprecationLevel.HIDDEN,
-        message = "Will be removed in v10.0",
-        replaceWith = ReplaceWith("(delegate as? HasUnitTest)?.unitTest")
+        "Will be removed in v9.0",
+        replaceWith = ReplaceWith("(Variant.Subtype).unitTest where available")
     ) // b/368607542
     val unitTest: UnitTest?
 

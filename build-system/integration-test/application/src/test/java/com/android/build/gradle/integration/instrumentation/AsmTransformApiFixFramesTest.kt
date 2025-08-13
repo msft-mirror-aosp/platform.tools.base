@@ -172,11 +172,11 @@ class AsmTransformApiFixFramesTest {
                 """
             val androidComponentsExt = project.extensions.getByType(AndroidComponentsExtension::class.java)
             androidComponentsExt.onVariants {
-                    (it as? HasUnitTest)?.unitTest?.instrumentation?.transformClassesWith(
+                    it.unitTest?.instrumentation?.transformClassesWith(
                             FramesBreakingClassVisitorFactory::class.java,
                             InstrumentationScope.PROJECT
                     ) {}
-                    (it as? HasUnitTest)?.unitTest?.instrumentation?.setAsmFramesComputationMode($framesMode)
+                    it.unitTest?.instrumentation?.setAsmFramesComputationMode($framesMode)
                 }
                 """.trimIndent()
 
