@@ -3171,8 +3171,6 @@ package com.android.build.api.variant {
   }
 
   public interface KotlinMultiplatformAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension,com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder,com.android.build.api.variant.KotlinMultiplatformAndroidVariant> {
-    method @Deprecated @org.gradle.api.Incubating public void onVariant(kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant,kotlin.Unit> callback);
-    method @Deprecated @org.gradle.api.Incubating public void onVariant(org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant> callback);
   }
 
   public interface KotlinMultiplatformAndroidVariant extends com.android.build.api.variant.LibraryVariant {

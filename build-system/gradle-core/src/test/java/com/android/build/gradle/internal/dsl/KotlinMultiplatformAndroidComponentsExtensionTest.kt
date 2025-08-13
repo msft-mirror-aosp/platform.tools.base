@@ -110,7 +110,7 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
         )
 
         var called = false
-        componentsExtension.onVariant {
+        componentsExtension.onVariants {
             Truth.assertThat(it).isEqualTo(variant)
             called = true
         }
