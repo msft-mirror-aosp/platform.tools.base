@@ -283,7 +283,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(19, 0, humanReadable = "Android Gradle Plugin 9.0")
+        val modelProducer = VersionImpl(20, 0, humanReadable = "Android Gradle Plugin 9.0")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.

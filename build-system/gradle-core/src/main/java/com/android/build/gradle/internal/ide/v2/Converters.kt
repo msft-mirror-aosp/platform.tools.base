@@ -134,6 +134,7 @@ internal fun DslBuildType.convert(features: BuildFeatureValues) = BuildTypeImpl(
     isMinifyEnabled = isMinifyEnabled,
     isZipAlignEnabled = isZipAlignEnabled,
     isEmbedMicroApp = isEmbedMicroApp,
+    matchingFallbacks = matchingFallbacks.toImmutableList(),
     signingConfig = signingConfig?.name,
     applicationIdSuffix = applicationIdSuffix,
     versionNameSuffix = versionNameSuffix,

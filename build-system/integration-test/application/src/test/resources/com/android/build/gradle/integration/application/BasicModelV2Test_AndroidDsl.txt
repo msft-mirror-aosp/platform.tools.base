@@ -101,6 +101,8 @@
          - isZipAlignEnabled        = true
          - isEmbedMicroApp          = false
          - signingConfig            = "debug"
+         - matchingFallbacks:
+            * "release"
       < debug
       > release:
          - name                     = "release"
@@ -126,6 +128,7 @@
          - isZipAlignEnabled        = true
          - isEmbedMicroApp          = false
          - signingConfig            = (null)
+         - matchingFallbacks        = []
       < release
    < buildTypes
    - flavorDimensions  = []
