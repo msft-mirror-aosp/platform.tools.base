@@ -16,6 +16,7 @@
 
 package com.android.tools.agent.appinspection.proto
 
+import android.content.Context
 import android.content.res.Resources
 import android.graphics.Matrix
 import android.graphics.Point
@@ -330,3 +331,21 @@ fun android.graphics.Rect.toRect(): Rect = Rect.newBuilder().apply {
     w = width()
     h = height()
 }.build()
+
+/** Returns the display this view is attached to, or null if the view is not attached */
+fun View.getDisplayCompat(): Display? {
+    return if (Build.VERSION.SDK_INT >= 17) {
+        this.display
+    }
+    else if (this.windowToken != null) {
+        // This code path is for completeness only, since embedded LI currently requires API 29+.
+        // For older APIs, we fall back to the default display.
+        // A view must be attached to a window to have a display.
+        val windowManager = this.context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        windowManager.defaultDisplay
+    }
+    else {
+        // If not attached, we can't determine the display.
+        null
+    }
+}

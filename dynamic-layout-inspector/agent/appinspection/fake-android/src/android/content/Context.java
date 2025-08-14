@@ -21,7 +21,9 @@ import android.hardware.SensorManager;
 import android.view.Display;
 import android.view.WindowManager;
 import android.view.WindowManagerImpl;
+
 import androidx.annotation.VisibleForTesting;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("MethodMayBeStatic")
@@ -31,6 +33,8 @@ public class Context {
 
     private final String mPackageName;
     private final Resources mResources;
+
+    public static final String WINDOW_SERVICE = "window";
 
     @VisibleForTesting public SensorManager sensorManager = new SensorManager();
 
@@ -74,5 +78,9 @@ public class Context {
 
     public Display getDisplay() {
         return new Display(new Point(1440, 3120));
+    }
+
+    public Object getSystemService(String name) {
+        return new Object();
     }
 }
