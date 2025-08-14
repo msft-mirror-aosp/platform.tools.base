@@ -155,7 +155,7 @@ abstract class GeneratePrivacySandboxAsar : NonIncrementalGlobalTask() {
             }
             task.signingConfigDataProvider.setDisallowChanges(
                     SigningConfigDataProvider(
-                            signingConfigData = signingConfigProvider as Provider<SigningConfigData?>,
+                            signingConfigData = signingConfigProvider as Provider<SigningConfigData>,
                             signingConfigFileCollection = null,
                             signingConfigValidationResultDir = creationConfig.artifacts.get(
                                     InternalArtifactType.VALIDATE_SIGNING_CONFIG)

@@ -1815,7 +1815,7 @@ abstract class SdkVersionInput {
 
     @get:Input
     @get:Optional
-    abstract val codeName: Property<String?>
+    abstract val codeName: Property<String>
 
     internal fun initialize(version: com.android.build.api.variant.AndroidVersion) {
         apiLevel.setDisallowChanges(version.apiLevel)

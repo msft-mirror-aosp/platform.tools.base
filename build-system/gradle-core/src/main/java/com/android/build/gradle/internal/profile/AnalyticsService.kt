@@ -62,7 +62,7 @@ abstract class AnalyticsService :
         val anonymizer: Property<String>
         val projects: MapProperty<String, ProjectData>
         val enableProfileJson: Property<Boolean>
-        val profileDir: Property<File?>
+        val profileDir: Property<File>
         val taskMetadata: MapProperty<String, TaskMetadata>
         val rootProjectPath: Property<String>
         val applicationId: SetProperty<String>

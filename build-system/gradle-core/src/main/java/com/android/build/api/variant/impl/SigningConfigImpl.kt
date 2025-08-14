@@ -112,19 +112,19 @@ class SigningConfigImpl(
     //-----------------------------------------------------
     // Internal APIs
     //------------------------------------------------------
-    val storeFile: Provider<File?> =
+    val storeFile: Provider<File> =
         variantServices.provider { dslSigningConfig?.storeFile }
 
-    val storePassword: Provider<String?> =
+    val storePassword: Provider<String> =
         variantServices.provider { dslSigningConfig?.storePassword }
 
-    val keyAlias: Provider<String?> =
+    val keyAlias: Provider<String> =
         variantServices.provider { dslSigningConfig?.keyAlias }
 
-    val keyPassword: Provider<String?> =
+    val keyPassword: Provider<String> =
         variantServices.provider { dslSigningConfig?.keyPassword }
 
-    val storeType: Provider<String?> =
+    val storeType: Provider<String> =
         variantServices.provider { dslSigningConfig?.storeType }
 
     fun isSigningReady(): Boolean {

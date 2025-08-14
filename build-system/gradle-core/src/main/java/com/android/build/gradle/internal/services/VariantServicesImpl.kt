@@ -47,7 +47,7 @@ class VariantServicesImpl(
     // direct value.
     private val compatibilityMode = projectServices.projectOptions[BooleanOption.ENABLE_LEGACY_API]
 
-    override fun <T> propertyOf(type: Class<T>, value: T): Property<T> {
+    override fun <T : Any> propertyOf(type: Class<T>, value: T): Property<T> {
         return initializeProperty(type).also {
             it.set(value)
             it.finalizeValueOnRead()
@@ -58,7 +58,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> propertyOf(type: Class<T>, value: Provider<T>): Property<T> {
+    override fun <T : Any> propertyOf(type: Class<T>, value: Provider<T>): Property<T> {
         return initializeProperty(type).also {
             it.set(value)
             it.finalizeValueOnRead()
@@ -69,7 +69,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> propertyOf(type: Class<T>, value: () -> T): Property<T> {
+    override fun <T : Any> propertyOf(type: Class<T>, value: () -> T): Property<T> {
         return initializeProperty(type).also {
             it.set(projectServices.providerFactory.provider(value))
             it.finalizeValueOnRead()
@@ -80,7 +80,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> propertyOf(type: Class<T>, value: Callable<T>): Property<T> {
+    override fun <T : Any> propertyOf(type: Class<T>, value: Callable<T>): Property<T> {
         return initializeProperty(type).also {
             it.set(projectServices.providerFactory.provider(value))
             it.finalizeValueOnRead()
@@ -91,7 +91,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> listPropertyOf(
+    override fun <T : Any> listPropertyOf(
         type: Class<T>,
         value: Collection<T>,
         disallowUnsafeRead: Boolean,
@@ -106,7 +106,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> listPropertyOf(
+    override fun <T : Any> listPropertyOf(
         type: Class<T>,
         fillAction: (ListProperty<T>) -> Unit,
     ): ListProperty<T> {
@@ -120,7 +120,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> setPropertyOf(type: Class<T>, value: Callable<Collection<T>>): SetProperty<T> {
+    override fun <T : Any> setPropertyOf(type: Class<T>, value: Callable<Collection<T>>): SetProperty<T> {
         return projectServices.objectFactory.setProperty(type).also {
             it.set(projectServices.providerFactory.provider(value))
             it.finalizeValueOnRead()
@@ -131,7 +131,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> setPropertyOf(
+    override fun <T : Any> setPropertyOf(
         type: Class<T>,
         value: Collection<T>,
         disallowUnsafeRead: Boolean
@@ -146,7 +146,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <K, V> mapPropertyOf(
+    override fun <K : Any, V : Any> mapPropertyOf(
         keyType: Class<K>,
         valueType: Class<V>,
         value: Map<K, V>,
@@ -162,7 +162,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> newPropertyBackingDeprecatedApi(type: Class<T>, value: T): Property<T> {
+    override fun <T : Any> newPropertyBackingDeprecatedApi(type: Class<T>, value: T): Property<T> {
         return initializeProperty(type).also {
             it.set(value)
             if (!compatibilityMode) {
@@ -175,7 +175,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> newPropertyBackingDeprecatedApi(type: Class<T>, value: Callable<T>): Property<T> {
+    override fun <T : Any> newPropertyBackingDeprecatedApi(type: Class<T>, value: Callable<T>): Property<T> {
         return initializeProperty(type).also {
             it.set(projectServices.providerFactory.provider(value))
             if (!compatibilityMode) {
@@ -188,7 +188,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> newPropertyBackingDeprecatedApi(type: Class<T>, value: Provider<T>): Property<T> {
+    override fun <T : Any> newPropertyBackingDeprecatedApi(type: Class<T>, value: Provider<T>): Property<T> {
         return initializeProperty(type).also {
             it.set(value)
             if (!compatibilityMode) {
@@ -201,7 +201,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> newProviderBackingDeprecatedApi(type: Class<T>, value: Provider<T>): Provider<T> {
+    override fun <T : Any> newProviderBackingDeprecatedApi(type: Class<T>, value: Provider<T>): Provider<T> {
         return initializeProperty(type).also {
             it.set(value)
             it.disallowChanges()
@@ -214,11 +214,11 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> newListPropertyForInternalUse(type: Class<T>): ListProperty<T> {
+    override fun <T : Any> newListPropertyForInternalUse(type: Class<T>): ListProperty<T> {
         return initializeListProperty(type)
     }
 
-    override fun <T> providerOf(
+    override fun <T : Any> providerOf(
         type: Class<T>,
         value: Provider<T>,
         id: String,
@@ -234,7 +234,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> setProviderOf(type: Class<T>, value: Provider<out Iterable<T>?>): Provider<Set<T>?> {
+    override fun <T> setProviderOf(type: Class<T>, value: Provider<out Iterable<T>>): Provider<Set<T>> {
         return projectServices.objectFactory.setProperty(type).also {
             it.set(value)
             it.disallowChanges()
@@ -245,7 +245,7 @@ class VariantServicesImpl(
         }
     }
 
-    override fun <T> setProviderOf(type: Class<T>, value: Iterable<T>?): Provider<Set<T>?> {
+    override fun <T> setProviderOf(type: Class<T>, value: Iterable<T>?): Provider<Set<T>> {
         return projectServices.objectFactory.setProperty(type).also {
             it.set(value)
             it.disallowChanges()
@@ -269,7 +269,7 @@ class VariantServicesImpl(
     override fun fileTree(): ConfigurableFileTree =
         projectServices.objectFactory.fileTree()
 
-    override fun <T> provider(callable: Callable<T>): Provider<T> {
+    override fun <T : Any> provider(callable: Callable<T?>): Provider<T> {
         return projectServices.providerFactory.provider(callable)
     }
 
@@ -310,7 +310,7 @@ class VariantServicesImpl(
         propertiesLockStatus = true
     }
 
-    override fun <T> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>) =
+    override fun <T : Any> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>) =
         projectServices.objectFactory.domainObjectContainer(type, factory)
 
     // register a property to be locked later.
@@ -324,12 +324,12 @@ class VariantServicesImpl(
         }
     }
 
-    private fun <T> initializeProperty(type: Class<T>): Property<T> =
+    private fun <T : Any> initializeProperty(type: Class<T>): Property<T> =
         projectServices.objectFactory.property(type)
 
-    private fun <T> initializeListProperty(type: Class<T>): ListProperty<T> =
+    private fun <T : Any> initializeListProperty(type: Class<T>): ListProperty<T> =
         projectServices.objectFactory.listProperty(type)
 
-    private fun <T> initializeNullableProperty(type: Class<T>): Property<T?> =
+    private fun <T : Any> initializeNullableProperty(type: Class<T>): Property<T> =
         projectServices.objectFactory.property(type)
 }

@@ -71,7 +71,7 @@ abstract class AsarsToCompatSplitsTask : NonIncrementalTask() {
 
     @get:Input
     @get:Optional
-    abstract val versionCode: Property<Int?>
+    abstract val versionCode: Property<Int>
 
     @get:Input
     abstract val minSdk: Property<Int>

@@ -75,7 +75,7 @@ abstract class ExtractPrivacySandboxCompatApks: NonIncrementalTask() {
 
     @get:Input
     @get:Optional
-    abstract val versionCode: Property<Int?>
+    abstract val versionCode: Property<Int>
 
     @get:Nested
     abstract val androidJarInput: AndroidJarInput

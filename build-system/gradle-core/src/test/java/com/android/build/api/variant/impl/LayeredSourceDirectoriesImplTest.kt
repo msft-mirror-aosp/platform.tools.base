@@ -45,7 +45,7 @@ internal class LayeredSourceDirectoriesImplTest {
     private val variantServices: VariantServices = mock()
 
     @Captor
-    lateinit var callableCaptor: ArgumentCaptor<Callable<*>>
+    lateinit var callableCaptor: ArgumentCaptor<Callable<Any?>>
 
     private lateinit var project: Project
 
@@ -58,7 +58,8 @@ internal class LayeredSourceDirectoriesImplTest {
             .build()
 
         whenever(variantServices.provider(capture(callableCaptor))).thenAnswer {
-            project.provider(callableCaptor.value)
+            val capturedCallable: Callable<Any?> = callableCaptor.value
+            project.provider(Callable { capturedCallable.call()!! })
         }
 
         val projectInfo = mock<ProjectInfo>()

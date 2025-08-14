@@ -23,7 +23,7 @@ import org.gradle.api.DomainObjectSet
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 
-class DomainObjectSetProxy<T>(private val dslRecorder: DslRecorder) : DomainObjectSet<T> {
+class DomainObjectSetProxy<T : Any>(private val dslRecorder: DslRecorder) : DomainObjectSet<T> {
 
     override fun addAll(elements: Collection<T>): Boolean {
         dslRecorder.collectionAddAll(elements)
@@ -49,15 +49,15 @@ class DomainObjectSetProxy<T>(private val dslRecorder: DslRecorder) : DomainObje
         return true
     }
 
-    override fun <S : T?> withType(type: Class<S?>): DomainObjectSet<S?> {
+    override fun <S : T> withType(type: Class<S?>): DomainObjectSet<S> {
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun matching(spec: Spec<in T>): DomainObjectSet<T?> {
+    override fun matching(spec: Spec<in T>): DomainObjectSet<T> {
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun matching(spec: Closure<*>): DomainObjectSet<T?> {
+    override fun matching(spec: Closure<*>): DomainObjectSet<T> {
         throw RuntimeException("Not yet implemented")
     }
 
@@ -65,25 +65,25 @@ class DomainObjectSetProxy<T>(private val dslRecorder: DslRecorder) : DomainObje
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun addLater(provider: Provider<out T?>) {
+    override fun addLater(provider: Provider<out T>) {
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun addAllLater(provider: Provider<out Iterable<T?>?>) {
+    override fun addAllLater(provider: Provider<out Iterable<T>>) {
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun <S : T?> withType(
+    override fun <S : T> withType(
         type: Class<S?>,
         configureAction: Action<in S>
-    ): DomainObjectCollection<S?> {
+    ): DomainObjectCollection<S> {
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun <S : T?> withType(
-        type: Class<S?>,
+    override fun <S : T> withType(
+        type: Class<S>,
         configureClosure: Closure<*>
-    ): DomainObjectCollection<S?> {
+    ): DomainObjectCollection<S> {
         throw RuntimeException("Not yet implemented")
     }
 
@@ -115,22 +115,22 @@ class DomainObjectSetProxy<T>(private val dslRecorder: DslRecorder) : DomainObje
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun iterator(): MutableIterator<T?> {
+    override fun iterator(): MutableIterator<T> {
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun retainAll(elements: Collection<T?>): Boolean {
+    override fun retainAll(elements: Collection<T>): Boolean {
         throw RuntimeException("Not yet implemented")
     }
 
     override val size: Int
         get() = throw RuntimeException("Not yet implemented")
 
-    override fun contains(element: T?): Boolean {
+    override fun contains(element: T): Boolean {
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun containsAll(elements: Collection<T?>): Boolean {
+    override fun containsAll(elements: Collection<T>): Boolean {
         throw RuntimeException("Not yet implemented")
     }
 

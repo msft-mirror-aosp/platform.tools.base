@@ -217,7 +217,7 @@ abstract class MergeResources : NewIncrementalTask() {
     abstract val mergedNotCompiledResourcesOutputDirectory: DirectoryProperty
 
     @get:Internal
-    abstract val aaptEnv: Property<String?>
+    abstract val aaptEnv: Property<String>
 
     @get:Internal
     abstract val projectRootDir: DirectoryProperty

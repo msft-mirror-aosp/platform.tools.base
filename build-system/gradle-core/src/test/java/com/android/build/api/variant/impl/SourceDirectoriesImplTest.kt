@@ -52,7 +52,7 @@ internal class SourceDirectoriesImplTest {
     private val variantServices: VariantServices = mock()
 
     @Captor
-    lateinit var callableCaptor: ArgumentCaptor<Callable<*>>
+    lateinit var callableCaptor: ArgumentCaptor<Callable<Any?>>
 
     private lateinit var project: Project
 

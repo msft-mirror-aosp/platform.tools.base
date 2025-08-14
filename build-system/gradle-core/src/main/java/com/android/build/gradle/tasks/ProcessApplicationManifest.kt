@@ -272,15 +272,15 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
 
     @get:Optional
     @get:Input
-    abstract val minSdkVersion: Property<String?>
+    abstract val minSdkVersion: Property<String>
 
     @get:Optional
     @get:Input
-    abstract val targetSdkVersion: Property<String?>
+    abstract val targetSdkVersion: Property<String>
 
     @get:Optional
     @get:Input
-    abstract val maxSdkVersion: Property<Int?>
+    abstract val maxSdkVersion: Property<Int>
 
     @get:Input
     abstract val optionalFeatures: SetProperty<Invoker.Feature>

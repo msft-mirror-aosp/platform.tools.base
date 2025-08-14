@@ -88,7 +88,7 @@ class RegularFilePropertyProxy(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun fileProvider(provider: Provider<File?>): RegularFileProperty {
+    override fun fileProvider(provider: Provider<File>): RegularFileProperty {
         throw RuntimeException("Not yet implemented")
     }
 
@@ -100,7 +100,7 @@ class RegularFilePropertyProxy(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun <U : Any?, R : Any?> zip(
+    override fun <U : Any, R : Any> zip(
         right: Provider<U>,
         combiner: BiFunction<in RegularFile, in U, out R?>
     ): Provider<R> {
@@ -115,7 +115,7 @@ class RegularFilePropertyProxy(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun <S : Any?> flatMap(transformer: Transformer<out Provider<out S>?, in RegularFile>): Provider<S> {
+    override fun <S : Any> flatMap(transformer: Transformer<out Provider<out S>?, in RegularFile>): Provider<S> {
         throw RuntimeException("Not yet implemented")
     }
 
@@ -123,7 +123,7 @@ class RegularFilePropertyProxy(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun <S : Any?> map(transformer: Transformer<out S?, in RegularFile>): Provider<S> {
+    override fun <S : Any> map(transformer: Transformer<out S?, in RegularFile>): Provider<S> {
         throw RuntimeException("Not yet implemented")
     }
 
@@ -131,7 +131,7 @@ class RegularFilePropertyProxy(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun getAsFile(): Provider<File?> {
+    override fun getAsFile(): Provider<File> {
         throw RuntimeException("Not yet implemented")
     }
 
@@ -139,7 +139,7 @@ class RegularFilePropertyProxy(
         dslRecorder.call("set", listOf(file), isVarArgs = false)
     }
 
-    override fun getLocationOnly(): Provider<RegularFile?> {
+    override fun getLocationOnly(): Provider<RegularFile> {
         throw RuntimeException("Not yet implemented")
     }
 }
