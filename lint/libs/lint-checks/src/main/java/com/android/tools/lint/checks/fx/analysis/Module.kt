@@ -177,7 +177,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       base: UClass,
       sam: PsiMethod,
     ): ClassId =
-      ClassId.of(guard, base.javaPsi).also { id ->
+      ClassId.of(guard.annotated, base.javaPsi).also { id ->
         classes.computeIfAbsent(id) {
           val baseBody = buildClass(context, base)
           val baseMethodId = MethodId(sam)
