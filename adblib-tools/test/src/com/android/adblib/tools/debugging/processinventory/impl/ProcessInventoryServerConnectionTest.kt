@@ -643,6 +643,92 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
         }
     }
 
+    @Test
+    fun testProcessUpdate_isWaitingForDebuggerIsTerminalWhenFalse(): Unit =
+        CoroutineTestUtils.runBlockingWithTimeout {
+            // Prepare
+            setHostPropertyValue(
+                session.host,
+                AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1,
+                findFreeTcpPort()
+            )
+            val serverConnection = createServerConnection(session)
+            val deviceState = addFakeDevice(fakeAdb, api = 32)
+            val device = session.waitForOnlineConnectedDevice(deviceState.deviceId)
+            val processListSnapshots = CopyOnWriteArrayList<List<JdwpProcessProperties>>()
+            val job = async {
+                serverConnection.withConnectionForDevice(device) {
+                    processListStateFlow.collect {
+                        processListSnapshots.add(it)
+                    }
+                }
+            }
+
+            // Act
+            val pid = 10
+            // 1. Send an update making the process wait for debugger
+            serverConnection.withConnectionForDevice(device) {
+                sendProcessProperties(
+                    JdwpProcessProperties(
+                        pid,
+                        isWaitingForDebugger = OptionalValue.of(
+                            true
+                        )
+                    )
+                )
+            }
+            yieldUntil {
+                processListSnapshots.lastOrNull()
+                    ?.firstOrNull()?.isWaitingForDebugger?.getOrNull() == true
+            }
+            assertEquals(true, processListSnapshots.last().first().isWaitingForDebugger.getOrNull())
+
+            // 2. Send an update making the process run (i.e. the terminal state)
+            serverConnection.withConnectionForDevice(device) {
+                sendProcessProperties(
+                    JdwpProcessProperties(
+                        pid,
+                        isWaitingForDebugger = OptionalValue.of(
+                            false
+                        )
+                    )
+                )
+            }
+            yieldUntil {
+                processListSnapshots.lastOrNull()
+                    ?.firstOrNull()?.isWaitingForDebugger?.getOrNull() == false
+            }
+            assertEquals(
+                false,
+                processListSnapshots.last().first().isWaitingForDebugger.getOrNull()
+            )
+
+            // 3. Send another update trying to set it back to "waiting". This should be ignored.
+            serverConnection.withConnectionForDevice(device) {
+                sendProcessProperties(
+                    JdwpProcessProperties(
+                        pid,
+                        isWaitingForDebugger = OptionalValue.of(
+                            true
+                        )
+                    )
+                )
+            }
+            // Wait a bit to ensure the server has processed the update and the client has received it.
+            delay(100)
+
+            // Assert: The state should NOT have changed back to true. It should remain in the terminal 'false' state.
+            val lastProcess = processListSnapshots.last().first()
+            assertEquals(pid, lastProcess.pid)
+            assertEquals(
+                "isWaitingForDebugger should remain false after reaching its terminal state",
+                false,
+                lastProcess.isWaitingForDebugger.getOrNull()
+            )
+
+            job.cancel()
+        }
+
     private class ProcessCommandHelper(
         private val device: ConnectedDevice,
         private val serverConnection: ProcessInventoryServerConnection
