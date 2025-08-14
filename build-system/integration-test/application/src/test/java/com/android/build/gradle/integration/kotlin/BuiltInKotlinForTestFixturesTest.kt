@@ -140,7 +140,7 @@ class BuiltInKotlinForTestFixturesTest {
                 // remove the jvmtoolchain setting
                 resetKotlinDsl()
                 kotlin {
-                    compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
                 }
 
                 // Add a simple kotlin source file so that kotlin compilation task does work.
@@ -159,14 +159,14 @@ class BuiltInKotlinForTestFixturesTest {
 
         ScannerSubject.assertThat(
             build.executor.run(":lib:compileDebugTestFixturesKotlin").stdout
-        ).contains("My jvmTarget: 1.8")
+        ).contains("My jvmTarget: 11")
 
         // Then check that setting jvmTarget on the task overrides the compilerOptions DSL.
         // And because it does not match the jvmTarget for JavaCompile, the build should fail.
         build.executor.expectFailure()
             .withArgument("-PsetViaTask=true")
             .run(":lib:compileDebugTestFixturesKotlin")
-            .assertErrorContains("Inconsistent JVM targets between Java and Kotlin compile tasks: 1.8 and 17.")
+            .assertErrorContains("Inconsistent JVM targets between Java and Kotlin compile tasks: 11 and 17.")
     }
 
     class JvmTargetCallback: GenericCallback {

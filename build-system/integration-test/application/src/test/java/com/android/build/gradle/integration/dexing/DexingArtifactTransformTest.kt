@@ -214,7 +214,7 @@ class DexingArtifactTransformTest {
 
     @Test
     fun testDesugaringDoesUseNewPipeline() {
-        project.buildFile.appendText("\nandroid.compileOptions.targetCompatibility 1.8")
+        project.buildFile.appendText("\nandroid.compileOptions.targetCompatibility 11")
         val result = executor().run("assembleDebug")
         assertThat(result.tasks).containsAllIn(listOf(":mergeExtDexDebug", ":mergeDexDebug"))
     }
@@ -243,7 +243,7 @@ class DexingArtifactTransformTest {
     fun testDesugaringWithMinSdk24() {
         project.buildFile.appendText("\n" + """
             android.defaultConfig.minSdkVersion 24
-            android.compileOptions.targetCompatibility 1.8
+            android.compileOptions.targetCompatibility 11
             dependencies {
                 implementation 'com.android.support:support-core-utils:$SUPPORT_LIB_VERSION'
             }

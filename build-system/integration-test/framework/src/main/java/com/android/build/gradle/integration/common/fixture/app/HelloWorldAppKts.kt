@@ -68,7 +68,7 @@ class HelloWorldAppKts private constructor(val namespace: String) : KotlinHelloW
                     }
 
                    kotlinOptions {
-                        jvmTarget = "1.8"
+                        jvmTarget = "11"
                    }
             }
 

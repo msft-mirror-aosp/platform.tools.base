@@ -124,11 +124,11 @@ public class DataBindingIncrementalTest {
                             + "apply plugin: 'kotlin-kapt'");
             TestFileUtils.appendToFile(
                     project.getBuildFile(),
-                    "android.kotlinOptions.jvmTarget = '1.8'\n"
+                    "android.kotlinOptions.jvmTarget = '11'\n"
                         + "tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach"
                         + " {\n"
                         + "  compilerOptions {\n"
-                        + "    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)\n"
+                        + "    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)\n"
                         + "  }\n"
                         + "}");
         }

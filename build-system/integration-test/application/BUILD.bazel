@@ -54,6 +54,9 @@ OLD_SDKS = [
     "//prebuilts/studio/sdk:platforms/android-23_build_only",
     "//prebuilts/studio/sdk:platforms/android-24_build_only",
     "//prebuilts/studio/sdk:platforms/android-29_build_only",
+    "//prebuilts/studio/sdk:platforms/android-30_build_only",
+    "//prebuilts/studio/sdk:platforms/android-31_build_only",
+    "//prebuilts/studio/sdk:platforms/android-32_build_only",
 ]
 
 #keep sorted

@@ -113,7 +113,7 @@ object AsmApiApiTestUtils {
                 .filterKeys {
                     it.startsWith(classesDescriptorPackagePrefix)
                 }
-        Truth.assertThat(filteredClasses.keys)
+        Truth.assertThat(filteredClasses.filterNot { it.key.endsWith("\$Condy0;") }.keys)
                 .containsExactlyElementsIn(expectedClasses.map { name ->
                     "$classesDescriptorPackagePrefix$name;"
                 })

@@ -37,8 +37,8 @@ class CompileOptionsTest {
         val options = compileOptions()
         options.finalizeSourceAndTargetCompatibility(toolchainVersion = null)
 
-        assertThat(options.sourceCompatibility).isEqualTo(JavaVersion.VERSION_1_8)
-        assertThat(options.targetCompatibility).isEqualTo(JavaVersion.VERSION_1_8)
+        assertThat(options.sourceCompatibility).isEqualTo(JavaVersion.VERSION_11)
+        assertThat(options.targetCompatibility).isEqualTo(JavaVersion.VERSION_11)
     }
 
     @Test

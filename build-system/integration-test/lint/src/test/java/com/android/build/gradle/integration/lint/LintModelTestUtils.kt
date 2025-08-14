@@ -52,7 +52,7 @@ fun checkLintModels(
                 actual.toTypedArray()
             )
             errors += if (System.getenv("GENERATE_MODEL_GOLDEN_FILES").isNullOrEmpty()) {
-                "Unexpected lint model change for ${model.fileName}\n" +
+                "Unexpected lint model change for ${model.fileName} (path: $modelSnapshotResourceRelativePath/${model.fileName})\n" +
                         "Run with env var GENERATE_MODEL_GOLDEN_FILES=true to regenerate\n" +
                         diff
             } else {

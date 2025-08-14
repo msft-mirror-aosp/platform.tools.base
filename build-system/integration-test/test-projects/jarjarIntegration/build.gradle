@@ -19,6 +19,11 @@ android {
     //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion
     targetSdkVersion 20
   }
+
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
 }
 
 import com.android.test.jarjar.JarJarTask

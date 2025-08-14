@@ -28,7 +28,7 @@ android {
         minSdkVersion libs.versions.supportLibMinSdk.get()
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = JavaVersion.VERSION_11
     }
 }
 

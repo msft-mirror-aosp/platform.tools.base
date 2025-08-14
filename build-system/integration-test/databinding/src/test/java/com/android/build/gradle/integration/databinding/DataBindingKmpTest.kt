@@ -139,14 +139,14 @@ class DataBindingKmpTest {
                 androidTarget()
                 androidTarget { target ->
                     target.compilations.all { compilation ->
-                        compilation.compilerOptions.options.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+                        compilation.compilerOptions.options.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
                     }
                 }
             }
 
             project.tasks.withType(KaptGenerateStubs::class.java) {
                 it.compilerOptions {
-                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
                 }
             }
         }

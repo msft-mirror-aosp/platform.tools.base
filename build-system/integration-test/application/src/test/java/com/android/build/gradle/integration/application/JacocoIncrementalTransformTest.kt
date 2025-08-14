@@ -126,14 +126,34 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("A", "B", "C", "R")
+            classes().subPackage("com/agpTest/libWithClasses/")
+                .containsExactly(
+                    "A",
+                    "A$\$ExternalSynthetic\$Condy0",
+                    "B",
+                    "B$\$ExternalSynthetic\$Condy0",
+                    "C",
+                    "C$\$ExternalSynthetic\$Condy0",
+                    "R"
+                )
         }
         build.androidLibrary().files.update("src/main/java/com/agpTest/libWithClasses/B.kt").append(
             "\nfun bar() {}"
         )
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("A", "B", "BKt", "C", "R")
+            classes().subPackage("com/agpTest/libWithClasses/")
+                .containsExactly(
+                    "A",
+                    "A$\$ExternalSynthetic\$Condy0",
+                    "B",
+                    "B$\$ExternalSynthetic\$Condy0",
+                    "BKt",
+                    "BKt$\$ExternalSynthetic\$Condy0",
+                    "C",
+                    "C$\$ExternalSynthetic\$Condy0",
+                    "R"
+                )
         }
     }
 
@@ -144,12 +164,26 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("A", "B", "C", "R")
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly(
+                "A",
+                "A$\$ExternalSynthetic\$Condy0",
+                "B",
+                "B$\$ExternalSynthetic\$Condy0",
+                "C",
+                "C$\$ExternalSynthetic\$Condy0",
+                "R"
+            )
         }
         build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("B", "C", "R")
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly(
+                "B",
+                "B$\$ExternalSynthetic\$Condy0",
+                "C",
+                "C$\$ExternalSynthetic\$Condy0",
+                "R"
+            )
         }
     }
 
@@ -158,7 +192,15 @@ class JacocoIncrementalTransformTest {
         val build = project.build
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("A", "B", "C", "R")
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly(
+                "A",
+                "A$\$ExternalSynthetic\$Condy0",
+                "B",
+                "B$\$ExternalSynthetic\$Condy0",
+                "C",
+                "C$\$ExternalSynthetic\$Condy0",
+                "R"
+            )
         }
         // Remove file that impacts file ordering.
         build.androidLibrary().files.remove("src/main/java/com/agpTest/libWithClasses/A.kt")
@@ -166,7 +208,13 @@ class JacocoIncrementalTransformTest {
             .searchAndReplace("class B {}", """class B { fun bar () {} }""")
         build.executor.run("${AndroidProjectDefinition.DEFAULT_APP_PATH}:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("com/agpTest/libWithClasses/").containsExactly("B", "C", "R")
+            classes().subPackage("com/agpTest/libWithClasses/").containsExactly(
+                "B",
+                "B$\$ExternalSynthetic\$Condy0",
+                "C",
+                "C$\$ExternalSynthetic\$Condy0",
+                "R"
+            )
             secondaryDexes().classDefinition("com/agpTest/libWithClasses/B").methods().contains("bar")
         }
     }

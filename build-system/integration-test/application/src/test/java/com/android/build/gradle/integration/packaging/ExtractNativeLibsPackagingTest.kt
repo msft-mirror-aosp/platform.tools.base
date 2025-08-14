@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import org.gradle.api.JavaVersion
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,32 +47,33 @@ class ExtractNativeLibsPackagingTest(
     private val useLegacyPackaging: Boolean?,
     private val expectedMergedManifestValue: Boolean?,
     private val expectedCompression: Int,
+    private val customJavaVersion: JavaVersion?
 ) {
 
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "extractNativeLibs_{0}_minSdk_{1}_compileSdk_{2}_useLegacyPackaging_{3}_expectedMergedManifestValue_{4}_expectedCompression_{5}")
+        @Parameterized.Parameters(name = "extractNativeLibs_{0}_minSdk_{1}_compileSdk_{2}_useLegacyPackaging_{3}_expectedMergedManifestValue_{4}_expectedCompression_{5}_customJavaVersion_{6}")
         fun parameters() = listOf(
-            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED),
-            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED),
-            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED),
-            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED),
-            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED),
-            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED),
-            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, true, false, STORED),
-            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED),
-            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED),
-            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, true, false, STORED),
-            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED),
-            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED),
-            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED),
-            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED),
-            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED),
-            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED),
-            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED),
-            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED),
+            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
+            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED, null),
+            arrayOf(true, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
+            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
+            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, false, true, DEFLATED, null),
+            arrayOf(true, 23, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
+            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, true, false, STORED, null),
+            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
+            arrayOf(false, 22, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
+            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, true, false, STORED, null),
+            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
+            arrayOf(false, 23, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
+            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
+            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
+            arrayOf(null, 22, DEFAULT_COMPILE_SDK_VERSION, null, true, DEFLATED, null),
+            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, true, true, DEFLATED, null),
+            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, false, false, STORED, null),
+            arrayOf(null, 23, DEFAULT_COMPILE_SDK_VERSION, null, false, STORED, null),
             // test case with older compile SDK that doesn't recognize android:extractNativeLibs.
-            arrayOf(null, 22, 21, null, null, DEFLATED)
+            arrayOf(null, 22, 21, null, null, DEFLATED, JavaVersion.VERSION_1_8)
         )
     }
 
@@ -96,6 +98,12 @@ class ExtractNativeLibsPackagingTest(
                         this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let {
                             useLegacyPackaging = it
                         }
+                    }
+                }
+                if (customJavaVersion != null) {
+                    compileOptions {
+                        sourceCompatibility = customJavaVersion
+                        targetCompatibility = customJavaVersion
                     }
                 }
             }
@@ -136,6 +144,13 @@ class ExtractNativeLibsPackagingTest(
                         this@ExtractNativeLibsPackagingTest.useLegacyPackaging?.let {
                             useLegacyPackaging = it
                         }
+                    }
+                }
+
+                if (customJavaVersion != null) {
+                    compileOptions {
+                        sourceCompatibility = customJavaVersion
+                        targetCompatibility = customJavaVersion
                     }
                 }
             }

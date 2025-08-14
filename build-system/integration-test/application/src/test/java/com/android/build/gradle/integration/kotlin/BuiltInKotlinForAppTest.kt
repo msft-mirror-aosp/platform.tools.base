@@ -419,6 +419,6 @@ class BuiltInKotlinForAppTest(
         }
         build.executor.expectFailure()
             .run(":app:compileDebugJavaWithJavac")
-            .assertErrorContains("Inconsistent JVM targets between Java and Kotlin compile tasks: 1.8 and 17.")
+            .assertErrorContains("Inconsistent JVM targets between Java and Kotlin compile tasks: 11 and 17.")
     }
 }

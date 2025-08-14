@@ -209,11 +209,11 @@ public class ManifestMergingTest {
         TestFileUtils.appendToFile(
                 flavors.getBuildFile(),
                 "android {\n"
-                    + "    compileSdkVersion 24\n"
+                    + "    compileSdkVersion 30\n"
                     + "    defaultConfig {\n"
                     + "        minSdkVersion 15\n"
                     + "        //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion\n"
-                    + "        targetSdkVersion 24\n"
+                    + "        targetSdkVersion 30\n"
                     + "    }\n"
                     + "}");
         flavors.executor()
@@ -223,7 +223,7 @@ public class ManifestMergingTest {
                 flavors.file(
                         "build/intermediates/packaged_manifests/f1FaDebug/processF1FaDebugManifestForPackage/AndroidManifest.xml");
         assertThat(manifestFile)
-                .containsAllOf("android:minSdkVersion=\"15\"", "android:targetSdkVersion=\"24\"");
+                .containsAllOf("android:minSdkVersion=\"15\"", "android:targetSdkVersion=\"30\"");
     }
 
     /**
@@ -436,7 +436,7 @@ public class ManifestMergingTest {
         TestFileUtils.appendToFile(
                 flavors.getBuildFile(),
                 "android {\n"
-                        + "    compileSdkVersion 24\n"
+                        + "    compileSdkVersion 30\n"
                         + "    defaultConfig {\n"
                         + "        versionCode 123\n"
                         + "    }\n"

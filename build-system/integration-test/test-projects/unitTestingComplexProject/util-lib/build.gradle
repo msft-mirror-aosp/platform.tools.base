@@ -22,7 +22,7 @@ android {
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = JavaVersion.VERSION_11
     }
 }
 

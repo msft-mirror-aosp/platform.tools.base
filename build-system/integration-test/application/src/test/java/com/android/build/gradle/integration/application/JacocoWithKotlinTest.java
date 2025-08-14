@@ -22,15 +22,15 @@ import static com.android.testutils.truth.PathSubject.assertThat;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.android.build.gradle.internal.scope.ArtifactTypeUtil;
-import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
-import java.io.File;
-import java.io.IOException;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 /** Check that Jacoco runs for a Kotlin-based project. */
 public class JacocoWithKotlinTest {
@@ -64,7 +64,7 @@ public class JacocoWithKotlinTest {
         assertThat(project.getApk(GradleTestProject.ApkType.DEBUG))
                 .hasMainClass("Lcom/example/helloworld/HelloWorld;")
                 .that()
-                .hasField("$jacocoData");
+                .hasMethod("$jacocoInit");
 
         File kotlinModuleFile =
                 FileUtils.join(
