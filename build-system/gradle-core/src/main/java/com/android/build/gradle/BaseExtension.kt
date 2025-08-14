@@ -22,7 +22,6 @@ import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
-import com.android.build.api.transform.Transform
 import com.android.build.api.variant.VariantFilter
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
@@ -271,29 +270,6 @@ abstract class BaseExtension protected constructor(
 
     override val testServers: List<TestServer>
         get() = testServerList
-
-    /**
-     * The [Transform] API is planned to be removed in Android Gradle plugin 8.0.
-     *
-     * There is no single replacement. For more information about how to migrate, see
-     * [https://developer.android.com/studio/releases/gradle-plugin-roadmap]
-     */
-    @Deprecated(
-        "The transform API support has been removed in Android Gradle plugin 8.0."
-    )
-    fun registerTransform(transform: Transform, vararg dependencies: Any) {
-        dslServices.deprecationReporter.reportRemovedApi(
-            oldApiElement = "android.registerTransform",
-            url = "https://developer.android.com/studio/releases/gradle-plugin-api-updates#transform-api",
-            deprecationTarget = DeprecationReporter.DeprecationTarget.TRANSFORM_API
-        )
-    }
-
-    override val transforms: List<Transform>
-        get() = ImmutableList.of()
-
-    override val transformsDependencies: List<List<Any>>
-        get() = ImmutableList.of()
 
     open fun defaultPublishConfig(value: String) {
         defaultPublishConfig = value

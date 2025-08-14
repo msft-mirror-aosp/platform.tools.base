@@ -678,7 +678,6 @@ com/android/tools/build/gradle-api
   com/android/build/api/instrumentation/
   com/android/build/api/instrumentation/manageddevice/
   com/android/build/api/testsuites/
-  com/android/build/api/transform/
   com/android/build/api/variant/
   com/android/build/gradle/
   com/android/build/gradle/api/

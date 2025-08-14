@@ -20,7 +20,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.artifact.SingleArtifact;
-import com.android.build.api.transform.Transform;
 import com.android.build.gradle.internal.dsl.ModulePropertyKey;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.decorator.AndroidPluginDslDecoratorKt;
@@ -84,15 +83,6 @@ public class AnalyticsUtilTest {
                 AnalyticsUtil::getTaskExecutionType,
                 AnalyticsUtil::getPotentialTaskExecutionTypeName,
                 true);
-    }
-
-    @Test
-    public void checkAllTransformsHaveEnumValues() throws IOException {
-        checkHaveAllEnumValues(
-                Transform.class,
-                AnalyticsUtil::getTransformType,
-                AnalyticsUtil::getPotentialTransformTypeName,
-                false);
     }
 
     private interface SplitsWrapper {

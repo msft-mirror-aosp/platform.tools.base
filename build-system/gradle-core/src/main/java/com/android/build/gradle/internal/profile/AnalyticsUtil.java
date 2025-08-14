@@ -20,7 +20,6 @@ package com.android.build.gradle.internal.profile;
 import com.android.Version;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.api.transform.Transform;
 import com.android.build.api.variant.AndroidVersion;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dsl.Splits;
@@ -35,7 +34,6 @@ import com.android.builder.model.TestOptions;
 import com.android.resources.Density;
 import com.android.tools.analytics.CommonMetricsData;
 import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType;
-import com.android.tools.build.gradle.internal.profile.GradleTransformExecutionType;
 import com.android.tools.build.gradle.internal.profile.VariantApiArtifactType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
@@ -66,17 +64,6 @@ public class AnalyticsUtil {
                 .setVersion(Version.ANDROID_GRADLE_PLUGIN_VERSION)
                 .setOsArchitecture(CommonMetricsData.getOsArchitecture())
                 .build();
-    }
-
-    public static GradleTransformExecutionType getTransformType(
-            @NonNull Class<? extends Transform> taskClass) {
-        Descriptors.EnumValueDescriptor value =
-                GradleTransformExecutionType.getDescriptor()
-                        .findValueByName(getPotentialTransformTypeName(taskClass));
-        if (value == null) {
-            return GradleTransformExecutionType.UNKNOWN_TRANSFORM_TYPE;
-        }
-        return GradleTransformExecutionType.valueOf(value);
     }
 
     @VisibleForTesting

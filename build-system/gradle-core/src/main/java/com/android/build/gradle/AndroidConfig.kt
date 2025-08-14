@@ -16,7 +16,6 @@
 
 package com.android.build.gradle
 
-import com.android.build.api.transform.Transform
 import com.android.build.api.variant.VariantFilter
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariantOutput
@@ -376,16 +375,6 @@ interface AndroidConfig {
 
     /** List of remote CI servers.  */
     val testServers: List<TestServer>
-
-    @Deprecated(
-        "The transform API is planned to be removed in Android Gradle plugin 8.0."
-    )
-    val transforms: List<Transform>
-
-    @Deprecated(
-        "The transform API is planned to be removed in Android Gradle plugin 8.0."
-    )
-    val transformsDependencies: List<List<Any>>
 
     /** Replaced by [com.android.build.api.dsl.CommonExtension.productFlavors] */
     val productFlavors: Collection<CoreProductFlavor>
