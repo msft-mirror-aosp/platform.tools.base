@@ -16,14 +16,6 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Incubating
-
-@Incubating
-@Deprecated("Use KotlinMultiplatformAndroidDeviceTestCompilation. This interface will be removed in AGP 9.0")
-interface KotlinMultiplatformAndroidTestOnDeviceCompilation:
-    KotlinMultiplatformAndroidDeviceTest,
-    KotlinMultiplatformAndroidCompilation
-
 interface KotlinMultiplatformAndroidDeviceTestCompilation:
     KotlinMultiplatformAndroidDeviceTest,
     KotlinMultiplatformAndroidCompilation

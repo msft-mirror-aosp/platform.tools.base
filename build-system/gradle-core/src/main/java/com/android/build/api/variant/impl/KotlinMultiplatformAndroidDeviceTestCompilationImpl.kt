@@ -18,7 +18,6 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation
-import com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnDeviceCompilation
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 
 @OptIn(ExternalKotlinTargetApi::class)
@@ -26,6 +25,5 @@ class KotlinMultiplatformAndroidDeviceTestCompilationImpl(
     private val testOnDevice: KotlinMultiplatformAndroidDeviceTest,
     delegate: Delegate,
 ) : KotlinMultiplatformAndroidCompilationImpl(delegate),
-    KotlinMultiplatformAndroidTestOnDeviceCompilation,
     KotlinMultiplatformAndroidDeviceTestCompilation,
     KotlinMultiplatformAndroidDeviceTest by testOnDevice

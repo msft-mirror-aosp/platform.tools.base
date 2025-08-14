@@ -1390,10 +1390,6 @@ package com.android.build.api.dsl {
     method public void setTestNamespace(String?);
     method public void useLibrary(String name);
     method public void useLibrary(String name, boolean required);
-    method @Deprecated public void withAndroidTestOnDevice(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest,kotlin.Unit> action);
-    method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest> withAndroidTestOnDeviceBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
-    method @Deprecated public void withAndroidTestOnJvm(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest,kotlin.Unit> action);
-    method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest> withAndroidTestOnJvmBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
     method public void withDeviceTest(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest,kotlin.Unit> action);
     method public com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest> withDeviceTestBuilder(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder,kotlin.Unit> action);
     method public void withHostTest(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest,kotlin.Unit> action);
@@ -1432,12 +1428,6 @@ package com.android.build.api.dsl {
     method @Deprecated public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation> getCompilations();
     method @Deprecated public void withJava();
     property @Deprecated public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation> compilations;
-  }
-
-  @Deprecated @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTestOnDeviceCompilation extends com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation {
-  }
-
-  @Deprecated @org.gradle.api.Incubating public interface KotlinMultiplatformAndroidTestOnJvmCompilation extends com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation {
   }
 
   public interface LibraryAndroidResources extends com.android.build.api.dsl.AndroidResources {

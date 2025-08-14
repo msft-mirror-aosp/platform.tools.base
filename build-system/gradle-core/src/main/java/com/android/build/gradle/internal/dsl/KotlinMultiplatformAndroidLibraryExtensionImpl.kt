@@ -40,7 +40,6 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.LibraryRequest
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.signing.DefaultSigningConfig
-import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
@@ -200,13 +199,6 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         withHostTestBuilder {  }.configure(action)
     }
 
-    @Deprecated("Use withHostTest. This api will be removed in AGP 9.0",
-        ReplaceWith("withHostTest(action)")
-    )
-    override fun withAndroidTestOnJvm(action: KotlinMultiplatformAndroidHostTest.() -> Unit) {
-        return withHostTest(action)
-    }
-
     override fun withHostTestBuilder(
         action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit
     ): HasConfigurableValue<KotlinMultiplatformAndroidHostTest> {
@@ -223,24 +215,8 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         return HasConfigurableValueImpl(androidTestOnJvmOptions!!)
     }
 
-    @Deprecated("Use withHostTestBuilder. This api will be removed in AGP 9.0",
-        ReplaceWith("withHostTestBuilder(action)")
-    )
-    override fun withAndroidTestOnJvmBuilder(
-        action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit
-    ): HasConfigurableValue<KotlinMultiplatformAndroidHostTest> {
-        return withHostTestBuilder(action)
-    }
-
     override fun withDeviceTest(action: KotlinMultiplatformAndroidDeviceTest.() -> Unit) {
         withDeviceTestBuilder {  }.configure(action)
-    }
-
-    @Deprecated("Use withDeviceTest. This api will be removed in AGP 9.0",
-        ReplaceWith("withDeviceTest(action)")
-    )
-    override fun withAndroidTestOnDevice(action: KotlinMultiplatformAndroidDeviceTest.() -> Unit) {
-        return withDeviceTest(action)
     }
 
     override fun withDeviceTestBuilder(
@@ -257,12 +233,5 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         androidTestOnDeviceBuilder!!.action()
         compilationEnabledCallback(androidTestOnDeviceBuilder!!)
         return HasConfigurableValueImpl(androidTestOnDeviceOptions!!)
-    }
-
-    @Deprecated("Use withDeviceTestBuilder. This api will be removed in AGP 9.0",
-        ReplaceWith("withDeviceTestBuilder(action)")
-    )
-    override fun withAndroidTestOnDeviceBuilder(action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit): HasConfigurableValue<KotlinMultiplatformAndroidDeviceTest> {
-        return withDeviceTestBuilder(action)
     }
 }
