@@ -289,10 +289,6 @@ class OldVariantApiLegacySupportImpl(
                     .artifactFiles
             )
 
-            component.taskContainer.generateApkDataTask?.let {
-                fileCollection.from(component.artifacts.get(InternalArtifactType.MICRO_APK_RES))
-            }
-
             component.sources.res { resSources ->
                 fileCollection.from(
                     resSources.getVariantSources().map { directoryEntries ->

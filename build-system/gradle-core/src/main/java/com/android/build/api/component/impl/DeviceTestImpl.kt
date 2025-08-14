@@ -302,10 +302,6 @@ open class DeviceTestImpl @Inject constructor(
     override val nativeBuildCreationConfig: NativeBuildCreationConfig?
         get() = mainVariant.nativeBuildCreationConfig
 
-    // always false for this type
-    override val embedsMicroApp: Boolean
-        get() = false
-
     // always true for this kind
     override val testOnlyApk: Boolean
         get() = true

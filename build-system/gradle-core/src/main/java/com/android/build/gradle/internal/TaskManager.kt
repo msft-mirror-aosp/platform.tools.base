@@ -422,11 +422,7 @@ abstract class TaskManager(
                 )
             )
         }
-        val processManifestTask = createMergeManifestTasks(creationConfig)
-        val taskContainer = creationConfig.taskContainer
-        if (taskContainer.microApkTask != null && processManifestTask != null) {
-            processManifestTask.dependsOn(taskContainer.microApkTask)
-        }
+        createMergeManifestTasks(creationConfig)
     }
 
     /** Creates the merge manifests task.  */

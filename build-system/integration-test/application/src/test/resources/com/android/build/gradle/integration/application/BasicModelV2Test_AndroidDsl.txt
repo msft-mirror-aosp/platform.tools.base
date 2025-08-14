@@ -124,7 +124,7 @@
          - renderscriptOptimLevel   = 3
          - isMinifyEnabled          = false
          - isZipAlignEnabled        = true
-         - isEmbedMicroApp          = true
+         - isEmbedMicroApp          = false
          - signingConfig            = (null)
       < release
    < buildTypes

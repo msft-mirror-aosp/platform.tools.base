@@ -18,7 +18,6 @@ package com.android.manifmerger;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.manifmerger.ManifestMerger2.COMPATIBLE_SCREENS_SUB_MANIFEST;
-import static com.android.manifmerger.ManifestMerger2.WEAR_APP_SUB_MANIFEST;
 import static com.android.manifmerger.MergingReport.Record.Severity.ERROR;
 import static com.android.manifmerger.MergingReport.Record.Severity.WARNING;
 import static com.android.manifmerger.XmlNode.NodeKey;
@@ -292,8 +291,7 @@ public class PreValidator {
         if (description == null) {
             return false;
         }
-        return description.equals(WEAR_APP_SUB_MANIFEST)
-                || description.equals(COMPATIBLE_SCREENS_SUB_MANIFEST)
+        return description.equals(COMPATIBLE_SCREENS_SUB_MANIFEST)
                 || description.endsWith(
                         SdkConstants.PRIVACY_SANDBOX_SDK_DEPENDENCY_MANIFEST_SNIPPET_NAME_SUFFIX);
     }

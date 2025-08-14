@@ -493,18 +493,15 @@ package com.android.build.api.dsl {
     method public Boolean? isCrunchPngs();
     method public boolean isDebuggable();
     method public boolean isDefault();
-    method public boolean isEmbedMicroApp();
     method public boolean isProfileable();
     method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization,kotlin.Unit> action);
     method public void setCrunchPngs(Boolean?);
     method public void setDebuggable(boolean);
     method public void setDefault(boolean);
-    method public void setEmbedMicroApp(boolean);
     method public void setProfileable(boolean);
     property public abstract Boolean? isCrunchPngs;
     property public abstract boolean isDebuggable;
     property public abstract boolean isDefault;
-    property public abstract boolean isEmbedMicroApp;
     property public abstract boolean isProfileable;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Optimization optimization;
   }

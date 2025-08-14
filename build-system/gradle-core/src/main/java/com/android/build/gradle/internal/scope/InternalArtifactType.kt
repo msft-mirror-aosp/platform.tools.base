@@ -616,11 +616,6 @@ InternalArtifactType<T : FileSystemLocation>(
     /** Metadata file included in the app bundle as output from R8 */
     object R8_METADATA: InternalArtifactType<RegularFile>(FILE)
 
-    // Micro APK manifest file
-    object MICRO_APK_MANIFEST_FILE: InternalArtifactType<RegularFile>(FILE)
-    // Micro APK res directory
-    object MICRO_APK_RES: InternalArtifactType<Directory>(DIRECTORY)
-
     // Human-readable Art profile artifacts; combines art profiles from various project sources
     object MERGED_ART_PROFILE: InternalArtifactType<RegularFile>(
         FILE,

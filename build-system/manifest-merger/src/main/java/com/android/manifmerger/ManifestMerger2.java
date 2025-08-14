@@ -80,7 +80,6 @@ import java.util.stream.Collectors;
 public class ManifestMerger2 {
 
     public static final String COMPATIBLE_SCREENS_SUB_MANIFEST = "Compatible-Screens sub-manifest";
-    public static final String WEAR_APP_SUB_MANIFEST = "Wear App sub-manifest";
 
     private static final String SPLIT_IN_DYNAMIC_FEATURE =
             "https://d.android.com/r/studio-ui/dynamic-delivery/dynamic-feature-manifest";

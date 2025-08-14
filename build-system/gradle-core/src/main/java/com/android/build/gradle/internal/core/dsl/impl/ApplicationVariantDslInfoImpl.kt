@@ -149,8 +149,6 @@ internal class ApplicationVariantDslInfoImpl(
     }
     override val isWearAppUnbundled: Boolean?
         get() = mergedFlavor.wearAppUnbundled
-    override val isEmbedMicroApp: Boolean
-        get() = applicationBuildType.isEmbedMicroApp
 
     override val dexingDslInfo: DexingDslInfo by lazy {
         DexingDslInfoImpl(

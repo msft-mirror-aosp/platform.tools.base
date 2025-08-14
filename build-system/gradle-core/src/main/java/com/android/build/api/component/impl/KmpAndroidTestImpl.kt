@@ -294,7 +294,6 @@ open class KmpAndroidTestImpl @Inject constructor(
 
     // unsupported features
     override val shouldPackageProfilerDependencies: Boolean = false
-    override val embedsMicroApp: Boolean = false
     override val advancedProfilingTransforms: List<String> = emptyList()
     override val renderscript: Renderscript? = null
     override val renderscriptCreationConfig: RenderscriptCreationConfig? = null
