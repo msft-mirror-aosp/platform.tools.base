@@ -676,6 +676,12 @@ enum class BooleanOption(
         FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
+    DEFAULT_MIN_COMPILE_SDK_IN_AAR_METADATA(
+        "android.aar.metadata.defaultMinCompileSdkToCompileSdk",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
     /* -------------------
      * DEPRECATED FEATURES
      */

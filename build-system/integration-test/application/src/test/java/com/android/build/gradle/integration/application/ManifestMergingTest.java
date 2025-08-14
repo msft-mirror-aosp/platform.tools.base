@@ -147,13 +147,16 @@ public class ManifestMergingTest {
         TestFileUtils.appendToFile(
                 appProject.getBuildFile(),
                 "android{\n"
-                    + "    compileSdkVersion 24\n"
-                    + "    defaultConfig{\n"
-                    + "        minSdkVersion 15\n"
-                    + "        //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion\n"
-                    + "        targetSdkVersion 'N'\n"
-                    + "    }\n"
-                    + "}");
+                        + "    compileSdkVersion "
+                        + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                        + "\n"
+                        + "    defaultConfig{\n"
+                        + "        minSdkVersion 15\n"
+                        + "        //noinspection"
+                        + " ExpiringTargetSdkVersion,ExpiredTargetSdkVersion\n"
+                        + "        targetSdkVersion 'N'\n"
+                        + "    }\n"
+                        + "}");
         libsTest.executor().run("clean", ":app:build");
         assertThat(
                         appProject.file(
@@ -180,13 +183,16 @@ public class ManifestMergingTest {
         TestFileUtils.appendToFile(
                 appProject.getBuildFile(),
                 "android{\n"
-                    + "    compileSdkVersion 24\n"
-                    + "    defaultConfig{\n"
-                    + "        minSdkVersion 'N'\n"
-                    + "        //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion\n"
-                    + "        targetSdkVersion 15\n"
-                    + "    }\n"
-                    + "}");
+                        + "    compileSdkVersion "
+                        + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                        + "\n"
+                        + "    defaultConfig{\n"
+                        + "        minSdkVersion 'N'\n"
+                        + "        //noinspection"
+                        + " ExpiringTargetSdkVersion,ExpiredTargetSdkVersion\n"
+                        + "        targetSdkVersion 15\n"
+                        + "    }\n"
+                        + "}");
         libsTest.executor().run("clean", ":app:assembleDebug");
         assertThat(
                         appProject.file(

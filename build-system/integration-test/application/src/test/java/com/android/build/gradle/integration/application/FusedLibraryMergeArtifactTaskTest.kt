@@ -89,6 +89,7 @@ internal class FusedLibraryMergeArtifactsTest {
             android {
                 namespace = "com.example.androidLib2"
                 defaultConfig.minSdk = 19
+                defaultConfig.aarMetadata.minCompileSdk = 18
             }
             dependencies {
                 implementation(project(":androidLib1"))
@@ -118,6 +119,7 @@ internal class FusedLibraryMergeArtifactsTest {
                     checkOnly += "UnitTestLintCheck"
                     absolutePaths = false
                 }
+                defaultConfig.aarMetadata.minCompileSdk = 18
             }
             dependencies {
                 lintPublish(project(":lintPublish1"))

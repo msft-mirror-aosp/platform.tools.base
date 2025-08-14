@@ -88,14 +88,6 @@ class CheckAarMetadataTaskTest {
                 """.trimIndent()
         )
 
-        // Set app's compileSdkVersion to 24.
-        project.getSubproject("app").buildFile
-        TestFileUtils.searchRegexAndReplace(
-            project.getSubproject("app").buildFile,
-            "compileSdkVersion = \\d+",
-            "compileSdkVersion = 24"
-        )
-
         // First test that the build fails when minCompileSdkVersion isn't set.
         try {
             project.executor().run(":app:assembleDebug")
@@ -104,6 +96,15 @@ class CheckAarMetadataTaskTest {
             assertThat(Throwables.getRootCause(e).message)
                 .contains("Android resource linking failed")
         }
+
+        // Set app's compileSdkVersion to 24, we set this after the check to ensure that
+        // minCompileSdkVersion does not default to the compileSdkVersion.
+        project.getSubproject("app").buildFile
+        TestFileUtils.searchRegexAndReplace(
+            project.getSubproject("app").buildFile,
+            "compileSdkVersion = \\d+",
+            "compileSdkVersion = 24"
+        )
 
         // Then test that setting minCompileSdkVersion results in a better error message.
         project.getSubproject("lib").buildFile.appendText(
