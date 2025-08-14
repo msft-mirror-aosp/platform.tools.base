@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.options
 
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.EXCLUDE_LIBRARIES_FROM_CONSTRAINTS
-import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
 import com.android.build.gradle.options.Version.VERSION_3_5
 import com.android.build.gradle.options.Version.VERSION_3_6
@@ -97,12 +98,12 @@ enum class BooleanOption(
     // AndroidX & Jetifier
     USE_ANDROID_X(
         "android.useAndroidX",
-        false,
+        true,
         ApiStage.Stable,
         FutureStage(
             true,
-            ApiStage.Stable,
-            Version.VERSION_9_0
+            ApiStage.Deprecated(DeprecationTarget.VERSION_11_0),
+            Version.VERSION_10_0
         )
     ),
     ENABLE_JETIFIER("android.enableJetifier", false, ApiStage.Stable),

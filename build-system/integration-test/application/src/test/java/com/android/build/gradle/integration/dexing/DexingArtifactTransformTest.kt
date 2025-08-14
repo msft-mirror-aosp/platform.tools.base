@@ -49,7 +49,9 @@ class DexingArtifactTransformTest {
         GradleTestProject.builder().fromTestApp(
             MinimalSubProject.app("com.example.test")
         ).addGradleProperties(
-                "${OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS.propertyName}=true"
+            "${OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS.propertyName}=true"
+        ).addGradleProperties(
+            "${BooleanOption.USE_ANDROID_X.propertyName}=false"
         ).withAdditionalMavenRepo(
                 MavenRepoGenerator(
                         listOf(

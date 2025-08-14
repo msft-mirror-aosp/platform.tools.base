@@ -85,7 +85,6 @@ class OptionVersionTest {
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
             BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED,
             BooleanOption.TEST_SUITE_SUPPORT,
-            BooleanOption.USE_ANDROID_X,
         )
 
     }

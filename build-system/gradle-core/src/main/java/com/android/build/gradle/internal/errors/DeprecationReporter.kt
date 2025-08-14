@@ -114,14 +114,14 @@ interface DeprecationReporter {
             Version.VERSION_10_0,
         "The legacy variant API is disabled by default in AGP 9.0, but can be " +
                 "re-enabled by adding \n" +
-                "    ${BooleanOption.ENABLE_LEGACY_VARIANT_API.propertyName}=true\n" +
+                "    android.enableLegacyVariantApi=true\n" +
                 "to this project's gradle.properties file."
         ),
 
         EXCLUDE_LIBRARIES_FROM_CONSTRAINTS(
             Version.VERSION_10_0,
             "Following can be set instead to achieve a similar behaviour.\n" +
-            "    ${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=false"
+            "    android.dependency.useConstraints=false"
         )
         ;
 

@@ -129,11 +129,15 @@ class DataBindingMinifyDynamicFeaturesTest {
             .appendText("\nandroid.buildTypes.minified.consumerProguardFiles \"proguard-rules.pro\"")
     }
 
+    /**
+     * TODO turned off androidx. b/440264272
+     */
     @Test
     fun assembleMinified() {
         project.executor()
             // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            .with(BooleanOption.USE_ANDROID_X, false)
             .run("assembleMinified")
 
         val minifiedApk = "minified"

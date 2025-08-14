@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.scope.ArtifactTypeUtil;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.ide.common.process.ProcessException;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
@@ -72,6 +73,7 @@ public class MultiDexTest {
                 project.getBuildFile(), "\nandroid.dexOptions.keepRuntimeAnnotatedClasses = false");
 
         project.executor()
+                .with(BooleanOption.USE_ANDROID_X, false)
                 .run("assembleDebug", "makeApkFromBundleForIcsDebug", "assembleAndroidTest");
 
         List<String> mandatoryClasses =
@@ -127,7 +129,7 @@ public class MultiDexTest {
                         FileUtils.join(
                                 project.getProjectDir(),
                                 "build/intermediates/merged_manifests/icsDebug/processIcsDebugManifest/AndroidManifest.xml"))
-                .contains("android:name=\"android.support.multidex.MultiDexApplication\"");
+                .contains("android:name=\"androidx.multidex.MultiDexApplication\"");
     }
 
     private Apk getStandaloneBundleApk() throws IOException {
@@ -150,7 +152,9 @@ public class MultiDexTest {
 
     @Test
     public void checkShrinker() throws Exception {
-        project.executor().run(StringHelper.appendCapitalized("assemble", "r8"));
+        project.executor()
+                .with(BooleanOption.USE_ANDROID_X, false)
+                .run(StringHelper.appendCapitalized("assemble", "r8"));
         assertMainDexContains("r8", ImmutableList.of());
 
         commonApkChecks("r8");
