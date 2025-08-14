@@ -350,6 +350,12 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             )
                 .withFeatures(
                     *listOfNotNull(
+                        // Don't check the minSdk library because this is already handled by the
+                        // processMainManifest task. If we check it again here, it causes the
+                        // false-positive error because the generatedTestManifest input doesn't
+                        // have an overrideLibrary tag, b/436878535.
+                        ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
+
                         ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS,
                         ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
                             disallowUsesSdkInManifest.get()

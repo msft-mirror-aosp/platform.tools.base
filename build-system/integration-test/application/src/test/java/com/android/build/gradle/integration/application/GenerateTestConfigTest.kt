@@ -115,6 +115,64 @@ class GenerateTestConfigTest {
         verifyMergedManifest(DEFAULT_LIB_PATH)
     }
 
+    // Regression test for b/436878535
+    @Test
+    fun `overrideLibrary from app manifest should be respected`() {
+        rule.build {
+            androidApplication {
+                android.defaultConfig.minSdk = 28
+                android.testOptions.unitTests.isIncludeAndroidResources = true
+                dependencies {
+                    implementation(project(":lib"))
+                }
+                files {
+                    update("src/main/AndroidManifest.xml").replaceWith(
+                        //language=xml
+                        """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                            xmlns:tools="http://schemas.android.com/tools">
+                            <uses-sdk tools:overrideLibrary="pkg.name.lib" />
+                        </manifest>
+                        """.trimIndent()
+                    )
+                }
+            }
+            androidLibrary {
+                // Library's min sdk level is higher than app's manifest.
+                // This should cause the manifest merger failure, however the app's manifest has an overrideLibrary,
+                // so this incompatibility should be ignored.
+                android.defaultConfig.minSdk = 31
+            }
+        }
+
+        executor.run(":app:generateDebugUnitTestConfig")
+    }
+
+    // Regression test for b/436878535
+    @Test
+    fun `manifest merger should fail when min sdk version is smaller than the library's min sdk without override`() {
+        rule.build {
+            androidApplication {
+                android.defaultConfig.minSdk = 28
+                android.testOptions.unitTests.isIncludeAndroidResources = true
+                dependencies {
+                    implementation(project(":lib"))
+                }
+            }
+            androidLibrary {
+                // Library's min sdk level is higher than app's manifest.
+                // This should cause the manifest merger failure.
+                android.defaultConfig.minSdk = 31
+            }
+        }
+
+        val result = executor.expectFailure().run(":app:generateDebugUnitTestConfig")
+
+        result.assertErrorContains(
+            "uses-sdk:minSdkVersion 28 cannot be smaller than version 31 declared in library [:lib]")
+    }
+
     private fun verifyMergedManifest(path: String) {
         val result = executor.run("$path:generateDebugUnitTestConfig")
 
