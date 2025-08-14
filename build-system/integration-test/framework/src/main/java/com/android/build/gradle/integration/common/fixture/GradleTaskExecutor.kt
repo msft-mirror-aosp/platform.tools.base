@@ -92,8 +92,12 @@ class GradleTaskExecutor(
         }
 
         val testOutputDir = TestUtils.getTestOutputDir().toFile()
-        val tmpStdOut = File.createTempFile("stdout", "log", testOutputDir)
-        val tmpStdErr = File.createTempFile("stderr", "log", testOutputDir)
+        val tmpStdOut = File.createTempFile("stdout_", ".txt", testOutputDir)
+        val tmpStdErr = File.createTempFile("stderr_", ".txt", testOutputDir)
+
+        println(
+            "Executing tasks [${tasksList.joinToString(",")}], " +
+              "stdout = ${tmpStdOut.name}, stderr = ${tmpStdErr.name}")
 
         val launcher =
             projectConnection.newBuild().forTasks(
