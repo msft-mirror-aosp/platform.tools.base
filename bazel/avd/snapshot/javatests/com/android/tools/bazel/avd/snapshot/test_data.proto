@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package com.android.tools.bazel.avd.snapshot.test;
+
+import "google/protobuf/any.proto";
+
+// A nested message structure to test recursive patching.
+message NestedMessage {
+  // A string field within the nested message that can be targeted for replacement.
+  string nested_field = 1;
+  // An integer field that should be ignored by the patcher.
+  int64 nested_number = 2;
+}
+
+// The main message structure for testing.
+message TestMessage {
+  // A top-level string field for basic replacement tests.
+  string top_level_string = 1;
+
+  // A field containing a nested message to test the patcher's ability
+  // to navigate and modify complex structures.
+  NestedMessage nested_message = 2;
+
+  // An integer field that should remain unchanged during patching.
+  int32 untouched_number = 3;
+
+  // A repeated string field to ensure the patcher can handle multiple
+  // values and modify them correctly.
+  repeated string repeated_strings = 4;
+
+  // A bytes field which might contain non-UTF8 data and should be
+  // handled gracefully, typically by being ignored unless it coincidentally
+  // parses as a valid nested message.
+  bytes raw_bytes = 5;
+
+  // Another string field to ensure multiple fields at the same level can be patched.
+  string another_top_level_string = 6;
+
+  // A oneof field to test that the patcher can handle this structure.
+  oneof oneof_content {
+    // A string within the oneof that can be patched.
+    string oneof_string = 7;
+    // An integer within the oneof that should be ignored.
+    int32 oneof_number = 8;
+  }
+
+  // A field of type Any to test patching of packed, well-known types.
+  // The patcher should be able to process the raw bytes of the Any's `value`
+  // field as if it were a nested message.
+  google.protobuf.Any any_field = 9;
+}

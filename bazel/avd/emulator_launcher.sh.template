@@ -75,6 +75,10 @@ emulator_path="%emulator_path%"
 snapshot_dir_path="%snapshot_dir_path%"
 snapshot_dir_short_path="%snapshot_dir_short_path%"
 
+proto_patcher_path="%proto_patcher_path%"
+proto_patcher_short_path="%proto_patcher_short_path%"
+
+java_bin_path="%java_bin_path%"
 
 # --- Environment and Timeout Setup ---
 
@@ -109,6 +113,15 @@ export ANDROID_AVD_HOME=$ANDROID_EMULATOR_HOME/avd
 # --- Binary Paths ---
 emulator="$emulator_path"
 adb="prebuilts/studio/sdk/$OS_DIR_NAME/platform-tools/adb"
+
+if [ -f "$proto_patcher_short_path" ]; then
+  proto_patcher="${java_bin_path} -jar $proto_patcher_short_path"
+elif [ -f "$proto_patcher_path" ]; then
+  proto_patcher="${java_bin_path} -jar $proto_patcher_path"
+else
+  echo "proto-patcher is missing."
+  exit 1
+fi
 
 # Enable verbose logging to aid in debugging emulator launch failures.
 additional_emulator_args=("-verbose" "-show-kernel")
@@ -172,7 +185,7 @@ if [ "$mode" = "create-snapshot" ]; then
   # For snapshot creation, use the base AVD name. This process runs only
   # once at build time to create the snapshot, so a unique,
   # port-suffixed name is not necessary here.
-  readonly avd_name_to_launch="$avd_name"
+  readonly avd_name_to_launch="${avd_name}_template"
 
   # Start from a clean boot to ensure a consistent snapshot.
   additional_emulator_args+=("-no-snapshot-load")
@@ -206,7 +219,7 @@ if [ "$mode" = "create-snapshot" ]; then
   fi
 
   # Create an AVD named after the unique build target (`avd_name`) to support multiple system images.
-  echo "Creating AVD '$avd_name_to_launch' with API $api_level ($abi_type)..."
+  echo "Creating AVD '$avd_name' with API $api_level ($abi_type)..."
   system_image_dir=$(pwd)/$(dirname "$source_properties_path")
   mkdir -p "$ANDROID_AVD_HOME/$avd_name_to_launch.avd"
 
@@ -287,8 +300,8 @@ else
   mkdir -p "$ANDROID_AVD_HOME"
 
   # Copy the snapshot AVD content to the unique instance directory.
-  echo "Copying snapshot for '$avd_name' to $instance_avd_dir..."
-  cp -RL "$snapshot_dir_short_path/$avd_name.avd" "$instance_avd_dir"
+  echo "Copying snapshot for '${avd_name}_template' to $instance_avd_dir..."
+  cp -RL "$snapshot_dir_short_path/${avd_name}_template.avd" "$instance_avd_dir"
   chmod -R +w "$instance_avd_dir"
 
   # The snapshot contains absolute paths that must be updated.
@@ -307,17 +320,23 @@ else
       sed -i "s#__PLACEHOLDER_HOME__#$HOME#g" "$file"
     fi
   done
-  for file in $(grep -rl "avd/$avd_name.avd" --include="*.ini" "$instance_avd_dir"); do
+  for file in $(grep -rl "__PLACEHOLDER_AVD_NAME__" --include="*.ini" "$instance_avd_dir"); do
     if [ "$(uname)" = "Darwin" ]; then
-      sed -i '' "s#avd/$avd_name.avd#avd/$instance_avd_name.avd#g" "$file"
+      sed -i '' "s#__PLACEHOLDER_AVD_NAME__#$instance_avd_name#g" "$file"
     else
-      sed -i "s#avd/$avd_name.avd#avd/$instance_avd_name.avd#g" "$file"
+      sed -i "s#__PLACEHOLDER_AVD_NAME__#$instance_avd_name#g" "$file"
     fi
   done
 
+  echo "Relocating paths in snapshot.pb..."
+  $proto_patcher "$instance_avd_dir/snapshots/default_boot/snapshot.pb" \
+    "__PLACEHOLDER_EXTERNAL__" "$HOME/.." \
+    "__PLACEHOLDER_HOME__" "$HOME" \
+    "__PLACEHOLDER_AVD_NAME__" "$instance_avd_name"
+
   # The original .ini (named after the base avd) is inside the snapshot directory for portability.
   # We rename and move it to its final destination, which will have the unique instance name.
-  mv "$instance_avd_dir/$avd_name.ini" "$instance_ini_file"
+  mv "$instance_avd_dir/${avd_name}_template.ini" "$instance_ini_file"
 
   echo "Snapshot is ready."
 fi
@@ -463,6 +482,20 @@ if [ "$boot_complete" = true ]; then
         sed -i "s#$HOME#__PLACEHOLDER_HOME__#g" "$file"
       fi
     done
+    for file in $(grep -rl "$avd_name_to_launch" --include="*.ini" "$snapshot_dir_path/$avd_name_to_launch.avd"); do
+      if [ "$(uname)" = "Darwin" ]; then
+        sed -i '' "s#$avd_name_to_launch#__PLACEHOLDER_AVD_NAME__#g" "$file"
+      else
+        sed -i "s#$avd_name_to_launch#__PLACEHOLDER_AVD_NAME__#g" "$file"
+      fi
+    done
+
+    echo "Replacing absolute paths in snapshot.pb with placeholders..."
+    $proto_patcher "$snapshot_dir_path/$avd_name_to_launch.avd/snapshots/default_boot/snapshot.pb" \
+      "$HOME/external" "__PLACEHOLDER_EXTERNAL__" \
+      "$HOME" "__PLACEHOLDER_HOME__" \
+      "$avd_name_to_launch" "__PLACEHOLDER_AVD_NAME__"
+
     echo "Snapshot created successfully at $snapshot_dir_path/$avd_name_to_launch.avd."
   else
     # In 'launch' mode, inform the user that the script is detaching.

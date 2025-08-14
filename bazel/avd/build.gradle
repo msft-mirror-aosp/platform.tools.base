@@ -1,12 +1,31 @@
 apply plugin: 'com.android.tools.java-library'
+apply plugin: 'com.android.tools.kotlin'
+apply plugin: 'com.google.protobuf'
 
 sourceSets {
     main.java.srcDir 'src'
     sample.java.srcDir 'sample'
+    snapshot.java.srcDir 'snapshot/java'
+    snapshotTest {
+        java.srcDir 'snapshot/javatests'
+        proto {
+            srcDir 'snapshot/javatests'
+        }
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = libs.proto_compiler
+    }
 }
 
 dependencies {
     implementation libs.junit
     sampleImplementation sourceSets.main.output
     sampleImplementation libs.junit
+    snapshotImplementation libs.protobuf
+    snapshotTestImplementation sourceSets.snapshot.output
+    snapshotTestImplementation libs.junit
+    snapshotTestImplementation libs.protobuf
 }
