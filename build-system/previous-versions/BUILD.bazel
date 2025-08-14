@@ -30,7 +30,7 @@ AGP_8_10_1_ARTIFACTS = [
     "@maven//:com.android.library.com.android.library.gradle.plugin_8.10.1",
     "@maven//:com.android.tools.build.aapt2_8.10.1-12782657",
     "@maven//:com.android.tools.build.gradle_8.10.1",
-    "@maven//:com.android.tools.lint.lint-gradle_31.9.0",
+    "@maven//:com.android.tools.lint.lint-gradle_31.10.1",
     "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.20",
     "@maven//:org.junit.junit-bom_5.10.2",
 ]
