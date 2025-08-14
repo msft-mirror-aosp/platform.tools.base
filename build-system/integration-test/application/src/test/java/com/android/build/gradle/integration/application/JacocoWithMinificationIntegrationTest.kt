@@ -56,11 +56,7 @@ class JacocoWithMinificationIntegrationTest {
                       testCoverage {
                         enableAndroidTestCoverage = true
                       }
-                      postprocessing {
-                        removeUnusedCode = true
-                        optimizeCode = true
-                        obfuscate = false
-                      }
+                      minifyEnabled = true
                       proguardFiles(
                         getDefaultProguardFile("proguard-android-optimize.txt"),
                         "proguard-rules.pro"

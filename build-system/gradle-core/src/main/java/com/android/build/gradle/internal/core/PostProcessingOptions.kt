@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.core
 
-import com.android.build.gradle.internal.PostprocessingFeatures
 import com.android.build.gradle.internal.ProguardFilesProvider
 import java.io.File
 
@@ -27,11 +26,7 @@ import java.io.File
 interface PostProcessingOptions : ProguardFilesProvider {
     fun getDefaultProguardFiles(): List<File>
 
-    fun getPostprocessingFeatures(): PostprocessingFeatures?
-
     fun codeShrinkerEnabled(): Boolean
 
     fun resourcesShrinkingEnabled(): Boolean
-
-    fun hasPostProcessingConfiguration(): Boolean
 }

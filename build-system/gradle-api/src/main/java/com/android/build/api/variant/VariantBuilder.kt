@@ -84,7 +84,8 @@ interface VariantBuilder: ComponentBuilder {
      * @return the target SDK Version or null if [targetSdkPreview] was used to set it.
      */
     @Deprecated(
-        "Will be removed in v9.0 - Use (variantBuilder as GeneratesApkBuilder).targetSdk",
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in v10.0 - Use (variantBuilder as GeneratesApkBuilder).targetSdk",
     )
     var targetSdk: Int?
 
@@ -98,7 +99,8 @@ interface VariantBuilder: ComponentBuilder {
      * @return the target supported SDK Version or null if [targetSdkPreview] was used to set it.
      */
     @Deprecated(
-        "Will be removed in v9.0 - Use (variantBuilder as GeneratesApkBuilder).targetSdkPreview",
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in v10.0 - Use (variantBuilder as GeneratesApkBuilder).targetSdkPreview",
     )
     var targetSdkPreview: String?
 
@@ -117,7 +119,8 @@ interface VariantBuilder: ComponentBuilder {
      * by default.
      */
     @Deprecated(
-        "Will be removed in AGP 9.0 - " +
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in AGP 10.0 - " +
                 "Use (variantBuilder as HasHostTestsBuilder).hostTests.get(HostTestBuilder.UNIT_TEST_TYPE).enable",
     ) // b/368607542
     var unitTestEnabled: Boolean
@@ -127,7 +130,8 @@ interface VariantBuilder: ComponentBuilder {
      * by default.
      */
     @Deprecated(
-        "Will be removed in AGP 9.0 - " +
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in AGP 10.0 - " +
             "Use (variantBuilder as HasHostTestsBuilder).hostTests.get(HostTestBuilder.UNIT_TEST_TYPE).enable",
     ) // b/368607542
     var enableUnitTest: Boolean

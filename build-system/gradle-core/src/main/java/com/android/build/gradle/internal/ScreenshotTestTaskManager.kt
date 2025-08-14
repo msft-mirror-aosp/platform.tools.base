@@ -59,12 +59,6 @@ class ScreenshotTestTaskManager(
 
         setupLintTasks(screenshotTestCreationConfig)
 
-        createRunHostTestTask(
-            screenshotTestCreationConfig,
-            SCREENSHOT_TEST_EXECUTION_TASK_NAME,
-            SCREENSHOT_TEST_EXECUTION_TASK_NAME,
-            InternalArtifactType.SCREENSHOT_TEST_CODE_COVERAGE
-        )
     }
 
     override val javaResMergingScopes = setOf(

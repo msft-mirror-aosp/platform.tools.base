@@ -153,7 +153,7 @@ ARTIFACTS = [
     "net.sf.proguard:proguard-gradle:5.2.1",
     "nl.jqno.equalsverifier:equalsverifier:3.15.6",
     "org.apache.bcel:bcel:6.9.0",
-    "org.apache.commons:commons-compress:1.21",
+    "org.apache.commons:commons-compress:1.27.1",
     "org.apache.httpcomponents:httpclient:4.5.6",
     "org.apache.httpcomponents:httpcore:4.4.10",
     "org.apache.httpcomponents:httpmime:4.5.6",

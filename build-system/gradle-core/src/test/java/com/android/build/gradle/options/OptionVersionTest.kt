@@ -33,18 +33,70 @@ class OptionVersionTest {
             val agpVersion = AgpVersion.parse(ANDROID_GRADLE_PLUGIN_VERSION)
             AgpVersion(agpVersion.major, agpVersion.minor, 0)
         }
-
         /**
-         * [Option]s that have invalid associated versions.
+         * [Option]s that have invalid associated future stages.
          *
          * @ RELEASE TEAM: If you update this list when upgrading AGP, be sure to file a new bug
          * assigned to the AGP team and blocking beta release.
          *   - [Insert new bug below]
+         *   - Tracking bug for AGP 9.0: b/433951904
          *   - Tracking bug for AGP 8.3: b/295183580
          *   - Tracking bug for AGP 8.2: b/277803353
          *   - Tracking bug for AGP 8.0: b/243560711
          */
-        private val INVALID_OPTIONS: List<Option<*>> = listOf(
+        private val INVALID_DEPRECATION_TARGET: List<Option<*>> = listOf(
+            BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
+            BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
+            BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
+            BooleanOption.ENABLE_EMULATOR_CONTROL,
+            BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE,
+            BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
+            BooleanOption.GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE,
+            BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
+            BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
+            BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
+            BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING,
+        )
+
+        /**
+         * [Option]s that have invalid associated future stages.
+         *
+         * @ RELEASE TEAM: If you update this list when upgrading AGP, be sure to file a new bug
+         * assigned to the AGP team and blocking beta release.
+         *   - Tracking bug for AGP 9.0: b/433951904
+         *   - Tracking bug for AGP 8.3: b/295183580
+         *   - Tracking bug for AGP 8.2: b/277803353
+         *   - Tracking bug for AGP 8.0: b/243560711
+         */
+        private val INVALID_FUTURE_STAGES: List<Option<*>> = listOf(
+            BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM,
+            BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
+            BooleanOption.BUILD_FEATURE_RESVALUES,
+            BooleanOption.BUILT_IN_KOTLIN,
+            BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET,
+            BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
+            BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
+            BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS,
+            BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT,
+            BooleanOption.ENABLE_EMULATOR_CONTROL,
+            BooleanOption.ENABLE_LEGACY_VARIANT_API,
+            BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE,
+            BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
+            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES,
+            BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS,
+            BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES,
+            BooleanOption.FULL_R8,
+            BooleanOption.GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE,
+            BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
+            BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
+            BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE,
+            BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
+            BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING,
+            BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED,
+            BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING,
+            BooleanOption.R8_STRICT_FULL_MODE_FOR_KEEP_RULES,
+            BooleanOption.TEST_SUITE_SUPPORT,
+            BooleanOption.USE_ANDROID_X,
         )
 
     }
@@ -59,12 +111,12 @@ class OptionVersionTest {
 
         checkViolatingProjectOptions(
                 violatingOptions = violatingOptions,
-                ignoreList = INVALID_OPTIONS,
+                ignoreList = INVALID_DEPRECATION_TARGET,
                 requirement = "Deprecated options must have target removal versions in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
                 suggestion = "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
                         "We don't have to fix this issue immediately, but we should fix it before the beta release.\n" +
                         "To do that:\n" +
-                        "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_OPTIONS`.\n" +
+                        "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_DEPRECATION_TARGET`.\n" +
                         "  - Please file a bug for the AGP team and mark it as blocking the beta release (example bug: b/277803353)."
         )
     }
@@ -91,12 +143,12 @@ class OptionVersionTest {
 
         checkViolatingProjectOptions(
             violatingOptions = violatingOptions,
-            ignoreList = INVALID_OPTIONS,
+            ignoreList = INVALID_FUTURE_STAGES,
             requirement = "`BooleanOption`s must have FutureStage in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
             suggestion = "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
                     "We don't have to fix this issue immediately, but we should fix it before the beta release.\n" +
                     "To do that:\n" +
-                    "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_OPTIONS`.\n" +
+                    "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_FUTURE_OPTIONS`.\n" +
                     "  - Please file a bug for the AGP team and mark it as blocking the beta release (example bug: b/277803353)."
         )
     }

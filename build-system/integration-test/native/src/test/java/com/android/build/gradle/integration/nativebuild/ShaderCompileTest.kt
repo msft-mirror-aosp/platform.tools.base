@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
@@ -46,7 +47,8 @@ class ShaderCompileTest {
         project.file("local.properties").writeText(
             updatedContent + "\nglslc.dir=${getGlslcFolder()}"
         )
-        project.executor().run("assembleDebug")
+        project.executor()
+            .run("assembleDebug")
         project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
             assertThat(apk).containsFile("lib/x86/libvktuts.so")
             assertThat(apk).containsFile("lib/x86_64/libvktuts.so")
@@ -58,13 +60,29 @@ class ShaderCompileTest {
     }
 
     @Test
+    fun checkErrorForFutureVersion() {
+        val content = project.file("local.properties").readText()
+        val updatedContent =
+            content.split("\n").filter { !it.contains("ndk.symlinkdir") }.joinToString ("\n" )
+
+        // glslc.dir property is not set
+
+        val result = project.executor()
+            .with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, true)
+            .expectFailure()
+            .run("assembleDebug")
+        result.assertErrorContains("Property `glslc.dir` must be set for AGP to define custom shader.")
+    }
+
+    @Test
     fun assembleGlslcDebugWrongName() {
         val emptyDirectory = File(project.buildFile.parentFile, "customCompilerFolder")
         Files.createDirectory(emptyDirectory.toPath())
 
         project.file("local.properties")
             .appendText("glslc.dir=${FileUtils.toSystemIndependentPath(emptyDirectory.absolutePath)}")
-        val result = project.executor().expectFailure().run("assembleDebug")
+        val result = project.executor()
+            .expectFailure().run("assembleDebug")
         result.assertErrorContains("Custom `glslc.dir` location must point to existing directory with")
     }
 

@@ -25,8 +25,6 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import com.android.build.api.variant.VariantSelector
 import com.android.build.gradle.internal.services.DslServices
-import com.android.builder.errors.IssueReporter
-import com.android.utils.appendCapitalized
 import org.gradle.api.Action
 import org.gradle.api.artifacts.Configuration
 import javax.inject.Inject
@@ -46,16 +44,6 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
         variantApiOperations,
         kmpExtension
     ) {
-
-    override fun onVariant(callback: (KotlinMultiplatformAndroidVariant) -> Unit) {
-        variantApiOperations.variantOperations
-            .addPublicOperation({ callback.invoke(it) }, "onVariant")
-    }
-
-    override fun onVariant(callback: Action<KotlinMultiplatformAndroidVariant>) {
-        variantApiOperations.variantOperations.addPublicOperation(callback, "onVariant")
-    }
-
     override fun beforeVariants(
         selector: VariantSelector,
         callback: (KotlinMultiplatformAndroidVariantBuilder) -> Unit

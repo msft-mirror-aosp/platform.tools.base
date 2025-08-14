@@ -20,6 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.android.testutils.TestUtils;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,9 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 public class LocalMavenRepositoryGeneratorTest {
 
@@ -57,7 +59,8 @@ public class LocalMavenRepositoryGeneratorTest {
                         "com.google.example:u:1",
                         "com.google.example:x:1",
                         "com.google.example:y:pom:1",
-                        "com.google.example2:a:1");
+                        "com.google.example2:a:1",
+                        "com.google.example:bb:1");
         List<String> data = Arrays.asList("com.google.example:a:2");
         String outputBuildFile = "generated.BUILD";
         LocalMavenRepositoryGenerator generator =

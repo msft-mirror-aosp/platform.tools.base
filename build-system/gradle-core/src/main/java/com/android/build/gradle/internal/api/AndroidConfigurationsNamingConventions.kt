@@ -31,7 +31,6 @@ data class AndroidSourceSetName(
         private const val CONFIG_NAME_PUBLISH = "publish"
         private const val CONFIG_NAME_APK = "apk"
         private const val CONFIG_NAME_PROVIDED = "provided"
-        private const val CONFIG_NAME_WEAR_APP = "wearApp"
         private const val CONFIG_NAME_ANNOTATION_PROCESSOR = "annotationProcessor"
         private const val CONFIG_NAME_KAPT = "kapt"
         private const val CONFIG_NAME_API = "api"
@@ -67,9 +66,6 @@ data class AndroidSourceSetName(
 
     val providedConfigurationName: String
         get() = getName(CONFIG_NAME_PROVIDED)
-
-    val wearAppConfigurationName: String
-        get() = getName(CONFIG_NAME_WEAR_APP)
 
     val annotationProcessorConfigurationName: String
         get() = getName(CONFIG_NAME_ANNOTATION_PROCESSOR)

@@ -21,6 +21,7 @@ import com.android.sdklib.internal.avd.AvdInfo
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
 import java.awt.Component
+import java.nio.file.Path
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,6 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.test.TestScope
@@ -76,6 +78,9 @@ class LocalEmulatorDeviceHandleTest {
 fun unsupportedOperation(): Nothing = throw UnsupportedOperationException()
 
 open class StubAvdManager : LocalEmulatorProvisionerPlugin.AvdManager {
+
+  override val runningAvdsFlow: StateFlow<Map<Path, RunningAvd>>
+    get() = unsupportedOperation()
 
   override suspend fun rescanAvds(): List<AvdInfo> = unsupportedOperation()
 

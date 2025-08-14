@@ -16,6 +16,7 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbLogger
+import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
@@ -24,10 +25,13 @@ import com.android.adblib.tools.debugging.ExternalJdwpProcessCommandDispatcher.P
 import com.android.adblib.tools.debugging.impl.JdwpProcessAllocationTrackerImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessProfilerImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessViewHierarchyImpl
+import com.android.adblib.tools.debugging.impl.ResumeProcessImpl
 import com.android.adblib.tools.debugging.packets.JdwpPacketBuilders
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.utils.runAlongOtherScope
+import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
+import kotlin.use
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -119,48 +123,20 @@ suspend fun JdwpProcess.executeGarbageCollector(progress: JdwpCommandProgress? =
 /**
  * Resumes execution of this [JdwpProcess] if it is in the
  * [JdwpProcessProperties.isWaitingForDebugger] state.
+ *
+ * Note: This method uses different strategies depending on the device configuration and
+ * [AdbSession] configuration, including dispatching the call to other [AdbSession]
+ * instances via pre-registered [ExternalJdwpProcessCommandDispatcher] if needed.
  */
 suspend fun JdwpProcess.resumeProcess() {
-    val logger = adbLogger()
-    val externalDispatchers = externalJdwpProcessCommandDispatcherList()
-    if (externalDispatchers.isNotEmpty()) {
-        externalDispatchers.forEach {
-            logger.debug { "Forwarding `resumeProcess` call to '$it'" }
-            it.executeCommand(ResumeJdwpProcess(pid))
-        }
-    } else {
-        resumeProcessImpl()
-    }
+    resumeProcessImpl.resumeProcess()
 }
 
-/**
- * Resumes execution of this [JdwpProcess] if it is in the
- * [JdwpProcessProperties.isWaitingForDebugger] state.
- */
-internal suspend fun JdwpProcess.resumeProcessImpl() {
-    val logger = adbLogger()
+private val resumeProcessImplKey =
+    CoroutineScopeCache.Key<ResumeProcessImpl>("ResumeProcessImpl")
 
-    // Note: we need to use `runAlongOtherScope` because we are waiting on a value from a
-    // `StateFlow` and `StateFlows` never end.
-    val isWaitingForDebugger = runAlongOtherScope(scope) {
-        logger.debug { "Waiting for `isWaitingForDebugger` property to be set" }
-        jdwpPropertiesCollector.stateFlow.first { props ->
-            props.isWaitingForDebugger.hasValue
-        }.isWaitingForDebugger.getOrThrow()
-    }
-    logger.debug { "isWaitingForDebugger = $isWaitingForDebugger" }
-
-    if (isWaitingForDebugger) {
-        logger.debug { "Opening JDWP connection to the process to resume its execution" }
-        withJdwpSession {
-            // Sends an "VM_ID_SIZES" command packet and wait for the reply. The Android VM (Art)
-            // considers this as a signal to "resume" the JDWP process execution.
-            val idSizesCommand = JdwpPacketBuilders.Commands.vmIdSizes(nextPacketId())
-            sendAndReceiveCommand(idSizesCommand)
-        }
-        logger.debug { "Process execution should now be resumed" }
-    }
-}
+internal val JdwpProcess.resumeProcessImpl: ResumeProcessImpl
+    get() = cache.getOrPut(resumeProcessImplKey) { ResumeProcessImpl(this) }
 
 private val jdwpProcessAllocationTrackerKey =
     CoroutineScopeCache.Key<JdwpProcessAllocationTracker>("JdwpProcessAllocationTracker")

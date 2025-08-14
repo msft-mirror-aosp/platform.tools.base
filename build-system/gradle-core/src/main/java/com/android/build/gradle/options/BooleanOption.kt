@@ -84,13 +84,8 @@ enum class BooleanOption(
     ),
     BUILD_FEATURE_SHADERS(
         "android.defaults.buildfeatures.shaders",
-        true,
+        false,
         ApiStage.Stable,
-        FutureStage(
-            false,
-            ApiStage.Stable,
-            Version.VERSION_9_0
-        )
     ),
     BUILD_FEATURE_VIEWBINDING("android.defaults.buildfeatures.viewbinding", false, ApiStage.Stable),
     BUILD_FEATURE_ANDROID_RESOURCES("android.library.defaults.buildfeatures.androidresources", true, ApiStage.Stable),
@@ -116,7 +111,6 @@ enum class BooleanOption(
     // Disabled by default due to low usage.
     GENERATE_MANIFEST_CLASS("android.generateManifestClass", false, ApiStage.Stable),
 
-    USE_NON_FINAL_RES_IDS("android.nonFinalResIds", true, ApiStage.Stable),
     NON_TRANSITIVE_R_CLASS("android.nonTransitiveRClass", true, ApiStage.Stable),
 
     /**
@@ -553,6 +547,20 @@ enum class BooleanOption(
         )
     ),
 
+    /**
+     * Setting custom shader path is required with `glslc.dir` property
+     */
+    CUSTOM_SHADER_PATH_REQUIRED(
+        "android.custom.shader.path.required",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_10_0
+        )
+    ),
+
     // Flag should only be used in test.
     TEST_SIMULATE_AGP_VERSION_BEHAVIOR(
         "android.testSimulateAgpVersionBehavior",
@@ -734,20 +742,6 @@ enum class BooleanOption(
      */
 
     // TODO(b/254305041) move to ApiStage.Removed
-    BUILD_FEATURE_AIDL(
-        "android.defaults.buildfeatures.aidl",
-        false,
-        ApiStage.Deprecated(VERSION_9_0),
-    ),
-
-    // TODO(b/254305041) move to ApiStage.Removed
-    BUILD_FEATURE_RENDERSCRIPT(
-        "android.defaults.buildfeatures.renderscript",
-        false,
-        ApiStage.Deprecated(VERSION_9_0),
-    ),
-
-    // TODO(b/254305041) move to ApiStage.Removed
     BUILD_FEATURE_BUILDCONFIG(
         "android.defaults.buildfeatures.buildconfig",
         false,
@@ -758,6 +752,8 @@ enum class BooleanOption(
     // Flag used to indicate a "deploy as instant" run configuration.
     @Suppress("unused")
     IDE_DEPLOY_AS_INSTANT_APP(PROPERTY_DEPLOY_AS_INSTANT_APP, false, ApiStage.Deprecated(VERSION_9_0)),
+
+    USE_NON_FINAL_RES_IDS("android.nonFinalResIds", true, ApiStage.Deprecated(VERSION_10_0)),
 
     /* -----------------
      * ENFORCED FEATURES
@@ -1101,6 +1097,27 @@ enum class BooleanOption(
         )
     ),
 
+
+    /* ----------------
+     * REMOVED API
+     */
+    BUILD_FEATURE_RENDERSCRIPT(
+        "android.defaults.buildfeatures.renderscript",
+        false,
+        ApiStage.Removed(
+            Version.VERSION_9_0,
+            "The buildfeatures.renderscript property has no effect"
+        ),
+    ),
+
+    BUILD_FEATURE_AIDL(
+        "android.defaults.buildfeatures.aidl",
+        false,
+        ApiStage.Removed(
+            Version.VERSION_9_0,
+            "The buildfeatures.aidl property has no effect"
+        ),
+    ),
 
     /* ----------------
      * REMOVED FEATURES

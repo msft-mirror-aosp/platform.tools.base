@@ -178,15 +178,15 @@ maven_repository(
 maven_repository(
     name = "kotlin_gradle_plugin_for_compose_prebuilts",
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_1.9.23",
-        "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_1.9.23",
-        "@maven//:org.jetbrains.kotlin.kotlin-android-extensions-runtime_1.9.23",
-        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_1.9.23",
-        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_1.9.23",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_1.9.23",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_1.9.23",
+        "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.2.0",
+        "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-android-extensions-runtime_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.0",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
-        "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_1.9.23",
+        "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.2.0",
     ],
     visibility = ["//visibility:public"],
 )

@@ -54,10 +54,6 @@ class SetPropertyProxy<T>(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun forUseAtConfigurationTime(): Provider<MutableSet<T>> {
-        throw RuntimeException("Not yet implemented")
-    }
-
     override fun finalizeValue() {
         throw RuntimeException("Not yet implemented")
     }

@@ -33,6 +33,27 @@ avd(
     visibility = ["//visibility:public"],
 )
 
+avd(
+    name = "avd_34",
+    image = "@system_image_android-34_aosp_atd_x86_64//:x86_64-android-34AospAtd-images",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
+avd(
+    name = "avd_32",
+    image = "@system_image_android-32_aosp_atd_x86_64//:x86_64-android-32AospAtd-images",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
+avd(
+    name = "avd_30",
+    image = "@system_image_android-30_default_x86_64//:x86_64-android-30-images",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
 # managed by go/iml_to_build
 iml_module(
     name = "studio.android.sdktools.base.bazel.avd",

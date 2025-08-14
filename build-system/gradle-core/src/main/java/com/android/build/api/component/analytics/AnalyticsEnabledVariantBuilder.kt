@@ -16,6 +16,9 @@
 
 package com.android.build.api.component.analytics
 
+import com.android.build.api.variant.HasHostTestsBuilder
+import com.android.build.api.variant.HostTestBuilder
+import com.android.build.api.variant.GeneratesApkBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -51,19 +54,19 @@ abstract class AnalyticsEnabledVariantBuilder(
         }
 
     override var targetSdk: Int?
-        get() = delegate.targetSdk
+        get() = (delegate as? GeneratesApkBuilder)?.targetSdk
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
                     VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE
-            delegate.targetSdk = value
+            (delegate as? GeneratesApkBuilder)?.targetSdk = value
         }
 
     override var targetSdkPreview: String?
-        get() = delegate.targetSdkPreview
+        get() = (delegate as? GeneratesApkBuilder)?.targetSdkPreview
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
                 VariantMethodType.TARGET_SDK_PREVIEW_VALUE
-            delegate.targetSdkPreview = value
+            (delegate as? GeneratesApkBuilder)?.targetSdkPreview = value
         }
 
     override var renderscriptTargetApi: Int
@@ -75,17 +78,17 @@ abstract class AnalyticsEnabledVariantBuilder(
         }
 
     override var unitTestEnabled: Boolean
-        get() = delegate.enableUnitTest
+        get() = (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable ?: false
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
-            delegate.enableUnitTest = value
+            (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
         }
 
     override var enableUnitTest: Boolean
-        get() = delegate.enableUnitTest
+        get() = (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable ?: false
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
-            delegate.enableUnitTest = value
+            (delegate as HasHostTestsBuilder).hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = value
         }
 
     override fun <T: Any> registerExtension(type: Class<out T>, instance: T) {

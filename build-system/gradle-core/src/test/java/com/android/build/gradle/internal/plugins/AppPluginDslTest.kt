@@ -164,48 +164,6 @@ project.android {
     }
 
     @Test
-    fun testPostprocessingBlock_default() {
-        val release = android.buildTypes.getByName("release")
-        release.postprocessing.isRemoveUnusedCode = true
-
-        plugin.createAndroidTasks(project)
-
-        Truth.assertThat(project.tasks.names).contains(DEFAULT_RELEASE)
-    }
-
-    @Test
-    fun testPostprocessingBlock_justObfuscate() {
-        val release = android.buildTypes.getByName("release")
-        release.postprocessing.isObfuscate = true
-
-        plugin.createAndroidTasks(project)
-
-        Truth.assertThat(project.tasks.names).contains(DEFAULT_RELEASE)
-    }
-
-    @Test
-    fun testPostprocessingBlock_r8_noFeatures() {
-        val release = android.buildTypes.getByName("release")
-        release.postprocessing.codeShrinker = "r8"
-        release.postprocessing.isRemoveUnusedCode = false
-
-        plugin.createAndroidTasks(project)
-
-        Truth.assertThat(project.tasks.names).doesNotContain(R8_RELEASE)
-    }
-
-    @Test
-    fun testPostprocessingBlock_r8() {
-        val release = android.buildTypes.getByName("release")
-        release.postprocessing.codeShrinker = "r8"
-        release.postprocessing.isRemoveUnusedCode = true
-
-        plugin.createAndroidTasks(project)
-
-        Truth.assertThat(project.tasks.names).contains(R8_RELEASE)
-    }
-
-    @Test
     fun testPostprocessingBlock_noCodeShrinking_oldDsl() {
         val release = android.buildTypes.getByName("release")
         release.isShrinkResources = true
@@ -215,21 +173,6 @@ project.android {
         } catch (e: Exception) {
             Truth.assertThat(e.message).contains("requires unused code shrinking")
         }
-    }
-
-    @Test
-    fun testPostprocessingBlock_initWith() {
-        val debug = android.buildTypes.getByName("debug")
-        val release = android.buildTypes.getByName("release")
-
-        debug.isMinifyEnabled = true
-        release.postprocessing.isRemoveUnusedCode = true
-
-        val debugCopy = android.buildTypes.create("debugCopy")
-        debugCopy.initWith(debug)
-
-        val releaseCopy = android.buildTypes.create("releaseCopy")
-        releaseCopy.initWith(release)
     }
 
     @Test
@@ -267,15 +210,6 @@ project.android {
     }
 
     @Test
-    fun testShrinkerChoice_newDsl_noInstantRun() {
-        android.buildTypes.getByName("debug").postprocessing.isRemoveUnusedCode = true
-
-        plugin.createAndroidTasks(project)
-
-        Truth.assertThat(project.tasks.names).contains(DEFAULT_DEBUG)
-    }
-
-    @Test
     fun testApkShrinker_oldDsl() {
         project =
             TestProjects.builder(projectDirectory.newFolder("oldDsl_builtInShrinker").toPath())
@@ -289,31 +223,6 @@ project.android {
 
         Truth.assertThat(project.tasks.names).contains(R8_DEBUG)
         Truth.assertThat(project.tasks.names).contains(R8_DEBUG_ANDROID_TEST)
-    }
-
-    @Test
-    fun testApkShrinker_newDsl_noObfuscation() {
-        val postprocessing =
-            android.buildTypes.getByName("debug").postprocessing
-        postprocessing.isRemoveUnusedCode = true
-
-        plugin.createAndroidTasks(project)
-
-        Truth.assertThat(project.tasks.names).contains(DEFAULT_DEBUG)
-        Truth.assertThat(project.tasks.names).doesNotContain(DEFAULT_DEBUG_ANDROID_TEST)
-    }
-
-    @Test
-    fun testApkShrinker_newDsl_obfuscation() {
-        val postprocessing =
-            android.buildTypes.getByName("debug").postprocessing
-        postprocessing.isRemoveUnusedCode = true
-        postprocessing.isObfuscate = true
-
-        plugin.createAndroidTasks(project)
-
-        Truth.assertThat(project.tasks.names).contains(DEFAULT_DEBUG)
-        Truth.assertThat(project.tasks.names).contains(DEFAULT_DEBUG_ANDROID_TEST)
     }
 
     @Test

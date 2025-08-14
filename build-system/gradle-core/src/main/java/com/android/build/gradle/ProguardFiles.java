@@ -47,11 +47,6 @@ public class ProguardFiles {
         /** Variant of the above which does not disable optimizations. */
         OPTIMIZE("proguard-android-optimize.txt"),
 
-        /**
-         * Does not disable any actions, includes optimizations config. To be used with the new
-         * "postProcessing" DSL block.
-         */
-        NO_ACTIONS("proguard-defaults.txt"),
         ;
 
         @NonNull public final String fileName;
@@ -147,12 +142,6 @@ public class ProguardFiles {
                 sb.append(
                         "# Optimizations: If you don't want to optimize, use the proguard-android.txt configuration file\n"
                                 + "# instead of this one, which turns off the optimization flags.\n");
-                append(sb, "proguard-optimizations.txt");
-                break;
-            case NO_ACTIONS:
-                sb.append(
-                        "# Optimizations can be turned on and off in the 'postProcessing' DSL block.\n"
-                                + "# The configuration below is applied if optimizations are enabled.\n");
                 append(sb, "proguard-optimizations.txt");
                 break;
         }

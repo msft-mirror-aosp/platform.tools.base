@@ -71,7 +71,10 @@ class DataBindingWithDynamicFeaturesTest(private val useAndroidX : Boolean) {
 
     @Test
     fun checkApkContainsDataBindingClasses() {
-        project.executor().run("clean", "assembleDebug")
+        project.executor()
+            // Disabled due to dependencies on vectordrawable libraries.
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            .run("clean", "assembleDebug")
         val aApk: Apk = project.getSubproject("featureA")
             .getApk(GradleTestProject.ApkType.DEBUG)
         val bApk: Apk = project.getSubproject("featureB")

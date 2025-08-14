@@ -52,12 +52,23 @@ cc_library(
 )
 
 cc_test(
+    name = "transport_service_test",
+    srcs = ["transport_service_test.cc"],
+    linkstatic = 1,
+    deps = [
+        ":daemon",
+        "//tools/base/transport/proto:cc_proto",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "daemon_test",
     srcs = [
         "agent_service_test.cc",
         "daemon_test.cc",
         "event_buffer_test.cc",
-        "transport_service_test.cc",
+        "transport_command_test.cc",
     ],
     copts = [
         "-Itools/base/profiler/native",

@@ -669,11 +669,6 @@ abstract class ProguardConfigurableTask(
             minifyEnabled: Boolean,
             creationConfig: ConsumableCreationConfig,
         ) {
-            setActions(PostprocessingFeatures(
-                isRemoveUnusedCode = minifyEnabled,
-                isObfuscate = minifyEnabled,
-                isOptimize = minifyEnabled
-            ))
             if (minifyEnabled) {
                 applyGeneratedProguardFiles(task, creationConfig)
             } else {
@@ -687,9 +682,6 @@ abstract class ProguardConfigurableTask(
             task: ProguardConfigurableTask,
             creationConfig: ConsumableCreationConfig
         ) {
-            val postprocessingFeatures = optimizationCreationConfig.postProcessingFeatures
-            postprocessingFeatures?.let { setActions(postprocessingFeatures) }
-
             applyGeneratedProguardFiles(task, creationConfig)
             applyInheritedProguardFiles(task)
             applyProguardDefaultForNonTest(creationConfig)
@@ -768,8 +760,6 @@ abstract class ProguardConfigurableTask(
         protected abstract fun keepAttributes()
 
         protected abstract fun dontWarn(dontWarn: String)
-
-        protected abstract fun setActions(actions: PostprocessingFeatures)
     }
 
 }

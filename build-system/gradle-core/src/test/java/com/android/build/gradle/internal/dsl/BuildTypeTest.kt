@@ -127,8 +127,6 @@ class BuildTypeTest {
             original.isUseProguard
             // Covered by externalNativeBuildOptions
             original.externalNativeBuild
-            original.postProcessingBlockUsed
-            original.postprocessing
         }
     }
 

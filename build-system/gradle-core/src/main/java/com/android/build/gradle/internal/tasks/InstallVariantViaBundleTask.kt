@@ -104,7 +104,7 @@ abstract class InstallVariantViaBundleTask : NonIncrementalTask() {
         abstract val timeOutInMs: Property<Int>
         abstract val installOptions: ListProperty<String>
         abstract val variantName: Property<String>
-        abstract val minApiCodeName: Property<String?>
+        abstract val minApiCodeName: Property<String>
         abstract val minSdkVersion: Property<Int>
         abstract val privacySandboxSdkApksFiles: ConfigurableFileCollection
     }

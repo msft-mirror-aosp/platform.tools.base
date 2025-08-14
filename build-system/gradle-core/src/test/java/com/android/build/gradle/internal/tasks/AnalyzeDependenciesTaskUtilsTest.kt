@@ -506,10 +506,6 @@ class AnalyzeDependenciesTaskUtilsTest {
 
         override fun getVersion() = fakeVersion
 
-        override fun contentEquals(var1: Dependency): Boolean {
-            return (var1.group == fakeGroup && name == fakeName && version == fakeVersion)
-        }
-
         override fun copy(): Dependency {
             return FakeDependency(fakeName, fakeVersion, fakeGroup)
         }

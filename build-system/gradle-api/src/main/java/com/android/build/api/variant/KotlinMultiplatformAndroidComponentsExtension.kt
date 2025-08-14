@@ -17,8 +17,6 @@
 package com.android.build.api.variant
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
-import org.gradle.api.Action
-import org.gradle.api.Incubating
 
 /**
  * Components extension for KMP Android Gradle Plugin related components.
@@ -29,36 +27,4 @@ import org.gradle.api.Incubating
 interface KotlinMultiplatformAndroidComponentsExtension : AndroidComponentsExtension<
     KotlinMultiplatformAndroidLibraryExtension,
     KotlinMultiplatformAndroidVariantBuilder,
-    KotlinMultiplatformAndroidVariant> {
-
-    /**
-     * Allow for registration of a [callback] to be called with variant instances of type [KotlinMultiplatformAndroidLibraryExtension]
-     * once the list of [com.android.build.api.artifact.Artifact] has been determined.
-     *
-     * At this stage, access to the DSL objects is disallowed
-     *
-     * Because the list of artifacts (including private ones) is final, one cannot change the build
-     * flow anymore as [org.gradle.api.Task]s are now expecting those artifacts as inputs. However
-     * users can modify such artifacts by replacing or transforming them, see [com.android.build.api.artifact.Artifacts]
-     * for details.
-     *
-     * Code executing in the [callback] also has access to the [KotlinMultiplatformAndroidLibraryExtension] information which is used
-     * to configure [org.gradle.api.Task] inputs (for example, the buildConfigFields). Such
-     * information represented as [org.gradle.api.provider.Property] can still be modified ensuring
-     * that all [org.gradle.api.Task]s created by the Android Gradle Plugin use the updated value.
-     */
-    @Incubating
-    @Deprecated("Use the equivalent onVariants {}. This API will be removed in 9.0", replaceWith = ReplaceWith("onVariants"))
-    fun onVariant(
-        callback: (KotlinMultiplatformAndroidVariant) -> Unit
-    )
-
-    /**
-     * [Action] based version of [onVariant] above.
-     */
-    @Incubating
-    @Deprecated("Use the equivalent onVariants {}. This API will be removed in 9.0", replaceWith = ReplaceWith("onVariants"))
-    fun onVariant(
-        callback: Action<KotlinMultiplatformAndroidVariant>
-    )
-}
+    KotlinMultiplatformAndroidVariant>

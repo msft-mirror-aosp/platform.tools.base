@@ -34,6 +34,7 @@ import org.gradle.api.problems.internal.InternalProblemReporter
 import org.gradle.api.problems.internal.InternalProblemSpec
 import org.gradle.api.problems.internal.InternalProblems
 import org.gradle.api.provider.Property
+import org.gradle.problems.ProblemDiagnostics
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.any
@@ -216,12 +217,8 @@ class AndroidProblemsReporterTest {
             fail("Not expected to be called")
         }
 
-        override fun <T : AdditionalData?> additionalDataInternal(p0: T & Any): InternalProblemSpec {
-            fail("Not expected to be called")
-        }
-
-        override fun taskPathLocation(p0: String): InternalProblemSpec = apply {
-            record("taskPathLocation", p0)
+        override fun taskLocation(buildTreePath: String): InternalProblemSpec = apply {
+            record("taskPathLocation", buildTreePath)
         }
 
         override fun documentedAt(p0: DocLink?): InternalProblemSpec = apply {
@@ -298,6 +295,10 @@ class AndroidProblemsReporterTest {
 
         override fun severity(p0: Severity): InternalProblemSpec = apply {
             record("severity", p0)
+        }
+
+        override fun diagnostics(diagnostics: ProblemDiagnostics): InternalProblemSpec = apply {
+            record("diagnostics", diagnostics)
         }
 
     }

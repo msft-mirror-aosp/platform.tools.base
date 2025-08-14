@@ -15,20 +15,20 @@
  */
 package com.android.tools.appinspection.database.testing
 
+import androidx.sqlite.driver.bundled.BundledSQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_CREATE
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_READONLY
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_READWRITE
 import com.android.tools.appinspection.database.Database
 import com.android.tools.appinspection.database.androidx.AndroidXDatabase
-import com.android.tools.appinspection.database.androidx.SQLiteConnectionWrapper
 
 internal class AndroidXDatabaseProvider(override val path: String) : DatabaseProvider {
 
   override fun getReadOnlyDb(autoClose: Boolean): Database {
     val connection = BundledSQLiteDriver().open(path, SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE)
     return AndroidXDatabase(
-      SQLiteConnectionWrapper(connection, {}, {}),
+      connection as BundledSQLiteConnection,
       path,
       SQLITE_OPEN_READONLY or SQLITE_OPEN_CREATE,
     )
@@ -37,7 +37,7 @@ internal class AndroidXDatabaseProvider(override val path: String) : DatabasePro
   override fun getReadWriteDb(autoClose: Boolean): Database {
     val flags = SQLITE_OPEN_READWRITE or SQLITE_OPEN_CREATE
     val connection = BundledSQLiteDriver().open(path, flags)
-    return AndroidXDatabase(SQLiteConnectionWrapper(connection, {}, {}), path, flags)
+    return AndroidXDatabase(connection as BundledSQLiteConnection, path, flags)
   }
 
   override fun createAndClose() {

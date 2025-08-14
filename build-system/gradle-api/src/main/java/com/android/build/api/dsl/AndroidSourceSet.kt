@@ -80,14 +80,14 @@ interface AndroidSourceSet : Named {
      * The Android JNI source directory for this source set.
      * @deprecated This is unused and will be removed in AGP 9.0
      */
-    @Deprecated("Unused") // b/368426598
+    @Deprecated("Unused", level = DeprecationLevel.HIDDEN) // b/368426598
     @get:Incubating
     val jni: AndroidSourceDirectorySet
     /**
      * The Android JNI source directory for this source set.
      * @deprecated This is unused and will be removed in AGP 9.0
      */
-    @Deprecated("Unused") // b/368426598
+    @Deprecated("Unused", level = DeprecationLevel.HIDDEN) // b/368426598
     @Incubating
     fun jni(action: AndroidSourceDirectorySet.() -> Unit)
 
@@ -130,12 +130,6 @@ interface AndroidSourceSet : Named {
      * Returns the name of the implementation configuration for this source set.
      */
     val runtimeOnlyConfigurationName: String
-
-    /**
-     * Returns the name of the wearApp configuration for this source set.
-     */
-    @Deprecated("Deprecated configuration - to be removed in AGP 9.0")
-    val wearAppConfigurationName: String
 
     /**
      * Returns the name of the annotation processing tool classpath for this source set.

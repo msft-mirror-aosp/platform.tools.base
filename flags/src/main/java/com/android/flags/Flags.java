@@ -18,8 +18,10 @@ package com.android.flags;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.flags.overrides.DefaultFlagOverrides;
+import com.android.flags.overrides.InMemoryFlagValueContainer;
 import com.android.flags.overrides.PropertyOverrides;
+
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,62 +49,98 @@ import java.util.Map;
  *         ...
  *     }
  * </pre>
+ *
+ * Flags values come from several places. There is the {@link Flag#getDefault()}, but this class
+ * provide overrides over this default value. Inside this class values can come from 3 different
+ * types of sources (in decreasing order of priority) - {@link Flags#getUserOverrides()}: a mutable
+ * container of flag values, generally used for user-settable flag override - a list of {@link
+ * Flags#fallbackProviders} for read-only overrides coming from other places (e.g. server side
+ * override, properties) - {@link Flags#fileBasedDefaultProvider} for a read-only file-based source
+ * of default. This is generally only used for boolean flags. See {@link
+ * com.android.tools.idea.flags.overrides.FeatureConfigurationProvider}
  */
 public final class Flags {
     private final Map<String, Flag<?>> registeredFlags =
             Collections.synchronizedMap(new HashMap<>());
-    private final ImmutableFlagOverrides[] fallbackOverridesList;
-    private final FlagOverrides mutableOverrides;
 
     /**
-     * Construct a new collection of flags, providing both a main, mutable {@link FlagOverrides} and
-     * a list of 0 or more fallback {@link FlagOverrides}. The fallback overrides will be checked in
-     * the order they were added.
+     * This provider reads default flag values from a file embedded in Studio. It's used as a last
+     * resort when querying for values as other override must take precedence.
+     */
+    private final FlagValueProvider fileBasedDefaultProvider;
+
+    /** A container of flags to record user-overridden flag values */
+    private final FlagValueContainer userOverrides;
+
+    /**
+     * An array of flag value providers that give access to some automatic overrides, for example
+     * using server-flags.
+     *
+     * <p>They are used as fallbacks if the {@link Flags#userOverrides} does not contain the
+     * requested flag
+     */
+    private final FlagValueProvider[] fallbackProviders;
+
+    /**
+     * Construct a new collection of flags, providing both a main, mutable {@link
+     * FlagValueContainer} and a list of 0 or more fallback {@link FlagValueContainer}. The fallback
+     * overrides will be checked in the order they were added.
      *
      * <p>It is likely you will want to pass in at least a {@link PropertyOverrides} instance as a
      * fallback handler, enabling flag defaults to be specified on the command line.
      */
     public Flags(
-            @NonNull FlagOverrides mutableOverrides,
-            ImmutableFlagOverrides... fallbackOverridesList) {
-        this.mutableOverrides = mutableOverrides;
-        this.fallbackOverridesList = fallbackOverridesList;
+            @NonNull FlagValueProvider fileBasedDefaultProvider,
+            @NonNull FlagValueContainer userOverrides,
+            FlagValueProvider... fallbackProviders) {
+        this.fileBasedDefaultProvider = fileBasedDefaultProvider;
+        this.userOverrides = userOverrides;
+        this.fallbackProviders = fallbackProviders;
     }
 
-    public Flags(ImmutableFlagOverrides... immutableOverrides) {
-        this(new DefaultFlagOverrides(), immutableOverrides);
+    @VisibleForTesting
+    public Flags(FlagValueProvider... immutableOverrides) {
+        this(
+                new InMemoryFlagValueContainer(),
+                new InMemoryFlagValueContainer(),
+                immutableOverrides);
     }
 
     /**
-     * A mutable set of flags used for overriding flag values at runtime.
+     * The container of user-set overrides.
      *
-     * <p>This collection does not include any of the immutable fallback overrides which may have
-     * been specified in the constructor.
+     * <p>This container does not include any of the fallback providers, or the file based default
+     * provider.
      */
     @NonNull
-    public FlagOverrides getOverrides() {
-        return mutableOverrides;
+    public FlagValueContainer getUserOverrides() {
+        return userOverrides;
     }
 
     /**
-     * Returns an overridden flag value, if any, or {@code null} if the value is not overridden by
-     * any of the {@link FlagOverrides} instances.
+     * Returns a flag value, if any, or {@code null} if the value is not returned by any of the
+     * {@link FlagValueContainer} instances.
      *
-     * <p>To set a flag, use {@link #getOverrides()} and set it through its API.
+     * <p>This does not include the default value set as {@link Flag#getDefault()}.
+     *
+     * <p>To set a flag, overriding its default, use {@link #getUserOverrides()} and set it through
+     * its API.
      */
     @Nullable
-    String getOverriddenValue(@NonNull Flag<?> flag) {
-        String flagValue = mutableOverrides.get(flag);
-        if (flagValue == null) {
-            for (ImmutableFlagOverrides flagOverrides : fallbackOverridesList) {
-                flagValue = flagOverrides.get(flag);
-                if (flagValue != null) {
-                    break;
-                }
+    String getValue(@NonNull Flag<?> flag) {
+        String flagValue = userOverrides.get(flag);
+        if (flagValue != null) {
+            return flagValue;
+        }
+
+        for (FlagValueProvider flagOverrides : fallbackProviders) {
+            flagValue = flagOverrides.get(flag);
+            if (flagValue != null) {
+                return flagValue;
             }
         }
 
-        return flagValue;
+        return fileBasedDefaultProvider.get(flag);
     }
 
     /**

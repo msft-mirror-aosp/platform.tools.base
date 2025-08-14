@@ -18,11 +18,14 @@ package com.android.flags
 import java.util.Locale
 
 /**
- * A flag is a setting with an unique ID and some value. Flags are often used to gate features (e.g.
- * start with the feature disabled or enabled) or initialize a feature with some default value (e.g.
- * how much memory to initialize a system with, what mode a system should use by default).
+ * A flag is a setting with an unique ID and a default value. Flags are often used to gate features
+ * (e.g. start with the feature disabled or enabled) or initialize a feature with some default value
+ * (e.g. how much memory to initialize a system with, what mode a system should use by default).
+ *
+ * A flag final value, queried via [get], is not necessarily the same as its [default] value.
+ * [Flag] are linked to a [Flags] instance which can provide an "override" over the default value.
  */
-sealed class Flag<T> constructor(
+sealed class Flag<T>(
     /** Returns the [FlagGroup] that this flag is part of. */
     val group: FlagGroup,
     name: String,
@@ -57,7 +60,7 @@ sealed class Flag<T> constructor(
 
     /** Returns the value of this flag. */
     fun get(): T {
-        val strValue = group.flags.getOverriddenValue(this) ?: return defaultValue
+        val strValue = group.flags.getValue(this) ?: return defaultValue
 
         return try {
             valueConverter.deserialize(strValue)
@@ -70,19 +73,24 @@ sealed class Flag<T> constructor(
      * Override the value of this flag at runtime.
      *
      * This method does not modify this flag definition directly, but instead adds an entry into its
-     * parent [Flags.getOverrides] collection.
+     * parent [Flags.getUserOverrides] collection.
      */
     fun override(overrideValue: T) {
-        group.flags.overrides.put(this, valueConverter.serialize(overrideValue))
+        group.flags.userOverrides.put(this, valueConverter.serialize(overrideValue))
     }
 
     /** Clear any override previously set by [.override]. */
     fun clearOverride() {
-        group.flags.overrides.remove(this)
+        group.flags.userOverrides.remove(this)
     }
 
-    val isOverridden: Boolean
-        get() = group.flags.overrides[this] != null
+    /**
+     * Whether the flag's value has been overridden manually by the user.
+     *
+     * This is generally done in the Flag UI.
+     */
+    val isUserOverridden: Boolean
+        get() = group.flags.userOverrides[this] != null
 
     /**
      * Simple interface for converting a value to and from a String. This is useful as all flags are
@@ -131,7 +139,7 @@ sealed class Flag<T> constructor(
     }
 }
 
-class MendelFlag constructor(
+class MendelFlag(
     group: FlagGroup,
     name: String,
     val mendelId: Int,
@@ -205,7 +213,7 @@ class IntFlag constructor(
     }
 }
 
-class LongFlag constructor(
+class LongFlag(
     group: FlagGroup,
     name: String,
     displayName: String,
@@ -228,7 +236,7 @@ class LongFlag constructor(
     }
 }
 
-class StringFlag constructor(
+class StringFlag(
     group: FlagGroup,
     name: String,
     displayName: String,
@@ -251,7 +259,7 @@ class StringFlag constructor(
     }
 }
 
-class EnumFlag<T : Enum<T>> constructor(
+class EnumFlag<T : Enum<T>>(
     group: FlagGroup,
     name: String,
     displayName: String,

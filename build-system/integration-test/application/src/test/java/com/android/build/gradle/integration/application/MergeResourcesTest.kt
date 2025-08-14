@@ -47,7 +47,7 @@ class MergeResourcesTest {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             android {
-                namespace = "com.example.android.multiproject"
+                namespace = "com.example.android.multiproject.app"
                 defaultConfig {
                     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                     minSdk = 19
@@ -64,10 +64,10 @@ class MergeResourcesTest {
             }
             files {
                 add(
-                    "src/main/java/com/example/android/multiproject/MainActivity.java",
+                    "src/main/java/com/example/android/multiproject/app/MainActivity.java",
                     //language=java
                     """
-                    package com.example.android.multiproject;
+                    package com.example.android.multiproject.app;
 
                     import android.app.Activity;
                     import android.content.Intent;
@@ -118,7 +118,7 @@ class MergeResourcesTest {
         }
         androidLibrary {
             android {
-                namespace = "com.example.android.multiproject.base.library"
+                namespace = "com.example.android.multiproject.library"
             }
             files.add(
                 "src/main/res/values/strings.xml",
@@ -439,7 +439,7 @@ class MergeResourcesTest {
         )
 
         app.files.update(
-            "src/main/java/com/example/android/multiproject/MainActivity.java")
+            "src/main/java/com/example/android/multiproject/app/MainActivity.java")
             .appendMethod("public int useFoo() { return R.id.foo; }")
 
         build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23)
@@ -648,16 +648,26 @@ class MergeResourcesTest {
     fun testSameNamedStringAndIdAppearInRClass() {
         val build = project.build {
             androidApplication {
+                android {
+                    namespace = "com.example.android.multiproject"
+                }
                 dependencies {
                     api(project(DEFAULT_LIB_PATH))
                 }
+                files.update("src/main/java/com/example/android/multiproject/app/MainActivity.java")
+                    .searchAndReplace(
+                        "package com.example.android.multiproject.app;",
+                        "package com.example.android.multiproject;"
+                    )
+                    .moveTo("src/main/java/com/example/android/multiproject/MainActivity.java")
             }
             androidLibrary {
                 android {
                     namespace = "com.example.android.multiproject"
                 }
                 // A string resource called `app_name` is already present in the project.
-                files.add("src/main/res/values/ids.xml",
+                files.add(
+                    "src/main/res/values/ids.xml",
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                             "<resources>\n" +
                             "    <item name=\"app_name\" type=\"id\" />\n" +
@@ -666,12 +676,15 @@ class MergeResourcesTest {
             }
         }
 
-        build.executor.run(":app:assembleDebug")
+        build.executor
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            .run(":app:assembleDebug")
 
         val rJar = build.androidApplication()
             .resolve(InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR)
-            .resolve("debug/processDebugResources/${SdkConstants.FN_R_CLASS_JAR}"
-        ).toFile()
+            .resolve(
+                "debug/processDebugResources/${SdkConstants.FN_R_CLASS_JAR}"
+            ).toFile()
         URLClassLoader.newInstance(arrayOf(rJar.toURI().toURL())).use { urlClassLoader ->
             val rClassStrings =
                 urlClassLoader.loadClass("com.example.android.multiproject.R\$string")?.fields

@@ -1,6 +1,5 @@
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
-load("//tools/base/bazel/avd:avd.bzl", "avd")
 load("//tools/base/build-system/integration-test/connected:connected-test.bzl", "gradle_connected_test", "single_gradle_connected_test_per_source")
 
 kotlin_library(
@@ -54,33 +53,13 @@ TEST_DEPS = [
     "@maven//:org.jetbrains.kotlin.kotlin-test",
 ]
 
-# For tests that needs to run on API 34 devices.
-avd(
-    name = "avd_34",
-    image = "@system_image_android-34_aosp_atd_x86_64//:x86_64-android-34AospAtd-images",
-    target_compatible_with = ["@platforms//os:linux"],
-)
-
-# For tests that needs to be updated in order to support API 33 devices.
-avd(
-    name = "avd_32",
-    image = "@system_image_android-32_aosp_atd_x86_64//:x86_64-android-32AospAtd-images",
-    target_compatible_with = ["@platforms//os:linux"],
-)
-
-# For tests that require 32-bit x86 support.
-avd(
-    name = "avd_default_30",
-    image = "@system_image_android-30_default_x86_64//:x86_64-android-30-images",
-    target_compatible_with = ["@platforms//os:linux"],
-)
-
 #keep sorted
 TEST_DATA = [
     "//prebuilts/studio/jdk/jdk17:jdk_runtime_files",
     "//prebuilts/studio/sdk:build-tools/latest",
     "//prebuilts/studio/sdk:platform-tools",
     "//tools/base/build-system:gradle-distrib",
+    "//tools/base/build-system:gradle-distrib-8.13",
     "//tools/base/build-system/aapt2:aapt2_for_tests",
     "//tools/base/build-system/integration-test:android_platform_for_tests",
 ]
@@ -111,7 +90,7 @@ single_gradle_connected_test_per_source(
             "src/test/java/com/android/build/gradle/integration/connected/application/privacysandbox/*ConnectedTest.java",
         ],
     ),
-    avd = ":avd_34",
+    avd = "//tools/base/bazel/avd:avd_34",
     data = TEST_DATA + [
         "//prebuilts/studio/sdk:platforms/android-34",
         "//tools/base/build-system/integration-test:test-projects/privacySandboxSdk",
@@ -188,7 +167,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "AndroidTestResourcesConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -207,7 +186,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "ApiConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/api"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -217,7 +196,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "AttrOrderConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/attrOrder"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -227,7 +206,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "BasicConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/basic"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -262,7 +241,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "LibraryAndroidTestWithViewTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_artifacts = [
         "@maven//:androidx.annotation.annotation_1.2.0-beta01",
@@ -279,7 +258,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "CoreLibraryDesugarConversionConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -290,7 +269,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "CoreLibraryDesugarConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -311,7 +290,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "D8DesugaringConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -353,7 +332,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "DensitySplitConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/densitySplit"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -363,7 +342,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "DependenciesConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/dependencies"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -382,7 +361,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "FlavoredConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/flavored"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -392,7 +371,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "FlavoredlibConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/flavoredlib"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -402,7 +381,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "FlavorlibConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/flavorlib"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -412,7 +391,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "FlavorsConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/flavors"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -422,7 +401,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "JacocoConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -432,7 +411,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "JarsInLibrariesConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/assets"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -452,7 +431,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "LibMinifyJarDepConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/libMinifyJarDep"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -471,7 +450,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "LibsTestConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/libsTest"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -481,7 +460,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "LibTestDepConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/libTestDep"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -491,7 +470,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MigratedConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/migrated"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -510,7 +489,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MinifyLibConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/minifyLib"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -541,7 +520,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MultiDexConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/multiDex"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -551,7 +530,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MultiDexWithLibConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/multiDexWithLib"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -561,7 +540,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MultiProjectConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/multiproject"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -571,7 +550,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "MultiresConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/multires"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -593,7 +572,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "NdkJniLibConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/ndk/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + [
         "//prebuilts/studio/sdk:cmake",
         "//prebuilts/studio/sdk:ndk",
@@ -607,7 +586,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "NdkLibPrebuiltsConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/ndk/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + [
         "//prebuilts/studio/sdk:cmake",
         "//prebuilts/studio/sdk:ndk",
@@ -621,7 +600,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "NdkSanAngelesConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/ndk/",
-    avd = ":avd_default_30",
+    avd = "//tools/base/bazel/avd:avd_30",
     data = TEST_DATA + [
         "//prebuilts/studio/sdk:cmake",
         "//prebuilts/studio/sdk:ndk",
@@ -635,7 +614,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "NoSplitNdkVariantsConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/ndk/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + [
         "//prebuilts/studio/sdk:cmake",
         "//prebuilts/studio/sdk:ndk",
@@ -648,7 +627,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "Overlay3ConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/overlay3"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -658,7 +637,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "PkgOverrideConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/pkgOverride"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -677,7 +656,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "SameNamedLibsConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/library/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/sameNamedLibs"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -687,7 +666,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "SeparateTestModuleConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/testing/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/separateTestModule"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -697,7 +676,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "SeparateTestModuleWithMinifiedAppConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/testing/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/separateTestModuleWithMinifiedApp"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -707,7 +686,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "SeparateTestWithAarDependencyConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/testing/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/separateTestModule"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -717,7 +696,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "SeparateTestWithMinificationButNoObfuscationConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/testing/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/separateTestWithMinificationButNoObfuscation"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -727,7 +706,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "SigningConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -738,7 +717,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "TestingSupportLibraryConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/testing/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -748,7 +727,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "TestWithSameDepAsAppConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/dependencies/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA,
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -802,7 +781,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "InstrumentationRunnerConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/testing/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/separateTestModule"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
@@ -821,7 +800,7 @@ gradle_connected_test(
 gradle_connected_test(
     name = "ResourceSplitTestModuleConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
-    avd = ":avd_32",
+    avd = "//tools/base/bazel/avd:avd_32",
     data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/separateTestModule"],
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,

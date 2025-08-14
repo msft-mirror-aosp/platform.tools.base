@@ -24,7 +24,6 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.services.VariantBuilderServices
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.errors.IssueReporter
 
 abstract class VariantBuilderImpl(
     globalVariantBuilderConfig: GlobalVariantBuilderConfig,
@@ -151,13 +150,13 @@ abstract class VariantBuilderImpl(
         get() = hostTests[HostTestBuilder.UNIT_TEST_TYPE]
                 ?: throw RuntimeException("Invalid component, no unit test defined")
 
-    @Deprecated("Will be removed in AGP 9.0 - Use (variantBuilder as HasHostTestsBuilder).get(HasHostTestsBuilder.UNIT_TEST_TYPE).enable")
+    @Deprecated("Will be removed in AGP 10.0 - Use (variantBuilder as HasHostTestsBuilder).get(HasHostTestsBuilder.UNIT_TEST_TYPE).enable")
     override var enableUnitTest: Boolean
         get() = unitTest.enable
         set(value) {
             unitTest.enable = value
         }
-    @Deprecated("Will be removed in AGP 9.0 - Use (variantBuilder as HasHostTestsBuilder).get(HasHostTestsBuilder.UNIT_TEST_TYPE).enable")
+    @Deprecated("Will be removed in AGP 10.0 - Use (variantBuilder as HasHostTestsBuilder).get(HasHostTestsBuilder.UNIT_TEST_TYPE).enable")
     override var unitTestEnabled: Boolean
         get() = unitTest.enable
         set(value) {
@@ -176,22 +175,4 @@ abstract class VariantBuilderImpl(
         if (registeredExtensionDelegate.isInitialized())
             registeredExtensionDelegate.value
         else null
-
-    private val hasPostProcessingConfiguration =
-        variantDslInfo.optimizationDslInfo.postProcessingOptions.hasPostProcessingConfiguration()
-
-    internal fun setMinificationIfPossible(
-        varName: String,
-        newValue: Boolean,
-        setter: (Boolean) -> Unit
-    ) {
-        if (hasPostProcessingConfiguration)
-            variantBuilderServices.issueReporter.reportWarning(
-                IssueReporter.Type.GENERIC,
-                "You cannot set $varName via Variant API as build uses postprocessing{...} " +
-                        "instead of buildTypes{...}"
-            )
-        else
-            setter(newValue)
-    }
 }

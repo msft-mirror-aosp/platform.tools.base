@@ -4,33 +4,17 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
 Deprecated from AGP 8.13.0
+  * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.getCompilerOptions: org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions> ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.getKotlinOptions: org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.kotlinOptions: void (kotlin.jvm.functions.Function1<? super org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.kotlinOptions: void (org.gradle.api.Action<org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget$DefaultImpls.getPreset: org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset (com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidTarget$DefaultImpls.getPreset: org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset (com.android.build.api.dsl.KotlinMultiplatformAndroidTarget)
-  * com.android.build.api.dsl.PostProcessing
-  * com.android.build.api.dsl.PostProcessing.consumerProguardFile: void (java.lang.Object)
-  * com.android.build.api.dsl.PostProcessing.consumerProguardFiles: void (java.lang.Object[])
-  * com.android.build.api.dsl.PostProcessing.initWith: void (com.android.build.api.dsl.PostProcessing)
-  * com.android.build.api.dsl.PostProcessing.isObfuscate: boolean ()
-  * com.android.build.api.dsl.PostProcessing.isOptimizeCode: boolean ()
-  * com.android.build.api.dsl.PostProcessing.isRemoveUnusedCode: boolean ()
-  * com.android.build.api.dsl.PostProcessing.isRemoveUnusedResources: boolean ()
-  * com.android.build.api.dsl.PostProcessing.proguardFile: void (java.lang.Object)
-  * com.android.build.api.dsl.PostProcessing.proguardFiles: void (java.lang.Object[])
-  * com.android.build.api.dsl.PostProcessing.setConsumerProguardFiles: void (java.util.List<?>)
-  * com.android.build.api.dsl.PostProcessing.setObfuscate: void (boolean)
-  * com.android.build.api.dsl.PostProcessing.setOptimizeCode: void (boolean)
-  * com.android.build.api.dsl.PostProcessing.setProguardFiles: void (java.util.List<?>)
-  * com.android.build.api.dsl.PostProcessing.setRemoveUnusedCode: void (boolean)
-  * com.android.build.api.dsl.PostProcessing.setRemoveUnusedResources: void (boolean)
-  * com.android.build.api.dsl.PostProcessing.setTestProguardFiles: void (java.util.List<?>)
-  * com.android.build.api.dsl.PostProcessing.testProguardFile: void (java.lang.Object)
-  * com.android.build.api.dsl.PostProcessing.testProguardFiles: void (java.lang.Object[])
   * com.android.build.api.dsl.VariantDimension.getOptimization: com.android.build.api.dsl.Optimization ()
   * com.android.build.api.dsl.VariantDimension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization, kotlin.Unit>)
+  * com.android.build.api.variant.ComponentBuilder.getEnabled: boolean ()
+  * com.android.build.api.variant.ComponentBuilder.setEnabled: void (boolean)
 Deprecated from AGP 8.12.0
   * com.android.build.api.dsl.BaseFlavor.getMinSdkPreview: java.lang.String ()
   * com.android.build.api.dsl.BaseFlavor.setMinSdkPreview: void (java.lang.String)
@@ -52,8 +36,6 @@ Deprecated from AGP 8.11.0
   * com.android.build.api.dsl.LibraryBuildFeatures.setAndroidResources: void (java.lang.Boolean)
   * com.android.build.api.dsl.TestOptions.emulatorSnapshots: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots, kotlin.Unit>)
   * com.android.build.api.dsl.TestOptions.getEmulatorSnapshots: com.android.build.api.dsl.EmulatorSnapshots ()
-  * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant, kotlin.Unit>)
-  * com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension.onVariant: void (org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant>)
 Deprecated from AGP 8.9.0
   * com.android.build.api.variant.GeneratesApkBuilder.getDebuggable: boolean ()
 Deprecated from AGP 8.8.0
@@ -76,8 +58,6 @@ Deprecated from AGP 8.8.0
 Deprecated from AGP 8.7.0
   * com.android.build.api.dsl.ComposeOptions.getUseLiveLiterals: boolean ()
   * com.android.build.api.dsl.ComposeOptions.setUseLiveLiterals: void (boolean)
-Deprecated from AGP 8.6.0
-  * com.android.build.api.dsl.AndroidSourceSet.getWearAppConfigurationName: java.lang.String ()
 Deprecated from AGP 8.5.0
   * com.android.build.api.dsl.Ndk.getCFlags: java.lang.String ()
   * com.android.build.api.dsl.Ndk.getJobs: java.lang.Integer ()
@@ -98,9 +78,6 @@ Deprecated from AGP 8.3.0
   * com.android.build.api.variant.AndroidTestBuilder.getEnableMultiDex: java.lang.Boolean ()
   * com.android.build.api.variant.ApplicationVariantBuilder.getProfileable: boolean ()
   * com.android.build.api.variant.GeneratesApkBuilder.getEnableMultiDex: java.lang.Boolean ()
-Deprecated from AGP 8.2.0
-  * com.android.build.api.dsl.BuildType.isRenderscriptDebuggable: boolean ()
-  * com.android.build.api.dsl.BuildType.setRenderscriptDebuggable: void (boolean)
 Deprecated from AGP 8.1.0
   * com.android.build.api.dsl.DensitySplit implements com.android.build.api.dsl.Split
   * com.android.build.api.dsl.DensitySplit.compatibleScreens: void (java.lang.String[])
@@ -153,8 +130,6 @@ Deprecated from AGP 7.3.0
   * com.android.build.api.dsl.DataBinding.isEnabledForTests: boolean ()
   * com.android.build.api.dsl.DataBinding.setEnabled: void (boolean)
   * com.android.build.api.dsl.DataBinding.setEnabledForTests: void (boolean)
-  * com.android.build.api.dsl.Installation.installOptions: void (java.lang.String)
-  * com.android.build.api.dsl.Installation.installOptions: void (java.lang.String[])
   * com.android.build.api.variant.VariantFilter
   * com.android.build.api.variant.VariantFilter.getBuildType: com.android.builder.model.BuildType ()
   * com.android.build.api.variant.VariantFilter.getDefaultConfig: com.android.builder.model.ProductFlavor ()
@@ -172,7 +147,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.AaptOptions implements com.android.build.api.dsl.AndroidResources
   * com.android.build.api.dsl.AdbOptions implements com.android.build.api.dsl.Installation
   * com.android.build.api.dsl.AndroidSourceSet.getJni: com.android.build.api.dsl.AndroidSourceDirectorySet ()
-  * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
   * com.android.build.api.dsl.ApkSigningConfig.isV1SigningEnabled: boolean ()
   * com.android.build.api.dsl.ApkSigningConfig.isV2SigningEnabled: boolean ()
   * com.android.build.api.dsl.ApkSigningConfig.setV1SigningEnabled: void (boolean)
@@ -299,8 +273,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
   * com.android.build.api.dsl.ManagedDevices.getDevices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> ()
-  * com.android.build.api.dsl.PostProcessing.getCodeShrinker: java.lang.String ()
-  * com.android.build.api.dsl.PostProcessing.setCodeShrinker: void (java.lang.String)
   * com.android.build.api.dsl.ProductFlavor.setDimension: java.lang.Void (java.lang.String)
   * com.android.build.api.dsl.ProductFlavor.setMatchingFallbacks: void (java.lang.String[])
   * com.android.build.api.dsl.ProductFlavor.setMatchingFallbacks: void (java.util.List<java.lang.String>)
@@ -309,8 +281,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.TestBaseFlavor.targetSdkVersion: void (int)
   * com.android.build.api.dsl.TestBaseFlavor.targetSdkVersion: void (java.lang.String)
   * com.android.build.api.dsl.TestOptions.failureRetention: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.FailureRetention, kotlin.Unit>)
-  * com.android.build.api.dsl.TestOptions.getDeviceGroups: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> ()
-  * com.android.build.api.dsl.TestOptions.getDevices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> ()
   * com.android.build.api.dsl.TestOptions.getFailureRetention: com.android.build.api.dsl.FailureRetention ()
   * com.android.build.api.dsl.VariantDimension.getMultiDexKeepFile: java.io.File ()
   * com.android.build.api.dsl.VariantDimension.setManifestPlaceholders: java.lang.Void (java.util.Map<java.lang.String, ?>)
@@ -389,8 +359,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.transform.TransformOutputProvider.deleteAll: void () throws java.io.IOException
   * com.android.build.api.transform.TransformOutputProvider.getContentLocation: java.io.File (java.lang.String, java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType>, java.util.Set<? super com.android.build.api.transform.QualifiedContent$Scope>, com.android.build.api.transform.Format)
   * com.android.build.api.variant.AndroidComponentsExtension.finalizeDSl: void (org.gradle.api.Action<DslExtensionT>)
-  * com.android.build.api.variant.ComponentBuilder.getEnabled: boolean ()
-  * com.android.build.api.variant.ComponentBuilder.setEnabled: void (boolean)
   * com.android.build.api.variant.VariantInfo
   * com.android.build.api.variant.VariantInfo.getBuildTypeName: java.lang.String ()
   * com.android.build.api.variant.VariantInfo.getFlavorNames: com.google.common.collect.ImmutableList<java.lang.String> ()

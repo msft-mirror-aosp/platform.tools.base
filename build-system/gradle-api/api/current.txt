@@ -366,7 +366,6 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getResources();
     method public String getRuntimeOnlyConfigurationName();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getShaders();
-    method @Deprecated public String getWearAppConfigurationName();
     method public void java(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void jni(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
     method public void jniLibs(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
@@ -387,7 +386,7 @@ package com.android.build.api.dsl {
     property public abstract String compileOnlyConfigurationName;
     property public abstract String implementationConfigurationName;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet java;
-    property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AndroidSourceDirectorySet jni;
+    property @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.AndroidSourceDirectorySet jni;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet jniLibs;
     property public abstract String kaptConfigurationName;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet kotlin;
@@ -398,7 +397,6 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet resources;
     property public abstract String runtimeOnlyConfigurationName;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet shaders;
-    property @Deprecated public abstract String wearAppConfigurationName;
   }
 
   @org.gradle.api.Incubating public interface AndroidTest {
@@ -711,18 +709,15 @@ package com.android.build.api.dsl {
     method public boolean getEnableAndroidTestCoverage();
     method public boolean getEnableUnitTestCoverage();
     method public java.util.List<java.lang.String> getMatchingFallbacks();
-    method @org.gradle.api.Incubating public com.android.build.api.dsl.PostProcessing getPostprocessing();
     method public int getRenderscriptOptimLevel();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.VcsInfo getVcsInfo();
     method public void initWith(com.android.build.api.dsl.BuildType that);
     method public boolean isJniDebuggable();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public boolean isMinifyEnabled();
     method public boolean isPseudoLocalesEnabled();
-    method @Deprecated public boolean isRenderscriptDebuggable();
     method public boolean isShrinkResources();
     method @Deprecated public boolean isTestCoverageEnabled();
     method @Deprecated public boolean isZipAlignEnabled();
-    method @org.gradle.api.Incubating public void postprocessing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PostProcessing,kotlin.Unit> action);
     method public void setEnableAndroidTestCoverage(boolean);
     method public void setEnableUnitTestCoverage(boolean);
     method public void setJniDebuggable(boolean);
@@ -730,7 +725,6 @@ package com.android.build.api.dsl {
     method @Deprecated public void setMatchingFallbacks(java.util.List<java.lang.String> fallbacks);
     method public void setMinifyEnabled(boolean);
     method public void setPseudoLocalesEnabled(boolean);
-    method @Deprecated public void setRenderscriptDebuggable(boolean);
     method public void setRenderscriptOptimLevel(int);
     method public void setShrinkResources(boolean);
     method @Deprecated public void setTestCoverageEnabled(boolean);
@@ -741,12 +735,10 @@ package com.android.build.api.dsl {
     property public abstract boolean isJniDebuggable;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean isMinifyEnabled;
     property public abstract boolean isPseudoLocalesEnabled;
-    property @Deprecated public abstract boolean isRenderscriptDebuggable;
     property public abstract boolean isShrinkResources;
     property @Deprecated public abstract boolean isTestCoverageEnabled;
     property @Deprecated public abstract boolean isZipAlignEnabled;
     property public abstract java.util.List<java.lang.String> matchingFallbacks;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.PostProcessing postprocessing;
     property public abstract int renderscriptOptimLevel;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.VcsInfo vcsInfo;
   }
@@ -1223,8 +1215,6 @@ package com.android.build.api.dsl {
   public interface Installation {
     method public java.util.List<java.lang.String> getInstallOptions();
     method public int getTimeOutInMs();
-    method @Deprecated public void installOptions(String option);
-    method @Deprecated public void installOptions(java.lang.String... options);
     method public void setTimeOutInMs(int);
     property public abstract java.util.List<java.lang.String> installOptions;
     property public abstract int timeOutInMs;
@@ -1908,34 +1898,6 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.ResourcesPackaging resources;
   }
 
-  @Deprecated @org.gradle.api.Incubating public interface PostProcessing {
-    method @Deprecated public void consumerProguardFile(Object file);
-    method @Deprecated public void consumerProguardFiles(java.lang.Object... files);
-    method @Deprecated public String getCodeShrinker();
-    method @Deprecated public void initWith(com.android.build.api.dsl.PostProcessing that);
-    method @Deprecated public boolean isObfuscate();
-    method @Deprecated public boolean isOptimizeCode();
-    method @Deprecated public boolean isRemoveUnusedCode();
-    method @Deprecated public boolean isRemoveUnusedResources();
-    method @Deprecated public void proguardFile(Object file);
-    method @Deprecated public void proguardFiles(java.lang.Object... files);
-    method @Deprecated public void setCodeShrinker(String);
-    method @Deprecated public void setConsumerProguardFiles(java.util.List<?> consumerProguardFiles);
-    method @Deprecated public void setObfuscate(boolean);
-    method @Deprecated public void setOptimizeCode(boolean);
-    method @Deprecated public void setProguardFiles(java.util.List<?> proguardFiles);
-    method @Deprecated public void setRemoveUnusedCode(boolean);
-    method @Deprecated public void setRemoveUnusedResources(boolean);
-    method @Deprecated public void setTestProguardFiles(java.util.List<?> testProguardFiles);
-    method @Deprecated public void testProguardFile(Object file);
-    method @Deprecated public void testProguardFiles(java.lang.Object... files);
-    property @Deprecated public abstract String codeShrinker;
-    property @Deprecated public abstract boolean isObfuscate;
-    property @Deprecated public abstract boolean isOptimizeCode;
-    property @Deprecated public abstract boolean isRemoveUnusedCode;
-    property @Deprecated public abstract boolean isRemoveUnusedResources;
-  }
-
   public interface Prefab {
     method public boolean getHeaderOnly();
     method public String? getHeaders();
@@ -2198,8 +2160,6 @@ package com.android.build.api.dsl {
   public interface TestOptions {
     method @org.gradle.api.Incubating public void emulatorControl(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl,kotlin.Unit> action);
     method public boolean getAnimationsDisabled();
-    method @Deprecated @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> getDeviceGroups();
-    method @Deprecated @org.gradle.api.Incubating public org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> getDevices();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.EmulatorControl getEmulatorControl();
     method public String getExecution();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.ManagedDevices getManagedDevices();
@@ -2217,8 +2177,6 @@ package com.android.build.api.dsl {
     method public void setTargetSdkPreview(String?);
     method public void unitTests(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.UnitTestOptions,kotlin.Unit> action);
     property public abstract boolean animationsDisabled;
-    property @Deprecated @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> deviceGroups;
-    property @Deprecated @org.gradle.api.Incubating public abstract org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> devices;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.EmulatorControl emulatorControl;
     property public abstract String execution;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ManagedDevices managedDevices;
@@ -2841,7 +2799,7 @@ package com.android.build.api.variant {
     method public void setEnable(boolean);
     method @Deprecated public void setEnabled(boolean);
     property public abstract boolean enable;
-    property @Deprecated public abstract boolean enabled;
+    property @Deprecated public boolean enabled;
   }
 
   public interface ComponentIdentity {
@@ -3213,8 +3171,6 @@ package com.android.build.api.variant {
   }
 
   public interface KotlinMultiplatformAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension,com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder,com.android.build.api.variant.KotlinMultiplatformAndroidVariant> {
-    method @Deprecated @org.gradle.api.Incubating public void onVariant(kotlin.jvm.functions.Function1<? super com.android.build.api.variant.KotlinMultiplatformAndroidVariant,kotlin.Unit> callback);
-    method @Deprecated @org.gradle.api.Incubating public void onVariant(org.gradle.api.Action<com.android.build.api.variant.KotlinMultiplatformAndroidVariant> callback);
   }
 
   public interface KotlinMultiplatformAndroidVariant extends com.android.build.api.variant.LibraryVariant {
@@ -3441,7 +3397,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.Packaging packaging;
     property public abstract org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> proguardFiles;
     property @Deprecated public abstract com.android.build.api.variant.AndroidVersion targetSdkVersion;
-    property @Deprecated public abstract com.android.build.api.component.UnitTest? unitTest;
+    property @Deprecated public com.android.build.api.component.UnitTest? unitTest;
   }
 
   public interface VariantBuilder extends com.android.build.api.variant.ComponentBuilder {
@@ -3462,14 +3418,14 @@ package com.android.build.api.variant {
     method @Deprecated public void setTargetSdk(Integer?);
     method @Deprecated public void setTargetSdkPreview(String?);
     method @Deprecated public void setUnitTestEnabled(boolean);
-    property @Deprecated public abstract boolean enableUnitTest;
+    property @Deprecated public boolean enableUnitTest;
     property public abstract Integer? maxSdk;
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;
     property public abstract int renderscriptTargetApi;
-    property @Deprecated public abstract Integer? targetSdk;
-    property @Deprecated public abstract String? targetSdkPreview;
-    property @Deprecated public abstract boolean unitTestEnabled;
+    property @Deprecated public Integer? targetSdk;
+    property @Deprecated public String? targetSdkPreview;
+    property @Deprecated public boolean unitTestEnabled;
   }
 
   public interface VariantExtension {

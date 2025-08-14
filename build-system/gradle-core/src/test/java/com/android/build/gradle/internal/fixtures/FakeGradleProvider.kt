@@ -54,10 +54,6 @@ class FakeGradleProvider<T>(private val v: (()-> T)?): Provider<T> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun forUseAtConfigurationTime(): Provider<T> {
-        TODO("Not yet implemented")
-    }
-
     override fun <U : Any?, R : Any?> zip(
         p0: Provider<U>,
         p1: BiFunction<in T, in U, out R>

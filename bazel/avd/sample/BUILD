@@ -2,7 +2,10 @@ load("@rules_java//java:defs.bzl", "java_test")
 
 java_test(
     name = "emulator_test",
-    srcs = ["EmulatorTest.java"],
+    srcs = [
+        "EmulatorTest.java",
+        "EmulatorTestUtils.java",
+    ],
     data = [
         "//prebuilts/studio/sdk:platform-tools",
         "//tools/base/bazel/avd:default_avd",
@@ -21,9 +24,13 @@ java_test(
 
 java_test(
     name = "MultipleEmulatorTest",
-    srcs = ["MultipleEmulatorTest.java"],
+    srcs = [
+        "EmulatorTestUtils.java",
+        "MultipleEmulatorTest.java",
+    ],
     data = [
         "//prebuilts/studio/sdk:platform-tools",
+        "//tools/base/bazel/avd:avd_34",
         "//tools/base/bazel/avd:default_avd",
     ],
     tags = [

@@ -16,17 +16,17 @@
 
 package com.android.build.api.variant.impl
 
+import com.android.build.api.variant.ApplicationVariantBuilder
 import com.android.build.api.variant.ComponentIdentity
+import com.android.build.api.variant.GeneratesApkBuilder
 import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.core.PostProcessingOptions
-import com.android.build.gradle.internal.core.dsl.VariantDslInfo
+import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
+import com.android.build.gradle.internal.core.dsl.features.DexingDslInfo
 import com.android.build.gradle.internal.core.dsl.features.OptimizationDslInfo
-import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
-import com.android.build.gradle.options.ProjectOptions
-import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Before
@@ -42,13 +42,13 @@ internal class VariantBuilderImplTest {
     @get:Rule
     val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val variantDslInfo: VariantDslInfo = mock()
+    private val variantDslInfo: ApplicationVariantDslInfo = mock()
     private val componentIdentity: ComponentIdentity = mock()
     private val variantBuilderServices: VariantBuilderServices = mock()
     private val globalVariantBuilderConfig: GlobalVariantBuilderConfig = mock()
 
-    val builder: VariantBuilder by lazy {
-        object : VariantBuilderImpl(
+    val builder: ApplicationVariantBuilder by lazy {
+        object : ApplicationVariantBuilderImpl(
             globalVariantBuilderConfig,
             variantDslInfo,
             componentIdentity,
@@ -67,13 +67,11 @@ internal class VariantBuilderImplTest {
 
     @Before
     fun setup() {
-//        whenever(variantBuilderServices.projectOptions).thenReturn(
-//            ProjectOptions(ImmutableMap.of(), FakeProviderFactory.factory)
-//        )
         val optimizationDslInfo = mock<OptimizationDslInfo>()
+        val dexingDslInfo = mock<DexingDslInfo>()
         val postProcessingOptions = mock<PostProcessingOptions>()
         whenever(optimizationDslInfo.postProcessingOptions).thenReturn(postProcessingOptions)
-        whenever(postProcessingOptions.hasPostProcessingConfiguration()).thenReturn(false)
+        whenever(variantDslInfo.dexingDslInfo).thenReturn(dexingDslInfo)
         whenever(variantDslInfo.optimizationDslInfo).thenReturn(optimizationDslInfo)
         whenever(variantDslInfo.minSdkVersion).thenReturn(MutableAndroidVersion(12, null))
         whenever(variantDslInfo.targetSdkVersion).thenReturn(null)
@@ -104,37 +102,57 @@ internal class VariantBuilderImplTest {
     @Test
     fun testTargetSdkSetters() {
         // check we get the minSdkVersion by default
-        Truth.assertThat(builder.targetSdk).isEqualTo(12)
-        Truth.assertThat(builder.targetSdkPreview).isNull()
+        Truth.assertThat(getTargetSdk()).isEqualTo(12)
+        Truth.assertThat(getTargetSdkPreview()).isNull()
         builder.minSdk = 43
-        Truth.assertThat(builder.targetSdk).isEqualTo(43)
-        Truth.assertThat(builder.targetSdkPreview).isNull()
+        Truth.assertThat(getTargetSdk()).isEqualTo(43)
+        Truth.assertThat(getTargetSdkPreview()).isNull()
         builder.minSdkPreview = "N"
-        Truth.assertThat(builder.targetSdk).isNull()
-        Truth.assertThat(builder.targetSdkPreview).isEqualTo("N")
+        Truth.assertThat(getTargetSdk()).isNull()
+        Truth.assertThat(getTargetSdkPreview()).isEqualTo("N")
 
-        builder.targetSdk = 43
-        Truth.assertThat(builder.targetSdk).isEqualTo(43)
-        Truth.assertThat(builder.targetSdkPreview).isNull()
+        setTargetSdk(43)
+        Truth.assertThat(getTargetSdk()).isEqualTo(43)
+        Truth.assertThat(getTargetSdkPreview()).isNull()
         // check the min sdk is not impacted by changes to target
         Truth.assertThat(builder.minSdk).isNull()
         Truth.assertThat(builder.minSdkPreview).isEqualTo("N")
 
-        builder.targetSdkPreview = "M"
-        Truth.assertThat(builder.targetSdk).isNull()
-        Truth.assertThat(builder.targetSdkPreview).isEqualTo("M")
+        setTargetSdkPreview("M")
+        Truth.assertThat(getTargetSdk()).isNull()
+        Truth.assertThat(getTargetSdkPreview()).isEqualTo("M")
 
-        builder.targetSdkPreview = "N"
-        Truth.assertThat(builder.targetSdk).isNull()
-        Truth.assertThat(builder.targetSdkPreview).isEqualTo("N")
+        setTargetSdkPreview("N")
+        Truth.assertThat(getTargetSdk()).isNull()
+        Truth.assertThat(getTargetSdkPreview()).isEqualTo("N")
 
-        builder.targetSdk = 23
-        Truth.assertThat(builder.targetSdk).isEqualTo(23)
-        Truth.assertThat(builder.targetSdkPreview).isNull()
+        setTargetSdk(23)
+        Truth.assertThat(getTargetSdk()).isEqualTo(23)
+        Truth.assertThat(getTargetSdkPreview()).isNull()
 
         // check changing the min sdk does impact the target after it's forked
         builder.minSdk = 43
-        Truth.assertThat(builder.targetSdk).isEqualTo(23)
-        Truth.assertThat(builder.targetSdkPreview).isNull()
+        Truth.assertThat(getTargetSdk()).isEqualTo(23)
+        Truth.assertThat(getTargetSdkPreview()).isNull()
     }
+
+    private fun getTargetSdk() =
+        GeneratesApkBuilder::class.java
+            .getMethod("getTargetSdk")
+            .invoke(builder)
+
+    private fun setTargetSdk(value: Int) =
+        GeneratesApkBuilder::class.java
+            .getMethod("setTargetSdk", Integer::class.java)
+            .invoke(builder, value)
+
+    private fun getTargetSdkPreview() =
+        GeneratesApkBuilder::class.java
+            .getMethod("getTargetSdkPreview")
+            .invoke(builder)
+
+    private fun setTargetSdkPreview(value: Any) =
+        GeneratesApkBuilder::class.java
+            .getMethod("setTargetSdkPreview", String::class.java)
+            .invoke(builder, value)
 }

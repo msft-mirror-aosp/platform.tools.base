@@ -15,37 +15,38 @@
  */
 package com.android.tools.appinspection.database.androidx
 
+import android.database.SQLException
 import android.os.CancellationSignal
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.bundled.BundledSQLiteConnection
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_MEMORY
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_READONLY
 import com.android.tools.appinspection.database.AbstractDatabase
 import com.android.tools.appinspection.database.AbstractDatabase.Companion.IN_MEMORY_DATABASE_PATH
 import com.android.tools.appinspection.database.Cursor
 
-/**
- * A [com.android.tools.appinspection.database.Database] for AndroidX [SQLiteConnection]
- *
- * We actually delegate to a wrapper [SQLiteConnectionWrapper] which prides some missing
- * capabilities like `isOpen()` etc.
- */
-internal class AndroidXDatabase(connection: SQLiteConnectionWrapper, path: String, flags: Int = 0) :
-  AbstractDatabase<SQLiteConnectionWrapper>(connection, getPath(path, flags)) {
+/** A [com.android.tools.appinspection.database.Database] for AndroidX [SQLiteConnection] */
+internal class AndroidXDatabase(connection: BundledSQLiteConnection, path: String, flags: Int = 0) :
+  AbstractDatabase<BundledSQLiteConnection>(connection, getPath(path, flags)) {
+  // TODO(aalbert): Try to tst for RO status from DB without flags
   override val isReadOnly = flags and SQLITE_OPEN_READONLY != 0
 
-  override fun isOpen() = delegate.isOpen()
+  override fun isOpen(): Boolean {
+    return try {
+      delegate.prepare("SELECT 1").close()
+      true
+    } catch (_: SQLException) {
+      false
+    }
+  }
 
   override fun isWriteAheadLoggingEnabled(): Boolean {
     return getJournalMode() == "wal"
   }
 
-  override fun acquireReference() {
-    delegate.acquireReference()
-  }
+  override fun acquireReference() {}
 
-  override fun releaseReference() {
-    delegate.releaseReference()
-  }
+  override fun releaseReference() {}
 
   override fun execSql(
     sql: String,

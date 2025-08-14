@@ -62,10 +62,6 @@ class FakeGradleDirectoryProperty(private val directory: Directory?) : Directory
         TODO("Not yet implemented")
     }
 
-    override fun forUseAtConfigurationTime(): Provider<Directory> {
-        TODO("Not yet implemented")
-    }
-
     override fun <U : Any?, R : Any?> zip(right: Provider<U>, combiner: BiFunction<in Directory, in U, out R?>): Provider<R> {
         TODO("Not yet implemented")
     }

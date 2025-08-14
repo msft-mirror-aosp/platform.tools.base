@@ -27,7 +27,6 @@ import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.testingutils.TimeWaitSocketsThrottler
 import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.devicecommandhandlers.SyncCommandHandler
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
@@ -56,10 +55,7 @@ class AdbDeviceSyncServicesTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-        installDeviceHandler(SyncCommandHandler())
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
     private val adbSession get() = fakeAdbRule.adbSession

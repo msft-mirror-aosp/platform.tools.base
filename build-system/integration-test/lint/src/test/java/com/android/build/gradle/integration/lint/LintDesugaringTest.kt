@@ -16,6 +16,7 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import org.junit.Rule
 import org.junit.Test
@@ -29,7 +30,10 @@ class LintDesugaringTest {
 
     @Test
     fun checkFindErrors() {
-        project.executor().run(":app:clean", ":app:lintDebug", ":library:lintDebug")
+        project.executor()
+            // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            .run(":app:clean", ":app:lintDebug", ":library:lintDebug")
         val appReport = project.file("app/build/reports/lint-results.txt")
         PathSubject.assertThat(appReport).contains("No issues found.")
         val libReport = project.file("library/build/reports/lint-results.txt")

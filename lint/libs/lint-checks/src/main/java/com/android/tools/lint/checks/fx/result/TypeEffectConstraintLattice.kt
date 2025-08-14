@@ -18,6 +18,7 @@ package com.android.tools.lint.checks.fx.result
 import com.android.tools.lint.checks.fx.result.Type.Sym.Fix.Companion.hasFreeRec
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
+import com.android.tools.lint.checks.fx.utils.flatMapToPersistentSet
 import com.android.tools.lint.checks.fx.utils.map
 import com.android.tools.lint.checks.fx.utils.partitionIsInstanceOf
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
@@ -188,10 +189,13 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
       return when {
         casesJoined.isEmpty() -> Type.None
         casesJoined.size == 1 -> casesJoined.first()
+        !casesNow.any { it is Type.Sym.Fix || it.hasFreeRec() } &&
+          casesNow.containsAll(casesPrev) -> now
         else -> {
           val (symsPrev, constantsPrev) = casesPrev.partitionIsInstanceOf<_, Type.Sym<Nothing>>()
           val (symsNow, constantsNow) = casesNow.partitionIsInstanceOf<_, Type.Sym<Nothing>>()
-          Type.Union(constantsPrev + constantsNow + summarize(symsPrev, symsNow))
+          val summarizedConstants = (constantsPrev + constantsNow).consolidateConstants()
+          Type.Union(summarizedConstants + summarize(symsPrev, symsNow))
         }
       }
     }
@@ -208,14 +212,12 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
       val cases = now.fold(prev.fold(persistentSetOf(), ::flatMerge), ::flatMerge)
       val fixed =
         fix(cases) { cases -> cases.map { fix(it, { cases.productiveSubstSym(it) }) } }
-          .consolidate()
+          .consolidateSymbols()
 
       return when {
         fixed.any { it.hasFreeRec() } ->
           try {
             persistentSetOf(Type.Sym.Fix(fixed))
-          } catch (_: Type.Sym.Fix.IllFoundedInduction) {
-            fixed
           } catch (e: Type.Sym.Fix.TrivialInduction) {
             e.cases as PersistentSet<Type.Sym<FX>>
           }
@@ -253,8 +255,15 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
         is Type.Ellipsis -> flatMergeFix(types, type.element)
         is Type.Sym.Invoke -> type.args.fold(flatMergeFix(types, type.receiver), ::flatMergeFix)
         is Type.SpecializedMethodRef -> flatMergeFix(types, type.receiver)
+        is Type.Lambda<*> -> {
+          val body = type.body
+          val bodyType = body.value as Type<FX>
+          val bodySymFx = body.effect.invocations as UnboundedSet<Type.Sym<FX>>
+          val accFromType = flatMergeFix(types, bodyType)
+          val accFromFx = bodySymFx?.fold(accFromType, ::flatMerge) ?: accFromType
+          accFromFx
+        }
         is Type.Sym,
-        is Type.Lambda<*>,
         is Type.WildCard,
         is Type.MethodRef -> types
       }
@@ -323,29 +332,75 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
       }
     }
 
-    private fun PersistentSet<Type.Sym<FX>>.consolidate(): PersistentSet<Type.Sym<FX>> {
-      val dedup = hashMapOf<Pair<Type.Sym<FX>, MethodId>, List<Type<FX>>>()
-      var rest = persistentSetOf<Type.Sym<FX>>()
-      for (t in this) {
-        when (t) {
-          is Type.Sym.Invoke -> {
-            val k = t.receiver to t.method
-            dedup[k] =
-              when (val ts0 = dedup[k]) {
-                null -> t.args
-                else -> (ts0 zip t.args).map { (t0, t1) -> joinOf(t0, t1) }
+    /** Collapse symbolic invocations of the same receiver and method */
+    private fun PersistentSet<Type.Sym<FX>>.consolidateSymbols(): PersistentSet<Type.Sym<FX>> =
+      consolidate(
+        disassemble = { t: Type.Sym.Invoke<FX> -> (t.receiver to t.method) to t.args },
+        reassemble = { (recv, method), args -> Type.Sym.Invoke(recv, method, args) },
+        merge = { ts0, ts1 -> (ts0 zip ts1).map { (t0, t1) -> joinOf(t0, t1) } },
+      )
+
+    /** Collapse lambdas of the same source code signatures */
+    private fun PersistentSet<Type<FX>>.consolidateConstants(): PersistentSet<Type<FX>> =
+      consolidate(
+        disassemble = { t: Type.Lambda<FX> -> (t.params to t.intf) to t.body },
+        reassemble = { (params, intf), body -> Type.Lambda(params, body, intf) },
+        merge = { (body0, fx0), (body1, fx1) ->
+          Result(widen(body0, body1), effectLattice.widen(fx0, fx1))
+        },
+      )
+
+    /** Consolidate the set of [X] by potentially merging elements of subtype [Y] */
+    private inline fun <X, reified Y : X, K, V : Any> PersistentSet<X>.consolidate(
+      disassemble: (Y) -> Pair<K, V>,
+      reassemble: (K, V) -> Y,
+      merge: (V, V) -> V,
+    ): PersistentSet<X> {
+      val consolidated = mutableMapOf<K, V>()
+      var untouched = persistentSetOf<X>()
+      for (x in this) {
+        when (x) {
+          is Y -> {
+            val (key, value) = disassemble(x)
+            val consolidatedValue =
+              when (val oldValue = consolidated[key]) {
+                null -> value
+                else -> merge(oldValue, value)
               }
+            consolidated[key] = consolidatedValue
           }
-          else -> rest += t
+          else -> untouched += x
         }
       }
       return when {
-        rest.size + dedup.size == size -> this
-        else ->
-          dedup.asSequence().fold(rest) { acc, (k, v) ->
-            acc + Type.Sym.Invoke(k.first, k.second, v)
-          }
+        untouched.size + consolidated.size == size -> this // If did nothing, reuse old instance
+        else -> consolidated.asSequence().fold(untouched) { acc, (k, v) -> acc + reassemble(k, v) }
       }
     }
   }
 }
+
+fun <FX> Lattice<Type<FX>>.widen(t: Type<FX>): Type<FX> =
+  when (t) {
+    is Type.Sym.Invoke -> {
+      val m = t.method
+      /**
+       * Along a symbolic invocation chain with repeated method, guess the base case(s), then defer
+       * to [Lattice.widen] to find an over-approximating inductive description of this invocation.
+       */
+      fun bases(t: Type<FX>): PersistentSet<Type<FX>> =
+        when (t) {
+          is Type.Sym.Invoke ->
+            when (t.method) {
+              m -> persistentSetOf(t)
+              else -> bases(t.receiver) + t.args.flatMapToPersistentSet(::bases)
+            }
+          is Type.Union -> t.cases.flatMapToPersistentSet(::bases)
+          else -> persistentSetOf()
+        }
+      val bases = bases(t.receiver) + t.args.flatMapToPersistentSet(::bases)
+      widen(Type.Union(bases), t)
+    }
+    is Type.Union -> t.cases.joinedOver(::widen)
+    else -> t
+  }

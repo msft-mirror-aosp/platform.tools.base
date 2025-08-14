@@ -71,7 +71,7 @@ android {
     }
 
     adbOptions {
-          installOptions "-d","-t"
+          installOptions = ["-d","-t"]
     }
 
     lintOptions {

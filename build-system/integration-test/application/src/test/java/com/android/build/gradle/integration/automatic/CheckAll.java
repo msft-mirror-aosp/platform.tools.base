@@ -105,6 +105,9 @@ public class CheckAll {
         AssumeUtil.assumeNotWindows(); // b/73306170
         Assume.assumeTrue(canAssemble(project));
         project.executor()
+                // Test project depends on vector drawable libraries that violate unique
+                // namespacing.
+                .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
                 .withEnableInfoLogging(false)
                 .run("assembleDebug", "assembleAndroidTest", "lint");
     }

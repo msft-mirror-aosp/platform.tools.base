@@ -25,7 +25,6 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
 import com.android.adblib.readNBytes
 import com.android.adblib.scope
-import com.android.adblib.serialNumber
 import com.android.adblib.tools.debugging.JdwpSession
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_BYTE_ORDER
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
@@ -42,12 +41,12 @@ import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
+import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.nio.ByteBuffer
-import java.util.concurrent.atomic.AtomicInteger
 
 internal class JdwpSessionImpl(
     override val device: ConnectedDevice,
@@ -66,7 +65,7 @@ internal class JdwpSessionImpl(
 
     private val outputChannel = session.channelFactory.createWriteBackChannel(channel)
 
-    private val handshakeHandler = HandshakeHandler(peerName, logger, inputChannel, outputChannel)
+    private val handshakeHandler = JdwpHandshakeHandler(peerName, logger)
 
     private val sender = Sender(outputChannel)
 
@@ -99,19 +98,34 @@ internal class JdwpSessionImpl(
         scope.cancel("${this::class.simpleName} has been closed")
     }
 
+    override suspend fun waitForHandshake() {
+        // Short-circuit for most common code path: Don't lock if handshake has already completed
+        if (!handshakeHandler.handshakeComplete) {
+            sendMutex.withLock {
+                handshakeHandler.sendHandshake(outputChannel)
+            }
+            receiveMutex.withLock {
+                handshakeHandler.receiveHandshake(inputChannel)
+            }
+            // If handshake is not complete here, our short-circuit is incorrect and
+            // needs to be revised (somehow)
+            assert(handshakeHandler.handshakeComplete)
+        }
+    }
+
     override suspend fun sendPacket(packet: JdwpPacketView) {
+        waitForHandshake()
         // We serialize sending packets to the channel so that we always send fully formed packets
         sendMutex.withLock {
-            sendHandshake()
             logger.verbose { "Sending JDWP packet: $packet" }
             sender.sendPacket(packet)
         }
     }
 
     override suspend fun receivePacket(): JdwpPacketView {
+        waitForHandshake()
         // We serialize reading packets from the channel so that we always read fully formed packets
         receiveMutex.withLock {
-            waitForHandshake()
             logger.verbose { "Waiting for next JDWP packet from channel" }
             val packet = receiver.receivePacket()
             logger.verbose { "Received JDWP packet: $packet" }
@@ -124,65 +138,27 @@ internal class JdwpSessionImpl(
             ?: throw UnsupportedOperationException("JDWP session does not support custom packet (IDs)")
     }
 
-    private suspend fun sendHandshake() {
-        handshakeHandler.sendHandshake()
-    }
-
-    private suspend fun waitForHandshake() {
-        handshakeHandler.waitForHandshake()
-    }
-
-    class HandshakeHandler(
+    /**
+     * Handles the initial JDWP Handshake on a JDWP connection: client sends [HANDSHAKE]
+     * then waits for [HANDSHAKE] before anything JDWP packet can be sent/received.
+     */
+    private class JdwpHandshakeHandler(
         private val peerName: String,
         parentLogger: AdbLogger,
-        private val inputChannel: AdbInputChannel,
-        private val outputChannel: AdbOutputChannel
     ) {
-
         private val logger = parentLogger.withPrefix("HandshakeHandler: ")
 
-        private val channelMutex = Mutex()
+        @Volatile
         private var handshakeSent: Boolean = false
+        @Volatile
         private var handshakeReceived: Boolean = false
 
-        suspend fun sendHandshake() {
-            // Short-circuit: We don't need synchronization here, as the field is only set
-            // once the handshake has already been sent
-            if (handshakeSent) {
-                return
-            }
+        val handshakeComplete: Boolean
+            get() = handshakeSent && handshakeReceived
 
-            channelMutex.withLock {
-                // Execution is serialized here
-                val workBuffer = ResizableBuffer().order(PACKET_BYTE_ORDER)
-                sendHandshakeWorker(workBuffer)
-            }
-        }
-
-        suspend fun waitForHandshake() {
-            // Short-circuit: We don't need synchronization here, as the field is only set
-            // once the handshake has been fully received
-            if (handshakeReceived) {
-                return
-            }
-
-            channelMutex.withLock {
-                // Execution is serialized here
-                if (!handshakeReceived) {
-                    val workBuffer = ResizableBuffer().order(PACKET_BYTE_ORDER)
-                    sendHandshakeWorker(workBuffer)
-
-                    logger.debug { "Waiting for JDWP handshake from $peerName" }
-                    receiveJdwpHandshake(workBuffer)
-                    logger.debug { "JDWP handshake received from $peerName" }
-
-                    handshakeReceived = true
-                }
-            }
-        }
-
-        private suspend fun sendHandshakeWorker(workBuffer: ResizableBuffer) {
+        suspend fun sendHandshake(outputChannel: AdbOutputChannel) {
             if (!handshakeSent) {
+                val workBuffer = ResizableBuffer().order(PACKET_BYTE_ORDER)
                 logger.debug { "Sending JDWP handshake to $peerName" }
                 workBuffer.clear()
                 workBuffer.appendBytes(HANDSHAKE)
@@ -192,11 +168,24 @@ internal class JdwpSessionImpl(
             }
         }
 
-        private suspend fun receiveJdwpHandshake(workBuffer: ResizableBuffer) {
+        suspend fun receiveHandshake(inputChannel: AdbInputChannel) {
+            if (!handshakeReceived) {
+                val workBuffer = ResizableBuffer().order(PACKET_BYTE_ORDER)
+                logger.debug { "Waiting for JDWP handshake from $peerName" }
+                receiveJdwpHandshake(inputChannel, workBuffer)
+                logger.debug { "JDWP handshake received from $peerName" }
+                handshakeReceived = true
+            }
+        }
+
+        private suspend fun receiveJdwpHandshake(
+            inputChannel: AdbInputChannel,
+            workBuffer: ResizableBuffer
+        ) {
             //TODO: This could be more efficient
             val bytesSoFar = ArrayList<Byte>()
             while (true) {
-                bytesSoFar.add(readOneByte(workBuffer))
+                bytesSoFar.add(readOneByte(inputChannel, workBuffer))
 
                 if (isJdwpHandshake(bytesSoFar)) {
                     return
@@ -241,7 +230,7 @@ internal class JdwpSessionImpl(
             return true
         }
 
-        private suspend fun readOneByte(workBuffer: ResizableBuffer): Byte {
+        private suspend fun readOneByte(inputChannel: AdbInputChannel, workBuffer: ResizableBuffer): Byte {
             workBuffer.clear()
             inputChannel.readExactly(workBuffer.forChannelRead(1))
             return workBuffer.afterChannelRead().get()

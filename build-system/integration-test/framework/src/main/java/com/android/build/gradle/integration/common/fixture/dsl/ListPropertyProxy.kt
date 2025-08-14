@@ -58,10 +58,6 @@ class ListPropertyProxy<T>(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun forUseAtConfigurationTime(): Provider<MutableList<T>> {
-        throw RuntimeException("Not yet implemented")
-    }
-
     override fun finalizeValue() {
         throw RuntimeException("Not yet implemented")
     }

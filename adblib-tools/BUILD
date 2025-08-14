@@ -22,7 +22,6 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
-        "@intellij//:com.intellij.java",
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/adt/idea/.idea/libraries:libadblib-tools-proto",
     ],

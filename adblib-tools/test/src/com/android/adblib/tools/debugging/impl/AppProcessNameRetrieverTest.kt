@@ -19,7 +19,7 @@ import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.tools.debugging.AppProcessTracker
-import com.android.adblib.tools.debugging.isAppInfoSupported
+import com.android.adblib.tools.debugging.useAppInfoForProcessProperties
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
@@ -134,7 +134,7 @@ class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
         val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
 
         // Act
-        Assert.assertTrue(connectedDevice.isAppInfoSupported())
+        Assert.assertTrue(connectedDevice.useAppInfoForProcessProperties())
         val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
 
         // Assert

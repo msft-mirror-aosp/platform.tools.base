@@ -19,7 +19,11 @@ package com.android.tools.perflib.heap.io;
 import com.android.annotations.NonNull;
 import com.android.tools.perflib.captures.DataBuffer;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 public class InMemoryBuffer implements DataBuffer {
 
@@ -39,6 +43,17 @@ public class InMemoryBuffer implements DataBuffer {
     public InMemoryBuffer(ByteBuffer data) {
         mBuffer = data;
         mBuffer.rewind();
+    }
+
+    /**
+     * Create an in-memory buffer by memory-mapping a file. This is the most efficient way to handle
+     * large files, as it doesn't require loading the entire file into the Java heap.
+     */
+    public InMemoryBuffer(@NonNull File file) throws IOException {
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r");
+                FileChannel channel = raf.getChannel()) {
+            mBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+        }
     }
 
     @Override
@@ -65,7 +80,7 @@ public class InMemoryBuffer implements DataBuffer {
 
     @Override
     public void readSubSequence(byte[] b, int sourceStart, int sourceEnd) {
-        ((ByteBuffer)mBuffer.slice().position(sourceStart)).get(b);
+        mBuffer.slice().position(sourceStart).get(b);
     }
 
     @Override

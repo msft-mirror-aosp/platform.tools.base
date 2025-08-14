@@ -29,6 +29,7 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.USE_ANDROID_X
 import com.android.testutils.TestUtils.waitForFileSystemTick
 import com.android.testutils.truth.PathSubject.assertThat
@@ -579,14 +580,20 @@ class DataBindingIncrementalityTest {
      * Runs a full (non-incremental) build.
      */
     private fun runFullBuild(): GradleBuildResult {
-        val result = project.executor().run(CLEAN_TASK, APP_COMPILE_TASK)
+        val result = project.executor()
+            // Disabled as the test project depends on Androidx vector drawables
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            .run(CLEAN_TASK, APP_COMPILE_TASK)
         recordTimestamps()
         return result
     }
 
     /** Runs an incremental build. */
     private fun runIncrementalBuild(): GradleBuildResult {
-        val result = project.executor().run(APP_COMPILE_TASK)
+        val result = project.executor()
+            // Disabled as the test project depends on Androidx vector drawables
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            .run(APP_COMPILE_TASK)
         recordChangedFiles()
         return result
     }

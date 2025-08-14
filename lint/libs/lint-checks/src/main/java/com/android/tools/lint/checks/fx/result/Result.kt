@@ -135,13 +135,10 @@ sealed interface Type<out FX> {
       val inductiveCases: PersistentSet<Invoke<FX>>, // that refer to 1+ `Rec`
     ) : Sym<FX> {
       init {
-        if (baseCases.isEmpty()) throw IllFoundedInduction(inductiveCases)
         if (inductiveCases.isEmpty()) throw TrivialInduction(baseCases)
       }
 
       class TrivialInduction(val cases: PersistentSet<Sym<*>>) : Exception()
-
-      class IllFoundedInduction(val cases: PersistentSet<Invoke<*>>) : Exception()
 
       val cases: Sequence<Sym<FX>>
         get() = baseCases.asSequence() + inductiveCases.asSequence()
@@ -157,7 +154,8 @@ sealed interface Type<out FX> {
         internal fun <FX> Type<FX>.hasFreeRec(): Boolean =
           when (this) {
             is Application -> args.any { it.hasFreeRec() }
-            is Lambda -> body.value.hasFreeRec()
+            is Lambda ->
+              body.value.hasFreeRec() || body.effect.invocations?.any { it.hasFreeRec() } == true
             is Union -> cases.any { it.hasFreeRec() }
             is SpecializedMethodRef -> receiver.hasFreeRec()
             is Rec -> true

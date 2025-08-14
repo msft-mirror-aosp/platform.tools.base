@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 /** Prints out the DSL names and directory names of available source sets. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.HELP)
-public class SourceSetsTask extends ProjectBasedReportTask {
+public abstract class SourceSetsTask extends ProjectBasedReportTask {
 
     private final TextReportRenderer mRenderer = new TextReportRenderer();
 
@@ -80,7 +80,8 @@ public class SourceSetsTask extends ProjectBasedReportTask {
                         "Baseline profile sources",
                         (AndroidSourceDirectorySet) sourceSet.getBaselineProfiles(),
                         project);
-                renderDirectorySet("JNI sources", sourceSet.getJni(), project);
+                renderDirectorySet(
+                        "JNI sources", ((DefaultAndroidSourceSet) sourceSet).getJni(), project);
                 renderDirectorySet("JNI libraries", sourceSet.getJniLibs(), project);
             }
             if (sourceSet instanceof DefaultAndroidSourceSet) {

@@ -41,23 +41,23 @@ class EnabledSrcResGenTest {
     }
 
     @Test
-    fun `test enabling Renderscript via gradle-properties`() {
-        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_RENDERSCRIPT, "compileDebugRenderscript")
-    }
-
-    @Test
     fun `test enabling Renderscript via build-gradle`() {
         checkViaBuildFile("renderScript", "compileDebugRenderscript")
     }
 
     @Test
-    fun `test enabling AIDL via gradle-properties`() {
-        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_AIDL, "compileDebugAidl")
+    fun `test enabling AIDL via build-gradle`() {
+        checkViaBuildFile("aidl", "compileDebugAidl")
     }
 
     @Test
-    fun `test enabling AIDL via build-gradle`() {
-        checkViaBuildFile("aidl", "compileDebugAidl")
+    fun `test enabling shaders via gradle-properties`() {
+        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_SHADERS, "compileDebugShaders")
+    }
+
+    @Test
+    fun `test enabling shaders via build-gradle`() {
+        checkViaBuildFile("shaders", "compileDebugShaders")
     }
 
     private fun checkViaGradleProperties(

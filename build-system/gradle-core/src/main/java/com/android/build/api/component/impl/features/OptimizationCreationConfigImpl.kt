@@ -19,7 +19,6 @@ package com.android.build.api.component.impl.features
 import com.android.build.api.variant.CanMinifyAndroidResourcesBuilder
 import com.android.build.api.variant.CanMinifyCodeBuilder
 import com.android.build.gradle.ProguardFiles
-import com.android.build.gradle.internal.PostprocessingFeatures
 import com.android.build.gradle.internal.ProguardFileType
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
@@ -112,23 +111,14 @@ class OptimizationCreationConfigImpl(
     override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean =
         dslInfo.ignoreFromAllExternalDependenciesInBaselineProfile
 
-    override val postProcessingFeatures: PostprocessingFeatures?
-        get() = dslInfo.postProcessingOptions.getPostprocessingFeatures()
-
     override val minifiedEnabled: Boolean
         get() {
             val minify = minifyCodeBuilder?.isMinifyEnabled ?: false
             return if (component is DeviceTestCreationConfig) {
-                val hasPostprocessingOptions =
-                    dslInfo.postProcessingOptions.hasPostProcessingConfiguration()
                 when {
-                    // Enable minify for android test is not supported via the postProcessing block
                     component.mainVariant.componentType.isAar ->
-                        !hasPostprocessingOptions &&
                                 dslInfo.postProcessingOptions.codeShrinkerEnabled()
-                    !hasPostprocessingOptions ->
-                        component.mainVariant.optimizationCreationConfig.minifiedEnabled
-                    else -> dslInfo.postProcessingOptions.codeShrinkerEnabled()
+                    else -> component.mainVariant.optimizationCreationConfig.minifiedEnabled
                 }
             } else if (component.getPartialShrinkingConfig() != null) {
                 true
@@ -146,18 +136,13 @@ class OptimizationCreationConfigImpl(
                 is DeviceTestCreationConfig -> {
                     when {
                         component.mainVariant.componentType.isAar -> false
-                        !dslInfo.postProcessingOptions.hasPostProcessingConfiguration() ->
-                            component.mainVariant.optimizationCreationConfig.resourcesShrink
-
-                        else -> dslInfo.postProcessingOptions.resourcesShrinkingEnabled()
+                        else -> component.mainVariant.optimizationCreationConfig.resourcesShrink
                     }
                 }
 
-                // need to return shrink flag for PostProcessing as this API has the flag for
-                // libraries return false otherwise
                 is LibraryCreationConfig -> {
                     dslInfo.postProcessingOptions.let {
-                        it.hasPostProcessingConfiguration() && it.resourcesShrinkingEnabled()
+                        it.resourcesShrinkingEnabled()
                     }
                 }
 

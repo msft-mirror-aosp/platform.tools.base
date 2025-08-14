@@ -18,15 +18,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.android.tools.bazel.avd.Emulator;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+
 import org.junit.ClassRule;
 import org.junit.Test;
 
 public class EmulatorTest {
-
-    private static final String ADB =
-            String.format("prebuilts/studio/sdk/%s/platform-tools/adb", getOsDirName());
 
     /**
      * Path to the executable that the avd rule generates.
@@ -52,44 +48,12 @@ public class EmulatorTest {
         // Sample assertions against the running emulator.
         // Note: This test does not have access to ddmlib, so it resorts to
         // issuing ADB calls.
-        assertTrue(adb("devices").contains("emulator-" + PORT));
+        assertTrue(EmulatorTestUtils.adb(PORT, "devices").contains("emulator-" + PORT));
     }
 
     @Test
     public void sampleTestForEmulatorBoot() throws Exception {
-        assertEquals(adb("shell getprop sys.boot_completed"), "1");
-        assertEquals(adb("shell pwd"), "/");
-    }
-
-    private static String adb(String cmd) throws Exception {
-        return exec(ADB + " -s emulator-" + String.valueOf(PORT) + " " + cmd).trim();
-    }
-
-    private static String exec(String cmd) throws Exception {
-        Runtime r = Runtime.getRuntime();
-        Process p = r.exec(cmd);
-        p.waitFor();
-        String res = "";
-        try (BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String l = "";
-            while ((l = b.readLine()) != null) {
-                res += l + "\n";
-            }
-        }
-
-        return res;
-    }
-
-    private static String getOsDirName() {
-        String os = System.getProperty("os.name");
-        if (os.startsWith("Mac OS")) {
-            return "darwin";
-        } else if (os.startsWith("Windows")) {
-            return "windows";
-        } else if (os.startsWith("Linux")) {
-            return "linux";
-        } else {
-            throw new RuntimeException("Unsupported os.name: " + os);
-        }
+        assertEquals(EmulatorTestUtils.adb(PORT, "shell", "getprop sys.boot_completed"), "1");
+        assertEquals(EmulatorTestUtils.adb(PORT, "shell", "pwd"), "/");
     }
 }

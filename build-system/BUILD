@@ -98,7 +98,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "8.13"
+GRADLE_VERSION = "9.0.0"
 
 filegroup(
     name = "gradle-distrib",
@@ -120,6 +120,12 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.20",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.20",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.0.0",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.0.0"],
     visibility = ["//visibility:public"],
 )
 
@@ -426,6 +432,7 @@ maven_repository(
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",
         "@maven//:org.junit.junit-bom_5.10.2",
+        "@maven//:org.junit.junit-bom_5.11.0-M2",
     ],
     visibility = ["//prebuilts/studio/buildbenchmarks:__subpackages__"],
 )
@@ -631,6 +638,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",
         "@maven//:org.jetbrains.markdown",
         "@maven//:org.junit.junit-bom_5.10.2",
+        "@maven//:org.junit.junit-bom_5.11.0-M2",
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",
         "@maven//:org.mockito.mockito-core",

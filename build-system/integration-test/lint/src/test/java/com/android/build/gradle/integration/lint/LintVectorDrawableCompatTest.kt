@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -81,7 +82,10 @@ class LintVectorDrawableCompatTest {
     // Regression test for b/187341964
     @Test
     fun testVectorDrawableCompat() {
-        project.executor().run("lintDebug")
+        val executor = project.executor()
+            // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
+            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+        executor.run("lintDebug")
         assertThat(project.file("lint-results.txt")).exists()
         assertThat(project.file("lint-results.txt")).contains(
             "Error: To use VectorDrawableCompat, you need to set android.defaultConfig.vectorDrawables.useSupportLibrary = true"
@@ -91,7 +95,7 @@ class LintVectorDrawableCompatTest {
             "vectorDrawables.useSupportLibrary = false",
             "vectorDrawables.useSupportLibrary = true"
         )
-        project.executor().run("lintDebug")
+        executor.run("lintDebug")
         assertThat(project.file("lint-results.txt")).exists()
         assertThat(project.file("lint-results.txt")).doesNotContain(
             "Error: To use VectorDrawableCompat, you need to set android.defaultConfig.vectorDrawables.useSupportLibrary = true"

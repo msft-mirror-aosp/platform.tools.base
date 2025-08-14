@@ -182,31 +182,8 @@ class ApplicationTaskManager(
         val componentType = appVariant.componentType
         if (componentType.isBaseModule) {
             val unbundledWearApp: Boolean? = appVariant.isWearAppUnbundled
-            if (unbundledWearApp != true && appVariant.embedsMicroApp) {
-                val wearApp =
-                        appVariant.variantDependencies.wearAppConfiguration
-                        ?: error("Wear app with no wearApp configuration")
-                if (!wearApp.allDependencies.isEmpty()) {
-                    val setApkArtifact =
-                        Action { container: AttributeContainer ->
-                            container.attribute(
-                                AndroidArtifacts.ARTIFACT_TYPE,
-                                AndroidArtifacts.ArtifactType.APK.type
-                            )
-                        }
-                    val files = wearApp.incoming
-                        .artifactView { config: ArtifactView.ViewConfiguration ->
-                            config.attributes(
-                                setApkArtifact
-                            )
-                        }
-                        .files
-                    createGenerateMicroApkDataTask(appVariant, files)
-                }
-            } else {
-                if (unbundledWearApp == true) {
-                    createGenerateMicroApkDataTask(appVariant)
-                }
+            if (unbundledWearApp == true) {
+                createGenerateMicroApkDataTask(appVariant)
             }
         }
     }

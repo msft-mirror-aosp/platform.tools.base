@@ -433,6 +433,9 @@ iml_module(
         "//tools/adt/idea/.idea/libraries:truth",
     ],
     test_srcs = ["libs/lint-gradle/src/test/java"],
+    # The canonical test target for this is :tests (//tools/base/lint:tests)
+    # as that runs with the correct dependencies. This iml_module is only defined for development.
+    test_tags = ["manual"],
     visibility = ["//visibility:public"],
 )
 

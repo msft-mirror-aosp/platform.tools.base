@@ -33,24 +33,4 @@ abstract class AdbOptions @Inject constructor(
     open fun timeOutInMs(timeOutInMs: Int) {
         this.timeOutInMs = timeOutInMs
     }
-
-    fun setInstallOptions(option: String) {
-        installOptions.clear()
-        installOptions.add(option)
-    }
-
-    fun setInstallOptions(vararg options: String) {
-        installOptions.clear()
-        installOptions.addAll(options)
-    }
-
-    override fun installOptions(option: String) {
-        installOptions.clear()
-        installOptions.add(option)
-    }
-
-    override fun installOptions(vararg options: String) {
-        installOptions.clear()
-        installOptions.addAll(options)
-    }
 }

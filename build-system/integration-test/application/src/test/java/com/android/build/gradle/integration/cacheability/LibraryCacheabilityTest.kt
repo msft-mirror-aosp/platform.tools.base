@@ -84,7 +84,6 @@ class LibraryCacheabilityTest {
                     ":lib:mergeReleaseGeneratedProguardFiles", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction] */
                     ":lib:mergeReleaseJavaResource", /* Bug 181142260 */
                     ":lib:mergeReleaseJniLibFolders",
-                    ":lib:mergeReleaseShaders",
                     ":lib:mergeReleaseAssets",
                     ":lib:prepareLintJarForPublish", /* Bug 120413672 */
                     /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.AarMetadataTask] */
@@ -92,7 +91,6 @@ class LibraryCacheabilityTest {
                 ),
                 SKIPPED to setOf(
                     ":lib:assembleRelease",
-                    ":lib:compileReleaseShaders",
                     ":lib:mergeReleaseNativeLibs",
                     ":lib:processReleaseJavaRes",
                     ":lib:stripReleaseDebugSymbols"

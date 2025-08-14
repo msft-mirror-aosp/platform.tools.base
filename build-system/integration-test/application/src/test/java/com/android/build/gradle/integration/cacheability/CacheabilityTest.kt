@@ -93,7 +93,6 @@ class CacheabilityTest {
             ":app:merge${DEBUG_RELEASE}Assets",
             ":app:merge${DEBUG_RELEASE}JavaResource",
             ":app:merge${DEBUG_RELEASE}JniLibFolders",
-            ":app:merge${DEBUG_RELEASE}Shaders",
             ":app:mergeReleaseArtProfile",
             ":app:mergeReleaseStartupProfile",
             ":app:processApplicationManifest${DEBUG_RELEASE}ForBundle",
@@ -116,7 +115,6 @@ class CacheabilityTest {
         ),
         SKIPPED to setOf(
             ":app:assemble${DEBUG_RELEASE}",
-            ":app:compile${DEBUG_RELEASE}Shaders",
             ":app:extractReleaseNativeSymbolTables",
             ":app:merge${DEBUG_RELEASE}NativeDebugMetadata",
             ":app:merge${DEBUG_RELEASE}NativeLibs",

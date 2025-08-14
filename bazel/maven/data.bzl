@@ -910,6 +910,7 @@ DATA = [
     "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:0.8.0",
     "org.hamcrest:hamcrest-core:2.2",
     "org.jacoco:org.jacoco.agent:0.7.4.201502262128",  # Keep old Jacoco version for testing.
+    "org.jacoco:org.jacoco.agent:0.8.11",
     "org.jacoco:org.jacoco.agent:0.8.12",
     "org.jacoco:org.jacoco.agent:0.8.13",
     "org.jacoco:org.jacoco.agent:0.8.7",
@@ -969,6 +970,7 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.0",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.20-dev-8371",
     "org.jetbrains.kotlin:jvm-abi-gen:2.2.0",  # Studio build
@@ -991,6 +993,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.0",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.22",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.9.23",
+    "org.jetbrains.kotlin:kotlin-android-extensions-runtime:2.2.0",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.9.20",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.9.22",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.9.23",
@@ -1014,6 +1017,9 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler:2.2.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
+    "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.22",
+    "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.20",
+    "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.0.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.2.0",  # Studio build
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
@@ -1091,7 +1097,9 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-script-runtime:1.8.21",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.9.0",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.9.20",
+    "org.jetbrains.kotlin:kotlin-script-runtime:1.9.22",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.9.24",
+    "org.jetbrains.kotlin:kotlin-script-runtime:2.2.0",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.2.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.2.0",  # Studio build
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
@@ -1107,6 +1115,8 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.20-dev-8371",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.21",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.2.0",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.31",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.10",
@@ -1118,8 +1128,10 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0",  # Compose/Kotlin 2.0.0 templates
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.0",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.20-Beta1",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.20-dev-8371",
     "org.jetbrains.kotlin:kotlin-test:1.9.24",
@@ -1185,9 +1197,13 @@ DATA = [
     "org.junit.platform:junit-platform-console-standalone:1.12.0",
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
     "org.ow2.asm:asm:9.6",
+    "org.ow2.asm:asm:9.8",
     "org.ow2.asm:asm-commons:9.6",
+    "org.ow2.asm:asm-commons:9.8",
     "org.ow2.asm:asm-tree:9.6",
+    "org.ow2.asm:asm-tree:9.8",
     "org.ow2.asm:asm-util:9.6",
+    "org.ow2.asm:asm-util:9.8",
     "org.robolectric:android-all-instrumented:7.0.0_r1-robolectric-r1-i4",  # Runtime for Android N
     "org.robolectric:android-all-instrumented:9-robolectric-4913185-2-i4",  # Runtime for Android P
     "org.robolectric:robolectric:4.14.1",

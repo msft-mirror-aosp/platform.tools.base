@@ -49,6 +49,14 @@ interface JdwpSession : AutoShutdown {
     val scope: CoroutineScope
 
     /**
+     * Waits for the JDWP handshake to be sent and acknowledged
+     *
+     * Note: On some versions of Art/Android, this may never complete if there is another
+     * active JDWP connection open for the same process.
+     */
+    suspend fun waitForHandshake()
+
+    /**
      * Sends a [JdwpPacketView] to the process VM.
      *
      * @throws [IOException] if an I/O error occurs

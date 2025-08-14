@@ -40,9 +40,7 @@ class JdwpProcessChangeFlowTest {
 
     @JvmField
     @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
-    }
+    val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
     private val hostServices get() = fakeAdbRule.adbSession.hostServices

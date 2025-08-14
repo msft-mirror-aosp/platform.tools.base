@@ -131,10 +131,6 @@ class MapPropertyProxy<K, V>(
         throw RuntimeException("Not yet implemented")
     }
 
-    override fun forUseAtConfigurationTime(): Provider<Map<K?, V?>?> {
-        throw RuntimeException("Not yet implemented")
-    }
-
     override fun <U : Any?, R : Any?> zip(
         right: Provider<U?>,
         combiner: BiFunction<in MutableMap<K, V>, in U, out R?>

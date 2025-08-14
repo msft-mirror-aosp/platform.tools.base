@@ -85,7 +85,6 @@ class MinifyCacheabilityTest {
             ":mergeMinifiedAssets",
             ":mergeMinifiedJavaResource", /* Bug 181142260 */
             ":mergeMinifiedJniLibFolders",
-            ":mergeMinifiedShaders",
             ":processMinifiedJavaRes",
             ":mergeMinifiedGeneratedProguardFiles", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction] */
             ":packageMinified",
@@ -95,7 +94,6 @@ class MinifyCacheabilityTest {
         ),
         SKIPPED to setOf(
             ":assembleMinified",
-            ":compileMinifiedShaders",
             ":mergeMinifiedNativeDebugMetadata",
             ":mergeMinifiedNativeLibs",
             ":stripMinifiedDebugSymbols",

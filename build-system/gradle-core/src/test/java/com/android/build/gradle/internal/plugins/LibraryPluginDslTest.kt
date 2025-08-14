@@ -128,22 +128,6 @@ class LibraryPluginDslTest {
     }
 
     @Test
-    fun testResourceShrinkerWithPostProcessing() {
-        val debug = android.buildTypes.getByName("debug")
-        try {
-            debug.postprocessing.isRemoveUnusedResources = true
-            Assert.fail("Expected resource shrinker error")
-        } catch (e: EvalIssueException) {
-            Truth.assertThat(e)
-                .hasMessageThat()
-                .isEqualTo("Resource shrinker cannot be used for libraries.")
-        }
-
-        debug.postprocessing.isRemoveUnusedResources = false
-        plugin.createAndroidTasks(project)
-    }
-
-    @Test
     fun testResourceShrinker() {
         val debug = android.buildTypes.getByName("debug")
         try {

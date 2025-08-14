@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.services.BuildServicesKt;
 import com.android.build.gradle.internal.tasks.BuildAnalyzer;
 import com.android.build.gradle.internal.tasks.NonIncrementalTask;
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.buildanalyzer.common.TaskCategory;
 import com.android.builder.internal.compiler.DirectoryWalker;
 import com.android.builder.internal.compiler.ShaderProcessor;
@@ -325,6 +326,7 @@ public abstract class ShaderCompile extends NonIncrementalTask {
                 task.getOutputs()
                         .doNotCacheIf("User wants to use custom shader compiler", (t) -> false);
             } else {
+                validateCustomShaderIsSet();
                 task.getShaderCompilerDirectory().disallowChanges();
             }
 
@@ -338,6 +340,20 @@ public abstract class ShaderCompile extends NonIncrementalTask {
             task.setDefaultArgs(shadersCreationConfig.getDefaultGlslcArgs());
             task.setScopedArgs(shadersCreationConfig.getScopedGlslcArgs());
             SdkComponentsKt.initialize(task.getNdkHandlerInput(), creationConfig);
+        }
+
+        private void validateCustomShaderIsSet() {
+            boolean failOnShaderProperty =
+                    creationConfig
+                            .getServices()
+                            .getProjectOptions()
+                            .get(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED);
+            if (failOnShaderProperty) {
+                throw new IllegalStateException(
+                        "Property `"
+                                + SdkConstants.SHADE_COMPILER_DIR_PROPERTY
+                                + "` must be set for AGP to define custom shader.");
+            }
         }
     }
 }

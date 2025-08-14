@@ -23,8 +23,7 @@
             * {PROJECT}/app/src/main/assets{!}
          - jniLibsDirectories:
             * {PROJECT}/app/src/main/jniLibs{!}
-         - shadersDirectories:
-            * {PROJECT}/app/src/main/shaders{!}
+         - shadersDirectories      = (null)
          - mlModelsDirectories     = (null)
          - custom                  = []
       < sourceProvider
@@ -46,8 +45,7 @@
             * {PROJECT}/app/src/androidTest/assets{!}
          - jniLibsDirectories:
             * {PROJECT}/app/src/androidTest/jniLibs{!}
-         - shadersDirectories:
-            * {PROJECT}/app/src/androidTest/shaders{!}
+         - shadersDirectories      = (null)
          - mlModelsDirectories     = (null)
          - custom                  = []
       < androidTestSourceProvider
@@ -69,8 +67,7 @@
             * {PROJECT}/app/src/test/assets{!}
          - jniLibsDirectories:
             * {PROJECT}/app/src/test/jniLibs{!}
-         - shadersDirectories:
-            * {PROJECT}/app/src/test/shaders{!}
+         - shadersDirectories      = (null)
          - mlModelsDirectories     = (null)
          - custom                  = []
       < unitTestSourceProvider
@@ -96,8 +93,7 @@
                * {PROJECT}/app/src/debug/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/app/src/debug/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/app/src/debug/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < sourceProvider
@@ -119,8 +115,7 @@
                * {PROJECT}/app/src/androidTestDebug/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/app/src/androidTestDebug/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/app/src/androidTestDebug/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < androidTestSourceProvider
@@ -142,8 +137,7 @@
                * {PROJECT}/app/src/testDebug/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/app/src/testDebug/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/app/src/testDebug/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < unitTestSourceProvider
@@ -170,8 +164,7 @@
                * {PROJECT}/app/src/pro/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/app/src/pro/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/app/src/pro/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < sourceProvider
@@ -193,8 +186,7 @@
                * {PROJECT}/app/src/androidTestPro/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/app/src/androidTestPro/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/app/src/androidTestPro/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < androidTestSourceProvider
@@ -216,8 +208,7 @@
                * {PROJECT}/app/src/testPro/assets{!}
             - jniLibsDirectories:
                * {PROJECT}/app/src/testPro/jniLibs{!}
-            - shadersDirectories:
-               * {PROJECT}/app/src/testPro/shaders{!}
+            - shadersDirectories      = (null)
             - mlModelsDirectories     = (null)
             - custom                  = []
          < unitTestSourceProvider
@@ -249,8 +240,7 @@
                   * {PROJECT}/app/src/proDebug/assets{!}
                - jniLibsDirectories:
                   * {PROJECT}/app/src/proDebug/jniLibs{!}
-               - shadersDirectories:
-                  * {PROJECT}/app/src/proDebug/shaders{!}
+               - shadersDirectories      = []
                - mlModelsDirectories     = []
                - custom                  = []
             < variantSourceProvider
@@ -275,8 +265,7 @@
                   * {PROJECT}/app/src/androidTestProDebug/assets{!}
                - jniLibsDirectories:
                   * {PROJECT}/app/src/androidTestProDebug/jniLibs{!}
-               - shadersDirectories:
-                  * {PROJECT}/app/src/androidTestProDebug/shaders{!}
+               - shadersDirectories      = []
                - mlModelsDirectories     = []
                - custom                  = []
             < variantSourceProvider
@@ -300,8 +289,7 @@
                   * {PROJECT}/app/src/testProDebug/assets{!}
                - jniLibsDirectories:
                   * {PROJECT}/app/src/testProDebug/jniLibs{!}
-               - shadersDirectories:
-                  * {PROJECT}/app/src/testProDebug/shaders{!}
+               - shadersDirectories      = []
                - mlModelsDirectories     = []
                - custom                  = []
             < variantSourceProvider

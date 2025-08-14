@@ -22,6 +22,7 @@ import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.ExternalNativeBuild
 import com.android.build.api.variant.ExternalNdkBuildImpl
+import com.android.build.api.variant.HasUnitTest
 import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ResValue
 import com.android.build.api.variant.Variant
@@ -111,7 +112,7 @@ abstract class AnalyticsEnabledVariant (
         }
 
     private val userVisibleUnitTest: AnalyticsEnabledUnitTest? by lazy(LazyThreadSafetyMode.SYNCHRONIZED){
-        delegate.unitTest?.let {
+        (delegate as? HasUnitTest)?.unitTest?.let {
             objectFactory.newInstance(
                 AnalyticsEnabledUnitTest::class.java,
                 it,

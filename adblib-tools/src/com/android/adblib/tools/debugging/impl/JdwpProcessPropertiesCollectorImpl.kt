@@ -17,10 +17,7 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.AdbFeatures
 import com.android.adblib.ConnectedDevice
-import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
-import com.android.adblib.property
-import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
@@ -28,8 +25,8 @@ import com.android.adblib.tools.debugging.JdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollectorFactoryList
 import com.android.adblib.tools.debugging.externalJdwpProcessCommandDispatcherList
-import com.android.adblib.tools.debugging.isAppInfoSupported
 import com.android.adblib.tools.debugging.orElse
+import com.android.adblib.tools.debugging.useAppInfoForProcessProperties
 import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CoroutineScope
@@ -80,7 +77,7 @@ internal class JdwpProcessPropertiesCollectorImpl(
 
         // Launch external collectors (e.g. out of process inventory) if available
         processScope.launch(device.session.ioDispatcher) {
-            if (device.useAppInfo()) {
+            if (device.useAppInfoForProcessProperties()) {
                 // Don't call external collectors if we use app info, because app info
                 // is always the source of truth
                 return@launch
@@ -115,7 +112,7 @@ internal class JdwpProcessPropertiesCollectorImpl(
     }
 
     private suspend fun createFlowUpdater(): JdwpProcessPropertiesFlowUpdater {
-        return if (device.useAppInfo()) {
+        return if (device.useAppInfoForProcessProperties()) {
             logger.debug { "${AdbFeatures.APP_INFO} is supported, using TRACK_APP collector" }
             UsingAppInfoFlowUpdater(process)
         } else {
@@ -125,15 +122,6 @@ internal class JdwpProcessPropertiesCollectorImpl(
     }
 
     companion object {
-        private val useAppInfoKey = CoroutineScopeCache.Key<Boolean>("useAppInfoKey")
-
-        private suspend fun ConnectedDevice.useAppInfo(): Boolean {
-            return cache.getOrPutSuspending(useAppInfoKey) {
-                session.property(PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE)
-                        && isAppInfoSupported()
-            }
-        }
-
         /**
          * The process name (and package name) can be set to this value when the process is not yet fully
          * initialized. We should ignore this value to make sure we only return "valid" process/package name.

@@ -59,7 +59,7 @@ public class TestWithMismatchDep {
             "Could not resolve all files for configuration ':debugAndroidTestRuntimeClasspath'.\n"
                     + "   > Could not resolve com.google.guava:guava:19.0.\n"
                     + "     Required by:\n"
-                    + "         root project :\n"
+                    + "         root project 'testDependency'\n"
                     + "      > Cannot find a version of 'com.google.guava:guava' that satisfies the"
                     + " version constraints:\n"
                     + "           Dependency path ':testDependency:unspecified' -->"
