@@ -73,7 +73,6 @@ class OptionVersionTest {
             BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
             BooleanOption.BUILD_FEATURE_RESVALUES,
             BooleanOption.BUILT_IN_KOTLIN,
-            BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET,
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
             BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
             BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS,

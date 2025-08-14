@@ -23,8 +23,10 @@ import com.android.build.gradle.options.Option;
 import com.android.build.gradle.options.OptionalBooleanOption;
 import com.android.build.gradle.options.StringOption;
 import com.android.testutils.TestUtils;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
+
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,6 +53,7 @@ public class ProjectOptionsBuilder {
     }
 
     List<String> getArguments() {
+        revertDefaultsForAgp9(booleans, suppressWarnings);
         injectWarningSuppression(strings, suppressWarnings);
         injectBazelSpecificOptions(booleans);
         ImmutableList.Builder<String> args = ImmutableList.builder();
@@ -59,6 +62,14 @@ public class ProjectOptionsBuilder {
         addArgs(args, integers);
         addArgs(args, strings);
         return args.build();
+    }
+
+    private void revertDefaultsForAgp9(
+            Map<BooleanOption, Boolean> booleans, Set<Option<?>> suppressWarnings) {
+        if (!booleans.containsKey(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET)) {
+            booleans.put(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false);
+            suppressWarnings.add(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET);
+        }
     }
 
     private static void injectWarningSuppression(
