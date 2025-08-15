@@ -19,17 +19,18 @@ import com.android.adblib.AdbSession
 import com.android.adblib.SOCKET_CONNECT_TIMEOUT_MS
 import com.android.adblib.serialNumber
 import com.android.adblib.testing.FakeAdbSession
-import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
+import com.android.adblib.tools.debugging.impl.AbstractJdwpProcessDelegateProvider
 import com.android.adblib.tools.debugging.processinventory.AdbLibToolsProcessInventoryServerProperties
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
 import com.android.adblib.tools.debugging.processinventory.installProcessInventoryJdwpProcessCommandDispatcherFactory
 import com.android.adblib.tools.debugging.processinventory.installProcessInventoryJdwpProcessPropertiesCollectorFactory
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
+import com.android.adblib.tools.testutils.AdbLibToolsJdwpTestBase
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
@@ -41,18 +42,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import org.junit.Assert
-import org.junit.Rule
 import org.junit.Test
 
-class JdwpProcessResumeProcessTest {
-
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
-
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+class JdwpProcessResumeProcessTest : AdbLibToolsJdwpTestBase() {
 
     @Test
     fun testJdwpProcessResumeWorksWithJdwpPropertiesCollectorWhenCalledOnProcessThatIsWaitingForJdwpConnection(): Unit = runBlockingWithTimeout {
@@ -77,7 +69,10 @@ class JdwpProcessResumeProcessTest {
             processWithNoJdwpConnectionOpen
         }
 
-        testJdwpProcessResumeWorksWithJdwpPropertiesCollector(processPicker)
+        testJdwpProcessResumeWorksWithJdwpPropertiesCollector(
+            adbSessions = createTwoSessions().toList(),
+            pickProcess = processPicker
+        )
     }
 
     @Test
@@ -97,7 +92,24 @@ class JdwpProcessResumeProcessTest {
 
             processWithJdwpConnectionOpen
         }
-        testJdwpProcessResumeWorksWithJdwpPropertiesCollector(processPicker)
+        testJdwpProcessResumeWorksWithJdwpPropertiesCollector(
+            adbSessions = createTwoSessions().toList(),
+            pickProcess = processPicker
+        )
+    }
+
+    @Test
+    fun testJdwpProcessResumeWorksWithJdwpPropertiesCollectorWhenCalledOnDelegateProcess(): Unit = runBlockingWithTimeout {
+        val processPicker: suspend (List<JdwpProcess>) -> JdwpProcess = { jdwpProcessList ->
+            jdwpProcessList.first {
+                (it is AbstractJdwpProcessDelegateProvider)
+            }
+        }
+
+        testJdwpProcessResumeWorksWithJdwpPropertiesCollector(
+            adbSessions = createTwoSessionsAndTwoDelegateSessions().toList(),
+            pickProcess = processPicker
+        )
     }
 
     @Test
@@ -122,7 +134,7 @@ class JdwpProcessResumeProcessTest {
         // Act: create 2 adb sessions with one device
         val jdwpProcessList = createDeviceAndProcessInAdbSessions(
             deviceApiLevel = 36 /* ensure fake device supports app info */,
-            adbSessions = createTwoSession()
+            adbSessions = createTwoSessions().toList()
         )
 
         // Wait until are processes are in the `isWaitingForDebugger` state
@@ -141,6 +153,7 @@ class JdwpProcessResumeProcessTest {
     }
 
     private suspend fun testJdwpProcessResumeWorksWithJdwpPropertiesCollector(
+        adbSessions: List<AdbSession>,
         pickProcess: suspend (List<JdwpProcess>) -> JdwpProcess
     ) {
         // Prepare
@@ -163,7 +176,7 @@ class JdwpProcessResumeProcessTest {
         // Act: create 2 adb sessions with one device, and call `resumeProcess`
         val jdwpProcessList = createDeviceAndProcessInAdbSessions(
             deviceApiLevel = 30 /* ensure fake device does not support app_info */,
-            adbSessions = createTwoSession()
+            adbSessions = adbSessions
         )
 
         // All processes should reach `isWaitingForDebugger`==`true` (since the Process Inventory
@@ -178,7 +191,7 @@ class JdwpProcessResumeProcessTest {
         pickProcess(jdwpProcessList).resumeProcess()
 
         // Assert
-        Assert.assertEquals(2, jdwpProcessList.size)
+        Assert.assertEquals(adbSessions.size, jdwpProcessList.size)
 
         // The `Client` process (in FakeAdb) should have been resumed
         jdwpProcessList.first().also { jdwpProcess ->
@@ -198,7 +211,7 @@ class JdwpProcessResumeProcessTest {
         }
     }
 
-    private fun createTwoSession(): Sequence<AdbSession> = sequence {
+    private fun createTwoSessions(): Sequence<AdbSession> = sequence {
         val session1 = fakeAdbRule.adbSession
         val session2 = createSessionClone(fakeAdbRule)
         session1.setupForTest()
@@ -207,9 +220,20 @@ class JdwpProcessResumeProcessTest {
         yield(session2)
     }
 
+    private fun createTwoSessionsAndTwoDelegateSessions(): Sequence<AdbSession> = sequence {
+        val session1 = fakeAdbRule.adbSession
+        val session2 = createSessionClone(fakeAdbRule)
+        session1.setupForTest()
+        session2.setupForTest()
+        yield(session1)
+        yield(session2)
+        yield(session1.createDelegatingChildSession(fakeAdbRule))
+        yield(session2.createDelegatingChildSession(fakeAdbRule))
+    }
+
     private suspend fun createDeviceAndProcessInAdbSessions(
         deviceApiLevel: Int = 30,
-        adbSessions: Sequence<AdbSession>
+        adbSessions: List<AdbSession>
     ): List<JdwpProcess> {
         // Create a single device with a single process for testing
         val pid = 20
@@ -314,12 +338,7 @@ class JdwpProcessResumeProcessTest {
         override var serverDescription: String = "test_server_$sessionId"
     }
 
-    private fun <T : AutoCloseable> registerCloseable(item: T): T {
-        return closeables.register(item)
-    }
-
     private fun <T: Any> OptionalValue<T>.isValue(value: T): Boolean {
         return this.hasValue && this.getOrThrow() == value
     }
-
 }
