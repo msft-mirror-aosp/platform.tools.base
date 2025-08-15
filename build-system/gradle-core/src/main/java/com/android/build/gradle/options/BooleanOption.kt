@@ -552,13 +552,8 @@ enum class BooleanOption(
      */
     CUSTOM_SHADER_PATH_REQUIRED(
         "android.custom.shader.path.required",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_10_0
-        )
+        true,
+        FeatureStage.Experimental
     ),
 
     // Flag should only be used in test.

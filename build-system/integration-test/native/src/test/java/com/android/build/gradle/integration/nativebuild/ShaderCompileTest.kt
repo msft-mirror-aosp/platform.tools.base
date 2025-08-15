@@ -60,15 +60,10 @@ class ShaderCompileTest {
     }
 
     @Test
-    fun checkErrorForFutureVersion() {
-        val content = project.file("local.properties").readText()
-        val updatedContent =
-            content.split("\n").filter { !it.contains("ndk.symlinkdir") }.joinToString ("\n" )
-
+    fun checkErrorWhenNoCustomShaderProperty() {
         // glslc.dir property is not set
 
         val result = project.executor()
-            .with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, true)
             .expectFailure()
             .run("assembleDebug")
         result.assertErrorContains("Property `glslc.dir` must be set for AGP to define custom shader.")
