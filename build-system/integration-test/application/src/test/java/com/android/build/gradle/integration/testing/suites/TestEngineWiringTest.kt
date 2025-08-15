@@ -33,8 +33,6 @@ import com.android.builder.model.v2.models.BasicAndroidProject
 import com.android.builder.model.v2.models.BasicTestSuite
 import com.android.builder.model.v2.models.SourceType
 import com.google.common.truth.Truth
-import com.google.common.truth.TruthJUnit.assume
-import org.gradle.util.GradleVersion
 import junit.framework.AssertionFailedError
 import org.junit.Rule
 import org.junit.Test
@@ -101,6 +99,7 @@ class TestEngineWiringTest(
                 .addClasses(
                     ToyJunitEngineForTesting::class.java,
                     ToyTestDescriptor::class.java,
+                    TestEngineLogger::class.java,
                 )
                 .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine",
                     ToyJunitEngineForTesting::class.java.name)
