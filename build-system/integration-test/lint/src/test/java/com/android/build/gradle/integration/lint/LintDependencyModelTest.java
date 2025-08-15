@@ -114,6 +114,11 @@ public class LintDependencyModelTest {
                 .doesNotContain(
                         "javalib/src/main/java/com/example/MyClass.java:5: Warning: Use"
                                 + " Boolean.valueOf(false)");
+        // App is using legacy `proguard-android.txt`
+        assertThat(textReport)
+                .contains(
+                        "app/build.gradle:18: Warning: Avoid"
+                                + " getDefaultProguardFile('proguard-android.txt')");
         // TODO(b/182859396): These 2 should be informational, as explained in comments above
         assertThat(textReport)
                 .contains(
@@ -148,8 +153,8 @@ public class LintDependencyModelTest {
         GradleBuildResult firstResult = project.executor().run(":app:lintDebug");
         tasks.forEach(taskName -> firstResult.assertTask(taskName).didWork());
         String textReport = readTextReportToString();
-        // TODO(b/182859396): There should be 5 warnings; see TODO in checkFindNestedResult().
-        assertThat(textReport).contains("0 errors, 6 warnings");
+        // TODO(b/182859396): There should be 6 warnings; see TODO in checkFindNestedResult().
+        assertThat(textReport).contains("0 errors, 7 warnings");
 
         GradleBuildResult secondResult = project.executor().run(":app:lintDebug");
         tasks.forEach(taskName -> secondResult.assertTask(taskName).wasUpToDate());

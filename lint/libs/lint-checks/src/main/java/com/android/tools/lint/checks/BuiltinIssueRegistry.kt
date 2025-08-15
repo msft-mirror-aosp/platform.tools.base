@@ -379,6 +379,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           PrivateApiDetector.SOON_BLOCKED_PRIVATE_API,
           PrivateKeyDetector.ISSUE,
           PrivateResourceDetector.ISSUE,
+          ProguardAndroidTxtDetector.ISSUE,
           ProguardDetector.SPLIT_CONFIG,
           ProguardDetector.WRONG_KEEP,
           PropertyFileDetector.ESCAPE,
