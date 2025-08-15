@@ -86,6 +86,7 @@ import org.jetbrains.kotlin.asJava.elements.isAccessor
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
+import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UArrayAccessExpression
@@ -1284,7 +1285,7 @@ internal open class Analysis<FX : Any>(
       firstParam != null && (firstParam.nameFromSource?.startsWith("$") != false) -> {
         val offset = if (call.isArrayAccess()) /* TODO hack against ArrayAccessAsCall */ 0 else 1
         val paramsSansReceiver = allParams.subList(1, allParams.size)
-        completeArguments(typeParams, call, paramsSansReceiver, offset)
+        completeArguments(typeParams, call, paramsSansReceiver)
       }
       else -> completeArguments(typeParams, call, method.params())
     }
@@ -1294,33 +1295,41 @@ internal open class Analysis<FX : Any>(
     typeParams: Set<String>,
     call: UCallExpression,
     params: List<UParameter>,
-    offset: Int = 0,
   ) =
-    buildList<UExpression> {
-      for ((i, param) in params.withIndex()) {
-        val paramPsi = param.javaPsi as PsiParameter
-        val paramName = paramPsi.name
-        val arg =
-          call.getArgumentForParameter(i + offset)
-            ?: param.uastInitializer // TODO wrong. Make it lexically, not dynamically scoped!
-            ?: OpaqueConstant(PsiTypeAdapter.translate(typeParams, paramPsi.type)).also {
-              log("WARNING: Can't retrieve default argument for $paramName, supplying $it")
-            }
-        // TODO (b/406877361)
-        add(
+    when {
+      // Common case: don't resort to `getArgumentForParameter` args already match!
+      params.size == call.valueArguments.size &&
+        params.none { it.isVararg() } &&
+        !call.hasComplexArgList() -> call.valueArguments
+      else ->
+        params.mapIndexed { i, param ->
+          val paramPsi = param.javaPsi as PsiParameter
+          val paramName = paramPsi.name
+          val arg =
+            call.getArgumentForParameter(i)
+              ?: param.uastInitializer // TODO wrong. Make it lexically, not dynamically scoped!
+              ?: OpaqueConstant(PsiTypeAdapter.translate(typeParams, paramPsi.type)).also {
+                log("WARNING: Can't retrieve default argument for $paramName, supplying $it")
+              }
+          // TODO (b/406877361)
           when {
             paramPsi.type !is PsiEllipsisType -> arg
             arg is UExpressionList || arg is OpaqueConstant -> arg
-            i + offset >= call.valueArguments.size -> OpaqueConstant(Type.EmptyArray)
+            i >= call.valueArguments.size -> OpaqueConstant(Type.EmptyArray)
             else -> {
               // TODO hack against `ArrayAccessAsCallExpression`
               val max = call.valueArgumentCount - (if (call.isArrayAccess()) 1 else 0)
-              RestArg(call.valueArguments.subList(i + offset, max))
+              RestArg(call.valueArguments.subList(i, max))
             }
           }
-        )
-      }
+        }
     }
+
+  private fun UCallExpression.hasComplexArgList(): Boolean =
+    (sourcePsi as? KtCallExpression)?.valueArguments?.any { it.children.size > 1 } == true
+
+  private fun UParameter.isVararg(): Boolean =
+    (sourcePsi as? KtParameter)?.isVarArg == true || (javaPsi as? PsiParameter)?.isVarArgs == true
 
   private fun UCallExpression.isArrayAccess() =
     javaClass.canonicalName == "com.android.tools.lint.detector.api.ArrayAccessAsCallExpression"
