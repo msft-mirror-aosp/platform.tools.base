@@ -218,6 +218,40 @@ class DeviceProcessCatalogTest {
             assertEquals(1, collectedIndex)
         }
 
+    @Test
+    fun testWaitingForDebuggerFalseIsTerminalState(): Unit =
+        CoroutineTestUtils.runBlockingWithTimeout {
+            // Prepare
+            val pid = 100
+            val runningProcess = createJdwpProcessInfo(pid = pid, waitingForDebugger = false)
+            catalog.handleProcessUpdates(createProcessUpdates(runningProcess))
+
+            var collectedCount = 0
+            val job = async {
+                catalog.trackProcessUpdates().collect {
+                    if (collectedCount == 0) {
+                        // Assert initial state
+                        assertEquals(1, it.processUpdateCount)
+                        val processInfo = it.getProcessUpdate(0).processUpdated
+                        assertEquals(pid, processInfo.pid)
+                        assertEquals(false, processInfo.waitingForDebugger.boolValue)
+                    } else {
+                        // Assert
+                        fail("No new updates should be collected as the terminal 'false' state should not be overwritten.")
+                    }
+                    collectedCount++
+                }
+            }
+
+            // Act: Attempt to update the process back to a "waiting" state.
+            val waitingProcessUpdate = createJdwpProcessInfo(pid = pid, waitingForDebugger = true)
+            catalog.handleProcessUpdates(createProcessUpdates(waitingProcessUpdate))
+
+            // Assert: Wait a moment to ensure no update is processed (see `fail` above)
+            delay(100)
+            job.cancelAndJoin()
+        }
+
     private fun createProcessUpdates(process: ProcessInventoryServerProto.JdwpProcessInfo): ProcessInventoryServerProto.ProcessUpdates {
         return ProcessInventoryServerProto.ProcessUpdates.newBuilder()
             .also { it.addProcessUpdateBuilder().setProcessUpdated(process).build() }

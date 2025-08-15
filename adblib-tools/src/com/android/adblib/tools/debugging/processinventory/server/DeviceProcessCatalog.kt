@@ -104,7 +104,7 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
      *
      * Updates are reflected in the [Flow] returned by [trackProcessUpdates].
      */
-    suspend fun handleProcessUpdates(processUpdates: ProcessUpdates) {
+    fun handleProcessUpdates(processUpdates: ProcessUpdates) {
         updateProcessListStateFlow { oldProcessList ->
             // Create a new process list from the updates we are receiving
             // * Remove "deleted" processes
@@ -267,7 +267,15 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
                 proto.vmIdentifier = newer.vmIdentifier.orElse(proto.vmIdentifier)
                 proto.jvmFlags = newer.jvmFlags.orElse(proto.jvmFlags)
                 proto.nativeDebuggable = newer.nativeDebuggable.orElse(proto.nativeDebuggable)
-                proto.waitingForDebugger = newer.waitingForDebugger.orElse(proto.waitingForDebugger)
+                // Once `false`, `isWaitingForDebugger` can never go back to `true`, because
+                // merging `JdwpProcessInfo` only happens when ProcessInventoryServer is used,
+                // which implies we use JDWP connection (see `UsingJdwpSessionFlowUpdater` class)
+                // to track the `isWaitingForDebugger` state. In this case, false is the
+                // terminal value.
+                proto.waitingForDebugger = proto.waitingForDebugger.mergeWithTerminalValue(
+                    newer.waitingForDebugger,
+                    terminalValue = false
+                )
                 proto.features = newer.features.orElse(proto.features)
             }
             .build()
@@ -307,5 +315,21 @@ internal class DeviceProcessCatalog(session: AdbSession, val deviceId: DeviceId)
             this.isError -> this
             else -> other
         }
+    }
+
+    /**
+     * Merges two [OptionalBool]s, treating a specific [terminalValue] in the receiver
+     * as a final state that should not be overwritten by a newer value.
+     */
+    private fun OptionalBool.mergeWithTerminalValue(
+        newer: OptionalBool,
+        terminalValue: Boolean
+    ): OptionalBool {
+        // If the current value is the terminal state, don't change it.
+        if (this.hasBoolValue() && this.boolValue == terminalValue) {
+            return this
+        }
+        // Otherwise, take the newer value, or fall back to the current one.
+        return newer.orElse(this)
     }
 }
