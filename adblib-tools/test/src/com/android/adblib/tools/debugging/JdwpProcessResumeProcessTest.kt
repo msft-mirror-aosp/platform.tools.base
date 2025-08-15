@@ -36,7 +36,6 @@ import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import java.net.InetSocketAddress
 import java.time.Duration
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -174,9 +173,6 @@ class JdwpProcessResumeProcessTest {
         }.first {
             it.all { jdwpProcessProperties -> jdwpProcessProperties.isWaitingForDebugger.isValue(true) }
         }
-        // TODO(b/438199018): Remove this delay that is currently needed to
-        //  allow the process property updates to stop propagating through InventoryServer
-        delay(100)
 
         // We can now call `resumeProcess`
         pickProcess(jdwpProcessList).resumeProcess()
