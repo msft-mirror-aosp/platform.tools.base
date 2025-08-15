@@ -89,6 +89,7 @@ kotlin_test(
         ":debugger",
         "//tools/adt/idea/as-driver:as-driver.utils_testlib",
         "//tools/base/testutils:tools.testutils",
+        "@intellij//:com.intellij.java",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

@@ -21,10 +21,7 @@ iml_module(
     test_tags = ["manual"],  # src/main/java is TEST scoped but contains no runnable tests
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
-    deps = [
-        "@intellij//:intellij-sdk",
-        "@intellij//:com.intellij.java",
-    ],
+    deps = ["@intellij//:intellij-sdk"],
 )
 
 # managed by go/iml_to_build
