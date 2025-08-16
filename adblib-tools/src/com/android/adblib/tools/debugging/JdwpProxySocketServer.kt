@@ -16,19 +16,12 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbChannelFactory
-import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
-import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.impl.AbstractJdwpProcessDelegateProvider
 import com.android.adblib.tools.debugging.impl.JdwpProxySocketServerImpl
-import com.android.adblib.utils.logIOCompletionErrors
-import com.android.adblib.withPrefix
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import com.android.adblib.tools.debugging.utils.StateFlowForwarder
 import java.net.InetSocketAddress
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Maintains a JDWP socket proxy for the given [process] on a given device.
@@ -131,39 +124,13 @@ private class JdwpProxySocketServerDelegate(
     private val processProvider: AbstractJdwpProcessDelegateProvider
 ) : JdwpProxySocketServer {
 
-    private val processDescription = "${device.session} - $device - pid=${process.pid}"
+    private val proxyStatusMutableStateFlowForwarder = StateFlowForwarder(
+        session = process.device.session,
+        parentScope = process.scope,
+        sourceStateFlowProvider = { processProvider.abstractJdwpProcess().jdwpProxySocketServer.proxyStatusFlow },
+        defaultValue = JdwpProxySocketServerStatus(process.pid)
+    )
 
-    private val logger = adbLogger(device.session).withPrefix("$processDescription - ")
-
-    private val device: ConnectedDevice
-        get() = process.device
-
-    private val proxyStatusMutableFlow = MutableStateFlow(JdwpProxySocketServerStatus(process.pid))
-
-    private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        forwardStateFlowFromDelegateProcess()
-    }
-
-    override val proxyStatusFlow = proxyStatusMutableFlow.asStateFlow()
-        get() {
-            lazyStartMonitoring
-            return field
-        }
-
-    private fun forwardStateFlowFromDelegateProcess() {
-        logger.debug { "Forwarding proxy state flow from delegate" }
-        process.scope.launch {
-            runCatching {
-                processProvider.abstractJdwpProcess().also { delegateProcess ->
-                    logger.debug { "Acquired delegate process, starting forwarding" }
-                    delegateProcess.jdwpProxySocketServer.proxyStatusFlow.collect { newStatus ->
-                        logger.verbose { "Forwarding new proxy status: $newStatus" }
-                        proxyStatusMutableFlow.update { newStatus }
-                    }
-                }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-            }
-        }
-    }
+    override val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
+        get() = proxyStatusMutableStateFlowForwarder.stateFlow
 }

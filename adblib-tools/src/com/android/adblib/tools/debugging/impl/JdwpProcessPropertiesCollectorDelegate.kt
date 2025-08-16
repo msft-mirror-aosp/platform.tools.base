@@ -15,51 +15,25 @@
  */
 package com.android.adblib.tools.debugging.impl
 
-import com.android.adblib.adbLogger
 import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.JdwpProcessPropertiesCollector
 import com.android.adblib.tools.debugging.jdwpPropertiesCollector
-import com.android.adblib.utils.logIOCompletionErrors
-import com.android.adblib.withProcessPrefix
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.android.adblib.tools.debugging.utils.StateFlowForwarder
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 internal class JdwpProcessPropertiesCollectorDelegate(
   override val process: JdwpProcess,
   private val processProvider: AbstractJdwpProcessDelegateProvider
 ) : JdwpProcessPropertiesCollector {
-    private val logger = adbLogger(process.device.session).withProcessPrefix(process.device, process.pid)
 
-    private val mutableStateFlow = MutableStateFlow(JdwpProcessProperties(pid = process.pid))
+    private val mutableStateFlowForwarder = StateFlowForwarder(
+        session = process.device.session,
+        parentScope = process.scope,
+        sourceStateFlowProvider = { processProvider.abstractJdwpProcess().jdwpPropertiesCollector.stateFlow },
+        defaultValue = JdwpProcessProperties(pid = process.pid)
+    )
 
-    private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        forwardStateFlowFromDelegateProcess()
-    }
-
-    override val stateFlow: StateFlow<JdwpProcessProperties> = mutableStateFlow.asStateFlow()
-        get() {
-            lazyStartMonitoring
-            return field
-        }
-
-    private fun forwardStateFlowFromDelegateProcess() {
-        logger.debug { "Forwarding JDWP properties from delegate process" }
-        process.scope.launch {
-            runCatching {
-                processProvider.abstractJdwpProcess().also { delegateProcess ->
-                    logger.debug { "Acquired delegate process, starting forwarding" }
-                    delegateProcess.jdwpPropertiesCollector.stateFlow.collect { newProperties ->
-                        logger.verbose { "Forwarding new JDWP process properties: $newProperties" }
-                        mutableStateFlow.update { newProperties }
-                    }
-                }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
-            }
-        }
-    }
+    override val stateFlow: StateFlow<JdwpProcessProperties>
+        get() = mutableStateFlowForwarder.stateFlow
 }
