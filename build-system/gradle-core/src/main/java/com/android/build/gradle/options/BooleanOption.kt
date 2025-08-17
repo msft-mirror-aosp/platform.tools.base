@@ -612,8 +612,7 @@ enum class BooleanOption(
      * Whether to enable built-in Kotlin support (https://issuetracker.google.com/259523353).
      *
      * When this property is enabled, AGP provides Kotlin support for all [Project]s without
-     * requiring users to apply the `org.jetbrains.kotlin.android` plugin or the
-     * `com.android.experimental.built-in-kotlin` plugin.
+     * requiring users to apply the `org.jetbrains.kotlin.android` plugin.
      *   - If the user applies the `org.jetbrains.kotlin.android` plugin, the build will fail as AGP
      *   already provides Kotlin support.
      *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin, the build
@@ -623,9 +622,10 @@ enum class BooleanOption(
      * `com.android.experimental.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
      * plugin to have Kotlin support.
      *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin (recommended),
-     *   AGP will provide Kotlin support for the current project that the plugin is applied to.
+     *   AGP will provide Kotlin support for the current [Project] that the plugin is applied to.
      *   - If the user applies the `org.jetbrains.kotlin.android` plugin (legacy behavior), that
-     *   plugin will provide Kotlin support for the current project that the plugin is applied to.
+     *   plugin will provide Kotlin support for the current [Project] that the plugin is applied to.
+     *   - If the user applies both plugins, the build will fail.
      */
     BUILT_IN_KOTLIN(
         propertyName = "android.builtInKotlin",

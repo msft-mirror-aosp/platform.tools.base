@@ -26,8 +26,20 @@ import com.android.testutils.truth.PathSubject
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class BuiltInKotlinForAppTest {
+@RunWith(Parameterized::class)
+class BuiltInKotlinForAppTest(
+    private val builtInKotlinBooleanOption: Boolean,
+) {
+
+    companion object {
+
+        @Parameterized.Parameters(name = "builtInKotlinBooleanOption_{0}")
+        @JvmStatic
+        fun parameters() = listOf(false, true)
+    }
 
     @get:Rule
     val rule = GradleRule.from {
@@ -35,6 +47,9 @@ class BuiltInKotlinForAppTest {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
             HelloWorldAndroid.setupKotlin(files)
+        }
+        gradleProperties {
+            add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlinBooleanOption)
         }
     }
 
@@ -309,18 +324,33 @@ class BuiltInKotlinForAppTest {
     }
 
     @Test
-    fun `fail when both built-in Kotlin and kotlin-android plugins are applied`() {
+    fun `fail when built-in Kotlin plugin is applied before kotlin-android plugin`() {
         val build = rule.build {
             androidApplication {
-                // Set `applyFirst = true` because the following error message currently appears
-                // only when the `kotlin-android` plugin is applied *before* the built-in Kotlin
-                // plugin (b/397373580)
+                applyPlugin(PluginType.KOTLIN_ANDROID)
+            }
+        }
+        val result = build.executor.expectFailure().run(":app:assembleDebug")
+        // See b/438711106
+        result.assertErrorContains(
+            "Cannot add extension with name 'kotlin', as there is an extension already registered with that name."
+        )
+    }
+
+    @Test
+    fun `fail when kotlin-android plugin is applied before built-in Kotlin plugin`() {
+        val build = rule.build {
+            androidApplication {
                 applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
             }
         }
         val result = build.executor.expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
-            "The 'org.jetbrains.kotlin.android' plugin is not compatible with the 'com.android.experimental.built-in-kotlin' plugin."
+            if (builtInKotlinBooleanOption) {
+                "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
+            } else {
+                "The 'org.jetbrains.kotlin.android' plugin is not compatible with the 'com.android.experimental.built-in-kotlin' plugin."
+            }
         )
     }
 

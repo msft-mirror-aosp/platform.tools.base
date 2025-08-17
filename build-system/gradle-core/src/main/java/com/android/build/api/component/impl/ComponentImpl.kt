@@ -64,6 +64,7 @@ import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS
 import com.android.builder.core.ComponentType
 import com.android.utils.appendCapitalized
@@ -209,10 +210,10 @@ abstract class ComponentImpl<DslInfoT: ComponentDslInfo>(
     }
 
     override val builtInKotlinSupportMode: BuiltInKotlinSupportMode by lazy {
-        if (internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)) {
-            BuiltInKotlinSupportMode.Supported.BuiltInKotlinPluginApplied
-        } else {
-            BuiltInKotlinSupportMode.NotSupported.BuiltInKotlinPluginNotApplied
+        when {
+            internalServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN) -> BuiltInKotlinSupportMode.Supported.BuiltInKotlinBooleanOptionEnabled
+            internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) -> BuiltInKotlinSupportMode.Supported.BuiltInKotlinPluginApplied
+            else -> BuiltInKotlinSupportMode.NotSupported
         }
     }
 
@@ -220,7 +221,7 @@ abstract class ComponentImpl<DslInfoT: ComponentDslInfo>(
         if (internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID)) {
             BuiltInKaptSupportMode.Supported.BuiltInKaptPluginApplied
         } else {
-            BuiltInKaptSupportMode.NotSupported.BuiltInKaptPluginNotApplied
+            BuiltInKaptSupportMode.NotSupported
         }
     }
 

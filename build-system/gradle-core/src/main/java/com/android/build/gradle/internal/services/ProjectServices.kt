@@ -99,7 +99,11 @@ class ProjectServices constructor(
             reason = reason,
             kotlinBaseApiPlugin = projectInfo.getPlugin(KotlinBaseApiPlugin::class.java),
             kotlinAndroidProjectExtension = projectInfo.getExtension(KotlinAndroidProjectExtension::class.java),
-            baseExtension = projectInfo.findExtension(BaseExtension::class.java)
+            // The BaseExtension may not yet be registered at this point, so we need to pass a
+            // Provider instead.
+            baseExtensionProvider = providerFactory.provider {
+                projectInfo.findExtension(BaseExtension::class.java)
+            }
         )
     }
 }

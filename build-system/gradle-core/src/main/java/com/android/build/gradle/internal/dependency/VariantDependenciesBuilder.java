@@ -731,7 +731,10 @@ public class VariantDependenciesBuilder {
         if (projectOptions.get(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP)) {
             return false;
         }
-        boolean kotlinPluginApplied = kgpApplied() || project.getPluginManager().hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID);
+        boolean kotlinPluginApplied =
+                kgpApplied()
+                        || projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)
+                        || project.getPluginManager().hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID);
         // If KGP (legacy or built-in) is not applied, AGP should add the attribute.
         // If KGP (legacy or built-in) is applied, it will add the attribute, so AGP should not
         // add it, except for screenshot-test and test-fixture components (these components are
