@@ -30,6 +30,7 @@ public final class Version {
     public static final int BUILDER_MODEL_API_VERSION;
     public static final int BUILDER_NATIVE_MODEL_API_VERSION;
     public static final String LAST_STABLE_ANDROID_GRADLE_PLUGIN_VERSION;
+    public static final Boolean IS_AGP_RELEASE_BRANCH;
 
     static {
         Properties properties = new Properties();
@@ -52,6 +53,7 @@ public final class Version {
         BUILDER_MODEL_API_VERSION = Integer.parseInt(properties.getProperty("apiVersion"));
         BUILDER_NATIVE_MODEL_API_VERSION =
                 Integer.parseInt(properties.getProperty("nativeApiVersion"));
+        IS_AGP_RELEASE_BRANCH = Boolean.valueOf(properties.getProperty("isAgpReleaseBranch"));
     }
 
     private Version() {}
