@@ -17,11 +17,9 @@
 package com.android.build.gradle.internal.ide.v2
 
 import com.android.AndroidProjectTypes
-import com.android.build.api.dsl.ApplicationBuildFeatures
 import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.ApplicationDefaultConfig
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
@@ -175,7 +173,7 @@ class ModelBuilderTest {
 
     //---------------
 
-    fun <T> ModelBuilder<*,*,*,*,*>.query(modelClass: Class<T>, project: Project) : T {
+    fun <T> ModelBuilder<*,*,*,*>.query(modelClass: Class<T>, project: Project) : T {
         return modelClass.cast(buildAll(modelClass.name, project))
     }
 
@@ -194,7 +192,6 @@ class ModelBuilderTest {
                     ApplicationBuildType,
                     ApplicationDefaultConfig,
                     ApplicationProductFlavor,
-                    ApplicationInstallation,
                     ApplicationExtension> {
 
         // for now create an app extension

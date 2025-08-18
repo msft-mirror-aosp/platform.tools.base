@@ -1611,6 +1611,7 @@ com.android.build.gradle.internal.dsl.InternalApplicationExtension.bundle: void 
 com.android.build.gradle.internal.dsl.InternalApplicationExtension.dependenciesInfo: void (org.gradle.api.Action<com.android.build.api.dsl.DependenciesInfo>)
 com.android.build.gradle.internal.dsl.InternalApplicationExtension.getAssetPacks: java.util.Set<java.lang.String> ()
 com.android.build.gradle.internal.dsl.InternalApplicationExtension.getDynamicFeatures: java.util.Set<java.lang.String> ()
+com.android.build.gradle.internal.dsl.InternalApplicationExtension.installation: void (org.gradle.api.Action<com.android.build.api.dsl.ApplicationInstallation>)
 com.android.build.gradle.internal.dsl.InternalApplicationExtension.privacySandbox: void (org.gradle.api.Action<com.android.build.api.dsl.PrivacySandbox>)
 com.android.build.gradle.internal.dsl.InternalApplicationExtension.publishing: void (org.gradle.api.Action<com.android.build.api.dsl.ApplicationPublishing>)
 com.android.build.gradle.internal.dsl.InternalApplicationExtension.setAssetPacks: void (java.util.Set<java.lang.String>)
@@ -1639,7 +1640,6 @@ com.android.build.gradle.internal.dsl.InternalCommonExtension.getSigningConfigs:
 com.android.build.gradle.internal.dsl.InternalCommonExtension.getSplits: com.android.build.gradle.internal.dsl.Splits ()
 com.android.build.gradle.internal.dsl.InternalCommonExtension.getTestOptions: com.android.build.gradle.internal.dsl.TestOptions ()
 com.android.build.gradle.internal.dsl.InternalCommonExtension.getViewBinding: com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl ()
-com.android.build.gradle.internal.dsl.InternalCommonExtension.installation: void (org.gradle.api.Action<InstallationT>)
 com.android.build.gradle.internal.dsl.InternalCommonExtension.jacoco: void (org.gradle.api.Action<com.android.build.gradle.internal.coverage.JacocoOptions>)
 com.android.build.gradle.internal.dsl.InternalCommonExtension.lint: void (org.gradle.api.Action<com.android.build.api.dsl.Lint>)
 com.android.build.gradle.internal.dsl.InternalCommonExtension.lintOptions: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.LintOptions>)
@@ -1657,11 +1657,13 @@ com.android.build.gradle.internal.dsl.InternalCommonExtension.viewBinding: void 
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension implements com.android.build.api.dsl.DynamicFeatureExtension, com.android.build.gradle.internal.dsl.InternalTestedExtension
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.androidResources: void (org.gradle.api.Action<com.android.build.api.dsl.DynamicFeatureAndroidResources>)
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.buildFeatures: void (org.gradle.api.Action<com.android.build.api.dsl.DynamicFeatureBuildFeatures>)
+com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.installation: void (org.gradle.api.Action<com.android.build.api.dsl.DynamicFeatureInstallation>)
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.privacySandbox: void (org.gradle.api.Action<com.android.build.api.dsl.PrivacySandbox>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension implements com.android.build.api.dsl.LibraryExtension, com.android.build.gradle.internal.dsl.InternalTestedExtension
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.androidResources: void (org.gradle.api.Action<com.android.build.api.dsl.LibraryAndroidResources>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.buildFeatures: void (org.gradle.api.Action<com.android.build.api.dsl.LibraryBuildFeatures>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.getAidlPackagedList: java.util.Collection<java.lang.String> ()
+com.android.build.gradle.internal.dsl.InternalLibraryExtension.installation: void (org.gradle.api.Action<com.android.build.api.dsl.LibraryInstallation>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.privacySandbox: void (org.gradle.api.Action<com.android.build.api.dsl.PrivacySandbox>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.publishing: void (org.gradle.api.Action<com.android.build.api.dsl.LibraryPublishing>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.setAidlPackagedList: void (java.util.Collection<java.lang.String>)
@@ -1674,6 +1676,7 @@ com.android.build.gradle.internal.dsl.InternalSigningConfig implements com.andro
 com.android.build.gradle.internal.dsl.InternalTestExtension implements com.android.build.api.dsl.TestExtension, com.android.build.gradle.internal.dsl.InternalCommonExtension
 com.android.build.gradle.internal.dsl.InternalTestExtension.androidResources: void (org.gradle.api.Action<com.android.build.api.dsl.TestAndroidResources>)
 com.android.build.gradle.internal.dsl.InternalTestExtension.buildFeatures: void (org.gradle.api.Action<com.android.build.api.dsl.TestBuildFeatures>)
+com.android.build.gradle.internal.dsl.InternalTestExtension.installation: void (org.gradle.api.Action<com.android.build.api.dsl.TestInstallation>)
 com.android.build.gradle.internal.dsl.InternalTestExtension.privacySandbox: void (org.gradle.api.Action<com.android.build.api.dsl.PrivacySandbox>)
 com.android.build.gradle.internal.dsl.InternalTestedExtension implements com.android.build.api.dsl.TestedExtension, com.android.build.gradle.internal.dsl.InternalCommonExtension
 com.android.build.gradle.internal.dsl.InternalTestedExtension.testFixtures: void (org.gradle.api.Action<com.android.build.api.dsl.TestFixtures>)

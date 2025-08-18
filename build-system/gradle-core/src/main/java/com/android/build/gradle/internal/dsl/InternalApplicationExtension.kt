@@ -34,8 +34,7 @@ interface InternalApplicationExtension :
     InternalTestedExtension<
                 ApplicationBuildType,
                 ApplicationDefaultConfig,
-                ApplicationProductFlavor,
-                ApplicationInstallation> {
+                ApplicationProductFlavor> {
     override val dynamicFeatures: MutableSet<String>
     fun setDynamicFeatures(dynamicFeatures: Set<String>)
     override val assetPacks: MutableSet<String>
@@ -46,6 +45,7 @@ interface InternalApplicationExtension :
     fun buildFeatures(action: Action<ApplicationBuildFeatures>)
     fun bundle(action: Action<BundleOptions>)
     fun dependenciesInfo(action: Action<DependenciesInfo>)
+    fun installation(action: Action<ApplicationInstallation>)
     fun publishing(action: Action<ApplicationPublishing>)
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

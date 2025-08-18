@@ -509,7 +509,7 @@ package com.android.build.api.dsl {
   public interface ApplicationDefaultConfig extends com.android.build.api.dsl.ApplicationBaseFlavor com.android.build.api.dsl.DefaultConfig {
   }
 
-  public interface ApplicationExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.ApplicationBuildType,com.android.build.api.dsl.ApplicationDefaultConfig,com.android.build.api.dsl.ApplicationProductFlavor,com.android.build.api.dsl.ApplicationInstallation> com.android.build.api.dsl.ApkExtension com.android.build.api.dsl.TestedExtension {
+  public interface ApplicationExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.ApplicationBuildType,com.android.build.api.dsl.ApplicationDefaultConfig,com.android.build.api.dsl.ApplicationProductFlavor> com.android.build.api.dsl.ApkExtension com.android.build.api.dsl.TestedExtension {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationBuildFeatures,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void bundle(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Bundle,kotlin.Unit> action);
@@ -523,6 +523,7 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.ApplicationInstallation getInstallation();
     method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
     method public com.android.build.api.dsl.ApplicationPublishing getPublishing();
+    method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationInstallation,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void publishing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationPublishing,kotlin.Unit> action);
     property public abstract com.android.build.api.dsl.ApplicationAndroidResources androidResources;
@@ -888,7 +889,7 @@ package com.android.build.api.dsl {
     property public abstract java.util.Set<java.lang.String> targets;
   }
 
-  public interface CommonExtension<BuildTypeT extends com.android.build.api.dsl.BuildType, DefaultConfigT extends com.android.build.api.dsl.DefaultConfig, ProductFlavorT extends com.android.build.api.dsl.ProductFlavor, InstallationT extends com.android.build.api.dsl.Installation> {
+  public interface CommonExtension<BuildTypeT extends com.android.build.api.dsl.BuildType, DefaultConfigT extends com.android.build.api.dsl.DefaultConfig, ProductFlavorT extends com.android.build.api.dsl.ProductFlavor> {
     method @Deprecated public void aaptOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AaptOptions,kotlin.Unit> action);
     method @Deprecated public void adbOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AdbOptions,kotlin.Unit> action);
     method @Deprecated public void buildToolsVersion(String buildToolsVersion);
@@ -921,7 +922,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
     method public com.android.build.api.dsl.ExternalNativeBuild getExternalNativeBuild();
     method public java.util.List<java.lang.String> getFlavorDimensions();
-    method public InstallationT getInstallation();
+    method public com.android.build.api.dsl.Installation getInstallation();
     method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.JacocoOptions getJacoco();
     method public com.android.build.api.dsl.Lint getLint();
     method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.LintOptions getLintOptions();
@@ -939,7 +940,6 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.TestCoverage getTestCoverage();
     method public com.android.build.api.dsl.TestOptions getTestOptions();
     method public com.android.build.api.dsl.ViewBinding getViewBinding();
-    method public void installation(kotlin.jvm.functions.Function1<? super InstallationT,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void jacoco(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void lintOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions,kotlin.Unit> action);
@@ -981,7 +981,7 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
     property public abstract com.android.build.api.dsl.ExternalNativeBuild externalNativeBuild;
     property public abstract java.util.List<java.lang.String> flavorDimensions;
-    property public abstract InstallationT installation;
+    property public abstract com.android.build.api.dsl.Installation installation;
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.JacocoOptions jacoco;
     property public abstract com.android.build.api.dsl.Lint lint;
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.LintOptions lintOptions;
@@ -1154,15 +1154,18 @@ package com.android.build.api.dsl {
   public interface DynamicFeatureDefaultConfig extends com.android.build.api.dsl.DynamicFeatureBaseFlavor com.android.build.api.dsl.DefaultConfig {
   }
 
-  public interface DynamicFeatureExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.DynamicFeatureBuildType,com.android.build.api.dsl.DynamicFeatureDefaultConfig,com.android.build.api.dsl.DynamicFeatureProductFlavor,com.android.build.api.dsl.DynamicFeatureInstallation> com.android.build.api.dsl.ApkExtension com.android.build.api.dsl.TestedExtension {
+  public interface DynamicFeatureExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.DynamicFeatureBuildType,com.android.build.api.dsl.DynamicFeatureDefaultConfig,com.android.build.api.dsl.DynamicFeatureProductFlavor> com.android.build.api.dsl.ApkExtension com.android.build.api.dsl.TestedExtension {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureBuildFeatures,kotlin.Unit> action);
     method public com.android.build.api.dsl.DynamicFeatureAndroidResources getAndroidResources();
     method public com.android.build.api.dsl.DynamicFeatureBuildFeatures getBuildFeatures();
+    method public com.android.build.api.dsl.DynamicFeatureInstallation getInstallation();
     method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
+    method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureInstallation,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     property public abstract com.android.build.api.dsl.DynamicFeatureAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.DynamicFeatureBuildFeatures buildFeatures;
+    property public abstract com.android.build.api.dsl.DynamicFeatureInstallation installation;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
   }
 
@@ -1479,20 +1482,23 @@ package com.android.build.api.dsl {
   public interface LibraryDefaultConfig extends com.android.build.api.dsl.LibraryBaseFlavor com.android.build.api.dsl.DefaultConfig {
   }
 
-  public interface LibraryExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.LibraryBuildType,com.android.build.api.dsl.LibraryDefaultConfig,com.android.build.api.dsl.LibraryProductFlavor,com.android.build.api.dsl.LibraryInstallation> com.android.build.api.dsl.TestedExtension {
+  public interface LibraryExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.LibraryBuildType,com.android.build.api.dsl.LibraryDefaultConfig,com.android.build.api.dsl.LibraryProductFlavor> com.android.build.api.dsl.TestedExtension {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryBuildFeatures,kotlin.Unit> action);
     method @org.gradle.api.Incubating public java.util.Collection<java.lang.String>? getAidlPackagedList();
     method public com.android.build.api.dsl.LibraryAndroidResources getAndroidResources();
     method public com.android.build.api.dsl.LibraryBuildFeatures getBuildFeatures();
+    method public com.android.build.api.dsl.LibraryInstallation getInstallation();
     method @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> getPrefab();
     method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
     method public com.android.build.api.dsl.LibraryPublishing getPublishing();
+    method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryInstallation,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void publishing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryPublishing,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract java.util.Collection<java.lang.String>? aidlPackagedList;
     property public abstract com.android.build.api.dsl.LibraryAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.LibraryBuildFeatures buildFeatures;
+    property public abstract com.android.build.api.dsl.LibraryInstallation installation;
     property @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> prefab;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
     property public abstract com.android.build.api.dsl.LibraryPublishing publishing;
@@ -2135,17 +2141,20 @@ package com.android.build.api.dsl {
   public interface TestDefaultConfig extends com.android.build.api.dsl.TestBaseFlavor com.android.build.api.dsl.DefaultConfig {
   }
 
-  public interface TestExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.TestBuildType,com.android.build.api.dsl.TestDefaultConfig,com.android.build.api.dsl.TestProductFlavor,com.android.build.api.dsl.TestInstallation> {
+  public interface TestExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.TestBuildType,com.android.build.api.dsl.TestDefaultConfig,com.android.build.api.dsl.TestProductFlavor> {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestBuildFeatures,kotlin.Unit> action);
     method public com.android.build.api.dsl.TestAndroidResources getAndroidResources();
     method public com.android.build.api.dsl.TestBuildFeatures getBuildFeatures();
+    method public com.android.build.api.dsl.TestInstallation getInstallation();
     method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
     method public String? getTargetProjectPath();
+    method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestInstallation,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void setTargetProjectPath(String?);
     property public abstract com.android.build.api.dsl.TestAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.TestBuildFeatures buildFeatures;
+    property public abstract com.android.build.api.dsl.TestInstallation installation;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
     property public abstract String? targetProjectPath;
   }

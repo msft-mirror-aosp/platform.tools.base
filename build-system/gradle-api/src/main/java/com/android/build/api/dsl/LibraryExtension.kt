@@ -30,8 +30,7 @@ interface LibraryExtension :
     CommonExtension<
         LibraryBuildType,
         LibraryDefaultConfig,
-        LibraryProductFlavor,
-        LibraryInstallation>,
+        LibraryProductFlavor>,
     TestedExtension {
     // TODO(b/140406102)
 
@@ -62,6 +61,24 @@ interface LibraryExtension :
      * A list of build features that can be enabled or disabled on the Android Project.
      */
     fun buildFeatures(action: LibraryBuildFeatures.() -> Unit)
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    override val installation: LibraryInstallation
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    fun installation(action: LibraryInstallation.() -> Unit)
 
     /**
      * container of Prefab options

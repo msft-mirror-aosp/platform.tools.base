@@ -72,4 +72,12 @@ abstract class ApplicationExtensionImpl @Inject constructor(
 
     override val installation: ApplicationInstallation =
         dslServices.newDecoratedInstance(ApplicationInstallationImpl::class.java, dslServices)
+
+    override fun installation(action: ApplicationInstallation.() -> Unit) {
+        action(installation)
+    }
+
+    override fun installation(action: Action<ApplicationInstallation>) {
+        action.execute(installation)
+    }
 }

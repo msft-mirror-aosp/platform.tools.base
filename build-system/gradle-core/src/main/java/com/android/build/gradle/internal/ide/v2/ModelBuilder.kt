@@ -20,13 +20,10 @@ import com.android.SdkConstants
 import com.android.Version
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.component.impl.DeviceTestImpl
-import com.android.build.api.dsl.AndroidResources
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.DefaultConfig
-import com.android.build.api.dsl.Installation
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
@@ -149,12 +146,10 @@ class ModelBuilder<
         BuildTypeT : BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : ProductFlavor,
-        InstallationT : Installation,
         ExtensionT : CommonExtension<
                 BuildTypeT,
                 DefaultConfigT,
-                ProductFlavorT,
-                InstallationT>>(
+                ProductFlavorT>>(
     private val project: Project,
     private val variantModel: VariantModel,
     private val extension: ExtensionT,
@@ -764,7 +759,7 @@ class ModelBuilder<
                 } else null
 
         val extensionImpl =
-            extension as? CommonExtensionImpl<*, *, *, *>
+            extension as? CommonExtensionImpl<*, *, *>
                 ?: throw RuntimeException("Wrong extension provided to v2 ModelBuilder")
         val compileSdkVersion = extensionImpl.compileSdkVersion ?: "unknown"
 

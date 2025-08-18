@@ -29,8 +29,7 @@ interface ApplicationExtension :
     CommonExtension<
             ApplicationBuildType,
             ApplicationDefaultConfig,
-            ApplicationProductFlavor,
-            ApplicationInstallation>,
+            ApplicationProductFlavor>,
     ApkExtension,
     TestedExtension {
     // TODO(b/140406102)
@@ -91,7 +90,23 @@ interface ApplicationExtension :
      */
     fun buildFeatures(action: ApplicationBuildFeatures.() -> Unit)
 
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
     override val installation: ApplicationInstallation
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    fun installation(action: ApplicationInstallation.() -> Unit)
 
     /** Options related to the consumption of privacy sandbox libraries */
     val privacySandbox: PrivacySandbox

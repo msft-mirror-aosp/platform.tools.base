@@ -38,8 +38,7 @@ abstract class TestExtensionImpl @Inject constructor(
     CommonExtensionImpl<
             TestBuildType,
             TestDefaultConfig,
-            TestProductFlavor,
-            TestInstallation>(
+            TestProductFlavor>(
         dslServices,
         dslContainers
     ),
@@ -71,4 +70,12 @@ abstract class TestExtensionImpl @Inject constructor(
 
     override val installation: TestInstallation
         = dslServices.newDecoratedInstance(TestInstallationImpl::class.java, dslServices)
+
+    override fun installation(action: TestInstallation.() -> Unit) {
+        action(installation)
+    }
+
+    override fun installation(action: Action<TestInstallation>) {
+        action.execute(installation)
+    }
 }

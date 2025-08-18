@@ -39,12 +39,10 @@ abstract class AbstractAppPlugin<
         BuildTypeT: BuildType,
         DefaultConfigT: DefaultConfig,
         ProductFlavorT: ProductFlavor,
-        InstallationT: Installation,
         AndroidT: CommonExtension<
                 BuildTypeT,
                 DefaultConfigT,
-                ProductFlavorT,
-                InstallationT>,
+                ProductFlavorT>,
         AndroidComponentsT : AndroidComponentsExtension<
                 in AndroidT,
                 in VariantBuilderT,
@@ -58,7 +56,7 @@ abstract class AbstractAppPlugin<
         componentFactory: SoftwareComponentFactory?,
         listenerRegistry: BuildEventsListenerRegistry?,
         buildFeatures: org.gradle.api.configuration.BuildFeatures
-) : BasePlugin<BuildTypeT, DefaultConfigT, ProductFlavorT, InstallationT, AndroidT, AndroidComponentsT, VariantBuilderT, VariantDslInfoT, CreationConfigT, VariantT>(
+) : BasePlugin<BuildTypeT, DefaultConfigT, ProductFlavorT, AndroidT, AndroidComponentsT, VariantBuilderT, VariantDslInfoT, CreationConfigT, VariantT>(
         registry!!,
         componentFactory!!,
         listenerRegistry!!,

@@ -27,8 +27,7 @@ interface TestExtension :
     CommonExtension<
             TestBuildType,
             TestDefaultConfig,
-            TestProductFlavor,
-            TestInstallation> {
+            TestProductFlavor> {
     // TODO(b/140406102)
 
     /**
@@ -54,6 +53,24 @@ interface TestExtension :
      * A list of build features that can be enabled or disabled on the Android Project.
      */
     fun buildFeatures(action: TestBuildFeatures.() -> Unit)
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    override val installation: TestInstallation
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    fun installation(action: TestInstallation.() -> Unit)
 
     /**
      * The Gradle path of the project that this test project tests.

@@ -66,4 +66,11 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
     }
     override val installation: DynamicFeatureInstallation
         = dslServices.newDecoratedInstance(DynamicFeatureInstallationImpl::class.java, dslServices)
+
+    override fun installation(action: DynamicFeatureInstallation.() -> Unit) {
+        action(installation)
+    }
+    override fun installation(action: Action<DynamicFeatureInstallation>) {
+        action.execute(installation)
+    }
 }

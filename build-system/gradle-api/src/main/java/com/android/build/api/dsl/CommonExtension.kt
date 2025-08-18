@@ -31,8 +31,7 @@ import java.io.File
 interface CommonExtension<
         BuildTypeT : BuildType,
         DefaultConfigT : DefaultConfig,
-        ProductFlavorT : ProductFlavor,
-        InstallationT: Installation> {
+        ProductFlavorT : ProductFlavor> {
 
     /**
      * Specifies options for the Android Asset Packaging Tool (AAPT).
@@ -88,16 +87,7 @@ interface CommonExtension<
      *
      * For more information about the properties you can configure in this block, see [AdbOptions].
      */
-    val installation: InstallationT
-
-    /**
-     * Specifies options for the
-     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
-     * such as APK installation options.
-     *
-     * For more information about the properties you can configure in this block, see [AdbOptions].
-     */
-    fun installation(action: InstallationT.() -> Unit)
+    val installation: Installation
 
     /**
      * Specifies Java compiler options, such as the language level of the Java source code and

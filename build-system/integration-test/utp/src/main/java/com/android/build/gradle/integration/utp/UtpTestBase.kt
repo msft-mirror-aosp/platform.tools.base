@@ -346,7 +346,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
     abstract fun selectModule(moduleName: String)
 
-    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*>>.enableAndroidTestOrchestrator() {
+    private fun AndroidProjectDefinition<out CommonExtension<*, *, *>>.enableAndroidTestOrchestrator() {
         android.testOptions.execution = "ANDROIDX_TEST_ORCHESTRATOR"
         android.defaultConfig.testInstrumentationRunnerArguments["useTestStorageService"] = "true"
         android.defaultConfig.testInstrumentationRunnerArguments["clearPackageData"] = "true"
@@ -357,11 +357,11 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         }
     }
 
-    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*>>.enableForceCompilation() {
+    private fun AndroidProjectDefinition<out CommonExtension<*, *, *>>.enableForceCompilation() {
         android.experimentalProperties["android.experimental.force-aot-compilation"] = true
     }
 
-    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*>>.enableCodeCoverage() {
+    private fun AndroidProjectDefinition<out CommonExtension<*, *, *>>.enableCodeCoverage() {
         android.buildTypes {
             named("debug") { it.enableAndroidTestCoverage = true }
         }
@@ -372,7 +372,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         }
     }
 
-    private fun AndroidProjectDefinition<out CommonExtension<*,*,*,*>>.enableTestStorageService() {
+    private fun AndroidProjectDefinition<out CommonExtension<*, *, *>>.enableTestStorageService() {
         dependencies {
             add("androidTestUtil", "androidx.test.services:test-services:$ANDROIDX_TEST_VERSION")
         }

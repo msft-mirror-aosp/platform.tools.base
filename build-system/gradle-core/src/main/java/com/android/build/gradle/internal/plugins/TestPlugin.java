@@ -78,7 +78,6 @@ public class TestPlugin
                 TestBuildType,
                 TestDefaultConfig,
                 TestProductFlavor,
-                TestInstallation,
                 com.android.build.api.dsl.TestExtension,
                 TestAndroidComponentsExtension,
                 TestVariantBuilder,
@@ -110,7 +109,6 @@ public class TestPlugin
                     TestBuildType,
                     TestDefaultConfig,
                     TestProductFlavor,
-                    TestInstallation,
                     com.android.build.api.dsl.TestExtension>
             createExtension(
                     @NonNull DslServices dslServices,

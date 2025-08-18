@@ -97,4 +97,12 @@ abstract class LibraryExtensionImpl @Inject constructor(
 
     override val installation: LibraryInstallation
         = dslServices.newDecoratedInstance(LibraryInstallationImpl::class.java, dslServices)
+
+    override fun installation(action: LibraryInstallation.() -> Unit) {
+        action.invoke(installation)
+    }
+
+    override fun installation(action: Action<LibraryInstallation>) {
+        action.execute(installation)
+    }
 }

@@ -83,7 +83,6 @@ public class AppPlugin
                 ApplicationBuildType,
                 ApplicationDefaultConfig,
                 ApplicationProductFlavor,
-                ApplicationInstallation,
                 com.android.build.api.dsl.ApplicationExtension,
                 ApplicationAndroidComponentsExtension,
                 ApplicationVariantBuilder,
@@ -122,7 +121,6 @@ public class AppPlugin
                     ApplicationBuildType,
                     ApplicationDefaultConfig,
                     ApplicationProductFlavor,
-                    ApplicationInstallation,
                     ApplicationExtension>
             createExtension(
                     @NonNull DslServices dslServices,

@@ -212,7 +212,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
 
     override fun preVariantCallback(
         project: Project,
-        dslExtension: CommonExtension<*, *, *, *>,
+        dslExtension: CommonExtension<*, *, *>,
         model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
     ) {
         if (project.pluginManager.hasPlugin(ANDROID_APT_PLUGIN_NAME)) {

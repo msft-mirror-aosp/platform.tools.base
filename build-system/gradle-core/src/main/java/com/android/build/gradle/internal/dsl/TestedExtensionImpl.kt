@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.DefaultConfig
 import com.android.build.api.dsl.Installation
 import com.android.build.api.dsl.TestFixtures
@@ -36,8 +35,7 @@ abstract class TestedExtensionImpl<
         ) : CommonExtensionImpl<
         BuildTypeT,
         DefaultConfigT,
-        ProductFlavorT,
-        InstallationT>(
+        ProductFlavorT>(
     dslServices,
     dslContainers
 ), com.android.build.api.dsl.TestedExtension {

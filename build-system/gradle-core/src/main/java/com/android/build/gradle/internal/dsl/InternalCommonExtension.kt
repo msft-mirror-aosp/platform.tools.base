@@ -44,13 +44,11 @@ import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
 interface InternalCommonExtension<
         BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : com.android.build.api.dsl.DefaultConfig,
-        ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
-        InstallationT : com.android.build.api.dsl.Installation> :
+        ProductFlavorT : com.android.build.api.dsl.ProductFlavor> :
     CommonExtension<
         BuildTypeT,
         DefaultConfigT,
-        ProductFlavorT,
-        InstallationT>, Lockable {
+        ProductFlavorT>, Lockable {
 
     override val aaptOptions: AaptOptionsImpl
 
@@ -81,7 +79,6 @@ interface InternalCommonExtension<
     fun dataBinding(action: Action<DataBindingOptionsImpl>)
     fun viewBinding(action: Action<ViewBindingOptionsImpl>)
     fun externalNativeBuild(action: Action<ExternalNativeBuildImpl>)
-    fun installation(action: Action<InstallationT>)
     fun jacoco(action: Action<JacocoOptionsImpl>)
     fun lint(action: Action<Lint>)
     fun lintOptions(action: Action<LintOptionsImpl>)

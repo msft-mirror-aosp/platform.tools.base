@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestAndroidResources
 import com.android.build.api.dsl.TestBuildFeatures
@@ -32,10 +33,11 @@ interface InternalTestExtension :
         InternalCommonExtension<
                 TestBuildType,
                 TestDefaultConfig,
-                TestProductFlavor,
-                TestInstallation> {
+                TestProductFlavor> {
 
     fun androidResources(action: Action<TestAndroidResources>)
     fun buildFeatures(action: Action<TestBuildFeatures>)
+    fun installation(action: Action<TestInstallation>)
+
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

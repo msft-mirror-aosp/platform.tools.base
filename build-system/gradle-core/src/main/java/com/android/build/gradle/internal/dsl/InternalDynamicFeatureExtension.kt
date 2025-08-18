@@ -32,11 +32,11 @@ interface InternalDynamicFeatureExtension :
     InternalTestedExtension<
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
-            DynamicFeatureProductFlavor,
-            DynamicFeatureInstallation> {
+            DynamicFeatureProductFlavor> {
 
     fun androidResources(action: Action<DynamicFeatureAndroidResources>)
     fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>)
+    fun installation(action: Action<DynamicFeatureInstallation>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

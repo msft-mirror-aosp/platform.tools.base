@@ -73,7 +73,6 @@ public class DynamicFeaturePlugin
                 com.android.build.api.dsl.DynamicFeatureBuildType,
                 com.android.build.api.dsl.DynamicFeatureDefaultConfig,
                 com.android.build.api.dsl.DynamicFeatureProductFlavor,
-                com.android.build.api.dsl.DynamicFeatureInstallation,
                 com.android.build.api.dsl.DynamicFeatureExtension,
                 DynamicFeatureAndroidComponentsExtension,
                 DynamicFeatureVariantBuilder,
@@ -116,7 +115,6 @@ public class DynamicFeaturePlugin
                     com.android.build.api.dsl.DynamicFeatureBuildType,
                     com.android.build.api.dsl.DynamicFeatureDefaultConfig,
                     com.android.build.api.dsl.DynamicFeatureProductFlavor,
-                    com.android.build.api.dsl.DynamicFeatureInstallation,
                     com.android.build.api.dsl.DynamicFeatureExtension>
             createExtension(
                     @NonNull DslServices dslServices,

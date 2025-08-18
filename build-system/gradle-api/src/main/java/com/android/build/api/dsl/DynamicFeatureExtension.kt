@@ -27,8 +27,7 @@ interface DynamicFeatureExtension :
     CommonExtension<
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
-            DynamicFeatureProductFlavor,
-            DynamicFeatureInstallation>,
+            DynamicFeatureProductFlavor>,
     ApkExtension,
     TestedExtension {
 
@@ -54,6 +53,25 @@ interface DynamicFeatureExtension :
      * A list of build features that can be enabled or disabled on the Android Project.
      */
     fun buildFeatures(action: DynamicFeatureBuildFeatures.() -> Unit)
+
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    override val installation: DynamicFeatureInstallation
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    fun installation(action: DynamicFeatureInstallation.() -> Unit)
 
     val privacySandbox: PrivacySandbox
     fun privacySandbox(action: PrivacySandbox.() -> Unit)

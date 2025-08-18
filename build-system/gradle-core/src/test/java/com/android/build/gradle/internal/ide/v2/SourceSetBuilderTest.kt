@@ -292,7 +292,6 @@ class SourceSetBuilderTest {
                     ApplicationBuildType,
                     ApplicationDefaultConfig,
                     ApplicationProductFlavor,
-                    ApplicationInstallation,
                     ApplicationExtension> {
 
         // for now create an app extension

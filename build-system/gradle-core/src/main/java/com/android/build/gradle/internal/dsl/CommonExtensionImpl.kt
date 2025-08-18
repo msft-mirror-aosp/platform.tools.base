@@ -48,15 +48,13 @@ import java.util.function.Supplier
 abstract class CommonExtensionImpl<
         BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : DefaultConfig,
-        ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
-        InstallationT : Installation>(
+        ProductFlavorT : com.android.build.api.dsl.ProductFlavor>(
             protected val dslServices: DslServices,
             dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
         ) : InternalCommonExtension<
         BuildTypeT,
         DefaultConfigT,
-        ProductFlavorT,
-        InstallationT> {
+        ProductFlavorT> {
 
     private val sourceSetManager = dslContainers.sourceSetManager
 
@@ -96,14 +94,6 @@ abstract class CommonExtensionImpl<
 
     override fun aaptOptions(action: Action<AaptOptions>) {
         action.execute(aaptOptions)
-    }
-
-    override fun installation(action: InstallationT.() -> Unit) {
-        action.invoke(installation)
-    }
-
-    override fun installation(action: Action<InstallationT>) {
-        action.execute(installation)
     }
 
     override val adbOptions: AdbOptions get() = installation as AdbOptions
