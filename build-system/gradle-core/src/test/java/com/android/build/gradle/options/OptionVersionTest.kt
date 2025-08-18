@@ -72,7 +72,6 @@ class OptionVersionTest {
             BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM,
             BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
             BooleanOption.BUILD_FEATURE_RESVALUES,
-            BooleanOption.BUILT_IN_KOTLIN,
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
             BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
             BooleanOption.ENABLE_EMULATOR_CONTROL,

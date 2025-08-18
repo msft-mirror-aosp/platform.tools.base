@@ -534,36 +534,6 @@ enum class BooleanOption(
         )
     ),
 
-    /**
-     * Whether to enable built-in Kotlin support (https://issuetracker.google.com/259523353).
-     *
-     * When this property is enabled, AGP provides Kotlin support for all [Project]s without
-     * requiring users to apply the `org.jetbrains.kotlin.android` plugin.
-     *   - If the user applies the `org.jetbrains.kotlin.android` plugin, the build will fail as AGP
-     *   already provides Kotlin support.
-     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin, the build
-     *   doesn't fail, but it also doesn't have any further effect.
-     *
-     * When this property is disabled, the users will need to apply either the
-     * `com.android.experimental.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
-     * plugin to have Kotlin support.
-     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin (recommended),
-     *   AGP will provide Kotlin support for the current [Project] that the plugin is applied to.
-     *   - If the user applies the `org.jetbrains.kotlin.android` plugin (legacy behavior), that
-     *   plugin will provide Kotlin support for the current [Project] that the plugin is applied to.
-     *   - If the user applies both plugins, the build will fail.
-     */
-    BUILT_IN_KOTLIN(
-        propertyName = "android.builtInKotlin",
-        defaultValue = false,
-        stage = FeatureStage.Experimental,
-        futureStage = FutureStage(
-            defaultValue = true,
-            stage = FeatureStage.SoftlyEnforced(VERSION_10_0),
-            version = Version.VERSION_9_0
-        )
-    ),
-
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
@@ -688,6 +658,31 @@ enum class BooleanOption(
         "android.enableAppCompileTimeRClass",
         true,
         FeatureStage.SoftlyEnforced(VERSION_10_0),
+    ),
+
+    /**
+     * Whether to enable built-in Kotlin support (https://issuetracker.google.com/259523353).
+     *
+     * When this property is enabled, AGP provides Kotlin support for all [Project]s without
+     * requiring users to apply the `org.jetbrains.kotlin.android` plugin.
+     *   - If the user applies the `org.jetbrains.kotlin.android` plugin, the build will fail as AGP
+     *   already provides Kotlin support.
+     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin, the build
+     *   doesn't fail, but it also doesn't have any further effect.
+     *
+     * When this property is disabled, the users will need to apply either the
+     * `com.android.experimental.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
+     * plugin to have Kotlin support.
+     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin (recommended),
+     *   AGP will provide Kotlin support for the current [Project] that the plugin is applied to.
+     *   - If the user applies the `org.jetbrains.kotlin.android` plugin (legacy behavior), that
+     *   plugin will provide Kotlin support for the current [Project] that the plugin is applied to.
+     *   - If the user applies both plugins, the build will fail.
+     */
+    BUILT_IN_KOTLIN(
+        propertyName = "android.builtInKotlin",
+        defaultValue = true,
+        stage = FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
     /* -------------------
