@@ -35,29 +35,32 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   }
 
   fun testDocumentationExample() {
-    lint().files(
-      xml(
-        "res/layout/main.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/layout/main.xml",
+          """
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                   android:id="@+id/layout">
               <Button
                   android:id="@+id/button1"
                   android:text="Button" />
           </LinearLayout>
-          """.trimIndent()
-      ),
-      xml(
-        "res/values/strings.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/values/strings.xml",
+          """
           <resources>
               <string name="app_name">Test</string>
               <string name="some_string">Some String</string>
           </resources>
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          """
           import android.app.Activity;
           import android.os.Bundle;
 
@@ -69,9 +72,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   String name = getString(R.string.app_name);
               }
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE, UnusedResourceDetector.ISSUE_IDS)
       .run()
       .expect(
@@ -86,7 +90,8 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   android:id="@+id/button1"
                   ~~~~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 3 warnings
-          """.trimIndent()
+          """
+          .trimIndent()
       )
   }
 
@@ -106,13 +111,15 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
             <string name="hello">Hello</string>
                     ~~~~~~~~~~~~
         0 errors, 4 warnings
-        """.trimIndent()
-    lint().files(
-      mStrings2,
-      mLayout1,
-      xml(
-        "res/layout/other.xml",
         """
+        .trimIndent()
+    lint()
+      .files(
+        mStrings2,
+        mLayout1,
+        xml(
+          "res/layout/other.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
@@ -137,15 +144,15 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   android:text="Button" />
 
           </LinearLayout>
-          """.trimIndent()
-      ),  // Rename .txt files to .java
-
-      mTest,
-      mR,
-      manifest().minSdk(14),
-      mAccessibility,  // https://issuetracker.google.com/113686968
-      source("res/raw/.DS_Store", "")
-    )
+          """
+            .trimIndent(),
+        ), // Rename .txt files to .java
+        mTest,
+        mR,
+        manifest().minSdk(14),
+        mAccessibility, // https://issuetracker.google.com/113686968
+        source("res/raw/.DS_Store", ""),
+      )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expect(expected)
@@ -170,17 +177,19 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
             <ImageButton android:importantForAccessibility="yes" android:id="@+id/android_logo2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 5 warnings
-        """.trimIndent()
+        """
+        .trimIndent()
     lint().files(mTest, mR, manifest().minSdk(14), mAccessibility).run().expect(expected)
   }
 
   fun testImplicitFragmentUsage() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=209393
     // Ensure fragment id's aren't deleted.
-    lint().files(
-      xml(
-        "res/layout/has_fragment.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/layout/has_fragment.xml",
+          """
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android">
           <fragment
               android:id="@+id/viewer"
@@ -188,20 +197,22 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               android:layout_width="match_parent"
               android:layout_height="match_parent"/>
           </LinearLayout>
-          """.trimIndent()
-      ),
-      java(
-        "src/test/pkg/Test.java",
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          "src/test/pkg/Test.java",
+          """
           package test.pkg;
           public class Test {
               public void test() {
                   int used = R.layout.has_fragment;
               }
           }
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .run()
       .expectClean()
   }
@@ -216,39 +227,44 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
         <string-array name="my_array">
                       ~~~~~~~~~~~~~~~
         0 errors, 2 warnings
-        """.trimIndent()
-    lint().files(
-      xml(
-        "res/values/arrayusage.xml",
         """
+        .trimIndent()
+    lint()
+      .files(
+        xml(
+          "res/values/arrayusage.xml",
+          """
           <resources>
           <string name="my_item">An Item</string>
           <string-array name="my_array">
              <item>@string/my_item</item>
           </string-array>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expect(expected)
   }
 
   fun testArrayReferenceIncluded() {
-    lint().files(
-      xml(
-        "res/values/arrayusage.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/arrayusage.xml",
+          """
           <resources xmlns:tools="http://schemas.android.com/tools"   tools:keep="@array/my_array">
           <string name="my_item">An Item</string>
           <string-array name="my_array">
              <item>@string/my_item</item>
           </string-array>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -261,22 +277,25 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
         <foo.bar.ContentFrame
         ^
         0 errors, 1 warnings
-        """.trimIndent()
-    lint().files(
-      xml(
-        "res/values/customattr.xml",
         """
+        .trimIndent()
+    lint()
+      .files(
+        xml(
+          "res/values/customattr.xml",
+          """
           <resources>
               <declare-styleable name="ContentFrame">
                   <attr name="content" format="reference" />
                   <attr name="contentId" format="reference" />
               </declare-styleable>
           </resources>
-          """.trimIndent()
-      ),
-      xml(
-        "res/layout/customattrlayout.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/layout/customattrlayout.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <foo.bar.ContentFrame
               xmlns:android="http://schemas.android.com/apk/res/android"
@@ -284,10 +303,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               foobar:contentId="@+id/test" />
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          """
           /* AUTO-GENERATED FILE.  DO NOT MODIFY.
            *
            * This class was automatically generated by the
@@ -302,20 +322,22 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   public static final int contentId=0x7f020000;
               }
           }
-          """.trimIndent()
-      ),
-      manifest().minSdk(14)
-    )
+          """
+            .trimIndent()
+        ),
+        manifest().minSdk(14),
+      )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expect(expected)
   }
 
   fun testMultiProjectIgnoreLibraries() {
-    lint().files( // Main project
-      manifest().pkg("foo.Main").minSdk(14),
-      java(
-        """
+    lint()
+      .files( // Main project
+        manifest().pkg("foo.Main").minSdk(14),
+        java(
+          """
           package foo.main;
 
           public class MainCode {
@@ -323,17 +345,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   System.out.println(R.string.string2);
               }
           }
-          """.trimIndent()
-      ),  // Library project
-
-      manifest()
-        .pkg("foo.library")
-        .minSdk(14)
-        .to("../LibraryProject/AndroidManifest.xml"),
-      mLibraryCode,
-      xml(
-        "../LibraryProject/res/values/strings.xml",
-        """
+          """
+            .trimIndent()
+        ), // Library project
+        manifest().pkg("foo.library").minSdk(14).to("../LibraryProject/AndroidManifest.xml"),
+        mLibraryCode,
+        xml(
+          "../LibraryProject/res/values/strings.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
 
@@ -342,9 +361,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <string name="string3">String 3</string>
 
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .run()
       .expect(
         """
@@ -352,7 +372,8 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <string name="string3">String 3</string>
                       ~~~~~~~~~~~~~~
           0 errors, 1 warnings
-          """.trimIndent()
+          """
+          .trimIndent()
       )
   }
 
@@ -363,13 +384,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
     // Main references string2.
     val library =
       project( // Library project
-        mLibraryManifest, mLibraryCode, mLibraryStrings
-      )
+          mLibraryManifest,
+          mLibraryCode,
+          mLibraryStrings,
+        )
         .type(ProjectDescription.Type.LIBRARY)
         .name("LibraryProject")
 
-    val main =
-      project(mMainCode, manifest().minSdk(15)).name("App").dependsOn(library)
+    val main = project(mMainCode, manifest().minSdk(15)).name("App").dependsOn(library)
 
     lint().projects(main, library).reportFrom(main).run().expectClean()
   }
@@ -384,42 +406,45 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
     val library =
       project( // Library project
-        mLibraryManifest,
-        mLibraryCode,
-        mLibraryStrings,
-        xml(
-          "res/values/strings2.xml",
-          """
+          mLibraryManifest,
+          mLibraryCode,
+          mLibraryStrings,
+          xml(
+            "res/values/strings2.xml",
+            """
             <?xml version="1.0" encoding="utf-8"?>
             <resources>
                 <string name="unused1">Unused 1</string>
                 <string name="kept1">Kept1 1</string>
             </resources>
-            """.trimIndent()
+            """
+              .trimIndent(),
+          ),
         )
-      )
         .type(ProjectDescription.Type.LIBRARY)
         .name("LibraryProject")
 
     val main =
       project(
-        mMainCode,
-        manifest().minSdk(15),
-        xml(
-          "res/values/strings2.xml",
-          """
+          mMainCode,
+          manifest().minSdk(15),
+          xml(
+            "res/values/strings2.xml",
+            """
             <?xml version="1.0" encoding="utf-8"?>
             <resources
                 xmlns:tools="http://schemas.android.com/tools"     tools:keep="@string/ke*">
                 <string name="unused2">Unused 2</string>
             </resources>
-            """.trimIndent()
+            """
+              .trimIndent(),
+          ),
         )
-      )
         .name("App")
         .dependsOn(library)
 
-    lint().projects(main, library)
+    lint()
+      .projects(main, library)
       .reportFrom(main)
       .run()
       .expect(
@@ -431,7 +456,8 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <string name="unused2">Unused 2</string>
                       ~~~~~~~~~~~~~~
           0 errors, 2 warnings
-          """.trimIndent()
+          """
+          .trimIndent()
       )
   }
 
@@ -441,82 +467,88 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
     // the same unused resource
     val library1 =
       project(
-        mLibraryManifest,
-        mLibraryCode,
-        mLibraryStrings,
-        xml(
-          "res/values-fr/strings2.xml",
-          """
+          mLibraryManifest,
+          mLibraryCode,
+          mLibraryStrings,
+          xml(
+            "res/values-fr/strings2.xml",
+            """
             <?xml version="1.0" encoding="utf-8"?>
             <resources>
                 <string name="unused1">Unused 1</string>
                 <string name="kept1">Kept 1</string>
             </resources>
-            """.trimIndent()
-        ),
-        xml(
-          "res/values/strings2.xml",
-          """
+            """
+              .trimIndent(),
+          ),
+          xml(
+            "res/values/strings2.xml",
+            """
             <?xml version="1.0" encoding="utf-8"?>
             <resources>
                 <string name="unused1">Unused 1</string>
                 <string name="kept1">Kept 1</string>
             </resources>
-            """.trimIndent()
-        ),
-        xml(
-          "res/values-en/strings2.xml",
-          """
+            """
+              .trimIndent(),
+          ),
+          xml(
+            "res/values-en/strings2.xml",
+            """
             <?xml version="1.0" encoding="utf-8"?>
             <resources>
                 <string name="unused1">Unused 1</string>
                 <string name="kept1">Kept 1</string>
             </resources>
-            """.trimIndent()
+            """
+              .trimIndent(),
+          ),
         )
-      )
         .type(ProjectDescription.Type.LIBRARY)
         .name("LibraryProject1")
 
     val library2 =
       project(
-        mLibraryManifest,
-        mLibraryCode,
-        mLibraryStrings,
-        xml(
-          "res/values/strings2.xml",
-          """
+          mLibraryManifest,
+          mLibraryCode,
+          mLibraryStrings,
+          xml(
+            "res/values/strings2.xml",
+            """
             <?xml version="1.0" encoding="utf-8"?>
             <resources>
                 <string name="unused1">Unused 1</string>
                 <string name="kept2">Kept 2</string>
             </resources>
-            """.trimIndent()
+            """
+              .trimIndent(),
+          ),
         )
-      )
         .type(ProjectDescription.Type.LIBRARY)
         .name("LibraryProject2")
 
     val main =
       project(
-        mMainCode,
-        manifest().minSdk(15),
-        xml(
-          "res/values/strings2.xml",
-          """
+          mMainCode,
+          manifest().minSdk(15),
+          xml(
+            "res/values/strings2.xml",
+            """
             <?xml version="1.0" encoding="utf-8"?>
             <resources
                 xmlns:tools="http://schemas.android.com/tools"     tools:keep="@string/ke*">
                 <string name="unused2">Unused 2</string>
             </resources>
-            """.trimIndent()
+            """
+              .trimIndent(),
+          ),
         )
-      )
         .name("App")
         .dependsOn(library1)
         .dependsOn(library2)
 
-    lint().projects(main, library1, library2)
+    lint()
+      .projects(main, library1, library2)
       .reportFrom(main)
       .run()
       .expect(
@@ -531,15 +563,17 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <string name="unused2">Unused 2</string>
                       ~~~~~~~~~~~~~~
           0 errors, 3 warnings
-          """.trimIndent()
+          """
+          .trimIndent()
       )
   }
 
   fun testFqcnReference() {
-    lint().files(
-      mLayout1,
-      java(
-        """
+    lint()
+      .files(
+        mLayout1,
+        java(
+          """
           package test.pkg;
 
           import android.app.Activity;
@@ -552,20 +586,22 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   setContentView(test.pkg.R.layout.main);
               }
           }
-          """.trimIndent()
-      ),
-      manifest().minSdk(14)
-    )
+          """
+            .trimIndent()
+        ),
+        manifest().minSdk(14),
+      )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
   }
 
   fun testKotlin() {
-    lint().files(
-      mLayout1,
-      kotlin(
-        """
+    lint()
+      .files(
+        mLayout1,
+        kotlin(
+          """
           package test.pkg
 
           import android.app.Activity
@@ -578,11 +614,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   setContentView(R.layout.main)
               }
           }
-          """.trimIndent()
-      ),
-      rClass("test.pkg", "@layout/main"),
-      manifest().minSdk(14)
-    )
+          """
+            .trimIndent()
+        ),
+        rClass("test.pkg", "@layout/main"),
+        manifest().minSdk(14),
+      )
       .issues(UnusedResourceDetector.ISSUE) // Not id's
       .run()
       .expectClean()
@@ -592,21 +629,23 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
     // Regression test for issue 63150366, comment #17 - reference in class declaration
     // Blocked on https://youtrack.jetbrains.com/issue/KT-21409
     //
-    lint().files(
-      mLayout1,
-      kotlin(
-        """
+    lint()
+      .files(
+        mLayout1,
+        kotlin(
+          """
           package test.pkg
 
           open class Parent(val number: Int) {
           }
 
           class Five : Parent(R.layout.main)
-          """.trimIndent()
-      ),
-      rClass("test.pkg", "@layout/main"),
-      manifest().minSdk(14)
-    )
+          """
+            .trimIndent()
+        ),
+        rClass("test.pkg", "@layout/main"),
+        manifest().minSdk(14),
+      )
       .issues(UnusedResourceDetector.ISSUE) // Not id's
       .run()
       .expectClean()
@@ -615,31 +654,34 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testKotlin3() {
     // Regression test for issue 76213486
     // 76213486: Resource ids passed into Kotlin enum constructors are not considered used
-    lint().files(
-      kotlin(
-        """
+    lint()
+      .files(
+        kotlin(
+          """
           package test.pkg
 
           enum class KotlinEnum(val resId: Int) {
               MAIN(R.layout.main1)
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           public enum JavaEnum {
               MAIN(R.layout.main2);
 
               JavaEnum(int arg) {
               }
           }
-          """.trimIndent()
-      ),
-      xml("res/layout/main1.xml", LAYOUT_XML),
-      xml("res/layout/main2.xml", LAYOUT_XML),
-      rClass("test.pkg", "@layout/main1", "@layout/main2"),
-      manifest().minSdk(14)
-    )
+          """
+            .trimIndent()
+        ),
+        xml("res/layout/main1.xml", LAYOUT_XML),
+        xml("res/layout/main2.xml", LAYOUT_XML),
+        rClass("test.pkg", "@layout/main1", "@layout/main2"),
+        manifest().minSdk(14),
+      )
       .issues(UnusedResourceDetector.ISSUE) // Not id's
       .run()
       .expectClean()
@@ -647,10 +689,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testKotlin4() {
     // Regression test for https://issuetracker.google.com/113198298
-    lint().files(
-      mLayout1,
-      kotlin(
-        """
+    lint()
+      .files(
+        mLayout1,
+        kotlin(
+          """
           package test.pkg.other
 
           import android.app.Activity
@@ -663,30 +706,33 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   setContentView(RC.layout.main)
               }
           }
-          """.trimIndent()
-      ),
-      rClass("test.pkg", "@layout/main"),
-      manifest().minSdk(14)
-    )
+          """
+            .trimIndent()
+        ),
+        rClass("test.pkg", "@layout/main"),
+        manifest().minSdk(14),
+      )
       .issues(UnusedResourceDetector.ISSUE) // Not id's
       .run()
       .expectClean()
   }
 
   fun testPlurals() {
-    lint().files(
-      xml(
-        "res/values/strings4.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/strings4.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources xmlns:tools="http://schemas.android.com/tools">
               <string name="hello">Hello</string>
           </resources>
-          """.trimIndent()
-      ),
-      xml(
-        "res/values/plurals.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/values/plurals.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <plurals name="my_plural">
@@ -695,20 +741,22 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   <item quantity="other">@string/hello</item>
               </plurals>
           </resources>
-          """.trimIndent()
-      ),
-      java(
-        "src/test/pkg/Test.java",
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          "src/test/pkg/Test.java",
+          """
           package test.pkg;
           public class Test {
               public void test() {
                   int used = R.plurals.my_plural;
               }
           }
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .run()
       .expectClean()
   }
@@ -716,23 +764,16 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testLibraryMerging() {
     // http://code.google.com/p/android/issues/detail?id=36952
     val library =
-      project(
-        mLibraryManifest,
-        projectProperties().library(true),
-        mLibraryCode,
-        mLibraryStrings
-      )
+      project(mLibraryManifest, projectProperties().library(true), mLibraryCode, mLibraryStrings)
         .name("LibraryProject")
     val main =
       project( // Main project
-        manifest().pkg("foo.main").minSdk(14),
-        projectProperties()
-          .property(
-            "android.library.reference.1", "../LibraryProject"
-          )
-          .property("manifestmerger.enabled", "true"),
-        mMainCode
-      )
+          manifest().pkg("foo.main").minSdk(14),
+          projectProperties()
+            .property("android.library.reference.1", "../LibraryProject")
+            .property("manifestmerger.enabled", "true"),
+          mMainCode,
+        )
         .name("MainProject")
         .dependsOn(library)
     // The strings are all referenced in the library project's manifest file
@@ -742,9 +783,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testCornerCase() {
     // See http://code.google.com/p/projectlombok/issues/detail?id=415
-    lint().files(
-      java(
-        """
+    lint()
+      .files(
+        java(
+          """
           // http://code.google.com/p/projectlombok/issues/detail?id=415
           package test.pkg;
           public class X {
@@ -752,20 +794,22 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               parent.new Z(parent.getW()).execute();
             }
           }
-          """.trimIndent()
-      ),
-      manifest().minSdk(14)
-    )
+          """
+            .trimIndent()
+        ),
+        manifest().minSdk(14),
+      )
       .run()
       .expectClean()
   }
 
   fun testAnalytics() {
     // See http://code.google.com/p/android/issues/detail?id=42565
-    lint().files(
-      xml(
-        "res/values/analytics.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/analytics.xml",
+          """
           <?xml version="1.0" encoding="utf-8" ?>
           <resources>
             <!--Replace placeholder ID with your tracking ID-->
@@ -782,9 +826,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
             <string name="com.example.app.PrefsActivity">Preferences</string>
             <string name="test.pkg.OnClickActivity">Clicks</string>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -792,19 +837,21 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testIntegers() {
     // See https://code.google.com/p/android/issues/detail?id=53995
-    lint().files(
-      xml(
-        "res/values/integers.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/integers.xml",
+          """
           <resources>
               <item name="bar_display_duration" type="integer">3600</item>
               <item name="bar_slide_out_duration" type="integer">2400</item>
           </resources>
-          """.trimIndent()
-      ),
-      xml(
-        "res/anim/slide_in_out.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/anim/slide_in_out.xml",
+          """
           <set xmlns:android="http://schemas.android.com/apk/res/android"
                xmlns:tools="http://schemas.android.com/tools"
                tools:ignore="UnusedResources">
@@ -813,19 +860,21 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                 android:startOffset="@integer/bar_display_duration" />
           </set>
 
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .run()
       .expectClean()
   }
 
   fun testIntegerArrays() {
     // See http://code.google.com/p/android/issues/detail?id=59761
-    lint().files(
-      xml(
-        "res/values/integer_arrays.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/integer_arrays.xml",
+          """
           <resources xmlns:tools="http://schemas.android.com/tools">
               <dimen name="used">16dp</dimen>
 
@@ -842,9 +891,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   <item>@dimen/used</item>
               </integer-array>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -854,19 +904,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
     // Make sure that we pick up references in unit tests as well
     // Regression test for
     // https://code.google.com/p/android/issues/detail?id=79066
-    lint().files(
-      mStrings2,
-      mLayout1,
-      mOther,
-      mTest,
-      mR,
-      manifest(),
-      mAccessibility,  // Add unit test source which references resources which would otherwise
-      // be marked as unused
+    lint()
+      .files(
+        mStrings2,
+        mLayout1,
+        mOther,
+        mTest,
+        mR,
+        manifest(),
+        mAccessibility, // Add unit test source which references resources which would otherwise
+        // be marked as unused
 
-      java(
-        "test/my/pkg/MyTest.java",
-        """
+        java(
+          "test/my/pkg/MyTest.java",
+          """
           package my.pkg;
           class MyTest {
               public void test() {
@@ -876,9 +927,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   System.out.println(R.string.hello);
               }
           }
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -888,22 +940,24 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
     // Make sure that resources referenced only via a data binding expression
     // are not counted as unused.
     // Regression test for https://code.google.com/p/android/issues/detail?id=183934
-    lint().files(
-      xml(
-        "res/values/resources.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/resources.xml",
+          """
           <resources>
               <item type='dimen' name='largePadding'>20dp</item>
               <item type='dimen' name='smallPadding'>15dp</item>
               <item type='string' name='nameFormat'>%1${'$'}s %2${'$'}s</item>
           </resources>
-          """.trimIndent()
-      ),  // Add unit test source which references resources which would otherwise
-      // be marked as unused
+          """
+            .trimIndent(),
+        ), // Add unit test source which references resources which would otherwise
+        // be marked as unused
 
-      xml(
-        "res/layout/db.xml",
-        """
+        xml(
+          "res/layout/db.xml",
+          """
           <layout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"     tools:keep="@layout/db">
              <data>
@@ -916,9 +970,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                  android:padding="@{large? @dimen/largePadding : @dimen/smallPadding}"
                  android:text="@{@string/nameFormat(firstName, lastName)}" />
           </layout>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -927,22 +982,24 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testDataBinding_resourcesUsingRNamespacingAreConsideredUsed() {
     // Make sure that resources referenced only via a data binding expression in the
     // form of "R.type.name" are not counted as unused.
-    lint().files(
-      xml(
-        "res/values/resources.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/resources.xml",
+          """
           <resources>
               <item type='dimen' name='largePadding'>20dp</item>
               <item type='dimen' name='smallPadding'>15dp</item>
               <item type='string' name='name'>Name</item>
           </resources>
-          """.trimIndent()
-      ),  // Add unit test source which references resources which would otherwise
-      // be marked as unused
+          """
+            .trimIndent(),
+        ), // Add unit test source which references resources which would otherwise
+        // be marked as unused
 
-      xml(
-        "res/layout/db.xml",
-        """
+        xml(
+          "res/layout/db.xml",
+          """
           <layout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"     tools:keep="@layout/db">
              <LinearLayout
@@ -954,9 +1011,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <Button android:text="@{SomeEnum.NOMER.isEditable(viewmodel.fieldIsEditable)}"
            />
           </layout>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -967,10 +1025,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
     // (since the compiler will generate accessors for these that
     // may not be visible when running lint on edited sources)
     // Regression test for https://code.google.com/p/android/issues/detail?id=189065
-    lint().files(
-      xml(
-        "res/layout/db.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/layout/db.xml",
+          """
           <layout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"     tools:keep="@layout/db">
              <data>
@@ -982,9 +1041,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                  android:layout_width="match_parent"
                  android:layout_height="match_parent" />
           </layout>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .run()
       .expectClean()
   }
@@ -997,20 +1057,23 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
             <item type='string' name='nameFormat'>%1${'$'}s %2${'$'}s</item>
                                 ~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
-        """.trimIndent()
-    lint().files(
-      xml(
-        "res/values/resources.xml",
         """
+        .trimIndent()
+    lint()
+      .files(
+        xml(
+          "res/values/resources.xml",
+          """
           <resources>
               <item type='dimen' name='largePadding'>20dp</item>
               <item type='dimen' name='smallPadding'>15dp</item>
               <item type='string' name='nameFormat'>%1${'$'}s %2${'$'}s</item>
               <public type='dimen' name='largePadding' />    <public type='dimen' name='smallPadding' />
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expect(expected)
@@ -1019,18 +1082,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testPublicLibrary() {
     // Regression test for
     // 187343720: UnusedResources lint check does not work correctly for libraries
-    lint().files(
-      xml(
-        "res/values/resources.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/resources.xml",
+          """
           <resources>
               <style name='Theme.AppCompat' parent='@style/Theme.Other'/>
               <style name='Theme.Other'/>
               <public type='style' name='Theme.AppCompat' />
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -1042,14 +1107,15 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
         build.gradle: Warning: The resource R.string.cat appears to be unused [UnusedResources]
         build.gradle: Warning: The resource R.string.dog appears to be unused [UnusedResources]
         0 errors, 2 warnings
-        """.trimIndent() // Note: R.string.foo should not be here since it is not present in
+        """
+        .trimIndent() // Note: R.string.foo should not be here since it is not present in
     // `release` variant.
 
     val lib =
       project(
-        xml("src/main/" + mLayout1.targetRelativePath, mLayout1.contents),
-        java(
-          """
+          xml("src/main/" + mLayout1.targetRelativePath, mLayout1.contents),
+          java(
+            """
             package test.pkg;
 
             import android.app.Activity;
@@ -1064,19 +1130,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                     Snackbar.make(view, R.string.xyz, Snackbar.LENGTH_LONG);
                 }
             }
-            """.trimIndent()
-        ),
-        manifest().minSdk(14),
-        gradle("// dummy")
-      )
+            """
+              .trimIndent()
+          ),
+          manifest().minSdk(14),
+          gradle("// dummy"),
+        )
         .type(ProjectDescription.Type.LIBRARY)
         .name("library")
 
     val app =
       project(
-        manifest().minSdk(14),
-        gradle(
-          """
+          manifest().minSdk(14),
+          gradle(
+            """
             android {
                 defaultConfig {
                     resValue "string", "cat", "Some Data"
@@ -1091,15 +1158,17 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                     }
                 }
             }
-            """.trimIndent()
+            """
+              .trimIndent()
+          ),
         )
-      )
         .name("app")
         .type(ProjectDescription.Type.APP)
 
     app.dependsOn(lib)
 
-    lint().projects(app, lib)
+    lint()
+      .projects(app, lib)
       .variant("release")
       .reportFrom(app)
       .issues(UnusedResourceDetector.ISSUE) // skip UnusedResourceDetector.ISSUE_IDS
@@ -1110,9 +1179,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testManifestPlaceholders() {
     // Regression test for 78678414
-    lint().files(
-      manifest(
-        """
+    lint()
+      .files(
+        manifest(
+          """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="test.pkg"
               android:versionCode="1"
@@ -1120,10 +1190,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <uses-sdk android:minSdkVersion="14"
                         android:targetSdkVersion="25"/>    <meta-data android:name="account_type" android:value="${"$"}{account_type}" />
           </manifest>
-          """.trimIndent()
-      ),
-      gradle(
-        """
+          """
+            .trimIndent()
+        ),
+        gradle(
+          """
           android {
             defaultConfig {
               resValue "string", "account_type", "com.google"
@@ -1131,9 +1202,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               manifestPlaceholders = [ "account_type": "@string/account_type" ]
             }
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .variant("debug")
       .issues(UnusedResourceDetector.ISSUE) // skip UnusedResourceDetector.ISSUE_IDS
       .allowCompilationErrors()
@@ -1144,22 +1216,24 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testStaticImport() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=40293
     // 40293: Lint reports resource as unused when referenced via "import static"
-    lint().files(
-      xml(
-        "res/values/resources.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/resources.xml",
+          """
           <resources>
               <item type='dimen' name='largePadding'>20dp</item>
               <item type='dimen' name='smallPadding'>15dp</item>
               <item type='string' name='nameFormat'>%1${'$'}s %2${'$'}s</item>
           </resources>
-          """.trimIndent()
-      ),  // Add unit test source which references resources which would otherwise
-      // be marked as unused
+          """
+            .trimIndent(),
+        ), // Add unit test source which references resources which would otherwise
+        // be marked as unused
 
-      java(
-        "src/test/pkg/TestCode.java",
-        """
+        java(
+          "src/test/pkg/TestCode.java",
+          """
           package test.pkg;
 
           import static test.pkg.R.dimen.*;
@@ -1173,15 +1247,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   int z = nameFormat; // Static explicit import
               }
           }
-          """.trimIndent()
-      ),
-      rClass(
-        "test.pkg",
-        "@dimen/largePadding",
-        "@dimen/smallPadding",
-        "@string/nameFormat"
+          """
+            .trimIndent(),
+        ),
+        rClass("test.pkg", "@dimen/largePadding", "@dimen/smallPadding", "@string/nameFormat"),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -1209,11 +1279,13 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
             <style name="EmptyParent" parent=""/>
                    ~~~~~~~~~~~~~~~~~~
         0 errors, 6 warnings
-        """.trimIndent()
-    lint().files(
-      xml(
-        "res/values/styles.xml",
         """
+        .trimIndent()
+    lint()
+      .files(
+        xml(
+          "res/values/styles.xml",
+          """
           <resources>
 
 
@@ -1224,9 +1296,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <style name="ImplicitUsed" parent="android:Widget.ActionBar"/>
               <style name="EmptyParent" parent=""/>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .run()
       .expect(expected)
   }
@@ -1234,10 +1307,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testStylePrefix() {
     // AAPT accepts parent style references that simply start with "style/" (not @style);
     // similarly, it also allows android:style/ rather than @android:style/
-    lint().files(
-      xml(
-        "res/values/styles.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/styles.xml",
+          """
           <resources
                   xmlns:tools="http://schemas.android.com/tools"
                   tools:keep="@style/MyInheritingStyle" >
@@ -1249,28 +1323,31 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   <item name="android:textSize">24pt</item>
               </style>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .run()
       .expectClean()
   }
 
   fun testThemeFromLayout() {
-    lint().files(
-      xml(
-        "res/values/styles.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/styles.xml",
+          """
           <resources>
               <style name="InlineActionView" />
               <style name="InlineActionView.Like">
               </style>
           </resources>
-          """.trimIndent()
-      ),
-      xml(
-        "res/layout/main.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/layout/main.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
@@ -1282,39 +1359,43 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   style="@style/InlineActionView.Like"
                   android:layout_gravity="center_horizontal" />
           </LinearLayout>
-          """.trimIndent()
-      ),
-      java(
-        "src/my/pkg/MyTest.java",
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          "src/my/pkg/MyTest.java",
+          """
           package my.pkg;
           class MyTest {
               public void test() {
                   System.out.println(R.layout.main);
               }
           }
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
   }
 
   fun testReferenceFromObjectLiteralArguments() {
-    lint().files(
-      xml(
-        "res/layout/main.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/layout/main.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),
-      java(
-        "src/my/pkg/MyTest.java",
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          "src/my/pkg/MyTest.java",
+          """
           package test.pkg;
 
           public class MyTest {
@@ -1334,48 +1415,51 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   }
               }
           }
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .run()
       .expectClean()
   }
 
   fun testKeepAndDiscard() {
-    lint().files( // By name
-      xml("res/raw/keep.xml", "<foo/>"),  // By content
-
-      xml(
-        "res/raw/used.xml",
-        """
+    lint()
+      .files( // By name
+        xml("res/raw/keep.xml", "<foo/>"), // By content
+        xml(
+          "res/raw/used.xml",
+          """
           <resources
                   xmlns:tools="http://schemas.android.com/tools"
                   tools:shrinkMode="strict"
                   tools:discard="@raw/unused"
                   tools:keep="@raw/used" />
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
   }
 
   fun testKeepAndDiscardWithDifferentPrefix() {
-    lint().files( // By name
-      xml("res/raw/keep.xml", "<foo/>"),  // By content
-
-      xml(
-        "res/raw/used.xml",
-        """
+    lint()
+      .files( // By name
+        xml("res/raw/keep.xml", "<foo/>"), // By content
+        xml(
+          "res/raw/used.xml",
+          """
           <resources
                   xmlns:t="http://schemas.android.com/tools"
                   t:shrinkMode="strict"
                   t:discard="@raw/unused"
                   t:keep="@raw/used" />
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -1383,27 +1467,30 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testStringsWithDots() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=214189
-    lint().files(
-      xml(
-        "res/values/strings.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/strings.xml",
+          """
           <resources>
               <string name="foo.bar.your_name">Your Name</string>
           </resources>
-          """.trimIndent()
-      ),
-      java(
-        "src/my/pkg/MyTest.java",
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          "src/my/pkg/MyTest.java",
+          """
           package my.pkg;
           class MyTest {
               public void test() {
                   System.out.println(R.string.foo_bar_your_name);
               }
           }
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -1412,10 +1499,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testNavigation() {
     // Regression test for https://issuetracker.google.com/145687664
 
-    lint().files(
-      xml(
-        "res/navigation/graph.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/navigation/graph.xml",
+          """
           <navigation xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto"
               xmlns:tools="http://schemas.android.com/tools"
@@ -1439,11 +1527,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                       app:destination="@id/eventListFragment" />
               </fragment>
           </navigation>
-          """.trimIndent()
-      ),
-      java(
-        "src/my/pkg/MyTest.java",
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          "src/my/pkg/MyTest.java",
+          """
           package my.pkg;
           class MyTest {
               public void test() {
@@ -1451,19 +1540,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   System.out.println(R.navigation.graph);
               }
           }
-          """.trimIndent()
-      ),
-      rClass(
-        "my.pkg",
-        "@id/navigation",
-        "@id/importFragment",
-        "@id/exportFragment",
-        "@id/process_import",
-        "@id/process_export",
-        "@id/eventListFragment",
-        "@navigation/graph"
+          """
+            .trimIndent(),
+        ),
+        rClass(
+          "my.pkg",
+          "@id/navigation",
+          "@id/importFragment",
+          "@id/exportFragment",
+          "@id/process_import",
+          "@id/process_export",
+          "@id/eventListFragment",
+          "@navigation/graph",
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE_IDS, UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -1471,10 +1561,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testToolsNamespaceReferences() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=226204
-    lint().files(
-      xml(
-        "res/layout/my_layout.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/layout/my_layout.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -1495,28 +1586,30 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   app:layout_constraintTop_toTopOf="@+id/activity_main" />
 
           </android.support.constraint.ConstraintLayout>
-          """.trimIndent()
-      ),
-      xml(
-        "res/drawable/my_drawable.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/drawable/my_drawable.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
           </selector>
-          """.trimIndent()
-      ),  // By content
-
-      xml(
-        "res/raw/used.xml",
-        """
+          """
+            .trimIndent(),
+        ), // By content
+        xml(
+          "res/raw/used.xml",
+          """
           <resources
                   xmlns:tools="http://schemas.android.com/tools"
                   tools:shrinkMode="strict"
                   tools:keep="@raw/used,@layout/my_layout" />
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -1524,10 +1617,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testReferenceFromDataBinding() {
     // Regression test for https://issuetracker.google.com/38213600
-    lint().files( // Data binding layout
-      xml(
-        "res/layout/added_view.xml",
-        """
+    lint()
+      .files( // Data binding layout
+        xml(
+          "res/layout/added_view.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <layout xmlns:android="http://schemas.android.com/apk/res/android">
               <TextView
@@ -1536,11 +1630,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   android:orientation="vertical"
                   android:text="Hello World"/>
           </layout>
-          """.trimIndent()
-      ),
-      xml(
-        "res/layout/added_view2.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/layout/added_view2.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <layout xmlns:android="http://schemas.android.com/apk/res/android">
               <data class=".IndependentLibraryBinding">
@@ -1551,11 +1646,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   android:orientation="vertical"
                   android:text="Hello World"/>
           </layout>
-          """.trimIndent()
-      ),
-      xml(
-        "res/layout/third_added_view.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/layout/third_added_view.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <layout xmlns:android="http://schemas.android.com/apk/res/android">
               <data>
@@ -1566,10 +1662,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   android:orientation="vertical"
                   android:text="Hello World"/>
           </layout>
-          """.trimIndent()
-      ),  // Only usage: data binding class
-      java(
-        """
+          """
+            .trimIndent(),
+        ), // Only usage: data binding class
+        java(
+          """
           package my.pkg;
 
           import android.view.LayoutInflater;
@@ -1581,11 +1678,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   final AddedViewBinding addedView3 = IndependentLibraryBinding.inflate(inflater, null, true);
               }
           }
-          """.trimIndent()
-      ),  // Stubs to make type resolution work in test without actual data binding
-      // code-gen and data binding runtime libraries
-      java(
-        """
+          """
+            .trimIndent()
+        ), // Stubs to make type resolution work in test without actual data binding
+        // code-gen and data binding runtime libraries
+        java(
+          """
           package my.pkg;
 
           abstract class AddedViewBinding extends android.databinding.ViewDataBinding {
@@ -1600,10 +1698,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   return null;
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg;
 
           abstract class IndependentLibraryBinding extends android.databinding.ViewDataBinding {
@@ -1618,10 +1717,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   return null;
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg;
 
           abstract class ThirdAddedViewBinding extends android.databinding.ViewDataBinding {
@@ -1636,26 +1736,29 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   return null;
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package android.databinding;
           public abstract class ViewDataBinding {
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .run()
       .expectClean()
   }
 
   fun testReferenceFromAndroidxDataBinding() {
     // Regression test for https://issuetracker.google.com/116842158
-    lint().files( // Data binding layout
-      xml(
-        "res/layout/added_view.xml",
-        """
+    lint()
+      .files( // Data binding layout
+        xml(
+          "res/layout/added_view.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <layout xmlns:android="http://schemas.android.com/apk/res/android">
               <TextView
@@ -1664,11 +1767,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   android:orientation="vertical"
                   android:text="Hello World"/>
           </layout>
-          """.trimIndent()
-      ),
-      xml(
-        "res/layout/added_view2.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/layout/added_view2.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <layout xmlns:android="http://schemas.android.com/apk/res/android">
               <data class=".IndependentLibraryBinding">
@@ -1679,11 +1783,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   android:orientation="vertical"
                   android:text="Hello World"/>
           </layout>
-          """.trimIndent()
-      ),
-      xml(
-        "res/layout/third_added_view.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "res/layout/third_added_view.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <layout xmlns:android="http://schemas.android.com/apk/res/android">
               <data>
@@ -1694,10 +1799,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   android:orientation="vertical"
                   android:text="Hello World"/>
           </layout>
-          """.trimIndent()
-      ),  // Only usage: data binding class
-      java(
-        """
+          """
+            .trimIndent(),
+        ), // Only usage: data binding class
+        java(
+          """
           package my.pkg;
 
           import android.view.LayoutInflater;
@@ -1709,11 +1815,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   final AddedViewBinding addedView3 = IndependentLibraryBinding.inflate(inflater, null, true);
               }
           }
-          """.trimIndent()
-      ),  // Stubs to make type resolution work in test without actual data binding
-      // code-gen and data binding runtime libraries
-      java(
-        """
+          """
+            .trimIndent()
+        ), // Stubs to make type resolution work in test without actual data binding
+        // code-gen and data binding runtime libraries
+        java(
+          """
           package my.pkg;
 
           abstract class AddedViewBinding extends androidx.databinding.ViewDataBinding {
@@ -1728,10 +1835,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   return null;
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg;
 
           abstract class IndependentLibraryBinding extends androidx.databinding.ViewDataBinding {
@@ -1746,10 +1854,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   return null;
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg;
 
           abstract class ThirdAddedViewBinding extends androidx.databinding.ViewDataBinding {
@@ -1764,24 +1873,27 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   return null;
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package androidx.databinding;
           public abstract class ViewDataBinding {
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .run()
       .expectClean()
   }
 
   fun testReferenceFromViewBinding_java() {
-    lint().files(
-      gradle(
-        """
+    lint()
+      .files(
+        gradle(
+          """
           buildscript {
             dependencies {
               classpath "com.android.tools.build:gradle:3.6.0"
@@ -1793,49 +1905,53 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   viewBinding true
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_dot_syntax.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/layout/activity_dot_syntax.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_method_reference.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "src/main/res/layout/activity_method_reference.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_method_import.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "src/main/res/layout/activity_method_import.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_ignored.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "src/main/res/layout/activity_ignored.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent"
               tools:viewBindingIgnore="true" />
-          """.trimIndent()
-      ),  // View Binding usage here will reference activity_dot_syntax.xml
-
-      java(
-        """
+          """
+            .trimIndent(),
+        ), // View Binding usage here will reference activity_dot_syntax.xml
+        java(
+          """
           package my.pkg;
 
           import android.view.LayoutInflater;
@@ -1846,11 +1962,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   ActivityDotSyntaxBinding.inflate(inflater);
               }
           }
-          """.trimIndent()
-      ),  // View Binding usage here will reference activity_method_reference.xml
-
-      java(
-        """
+          """
+            .trimIndent()
+        ), // View Binding usage here will reference activity_method_reference.xml
+        java(
+          """
           package my.pkg;
 
           import android.view.LayoutInflater;
@@ -1861,11 +1977,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   ActivityMethodReferenceBinding::inflate;
               }
           }
-          """.trimIndent()
-      ),  // View Binding usage here will reference activity_method_import.xml
-
-      java(
-        """
+          """
+            .trimIndent()
+        ), // View Binding usage here will reference activity_method_import.xml
+        java(
+          """
           package my.pkg;
 
           import android.view.LayoutInflater;
@@ -1876,13 +1992,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   inflate(inflater);
               }
           }
-          """.trimIndent()
-      ),  // Here, we create a fake view binding class in an attempt to trick lint,
-      // but it won't work because activity_ignored.xml is skipped due to the
-      // viewBindingIgnore attribute.
+          """
+            .trimIndent()
+        ), // Here, we create a fake view binding class in an attempt to trick lint,
+        // but it won't work because activity_ignored.xml is skipped due to the
+        // viewBindingIgnore attribute.
 
-      java(
-        """
+        java(
+          """
           package my.pkg;
 
           import android.view.LayoutInflater;
@@ -1898,12 +2015,13 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   final ActivityIgnoredBinding binding = ActivityIgnoredBinding.inflate(inflater);
               }
           }
-          """.trimIndent()
-      ),  // Here we provide code that would have been generated for view binding /
-      // provided by the view binding library
+          """
+            .trimIndent()
+        ), // Here we provide code that would have been generated for view binding /
+        // provided by the view binding library
 
-      java(
-        """
+        java(
+          """
           package my.pkg.databinding;
 
           import android.view.LayoutInflater;
@@ -1913,10 +2031,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               return this;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg.databinding;
 
           import android.view.LayoutInflater;
@@ -1926,10 +2045,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               return this;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg.databinding;
 
           import android.view.LayoutInflater;
@@ -1939,16 +2059,18 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               return this;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package androidx.viewbinding;
           public interface ViewBinding {
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .clientFactory(gradleClientFactory)
       .run()
       .expect(
@@ -1957,14 +2079,16 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
           ^
           0 errors, 1 warnings
-          """.trimIndent()
+          """
+          .trimIndent()
       )
   }
 
   fun testReferenceFromViewBinding_kotlin() {
-    lint().files(
-      gradle(
-        """
+    lint()
+      .files(
+        gradle(
+          """
           buildscript {
             dependencies {
               classpath "com.android.tools.build:gradle:3.6.0"
@@ -1976,47 +2100,51 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   viewBinding true
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_dot_syntax.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/layout/activity_dot_syntax.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_method_reference.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "src/main/res/layout/activity_method_reference.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_method_import.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "src/main/res/layout/activity_method_import.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_property_type.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "src/main/res/layout/activity_property_type.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),  // View Binding usage here will reference activity_dot_syntax.xml
-
-      kotlin(
-        """
+          """
+            .trimIndent(),
+        ), // View Binding usage here will reference activity_dot_syntax.xml
+        kotlin(
+          """
           package my.pkg
 
           import android.view.LayoutInflater
@@ -2027,11 +2155,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   ActivityDotSyntaxBinding.inflate(inflater)
               }
           }
-          """.trimIndent()
-      ),  // View Binding usage here will reference activity_method_reference.xml
-
-      kotlin(
-        """
+          """
+            .trimIndent()
+        ), // View Binding usage here will reference activity_method_reference.xml
+        kotlin(
+          """
           package my.pkg
 
           import android.view.LayoutInflater
@@ -2042,11 +2170,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   ActivityMethodReferenceBinding::inflate
               }
           }
-          """.trimIndent()
-      ),  // View Binding usage here will reference activity_method_import.xml
-
-      kotlin(
-        """
+          """
+            .trimIndent()
+        ), // View Binding usage here will reference activity_method_import.xml
+        kotlin(
+          """
           package my.pkg
 
           import android.view.LayoutInflater
@@ -2057,11 +2185,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   inflate(inflater)
               }
           }
-          """.trimIndent()
-      ),  // View Binding usage here will reference activity_property_type.xml
-
-      kotlin(
-        """
+          """
+            .trimIndent()
+        ), // View Binding usage here will reference activity_property_type.xml
+        kotlin(
+          """
           package my.pkg
 
           import android.view.LayoutInflater
@@ -2070,12 +2198,13 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           class PropertyTypeBinding {
               private lateinit var binding: ActivityPropertyTypeBinding
           }
-          """.trimIndent()
-      ),  // Here we provide code that would have been generated for view binding /
-      // provided by the view binding library
+          """
+            .trimIndent()
+        ), // Here we provide code that would have been generated for view binding /
+        // provided by the view binding library
 
-      java(
-        """
+        java(
+          """
           package my.pkg.databinding;
 
           import android.view.LayoutInflater;
@@ -2085,10 +2214,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               return this;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg.databinding;
 
           import android.view.LayoutInflater;
@@ -2098,10 +2228,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               return this;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg.databinding;
 
           import android.view.LayoutInflater;
@@ -2111,10 +2242,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               return this;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg.databinding;
 
           import android.view.LayoutInflater;
@@ -2124,16 +2256,18 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               return this;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package androidx.viewbinding;
           public interface ViewBinding {
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .clientFactory(gradleClientFactory)
       .run()
       .expectClean()
@@ -2142,9 +2276,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testViewBindingPropertyDelegation() {
     // Regression test in 203123034: Lint UnusedResources incorrectly fails when using
     // ViewBinding via property delegation
-    lint().files(
-      gradle(
-        """
+    lint()
+      .files(
+        gradle(
+          """
           buildscript {
             dependencies {
               classpath "com.android.tools.build:gradle:7.0.3"
@@ -2156,19 +2291,21 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   viewBinding true
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/hello_world.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/layout/hello_world.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical" android:layout_width="match_parent"
               android:layout_height="match_parent" />
-          """.trimIndent()
-      ),
-      kotlin(
-        """
+          """
+            .trimIndent(),
+        ),
+        kotlin(
+          """
           package test.pkg
 
           import android.content.Context
@@ -2187,10 +2324,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   binding.text.setText(R.string.app_name)
               }
           }
-          """.trimIndent()
-      ),
-      kotlin(
-        """
+          """
+            .trimIndent()
+        ),
+        kotlin(
+          """
           package test.pkg
 
           import android.view.LayoutInflater
@@ -2214,12 +2352,13 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               override fun getValue(thisRef: ViewGroup, property: KProperty<*>): T = binding
           }
           inline fun <reified T : ViewBinding> ViewGroup.viewBinding() = ViewBindingDelegate(T::class.java, this)
-          """.trimIndent()
-      ),  // Here we provide code that would have been generated for view binding /
-      // provided by the view binding library
+          """
+            .trimIndent()
+        ), // Here we provide code that would have been generated for view binding /
+        // provided by the view binding library
 
-      java(
-        """
+        java(
+          """
           // Generated by view binder compiler. Do not edit!
           package test.pkg;
 
@@ -2238,16 +2377,18 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               return null;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package androidx.viewbinding;
           public interface ViewBinding {
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .clientFactory(gradleClientFactory)
       .skipTestModes(TestMode.TYPE_ALIAS)
       .run()
@@ -2257,18 +2398,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   @Suppress("SpellCheckingInspection")
   fun testButterknife() {
     // Regression test for https://issuetracker.google.com/62640956
-    lint().files( // Data binding layout
-      xml(
-        "res/values/colors.xml",
-        """
+    lint()
+      .files( // Data binding layout
+        xml(
+          "res/values/colors.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
               <color name="bgColor">#FF4444</color>
           </resources>
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent(),
+        ),
+        java(
+          """
           package my.pkg;
           import butterknife.BindColor;
 
@@ -2276,10 +2419,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               @BindColor(R2.color.bgColor)
               int bgColor;
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package butterknife;
           import java.lang.annotation.*;
           import static java.lang.annotation.ElementType.FIELD;
@@ -2288,10 +2432,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           public @interface BindColor {
             int value();
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg;
 
           public final class R {
@@ -2299,10 +2444,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   public static final int bgColor=0x7f05001f;
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package my.pkg;
 
           public final class R2 {
@@ -2310,33 +2456,37 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   public static final int bgColor=0x7f05001f;
               }
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .run()
       .expectClean()
   }
 
   fun testGeneratedResourcesIncluded() {
     // Regression test for https://issuetracker.google.com/72790641
-    lint().files(
-      gradle(
-        """
+    lint()
+      .files(
+        gradle(
+          """
           android {
               lintOptions {
                   checkGeneratedSources true
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "generated/res/raw/something.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "generated/res/raw/something.xml",
+          """
           <resources
                   xmlns:tools="http://schemas.android.com/tools" />
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expect(
@@ -2345,30 +2495,34 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           <resources
           ^
           0 errors, 1 warnings
-          """.trimIndent()
+          """
+          .trimIndent()
       )
   }
 
   fun testGeneratedResourcesExcluded() {
     // Regression test for https://issuetracker.google.com/72790641
-    lint().files(
-      gradle(
-        """
+    lint()
+      .files(
+        gradle(
+          """
           android {
               lintOptions {
                   checkGeneratedSources false
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "generated/res/raw/something.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "generated/res/raw/something.xml",
+          """
           <resources
                   xmlns:tools="http://schemas.android.com/tools" />
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -2377,18 +2531,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testNoWarningsInGradleLibraries() {
     // Regression test for
     // 78320922: Lint: UnusedResources false positive in library module
-    lint().files(
-      gradle("apply plugin: 'com.android.library'\n"),
-      xml(
-        "src/main/res/values/strings.xml",
-        """
+    lint()
+      .files(
+        gradle("apply plugin: 'com.android.library'\n"),
+        xml(
+          "src/main/res/values/strings.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources xmlns:tools="http://schemas.android.com/tools">
               <string name="hello">Hello</string>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .clientFactory(gradleClientFactory)
       .issues(UnusedResourceDetector.ISSUE)
       .run()
@@ -2398,10 +2554,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testSyntheticImports() {
     // Regression test for https://issuetracker.google.com/110175594
     // UnusedIds triggered when using Kotlin Synthetic Properties
-    lint().files(
-      gradle("apply plugin: 'com.android.application'\n"),
-      kotlin(
-        """
+    lint()
+      .files(
+        gradle("apply plugin: 'com.android.application'\n"),
+        kotlin(
+          """
           package test.pkg
           import android.widget.Button
           import android.widget.TextView
@@ -2423,11 +2580,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               fun handle(text: TextView) {
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/values/ids.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/values/ids.xml",
+          """
           <resources>
               <item name="fab1" type="id"/>
               <item name="fab2" type="id"/>
@@ -2435,9 +2593,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <item name="fab4" type="id"/>
               <item name="fab5" type="id"/>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .clientFactory(gradleClientFactory)
       .issues(UnusedResourceDetector.ISSUE_IDS)
       .run()
@@ -2447,16 +2606,18 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testFontTags() {
     // Regression test for https://issuetracker.google.com/142182927
     // 142182927: A <font> tag inside a string is treated as an empty resource
-    lint().files(
-      xml(
-        "res/values/strings.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/values/strings.xml",
+          """
           <resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/other">
               <string name="other">Here\'s a <font color="#ffff00">bold</font> prediction</string>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .run()
       .expectClean()
   }
@@ -2464,10 +2625,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testConstraintReferencedIds() {
     // Regression test for
     // 79995034: Lint unused id does not take in account constraint_referenced_ids
-    lint().files(
-      xml(
-        "res/layout/main.xml",
-        """
+    lint()
+      .files(
+        xml(
+          "res/layout/main.xml",
+          """
           <merge xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto"
               xmlns:tools="http://schemas.android.com/tools"
@@ -2484,19 +2646,21 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   app:flow_maxElementsWrap="3"
                   app:flow_wrapMode="aligned" />
           </merge>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        )
       )
-    )
       .run()
       .expectClean()
   }
 
   fun testSuspendFunctions() {
     // Regression test for https://issuetracker.google.com/135168818
-    lint().files(
-      gradle("apply plugin: 'com.android.application'\n"),
-      kotlin(
-        """
+    lint()
+      .files(
+        gradle("apply plugin: 'com.android.application'\n"),
+        kotlin(
+          """
           package test.pkg
           import android.widget.TextView
           class Test : android.app.Activity {
@@ -2504,18 +2668,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   val x = R.string.hello
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/values/strings.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/values/strings.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources xmlns:tools="http://schemas.android.com/tools">
               <string name="hello">Hello</string>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -2523,10 +2689,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testImportAs() {
     // Regression test for https://issuetracker.google.com/129213521
-    lint().files(
-      gradle("apply plugin: 'com.android.application'\n"),
-      kotlin(
-        """
+    lint()
+      .files(
+        gradle("apply plugin: 'com.android.application'\n"),
+        kotlin(
+          """
           package test.pkg
 
           import android.os.Bundle
@@ -2539,10 +2706,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   val s = coreR.string.hello
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           /* AUTO-GENERATED FILE.  DO NOT MODIFY.
            *
            * This class was automatically generated by the
@@ -2557,18 +2725,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   public static final int hello=0x7f020000;
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/values/strings.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/values/strings.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources xmlns:tools="http://schemas.android.com/tools">
               <string name="hello">Hello</string>
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -2577,10 +2747,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun test120747416() {
     // Regression test for https://issuetracker.google.com/120747416
     // "Unused Resources missing logic for strings with dot in the id"
-    lint().files(
-      gradle("apply plugin: 'com.android.application'\n"),
-      kotlin(
-        """
+    lint()
+      .files(
+        gradle("apply plugin: 'com.android.application'\n"),
+        kotlin(
+          """
           package test.pkg
 
           import androidx.annotation.StringRes
@@ -2597,29 +2768,32 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           fun test() {
               showDialog(R.string.abc_abc_abc_abc_abc)
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package test.pkg;
           public final class R {
               public static final class string {
                   public static final int abc_abc_abc_abc_abc=0x7f020000;
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/values/strings.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/values/strings.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources xmlns:tools="http://schemas.android.com/tools">
                  <string name="abc_abc.abc.abc_abc">ABC</string>
           </resources>
-          """.trimIndent()
-      ),
-      SUPPORT_ANNOTATIONS_JAR
-    )
+          """
+            .trimIndent(),
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -2627,10 +2801,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun test125138962() {
     // Regression test for https://issuetracker.google.com/125138962
-    lint().files(
-      gradle("apply plugin: 'com.android.application'\n"),
-      kotlin(
-        """
+    lint()
+      .files(
+        gradle("apply plugin: 'com.android.application'\n"),
+        kotlin(
+          """
           package test.pkg
 
           import android.annotation.SuppressLint
@@ -2645,20 +2820,22 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package test.pkg;
           public final class R {
               public static final class layout {
                   public static final int mosaic_view=0x7f020000;
               }
           }
-          """.trimIndent()
-      ),
-      xml("src/main/res/layout/mosaic_view.xml", "<LinearLayout/>\n")
-    )
+          """
+            .trimIndent()
+        ),
+        xml("src/main/res/layout/mosaic_view.xml", "<LinearLayout/>\n"),
+      )
       .issues(UnusedResourceDetector.ISSUE)
       .run()
       .expectClean()
@@ -2667,18 +2844,20 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   @Throws(Exception::class)
   fun testImportAliases() {
     // Regression test for workaround for https://issuetracker.google.com/188871862
-    lint().files(
-      manifest().minSdk(21),
-      xml(
-        "res/values/strings.xml",
-        """
+    lint()
+      .files(
+        manifest().minSdk(21),
+        xml(
+          "res/values/strings.xml",
+          """
           <resources>
               <string name="lib2">String from lib2</string>
           </resources>
-          """.trimIndent()
-      ),
-      kotlin(
-        """
+          """
+            .trimIndent(),
+        ),
+        kotlin(
+          """
           package com.android.tools.test.lib1
           import com.android.tools.test.lib2.R.string.lib2 as String_lib2
 
@@ -2687,9 +2866,10 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   println(String_lib2)
               }
           }
-          """.trimIndent()
-      )
-    ) // Deliberately missing imported symbol; this test is checking our fallback handling
+          """
+            .trimIndent()
+        ),
+      ) // Deliberately missing imported symbol; this test is checking our fallback handling
       .allowCompilationErrors()
       .run()
       .expectClean()
@@ -2697,10 +2877,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
 
   fun testDataBinding() {
     // Regression test for 230015328
-    lint().files( // Main project
-      manifest().pkg("com.android.tools.test.unusedbindingtest").minSdk(21),
-      gradle(
-        """
+    lint()
+      .files( // Main project
+        manifest().pkg("com.android.tools.test.unusedbindingtest").minSdk(21),
+        gradle(
+          """
           apply plugin: 'com.android.application'
           apply plugin: 'kotlin-android'
           android {
@@ -2708,32 +2889,35 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   viewBinding true
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/unused.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/layout/unused.xml",
+          """
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
           </LinearLayout>
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_main.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        xml(
+          "src/main/res/layout/activity_main.xml",
+          """
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
           </LinearLayout>
-          """.trimIndent()
-      ),
-      kotlin(
-        """
+          """
+            .trimIndent(),
+        ),
+        kotlin(
+          """
           package com.android.tools.test.unusedbindingtest
 
           import android.app.Activity
@@ -2750,15 +2934,16 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               }
 
           }
-          """.trimIndent()
-      ),
-      rClass(
-        "com.android.tools.test.unusedbindingtest.R",
-        "@layout/activity_main",
-        "@layout/unused"
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        rClass(
+          "com.android.tools.test.unusedbindingtest.R",
+          "@layout/activity_main",
+          "@layout/unused",
+        ),
+        java(
+          """
           // Generated by view binder compiler. Do not edit!
           package com.android.tools.test.unusedbindingtest.databinding;
 
@@ -2796,16 +2981,18 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                return null;
             }
           }
-          """.trimIndent()
-      ),  // View binding stubs
-      java(
-        """
+          """
+            .trimIndent()
+        ), // View binding stubs
+        java(
+          """
           package androidx.viewbinding;
           public interface ViewBinding { }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package androidx.viewbinding;
           import android.view.View;
           import android.view.ViewGroup;
@@ -2814,13 +3001,13 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   return null;
               }
           }
-          """.trimIndent()
-      ),
-      SUPPORT_ANNOTATIONS_JAR,  // Library project
-
-      gradle(
-        "../lib/build.gradle",
-        """
+          """
+            .trimIndent()
+        ),
+        SUPPORT_ANNOTATIONS_JAR, // Library project
+        gradle(
+          "../lib/build.gradle",
+          """
           apply plugin: 'com.android.application'
           apply plugin: 'kotlin-android'
           android {
@@ -2828,24 +3015,23 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   viewBinding false
               }
           }
-          """.trimIndent()
-      ),
-      manifest()
-        .pkg("foo.library")
-        .minSdk(14)
-        .to("../lib/src/main/AndroidManifest.xml"),
-      xml(
-        "../lib/src/main/res/values/strings.xml",
-        """
+          """
+            .trimIndent(),
+        ),
+        manifest().pkg("foo.library").minSdk(14).to("../lib/src/main/AndroidManifest.xml"),
+        xml(
+          "../lib/src/main/res/values/strings.xml",
+          """
           <?xml version="1.0" encoding="utf-8"?>
           <resources>
 
               <string name="string1">String 1</string>
 
           </resources>
-          """.trimIndent()
+          """
+            .trimIndent(),
+        ),
       )
-    )
       .testModes(TestMode.DEFAULT)
       .run()
       .expect(
@@ -2857,15 +3043,17 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
           ^
           0 errors, 2 warnings
-          """.trimIndent()
+          """
+          .trimIndent()
       )
   }
 
   fun testBindingClassFieldAccess() {
-    lint().files( // Main project
-      manifest().pkg("com.android.tools.test.unusedbindingtest").minSdk(21),
-      gradle(
-        """
+    lint()
+      .files( // Main project
+        manifest().pkg("com.android.tools.test.unusedbindingtest").minSdk(21),
+        gradle(
+          """
           apply plugin: 'com.android.application'
           apply plugin: 'kotlin-android'
           android {
@@ -2876,11 +3064,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   enable 'UnusedIds'
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_main.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/layout/activity_main.xml",
+          """
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto"
               xmlns:tools="http://schemas.android.com/tools"
@@ -2899,10 +3088,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   app:layout_constraintTop_toTopOf="parent" />
 
           </LinearLayout>
-          """.trimIndent()
-      ),
-      kotlin(
-        """
+          """
+            .trimIndent(),
+        ),
+        kotlin(
+          """
           package com.example.bugsample
 
           import android.os.Bundle
@@ -2914,10 +3104,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   println(ActivityMainBinding.inflate(layoutInflater).label.text)
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           // Generated by view binder compiler. Do not edit!
           package com.example.bugsample.databinding;
 
@@ -2954,26 +3145,29 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                return null;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package androidx.viewbinding;
           public abstract class ViewBinding {
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .testModes(TestMode.DEFAULT)
       .run()
       .expect("No warnings.")
   }
 
   fun testBindingClassFieldAccessWithImplicitReceiver() {
-    lint().files( // Main project
-      manifest().pkg("com.android.tools.test.unusedbindingtest").minSdk(21),
-      gradle(
-        """
+    lint()
+      .files( // Main project
+        manifest().pkg("com.android.tools.test.unusedbindingtest").minSdk(21),
+        gradle(
+          """
           apply plugin: 'com.android.application'
           apply plugin: 'kotlin-android'
           android {
@@ -2984,11 +3178,12 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   enable 'UnusedIds'
               }
           }
-          """.trimIndent()
-      ),
-      xml(
-        "src/main/res/layout/activity_main.xml",
-        """
+          """
+            .trimIndent()
+        ),
+        xml(
+          "src/main/res/layout/activity_main.xml",
+          """
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto"
               xmlns:tools="http://schemas.android.com/tools"
@@ -3007,10 +3202,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   app:layout_constraintTop_toTopOf="parent" />
 
           </LinearLayout>
-          """.trimIndent()
-      ),
-      kotlin(
-        """
+          """
+            .trimIndent(),
+        ),
+        kotlin(
+          """
           import android.app.Activity
           import android.os.Bundle
           import com.example.bugsample.databinding.ActivityMainBinding
@@ -3023,10 +3219,11 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                   }
               }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           // Generated by view binder compiler. Do not edit!
           package com.example.bugsample.databinding;
           import android.widget.TextView;
@@ -3059,17 +3256,19 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
                return null;
             }
           }
-          """.trimIndent()
-      ),
-      java(
-        """
+          """
+            .trimIndent()
+        ),
+        java(
+          """
           package androidx.viewbinding;
           public abstract class ViewBinding {
               public abstract android.widget.LinearLayout getRoot();
           }
-          """.trimIndent()
+          """
+            .trimIndent()
+        ),
       )
-    )
       .run()
       .expectClean()
   }
@@ -3077,19 +3276,16 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
   fun testSkipLibrary() {
     // Regression test for b/391955627
     val library =
-      project(
-        mLibraryManifest,
-        projectProperties().library(true),
-        mLibraryCode,
-        mLibraryStrings
-      )
+      project(mLibraryManifest, projectProperties().library(true), mLibraryCode, mLibraryStrings)
 
     lint().projects(library).run().expectClean()
-    lint().projects(library)
+    lint()
+      .projects(library)
       .configureOption(UnusedResourceDetector.SKIP_LIBRARIES, true)
       .run()
       .expectClean()
-    lint().projects(library)
+    lint()
+      .projects(library)
       .configureOption(UnusedResourceDetector.SKIP_LIBRARIES, false)
       .run()
       .expect(
@@ -3098,14 +3294,16 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               <string name="string2">String 2</string>
                       ~~~~~~~~~~~~~~
           0 errors, 1 warning
-          """.trimIndent()
+          """
+          .trimIndent()
       )
   }
 
   // Sample code
-  private val mAccessibility = xml(
-    "res/layout/accessibility.xml",
-    """
+  private val mAccessibility =
+    xml(
+      "res/layout/accessibility.xml",
+      """
       <?xml version="1.0" encoding="utf-8"?>
       <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
           <Button android:text="Button" android:id="@+id/button1" android:layout_width="wrap_content" android:layout_height="wrap_content"></Button>
@@ -3115,15 +3313,17 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           <Button android:id="@android:id/summary" android:contentDescription="@string/label" />
           <ImageButton android:importantForAccessibility="no" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
       </LinearLayout>
-      """.trimIndent()
-  )
+      """
+        .trimIndent(),
+    )
 
   private val mLayout1 = xml("res/layout/main.xml", LAYOUT_XML)
   private val mOther = xml("res/layout/other.xml", LAYOUT_XML)
 
   // Sample code
-  private val mR = java(
-    """
+  private val mR =
+    java(
+      """
       package my.pkg;
 
       public final class R {
@@ -3149,12 +3349,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               public static final int hello=0x7f040000;
           }
       }
-      """.trimIndent()
-  )
+      """
+        .trimIndent()
+    )
 
   // Sample code
-  private val mTest = java(
-    """
+  private val mTest =
+    java(
+      """
       package my.pgk;
 
       class Test {
@@ -3165,12 +3367,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
              System.out.println(R.id.linearLayout1);
          }
       }
-      """.trimIndent()
-  )
+      """
+        .trimIndent()
+    )
 
-  private val mLibraryManifest = xml(
-    "AndroidManifest.xml",
-    """
+  private val mLibraryManifest =
+    xml(
+      "AndroidManifest.xml",
+      """
       <?xml version="1.0" encoding="utf-8"?>
       <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="foo.library"
@@ -3202,12 +3406,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           </application>
 
       </manifest>
-      """.trimIndent()
-  )
+      """
+        .trimIndent(),
+    )
 
-  private val mLibraryStrings = xml(
-    "res/values/strings.xml",
-    """
+  private val mLibraryStrings =
+    xml(
+      "res/values/strings.xml",
+      """
       <?xml version="1.0" encoding="utf-8"?>
       <resources>
 
@@ -3217,12 +3423,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           <string name="string3">String 3</string>
 
       </resources>
-      """.trimIndent()
-  )
+      """
+        .trimIndent(),
+    )
 
-  private val mLibraryCode = java(
-    "src/foo/library/LibraryCode.java",
-    """
+  private val mLibraryCode =
+    java(
+      "src/foo/library/LibraryCode.java",
+      """
       package foo.library;
 
       public class LibraryCode {
@@ -3230,12 +3438,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               System.out.println(R.string.string1);
           }
       }
-      """.trimIndent()
-  )
+      """
+        .trimIndent(),
+    )
 
-  private val mMainCode = java(
-    "src/foo/main/MainCode.java",
-    """
+  private val mMainCode =
+    java(
+      "src/foo/main/MainCode.java",
+      """
       package foo.main;
 
       public class MainCode {
@@ -3243,23 +3453,27 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               System.out.println(R.string.string2);
           }
       }
-      """.trimIndent()
-  )
+      """
+        .trimIndent(),
+    )
 
-  private val mStrings2 = xml(
-    "res/values/strings2.xml",
-    """
+  private val mStrings2 =
+    xml(
+      "res/values/strings2.xml",
+      """
       <?xml version="1.0" encoding="utf-8"?>
       <resources>
           <string name="hello">Hello</string>
       </resources>
 
-      """.trimIndent()
-  )
+      """
+        .trimIndent(),
+    )
 
   companion object {
     @Language("XML")
-    private val LAYOUT_XML = """
+    private val LAYOUT_XML =
+      """
       <?xml version="1.0" encoding="utf-8"?>
       <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
           android:layout_width="match_parent"
@@ -3284,9 +3498,14 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
               android:text="Button" />
 
       </LinearLayout>
-      """.trimIndent()
+      """
+        .trimIndent()
 
     private val gradleClientFactory =
-      TestLintTask.ClientFactory { com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.Companion.CLIENT_GRADLE) }
+      TestLintTask.ClientFactory {
+        com.android.tools.lint.checks.infrastructure.TestLintClient(
+          LintClient.Companion.CLIENT_GRADLE
+        )
+      }
   }
 }
