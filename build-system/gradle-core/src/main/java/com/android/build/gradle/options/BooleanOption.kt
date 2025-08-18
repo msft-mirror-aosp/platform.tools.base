@@ -228,13 +228,8 @@ enum class BooleanOption(
      */
     ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE(
         "android.onlyEnableUnitTestForTheTestedBuildType",
-        false,
-        FeatureStage.Supported,
-        FutureStage(
-            true,
-            FeatureStage.Supported,
-            Version.VERSION_9_0
-        )
+        true,
+        FeatureStage.Supported
     ),
 
     /**

@@ -84,7 +84,6 @@ class OptionVersionTest {
             BooleanOption.GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE,
             BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
             BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
-            BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE,
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
             BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED,
             BooleanOption.TEST_SUITE_SUPPORT,

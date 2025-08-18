@@ -87,7 +87,7 @@ class UnitTestComponentDefaultsTest {
     @Test
     fun checkUnitTestsAreEnabledOrDisabledBasedOnTheBuildType() {
         val project = appWithNewUnitTestBehavior.build
-        val result = project.modelBuilder.fetchModels()
+        val result = project.modelBuilder.with(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, true).fetchModels()
         assertThat(result).isNotNull()
         val models = result.container.getProject(":app")
         val basicAndroidProject = checkNotNull(models.basicAndroidProject)

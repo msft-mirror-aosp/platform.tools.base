@@ -144,6 +144,7 @@ class BooleanOptionTest {
             BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES,
             BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS,
             BooleanOption.ENABLE_LEGACY_API,
+            BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE
         )
 
         checkViolatingProjectOptions(

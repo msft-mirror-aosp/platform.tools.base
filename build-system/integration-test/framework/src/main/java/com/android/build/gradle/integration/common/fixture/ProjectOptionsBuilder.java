@@ -74,6 +74,12 @@ public class ProjectOptionsBuilder {
             booleans.put(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, false);
             suppressWarnings.add(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES);
         }
+        if (!booleans.containsKey(
+                BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE)) {
+            booleans.put(
+                    BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE,
+                    false);
+        }
     }
 
     private static void injectWarningSuppression(
