@@ -25,6 +25,7 @@ import com.android.build.api.dsl.DynamicFeatureProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import javax.inject.Inject
 
 abstract class DynamicFeatureExtensionImpl @Inject constructor(
@@ -54,6 +55,22 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
 
     override fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>) {
         action.execute(buildFeatures)
+    }
+
+    override fun buildTypes(action: NamedDomainObjectContainer<DynamicFeatureBuildType>.() -> Unit) {
+        action(buildTypes)
+    }
+
+    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+    }
+
+    override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.debug(action: DynamicFeatureBuildType.() -> Unit) {
+        getByName("debug", action)
+    }
+
+    override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.release(action: DynamicFeatureBuildType.() -> Unit)  {
+        getByName("release", action)
     }
 
     override val androidResources: DynamicFeatureAndroidResources

@@ -16,27 +16,26 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestAndroidResources
 import com.android.build.api.dsl.TestBuildFeatures
-import com.android.build.api.dsl.TestBuildType
 import com.android.build.api.dsl.TestDefaultConfig
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.dsl.TestInstallation
 import com.android.build.api.dsl.TestProductFlavor
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
 interface InternalTestExtension :
     TestExtension,
         InternalCommonExtension<
-                TestBuildType,
                 TestDefaultConfig,
                 TestProductFlavor> {
 
     fun androidResources(action: Action<TestAndroidResources>)
     fun buildFeatures(action: Action<TestBuildFeatures>)
+    fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
     fun installation(action: Action<TestInstallation>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)

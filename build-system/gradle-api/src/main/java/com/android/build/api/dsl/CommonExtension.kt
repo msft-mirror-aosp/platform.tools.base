@@ -29,7 +29,6 @@ import java.io.File
  * Only the Android Gradle Plugin should create instances of this interface.
  */
 interface CommonExtension<
-        BuildTypeT : BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : ProductFlavor> {
 
@@ -128,45 +127,7 @@ interface CommonExtension<
      *
      * @see BuildType
      */
-    val buildTypes: NamedDomainObjectContainer<out BuildTypeT>
-
-    /**
-     * Encapsulates all build type configurations for this project.
-     *
-     * For more information about the properties you can configure in this block, see [BuildType]
-     */
-    fun buildTypes(action: NamedDomainObjectContainer<BuildTypeT>.() -> Unit)
-
-    /**
-     * Shortcut extension method to allow easy access to the predefined `debug` [BuildType]
-     *
-     * For example:
-     * ```
-     *  android {
-     *      buildTypes {
-     *          debug {
-     *              // ...
-     *          }
-     *      }
-     * }
-     * ```
-     */
-    fun NamedDomainObjectContainer<BuildTypeT>.debug(action: BuildTypeT.() -> Unit)
-    /**
-     * Shortcut extension method to allow easy access to the predefined `release` [BuildType]
-     *
-     * For example:
-     * ```
-     *  android {
-     *      buildTypes {
-     *          release {
-     *              // ...
-     *          }
-     *      }
-     * }
-     * ```
-     */
-    fun NamedDomainObjectContainer<BuildTypeT>.release(action: BuildTypeT.() -> Unit)
+    val buildTypes: NamedDomainObjectContainer<out BuildType>
 
     /**
      * Specifies options for the

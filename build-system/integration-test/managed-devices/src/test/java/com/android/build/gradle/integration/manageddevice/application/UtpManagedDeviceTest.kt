@@ -65,7 +65,7 @@ class UtpManagedDeviceTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWit
 
     override fun selectModule(moduleName: String) {
         rule.build.subProject(":$moduleName").reconfigure {
-            this as AndroidProjectDefinition<out CommonExtension<*, *, *>>
+            this as AndroidProjectDefinition<out CommonExtension<*, *>>
             addManagedDevice(DSL_DEVICE_NAME)
         }
 

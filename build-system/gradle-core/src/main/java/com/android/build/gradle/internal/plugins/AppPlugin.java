@@ -80,7 +80,6 @@ import javax.inject.Inject;
 /** Gradle plugin class for 'application' projects, applied on the base application module */
 public class AppPlugin
         extends AbstractAppPlugin<
-                ApplicationBuildType,
                 ApplicationDefaultConfig,
                 ApplicationProductFlavor,
                 com.android.build.api.dsl.ApplicationExtension,
@@ -118,7 +117,6 @@ public class AppPlugin
     @NonNull
     @Override
     protected ExtensionData<
-                    ApplicationBuildType,
                     ApplicationDefaultConfig,
                     ApplicationProductFlavor,
                     ApplicationExtension>

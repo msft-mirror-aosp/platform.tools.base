@@ -16,6 +16,7 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
 
 /**
@@ -27,7 +28,6 @@ import org.gradle.declarative.dsl.model.annotations.Configuring
  */
 interface ApplicationExtension :
     CommonExtension<
-            ApplicationBuildType,
             ApplicationDefaultConfig,
             ApplicationProductFlavor>,
     ApkExtension,
@@ -39,6 +39,64 @@ interface ApplicationExtension :
 
     /** Specify whether to include SDK dependency information in APKs and Bundles. */
     fun dependenciesInfo(action: DependenciesInfo.() -> Unit)
+
+    /**
+     * Encapsulates all build type configurations for this project.
+     *
+     * Unlike using [ApplicationProductFlavor] to create
+     * different versions of your project that you expect to co-exist on a single device, build
+     * types determine how Gradle builds and packages each version of your project. Developers
+     * typically use them to configure projects for various stages of a development lifecycle. For
+     * example, when creating a new project from Android Studio, the Android plugin configures a
+     * 'debug' and 'release' build type for you. By default, the 'debug' build type enables
+     * debugging options and signs your APK with a generic debug keystore. Conversely, The 'release'
+     * build type strips out debug symbols and requires you to
+     * [create a release key and keystore](https://developer.android.com/studio/publish/app-signing.html#sign-apk)
+     * for your app. You can then combine build types with product flavors to
+     * [create build variants](https://developer.android.com/studio/build/build-variants.html).
+     *
+     * @see BuildType
+     */
+    override val buildTypes: NamedDomainObjectContainer<out ApplicationBuildType>
+
+    /**
+     * Encapsulates all build type configurations for this project.
+     *
+     * For more information about the properties you can configure in this block, see [ApplicationBuildType]
+     */
+    fun buildTypes(action: NamedDomainObjectContainer<ApplicationBuildType>.() -> Unit)
+
+    /**
+     * Shortcut extension method to allow easy access to the predefined `debug` [ApplicationBuildType]
+     *
+     * For example:
+     * ```
+     *  android {
+     *      buildTypes {
+     *          debug {
+     *              // ...
+     *          }
+     *      }
+     * }
+     * ```
+     */
+    fun NamedDomainObjectContainer<ApplicationBuildType>.debug(action: ApplicationBuildType.() -> Unit)
+    /**
+     * Shortcut extension method to allow easy access to the predefined `release` [ApplicationBuildType]
+     *
+     * For example:
+     * ```
+     *  android {
+     *      buildTypes {
+     *          release {
+     *              // ...
+     *          }
+     *      }
+     * }
+     * ```
+     */
+    fun NamedDomainObjectContainer<ApplicationBuildType>.release(action: ApplicationBuildType.() -> Unit)
+
 
     val bundle: Bundle
 

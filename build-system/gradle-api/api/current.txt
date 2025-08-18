@@ -509,14 +509,17 @@ package com.android.build.api.dsl {
   public interface ApplicationDefaultConfig extends com.android.build.api.dsl.ApplicationBaseFlavor com.android.build.api.dsl.DefaultConfig {
   }
 
-  public interface ApplicationExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.ApplicationBuildType,com.android.build.api.dsl.ApplicationDefaultConfig,com.android.build.api.dsl.ApplicationProductFlavor> com.android.build.api.dsl.ApkExtension com.android.build.api.dsl.TestedExtension {
+  public interface ApplicationExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.ApplicationDefaultConfig,com.android.build.api.dsl.ApplicationProductFlavor> com.android.build.api.dsl.ApkExtension com.android.build.api.dsl.TestedExtension {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationBuildFeatures,kotlin.Unit> action);
+    method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void bundle(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Bundle,kotlin.Unit> action);
+    method public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationBuildType,kotlin.Unit> action);
     method public void dependenciesInfo(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependenciesInfo,kotlin.Unit> action);
     method public com.android.build.api.dsl.ApplicationAndroidResources getAndroidResources();
     method public java.util.Set<java.lang.String> getAssetPacks();
     method public com.android.build.api.dsl.ApplicationBuildFeatures getBuildFeatures();
+    method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApplicationBuildType> getBuildTypes();
     method public com.android.build.api.dsl.Bundle getBundle();
     method public com.android.build.api.dsl.DependenciesInfo getDependenciesInfo();
     method public java.util.Set<java.lang.String> getDynamicFeatures();
@@ -526,9 +529,11 @@ package com.android.build.api.dsl {
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationInstallation,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void publishing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationPublishing,kotlin.Unit> action);
+    method public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationBuildType,kotlin.Unit> action);
     property public abstract com.android.build.api.dsl.ApplicationAndroidResources androidResources;
     property public abstract java.util.Set<java.lang.String> assetPacks;
     property public abstract com.android.build.api.dsl.ApplicationBuildFeatures buildFeatures;
+    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApplicationBuildType> buildTypes;
     property public abstract com.android.build.api.dsl.Bundle bundle;
     property public abstract com.android.build.api.dsl.DependenciesInfo dependenciesInfo;
     property public abstract java.util.Set<java.lang.String> dynamicFeatures;
@@ -889,11 +894,10 @@ package com.android.build.api.dsl {
     property public abstract java.util.Set<java.lang.String> targets;
   }
 
-  public interface CommonExtension<BuildTypeT extends com.android.build.api.dsl.BuildType, DefaultConfigT extends com.android.build.api.dsl.DefaultConfig, ProductFlavorT extends com.android.build.api.dsl.ProductFlavor> {
+  public interface CommonExtension<DefaultConfigT extends com.android.build.api.dsl.DefaultConfig, ProductFlavorT extends com.android.build.api.dsl.ProductFlavor> {
     method @Deprecated public void aaptOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AaptOptions,kotlin.Unit> action);
     method @Deprecated public void adbOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AdbOptions,kotlin.Unit> action);
     method @Deprecated public void buildToolsVersion(String buildToolsVersion);
-    method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<BuildTypeT>,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
     method public void compileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkSpec,kotlin.Unit> action);
     method public void compileSdkAddon(String vendor, String name, int version);
@@ -901,7 +905,6 @@ package com.android.build.api.dsl {
     method @Deprecated public void compileSdkVersion(String version);
     method public void composeOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ComposeOptions,kotlin.Unit> action);
     method public void dataBinding(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DataBinding,kotlin.Unit> action);
-    method public void debug(org.gradle.api.NamedDomainObjectContainer<BuildTypeT>, kotlin.jvm.functions.Function1<? super BuildTypeT,kotlin.Unit> action);
     method public void defaultConfig(kotlin.jvm.functions.Function1<? super DefaultConfigT,kotlin.Unit> action);
     method public void externalNativeBuild(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ExternalNativeBuild,kotlin.Unit> action);
     method @Deprecated public com.android.build.api.dsl.AaptOptions getAaptOptions();
@@ -909,7 +912,7 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.AndroidResources getAndroidResources();
     method public com.android.build.api.dsl.BuildFeatures getBuildFeatures();
     method public String getBuildToolsVersion();
-    method public org.gradle.api.NamedDomainObjectContainer<? extends BuildTypeT> getBuildTypes();
+    method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.BuildType> getBuildTypes();
     method public com.android.build.api.dsl.CompileOptions getCompileOptions();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getCompileSdk();
     method public Integer? getCompileSdkExtension();
@@ -946,7 +949,6 @@ package com.android.build.api.dsl {
     method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method @Deprecated public void packagingOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method public void productFlavors(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<ProductFlavorT>,kotlin.Unit> action);
-    method public void release(org.gradle.api.NamedDomainObjectContainer<BuildTypeT>, kotlin.jvm.functions.Function1<? super BuildTypeT,kotlin.Unit> action);
     method public void setBuildToolsVersion(String);
     method public void setCompileSdk(Integer?);
     method public void setCompileSdkExtension(Integer?);
@@ -969,7 +971,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.AndroidResources androidResources;
     property public abstract com.android.build.api.dsl.BuildFeatures buildFeatures;
     property public abstract String buildToolsVersion;
-    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends BuildTypeT> buildTypes;
+    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.BuildType> buildTypes;
     property public abstract com.android.build.api.dsl.CompileOptions compileOptions;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? compileSdk;
     property public abstract Integer? compileSdkExtension;
@@ -1154,17 +1156,22 @@ package com.android.build.api.dsl {
   public interface DynamicFeatureDefaultConfig extends com.android.build.api.dsl.DynamicFeatureBaseFlavor com.android.build.api.dsl.DefaultConfig {
   }
 
-  public interface DynamicFeatureExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.DynamicFeatureBuildType,com.android.build.api.dsl.DynamicFeatureDefaultConfig,com.android.build.api.dsl.DynamicFeatureProductFlavor> com.android.build.api.dsl.ApkExtension com.android.build.api.dsl.TestedExtension {
+  public interface DynamicFeatureExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.DynamicFeatureDefaultConfig,com.android.build.api.dsl.DynamicFeatureProductFlavor> com.android.build.api.dsl.ApkExtension com.android.build.api.dsl.TestedExtension {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureBuildFeatures,kotlin.Unit> action);
+    method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DynamicFeatureBuildType>,kotlin.Unit> action);
+    method public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DynamicFeatureBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureBuildType,kotlin.Unit> action);
     method public com.android.build.api.dsl.DynamicFeatureAndroidResources getAndroidResources();
     method public com.android.build.api.dsl.DynamicFeatureBuildFeatures getBuildFeatures();
+    method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.DynamicFeatureBuildType> getBuildTypes();
     method public com.android.build.api.dsl.DynamicFeatureInstallation getInstallation();
     method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureInstallation,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
+    method public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DynamicFeatureBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureBuildType,kotlin.Unit> action);
     property public abstract com.android.build.api.dsl.DynamicFeatureAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.DynamicFeatureBuildFeatures buildFeatures;
+    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.DynamicFeatureBuildType> buildTypes;
     property public abstract com.android.build.api.dsl.DynamicFeatureInstallation installation;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
   }
@@ -1482,12 +1489,15 @@ package com.android.build.api.dsl {
   public interface LibraryDefaultConfig extends com.android.build.api.dsl.LibraryBaseFlavor com.android.build.api.dsl.DefaultConfig {
   }
 
-  public interface LibraryExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.LibraryBuildType,com.android.build.api.dsl.LibraryDefaultConfig,com.android.build.api.dsl.LibraryProductFlavor> com.android.build.api.dsl.TestedExtension {
+  public interface LibraryExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.LibraryDefaultConfig,com.android.build.api.dsl.LibraryProductFlavor> com.android.build.api.dsl.TestedExtension {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryBuildFeatures,kotlin.Unit> action);
+    method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.LibraryBuildType>,kotlin.Unit> action);
+    method public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.LibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryBuildType,kotlin.Unit> action);
     method @org.gradle.api.Incubating public java.util.Collection<java.lang.String>? getAidlPackagedList();
     method public com.android.build.api.dsl.LibraryAndroidResources getAndroidResources();
     method public com.android.build.api.dsl.LibraryBuildFeatures getBuildFeatures();
+    method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryBuildType> getBuildTypes();
     method public com.android.build.api.dsl.LibraryInstallation getInstallation();
     method @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> getPrefab();
     method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
@@ -1495,9 +1505,11 @@ package com.android.build.api.dsl {
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryInstallation,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void publishing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryPublishing,kotlin.Unit> action);
+    method public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.LibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryBuildType,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract java.util.Collection<java.lang.String>? aidlPackagedList;
     property public abstract com.android.build.api.dsl.LibraryAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.LibraryBuildFeatures buildFeatures;
+    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryBuildType> buildTypes;
     property public abstract com.android.build.api.dsl.LibraryInstallation installation;
     property @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> prefab;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
@@ -2141,19 +2153,24 @@ package com.android.build.api.dsl {
   public interface TestDefaultConfig extends com.android.build.api.dsl.TestBaseFlavor com.android.build.api.dsl.DefaultConfig {
   }
 
-  public interface TestExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.TestBuildType,com.android.build.api.dsl.TestDefaultConfig,com.android.build.api.dsl.TestProductFlavor> {
+  public interface TestExtension extends com.android.build.api.dsl.CommonExtension<com.android.build.api.dsl.TestDefaultConfig,com.android.build.api.dsl.TestProductFlavor> {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestBuildFeatures,kotlin.Unit> action);
+    method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.TestBuildType>,kotlin.Unit> action);
+    method public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.TestBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestBuildType,kotlin.Unit> action);
     method public com.android.build.api.dsl.TestAndroidResources getAndroidResources();
     method public com.android.build.api.dsl.TestBuildFeatures getBuildFeatures();
+    method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.TestBuildType> getBuildTypes();
     method public com.android.build.api.dsl.TestInstallation getInstallation();
     method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
     method public String? getTargetProjectPath();
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestInstallation,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
+    method public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.TestBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestBuildType,kotlin.Unit> action);
     method public void setTargetProjectPath(String?);
     property public abstract com.android.build.api.dsl.TestAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.TestBuildFeatures buildFeatures;
+    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.TestBuildType> buildTypes;
     property public abstract com.android.build.api.dsl.TestInstallation installation;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
     property public abstract String? targetProjectPath;

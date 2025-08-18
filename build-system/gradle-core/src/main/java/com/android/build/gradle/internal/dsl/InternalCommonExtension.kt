@@ -42,11 +42,9 @@ import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
  * to the new implementations.
  */
 interface InternalCommonExtension<
-        BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : com.android.build.api.dsl.DefaultConfig,
         ProductFlavorT : com.android.build.api.dsl.ProductFlavor> :
     CommonExtension<
-        BuildTypeT,
         DefaultConfigT,
         ProductFlavorT>, Lockable {
 
@@ -68,7 +66,6 @@ interface InternalCommonExtension<
     var compileSdkVersion: String?
 
     // See GroovyExtensionsTest
-    fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
     fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
     fun defaultConfig(action: Action<DefaultConfig>)
     fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)

@@ -143,11 +143,9 @@ import com.android.build.gradle.internal.dsl.BuildType as InternalBuildType
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalFlavor
 
 class ModelBuilder<
-        BuildTypeT : BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : ProductFlavor,
         ExtensionT : CommonExtension<
-                BuildTypeT,
                 DefaultConfigT,
                 ProductFlavorT>>(
     private val project: Project,

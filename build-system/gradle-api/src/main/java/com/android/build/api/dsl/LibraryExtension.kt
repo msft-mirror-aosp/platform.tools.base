@@ -28,7 +28,6 @@ import org.gradle.api.NamedDomainObjectContainer
  */
 interface LibraryExtension :
     CommonExtension<
-        LibraryBuildType,
         LibraryDefaultConfig,
         LibraryProductFlavor>,
     TestedExtension {
@@ -61,6 +60,63 @@ interface LibraryExtension :
      * A list of build features that can be enabled or disabled on the Android Project.
      */
     fun buildFeatures(action: LibraryBuildFeatures.() -> Unit)
+
+
+
+    /**
+     * Encapsulates all build type configurations for this project.
+     *
+     * Unlike using [LibraryProductFlavor] to create
+     * different versions of your project that you expect to co-exist on a single device, build
+     * types determine how Gradle builds and packages each version of your project. Developers
+     * typically use them to configure projects for various stages of a development lifecycle. For
+     * example, when creating a new project from Android Studio, the Android plugin configures a
+     * 'debug' and 'release' build type for you.
+     * You can then combine build types with product flavors to
+     * [create build variants](https://developer.android.com/studio/build/build-variants.html).
+     *
+     * @see BuildType
+     */
+    override val buildTypes: NamedDomainObjectContainer<out LibraryBuildType>
+
+    /**
+     * Encapsulates all build type configurations for this project.
+     *
+     * For more information about the properties you can configure in this block, see [LibraryBuildType]
+     */
+    fun buildTypes(action: NamedDomainObjectContainer<LibraryBuildType>.() -> Unit)
+
+    /**
+     * Shortcut extension method to allow easy access to the predefined `debug` [LibraryBuildType]
+     *
+     * For example:
+     * ```
+     *  android {
+     *      buildTypes {
+     *          debug {
+     *              // ...
+     *          }
+     *      }
+     * }
+     * ```
+     */
+    fun NamedDomainObjectContainer<LibraryBuildType>.debug(action: LibraryBuildType.() -> Unit)
+    /**
+     * Shortcut extension method to allow easy access to the predefined `release` [LibraryBuildType]
+     *
+     * For example:
+     * ```
+     *  android {
+     *      buildTypes {
+     *          release {
+     *              // ...
+     *          }
+     *      }
+     * }
+     * ```
+     */
+    fun NamedDomainObjectContainer<LibraryBuildType>.release(action: LibraryBuildType.() -> Unit)
+
 
     /**
      * Specifies options for the

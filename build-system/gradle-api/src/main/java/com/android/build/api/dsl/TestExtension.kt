@@ -16,6 +16,8 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.api.NamedDomainObjectContainer
+
 /**
  * Extension for the Android Test Gradle Plugin.
  *
@@ -25,7 +27,6 @@ package com.android.build.api.dsl
 */
 interface TestExtension :
     CommonExtension<
-            TestBuildType,
             TestDefaultConfig,
             TestProductFlavor> {
     // TODO(b/140406102)
@@ -53,6 +54,60 @@ interface TestExtension :
      * A list of build features that can be enabled or disabled on the Android Project.
      */
     fun buildFeatures(action: TestBuildFeatures.() -> Unit)
+
+    /**
+     * Encapsulates all build type configurations for this project.
+     *
+     * Unlike using [TestProductFlavor] to create
+     * different versions of your project that you expect to co-exist on a single device, build
+     * types determine how Gradle builds and packages each version of your project. Developers
+     * typically use them to configure projects for various stages of a development lifecycle. For
+     * example, when creating a new project from Android Studio, the Android plugin configures a
+     * 'debug' and 'release' build type for you.
+     * You can then combine build types with product flavors to
+     * [create build variants](https://developer.android.com/studio/build/build-variants.html).
+     *
+     * @see BuildType
+     */
+    override val buildTypes: NamedDomainObjectContainer<out TestBuildType>
+
+    /**
+     * Encapsulates all build type configurations for this project.
+     *
+     * For more information about the properties you can configure in this block, see [TestBuildType]
+     */
+    fun buildTypes(action: NamedDomainObjectContainer<TestBuildType>.() -> Unit)
+
+    /**
+     * Shortcut extension method to allow easy access to the predefined `debug` [TestBuildType]
+     *
+     * For example:
+     * ```
+     *  android {
+     *      buildTypes {
+     *          debug {
+     *              // ...
+     *          }
+     *      }
+     * }
+     * ```
+     */
+    fun NamedDomainObjectContainer<TestBuildType>.debug(action: TestBuildType.() -> Unit)
+    /**
+     * Shortcut extension method to allow easy access to the predefined `release` [TestBuildType]
+     *
+     * For example:
+     * ```
+     *  android {
+     *      buildTypes {
+     *          release {
+     *              // ...
+     *          }
+     *      }
+     * }
+     * ```
+     */
+    fun NamedDomainObjectContainer<TestBuildType>.release(action: TestBuildType.() -> Unit)
 
     /**
      * Specifies options for the

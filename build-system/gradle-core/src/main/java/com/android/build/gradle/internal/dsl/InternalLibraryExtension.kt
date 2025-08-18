@@ -26,17 +26,18 @@ import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.LibraryPublishing
 import com.android.build.api.dsl.PrivacySandbox
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
 interface InternalLibraryExtension :
     LibraryExtension,
     InternalTestedExtension<
-            LibraryBuildType,
             LibraryDefaultConfig,
             LibraryProductFlavor> {
 
     override var aidlPackagedList: MutableCollection<String>
     fun androidResources(action: Action<LibraryAndroidResources>)
+    fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
     fun buildFeatures(action: Action<LibraryBuildFeatures>)
     fun installation(action: Action<LibraryInstallation>)
     fun publishing(action: Action<LibraryPublishing>)

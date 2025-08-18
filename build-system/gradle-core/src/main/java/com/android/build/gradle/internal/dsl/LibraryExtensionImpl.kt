@@ -95,6 +95,22 @@ abstract class LibraryExtensionImpl @Inject constructor(
         action.execute(androidResources)
     }
 
+    override fun buildTypes(action: NamedDomainObjectContainer<LibraryBuildType>.() -> Unit) {
+        action(buildTypes)
+    }
+
+    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+    }
+
+    override fun NamedDomainObjectContainer<LibraryBuildType>.debug(action: LibraryBuildType.() -> Unit) {
+        getByName("debug", action)
+    }
+
+    override fun NamedDomainObjectContainer<LibraryBuildType>.release(action: LibraryBuildType.() -> Unit)  {
+        getByName("release", action)
+    }
+
     override val installation: LibraryInstallation
         = dslServices.newDecoratedInstance(LibraryInstallationImpl::class.java, dslServices)
 

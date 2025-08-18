@@ -25,6 +25,7 @@ import com.android.build.api.dsl.TestProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import javax.inject.Inject
 
 /** Internal implementation of the 'new' DSL interface */
@@ -53,6 +54,22 @@ abstract class TestExtensionImpl @Inject constructor(
 
     override fun buildFeatures(action: Action<TestBuildFeatures>) {
         action.execute(buildFeatures)
+    }
+
+    override fun buildTypes(action: NamedDomainObjectContainer<TestBuildType>.() -> Unit) {
+        action(buildTypes)
+    }
+
+    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+    }
+
+    override fun NamedDomainObjectContainer<TestBuildType>.debug(action: TestBuildType.() -> Unit) {
+        getByName("debug", action)
+    }
+
+    override fun NamedDomainObjectContainer<TestBuildType>.release(action: TestBuildType.() -> Unit)  {
+        getByName("release", action)
     }
 
     override var targetProjectPath: String? = null

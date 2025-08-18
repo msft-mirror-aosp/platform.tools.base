@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.dsl.decorator.ApplicationInstallationIm
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import javax.inject.Inject
 
 /** Internal implementation of the 'new' DSL interface */
@@ -58,6 +59,23 @@ abstract class ApplicationExtensionImpl @Inject constructor(
     override fun buildFeatures(action: Action<ApplicationBuildFeatures>) {
         action.execute(buildFeatures)
     }
+
+    override fun buildTypes(action: NamedDomainObjectContainer<ApplicationBuildType>.() -> Unit) {
+        action(buildTypes)
+    }
+
+    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+    }
+
+    override fun NamedDomainObjectContainer<ApplicationBuildType>.debug(action: ApplicationBuildType.() -> Unit) {
+        getByName("debug", action)
+    }
+
+    override fun NamedDomainObjectContainer<ApplicationBuildType>.release(action: ApplicationBuildType.() -> Unit)  {
+        getByName("release", action)
+    }
+
 
     override val androidResources: ApplicationAndroidResources =
         dslServices.newDecoratedInstance(ApplicationAndroidResourcesImpl::class.java, dslServices)

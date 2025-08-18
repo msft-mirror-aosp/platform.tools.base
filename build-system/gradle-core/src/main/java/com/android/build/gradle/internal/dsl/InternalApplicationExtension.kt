@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.ApplicationAndroidResources
 import com.android.build.api.dsl.ApplicationBuildFeatures
-import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.ApplicationDefaultConfig
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.ApplicationInstallation
@@ -27,12 +26,12 @@ import com.android.build.api.dsl.ApplicationPublishing
 import com.android.build.api.dsl.DependenciesInfo
 import com.android.build.api.dsl.PrivacySandbox
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
 interface InternalApplicationExtension :
     ApplicationExtension,
     InternalTestedExtension<
-                ApplicationBuildType,
                 ApplicationDefaultConfig,
                 ApplicationProductFlavor> {
     override val dynamicFeatures: MutableSet<String>
@@ -43,6 +42,7 @@ interface InternalApplicationExtension :
     // See GroovyBlockInExtensionsTest
     fun androidResources(action: Action<ApplicationAndroidResources>)
     fun buildFeatures(action: Action<ApplicationBuildFeatures>)
+    fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
     fun bundle(action: Action<BundleOptions>)
     fun dependenciesInfo(action: Action<DependenciesInfo>)
     fun installation(action: Action<ApplicationInstallation>)

@@ -52,7 +52,6 @@ abstract class CommonExtensionImpl<
             protected val dslServices: DslServices,
             dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
         ) : InternalCommonExtension<
-        BuildTypeT,
         DefaultConfigT,
         ProductFlavorT> {
 
@@ -186,22 +185,6 @@ abstract class CommonExtensionImpl<
 
     override fun composeOptions(action: Action<ComposeOptions>) {
         action.execute(composeOptions)
-    }
-
-    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
-        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
-    }
-
-    override fun buildTypes(action: NamedDomainObjectContainer<BuildTypeT>.() -> Unit) {
-        action.invoke(buildTypes)
-    }
-
-    override fun NamedDomainObjectContainer<BuildTypeT>.debug(action: BuildTypeT.() -> Unit) {
-        getByName("debug", action)
-    }
-
-    override fun NamedDomainObjectContainer<BuildTypeT>.release(action: BuildTypeT.() -> Unit)  {
-        getByName("release", action)
     }
 
     override val dataBinding: DataBindingOptions =

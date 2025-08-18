@@ -128,11 +128,9 @@ import java.util.function.Consumer
 
 /** Base class for all Android plugins */
 abstract class BasePlugin<
-                BuildTypeT: com.android.build.api.dsl.BuildType,
                 DefaultConfigT: com.android.build.api.dsl.DefaultConfig,
                 ProductFlavorT: com.android.build.api.dsl.ProductFlavor,
                 AndroidT: CommonExtension<
-                        BuildTypeT,
                         DefaultConfigT,
                         ProductFlavorT>,
                 AndroidComponentsT:
@@ -155,11 +153,9 @@ abstract class BasePlugin<
     }
 
     protected class ExtensionData<
-            BuildTypeT: com.android.build.api.dsl.BuildType,
             DefaultConfigT: com.android.build.api.dsl.DefaultConfig,
             ProductFlavorT: com.android.build.api.dsl.ProductFlavor,
             AndroidT: CommonExtension<
-                    out BuildTypeT,
                     out DefaultConfigT,
                     out ProductFlavorT>>(
         val oldExtension: BaseExtension,
@@ -315,7 +311,7 @@ abstract class BasePlugin<
         @Suppress("DEPRECATION")
         buildOutputs: NamedDomainObjectContainer<com.android.build.gradle.api.BaseVariantOutput>,
         versionedSdkLoaderService: VersionedSdkLoaderService
-    ): ExtensionData<BuildTypeT, DefaultConfigT, ProductFlavorT, AndroidT>
+    ): ExtensionData<DefaultConfigT, ProductFlavorT, AndroidT>
 
     protected abstract fun createComponentExtension(
         dslServices: DslServices,
@@ -534,7 +530,7 @@ abstract class BasePlugin<
         project: Project,
         registry: ToolingModelBuilderRegistry,
         variantInputModel: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
-        extensionData: ExtensionData<BuildTypeT, DefaultConfigT, ProductFlavorT, AndroidT>,
+        extensionData: ExtensionData<DefaultConfigT, ProductFlavorT, AndroidT>,
         globalConfig: GlobalTaskCreationConfig
     ) {
         // Register a builder for the custom tooling model

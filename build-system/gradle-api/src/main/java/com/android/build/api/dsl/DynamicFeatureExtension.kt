@@ -16,6 +16,8 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.api.NamedDomainObjectContainer
+
 /**
  * Extension for the Android Dynamic Feature Gradle Plugin.
  *
@@ -25,7 +27,6 @@ package com.android.build.api.dsl
  */
 interface DynamicFeatureExtension :
     CommonExtension<
-            DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
             DynamicFeatureProductFlavor>,
     ApkExtension,
@@ -54,6 +55,61 @@ interface DynamicFeatureExtension :
      */
     fun buildFeatures(action: DynamicFeatureBuildFeatures.() -> Unit)
 
+
+
+    /**
+     * Encapsulates all build type configurations for this project.
+     *
+     * Unlike using [DynamicFeatureProductFlavor] to create
+     * different versions of your project that you expect to co-exist on a single device, build
+     * types determine how Gradle builds and packages each version of your project. Developers
+     * typically use them to configure projects for various stages of a development lifecycle. For
+     * example, when creating a new project from Android Studio, the Android plugin configures a
+     * 'debug' and 'release' build type for you.
+     * You can then combine build types with product flavors to
+     * [create build variants](https://developer.android.com/studio/build/build-variants.html).
+     *
+     * @see BuildType
+     */
+    override val buildTypes: NamedDomainObjectContainer<out DynamicFeatureBuildType>
+
+    /**
+     * Encapsulates all build type configurations for this project.
+     *
+     * For more information about the properties you can configure in this block, see [DynamicFeatureBuildType]
+     */
+    fun buildTypes(action: NamedDomainObjectContainer<DynamicFeatureBuildType>.() -> Unit)
+
+    /**
+     * Shortcut extension method to allow easy access to the predefined `debug` [DynamicFeatureBuildType]
+     *
+     * For example:
+     * ```
+     *  android {
+     *      buildTypes {
+     *          debug {
+     *              // ...
+     *          }
+     *      }
+     * }
+     * ```
+     */
+    fun NamedDomainObjectContainer<DynamicFeatureBuildType>.debug(action: DynamicFeatureBuildType.() -> Unit)
+    /**
+     * Shortcut extension method to allow easy access to the predefined `release` [DynamicFeatureBuildType]
+     *
+     * For example:
+     * ```
+     *  android {
+     *      buildTypes {
+     *          release {
+     *              // ...
+     *          }
+     *      }
+     * }
+     * ```
+     */
+    fun NamedDomainObjectContainer<DynamicFeatureBuildType>.release(action: DynamicFeatureBuildType.() -> Unit)
 
     /**
      * Specifies options for the
