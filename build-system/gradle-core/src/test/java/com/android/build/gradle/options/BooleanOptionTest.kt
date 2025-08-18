@@ -86,7 +86,6 @@ class BooleanOptionTest {
             BooleanOption.ENABLE_NATIVE_COMPILER_SETTINGS_CACHE,
             BooleanOption.ENABLE_CMAKE_BUILD_COHABITATION,
             BooleanOption.ENABLE_PROGUARD_RULES_EXTRACTION,
-            BooleanOption.USE_DEPENDENCY_CONSTRAINTS,
             BooleanOption.ENABLE_DUPLICATE_CLASSES_CHECK,
             BooleanOption.MINIMAL_KEEP_RULES,
             BooleanOption.EXCLUDE_RES_SOURCES_FOR_RELEASE_BUNDLES,
@@ -118,7 +117,9 @@ class BooleanOptionTest {
             BooleanOption.GRADUAL_R8_SHRINKING,
             BooleanOption.ENABLE_PROBLEMS_API,
             BooleanOption.R8_GRADUAL_API,
-            BooleanOption.CUSTOM_SHADER_PATH_REQUIRED
+            BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,
+            BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS,
+            BooleanOption.DISABLE_ALL_CONSTRAINTS
         )
 
         checkViolatingProjectOptions(

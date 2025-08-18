@@ -64,7 +64,6 @@ import com.android.build.gradle.internal.testFixtures.TestFixturesUtil;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
 import com.android.builder.core.ComponentType;
-import com.android.builder.core.ComponentTypeImpl;
 import com.android.builder.errors.IssueReporter;
 import com.android.utils.StringHelper;
 
@@ -95,6 +94,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Object that represents the dependencies of variant.
@@ -351,9 +351,11 @@ public class VariantDependenciesBuilder {
 
         configureSourceTypeAttribute(project);
 
-        boolean isLibraryConstraintApplied =
+        boolean isConstraintApplied =
                 maybeAddDependencyConstraints(componentType, compileClasspath, runtimeClasspath);
-        maybeReportLibraryConstraintIssue(issueReporter);
+        if (isConstraintApplied) {
+            maybeReportLibraryConstraintIssue(issueReporter);
+        }
 
         Configuration globalTestedApks =
                 configurations.findByName(VariantDependencies.CONFIG_NAME_TESTED_APKS);
@@ -701,15 +703,13 @@ public class VariantDependenciesBuilder {
                 testedVariant,
                 project,
                 projectOptions,
-                isLibraryConstraintApplied,
                 isSelfInstrumenting,
                 sourceSetConfigurationsMap);
     }
 
     private void maybeReportLibraryConstraintIssue(IssueReporter issueReporter) {
         if (!projectOptions.get(
-                        BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED)
-                || projectOptions.get(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS)) {
+                BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED)) {
             return;
         }
 
@@ -763,36 +763,46 @@ public class VariantDependenciesBuilder {
             ComponentType componentType,
             Configuration compileClasspath,
             Configuration runtimeClasspath) {
-        if (!projectOptions.get(BooleanOption.USE_DEPENDENCY_CONSTRAINTS)) {
-            return false;
-        }
-        // Contrary to what the name might suggest, this will actually filter all aar components,
-        // not just libraries.
-        boolean excludeLibraryComponents =
-                projectOptions.get(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS);
-        boolean isAarTest =
-                (componentType == ComponentTypeImpl.ANDROID_TEST
-                                || componentType == ComponentTypeImpl.UNIT_TEST
-                                || componentType == ComponentTypeImpl.SCREENSHOT_TEST)
-                        && testedVariant.getComponentType().isAar();
+        boolean useConstraints = projectOptions.get(BooleanOption.USE_DEPENDENCY_CONSTRAINTS);
+        boolean applyLibraryConstraints =
+                !projectOptions.get(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS);
+        boolean disableClassPathAlignment =
+                projectOptions.get(BooleanOption.DISABLE_ALL_CONSTRAINTS);
 
-        if (excludeLibraryComponents && (componentType.isAar() || isAarTest)) {
+        if (disableClassPathAlignment) {
             return false;
         }
 
-        // make compileClasspath match runtimeClasspath
-        if (projectOptions.get(BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT)) {
-            compileClasspath.shouldResolveConsistentlyWith(runtimeClasspath);
+        if (!useConstraints) {
+            // This is considered essential and can only be disabled via the flag above.
+            alignAndroidTestRuntime(runtimeClasspath, componentType::isApk);
+            return false;
+        } else {
+            Supplier<Boolean> componentFilter =
+                    applyLibraryConstraints ? () -> true : componentType::isApk;
+            alignAndroidTestRuntime(runtimeClasspath, componentFilter);
+            alignMainCompileToRuntime(compileClasspath, runtimeClasspath, componentFilter);
+            // Return whether any library constraints are applied.
+            return applyLibraryConstraints;
         }
+    }
 
-        // No dependency alignment for runtimeClasspath and androidTest runtimeClasspath in library
-        if (isAarTest) {
-            // Constraints are added for compileClasspath and runtimeClasspath
-            return true;
+    private void alignMainCompileToRuntime(
+            Configuration compileClasspath,
+            Configuration runtimeClasspath,
+            Supplier<Boolean> predicate) {
+        if (!predicate.get()) {
+            return;
         }
+        compileClasspath.shouldResolveConsistentlyWith(runtimeClasspath);
+    }
 
-        if (componentType.isApk() && testedVariant != null) {
-            // if this is a test App, then also synchronize the 2 runtime classpaths
+    private void alignAndroidTestRuntime(
+            Configuration runtimeClasspath, Supplier<Boolean> predicate) {
+        if (!predicate.get()) {
+            return;
+        }
+        if (testedVariant != null) {
             Configuration testedRuntimeClasspath =
                     testedVariant.getVariantDependencies().getRuntimeClasspath();
             runtimeClasspath.shouldResolveConsistentlyWith(testedRuntimeClasspath);
@@ -805,7 +815,6 @@ public class VariantDependenciesBuilder {
                         project.getBuildFile());
             }
         }
-        return true;
     }
 
     @NonNull

@@ -172,6 +172,20 @@
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
   <library
+      name="androidx.core:core-ktx:1.2.0@aar"
+      jars="${gradleCacheDir}/<digest>/transformed/core-ktx-1.2.0/jars/classes.jar"
+      resolved="androidx.core:core-ktx:1.2.0"
+      provided="true"
+      folder="${gradleCacheDir}/<digest>/transformed/core-ktx-1.2.0"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
       name="androidx.core:core:1.9.0@aar"
       jars="${gradleCacheDir}/<digest>/transformed/core-1.9.0/jars/classes.jar"
       resolved="androidx.core:core:1.9.0"
@@ -217,6 +231,10 @@
       name="org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}@jar"
       jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/${kotlinVersion}/kotlin-stdlib-${kotlinVersion}.jar"
       resolved="org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"/>
+  <library
+      name="org.jetbrains:annotations:13.0@jar"
+      jars="${mavenRepo}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+      resolved="org.jetbrains:annotations:13.0"/>
   <library
       name="androidx.cursoradapter:cursoradapter:1.0.0@aar"
       jars="${gradleCacheDir}/<digest>/transformed/cursoradapter-1.0.0/jars/classes.jar"
@@ -274,6 +292,20 @@
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
   <library
+      name="androidx.arch.core:core-runtime:2.0.0@aar"
+      jars="${gradleCacheDir}/<digest>/transformed/core-runtime-2.0.0/jars/classes.jar"
+      resolved="androidx.arch.core:core-runtime:2.0.0"
+      provided="true"
+      folder="${gradleCacheDir}/<digest>/transformed/core-runtime-2.0.0"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
       name="androidx.arch.core:core-common:2.1.0@jar"
       jars="${mavenRepo}/androidx/arch/core/core-common/2.1.0/core-common-2.1.0.jar"
       resolved="androidx.arch.core:core-common:2.1.0"/>
@@ -312,38 +344,6 @@
       jars="${mavenRepo}/androidx/annotation/annotation/1.3.0/annotation-1.3.0.jar"
       resolved="androidx.annotation:annotation:1.3.0"/>
   <library
-      name="org.jetbrains:annotations:13.0@jar"
-      jars="${mavenRepo}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
-      resolved="org.jetbrains:annotations:13.0"/>
-  <library
       name=":@@:app::debug"
       project=":app"/>
-  <library
-      name="androidx.core:core-ktx:1.2.0@aar"
-      jars="${gradleCacheDir}/<digest>/transformed/core-ktx-1.2.0/jars/classes.jar"
-      resolved="androidx.core:core-ktx:1.2.0"
-      provided="true"
-      folder="${gradleCacheDir}/<digest>/transformed/core-ktx-1.2.0"
-      manifest="AndroidManifest.xml"
-      resFolder="res"
-      assetsFolder="assets"
-      lintJar="lint.jar"
-      publicResources="public.txt"
-      symbolFile="R.txt"
-      externalAnnotations="annotations.zip"
-      proguardRules="proguard.txt"/>
-  <library
-      name="androidx.arch.core:core-runtime:2.0.0@aar"
-      jars="${gradleCacheDir}/<digest>/transformed/core-runtime-2.0.0/jars/classes.jar"
-      resolved="androidx.arch.core:core-runtime:2.0.0"
-      provided="true"
-      folder="${gradleCacheDir}/<digest>/transformed/core-runtime-2.0.0"
-      manifest="AndroidManifest.xml"
-      resFolder="res"
-      assetsFolder="assets"
-      lintJar="lint.jar"
-      publicResources="public.txt"
-      symbolFile="R.txt"
-      externalAnnotations="annotations.zip"
-      proguardRules="proguard.txt"/>
 </libraries>

@@ -49,92 +49,42 @@ class LibraryCompileAndRuntimeClasspathTest {
             |    androidTestCompileOnly 'com.example:package:4.0-androidTestCompileOnly'
             |    androidTestRuntimeOnly 'com.example:package:3.0-androidTestRuntimeOnly'
             |    compileOnly 'com.example:package:2.0-compileOnly'
-            |}
-            |""".trimMargin())
-    }
-
-    @Test
-    fun `debugAndroidTestCompileClasspath - constraints unsatisfiable`() {
-        assertDependenciesOutput(
-            "debugAndroidTestCompileClasspath", """
-            |debugAndroidTestCompileClasspath - Resolved configuration for compilation for variant: debugAndroidTest
-            |+--- com.example:package:4.0-androidTestCompileOnly FAILED
-            |+--- root project : (*)
-            |\--- com.example:package:{strictly 3.0-androidTestRuntimeOnly} FAILED
-        """
-        )
-    }
-
-    @Test
-    fun `all other cases - constraints unsatisfiable`() {
-        // Adding this causes the debugAndroidTestRuntimeClasspath to fail, which in turn makes the
-        // debugAndroidTestCompileClasspath not applicable in this case, so that's a separate
-        // test case without the 1.0-runtimeOnly dependency
-        project.buildFile.appendText("""
-            |dependencies {
             |    runtimeOnly 'com.example:package:1.0-runtimeOnly'
             |}
             |""".trimMargin())
+    }
 
+
+    @Test
+    fun `constraints unsatisfiable`() {
+        project.gradlePropertiesFile.appendText("""
+            ${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=true
+            ${BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS.propertyName}=false
+        """.trimIndent()
+        )
         assertDependenciesOutput("debugCompileClasspath", """
             |debugCompileClasspath - Resolved configuration for compilation for variant: debug
             |+--- com.example:package:2.0-compileOnly FAILED
             |\--- com.example:package:{strictly 1.0-runtimeOnly} FAILED
         """)
-        assertDependenciesOutput("debugUnitTestCompileClasspath", """
-            |debugUnitTestCompileClasspath - Resolved configuration for compilation for variant: debugUnitTest
-            |+--- root project : (*)
-            |+--- com.example:package:6.0-testCompileOnly FAILED
-            |\--- com.example:package:{strictly 5.0-testRuntimeOnly} FAILED
-        """)
 
-        // This won't fails because the androidTest runtimeClasspath is no longer aligned to main
-        // runtimeClasspath.
         assertDependenciesOutput("debugAndroidTestRuntimeClasspath", """
             |debugAndroidTestRuntimeClasspath - Resolved configuration for runtime for variant: debugAndroidTest
-            |+--- com.example:package:3.0-androidTestRuntimeOnly
+            |+--- com.example:package:3.0-androidTestRuntimeOnly FAILED
             |+--- root project : (*)
-            |\--- com.example:package:1.0-runtimeOnly -> 3.0-androidTestRuntimeOnly
+            |+--- com.example:package:{strictly 1.0-runtimeOnly} FAILED
+            |\--- com.example:package:1.0-runtimeOnly FAILED
         """)
     }
 
     @Test
-    fun `debugAndroidTestCompileClasspath - succeeds with constraints disabled`() {
+    fun `succeeds with constraints disabled`() {
         project.gradlePropertiesFile.appendText(
-            "${BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS.propertyName}=true"
+            "${BooleanOption.DISABLE_ALL_CONSTRAINTS.propertyName}=true"
         )
-
-        assertDependenciesOutput("debugAndroidTestCompileClasspath", """
-            |debugAndroidTestCompileClasspath - Resolved configuration for compilation for variant: debugAndroidTest
-            |+--- com.example:package:4.0-androidTestCompileOnly
-            |\--- root project : (*)
-        """)
-    }
-
-
-    @Test
-    fun `all other cases - succeeds with constraints disabled`() {
-        project.gradlePropertiesFile.appendText(
-            "${BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS.propertyName}=true"
-        )
-
-        // Adding this causes the debugAndroidTestRuntimeClasspath to fail, which in turn makes the
-        // debugAndroidTestCompileClasspath not applicable in this case, so that's a separate
-        // test case without the 1.0-runtimeOnly dependency
-        project.buildFile.appendText("""
-            |dependencies {
-            |    runtimeOnly 'com.example:package:1.0-runtimeOnly'
-            |}
-            |""".trimMargin())
-
         assertDependenciesOutput("debugCompileClasspath", """
             |debugCompileClasspath - Resolved configuration for compilation for variant: debug
             |\--- com.example:package:2.0-compileOnly
-        """)
-        assertDependenciesOutput("debugUnitTestCompileClasspath", """
-            |debugUnitTestCompileClasspath - Resolved configuration for compilation for variant: debugUnitTest
-            |+--- root project : (*)
-            |\--- com.example:package:6.0-testCompileOnly
         """)
 
         assertDependenciesOutput("debugAndroidTestRuntimeClasspath", """

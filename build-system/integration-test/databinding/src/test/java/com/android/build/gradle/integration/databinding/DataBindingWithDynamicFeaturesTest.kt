@@ -74,6 +74,8 @@ class DataBindingWithDynamicFeaturesTest(private val useAndroidX : Boolean) {
         project.executor()
             // Disabled due to dependencies on vectordrawable libraries.
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            // TODO(b/439806981): Remove this
+            .with(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
             .run("clean", "assembleDebug")
         val aApk: Apk = project.getSubproject("featureA")
             .getApk(GradleTestProject.ApkType.DEBUG)

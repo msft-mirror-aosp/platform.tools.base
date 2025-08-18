@@ -209,11 +209,11 @@
           },
           {
             "flag": "EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS",
-            "value": false
+            "value": true
           },
           {
             "flag": "ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT",
-            "value": true
+            "value": false
           },
           {
             "flag": "DATA_BINDING_ENABLED",

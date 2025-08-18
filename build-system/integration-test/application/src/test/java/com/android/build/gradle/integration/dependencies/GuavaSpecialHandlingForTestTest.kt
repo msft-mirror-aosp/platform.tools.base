@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.testutils.AssumeUtil
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -50,6 +51,8 @@ class GuavaSpecialHandlingForTestTest {
     @Test
     @Throws(Exception::class)
     fun `check AndroidTest does not fail dependency resolution`() {
+        // Resolved dependency ends up having a path longer than what's allowed on Windows
+        AssumeUtil.assumeNotWindows()
         project.execute("assembleDebugAndroidTest")
     }
 }

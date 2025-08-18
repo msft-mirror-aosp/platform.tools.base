@@ -1650,13 +1650,14 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                 BooleanFlag.BUILD_FEATURE_ANDROID_RESOURCES,
                 variants.any { it.buildFeatures.androidResources }
             )
+            // TODO(b/439806981): Make sure this (and below) is correctly set
             flags.put(
                 BooleanFlag.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS,
                 projectOptions[BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS]
             )
             flags.put(
                 BooleanFlag.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT,
-                projectOptions[BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT]
+                projectOptions[BooleanOption.USE_DEPENDENCY_CONSTRAINTS] // This is now controlled by this flag
             )
             flags.put(
                 BooleanFlag.DATA_BINDING_ENABLED,

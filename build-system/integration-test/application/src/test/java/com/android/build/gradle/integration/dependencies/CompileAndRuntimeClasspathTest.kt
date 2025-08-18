@@ -40,7 +40,7 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
     @Rule
     val project: GradleTestProject = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .addGradleProperties("${BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT.propertyName}=$enableAlignment")
+        .addGradleProperties("${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=$enableAlignment")
         .create()
 
     @Test
@@ -119,7 +119,6 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
     @Test
     fun `value is represented in the model`() {
         val models = project.modelV2()
-            .allowOptionWarning(BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT)
             .fetchModels()
         val flags = models.container.getProject(":").androidProject!!.flags
         assertThat(ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT.getValue(flags))

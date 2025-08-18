@@ -204,10 +204,16 @@ public abstract class AbstractAppTaskManager<
                         .getProjectOptions()
                         .get(BooleanOption.USE_DEPENDENCY_CONSTRAINTS);
 
+        boolean enableClasspathCheckTask =
+                creationConfig
+                        .getServices()
+                        .getProjectOptions()
+                        .get(BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS);
+
         TaskProvider<? extends Task> task =
                 taskFactory.register(AppPreBuildTask.getCreationAction(creationConfig));
 
-        if (!useDependencyConstraints) {
+        if (!useDependencyConstraints && enableClasspathCheckTask) {
             TaskProvider<AppClasspathCheckTask> classpathCheck =
                     taskFactory.register(
                             new AppClasspathCheckTask.CreationAction(creationConfig));

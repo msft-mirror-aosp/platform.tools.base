@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.options
 
-import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.EXCLUDE_LIBRARIES_FROM_CONSTRAINTS
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
@@ -157,25 +157,22 @@ enum class BooleanOption(
         ApiStage.Stable
     ),
 
-    EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS(
-        "android.dependency.excludeLibraryComponentsFromConstraints",
-        false,
-        ApiStage.Stable,
-        FutureStage(
-            true,
-            ApiStage.Stable,
-            Version.VERSION_9_0
-        )
-    ),
+    /**
+     * Applies dependency constraints to align compile and runtime classpath.
+     *
+     * Apps always has their android test runtime classpath aligned to the main artifact's runtime classpath regardless of this flag.
+     *
+     * To disable all the alignments, see [DISABLE_ALL_CONSTRAINTS]
+     *
+     * Libraries has no alignment by default. See [EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS].
+     */
+    USE_DEPENDENCY_CONSTRAINTS("android.dependency.useConstraints", false, ApiStage.Stable),
 
     /**
-     * This creates a sync issue when library constraints are enabled, because disabling them would
+     * This creates a sync issue when library constraints are applied, because disabling them would
      * result in a performance boost.
-     *
-     * It is intended to switch to on in the next major release alongside the related flag:
-     * `android.dependency.excludeLibraryComponentsFromConstraints`
      */
-    GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED("android.generateSyncIssueWhenLibraryConstraintsAreEnabled", false, ApiStage.Stable),
+    GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED("android.generateSyncIssueWhenLibraryConstraintsAreEnabled", true, ApiStage.Stable),
 
     /* ------------------
      * SUPPORTED FEATURES
@@ -232,7 +229,7 @@ enum class BooleanOption(
         FeatureStage.Supported
     ),
 
-    /**
+/**
      * When enabled, R8 will perform resource shrinking in a more optimal way.
      *
      * Note: This flag takes effect only if resource shrinking is enabled AND
@@ -248,7 +245,6 @@ enum class BooleanOption(
             Version.VERSION_10_0
         )
     ),
-
     /* -----------------
      * EXPERIMENTAL APIs
      */
@@ -256,24 +252,6 @@ enum class BooleanOption(
     BUILD_FEATURE_MLMODELBINDING("android.defaults.buildfeatures.mlmodelbinding", false, ApiStage.Experimental),
     ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG("android.experimental.useDefaultDebugSigningConfigForProfileableBuildtypes", false, ApiStage.Experimental),
 
-    /**
-     * Enables compile classpath and runtime classpath alignment (i.e., if the version of a
-     * dependency on compile classpath is lower than its version on runtime classpath, the version
-     * on compile classpath will be promoted to match the version on runtime classpath; if the
-     * version on compile classpath is higher than the version on runtime classpath, the build will
-     * fail).
-     *
-     * This option is enabled by default. The users can disable it if it causes issues (e.g., when
-     * the dependencies involve `com.google.guava:guava` and `com.google.guava:listenablefuture` --
-     * see bug 300760566 for details).
-     */
-    ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT("android.enableCompileRuntimeClasspathAlignment", true, ApiStage.Experimental,
-        FutureStage(
-            false,
-            FeatureStage.Supported,
-            Version.VERSION_9_0
-        )
-    ),
 
     /* ---------------------
      * EXPERIMENTAL FEATURES
@@ -353,7 +331,14 @@ enum class BooleanOption(
     ENABLE_NATIVE_COMPILER_SETTINGS_CACHE("android.enableNativeCompilerSettingsCache", false, FeatureStage.Experimental),
     ENABLE_CMAKE_BUILD_COHABITATION("android.enableCmakeBuildCohabitation", false, FeatureStage.Experimental),
     ENABLE_PROGUARD_RULES_EXTRACTION("android.proguard.enableRulesExtraction", true, FeatureStage.Experimental),
-    USE_DEPENDENCY_CONSTRAINTS("android.dependency.useConstraints", true, FeatureStage.Experimental),
+
+    /**
+     * Disables all constraints overriding all the other related flags.
+     *
+     * Intended use is to keep backwards compatibility for users who previously set android.dependency.useConstraints=false by turning this on.
+     */
+    DISABLE_ALL_CONSTRAINTS("android.dependency.disableAllConstraints", false, FeatureStage.Experimental),
+    ENABLE_CLASSPATH_CHECK_TASKS("android.enableClasspathCheckTasks", false, FeatureStage.Experimental),
     ENABLE_DUPLICATE_CLASSES_CHECK("android.enableDuplicateClassesCheck", true, FeatureStage.Experimental),
     MINIMAL_KEEP_RULES("android.useMinimalKeepRules", true, FeatureStage.Experimental),
     EXCLUDE_RES_SOURCES_FOR_RELEASE_BUNDLES("android.bundle.excludeResSourcesForRelease", true, FeatureStage.Experimental),
@@ -709,6 +694,18 @@ enum class BooleanOption(
 
     USE_NON_FINAL_RES_IDS("android.nonFinalResIds", true, ApiStage.Deprecated(VERSION_10_0)),
 
+    /**
+     * Controls whether libraries has the following constraints applied for classpaths:
+     *   - compile -> runtime
+     *   - androidTestRuntime -> runtime
+     *
+     * Only relevant when [USE_DEPENDENCY_CONSTRAINTS] is enabled.
+     */
+    EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS(
+        "android.dependency.excludeLibraryComponentsFromConstraints",
+        true,
+        ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
+    ),
     /* -----------------
      * ENFORCED FEATURES
      */

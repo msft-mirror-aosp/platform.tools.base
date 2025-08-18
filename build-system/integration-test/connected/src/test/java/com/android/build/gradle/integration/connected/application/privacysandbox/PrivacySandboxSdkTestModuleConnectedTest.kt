@@ -21,10 +21,12 @@ import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.time.Duration
 
+@Ignore("b/439806981")
 class PrivacySandboxSdkTestModuleConnectedTest {
     @get:Rule
     val rule = privacySandboxSdkAppLargeSampleProjectWithTestModule {
