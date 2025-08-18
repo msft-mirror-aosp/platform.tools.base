@@ -136,6 +136,17 @@ class UnusedResourceDetector :
 
   override fun beforeCheckEachProject(context: Context) {
     projectUsesViewBinding = context.project.buildVariant?.buildFeatures?.viewBinding ?: false
+
+    // See LintResource.ShortestLocation. By default, we do not store the location of every version
+    // of a resource (e.g. every translation of a resource). However, in a global analysis, and with
+    // the client property below, we will store all resource versions, which is needed for the
+    // "Remove Unused Resources" refactoring.
+    if (
+      context.isGlobalAnalysis() &&
+        context.client.getClientProperty(KEY_INCLUDE_ALL_RESOURCE_VERSIONS) != null
+    ) {
+      model.recordAllResourceVersionLocations = true
+    }
   }
 
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {
@@ -223,9 +234,7 @@ class UnusedResourceDetector :
         for (resource in unused) {
           // Only consider resources without a location that are file-based.
           if (
-            resource.location.isNotEmpty() ||
-              resource.type == null ||
-              !isFileBasedResourceType(resource.type)
+            resource.hasLocation || resource.type == null || !isFileBasedResourceType(resource.type)
           ) {
             continue
           }
@@ -254,12 +263,12 @@ class UnusedResourceDetector :
         // filter out resources with no declaration locations; the resource was very probably
         // defined in one of the skipped library modules.
         if (context.isGlobalAnalysis() && context.driver.projects.any { !it.reportIssues }) {
-          unused = unused.filter { it.location.isNotEmpty() }
+          unused = unused.filter { it.hasLocation }
         } else {
           // Otherwise, for resources that still don't have a declaration location, set a default
           // location.
           for (resource in unused) {
-            if (resource.location.isEmpty()) {
+            if (!resource.hasLocation) {
               resource.recordLocation(context.project, Location.create(context.project.dir))
             }
           }
@@ -277,7 +286,7 @@ class UnusedResourceDetector :
             // Lint fix data for the IDE which will start the resource removal
             // refactoring with this resource field preselected
             val fix = fix().data(KEY_RESOURCE_FIELD, field)
-            for (location in resource.location.values) {
+            for (location in resource.locations) {
               context.report(Incident(getIssue(resource), location, message, fix))
             }
           }
@@ -287,9 +296,10 @@ class UnusedResourceDetector :
           // location of each resource (from the current module) that appears to be unused (but is
           // likely to end up being used by another module).
           val lintMap = storeSerializedModel(context)
+
           for (resource in unused) {
-            resource.location[context.project]?.let { location ->
-              lintMap.put(resource.field, location)
+            resource.getLocations(context.project).firstOrNull()?.let {
+              lintMap.put(resource.field, it)
             }
           }
         }
@@ -524,48 +534,71 @@ class UnusedResourceDetector :
         }
     }
 
-  private class LintResource(type: ResourceType?, name: String?, value: Int) :
+  private abstract class LintResource(type: ResourceType?, name: String?, value: Int) :
     ResourceUsageModel.Resource(type, name, value) {
+    abstract val hasLocation: Boolean
+    abstract val locations: Collection<Location>
+
+    abstract fun getLocations(project: Project): Collection<Location>
+
+    abstract fun recordLocation(project: Project, location: Location)
 
     /**
-     * Declaration location. We store this per module to ensure that global analysis results match
-     * partial analysis results. In partial analysis mode, the map will only ever contain a location
-     * for the current module.
+     * There can be multiple versions of a resource across modules, but this is usually a bug, and
+     * only one resource will make it to the final app. There can also be multiple versions of a
+     * resource within a module (for example, a string resource called "hello" for each language).
+     * Trying to store all versions (within a module) can be expensive, and is not particularly
+     * helpful for the user. This class only stores the location with the shortest directory name;
+     * this heuristic favors default resources (resource directories without qualifiers).
      */
-    val location: MutableMap<Project, Location> = LinkedHashMap()
+    class ShortestLocation(type: ResourceType?, name: String?, value: Int) :
+      LintResource(type, name, value) {
 
-    fun recordLocation(project: Project, location: Location) {
-      // There can be duplicate resources within a module (for example, a resource per language).
-      // Trying to store all of these can lead to an explosion of locations, and is not particularly
-      // helpful for the user. We just replace the existing location, but only if the new location
-      // has a shorter resource directory name; this heuristic favors default resources (resource
-      // directories without qualifiers).
+      /** Stores one location per module. */
+      private val locationMap: MutableMap<Project, Location> = LinkedHashMap()
 
-      val existingLocation = this.location[project]
-      // If we do not have a location, then store it.
-      if (existingLocation == null) {
-        this.location[project] = location
-        return
+      override val hasLocation: Boolean
+        get() = locationMap.isNotEmpty()
+
+      override val locations: Collection<Location>
+        get() = locationMap.values
+
+      override fun getLocations(project: Project): Collection<Location> =
+        listOfNotNull(locationMap[project])
+
+      override fun recordLocation(project: Project, location: Location) {
+        val existingLocation =
+          locationMap.putIfAbsent(project, location)
+            ?: return // There was no existing location, and we have now added the location.
+
+        // Otherwise, if the new resource directory name is shorter than the existing, replace the
+        // location.
+        if (location.resDirNameShorterThan(existingLocation)) {
+          locationMap[project] = location
+        }
       }
+    }
 
-      // Otherwise, if the new resource directory name is shorter than the existing, store the new
-      // location.
+    /** See [LintResource.ShortestLocation]. This class stores all locations. */
+    class AllLocations(type: ResourceType?, name: String?, value: Int) :
+      LintResource(type, name, value) {
 
-      fun Location.resDirName(): String? {
-        val dir = this.file.parentFile ?: return null
-        val resDir = dir.parentFile ?: return null
-        if (resDir.name != FD_RESOURCES) return null
-        return dir.name
-      }
+      /** Stores many locations per module. */
+      private val locationMap: MutableMap<Project, MutableMap<String, Location>> = LinkedHashMap()
 
-      fun Location.resDirNameShorterThan(location: Location): Boolean {
-        val left = this.resDirName() ?: return false
-        val right = location.resDirName() ?: return false
-        return left.length < right.length
-      }
+      override val hasLocation: Boolean
+        get() = locationMap.isNotEmpty()
 
-      if (location.resDirNameShorterThan(existingLocation)) {
-        this.location[project] = location
+      override val locations: Collection<Location>
+        get() = locationMap.values.flatMap { it.values }
+
+      override fun getLocations(project: Project): Collection<Location> =
+        locationMap[project]?.values ?: emptyList()
+
+      override fun recordLocation(project: Project, location: Location) {
+        val locations = locationMap.getOrPut(project, ::LinkedHashMap)
+        val sLocation = location.file.toString()
+        locations.putIfAbsent(sLocation, location)
       }
     }
   }
@@ -575,8 +608,16 @@ class UnusedResourceDetector :
     var context: Context? = null
     var unused: Set<Resource> = hashSetOf()
 
-    override fun createResource(type: ResourceType, name: String, realValue: Int) =
-      LintResource(type, name, realValue)
+    /** See [LintResource.ShortestLocation]. */
+    var recordAllResourceVersionLocations = false
+
+    override fun createResource(type: ResourceType, name: String, realValue: Int): Resource {
+      return if (recordAllResourceVersionLocations) {
+        LintResource.AllLocations(type, name, realValue)
+      } else {
+        LintResource.ShortestLocation(type, name, realValue)
+      }
+    }
 
     override fun readText(file: File) =
       context?.client?.readFile(file)?.toString() ?: super.readText(file)
@@ -648,6 +689,7 @@ class UnusedResourceDetector :
   companion object {
     const val KEY_RESOURCE_FIELD = "field"
     private const val KEY_MODEL = "model"
+    const val KEY_INCLUDE_ALL_RESOURCE_VERSIONS = "UnusedResourcesIncludeAllVersions"
     // TODO: Switch to configuration property!
     private const val EXCLUDE_TESTS_PROPERTY = "lint.unused-resources.exclude-tests"
     private const val INCLUDE_TESTS_PROPERTY = "lint.unused-resources.include-tests"
@@ -793,3 +835,16 @@ private fun File.listFilesOrEmpty(): List<File> =
     null -> listOf()
     else -> files.asList()
   }
+
+private fun Location.resDirName(): String? {
+  val dir = this.file.parentFile ?: return null
+  val resDir = dir.parentFile ?: return null
+  if (resDir.name != FD_RESOURCES) return null
+  return dir.name
+}
+
+private fun Location.resDirNameShorterThan(location: Location): Boolean {
+  val left = this.resDirName() ?: return false
+  val right = location.resDirName() ?: return false
+  return left.length < right.length
+}

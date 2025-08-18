@@ -20,13 +20,11 @@ import com.android.tools.lint.checks.infrastructure.TestFiles.rClass
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.client.api.LintClient
-import com.android.tools.lint.detector.api.Detector
 import org.intellij.lang.annotations.Language
 
+@Suppress("LintImplTrimIndent")
 class UnusedResourceDetectorTest : AbstractCheckTest() {
-  override fun getDetector(): Detector {
-    return UnusedResourceDetector()
-  }
+  override fun getDetector() = UnusedResourceDetector()
 
   override fun allowCompilationErrors(): Boolean {
     // Some of these unit tests are still relying on source code that references
@@ -565,6 +563,148 @@ class UnusedResourceDetectorTest : AbstractCheckTest() {
           0 errors, 3 warnings
           """
           .trimIndent()
+      )
+  }
+
+  fun testMultiProject4() {
+    // Similar to testMultiProject3, except we test the use of
+    // UnusedResourceDetector.KEY_INCLUDE_ALL_RESOURCE_VERSIONS to include all resource locations
+    // (even translations), but only in global analysis mode.
+    val library1 =
+      project(
+          mLibraryManifest,
+          mLibraryCode,
+          mLibraryStrings,
+          xml(
+            "res/values-fr/strings2.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="unused1">Unused 1</string>
+                <string name="kept1">Kept 1</string>
+            </resources>
+            """
+              .trimIndent(),
+          ),
+          xml(
+            "res/values/strings2.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="unused1">Unused 1</string>
+                <string name="kept1">Kept 1</string>
+            </resources>
+            """
+              .trimIndent(),
+          ),
+          xml(
+            "res/values-en/strings2.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="unused1">Unused 1</string>
+                <string name="kept1">Kept 1</string>
+            </resources>
+            """
+              .trimIndent(),
+          ),
+        )
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("LibraryProject1")
+
+    val library2 =
+      project(
+          mLibraryManifest,
+          mLibraryCode,
+          mLibraryStrings,
+          xml(
+            "res/values/strings2.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="unused1">Unused 1</string>
+                <string name="kept2">Kept 2</string>
+            </resources>
+            """
+              .trimIndent(),
+          ),
+        )
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("LibraryProject2")
+
+    val main =
+      project(
+          mMainCode,
+          manifest().minSdk(15),
+          xml(
+            "res/values/strings2.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources
+                xmlns:tools="http://schemas.android.com/tools"     tools:keep="@string/ke*">
+                <string name="unused2">Unused 2</string>
+            </resources>
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("App")
+        .dependsOn(library1)
+        .dependsOn(library2)
+
+    lint()
+      .projects(main, library1, library2)
+      .reportFrom(main)
+      .clientFactory {
+        object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
+          override fun getClientProperty(key: String): Any? {
+            if (key == UnusedResourceDetector.KEY_INCLUDE_ALL_RESOURCE_VERSIONS) {
+              return true
+            }
+            return super.getClientProperty(key)
+          }
+        }
+      }
+      .expectIdenticalTestModeOutput(false)
+      .testModes(TestMode.DEFAULT, TestMode.PARTIAL)
+      .run()
+      .expect(
+        """
+          ../LibraryProject1/res/values-en/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+              <string name="unused1">Unused 1</string>
+                      ~~~~~~~~~~~~~~
+          ../LibraryProject1/res/values-fr/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+              <string name="unused1">Unused 1</string>
+                      ~~~~~~~~~~~~~~
+          ../LibraryProject1/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+              <string name="unused1">Unused 1</string>
+                      ~~~~~~~~~~~~~~
+          ../LibraryProject2/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+              <string name="unused1">Unused 1</string>
+                      ~~~~~~~~~~~~~~
+          res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
+              <string name="unused2">Unused 2</string>
+                      ~~~~~~~~~~~~~~
+          0 errors, 5 warnings
+          """
+          .trimIndent(),
+        testMode = TestMode.DEFAULT,
+      )
+      .expect(
+        """
+          ../LibraryProject1/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+              <string name="unused1">Unused 1</string>
+                      ~~~~~~~~~~~~~~
+          ../LibraryProject2/res/values/strings2.xml:3: Warning: The resource R.string.unused1 appears to be unused [UnusedResources]
+              <string name="unused1">Unused 1</string>
+                      ~~~~~~~~~~~~~~
+          res/values/strings2.xml:4: Warning: The resource R.string.unused2 appears to be unused [UnusedResources]
+              <string name="unused2">Unused 2</string>
+                      ~~~~~~~~~~~~~~
+          0 errors, 3 warnings
+          """
+          .trimIndent(),
+        testMode = TestMode.PARTIAL,
       )
   }
 
