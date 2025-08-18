@@ -289,7 +289,6 @@ class SourceSetBuilderTest {
 
     private fun createApplicationModelBuilder(variantModel: VariantModel):
             ModelBuilder<
-                    ApplicationBuildFeatures,
                     ApplicationBuildType,
                     ApplicationDefaultConfig,
                     ApplicationProductFlavor,

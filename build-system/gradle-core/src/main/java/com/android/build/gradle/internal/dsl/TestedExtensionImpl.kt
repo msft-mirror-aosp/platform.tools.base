@@ -27,7 +27,6 @@ import org.gradle.api.Action
 
 /** Internal implementation of the 'new' DSL interface */
 abstract class TestedExtensionImpl<
-        BuildFeaturesT : BuildFeatures,
         BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
@@ -35,7 +34,6 @@ abstract class TestedExtensionImpl<
             dslServices: DslServices,
             dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
         ) : CommonExtensionImpl<
-        BuildFeaturesT,
         BuildTypeT,
         DefaultConfigT,
         ProductFlavorT,

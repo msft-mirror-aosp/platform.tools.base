@@ -38,7 +38,6 @@ abstract class ApplicationExtensionImpl @Inject constructor(
             SigningConfig>
 ) :
     TestedExtensionImpl<
-            ApplicationBuildFeatures,
             ApplicationBuildType,
             ApplicationDefaultConfig,
             ApplicationProductFlavor,
@@ -50,6 +49,15 @@ abstract class ApplicationExtensionImpl @Inject constructor(
 
     override val buildFeatures: ApplicationBuildFeatures =
         dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java)
+
+
+    override fun buildFeatures(action: ApplicationBuildFeatures.() -> Unit) {
+        action(buildFeatures)
+    }
+
+    override fun buildFeatures(action: Action<ApplicationBuildFeatures>) {
+        action.execute(buildFeatures)
+    }
 
     override val androidResources: ApplicationAndroidResources =
         dslServices.newDecoratedInstance(ApplicationAndroidResourcesImpl::class.java, dslServices)

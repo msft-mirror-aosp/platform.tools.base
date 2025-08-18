@@ -32,7 +32,6 @@ import org.gradle.api.Action
 interface InternalLibraryExtension :
     LibraryExtension,
     InternalTestedExtension<
-            LibraryBuildFeatures,
             LibraryBuildType,
             LibraryDefaultConfig,
             LibraryProductFlavor,
@@ -40,6 +39,7 @@ interface InternalLibraryExtension :
 
     override var aidlPackagedList: MutableCollection<String>
     fun androidResources(action: Action<LibraryAndroidResources>)
+    fun buildFeatures(action: Action<LibraryBuildFeatures>)
     fun publishing(action: Action<LibraryPublishing>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)

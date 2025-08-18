@@ -128,13 +128,11 @@ import java.util.function.Consumer
 
 /** Base class for all Android plugins */
 abstract class BasePlugin<
-                BuildFeaturesT: BuildFeatures,
                 BuildTypeT: com.android.build.api.dsl.BuildType,
                 DefaultConfigT: com.android.build.api.dsl.DefaultConfig,
                 ProductFlavorT: com.android.build.api.dsl.ProductFlavor,
                 InstallationT: com.android.build.api.dsl.Installation,
                 AndroidT: CommonExtension<
-                        BuildFeaturesT,
                         BuildTypeT,
                         DefaultConfigT,
                         ProductFlavorT,
@@ -159,13 +157,11 @@ abstract class BasePlugin<
     }
 
     protected class ExtensionData<
-            BuildFeaturesT: BuildFeatures,
             BuildTypeT: com.android.build.api.dsl.BuildType,
             DefaultConfigT: com.android.build.api.dsl.DefaultConfig,
             ProductFlavorT: com.android.build.api.dsl.ProductFlavor,
             InstallationT: com.android.build.api.dsl.Installation,
             AndroidT: CommonExtension<
-                    out BuildFeaturesT,
                     out BuildTypeT,
                     out DefaultConfigT,
                     out ProductFlavorT,
@@ -211,7 +207,7 @@ abstract class BasePlugin<
     }
 
     val managedDeviceRegistry: ManagedDeviceRegistry by lazy(LazyThreadSafetyMode.NONE) {
-        ManagedDeviceRegistry(DeviceTestOptionsDslInfoImpl((newExtension as CommonExtensionImpl<*, *, *, *, *>)))
+        ManagedDeviceRegistry(DeviceTestOptionsDslInfoImpl((newExtension as CommonExtensionImpl<*, *, *, *>)))
     }
 
     private val globalConfig by lazy {
@@ -220,7 +216,7 @@ abstract class BasePlugin<
             GlobalTaskCreationConfigImpl(
                 project,
                 extension,
-                (newExtension as CommonExtensionImpl<*, *, *, *, *>),
+                (newExtension as CommonExtensionImpl<*, *, *, *>),
                 dslServices,
                 versionedSdkLoaderService,
                 bootClasspathConfig,
@@ -323,7 +319,7 @@ abstract class BasePlugin<
         @Suppress("DEPRECATION")
         buildOutputs: NamedDomainObjectContainer<com.android.build.gradle.api.BaseVariantOutput>,
         versionedSdkLoaderService: VersionedSdkLoaderService
-    ): ExtensionData<BuildFeaturesT, BuildTypeT, DefaultConfigT, ProductFlavorT, InstallationT, AndroidT>
+    ): ExtensionData<BuildTypeT, DefaultConfigT, ProductFlavorT, InstallationT, AndroidT>
 
     protected abstract fun createComponentExtension(
         dslServices: DslServices,
@@ -542,7 +538,7 @@ abstract class BasePlugin<
         project: Project,
         registry: ToolingModelBuilderRegistry,
         variantInputModel: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
-        extensionData: ExtensionData<BuildFeaturesT, BuildTypeT, DefaultConfigT, ProductFlavorT, InstallationT, AndroidT>,
+        extensionData: ExtensionData<BuildTypeT, DefaultConfigT, ProductFlavorT, InstallationT, AndroidT>,
         globalConfig: GlobalTaskCreationConfig
     ) {
         // Register a builder for the custom tooling model

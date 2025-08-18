@@ -25,7 +25,6 @@ package com.android.build.api.dsl
  */
 interface DynamicFeatureExtension :
     CommonExtension<
-            DynamicFeatureBuildFeatures,
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
             DynamicFeatureProductFlavor,
@@ -45,6 +44,16 @@ interface DynamicFeatureExtension :
      * For more information about the properties you can configure in this block, see [DynamicFeatureAndroidResources].
      */
     fun androidResources(action: DynamicFeatureAndroidResources.() -> Unit)
+
+    /**
+     * A list of build features that can be enabled or disabled on the Android Project.
+     */
+    override val buildFeatures: DynamicFeatureBuildFeatures
+
+    /**
+     * A list of build features that can be enabled or disabled on the Android Project.
+     */
+    fun buildFeatures(action: DynamicFeatureBuildFeatures.() -> Unit)
 
     val privacySandbox: PrivacySandbox
     fun privacySandbox(action: PrivacySandbox.() -> Unit)

@@ -46,7 +46,6 @@ import java.util.function.Supplier
 
 /** Internal implementation of the 'new' DSL interface */
 abstract class CommonExtensionImpl<
-        BuildFeaturesT : BuildFeatures,
         BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
@@ -54,7 +53,6 @@ abstract class CommonExtensionImpl<
             protected val dslServices: DslServices,
             dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
         ) : InternalCommonExtension<
-        BuildFeaturesT,
         BuildTypeT,
         DefaultConfigT,
         ProductFlavorT,
@@ -116,14 +114,6 @@ abstract class CommonExtensionImpl<
 
     override fun adbOptions(action: Action<AdbOptions>) {
         action.execute(adbOptions)
-    }
-
-    override fun buildFeatures(action: Action<BuildFeaturesT>) {
-        action.execute(buildFeatures)
-    }
-
-    override fun buildFeatures(action: BuildFeaturesT.() -> Unit) {
-        action(buildFeatures)
     }
 
     protected abstract var _namespace: String?

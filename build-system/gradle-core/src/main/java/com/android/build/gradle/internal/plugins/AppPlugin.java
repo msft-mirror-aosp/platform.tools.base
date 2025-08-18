@@ -80,7 +80,6 @@ import javax.inject.Inject;
 /** Gradle plugin class for 'application' projects, applied on the base application module */
 public class AppPlugin
         extends AbstractAppPlugin<
-                ApplicationBuildFeatures,
                 ApplicationBuildType,
                 ApplicationDefaultConfig,
                 ApplicationProductFlavor,
@@ -120,7 +119,6 @@ public class AppPlugin
     @NonNull
     @Override
     protected ExtensionData<
-                    ApplicationBuildFeatures,
                     ApplicationBuildType,
                     ApplicationDefaultConfig,
                     ApplicationProductFlavor,

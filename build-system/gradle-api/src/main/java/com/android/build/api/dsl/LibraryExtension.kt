@@ -28,7 +28,6 @@ import org.gradle.api.NamedDomainObjectContainer
  */
 interface LibraryExtension :
     CommonExtension<
-        LibraryBuildFeatures,
         LibraryBuildType,
         LibraryDefaultConfig,
         LibraryProductFlavor,
@@ -53,6 +52,16 @@ interface LibraryExtension :
      * For more information about the properties you can configure in this block, see [LibraryAndroidResources].
      */
     fun androidResources(action: LibraryAndroidResources.() -> Unit)
+
+    /**
+     * A list of build features that can be enabled or disabled on the Android Project.
+     */
+    override val buildFeatures: LibraryBuildFeatures
+
+    /**
+     * A list of build features that can be enabled or disabled on the Android Project.
+     */
+    fun buildFeatures(action: LibraryBuildFeatures.() -> Unit)
 
     /**
      * container of Prefab options

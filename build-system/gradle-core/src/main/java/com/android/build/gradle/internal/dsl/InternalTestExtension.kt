@@ -30,12 +30,12 @@ import org.gradle.api.Action
 interface InternalTestExtension :
     TestExtension,
         InternalCommonExtension<
-                TestBuildFeatures,
                 TestBuildType,
                 TestDefaultConfig,
                 TestProductFlavor,
                 TestInstallation> {
 
     fun androidResources(action: Action<TestAndroidResources>)
+    fun buildFeatures(action: Action<TestBuildFeatures>)
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

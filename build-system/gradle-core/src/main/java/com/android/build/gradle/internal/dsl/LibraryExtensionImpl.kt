@@ -41,7 +41,6 @@ abstract class LibraryExtensionImpl @Inject constructor(
             SigningConfig>
 ) :
     TestedExtensionImpl<
-            LibraryBuildFeatures,
             LibraryBuildType,
             LibraryDefaultConfig,
             LibraryProductFlavor,
@@ -53,6 +52,14 @@ abstract class LibraryExtensionImpl @Inject constructor(
 
     override val buildFeatures: LibraryBuildFeatures =
         dslServices.newDecoratedInstance(LibraryBuildFeaturesImpl::class.java, Supplier { androidResources }, dslServices)
+
+    override fun buildFeatures(action: LibraryBuildFeatures.() -> Unit) {
+        action(buildFeatures)
+    }
+
+    override fun buildFeatures(action: Action<LibraryBuildFeatures>) {
+        action.execute(buildFeatures)
+    }
 
     @get:Suppress("WrongTerminology")
     @set:Suppress("WrongTerminology")

@@ -29,7 +29,6 @@ import java.io.File
  * Only the Android Gradle Plugin should create instances of this interface.
  */
 interface CommonExtension<
-        BuildFeaturesT : BuildFeatures,
         BuildTypeT : BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : ProductFlavor,
@@ -120,12 +119,7 @@ interface CommonExtension<
     /**
      * A list of build features that can be enabled or disabled on the Android Project.
      */
-    val buildFeatures: BuildFeaturesT
-
-    /**
-     * A list of build features that can be enabled or disabled on the Android Project.
-     */
-    fun buildFeatures(action: BuildFeaturesT.() -> Unit)
+    val buildFeatures: BuildFeatures
 
     /**
      * Encapsulates all build type configurations for this project.

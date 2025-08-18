@@ -90,7 +90,7 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
     internal open val namespace: String
         get() {
             val extension = android
-            if (extension is CommonExtension<*,*,*,*,*>) {
+            if (extension is CommonExtension<*,*,*,*>) {
                 return extension.namespace ?: throw RuntimeException("Namespace has not been set yet!")
             }
 
@@ -98,7 +98,7 @@ internal abstract class AndroidProjectDefinitionImpl<ExtensionT>(
         }
 
     protected open fun initDefaultValues(extension: ExtensionT) {
-        if (extension is CommonExtension<*,*,*,*,*>) {
+        if (extension is CommonExtension<*,*,*,*>) {
             extension.namespace = "pkg.name${path.replace(':', '.')}"
             extension.compileSdk {
                 version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)

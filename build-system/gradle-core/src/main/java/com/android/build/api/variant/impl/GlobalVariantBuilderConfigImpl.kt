@@ -25,7 +25,7 @@ import com.android.build.api.variant.AndroidVersion
 import com.android.builder.core.DefaultApiVersion
 
 class GlobalVariantBuilderConfigImpl(
-    private val extension: CommonExtension<*, *, *, *, *>
+    private val extension: CommonExtension<*, *, *, *>
 ) : GlobalVariantBuilderConfig {
 
     override val dependenciesInfo: DependenciesInfo

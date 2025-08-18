@@ -175,7 +175,7 @@ class ModelBuilderTest {
 
     //---------------
 
-    fun <T> ModelBuilder<*,*,*,*,*,*>.query(modelClass: Class<T>, project: Project) : T {
+    fun <T> ModelBuilder<*,*,*,*,*>.query(modelClass: Class<T>, project: Project) : T {
         return modelClass.cast(buildAll(modelClass.name, project))
     }
 
@@ -191,7 +191,6 @@ class ModelBuilderTest {
 
     private fun createApplicationModelBuilder() :
             ModelBuilder<
-                    ApplicationBuildFeatures,
                     ApplicationBuildType,
                     ApplicationDefaultConfig,
                     ApplicationProductFlavor,

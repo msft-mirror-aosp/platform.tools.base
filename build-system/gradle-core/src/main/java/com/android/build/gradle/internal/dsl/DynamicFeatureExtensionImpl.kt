@@ -36,7 +36,6 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
             SigningConfig>
 )  :
     TestedExtensionImpl<
-            DynamicFeatureBuildFeatures,
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
             DynamicFeatureProductFlavor,
@@ -48,6 +47,15 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
 
     override val buildFeatures: DynamicFeatureBuildFeatures =
         dslServices.newInstance(DynamicFeatureBuildFeaturesImpl::class.java)
+
+    override fun buildFeatures(action: DynamicFeatureBuildFeatures.() -> Unit) {
+        action(buildFeatures)
+    }
+
+    override fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>) {
+        action.execute(buildFeatures)
+    }
+
     override val androidResources: DynamicFeatureAndroidResources
         = dslServices.newDecoratedInstance(DynamicFeatureAndroidResourcesImpl::class.java, dslServices)
     override fun androidResources(action: DynamicFeatureAndroidResources.() -> Unit) {

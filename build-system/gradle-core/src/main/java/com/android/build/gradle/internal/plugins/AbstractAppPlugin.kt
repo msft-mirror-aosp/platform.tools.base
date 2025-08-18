@@ -36,13 +36,11 @@ import javax.inject.Inject
 
 /** Gradle plugin class for 'application' projects.  */
 abstract class AbstractAppPlugin<
-        BuildFeaturesT: BuildFeatures,
         BuildTypeT: BuildType,
         DefaultConfigT: DefaultConfig,
         ProductFlavorT: ProductFlavor,
         InstallationT: Installation,
         AndroidT: CommonExtension<
-                BuildFeaturesT,
                 BuildTypeT,
                 DefaultConfigT,
                 ProductFlavorT,
@@ -60,7 +58,7 @@ abstract class AbstractAppPlugin<
         componentFactory: SoftwareComponentFactory?,
         listenerRegistry: BuildEventsListenerRegistry?,
         buildFeatures: org.gradle.api.configuration.BuildFeatures
-) : BasePlugin<BuildFeaturesT, BuildTypeT, DefaultConfigT, ProductFlavorT, InstallationT, AndroidT, AndroidComponentsT, VariantBuilderT, VariantDslInfoT, CreationConfigT, VariantT>(
+) : BasePlugin<BuildTypeT, DefaultConfigT, ProductFlavorT, InstallationT, AndroidT, AndroidComponentsT, VariantBuilderT, VariantDslInfoT, CreationConfigT, VariantT>(
         registry!!,
         componentFactory!!,
         listenerRegistry!!,

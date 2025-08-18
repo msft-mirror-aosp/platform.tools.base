@@ -32,7 +32,6 @@ import org.gradle.api.Action
 interface InternalApplicationExtension :
     ApplicationExtension,
     InternalTestedExtension<
-                ApplicationBuildFeatures,
                 ApplicationBuildType,
                 ApplicationDefaultConfig,
                 ApplicationProductFlavor,
@@ -44,6 +43,7 @@ interface InternalApplicationExtension :
 
     // See GroovyBlockInExtensionsTest
     fun androidResources(action: Action<ApplicationAndroidResources>)
+    fun buildFeatures(action: Action<ApplicationBuildFeatures>)
     fun bundle(action: Action<BundleOptions>)
     fun dependenciesInfo(action: Action<DependenciesInfo>)
     fun publishing(action: Action<ApplicationPublishing>)

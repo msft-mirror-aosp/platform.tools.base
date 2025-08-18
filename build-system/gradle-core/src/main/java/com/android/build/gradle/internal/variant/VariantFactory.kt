@@ -201,7 +201,7 @@ interface VariantFactory<VariantBuilderT : VariantBuilder, VariantDslInfoT: Vari
      */
     fun preVariantCallback(
         project: Project,
-        dslExtension: CommonExtension<*, *, *, *, *>,
+        dslExtension: CommonExtension<*, *, *, *>,
         model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
     )
 

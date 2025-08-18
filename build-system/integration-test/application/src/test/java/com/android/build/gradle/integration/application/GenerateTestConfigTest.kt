@@ -226,7 +226,7 @@ class GenerateTestConfigTest {
         assertThat(mergedAndroidManifest).hasContents(expectedManifestContent)
     }
 
-    private fun AndroidProjectDefinition<out CommonExtension<*, *, *, *, *>>.addTestManifests() {
+    private fun AndroidProjectDefinition<out CommonExtension<*, *, *, *>>.addTestManifests() {
         android.testOptions.unitTests.isIncludeAndroidResources = true
         files {
             add(

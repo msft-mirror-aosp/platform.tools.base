@@ -75,7 +75,6 @@ import javax.inject.Inject;
 /** Gradle plugin class for 'test' projects. */
 public class TestPlugin
         extends BasePlugin<
-                TestBuildFeatures,
                 TestBuildType,
                 TestDefaultConfig,
                 TestProductFlavor,
@@ -108,7 +107,6 @@ public class TestPlugin
     @NonNull
     @Override
     protected ExtensionData<
-                    TestBuildFeatures,
                     TestBuildType,
                     TestDefaultConfig,
                     TestProductFlavor,

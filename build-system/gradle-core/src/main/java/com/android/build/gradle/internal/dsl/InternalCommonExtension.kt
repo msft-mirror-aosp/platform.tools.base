@@ -42,13 +42,11 @@ import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
  * to the new implementations.
  */
 interface InternalCommonExtension<
-        BuildFeaturesT : com.android.build.api.dsl.BuildFeatures,
         BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : com.android.build.api.dsl.DefaultConfig,
         ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
         InstallationT : com.android.build.api.dsl.Installation> :
     CommonExtension<
-        BuildFeaturesT,
         BuildTypeT,
         DefaultConfigT,
         ProductFlavorT,
@@ -78,7 +76,6 @@ interface InternalCommonExtension<
     fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
     fun aaptOptions(action: Action<AaptOptionsImpl>)
     fun adbOptions(action: Action<AdbOptionsImpl>)
-    fun buildFeatures(action: Action<BuildFeaturesT>)
     fun compileOptions(action: Action<CompileOptionsImpl>)
     fun composeOptions(action: Action<ComposeOptions>)
     fun dataBinding(action: Action<DataBindingOptionsImpl>)

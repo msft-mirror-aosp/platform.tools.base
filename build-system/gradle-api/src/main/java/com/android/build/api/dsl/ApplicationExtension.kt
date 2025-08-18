@@ -27,7 +27,6 @@ import org.gradle.declarative.dsl.model.annotations.Configuring
  */
 interface ApplicationExtension :
     CommonExtension<
-            ApplicationBuildFeatures,
             ApplicationBuildType,
             ApplicationDefaultConfig,
             ApplicationProductFlavor,
@@ -81,6 +80,16 @@ interface ApplicationExtension :
      * For more information about the properties you can configure in this block, see [ApplicationAndroidResources].
      */
     fun androidResources(action: ApplicationAndroidResources.() -> Unit)
+
+    /**
+     * A list of build features that can be enabled or disabled on the Android Project.
+     */
+    override val buildFeatures: ApplicationBuildFeatures
+
+    /**
+     * A list of build features that can be enabled or disabled on the Android Project.
+     */
+    fun buildFeatures(action: ApplicationBuildFeatures.() -> Unit)
 
     override val installation: ApplicationInstallation
 

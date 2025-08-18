@@ -146,13 +146,11 @@ import com.android.build.gradle.internal.dsl.BuildType as InternalBuildType
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalFlavor
 
 class ModelBuilder<
-        BuildFeaturesT : BuildFeatures,
         BuildTypeT : BuildType,
         DefaultConfigT : DefaultConfig,
         ProductFlavorT : ProductFlavor,
         InstallationT : Installation,
         ExtensionT : CommonExtension<
-                BuildFeaturesT,
                 BuildTypeT,
                 DefaultConfigT,
                 ProductFlavorT,
@@ -766,7 +764,7 @@ class ModelBuilder<
                 } else null
 
         val extensionImpl =
-            extension as? CommonExtensionImpl<*, *, *, *, *>
+            extension as? CommonExtensionImpl<*, *, *, *>
                 ?: throw RuntimeException("Wrong extension provided to v2 ModelBuilder")
         val compileSdkVersion = extensionImpl.compileSdkVersion ?: "unknown"
 

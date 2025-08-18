@@ -36,7 +36,6 @@ abstract class TestExtensionImpl @Inject constructor(
             TestProductFlavor, SigningConfig>
 ) :
     CommonExtensionImpl<
-            TestBuildFeatures,
             TestBuildType,
             TestDefaultConfig,
             TestProductFlavor,
@@ -48,6 +47,14 @@ abstract class TestExtensionImpl @Inject constructor(
 
     override val buildFeatures: TestBuildFeatures =
         dslServices.newInstance(TestBuildFeaturesImpl::class.java)
+
+    override fun buildFeatures(action: TestBuildFeatures.() -> Unit) {
+        action(buildFeatures)
+    }
+
+    override fun buildFeatures(action: Action<TestBuildFeatures>) {
+        action.execute(buildFeatures)
+    }
 
     override var targetProjectPath: String? = null
 

@@ -25,7 +25,6 @@ package com.android.build.api.dsl
 */
 interface TestExtension :
     CommonExtension<
-            TestBuildFeatures,
             TestBuildType,
             TestDefaultConfig,
             TestProductFlavor,
@@ -45,6 +44,16 @@ interface TestExtension :
      * For more information about the properties you can configure in this block, see [TestAndroidResources].
      */
     fun androidResources(action: TestAndroidResources.() -> Unit)
+
+    /**
+     * A list of build features that can be enabled or disabled on the Android Project.
+     */
+    override val buildFeatures: TestBuildFeatures
+
+    /**
+     * A list of build features that can be enabled or disabled on the Android Project.
+     */
+    fun buildFeatures(action: TestBuildFeatures.() -> Unit)
 
     /**
      * The Gradle path of the project that this test project tests.

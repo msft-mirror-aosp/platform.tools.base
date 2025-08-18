@@ -30,13 +30,13 @@ import org.gradle.api.Action
 interface InternalDynamicFeatureExtension :
     DynamicFeatureExtension,
     InternalTestedExtension<
-            DynamicFeatureBuildFeatures,
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
             DynamicFeatureProductFlavor,
             DynamicFeatureInstallation> {
 
     fun androidResources(action: Action<DynamicFeatureAndroidResources>)
+    fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)
 }
