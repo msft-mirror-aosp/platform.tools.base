@@ -55,7 +55,8 @@ def _platform_intellij_plugin_impl(ctx):
             args.add("--entry", "META-INF/plugin.xml")
             args.add("--optional_entry")
             args.add("--build_txt", ctx.file._build_txt)
-            args.add("--overwrite_since_until_builds")
+            if ctx.attr.overwrite_since_until_builds:
+                args.add("--overwrite_since_until_builds")
             _stamp(ctx, args, [ctx.file._build_txt], file, stamped_jar)
 
             new_files[path] = stamped_jar
@@ -78,6 +79,7 @@ _platform_intellij_plugin = rule(
         "plugin": attr.label(
             providers = [PluginInfo],
         ),
+        "overwrite_since_until_builds": attr.bool(),
         "_stamper": attr.label(
             default = Label("//tools/adt/idea/studio:stamper"),
             cfg = "exec",
@@ -143,7 +145,7 @@ _intellij_plugin = rule(
     implementation = _intellij_plugin_impl,
 )
 
-def intellij_plugin(name, plugin_id, platforms, **kwargs):
+def intellij_plugin(name, plugin_id, platforms, overwrite_since_until_builds = True, **kwargs):
     studio_plugin(
         name = plugin_id,
         target_compatible_with = select(
@@ -154,6 +156,7 @@ def intellij_plugin(name, plugin_id, platforms, **kwargs):
     )
     _platform_intellij_plugin(
         name = "%s.platform" % plugin_id,
+        overwrite_since_until_builds = overwrite_since_until_builds,
         plugin = plugin_id,
     )
     _intellij_plugin(
