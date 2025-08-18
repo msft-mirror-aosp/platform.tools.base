@@ -71,7 +71,7 @@ private class Receiver : MultiLineReceiver() {
 
 private val MDNS_AUTO_CONNECT_TLS_REGEX = Regex("adb-(.*)-.*\\._adb-tls-connect\\._tcp\\.?")
 
-private const val MDNS_UNENCRYPTED_SUFFIX = "_adb._tcp."
+private const val MDNS_UNENCRYPTED_SUFFIX = "_adb._tcp"
 
 /**
  * Returns `true` is the device is using mDNS auto-connect and TLS
