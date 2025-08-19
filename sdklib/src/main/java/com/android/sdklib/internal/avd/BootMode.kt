@@ -20,7 +20,11 @@ sealed class BootMode {
   /** A user-visible text representation of this boot mode. */
   abstract val text: String
 
+  /** Properties for config.ini to select this as the default boot mode */
   abstract fun properties(): Map<String, String>
+
+  /** Emulator command-line arguments to specify this boot mode */
+  abstract fun arguments(): List<String>
 
   companion object {
     fun fromProperties(properties: Map<String, String>): BootMode {
@@ -35,8 +39,7 @@ sealed class BootMode {
   }
 }
 
-// TODO: make this a data object when Kotlin 1.9 is available
-object QuickBoot : BootMode() {
+data object QuickBoot : BootMode() {
   override val text = "Quick Boot"
 
   override fun properties(): Map<String, String> =
@@ -47,10 +50,14 @@ object QuickBoot : BootMode() {
       ConfigKey.FORCE_FAST_BOOT_MODE to "yes",
     )
 
-  override fun toString() = this::class.simpleName!!
+  /**
+   * No argument is required for quick boot, and none exists to override forceColdBoot in
+   * config.ini.
+   */
+  override fun arguments(): List<String> = emptyList()
 }
 
-object ColdBoot : BootMode() {
+data object ColdBoot : BootMode() {
   override val text = "Cold Boot"
 
   override fun properties(): Map<String, String> =
@@ -61,7 +68,7 @@ object ColdBoot : BootMode() {
       ConfigKey.FORCE_FAST_BOOT_MODE to "no",
     )
 
-  override fun toString() = this::class.simpleName!!
+  override fun arguments(): List<String> = listOf("-no-snapstorage")
 }
 
 data class BootSnapshot(val snapshot: String) : BootMode() {
@@ -74,4 +81,6 @@ data class BootSnapshot(val snapshot: String) : BootMode() {
       ConfigKey.FORCE_COLD_BOOT_MODE to "no",
       ConfigKey.FORCE_FAST_BOOT_MODE to "no",
     )
+
+  override fun arguments(): List<String> = listOf("-snapshot", snapshot, "-no-snapshot-save")
 }

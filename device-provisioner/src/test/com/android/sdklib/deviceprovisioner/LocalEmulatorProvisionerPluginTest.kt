@@ -239,8 +239,8 @@ class LocalEmulatorProvisionerPluginTest {
 
     val connectedDevice = checkNotNull(handle.state.connectedDevice)
     handle.awaitReady()
-    assertThat(connectedDevice.deviceProperties().allReadonly()["ro.test.snapshot"])
-      .isEqualTo(snapshotPath.toString())
+    val properties = connectedDevice.deviceProperties().allReadonly()
+    assertThat(properties["ro.test.snapshot"]).isEqualTo(snapshotPath.name)
   }
 
   @Test
@@ -260,8 +260,8 @@ class LocalEmulatorProvisionerPluginTest {
 
     val connectedDevice = checkNotNull(handle.state.connectedDevice)
     handle.awaitReady()
-    assertThat(connectedDevice.deviceProperties().allReadonly()["ro.test.snapshot"])
-      .isEqualTo(snapshotPath.toString())
+    val properties = connectedDevice.deviceProperties().allReadonly()
+    assertThat(properties["ro.test.snapshot"]).isEqualTo(snapshotPath.name)
   }
 
   @Test

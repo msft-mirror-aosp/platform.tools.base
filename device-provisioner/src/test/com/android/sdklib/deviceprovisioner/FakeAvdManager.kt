@@ -27,6 +27,9 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.internal.avd.AvdInfo
+import com.android.sdklib.internal.avd.BootMode
+import com.android.sdklib.internal.avd.BootSnapshot
+import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.repository.IdDisplay
 import java.awt.Component
@@ -73,14 +76,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
       return true
     }
 
-  override suspend fun startAvd(avdInfo: AvdInfo) = boot(avdInfo, false, null)
-
-  override suspend fun coldBootAvd(avdInfo: AvdInfo) = boot(avdInfo, true, null)
-
-  override suspend fun bootAvdFromSnapshot(avdInfo: AvdInfo, snapshot: LocalEmulatorSnapshot) =
-    boot(avdInfo, false, snapshot)
-
-  private fun boot(avdInfo: AvdInfo, coldBoot: Boolean, snapshot: LocalEmulatorSnapshot?) {
+  override suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode) {
     avdInfo.properties[LAUNCH_EXCEPTION_MESSAGE]?.let { throw DeviceActionException(it) }
 
     val device =
@@ -90,9 +86,9 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
       selector,
       properties +
         mapOf(
-          "ro.test.coldboot" to if (coldBoot) "1" else "0",
-          "ro.test.snapshot" to (snapshot?.path?.toString() ?: ""),
-          "dev.bootcomplete" to if (coldBoot) "" else "1",
+          "ro.test.coldboot" to if (bootMode == ColdBoot) "1" else "0",
+          "ro.test.snapshot" to ((bootMode as? BootSnapshot)?.snapshot ?: ""),
+          "dev.bootcomplete" to if (bootMode == ColdBoot) "" else "1",
         ),
     )
     device.start()

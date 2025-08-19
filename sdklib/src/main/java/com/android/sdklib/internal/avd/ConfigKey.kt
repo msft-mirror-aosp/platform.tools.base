@@ -146,13 +146,28 @@ object ConfigKey {
   /** Latency of the simulated network, represented by [AvdNetworkLatency]. */
   const val NETWORK_LATENCY = "runtime.network.latency"
 
-  /** Flag indicating the emulator should perform a cold boot rather than using a snapshot. */
+  /**
+   * Flag indicating the emulator should perform a cold boot rather than using a snapshot. This is
+   * read by the emulator.
+   */
   const val FORCE_COLD_BOOT_MODE = "fastboot.forceColdBoot"
 
+  /**
+   * Flag indicating that [CHOSEN_SNAPSHOT_FILE] should be booted by default. This is not read by
+   * the emulator; Studio must read this and pass the necessary command-line arguments.
+   */
   const val FORCE_CHOSEN_SNAPSHOT_BOOT_MODE = "fastboot.forceChosenSnapshotBoot"
 
+  /**
+   * Flag indicating the emulator should boot from the default snapshot. This is not read by the
+   * emulator.
+   */
   const val FORCE_FAST_BOOT_MODE = "fastboot.forceFastBoot"
 
+  /**
+   * Indicates a snapshot to be booted by default. This is not read by the emulator; Studio must
+   * read this and pass it as a command-line argument to the emulator.
+   */
   const val CHOSEN_SNAPSHOT_FILE = "fastboot.chosenSnapshotFile"
 
   /** How to emulate the front facing camera, represented by [AvdCamera]. */
