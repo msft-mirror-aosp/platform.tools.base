@@ -18,24 +18,15 @@ package com.android.tools.lint.checks.fx.result
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
-import java.util.Objects
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 
 /** An internal representation of a method descriptor, identifying the name and overloading. */
-class MethodId(val isVirtual: Boolean, val name: String, val paramTags: List<ClassId?>) {
+data class MethodId(val isVirtual: Boolean, val name: String, val paramTags: List<ClassId?>) {
 
   override fun toString(): String = "$name${(paramTags.hashCode() % 1000).subscript()}"
-
-  override fun equals(other: Any?) =
-    other is MethodId &&
-      isVirtual == other.isVirtual &&
-      name == other.name &&
-      paramTags == other.paramTags
-
-  override fun hashCode() = Objects.hash(isVirtual, name, paramTags)
 
   companion object {
     operator fun invoke(method: PsiMethod): MethodId {
