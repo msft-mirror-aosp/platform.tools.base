@@ -128,11 +128,7 @@ import java.util.function.Consumer
 
 /** Base class for all Android plugins */
 abstract class BasePlugin<
-                DefaultConfigT: com.android.build.api.dsl.DefaultConfig,
-                ProductFlavorT: com.android.build.api.dsl.ProductFlavor,
-                AndroidT: CommonExtension<
-                        DefaultConfigT,
-                        ProductFlavorT>,
+                AndroidT: CommonExtension,
                 AndroidComponentsT:
                         AndroidComponentsExtension<
                                 in AndroidT,
@@ -152,12 +148,7 @@ abstract class BasePlugin<
         checkClasspathSanity()
     }
 
-    protected class ExtensionData<
-            DefaultConfigT: com.android.build.api.dsl.DefaultConfig,
-            ProductFlavorT: com.android.build.api.dsl.ProductFlavor,
-            AndroidT: CommonExtension<
-                    out DefaultConfigT,
-                    out ProductFlavorT>>(
+    protected class ExtensionData<AndroidT: CommonExtension>(
         val oldExtension: BaseExtension,
         val newExtension: AndroidT,
         val bootClasspathConfig: BootClasspathConfigImpl,
@@ -311,7 +302,7 @@ abstract class BasePlugin<
         @Suppress("DEPRECATION")
         buildOutputs: NamedDomainObjectContainer<com.android.build.gradle.api.BaseVariantOutput>,
         versionedSdkLoaderService: VersionedSdkLoaderService
-    ): ExtensionData<DefaultConfigT, ProductFlavorT, AndroidT>
+    ): ExtensionData<AndroidT>
 
     protected abstract fun createComponentExtension(
         dslServices: DslServices,
@@ -530,7 +521,7 @@ abstract class BasePlugin<
         project: Project,
         registry: ToolingModelBuilderRegistry,
         variantInputModel: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
-        extensionData: ExtensionData<DefaultConfigT, ProductFlavorT, AndroidT>,
+        extensionData: ExtensionData<AndroidT>,
         globalConfig: GlobalTaskCreationConfig
     ) {
         // Register a builder for the custom tooling model

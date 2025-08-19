@@ -49,7 +49,7 @@ class TestEngineWiringTest(
     configuration: (
         buildDefinition: GradleBuildDefinition,
         modulePath: String,
-        action: AndroidProjectDefinition<out CommonExtension<*, *>>.() -> Unit
+        action: AndroidProjectDefinition<out CommonExtension>.() -> Unit
     ) -> Unit
 ) {
     companion object {
@@ -60,7 +60,7 @@ class TestEngineWiringTest(
             arrayOf(
                 ":lib",
                 { projectDefinition: ApplicationExtension -> },
-                { buildDefinition : GradleBuildDefinition, modulePath: String, action: AndroidProjectDefinition<out CommonExtension<*, *>>.() -> Unit ->
+                { buildDefinition : GradleBuildDefinition, modulePath: String, action: AndroidProjectDefinition<out CommonExtension>.() -> Unit ->
                     buildDefinition.androidLibrary(modulePath, action = action)
 
                 },
@@ -69,7 +69,7 @@ class TestEngineWiringTest(
             arrayOf(
                 ":app",
                 { projectDefinition: ApplicationExtension -> },
-                { buildDefinition : GradleBuildDefinition, modulePath: String, action: AndroidProjectDefinition<out CommonExtension<*, *>>.() -> Unit ->
+                { buildDefinition : GradleBuildDefinition, modulePath: String, action: AndroidProjectDefinition<out CommonExtension>.() -> Unit ->
                     buildDefinition.androidApplication(modulePath, action = action)
                 },
             ),
@@ -78,7 +78,7 @@ class TestEngineWiringTest(
                 { projectDef: ApplicationExtension ->
                     projectDef.dynamicFeatures.add(":feature")
                 },
-                { buildDefinition : GradleBuildDefinition, modulePath: String, action: AndroidProjectDefinition<out CommonExtension<*, *>>.() -> Unit ->
+                { buildDefinition : GradleBuildDefinition, modulePath: String, action: AndroidProjectDefinition<out CommonExtension>.() -> Unit ->
                     buildDefinition.androidFeature(modulePath) {
                         action()
                         dependencies {

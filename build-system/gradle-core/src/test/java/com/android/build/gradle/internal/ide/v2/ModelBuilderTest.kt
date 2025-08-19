@@ -173,7 +173,7 @@ class ModelBuilderTest {
 
     //---------------
 
-    fun <T> ModelBuilder<*, *, *>.query(modelClass: Class<T>, project: Project) : T {
+    fun <T> ModelBuilder<*>.query(modelClass: Class<T>, project: Project) : T {
         return modelClass.cast(buildAll(modelClass.name, project))
     }
 
@@ -187,12 +187,7 @@ class ModelBuilderTest {
         sdkComponents = sdkComponentProvider
     )
 
-    private fun createApplicationModelBuilder() :
-            ModelBuilder<
-                    ApplicationDefaultConfig,
-                    ApplicationProductFlavor,
-                    ApplicationExtension> {
-
+    private fun createApplicationModelBuilder() : ModelBuilder<ApplicationExtension> {
         // for now create an app extension
 
         AndroidLocationsBuildService.RegistrationAction(project).execute()

@@ -25,12 +25,7 @@ import org.gradle.api.NamedDomainObjectContainer
  *
  * Only the Android Gradle Plugin should create instances of interfaces in com.android.build.api.dsl.
  */
-interface DynamicFeatureExtension :
-    CommonExtension<
-            DynamicFeatureDefaultConfig,
-            DynamicFeatureProductFlavor>,
-    ApkExtension,
-    TestedExtension {
+interface DynamicFeatureExtension: CommonExtension, ApkExtension, TestedExtension {
 
     /**
      * Specifies options related to the processing of Android Resources.
@@ -128,6 +123,81 @@ interface DynamicFeatureExtension :
      * For more information about the properties you can configure in this block, see [AdbOptions].
      */
     fun installation(action: DynamicFeatureInstallation.() -> Unit)
+
+
+    /**
+     * Encapsulates all product flavors configurations for this project.
+     *
+     * Product flavors represent different versions of your project that you expect to co-exist
+     * on a single device, the Google Play store, or repository. For example, you can configure
+     * 'demo' and 'full' product flavors for your app, and each of those flavors can specify
+     * different features, device requirements, resources, and application ID's--while sharing
+     * common source code and resources. So, product flavors allow you to output different versions
+     * of your project by simply changing only the components and settings that are different
+     * between them.
+     *
+     *
+     * Configuring product flavors is similar to
+     * [configuring build types](https://developer.android.com/studio/build/build-variants.html#build-types):
+     * add them to the `productFlavors` block of your project's `build.gradle` file
+     * and configure the settings you want.
+     * Product flavors support the same properties as the `defaultConfig`
+     * block--this is because `defaultConfig` defines an object that the plugin uses as the base
+     * configuration for all other flavors. Each flavor you configure can then override any of the
+     * default values in `defaultConfig`, such as the
+     * [`applicationId`](https://d.android.com/studio/build/application-id.html).
+     *
+     *
+     * When using Android plugin 3.0.0 and higher, *each flavor must belong to a
+     * [`flavorDimension`](com.android.build.gradle.BaseExtension.html#com.android.build.gradle.BaseExtension:flavorDimensions(java.lang.String[]))
+     * value*. By default, when you specify only one
+     * dimension, all flavors you configure belong to that dimension. If you specify more than one
+     * flavor dimension, you need to manually assign each flavor to a dimension. To learn more, read
+     * [Use Flavor Dimensions for variant-aware dependency management](https://developer.android.com/studio/build/gradle-plugin-3-0-0-migration.html#variant_aware).
+     *
+     *
+     * When you configure product flavors, the Android plugin automatically combines them with
+     * your [DynamicFeatureBuildType] configurations to
+     * [create build variants](https://developer.android.com/studio/build/build-variants.html).
+     * If the plugin creates certain build variants that you don't want, you can
+     * [filter variants](https://developer.android.com/studio/build/build-variants.html#filter-variants).
+     *
+     * @see [DynamicFeatureProductFlavor]
+     */
+    override val productFlavors: NamedDomainObjectContainer<out DynamicFeatureProductFlavor>
+
+    /**
+     * Encapsulates all product flavors configurations for this project.
+     *
+     * For more information about the properties you can configure in this block,
+     * see [DynamicFeatureProductFlavor]
+     */
+    fun productFlavors(action: NamedDomainObjectContainer<DynamicFeatureProductFlavor>.() -> Unit)
+
+
+    /**
+     * Specifies defaults for variant properties that the Android plugin applies to all build
+     * variants.
+     *
+     * You can override any `defaultConfig` property when
+     * [configuring product flavors](https://developer.android.com/studio/build/build-variants.html#product-flavors)
+     *
+     * For more information about the properties you can configure in this block, see [DynamicFeatureDefaultConfig].
+     */
+    override val defaultConfig: DynamicFeatureDefaultConfig
+
+    /**
+     * Specifies defaults for variant properties that the Android plugin applies to all build
+     * variants.
+     *
+     * You can override any `defaultConfig` property when
+     * [configuring product flavors](https://developer.android.com/studio/build/build-variants.html#product-flavors)
+     *
+     * For more information about the properties you can configure in this block, see [DynamicFeatureDefaultConfig].
+     */
+    fun defaultConfig(action: DynamicFeatureDefaultConfig.() -> Unit)
+
+
 
     val privacySandbox: PrivacySandbox
     fun privacySandbox(action: PrivacySandbox.() -> Unit)

@@ -28,9 +28,7 @@ import java.io.File
  *
  * Only the Android Gradle Plugin should create instances of this interface.
  */
-interface CommonExtension<
-        DefaultConfigT : DefaultConfig,
-        ProductFlavorT : ProductFlavor> {
+interface CommonExtension {
 
     /**
      * Specifies options for the Android Asset Packaging Tool (AAPT).
@@ -289,7 +287,6 @@ interface CommonExtension<
     /**
      * Encapsulates all product flavors configurations for this project.
      *
-     *
      * Product flavors represent different versions of your project that you expect to co-exist
      * on a single device, the Google Play store, or repository. For example, you can configure
      * 'demo' and 'full' product flavors for your app, and each of those flavors can specify
@@ -326,16 +323,7 @@ interface CommonExtension<
      *
      * @see [ProductFlavor]
      */
-    val productFlavors: NamedDomainObjectContainer<out ProductFlavorT>
-
-    /**
-     * Encapsulates all product flavors configurations for this project.
-     *
-     * For more information about the properties you can configure in this block,
-     * see [ProductFlavor]
-     */
-    fun productFlavors(action: NamedDomainObjectContainer<ProductFlavorT>.() -> Unit)
-
+    val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
 
     /**
      * Specifies defaults for variant properties that the Android plugin applies to all build
@@ -346,19 +334,7 @@ interface CommonExtension<
      *
      * For more information about the properties you can configure in this block, see [DefaultConfig].
      */
-    val defaultConfig: DefaultConfigT
-
-    /**
-     * Specifies defaults for variant properties that the Android plugin applies to all build
-     * variants.
-     *
-     * You can override any `defaultConfig` property when
-     * [configuring product flavors](https://developer.android.com/studio/build/build-variants.html#product-flavors)
-     *
-     * For more information about the properties you can configure in this block, see [DefaultConfig].
-     */
-    fun defaultConfig(action: DefaultConfigT.() -> Unit)
-
+    val defaultConfig: DefaultConfig
 
     /**
      * Encapsulates signing configurations that you can apply to [ ] and [ ] configurations.

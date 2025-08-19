@@ -287,12 +287,7 @@ class SourceSetBuilderTest {
         return variant
     }
 
-    private fun createApplicationModelBuilder(variantModel: VariantModel):
-            ModelBuilder<
-                    ApplicationDefaultConfig,
-                    ApplicationProductFlavor,
-                    ApplicationExtension> {
-
+    private fun createApplicationModelBuilder(variantModel: VariantModel): ModelBuilder<ApplicationExtension> {
         // for now create an app extension
 
         AndroidLocationsBuildService.RegistrationAction(project).execute()

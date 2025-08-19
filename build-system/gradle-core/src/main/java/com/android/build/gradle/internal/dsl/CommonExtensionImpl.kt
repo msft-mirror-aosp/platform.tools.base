@@ -51,9 +51,7 @@ abstract class CommonExtensionImpl<
         ProductFlavorT : com.android.build.api.dsl.ProductFlavor>(
             protected val dslServices: DslServices,
             dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
-        ) : InternalCommonExtension<
-        DefaultConfigT,
-        ProductFlavorT> {
+        ) : InternalCommonExtension {
 
     private val sourceSetManager = dslContainers.sourceSetManager
 
@@ -217,14 +215,6 @@ abstract class CommonExtensionImpl<
         action.invoke(viewBinding)
     }
 
-    override fun defaultConfig(action: Action<com.android.build.gradle.internal.dsl.DefaultConfig>) {
-        action.execute(defaultConfig as com.android.build.gradle.internal.dsl.DefaultConfig)
-    }
-
-    override fun defaultConfig(action: DefaultConfigT.() -> Unit) {
-        action.invoke(defaultConfig)
-    }
-
     override val testCoverage: TestCoverage  = dslServices.newInstance(JacocoOptions::class.java)
 
     override fun testCoverage(action: TestCoverage.() -> Unit) {
@@ -267,14 +257,6 @@ abstract class CommonExtensionImpl<
 
     override fun packagingOptions(action: Action<com.android.build.gradle.internal.dsl.PackagingOptions>) {
         action.execute(packaging as com.android.build.gradle.internal.dsl.PackagingOptions)
-    }
-
-    override fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>) {
-        action.execute(productFlavors as NamedDomainObjectContainer<ProductFlavor>)
-    }
-
-    override fun productFlavors(action: NamedDomainObjectContainer<ProductFlavorT>.() -> Unit) {
-        action.invoke(productFlavors)
     }
 
     override fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>) {

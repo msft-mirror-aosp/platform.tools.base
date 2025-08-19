@@ -27,15 +27,13 @@ import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
-interface InternalTestExtension :
-    TestExtension,
-        InternalCommonExtension<
-                TestDefaultConfig,
-                TestProductFlavor> {
+interface InternalTestExtension: TestExtension, InternalCommonExtension {
 
     fun androidResources(action: Action<TestAndroidResources>)
     fun buildFeatures(action: Action<TestBuildFeatures>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
+    fun defaultConfig(action: Action<DefaultConfig>)
     fun installation(action: Action<TestInstallation>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)

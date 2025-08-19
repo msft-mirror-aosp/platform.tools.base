@@ -27,13 +27,11 @@ import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
-interface InternalDynamicFeatureExtension :
-    DynamicFeatureExtension,
-    InternalTestedExtension<
-            DynamicFeatureDefaultConfig,
-            DynamicFeatureProductFlavor> {
+interface InternalDynamicFeatureExtension: DynamicFeatureExtension, InternalTestedExtension {
 
     fun androidResources(action: Action<DynamicFeatureAndroidResources>)
+    fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
+    fun defaultConfig(action: Action<DefaultConfig>)
     fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
     fun installation(action: Action<DynamicFeatureInstallation>)

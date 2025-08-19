@@ -75,8 +75,6 @@ import javax.inject.Inject;
 /** Gradle plugin class for 'test' projects. */
 public class TestPlugin
         extends BasePlugin<
-                TestDefaultConfig,
-                TestProductFlavor,
                 com.android.build.api.dsl.TestExtension,
                 TestAndroidComponentsExtension,
                 TestVariantBuilder,
@@ -104,10 +102,7 @@ public class TestPlugin
 
     @NonNull
     @Override
-    protected ExtensionData<
-                    TestDefaultConfig,
-                    TestProductFlavor,
-                    com.android.build.api.dsl.TestExtension>
+    protected ExtensionData<com.android.build.api.dsl.TestExtension>
             createExtension(
                     @NonNull DslServices dslServices,
                     @NonNull

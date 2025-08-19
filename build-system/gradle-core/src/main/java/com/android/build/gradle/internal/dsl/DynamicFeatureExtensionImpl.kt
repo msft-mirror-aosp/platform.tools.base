@@ -22,6 +22,8 @@ import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.DynamicFeatureDefaultConfig
 import com.android.build.api.dsl.DynamicFeatureInstallation
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
+import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
+import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.Action
@@ -71,6 +73,22 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
 
     override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.release(action: DynamicFeatureBuildType.() -> Unit)  {
         getByName("release", action)
+    }
+
+    override fun productFlavors(action: Action<NamedDomainObjectContainer<InternalProductFlavor>>) {
+        action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
+    }
+
+    override fun productFlavors(action: NamedDomainObjectContainer<DynamicFeatureProductFlavor>.() -> Unit) {
+        action.invoke(productFlavors)
+    }
+
+    override fun defaultConfig(action: Action<InternalDefaultConfig>) {
+        action.execute(defaultConfig as InternalDefaultConfig)
+    }
+
+    override fun defaultConfig(action: DynamicFeatureDefaultConfig.() -> Unit) {
+        action.invoke(defaultConfig)
     }
 
     override val androidResources: DynamicFeatureAndroidResources

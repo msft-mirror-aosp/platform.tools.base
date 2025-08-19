@@ -103,7 +103,7 @@ class GroovyExtensionsTest {
             "com.android.build.gradle.internal.dsl.BundleOptions" -> "com.android.build.api.dsl.Bundle"
             "com.android.build.gradle.internal.dsl.DataBindingOptions" -> "com.android.build.api.dsl.DataBinding"
             "com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl" -> "com.android.build.api.dsl.ViewBinding"
-            "com.android.build.gradle.internal.dsl.DefaultConfig" -> "DefaultConfigT"
+            "com.android.build.gradle.internal.dsl.DefaultConfig" -> "com.android.build.api.dsl.${componentPrefix}DefaultConfig"
             "com.android.build.gradle.internal.dsl.ExternalNativeBuild" -> "com.android.build.api.dsl.ExternalNativeBuild"
             "com.android.build.gradle.internal.dsl.LintOptions" -> "com.android.build.api.dsl.LintOptions"
             "com.android.build.gradle.internal.dsl.PackagingOptions" -> "com.android.build.api.dsl.Packaging"
@@ -114,7 +114,7 @@ class GroovyExtensionsTest {
             "org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.BuildType>" ->
                 "org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.${componentPrefix}BuildType>"
             "org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.ProductFlavor>" ->
-                "org.gradle.api.NamedDomainObjectContainer<ProductFlavorT>"
+                "org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.${componentPrefix}ProductFlavor>"
             "org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.SigningConfig>" ->
                 "org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApkSigningConfig>"
             else -> typeName

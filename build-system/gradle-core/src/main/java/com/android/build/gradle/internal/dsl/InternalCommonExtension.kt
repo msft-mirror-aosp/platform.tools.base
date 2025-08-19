@@ -41,12 +41,7 @@ import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
  * types, in order to enable the use of kotlin delegation from the original DSL classes
  * to the new implementations.
  */
-interface InternalCommonExtension<
-        DefaultConfigT : com.android.build.api.dsl.DefaultConfig,
-        ProductFlavorT : com.android.build.api.dsl.ProductFlavor> :
-    CommonExtension<
-        DefaultConfigT,
-        ProductFlavorT>, Lockable {
+interface InternalCommonExtension: CommonExtension, Lockable {
 
     override val aaptOptions: AaptOptionsImpl
 
@@ -66,8 +61,6 @@ interface InternalCommonExtension<
     var compileSdkVersion: String?
 
     // See GroovyExtensionsTest
-    fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
-    fun defaultConfig(action: Action<DefaultConfig>)
     fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
     fun aaptOptions(action: Action<AaptOptionsImpl>)
     fun adbOptions(action: Action<AdbOptionsImpl>)

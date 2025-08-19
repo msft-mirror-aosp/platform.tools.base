@@ -29,15 +29,13 @@ import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
-interface InternalLibraryExtension :
-    LibraryExtension,
-    InternalTestedExtension<
-            LibraryDefaultConfig,
-            LibraryProductFlavor> {
+interface InternalLibraryExtension: LibraryExtension, InternalTestedExtension{
 
     override var aidlPackagedList: MutableCollection<String>
     fun androidResources(action: Action<LibraryAndroidResources>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
+    fun defaultConfig(action: Action<DefaultConfig>)
     fun buildFeatures(action: Action<LibraryBuildFeatures>)
     fun installation(action: Action<LibraryInstallation>)
     fun publishing(action: Action<LibraryPublishing>)

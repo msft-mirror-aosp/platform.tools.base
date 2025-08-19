@@ -29,11 +29,7 @@ import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
-interface InternalApplicationExtension :
-    ApplicationExtension,
-    InternalTestedExtension<
-                ApplicationDefaultConfig,
-                ApplicationProductFlavor> {
+interface InternalApplicationExtension : ApplicationExtension, InternalTestedExtension {
     override val dynamicFeatures: MutableSet<String>
     fun setDynamicFeatures(dynamicFeatures: Set<String>)
     override val assetPacks: MutableSet<String>
@@ -43,6 +39,8 @@ interface InternalApplicationExtension :
     fun androidResources(action: Action<ApplicationAndroidResources>)
     fun buildFeatures(action: Action<ApplicationBuildFeatures>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
+    fun defaultConfig(action: Action<DefaultConfig>)
     fun bundle(action: Action<BundleOptions>)
     fun dependenciesInfo(action: Action<DependenciesInfo>)
     fun installation(action: Action<ApplicationInstallation>)

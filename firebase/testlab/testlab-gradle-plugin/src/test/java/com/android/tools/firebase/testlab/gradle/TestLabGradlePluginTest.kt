@@ -48,7 +48,7 @@ class TestLabGradlePluginTest {
   @Mock(answer = Answers.RETURNS_DEEP_STUBS)
   lateinit var mockAndroidPlugin: AndroidComponentsExtension<*, *, *>
 
-  @Mock(answer = Answers.RETURNS_DEEP_STUBS) lateinit var mockCommonExtension: CommonExtension<*, *>
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS) lateinit var mockCommonExtension: CommonExtension
 
   @Mock(answer = Answers.RETURNS_DEEP_STUBS)
   lateinit var mockTestLabExtension: TestLabGradlePluginExtension

@@ -142,12 +142,7 @@ import javax.xml.stream.events.EndElement
 import com.android.build.gradle.internal.dsl.BuildType as InternalBuildType
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalFlavor
 
-class ModelBuilder<
-        DefaultConfigT : DefaultConfig,
-        ProductFlavorT : ProductFlavor,
-        ExtensionT : CommonExtension<
-                DefaultConfigT,
-                ProductFlavorT>>(
+class ModelBuilder<ExtensionT : CommonExtension>(
     private val project: Project,
     private val variantModel: VariantModel,
     private val extension: ExtensionT,

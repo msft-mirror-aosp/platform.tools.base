@@ -23,6 +23,8 @@ import com.android.build.api.dsl.LibraryDefaultConfig
 import com.android.build.api.dsl.LibraryInstallation
 import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.Prefab
+import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
+import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.options.BooleanOption
@@ -109,6 +111,22 @@ abstract class LibraryExtensionImpl @Inject constructor(
 
     override fun NamedDomainObjectContainer<LibraryBuildType>.release(action: LibraryBuildType.() -> Unit)  {
         getByName("release", action)
+    }
+
+    override fun productFlavors(action: Action<NamedDomainObjectContainer<InternalProductFlavor>>) {
+        action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
+    }
+
+    override fun productFlavors(action: NamedDomainObjectContainer<LibraryProductFlavor>.() -> Unit) {
+        action.invoke(productFlavors)
+    }
+
+    override fun defaultConfig(action: Action<InternalDefaultConfig>) {
+        action.execute(defaultConfig as InternalDefaultConfig)
+    }
+
+    override fun defaultConfig(action: LibraryDefaultConfig.() -> Unit) {
+        action.invoke(defaultConfig)
     }
 
     override val installation: LibraryInstallation

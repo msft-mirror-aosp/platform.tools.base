@@ -70,8 +70,6 @@ import javax.inject.Inject;
 /** Gradle plugin class for 'application' projects, applied on an optional APK module */
 public class DynamicFeaturePlugin
         extends AbstractAppPlugin<
-                com.android.build.api.dsl.DynamicFeatureDefaultConfig,
-                com.android.build.api.dsl.DynamicFeatureProductFlavor,
                 com.android.build.api.dsl.DynamicFeatureExtension,
                 DynamicFeatureAndroidComponentsExtension,
                 DynamicFeatureVariantBuilder,
@@ -110,10 +108,7 @@ public class DynamicFeaturePlugin
 
     @NonNull
     @Override
-    protected ExtensionData<
-                    com.android.build.api.dsl.DynamicFeatureDefaultConfig,
-                    com.android.build.api.dsl.DynamicFeatureProductFlavor,
-                    com.android.build.api.dsl.DynamicFeatureExtension>
+    protected ExtensionData<com.android.build.api.dsl.DynamicFeatureExtension>
             createExtension(
                     @NonNull DslServices dslServices,
                     @NonNull

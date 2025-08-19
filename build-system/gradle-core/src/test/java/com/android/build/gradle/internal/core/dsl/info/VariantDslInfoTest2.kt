@@ -661,7 +661,7 @@ class VariantDslInfoTest2(
     override fun instantiateResult() = ResultData()
 
     private fun configureExtension(
-        extension: InternalTestedExtension<*, *>,
+        extension: InternalTestedExtension,
         given: GivenData
     ) {
         whenever(extension.namespace).thenReturn(given.namespace)
@@ -674,7 +674,7 @@ class VariantDslInfoTest2(
         val componentIdentity = mock<ComponentIdentity>()
         whenever(componentIdentity.name).thenReturn("compIdName")
 
-        val extension: InternalTestedExtension<*, *> = when (given.mainComponentType) {
+        val extension: InternalTestedExtension = when (given.mainComponentType) {
             ComponentTypeImpl.BASE_APK ->
                 mock<InternalApplicationExtension>().also {
                     configureExtension(it, given)
