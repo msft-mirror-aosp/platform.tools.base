@@ -35,6 +35,7 @@ import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.time.Duration
+import java.util.concurrent.TimeoutException
 
 /**
  * Abstraction over a device currently connected to ADB. An instance of [ConnectedDevice] is
@@ -408,12 +409,15 @@ class ActivityManager(val device: ConnectedDevice) {
      * @see AdbActivityManagerServices.crash
      */
     suspend fun crash(packageName: String) {
-        retryUntilDeviceReady(
-            amCommandName = "crash",
-            timeout = device.session.property(AM_SERVICE_TIMEOUT),
-            retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
-        ) {
-            device.session.activityManagerServices.crash(device.selector, packageName)
+        mapTimeoutToAdbException("crash $packageName") {
+            retryUntilDeviceReady(
+                amCommandName = "crash",
+                timeout = device.session.property(AM_SERVICE_TIMEOUT),
+                retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
+            ) {
+                device.waitUntilOnline()
+                device.session.activityManagerServices.crash(device.selector, packageName)
+            }
         }
     }
 
@@ -423,13 +427,15 @@ class ActivityManager(val device: ConnectedDevice) {
      * @see AdbActivityManagerServices.forceStop
      */
     suspend fun forceStop(packageName: String) {
-        retryUntilDeviceReady(
-            amCommandName = "force-stop",
-            timeout = device.session.property(AM_SERVICE_TIMEOUT),
-            retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
-        ) {
-            device.waitUntilOnline()
-            device.session.activityManagerServices.forceStop(device.selector, packageName)
+        mapTimeoutToAdbException("force-stop $packageName") {
+            retryUntilDeviceReady(
+                amCommandName = "force-stop",
+                timeout = device.session.property(AM_SERVICE_TIMEOUT),
+                retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
+            ) {
+                device.waitUntilOnline()
+                device.session.activityManagerServices.forceStop(device.selector, packageName)
+            }
         }
     }
 
@@ -447,14 +453,16 @@ class ActivityManager(val device: ConnectedDevice) {
      */
     suspend fun capabilities(): AmCapabilitiesResult? {
         return device.cache.getOrPutSuspending(capabilitiesKey) {
-            retryUntilDeviceReady(
-                amCommandName = "capabilities",
-                timeout = device.session.property(AM_SERVICE_TIMEOUT),
-                retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
-            ) {
-                device.waitUntilOnline()
-                logger.debug { "Retrieving device capabilities from activity manager" }
-                device.session.activityManagerServices.capabilities(device.selector)
+            mapTimeoutToAdbException("capabilities") {
+                retryUntilDeviceReady(
+                    amCommandName = "capabilities",
+                    timeout = device.session.property(AM_SERVICE_TIMEOUT),
+                    retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY)
+                ) {
+                    device.waitUntilOnline()
+                    logger.debug { "Retrieving device capabilities from activity manager" }
+                    device.session.activityManagerServices.capabilities(device.selector)
+                }
             }
         }
     }
@@ -492,6 +500,19 @@ class ActivityManager(val device: ConnectedDevice) {
         }
     }
 
+    /**
+     * Wrap TimeoutException in IOException.
+     *
+     * When the timeout is an implementation detail, and callers are only expected to handle
+     * generic I/O errors we should rethrow TimeoutException as IOException.
+     */
+    private inline fun <R> mapTimeoutToAdbException(commandDescription: String, block: () -> R): R {
+        return try {
+            block()
+        } catch (e: TimeoutException) {
+            throw AdbIOTimeoutException("Operation timed out executing `$commandDescription`", e)
+        }
+    }
 
     companion object {
         private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult?>("capabilitiesKey")
