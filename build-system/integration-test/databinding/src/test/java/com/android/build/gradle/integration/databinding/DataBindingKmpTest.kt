@@ -155,6 +155,8 @@ class DataBindingKmpTest {
     // Regression test for bug 238964168
     @Test
     fun testCompilation() {
-        rule.build.executor.run("clean", "compileDebugJavaWithJavac")
+        rule.build.executor
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .run("clean", "compileDebugJavaWithJavac")
     }
 }

@@ -57,7 +57,9 @@ class DataBindingKotlinAppTest(useAndroidX: Boolean) {
 
     @Test
     fun compile() {
-        project.executor().run("app:assembleDebug")
+        project.executor()
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .run("app:assembleDebug")
         val app = project.getSubproject("app")
 
         // Dependency artifacts should be present: 2 from androidx.databinding.library.baseAdapters
@@ -91,7 +93,9 @@ class DataBindingKotlinAppTest(useAndroidX: Boolean) {
             }
             """
         TestFileUtils.appendToFile(project.getSubproject(":app").buildFile, kapt)
-        val result = project.executor().expectFailure().run("app:assembleDebug")
+        val result = project.executor()
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .expectFailure().run("app:assembleDebug")
         assertThat(result.failureMessage)
             .contains("Data Binding annotation processor version needs to match the")
     }

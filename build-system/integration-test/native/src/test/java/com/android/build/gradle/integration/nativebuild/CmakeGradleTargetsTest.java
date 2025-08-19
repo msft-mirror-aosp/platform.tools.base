@@ -24,22 +24,26 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Apk
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.StringOption;
 import com.android.testutils.apk.Apk;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 /** Assemble tests for Cmake. */
 @RunWith(Parameterized.class)
@@ -90,7 +94,8 @@ public class CmakeGradleTargetsTest {
                                 + "          externalNativeBuild {\n"
                                 + "              cmake {\n"
                                 + "                abiFilters.addAll(\"armeabi-v7a\", \"x86\");\n"
-                                + "                cFlags.addAll(\"-DTEST_C_FLAG\", \"-DTEST_C_FLAG_2\")\n"
+                                + "                cFlags.addAll(\"-DTEST_C_FLAG\","
+                                + " \"-DTEST_C_FLAG_2\")\n"
                                 + "                cppFlags.addAll(\"-DTEST_CPP_FLAG\")\n");
 
         if (!targets.isEmpty()) {
@@ -118,6 +123,7 @@ public class CmakeGradleTargetsTest {
     @Test
     public void checkBuildDotGradleTargetsFieldHonored() throws IOException, InterruptedException {
         project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
                 .run("clean", "assembleDebug");
         Apk apk = project.getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates);

@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 import java.io.IOException
@@ -66,7 +67,7 @@ class VariantApiPropertiesTest {
             }
             """.trimIndent()
         )
-        project.executor().run("help")
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("help")
     }
 
     @Test
@@ -96,7 +97,8 @@ class VariantApiPropertiesTest {
             }
             """.trimIndent()
         )
-        project.executor().run("assembleFlavor1Debug")
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true)
+            .run("assembleFlavor1Debug")
         TruthHelper.assertThat(project.getApk(GradleTestProject.ApkType.DEBUG, "flavor1")).doesNotExist()
         TruthHelper.assertThat(project.getApk("1.0", GradleTestProject.ApkType.DEBUG, GradleTestProject.ApkLocation.Output, "flavor1")).exists()
     }

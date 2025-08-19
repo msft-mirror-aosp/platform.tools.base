@@ -80,6 +80,10 @@ public class ProjectOptionsBuilder {
             booleans.put(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false);
             suppressWarnings.add(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS);
         }
+        if (!booleans.containsKey(BooleanOption.ENABLE_LEGACY_VARIANT_API)) {
+            booleans.put(BooleanOption.ENABLE_LEGACY_VARIANT_API, true);
+            suppressWarnings.add(BooleanOption.ENABLE_LEGACY_VARIANT_API);
+        }
 
         // TODO(b/385745419): Migrate to built-in Kotlin
         if (!booleans.containsKey(BooleanOption.BUILT_IN_KOTLIN)) {

@@ -449,6 +449,7 @@ class DynamicAppTest {
         project.executor()
             .with(BooleanOption.BUILD_ONLY_TARGET_ABI, true)
             .with(StringOption.IDE_BUILD_TARGET_ABI, SdkConstants.ABI_ARMEABI_V7A)
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("assembleDebug")
 
         project.getSubproject(":app").assertApk(ApkSelector.DEBUG.fromIntermediates()) {

@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.collect.ImmutableMap
 import org.junit.Before
 import org.junit.Rule
@@ -125,6 +126,7 @@ project.getSubproject(":app").file("build.gradle").writeText(buildScript)
     fun checkIncrementalCompilation() {
         project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run(":lib-compiler:jar", ":app:assembleDebug")
         val app = project.getSubproject(":app")
         val apk = app.getApk(GradleTestProject.ApkType.DEBUG)
@@ -135,6 +137,7 @@ project.getSubproject(":app").file("build.gradle").writeText(buildScript)
         TestFileUtils.addMethod(app.file("src/main/java/com/example/helloworld/HelloWorld.java"), "void foo() {}")
         project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run(":app:assembleDebug")
         TruthHelper.assertThat(apk).containsClass("Lcom/example/helloworld/HelloWorldStringValue;")
         TruthHelper.assertThat(apk).containsClass("Lcom/example/helloworld/HelloWorld\$\$InnerClass;")

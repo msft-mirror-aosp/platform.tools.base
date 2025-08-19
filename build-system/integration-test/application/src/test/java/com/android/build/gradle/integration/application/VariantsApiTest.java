@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application;
 
 import static com.android.build.gradle.options.BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
@@ -24,16 +25,20 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 
 /**
  * Tests for all the methods exposed in the so-called variants API.
@@ -98,7 +103,7 @@ public class VariantsApiTest {
 
     @Test
     public void buildScriptRuns() throws Exception {
-        project.execute("clean");
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("clean");
 
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
@@ -125,6 +130,7 @@ public class VariantsApiTest {
                 project.executor()
                         .withProperty("doneWithConfiguration", "true")
                         .with(DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION, false)
+                        .with(BooleanOption.ENABLE_LEGACY_API, true)
                         .run("clean");
     }
 }

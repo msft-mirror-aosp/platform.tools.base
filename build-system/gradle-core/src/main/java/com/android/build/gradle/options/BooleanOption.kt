@@ -191,8 +191,9 @@ enum class BooleanOption(
     /**
      * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
      */
-    ENABLE_LEGACY_VARIANT_API("android.enableLegacyVariantApi", true, FeatureStage.Supported,
-        FutureStage(false, FeatureStage.Supported, Version.VERSION_9_0)
+    ENABLE_LEGACY_VARIANT_API(
+        "android.enableLegacyVariantApi", false, FeatureStage.Supported,
+        FutureStage(false, FeatureStage.Enforced(Version.VERSION_10_0), Version.VERSION_10_0)
     ),
 
     /** Enables R8 strict full mode for keep rules (see [FULL_R8] for more context). */
@@ -734,7 +735,9 @@ enum class BooleanOption(
     */
 
     /** This flag is subsumed by android.enableLegacyVariantApi ([ENABLE_LEGACY_VARIANT_API]) */
-    ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Deprecated(VERSION_10_0)),
+    ENABLE_LEGACY_API(
+        "android.compatibility.enableLegacyApi", true, FeatureStage.Deprecated(VERSION_10_0),
+    ),
 
     /** This is subsumed by `android.newDsl` ([USE_NEW_DSL]) which also affects groovy scripts and plugins. */
     USE_NEW_DSL_INTERFACES("android.experimental.newDslInterfaces", false, FeatureStage.Deprecated(VERSION_10_0)),

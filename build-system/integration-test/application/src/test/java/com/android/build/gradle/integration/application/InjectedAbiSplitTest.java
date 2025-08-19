@@ -16,34 +16,40 @@
 
 package com.android.build.gradle.integration.application;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkLocation;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType;
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.ProjectSyncIssuesUtilsV2Kt;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.StringOption;
 import com.android.builder.model.v2.ide.SyncIssue;
 import com.android.builder.model.v2.models.ProjectSyncIssues;
 import com.android.testutils.apk.Apk;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
+
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.Collection;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-
 /** Test injected ABI reduces the number of splits being built. */
 public class InjectedAbiSplitTest {
 
     @ClassRule
-    public static GradleTestProject sProject = GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .create();
+    public static GradleTestProject sProject =
+            GradleTestProject.builder()
+                    .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+                    .addGradleProperties(
+                            BooleanOption.ENABLE_LEGACY_API.getPropertyName() + "=true")
+                    .create();
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -74,6 +80,7 @@ public class InjectedAbiSplitTest {
     public void checkAbi() throws Exception {
         sProject.executor()
                 .with(StringOption.IDE_BUILD_TARGET_ABI, "armeabi-v7a")
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .run("clean", "assembleDebug");
 
         assertThat(getApk("armeabi-v7a")).exists();
@@ -90,8 +97,10 @@ public class InjectedAbiSplitTest {
         ModelContainerV2 container =
                 sProject.modelV2()
                         .with(StringOption.IDE_BUILD_TARGET_ABI, "mips")
+                        .with(BooleanOption.ENABLE_LEGACY_API, true)
                         .ignoreSyncIssues()
-                        .fetchModels().getContainer();
+                        .fetchModels()
+                        .getContainer();
 
         ProjectSyncIssues issues = container.getProject().getIssues();
         Collection<SyncIssue> genericSyncWarnings =

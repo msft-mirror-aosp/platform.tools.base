@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -52,7 +53,9 @@ class DeprecatedVariantApiTests {
             }
         }""".trimIndent())
 
-        project.execute("assembleDebug")
+        project.executor()
+            .with(BooleanOption.ENABLE_LEGACY_VARIANT_API, true)
+            .run("assembleDebug")
 
         project.assertApk(ApkSelector.DEBUG) {
             classes().classDefinition("com/example/helloworld/BuildConfig")

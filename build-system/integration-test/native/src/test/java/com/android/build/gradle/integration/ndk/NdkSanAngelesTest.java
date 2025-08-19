@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.ndk;
 
 import static com.android.build.gradle.integration.common.fixture.GradleTestProject.DEFAULT_NDK_SIDE_BY_SIDE_VERSION;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -27,15 +28,19 @@ import com.android.build.api.variant.impl.BuiltArtifactsImpl;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.AndroidProjectUtilsV2;
 import com.android.build.gradle.integration.common.utils.ProjectBuildOutputUtilsV2;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.builder.model.v2.models.AndroidProject;
+
 import com.google.common.collect.Maps;
 import com.google.common.truth.Truth;
-import java.io.File;
-import java.util.Map;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.File;
+import java.util.Map;
 
 /**
  * Assemble tests for ndkSanAngeles.
@@ -52,13 +57,17 @@ public class NdkSanAngelesTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        project.executor().run("clean", "assembleDebug");
-        model = project.modelV2()
-                .ignoreSyncIssues()
-                .fetchModels(null, null)
-                .getContainer()
-                .getProject(null, ":")
-                .getAndroidProject();
+        project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .run("clean", "assembleDebug");
+        model =
+                project.modelV2()
+                        .with(BooleanOption.ENABLE_LEGACY_API, true)
+                        .ignoreSyncIssues()
+                        .fetchModels(null, null)
+                        .getContainer()
+                        .getProject(null, ":")
+                        .getAndroidProject();
     }
 
     @AfterClass
@@ -69,7 +78,7 @@ public class NdkSanAngelesTest {
 
     @Test
     public void lint() throws Exception {
-        project.execute("lint");
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("lint");
     }
 
     @Test

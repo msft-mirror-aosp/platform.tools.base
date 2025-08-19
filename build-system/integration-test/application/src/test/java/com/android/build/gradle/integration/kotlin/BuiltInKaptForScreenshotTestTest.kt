@@ -117,7 +117,8 @@ class BuiltInKaptForScreenshotTestTest {
                 }
                 """.trimIndent(),
         )
-        project.executor().run("app:compileDebugScreenshotTestJavaWithJavac")
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true)
+            .run("app:compileDebugScreenshotTestJavaWithJavac")
         val kaptGeneratedTestDir =
             app.buildDir.resolve("generated/source/kapt/screenshotTest/debug/com/example")
         PathSubject.assertThat(kaptGeneratedTestDir.resolve("FooStringValue.java")).exists()

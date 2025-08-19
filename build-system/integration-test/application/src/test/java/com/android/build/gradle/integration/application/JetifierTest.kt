@@ -123,6 +123,8 @@ class JetifierTest(private val withKotlin: Boolean) {
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, true)
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+            // Legacy API only used with Kotlin.
+            .with(BooleanOption.ENABLE_LEGACY_API, withKotlin)
             .run("assembleDebug")
         val apk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)
 

@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.RELEASE;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -28,19 +29,22 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.AndroidProjectUtilsV2;
 import com.android.build.gradle.integration.common.utils.ProjectBuildOutputUtilsV2;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.builder.model.v2.ide.SyncIssue;
 import com.android.builder.model.v2.ide.Variant;
 import com.android.builder.model.v2.models.AndroidProject;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
 
 /** Assemble tests for class densitySplitInL */
 public class OutputRenamingTest {
@@ -56,18 +60,23 @@ public class OutputRenamingTest {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
                 "android {\n"
-                        + "applicationVariants.all { variant ->\n"
-                        + "    // Custom APK names (do not do this for 'dev' build type)\n"
-                        + "    println variant.buildType.name\n"
-                        + "    variant.outputs.all { output -> \n"
-                        + "      def baseFileName = \"project-${variant.flavorName}-${output.versionCode}-${variant.buildType.name}\"\n"
-                        + "      output.outputFileName = \"${baseFileName}-${output.getFilter(com.android.build.VariantOutput.FilterType.DENSITY)}-signed.apk\"\n"
-                        + "    }\n"
-                        + "  }\n"
-                        + "}");
-        project.executor().run("clean", "assemble");
+                    + "applicationVariants.all { variant ->\n"
+                    + "    // Custom APK names (do not do this for 'dev' build type)\n"
+                    + "    println variant.buildType.name\n"
+                    + "    variant.outputs.all { output -> \n"
+                    + "      def baseFileName ="
+                    + " \"project-${variant.flavorName}-${output.versionCode}-${variant.buildType.name}\"\n"
+                    + "      output.outputFileName ="
+                    + " \"${baseFileName}-${output.getFilter(com.android.build.VariantOutput.FilterType.DENSITY)}-signed.apk\"\n"
+                    + "    }\n"
+                    + "  }\n"
+                    + "}");
+        project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_VARIANT_API, true)
+                .run("clean", "assemble");
         model =
                 project.modelV2()
+                        .with(BooleanOption.ENABLE_LEGACY_VARIANT_API, true)
                         .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
                         .fetchModels()
                         .getContainer()
@@ -75,6 +84,7 @@ public class OutputRenamingTest {
                         .getAndroidProject();
         Collection<SyncIssue> syncIssues =
                 project.modelV2()
+                        .with(BooleanOption.ENABLE_LEGACY_VARIANT_API, true)
                         .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
                         .fetchModels()
                         .getContainer()

@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.truth.ApkSubject.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -109,8 +110,10 @@ class AarApiJarTest {
         )
 
         project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run(":publishedLib:assembleRelease")
         project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run(":consumingApp:assembleDebug")
 
         project.getSubproject("consumingApp")

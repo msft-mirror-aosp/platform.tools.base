@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -119,7 +120,7 @@ class OldAndNewVariantAPIInteractionTest {
             }
         """.trimIndent())
 
-        project.executor().run("readVariantObjects").stdout.use {
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("readVariantObjects").stdout.use {
             assertThat(it).contains("""Read NEW variant object:
 classNames = [className-SetByNewApi, className-SetByOldApi]
 arguments = {argument-SetByNewApi, argument-SetByOldApi}
