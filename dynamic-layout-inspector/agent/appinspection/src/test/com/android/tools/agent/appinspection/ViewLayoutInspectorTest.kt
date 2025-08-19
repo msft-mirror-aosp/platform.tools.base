@@ -1835,6 +1835,11 @@ abstract class ViewLayoutInspectorTestBase {
                 assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
                 assertThat(event.layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.BITMAP)
             }
+            // There will be a second one to capture the end of any animation.
+            checkNonProgressEvent(eventQueue) { event ->
+                assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
+                assertThat(event.layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.BITMAP)
+            }
         }
         val stopFetchCommand = Command.newBuilder().apply {
             stopFetchCommand = StopFetchCommand.getDefaultInstance()
@@ -1874,6 +1879,9 @@ abstract class ViewLayoutInspectorTestBase {
             checkNonProgressEvent(eventQueue) { event ->
                 assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
                 assertThat(event.layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.SKP)
+            }
+            checkNonProgressEvent(eventQueue) { event ->
+                assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.PROPERTIES_EVENT)
             }
         }
     }
