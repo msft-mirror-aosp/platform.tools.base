@@ -42,8 +42,7 @@ class LibraryConstraintsSyncIssueTest {
             }
         }.modelBuilder.ignoreSyncIssues().fetchModels().container
 
-        models.getProject(":app").assertIssues(PERFORMANCE_WARNING, EXPERIMENTAL_USAGE_WARNING)
-        // Experimental usage warning only gets issued once
+        models.getProject(":app").assertIssues(PERFORMANCE_WARNING)
         models.getProject(":lib").assertIssues(PERFORMANCE_WARNING)
     }
 
@@ -71,7 +70,8 @@ class LibraryConstraintsSyncIssueTest {
             }
         }.modelBuilder.ignoreSyncIssues().fetchModels().container
 
-        models.getProject(":app").assertIssueDoesNotExist()
+        models.getProject(":app").assertIssues(EXPERIMENTAL_USAGE_WARNING)
+        // Experimental usage warnings are only issued once
         models.getProject(":lib").assertIssueDoesNotExist()
     }
 
@@ -85,7 +85,7 @@ class LibraryConstraintsSyncIssueTest {
             }
         }.modelBuilder.ignoreSyncIssues().fetchModels().container
 
-        models.getProject(":app").assertIssues(EXPERIMENTAL_USAGE_WARNING)
+        models.getProject(":app").assertIssueDoesNotExist()
         // Experimental usage warning only gets issued once
         models.getProject(":lib").assertIssueDoesNotExist()
     }
@@ -115,8 +115,8 @@ private val EXPERIMENTAL_USAGE_WARNING = SyncIssueImpl(
     type = SyncIssue.TYPE_UNSUPPORTED_PROJECT_OPTION_USE,
     data = BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS.propertyName,
     message = """
-    The option setting '${BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS.propertyName}=false' is deprecated.
-    The current default is 'true'.
+    The option setting '${BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS.propertyName}=true' is deprecated.
+    The current default is 'false'.
     It will be removed in version 10.0 of the Android Gradle plugin.
     Following can be set instead to achieve a similar behaviour.
         android.dependency.useConstraints=false

@@ -705,7 +705,7 @@ enum class BooleanOption(
      */
     EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS(
         "android.dependency.excludeLibraryComponentsFromConstraints",
-        true,
+        false,
         ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
     ),
     /* -----------------

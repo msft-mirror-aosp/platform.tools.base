@@ -110,7 +110,7 @@
           },
           {
             "flag": "EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS",
-            "value": true
+            "value": false
           },
           {
             "flag": "ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT",
