@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
-import com.android.build.api.dsl.DependencyVariantSelection
 import com.android.build.api.dsl.HasConfigurableValue
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
@@ -67,15 +66,6 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
 
     override fun localDependencySelection(action: DependencySelection.() -> Unit) {
         action.invoke(localDependencySelection)
-    }
-
-    @Deprecated("Use localDependencySelection instead. This API will be removed in AGP 9.0")
-    override val dependencyVariantSelection: DependencyVariantSelection =
-        dslServices.newDecoratedInstance(DependencyVariantSelectionImpl::class.java, dslServices, localDependencySelection, objectFactory)
-
-    @Deprecated("Use localDependencySelection instead. This API will be removed in AGP 9.0")
-    override fun dependencyVariantSelection(action: DependencyVariantSelection.() -> Unit) {
-        action.invoke(dependencyVariantSelection)
     }
 
     override val androidResources: LibraryAndroidResources = dslServices.newDecoratedInstance(

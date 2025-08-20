@@ -20,6 +20,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.internal.core.dsl.KmpComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.features.PrivacySandboxDslInfo
+import com.android.build.gradle.internal.dsl.DependencySelectionImpl
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.AbstractProductFlavor
@@ -42,7 +43,7 @@ abstract class KmpComponentDslInfoImpl(
     }
 
     override val missingDimensionStrategies: Map<String, AbstractProductFlavor.DimensionRequest>
-        get() = extension.dependencyVariantSelection.productFlavors.get().mapValues {
+        get() = (extension.localDependencySelection as DependencySelectionImpl).getDimensions().mapValues {
             AbstractProductFlavor.DimensionRequest(
                 requested = it.key,
                 fallbacks = it.value.toList()
@@ -50,7 +51,7 @@ abstract class KmpComponentDslInfoImpl(
         }
 
     override val buildTypeMatchingFallbacks: List<String>
-        get() = extension.dependencyVariantSelection.buildTypes.get()
+        get() = extension.localDependencySelection.selectBuildTypeFrom.get()
 
     override val privacySandboxDsl: PrivacySandboxDslInfo
         get() = object: PrivacySandboxDslInfo {
