@@ -1650,14 +1650,24 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                 BooleanFlag.BUILD_FEATURE_ANDROID_RESOURCES,
                 variants.any { it.buildFeatures.androidResources }
             )
-            // TODO(b/439806981): Make sure this (and below) is correctly set
             flags.put(
                 BooleanFlag.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS,
                 projectOptions[BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS]
             )
             flags.put(
                 BooleanFlag.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT,
-                projectOptions[BooleanOption.USE_DEPENDENCY_CONSTRAINTS] // This is now controlled by this flag
+                variants.firstOrNull()?.let {
+                    val constraintsApplied = if (projectOptions[BooleanOption.DISABLE_ALL_CONSTRAINTS]) {
+                        false // No constraints applied at all
+                    } else if (!projectOptions[BooleanOption.USE_DEPENDENCY_CONSTRAINTS]) {
+                        false// Only android test is being constrained, but in this case we care about the main artifact
+                    } else if (projectOptions[BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS]) {
+                        it.componentType.isApk// Only apps are being constrained
+                    } else {
+                        true// All constraints applied
+                    }
+                    constraintsApplied
+                } == true // handling no variants with equality check, return value doesn't matter.
             )
             flags.put(
                 BooleanFlag.DATA_BINDING_ENABLED,
