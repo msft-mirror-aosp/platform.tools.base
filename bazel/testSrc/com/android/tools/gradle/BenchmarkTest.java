@@ -451,9 +451,12 @@ public class BenchmarkTest {
                             + "="
                             + String.join(
                                     ",",
-                                    // Workaround for YourKit instrumentation bug (b/142887436)
-                                    "disableall",
-                                    "exceptions=off",
+                                    // This disables several features at once. This can reduce
+                                    // profiling overhead. If you need to enable some of these
+                                    // features, such as asynchronous sampling, then you can replace
+                                    // disable_all with its expansion (see the link above), and
+                                    // remove certain options. Or just remove disable_all entirely.
+                                    "disable_all",
                                     // make sure we collect the agent log, useful for
                                     // troubleshooting
                                     "logdir=" + snapshotsDir.getAbsolutePath(),

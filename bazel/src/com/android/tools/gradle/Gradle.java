@@ -135,6 +135,7 @@ public class Gradle implements Closeable {
                         + "  task startProfiling {\n"
                         + "    doLast {\n"
                         + "      cpusettings.setSettings(settings)\n"
+                        // Can change to: controller.startAsyncSamplingPeriodic(cpusettings)
                         + "      controller.startSampling(cpusettings)\n"
                         + "    }\n"
                         + "  }\n"
