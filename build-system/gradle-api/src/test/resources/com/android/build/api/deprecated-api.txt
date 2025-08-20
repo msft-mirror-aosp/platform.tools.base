@@ -97,10 +97,6 @@ Deprecated from AGP 8.0.0
   * com.android.build.api.dsl.Packaging.merge: void (java.lang.String)
   * com.android.build.api.dsl.Packaging.pickFirst: void (java.lang.String)
 Deprecated from AGP 7.4.0
-  * com.android.build.api.dsl.LibraryBaseFlavor.getTargetSdk: java.lang.Integer ()
-  * com.android.build.api.dsl.LibraryBaseFlavor.getTargetSdkPreview: java.lang.String ()
-  * com.android.build.api.dsl.LibraryBaseFlavor.setTargetSdk: void (java.lang.Integer)
-  * com.android.build.api.dsl.LibraryBaseFlavor.setTargetSdkPreview: void (java.lang.String)
   * com.android.build.api.dsl.PrivacySandboxSdkBundle.getPackageName: java.lang.String ()
   * com.android.build.api.dsl.PrivacySandboxSdkBundle.setPackageName: void (java.lang.String)
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.getNamespace: java.lang.String ()
@@ -178,9 +174,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.JacocoOptions implements com.android.build.api.dsl.TestCoverage
   * com.android.build.api.dsl.JacocoOptions.getVersion: java.lang.String ()
   * com.android.build.api.dsl.JacocoOptions.setVersion: void (java.lang.String)
-  * com.android.build.api.dsl.LibraryBaseFlavor.setTargetSdkVersion: void (java.lang.String)
-  * com.android.build.api.dsl.LibraryBaseFlavor.targetSdkVersion: void (int)
-  * com.android.build.api.dsl.LibraryBaseFlavor.targetSdkVersion: void (java.lang.String)
   * com.android.build.api.dsl.Lint.getIgnore: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.LintOptions
   * com.android.build.api.dsl.LintOptions.baseline: void (java.io.File)

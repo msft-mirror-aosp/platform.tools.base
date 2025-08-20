@@ -35,30 +35,6 @@ class UnusableLibraryProductFlavorProxy(
             throwUnusableError("LibraryProductFlavor.isDefault")
         }
 
-    override var targetSdk: Int?
-        get() = throwUnusableError("LibraryProductFlavor.targetSdk")
-        set(value) {
-            throwUnusableError("LibraryProductFlavor.targetSdk")
-        }
-
-    override fun targetSdkVersion(targetSdkVersion: Int) {
-        throwUnusableError("LibraryProductFlavor.targetSdkVersion")
-    }
-
-    override fun targetSdkVersion(targetSdkVersion: String?) {
-        throwUnusableError("LibraryProductFlavor.targetSdkVersion")
-    }
-
-    override var targetSdkPreview: String?
-        get() = throwUnusableError("LibraryProductFlavor.targetSdkPreview")
-        set(value) {
-            throwUnusableError("LibraryProductFlavor.targetSdkPreview")
-        }
-
-    override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        throwUnusableError("LibraryProductFlavor.setTargetSdkVersion")
-    }
-
     override var multiDexEnabled: Boolean?
         get() = throwUnusableError("LibraryProductFlavor.multiDexEnabled")
         set(value) {

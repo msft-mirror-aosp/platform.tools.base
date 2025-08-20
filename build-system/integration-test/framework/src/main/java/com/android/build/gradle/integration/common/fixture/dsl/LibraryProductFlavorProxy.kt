@@ -36,30 +36,6 @@ class LibraryProductFlavorProxy(
             this@LibraryProductFlavorProxy.dslRecorder.setBoolean("isDefault", value, usingIsNotation = true)
         }
 
-    override var targetSdk: Int?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            this@LibraryProductFlavorProxy.dslRecorder.set("targetSdk", value)
-        }
-
-    override fun targetSdkVersion(targetSdkVersion: Int) {
-        this@LibraryProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
-    }
-
-    override fun targetSdkVersion(targetSdkVersion: String?) {
-        this@LibraryProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
-    }
-
-    override var targetSdkPreview: String?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            this@LibraryProductFlavorProxy.dslRecorder.set("targetSdkPreview", value)
-        }
-
-    override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        this@LibraryProductFlavorProxy.dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
-    }
-
     override var multiDexEnabled: Boolean?
         get() = throw RuntimeException("Not yet supported")
         set(value) {

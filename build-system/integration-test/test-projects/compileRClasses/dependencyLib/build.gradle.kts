@@ -10,6 +10,13 @@ android {
 
     defaultConfig {
         minSdk = 21
+    }
+
+    lint {
+        targetSdk = libs.versions.latestCompileSdk.get().toInt()
+    }
+
+    testOptions {
         targetSdk = libs.versions.latestCompileSdk.get().toInt()
     }
 
