@@ -4,7 +4,7 @@ load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library", "maven_repository")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_FOR_TESTS", "KGP_VERSION_FOR_TESTS")
-load("//tools/base/common:version.bzl", "BASE_VERSION", "BUILD_VERSION")
+load("//tools/base/common:version.bzl", "BASE_VERSION", "BUILD_VERSION", "IS_AGP_RELEASE_BRANCH")
 load("hybrid_build.bzl", "GRADLE_PROPERTIES")
 
 # managed by go/iml_to_build
@@ -502,7 +502,7 @@ gradle_build(
     gradle_properties = select({
         "//tools/base/bazel:release": {
             "hybrid-build-embedded-in-bazel": "true",
-            "release": "true",
+            "release": IS_AGP_RELEASE_BRANCH,
             "nextMajor": "true",
         },
         "//conditions:default": {
