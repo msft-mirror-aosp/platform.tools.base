@@ -773,18 +773,26 @@ public class VariantDependenciesBuilder {
             return false;
         }
 
-        if (!useConstraints) {
-            // This is considered essential and can only be disabled via the flag above.
-            alignAndroidTestRuntime(runtimeClasspath, componentType::isApk);
-            return false;
-        } else {
-            Supplier<Boolean> componentFilter =
-                    applyLibraryConstraints ? () -> true : componentType::isApk;
-            alignAndroidTestRuntime(runtimeClasspath, componentFilter);
-            alignMainCompileToRuntime(compileClasspath, runtimeClasspath, componentFilter);
+        // This is considered essential and can only be disabled via the flag above.
+        Supplier<Boolean> applicationAndroidTestComponents =
+                () ->
+                        componentType.isApk()
+                                && testedVariant != null
+                                && testedVariant.getComponentType().isApk();
+
+        alignAndroidTestRuntime(runtimeClasspath, applicationAndroidTestComponents);
+
+        if (useConstraints) {
+            Supplier<Boolean> allComponents = () -> true;
+
+            alignMainCompileToRuntime(
+                    compileClasspath,
+                    runtimeClasspath,
+                    applyLibraryConstraints ? allComponents : componentType::isApk);
             // Return whether any library constraints are applied.
             return applyLibraryConstraints;
         }
+        return false; // Return whether any library constraints are applied.
     }
 
     private void alignMainCompileToRuntime(
