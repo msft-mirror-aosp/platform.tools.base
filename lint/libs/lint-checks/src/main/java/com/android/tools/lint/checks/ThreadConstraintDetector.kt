@@ -18,6 +18,7 @@ package com.android.tools.lint.checks
 import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraint
 import com.android.tools.lint.checks.fx.JoinEffectDetector
 import com.android.tools.lint.checks.fx.analysis.isKtProperty
+import com.android.tools.lint.checks.fx.result.AssumptionTable
 import com.android.tools.lint.checks.fx.result.EffectAnnotation
 import com.android.tools.lint.checks.fx.result.EffectAnnotation.Explicit
 import com.android.tools.lint.checks.fx.result.Error
@@ -29,6 +30,7 @@ import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.intellij.psi.PsiParameter
+import kotlinx.collections.immutable.persistentMapOf
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.uast.UAnnotation
@@ -57,10 +59,14 @@ import org.jetbrains.uast.resolveToUElement
  * [ThreadConstraintLattice.AnyThread] is not equivalent to `@Ui ⊓ @Worker ⊓ @Binder`, but
  * conceptually equivalent to `@Ui ⊓ @Worker ⊓ @Binder ⊓ Other`, where `Other` is an implicit,
  * programmer-inaccessible thread category.
+ *
+ * The analysis is also parameterizable by [initialAssumptions], which can be provided either from
+ * the analysis result of a dependent module, or assumed for primitives.
  */
 abstract class ThreadConstraintDetector<T : Enum<T>>(
-  protected val lattice: ThreadConstraintLattice<T>
-) : JoinEffectDetector<ThreadConstraint<T>>(lattice) {
+  protected val lattice: ThreadConstraintLattice<T>,
+  initialAssumptions: AssumptionTable<ThreadConstraint<T>> = persistentMapOf(),
+) : JoinEffectDetector<ThreadConstraint<T>>(lattice, initialAssumptions) {
 
   protected abstract val violationIssue: Issue
   protected abstract val unsatisfiableConstraintIssue: Issue

@@ -20,11 +20,13 @@ import com.android.tools.lint.checks.fx.analysis.Ans
 import com.android.tools.lint.checks.fx.analysis.EffectResult
 import com.android.tools.lint.checks.fx.analysis.LocalFun
 import com.android.tools.lint.checks.fx.analysis.Module
+import com.android.tools.lint.checks.fx.result.AssumptionTable
 import com.android.tools.lint.checks.fx.result.ConstraintFailure
 import com.android.tools.lint.checks.fx.result.Error
 import com.android.tools.lint.checks.fx.result.MethodBody
 import com.android.tools.lint.checks.fx.result.Point
 import com.android.tools.lint.checks.fx.result.Result
+import com.android.tools.lint.checks.fx.result.ResultTable
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
@@ -49,14 +51,18 @@ import org.jetbrains.uast.UVariable
  * Generic detector for effect with only one way of combining by joining up a [Lattice] regardless
  * of whether sequentially or from different branches. As a consequence of assuming that the effects
  * form a [Lattice], this detector is only applicable for effects where we don't care about order
- * and count.
+ * and count. The analysis is also parameterizable by [initialAssumptions], which can be provided
+ * either from the analysis result of a dependent module, or assumed for primitives.
  *
  * We probably won't let Lint developers directly implement this, but only define each of their [FX]
  * as a [Lattice] (along with other callbacks for introducing the concrete [FX]). Then all the [FX]s
  * will be fused together as one [FX] to run in the same passes (a la [UElementVisitor]).
  */
-abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>) :
-  Detector(), SourceCodeScanner, Module.AnnotationParser<FX> {
+abstract class JoinEffectDetector<FX : Any>(
+  private val effects: Lattice<FX>,
+  initialAssumptions: AssumptionTable<FX>,
+) : Detector(), SourceCodeScanner, Module.AnnotationParser<FX> {
+  private val knownResults: ResultTable<FX> = ResultTable.of(initialAssumptions)
   private val programBuilder = Module.Builder(this)
 
   private var isSummariesCacheValid = false
@@ -114,7 +120,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>) :
           }
         }
 
-        val summaries = Analysis(program, effects).leastFixPoint(entries)
+        val summaries = Analysis(program, effects, knownResults).leastFixPoint(entries)
 
         buildMap {
           for ((k, v) in summaries) {
