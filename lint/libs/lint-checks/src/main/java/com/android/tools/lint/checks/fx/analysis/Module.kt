@@ -711,8 +711,7 @@ internal fun containerChain(fnUast: ULambdaExpression): Pair<ClassId.Local, Meth
       }
       .reversed()
   if (methods.size < 2) {
-    println("WARNING: skipping method ${fnUast.nameFromSource}")
-    return null
+    return null // TODO(b/438815669)
   }
   val selfId = methods.last()
   val classId =

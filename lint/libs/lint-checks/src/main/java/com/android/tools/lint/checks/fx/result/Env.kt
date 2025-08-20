@@ -182,12 +182,8 @@ private fun <FX> Env<FX>.unify(
     params.size == args.size || lastParam is Type.Sym.Param && lastParam.name == "\$completion"
   return when {
     arityChecks -> (params zip args).fold(this) { env, (l, r) -> env.unify(typeLattice, l, r) }
-    else -> {
-      println(
-        "Warning: mismatched arity: (${args.joinToString()}) supplied to (${params.joinToString()})"
-      )
-      params.fold(this) { env, x -> env.unify(typeLattice, x, Type.None) }
-    }
+    // TODO(b/438815669)
+    else -> params.fold(this) { env, x -> env.unify(typeLattice, x, Type.None) }
   }
 }
 
