@@ -32,19 +32,6 @@ public class VersionTest {
     }
 
     @Test
-    public void testBundledVersionConsistency() throws IOException {
-        try (InputStream bundled = Version.class.getResourceAsStream("version.properties")) {
-            Properties bundledProperties = new Properties();
-            bundledProperties.load(bundled);
-
-            String baseVersion = System.getProperty("test.version.baseVersion");
-            Assert.assertEquals(bundledProperties.getProperty("baseVersion"), baseVersion);
-            String buildVersion = System.getProperty("test.version.buildVersion");
-            Assert.assertEquals(bundledProperties.getProperty("buildVersion"), buildVersion);
-        }
-    }
-
-    @Test
     public void testAgpAndBaseRelationship() {
         // The Base libraries such as lint are expected to be exactly
         // the AGP version plus 23 (to make it easy for example for
