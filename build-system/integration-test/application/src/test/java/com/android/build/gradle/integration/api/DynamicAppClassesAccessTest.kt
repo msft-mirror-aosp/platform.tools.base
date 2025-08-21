@@ -72,7 +72,7 @@ class DynamicAppClassesAccessTest(val minified: Boolean) {
                 buildTypes {
                     debug {
                         minifyEnabled $minified
-                        proguardFiles getDefaultProguardFile('proguard-android.txt'),'proguard-rules.pro'
+                        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),'proguard-rules.pro'
                     }
                 }
             }

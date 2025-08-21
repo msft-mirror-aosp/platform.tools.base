@@ -322,7 +322,7 @@ class DynamicAppTest {
     @Test
     fun `test unsigned bundleRelease task with r8 dontminify`() {
         project.getSubproject("app").projectDir.resolve("proguard-rules.pro")
-            .writeText("-dontobfuscate")
+            .writeText("-dontobfuscate\n-dontoptimize")
         val bundleTaskName = project.getBundleTaskName("release", ":app")
         project.executor().run("app:$bundleTaskName")
 

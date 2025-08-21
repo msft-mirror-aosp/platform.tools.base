@@ -52,7 +52,7 @@ public class ProguardAarPackagingTest {
                                 + "    }\n"
                                 + "}\n"));
 
-        testApp.addFile(new TestSourceFile("config.pro", "-keeppackagenames **"));
+        testApp.addFile(new TestSourceFile("config.pro", "-dontoptimize\n-keeppackagenames **"));
 
         // Create simple library jar.
         libraryInJar.addFile(
@@ -103,7 +103,7 @@ public class ProguardAarPackagingTest {
                         + "        release {\n"
                         + "            minifyEnabled true\n"
                         + "            proguardFiles"
-                        + " getDefaultProguardFile('proguard-android.txt'), 'config.pro'\n"
+                        + " getDefaultProguardFile('proguard-android-optimize.txt'), 'config.pro'\n"
                         + "        }\n"
                         + "    }\n"
                         + "}");

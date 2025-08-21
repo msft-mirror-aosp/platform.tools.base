@@ -39,7 +39,7 @@ android {
         create("minified").initWith(buildTypes.debug)
         minified {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     "proguard-rules.pro"
         }
     }

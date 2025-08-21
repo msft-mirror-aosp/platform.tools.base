@@ -30,7 +30,7 @@ android {
             signingConfig = signingConfigs.debug
 
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'config.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'config.pro'
             testProguardFiles 'config_test.pro'
         }
     }

@@ -75,14 +75,14 @@ public class MinifyLibAndAppKeepRules {
 
         TestFileUtils.appendToFile(
                 project.getSubproject("app").getBuildFile(),
-                "android {\n" +
-                        "    buildTypes {\n" +
-                        "        release {\n" +
-                        "           proguardFiles getDefaultProguardFile('proguard-android.txt')," +
-                        "'proguard-rules.pro'\n" +
-                        "        }\n" +
-                        "    }\n" +
-                        "}");
+                "android {\n"
+                    + "    buildTypes {\n"
+                    + "        release {\n"
+                    + "           proguardFiles"
+                    + " getDefaultProguardFile('proguard-android-optimize.txt'),'proguard-rules.pro'\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}");
 
         project.executor().run(":app:assembleRelease");
         assertThat(project.getSubproject("app").getApk("release"))
@@ -101,13 +101,13 @@ public class MinifyLibAndAppKeepRules {
         TestFileUtils.appendToFile(
                 project.getSubproject("app").getBuildFile(),
                 "android {\n"
-                        + "    buildTypes {\n"
-                        + "        release {\n"
-                        + "           proguardFiles getDefaultProguardFile('proguard-android.txt'),"
-                        + "'proguard-rules.pro'\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}");
+                    + "    buildTypes {\n"
+                    + "        release {\n"
+                    + "           proguardFiles"
+                    + " getDefaultProguardFile('proguard-android-optimize.txt'),'proguard-rules.pro'\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}");
 
         GradleBuildResult buildResult =
                 project.executor().withLoggingLevel(LoggingLevel.DEBUG).run(":app:assembleRelease");
