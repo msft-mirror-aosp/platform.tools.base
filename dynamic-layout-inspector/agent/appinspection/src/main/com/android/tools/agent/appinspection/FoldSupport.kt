@@ -86,7 +86,7 @@ class FoldSupport(
         }
 
         val sensorManager = context.getSystemService(SensorManager::class.java)
-        sensorManager.getDefaultSensor(Sensor.TYPE_HINGE_ANGLE)?.let { hingeAngleSensor ->
+        sensorManager?.getDefaultSensor(Sensor.TYPE_HINGE_ANGLE)?.let { hingeAngleSensor ->
             sensorManager.registerListener(object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
                     currentHingeAngle = event.values[0].toInt()

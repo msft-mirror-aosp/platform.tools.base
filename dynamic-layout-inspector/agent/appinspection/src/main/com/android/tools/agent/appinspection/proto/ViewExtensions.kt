@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.graphics.Matrix
 import android.graphics.Point
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.util.AndroidRuntimeException
 import android.view.Display
@@ -173,59 +174,18 @@ fun View.getNamespace(attributeId: Int): String =
     if (attributeId != 0) resources.getResourcePackageName(attributeId) else ""
 
 fun View.createAppContext(stringTable: StringTable): AppContext {
-    val isRunningInMainDisplay = isRunningInMainDisplay()
-    val appDisplayType = if (isRunningInMainDisplay) {
-        LayoutInspectorViewProtocol.DisplayType.MAIN_DISPLAY
-    }
-    else {
-        LayoutInspectorViewProtocol.DisplayType.SECONDARY_DISPLAY
-    }
+    val displayInfo = buildDisplayInfo(context)
 
-    val point = getDefaultDisplaySize()
     return AppContext.newBuilder().apply {
         createResource(stringTable, context.themeResId)?.let { themeResource ->
             theme = themeResource
         }
-        mainDisplayWidth = point.x
-        mainDisplayHeight = point.y
-        mainDisplayOrientation = getDefaultDisplayRotation()
-        displayType = appDisplayType
+        addAllDisplayInfo(displayInfo)
     }.build()
 }
 
 fun View.createConfiguration(stringTable: StringTable) =
     context.resources.configuration.convert(stringTable)
-
-fun View.getDefaultDisplayRotation(): Int {
-    val display = getDefaultDisplay()
-    return when (display.rotation) {
-        Surface.ROTATION_0 -> 0
-        Surface.ROTATION_90 -> 90
-        Surface.ROTATION_180 -> 180
-        Surface.ROTATION_270 -> 270
-        else -> -1
-    }
-}
-
-fun View.isRunningInMainDisplay(): Boolean {
-    val display = getDefaultDisplay()
-    return display.getDisplayId() == Display.DEFAULT_DISPLAY
-}
-
-fun View.getDefaultDisplaySize(): Point {
-    val display = getDefaultDisplay()
-    if (Build.VERSION.SDK_INT >= 31) {
-        val windowManager = context.getSystemService(WindowManager::class.java)
-        val windowMetrics = windowManager.getMaximumWindowMetrics()
-        val rect = windowMetrics.getBounds()
-        return Point(rect.width(), rect.height())
-    }
-    else {
-        val point = Point()
-        display.getRealSize(point)
-        return point
-    }
-}
 
 fun View.createGetPropertiesResponse(): GetPropertiesResponse {
     val stringTable = StringTable()
@@ -257,14 +217,45 @@ fun View.createPropertyGroup(stringTable: StringTable): PropertyGroup {
     }
 }
 
-private fun View.getDefaultDisplay(): Display {
-    val windowManager = context.getSystemService(WindowManager::class.java)
-    return if (Build.VERSION.SDK_INT >= 30) {
-        runCatching { context.display }.getOrNull()
+fun buildDisplayInfo(context: Context): List<LayoutInspectorViewProtocol.Display> {
+    val displays = context.getAllDisplays()
+    return displays.map {
+        val displaySize = it.physicalSizePx()
+        LayoutInspectorViewProtocol.Display.newBuilder().apply {
+            id = it.displayId
+            orientation = it.getOrientation()
+            width = displaySize.x
+            height = displaySize.y
+        }.build()
     }
-    else {
-        null
-    } ?: windowManager.defaultDisplay
+}
+
+fun Context.getAllDisplays(): List<Display> {
+    val displayManager = getSystemService(DisplayManager::class.java)
+    return displayManager?.displays?.toList() ?: emptyList()
+}
+
+fun Display.getOrientation(): Int {
+    return when (rotation) {
+        Surface.ROTATION_0 -> 0
+        Surface.ROTATION_90 -> 90
+        Surface.ROTATION_180 -> 180
+        Surface.ROTATION_270 -> 270
+        else -> -1
+    }
+}
+
+/** Physical resolution in pixels for this Display. */
+fun Display.physicalSizePx(): Point {
+  return if (Build.VERSION.SDK_INT >= 23) {
+      val m = mode
+      Point(m.physicalWidth, m.physicalHeight)
+  }
+  else {
+      val p = Point()
+      getRealSize(p)
+      Point(p.x, p.y)
+  }
 }
 
 private fun View.createPropertyGroupImpl(stringTable: StringTable): PropertyGroup {

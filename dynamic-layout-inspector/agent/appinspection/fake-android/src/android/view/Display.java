@@ -40,4 +40,26 @@ public class Display {
     public int getDisplayId() {
         return DEFAULT_DISPLAY;
     }
+
+    public Mode getMode() {
+        return new Mode(mRealSize.x, mRealSize.y, 1);
+    }
+
+    public static final class Mode {
+        private int mWidth;
+        private int mHeight;
+
+        public Mode(int width, int height, float refreshRate) {
+            mWidth = width;
+            mHeight = height;
+        }
+
+        public int getPhysicalWidth() {
+            return mWidth;
+        }
+
+        public int getPhysicalHeight() {
+            return mHeight;
+        }
+    }
 }

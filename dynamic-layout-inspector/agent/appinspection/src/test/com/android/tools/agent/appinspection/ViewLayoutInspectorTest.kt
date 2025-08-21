@@ -19,12 +19,15 @@ package com.android.tools.agent.appinspection
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Picture
+import android.graphics.Point
 import android.graphics.Rect
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Looper
+import android.view.Display
 import android.view.Surface
 import android.view.View
 import android.view.ViewGroup
@@ -40,7 +43,6 @@ import checkNextEventMatching
 import com.android.testutils.PropertySetterRule
 import com.android.tools.agent.appinspection.proto.StringTable
 import com.android.tools.agent.appinspection.proto.createResource
-import com.android.tools.agent.appinspection.proto.toRect
 import com.android.tools.agent.appinspection.testutils.FrameworkStateRule
 import com.android.tools.agent.appinspection.testutils.MainLooperRule
 import com.android.tools.agent.appinspection.testutils.inspection.InspectorRule
@@ -529,6 +531,8 @@ abstract class ViewLayoutInspectorTestBase {
         val context = Context(packageName, resources)
         val windowManager = context.windowManager as WindowManagerImpl
         windowManager.mMetrics = WindowMetrics(Rect(100, 200, 1540, 3320))
+        val displayManager = context.displayManager as DisplayManager
+        displayManager.testDisplays = listOf(Display(Point(1440 ,3120)))
         val tree1 = View(context).apply { setAttachInfo(View.AttachInfo() )}
         val tree2 = View(context).apply { setAttachInfo(View.AttachInfo() )}
         val tree3 = View(context).apply { setAttachInfo(View.AttachInfo() )}
@@ -577,9 +581,11 @@ abstract class ViewLayoutInspectorTestBase {
                 assertThat(layoutEvent.rootView.node.id).isEqualTo(tree1.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.SKP)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree1FakePicture1.bytes)
-                assertThat(layoutEvent.appContext.mainDisplayHeight).isEqualTo(3120)
-                assertThat(layoutEvent.appContext.mainDisplayWidth).isEqualTo(1440)
-                assertThat(layoutEvent.appContext.mainDisplayOrientation).isEqualTo(90)
+                assertThat(layoutEvent.appContext.displayInfoList).hasSize(1)
+                val display = layoutEvent.appContext.displayInfoList.first()
+                assertThat(display.height).isEqualTo(3120)
+                assertThat(display.width).isEqualTo(1440)
+                assertThat(display.orientation).isEqualTo(90)
             }
         }
 

@@ -18,10 +18,12 @@ package android.content;
 import android.content.res.Resources;
 import android.graphics.Point;
 import android.hardware.SensorManager;
+import android.hardware.display.DisplayManager;
 import android.view.Display;
 import android.view.WindowManager;
 import android.view.WindowManagerImpl;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +41,8 @@ public class Context {
     @VisibleForTesting public SensorManager sensorManager = new SensorManager();
 
     @VisibleForTesting public WindowManager windowManager = new WindowManagerImpl();
+
+    @VisibleForTesting public DisplayManager displayManager = new DisplayManager();
 
     @VisibleForTesting
     public Context(String packageName, Resources resources) {
@@ -58,6 +62,7 @@ public class Context {
         return 0;
     }
 
+    @Nullable
     public <T> T getSystemService(Class<T> serviceClass) {
         if (serviceClass.equals(SensorManager.class)) {
             //noinspection unchecked
@@ -66,6 +71,10 @@ public class Context {
         if (serviceClass.equals(WindowManager.class)) {
             //noinspection unchecked
             return (T) windowManager;
+        }
+        if (serviceClass.equals(DisplayManager.class)) {
+            //noinspection unchecked
+            return (T) displayManager;
         }
         return null;
     }
