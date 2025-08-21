@@ -25,9 +25,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Collection;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -169,10 +171,11 @@ public enum ResourceType {
 
         TAG_NAMES = tagNames.build();
         CLASS_NAMES = classNames.build();
-        REFERENCEABLE_TYPES =
+        java.util.Set<ResourceType> referenceableSet =
                 Arrays.stream(values())
                         .filter(ResourceType::getCanBeReferenced)
-                        .collect(Sets.toImmutableEnumSet());
+                        .collect(Collectors.toCollection(() -> EnumSet.noneOf(ResourceType.class)));
+        REFERENCEABLE_TYPES = Sets.immutableEnumSet(referenceableSet);
     }
 
     /**
