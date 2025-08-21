@@ -26,6 +26,14 @@ http_archive(
 )
 
 http_archive(
+    name = "system_image_android-31_default_arm64",
+    build_file = "//tools/base/bazel/avd:system_images.BUILD",
+    sha256 = "dc2a5037982fad22462e8fa30a767f885fcdcad2ad437d45142d8a01b1094c8d",
+    strip_prefix = "arm64-v8a",
+    url = "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-31_r11.zip",
+)
+
+http_archive(
     name = "system_image_android-32_aosp_atd_x86_64",
     build_file = "//tools/base/bazel/avd:system_images.BUILD",
     sha256 = "192ff0f288b182200cb63046897a531d88def2d14bfc84e5bcb5ff3dc7a8f780",
