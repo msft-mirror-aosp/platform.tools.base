@@ -1,3 +1,4 @@
+# Bug component: 192755
 # OWNERS of artifacts_allowlist.txt should verify new Maven artifacts are
 # added to the admrs_config.textproto in google3.
 # See http://go/gmaven#registering-new-artifacts.

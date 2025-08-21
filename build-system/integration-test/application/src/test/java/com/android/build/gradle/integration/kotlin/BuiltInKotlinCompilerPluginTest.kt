@@ -24,9 +24,21 @@ import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefaul
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /** Tests that built-in Kotlin support works when Kotlin compiler Gradle plugins are used. */
-class BuiltInKotlinCompilerPluginTest {
+@RunWith(Parameterized::class)
+class BuiltInKotlinCompilerPluginTest(
+    private val builtInKotlinBooleanOption: Boolean,
+) {
+
+    companion object {
+
+        @Parameterized.Parameters(name = "builtInKotlinBooleanOption_{0}")
+        @JvmStatic
+        fun parameters() = listOf(false, true)
+    }
 
     @get:Rule
     val rule = GradleRule.from {
@@ -36,6 +48,7 @@ class BuiltInKotlinCompilerPluginTest {
             android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
         }
         gradleProperties {
+            add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlinBooleanOption)
             add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
         }
     }

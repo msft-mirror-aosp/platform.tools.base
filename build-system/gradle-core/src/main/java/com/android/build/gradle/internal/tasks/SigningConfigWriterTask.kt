@@ -58,14 +58,14 @@ abstract class SigningConfigWriterTask : NonIncrementalTask() {
 
     @get:Nested
     @get:Optional
-    abstract val signingConfigData: Property<SigningConfigData?>
+    abstract val signingConfigData: Property<SigningConfigData>
 
     // Add the store file path as an input as SigningConfigData ignores it (see its javadoc). This
     // will break cache relocatability, but we have to accept it for correctness (see bug
     // 135509623#comment6).
     @get:Input
     @get:Optional
-    abstract val storeFilePath: Property<String?>
+    abstract val storeFilePath: Property<String>
 
     public override fun doTaskAction() {
         SigningConfigUtils.saveSigningConfigData(outputFile.get().asFile, signingConfigData.orNull)
@@ -115,7 +115,7 @@ abstract class SigningConfigWriterTask : NonIncrementalTask() {
                 }
             )
             task.storeFilePath.setDisallowChanges(
-                creationConfig.services.provider<String?> {
+                creationConfig.services.provider {
                     val signingConfig = creationConfig.signingConfig
                     if (signingConfig != null && signingConfig.storeFile.isPresent) {
                         signingConfig.storeFile.get()?.path

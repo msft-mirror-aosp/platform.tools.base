@@ -59,6 +59,14 @@ class BootModeTest {
   }
 
   @Test
+  fun arguments() {
+    assertThat(QuickBoot.arguments()).isEmpty()
+    assertThat(ColdBoot.arguments()).containsExactly("-no-snapstorage")
+    assertThat(BootSnapshot("snap2").arguments())
+      .containsExactly("-snapshot", "snap2", "-no-snapshot-save")
+  }
+
+  @Test
   fun roundtrip() {
     for (mode in listOf(QuickBoot, ColdBoot, BootSnapshot("snap"))) {
       assertThat(BootMode.fromProperties(mode.properties())).isEqualTo(mode)

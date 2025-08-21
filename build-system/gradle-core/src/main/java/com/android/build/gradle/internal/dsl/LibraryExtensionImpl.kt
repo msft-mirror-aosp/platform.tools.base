@@ -23,9 +23,12 @@ import com.android.build.api.dsl.LibraryDefaultConfig
 import com.android.build.api.dsl.LibraryInstallation
 import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.Prefab
+import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
+import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.options.BooleanOption
+import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import javax.inject.Inject
 import java.util.function.Supplier
@@ -40,11 +43,9 @@ abstract class LibraryExtensionImpl @Inject constructor(
             SigningConfig>
 ) :
     TestedExtensionImpl<
-            LibraryBuildFeatures,
             LibraryBuildType,
             LibraryDefaultConfig,
             LibraryProductFlavor,
-            LibraryAndroidResources,
             LibraryInstallation>(
         dslServices,
         dslContainers
@@ -53,6 +54,14 @@ abstract class LibraryExtensionImpl @Inject constructor(
 
     override val buildFeatures: LibraryBuildFeatures =
         dslServices.newDecoratedInstance(LibraryBuildFeaturesImpl::class.java, Supplier { androidResources }, dslServices)
+
+    override fun buildFeatures(action: LibraryBuildFeatures.() -> Unit) {
+        action(buildFeatures)
+    }
+
+    override fun buildFeatures(action: Action<LibraryBuildFeatures>) {
+        action.execute(buildFeatures)
+    }
 
     @get:Suppress("WrongTerminology")
     @set:Suppress("WrongTerminology")
@@ -80,6 +89,54 @@ abstract class LibraryExtensionImpl @Inject constructor(
         dslServices.projectOptions[BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES]
     )
 
+    override fun androidResources(action: LibraryAndroidResources.() -> Unit) {
+        action.invoke(androidResources)
+    }
+
+    override fun androidResources(action: Action<LibraryAndroidResources>) {
+        action.execute(androidResources)
+    }
+
+    override fun buildTypes(action: NamedDomainObjectContainer<LibraryBuildType>.() -> Unit) {
+        action(buildTypes)
+    }
+
+    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+    }
+
+    override fun NamedDomainObjectContainer<LibraryBuildType>.debug(action: LibraryBuildType.() -> Unit) {
+        getByName("debug", action)
+    }
+
+    override fun NamedDomainObjectContainer<LibraryBuildType>.release(action: LibraryBuildType.() -> Unit)  {
+        getByName("release", action)
+    }
+
+    override fun productFlavors(action: Action<NamedDomainObjectContainer<InternalProductFlavor>>) {
+        action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
+    }
+
+    override fun productFlavors(action: NamedDomainObjectContainer<LibraryProductFlavor>.() -> Unit) {
+        action.invoke(productFlavors)
+    }
+
+    override fun defaultConfig(action: Action<InternalDefaultConfig>) {
+        action.execute(defaultConfig as InternalDefaultConfig)
+    }
+
+    override fun defaultConfig(action: LibraryDefaultConfig.() -> Unit) {
+        action.invoke(defaultConfig)
+    }
+
     override val installation: LibraryInstallation
         = dslServices.newDecoratedInstance(LibraryInstallationImpl::class.java, dslServices)
+
+    override fun installation(action: LibraryInstallation.() -> Unit) {
+        action.invoke(installation)
+    }
+
+    override fun installation(action: Action<LibraryInstallation>) {
+        action.execute(installation)
+    }
 }

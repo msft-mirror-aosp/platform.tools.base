@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.core.dsl.impl
 
 import com.android.build.api.component.impl.ComponentIdentityImpl
+import com.android.build.api.component.impl.features.CommonOptimizationDslInfoImpl
 import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.Packaging
@@ -49,7 +50,6 @@ import com.android.builder.model.VectorDrawablesOptions
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
-import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import java.io.File
 
@@ -137,7 +137,7 @@ class KmpVariantDslInfoImpl(
         private val extension: KotlinMultiplatformAndroidLibraryExtension,
         private val services: VariantServices,
         private val buildDirectory: DirectoryProperty
-    ): OptimizationDslInfo {
+    ): CommonOptimizationDslInfoImpl(services) {
 
         private val keepRules =
             (extension.optimization as KmpOptimizationImpl).keepRules as LibraryKeepRulesImpl
@@ -150,18 +150,6 @@ class KmpVariantDslInfoImpl(
             get() = emptySet()
         override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
             get() = false
-
-        override fun getProguardFiles(into: ListProperty<RegularFile>) {
-            val result: MutableList<File> = ArrayList(gatherProguardFiles(ProguardFileType.EXPLICIT))
-            if (result.isEmpty()) {
-                result.addAll(postProcessingOptions.getDefaultProguardFiles())
-            }
-
-            val projectDir = services.projectInfo.projectDirectory
-            result.forEach { file ->
-                into.add(projectDir.file(file.absolutePath))
-            }
-        }
 
         override val postProcessingOptions: PostProcessingOptions by lazy {
             object: PostProcessingOptions {
@@ -194,8 +182,14 @@ class KmpVariantDslInfoImpl(
         override val keepRuleFiles: Set<File>
             get() = setOf()
 
-        override fun gatherProguardFiles(type: ProguardFileType): Collection<File> {
-            return postProcessingOptions.getProguardFiles(type)
+        override fun gatherProguardFiles(
+            type: ProguardFileType,
+            into: MutableList<RegularFile>
+        ) {
+            val projectDir = services.projectInfo.projectDirectory
+            into.addAll(postProcessingOptions.getProguardFiles(type)
+                .map { file -> projectDir.file(file.absolutePath) }
+            )
         }
     }
 

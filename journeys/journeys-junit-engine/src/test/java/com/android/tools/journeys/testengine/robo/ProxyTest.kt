@@ -27,9 +27,21 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.*
-import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.anyList
+import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.anyMap
+import org.mockito.ArgumentMatchers.anyString
+import org.mockito.Mockito.RETURNS_DEEP_STUBS
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockConstruction
+import org.mockito.Mockito.mockStatic
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import java.io.ByteArrayInputStream
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -71,7 +83,7 @@ class ProxyTest {
         val journeyPath = Paths.get("non_existent_journey.xml")
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(journeyPath) { artifact -> }
+            proxy.executeJourney("device-123", journeyPath) { artifact -> }
         }.apply {
             assertEquals(JourneyFailureReason.JOURNEY_READ_FAILED, reason)
             assertContains(message!!, "Failed to read journey: non_existent_journey.xml")
@@ -84,7 +96,7 @@ class ProxyTest {
         invalidJourneyPath.toFile().writeText("<journey><actions></journey>")
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(invalidJourneyPath) { artifact -> }
+            proxy.executeJourney("device-123", invalidJourneyPath) { artifact -> }
         }.apply {
             assertEquals(JourneyFailureReason.JOURNEY_READ_FAILED, reason)
             assertContains(
@@ -96,10 +108,11 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_usesCorrectAdbCommands_api34() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(34)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(34)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
         `when`(
             mockAdb.runInstrumentation(
+                anyString(),
                 anyString(),
                 anyString(),
                 anyMap()
@@ -107,14 +120,15 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }
 
-        verify(mockAdb).setGlobalSettingsValue("verifier_verify_adb_installs", "0")
+        verify(mockAdb).setGlobalSettingsValue("device-123", "verifier_verify_adb_installs", "0")
 
         val installFlagsCaptor = argumentCaptor<List<String>>()
         verify(mockAdb).install(
-            org.mockito.kotlin.eq("crawler.apk"),
+            eq("device-123"),
+            eq("crawler.apk"),
             installFlagsCaptor.capture(),
             anyLong()
         )
@@ -124,7 +138,8 @@ class ProxyTest {
         )
 
         verify(mockAdb).install(
-            org.mockito.kotlin.eq("app.apk"),
+            eq("device-123"),
+            eq("app.apk"),
             installFlagsCaptor.capture(),
             anyLong()
         )
@@ -133,10 +148,11 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_usesCorrectAdbCommands_api30() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
         `when`(
             mockAdb.runInstrumentation(
+                anyString(),
                 anyString(),
                 anyString(),
                 anyMap()
@@ -144,21 +160,23 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }
 
-        verify(mockAdb, never()).setGlobalSettingsValue(anyString(), anyString(), anyLong())
+        verify(mockAdb, never()).setGlobalSettingsValue(anyString(), anyString(), anyString(), anyLong())
 
         val installFlagsCaptor = argumentCaptor<List<String>>()
         verify(mockAdb).install(
-            org.mockito.kotlin.eq("crawler.apk"),
+            eq("device-123"),
+            eq("crawler.apk"),
             installFlagsCaptor.capture(),
             anyLong()
         )
         assertEquals(listOf("-r", "-d", "-g"), installFlagsCaptor.firstValue)
 
         verify(mockAdb).install(
-            org.mockito.kotlin.eq("app.apk"),
+            eq("device-123"),
+            eq("app.apk"),
             installFlagsCaptor.capture(),
             anyLong()
         )
@@ -167,10 +185,11 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_usesCorrectAdbCommands_api22() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(22)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(22)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
         `when`(
             mockAdb.runInstrumentation(
+                anyString(),
                 anyString(),
                 anyString(),
                 anyMap()
@@ -178,21 +197,23 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }
 
-        verify(mockAdb, never()).setGlobalSettingsValue(anyString(), anyString(), anyLong())
+        verify(mockAdb, never()).setGlobalSettingsValue(anyString(), anyString(), anyString(), anyLong())
 
         val installFlagsCaptor = argumentCaptor<List<String>>()
         verify(mockAdb).install(
-            org.mockito.kotlin.eq("crawler.apk"),
+            eq("device-123"),
+            eq("crawler.apk"),
             installFlagsCaptor.capture(),
             anyLong()
         )
         assertEquals(listOf("-r", "-d"), installFlagsCaptor.firstValue)
 
         verify(mockAdb).install(
-            org.mockito.kotlin.eq("app.apk"),
+            eq("device-123"),
+            eq("app.apk"),
             installFlagsCaptor.capture(),
             anyLong()
         )
@@ -201,9 +222,10 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_adbInstallFailed() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
         `when`(
             mockAdb.install(
+                anyString(),
                 anyString(),
                 anyList(),
                 anyLong()
@@ -211,7 +233,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Install failed"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { artifact -> }
+            proxy.executeJourney("device-123", validJourneyPath) { artifact -> }
         }.apply {
             assertEquals(JourneyFailureReason.ADB_INSTALL_FAILED, reason)
             assertContains(message!!, "Installation failure: Install failed")
@@ -220,21 +242,29 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_usesCorrectInstrumentationArgs() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
-        `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyMap())).thenReturn(
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(
+            mockAdb.runInstrumentation(
+                anyString(),
+                anyString(),
+                anyString(),
+                anyMap()
+            )
+        ).thenReturn(
             mockProcess
         )
-        `when`(mockAdb.dumpsys(anyString(), anyLong())).thenReturn("random port")
+        `when`(mockAdb.dumpsys(anyString(), anyString(), anyLong())).thenReturn("random port")
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }
 
         val instrumentationArgsCaptor = argumentCaptor<Map<String, String>>()
         verify(mockAdb).runInstrumentation(
-            org.mockito.kotlin.eq(RoboConfigConstants.CRAWLER_PACKAGE_ID),
-            org.mockito.kotlin.eq(RoboConfigConstants.TEST_RUNNER_CLASS),
+            eq("device-123"),
+            eq(RoboConfigConstants.CRAWLER_PACKAGE_ID),
+            eq(RoboConfigConstants.TEST_RUNNER_CLASS),
             instrumentationArgsCaptor.capture()
         )
         val expectedArgs = mapOf(
@@ -248,10 +278,11 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_instrumentationFailed() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
         `when`(
             mockAdb.runInstrumentation(
+                anyString(),
                 anyString(),
                 anyString(),
                 anyMap()
@@ -259,7 +290,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Instrumentation failed"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }.apply {
             assertEquals(JourneyFailureReason.INSTRUMENTATION_FAILED, reason)
             assertContains(message!!, "Failed to run instrumentation: Instrumentation failed")
@@ -268,33 +299,59 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_verifyCorrectPortCaptured() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
-        `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyMap())).thenReturn(
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(
+            mockAdb.runInstrumentation(
+                anyString(),
+                anyString(),
+                anyString(),
+                anyMap()
+            )
+        ).thenReturn(
             mockProcess
         )
-        `when`(mockAdb.dumpsys(anyString(), anyLong())).thenReturn("port_is_bound 12345")
-        `when`(mockAdb.forward(anyInt(), anyInt())).thenThrow(RuntimeException("Test failure"))
+        `when`(
+            mockAdb.dumpsys(
+                anyString(),
+                anyString(),
+                anyLong()
+            )
+        ).thenReturn("port_is_bound 12345")
+        `when`(
+            mockAdb.forward(
+                anyString(),
+                anyInt(),
+                anyInt()
+            )
+        ).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }
         val devicePortCaptor = ArgumentCaptor.forClass(Int::class.java)
-        verify(mockAdb).forward(anyInt(), devicePortCaptor.capture())
+        verify(mockAdb).forward(eq("device-123"), anyInt(), devicePortCaptor.capture())
         assertEquals(12345, devicePortCaptor.value)
     }
 
     @Test
     fun testExecuteJourney_roboPortExtractionFailed() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
-        `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyMap())).thenReturn(
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(
+            mockAdb.runInstrumentation(
+                anyString(),
+                anyString(),
+                anyString(),
+                anyMap()
+            )
+        ).thenReturn(
             mockProcess
         )
-        `when`(mockAdb.dumpsys(anyString(), anyLong())).thenReturn("some other output")
+        `when`(mockAdb.dumpsys(anyString(), anyString(), anyLong())).thenReturn("some other output")
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }.apply {
             assertEquals(JourneyFailureReason.ROBO_PORT_EXTRACTION_FAILED, reason)
             assertContains(message!!, "Failed to obtain device port after 10 attempts.")
@@ -303,16 +360,35 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_adbForwardingFailed() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
-        `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyMap())).thenReturn(
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(
+            mockAdb.runInstrumentation(
+                anyString(),
+                anyString(),
+                anyString(),
+                anyMap()
+            )
+        ).thenReturn(
             mockProcess
         )
-        `when`(mockAdb.dumpsys(anyString(), anyLong())).thenReturn("port_is_bound 12345")
-        `when`(mockAdb.forward(anyInt(), anyInt())).thenThrow(RuntimeException("Forwarding failed"))
+        `when`(
+            mockAdb.dumpsys(
+                anyString(),
+                anyString(),
+                anyLong()
+            )
+        ).thenReturn("port_is_bound 12345")
+        `when`(
+            mockAdb.forward(
+                anyString(),
+                anyInt(),
+                anyInt()
+            )
+        ).thenThrow(RuntimeException("Forwarding failed"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }.apply {
             assertEquals(JourneyFailureReason.ADB_FORWARDING_FAILED, reason)
             assertContains(message!!, "Forwarding failed")
@@ -321,13 +397,26 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_authenticationFailed() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
-        `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyMap())).thenReturn(
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(
+            mockAdb.runInstrumentation(
+                anyString(),
+                anyString(),
+                anyString(),
+                anyMap()
+            )
+        ).thenReturn(
             mockProcess
         )
-        `when`(mockAdb.dumpsys(anyString(), anyLong())).thenReturn("port_is_bound 12345")
-        `when`(mockAdb.forward(anyInt(), anyInt())).thenAnswer { }
+        `when`(
+            mockAdb.dumpsys(
+                anyString(),
+                anyString(),
+                anyLong()
+            )
+        ).thenReturn("port_is_bound 12345")
+        `when`(mockAdb.forward(anyString(), anyInt(), anyInt())).thenAnswer { }
 
         val tempDir = tempFolder.newFolder()
 
@@ -341,7 +430,7 @@ class ProxyTest {
         )
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxyWithMissingToken.executeJourney(validJourneyPath) { }
+            proxyWithMissingToken.executeJourney("device-123", validJourneyPath) { }
         }.apply {
             assertEquals(JourneyFailureReason.AUTHENTICATION_FAILED, reason)
             assertContains(message!!, "Failed to obtain credentials")
@@ -350,14 +439,30 @@ class ProxyTest {
 
     @Test
     fun testExecuteJourney_cleanupCalledOnSuccess() {
-        `when`(mockAdb.getDeviceApiLevel()).thenReturn(30)
-        `when`(mockAdb.install(anyString(), anyList(), anyLong())).thenAnswer { }
-        `when`(mockAdb.runInstrumentation(anyString(), anyString(), anyMap())).thenReturn(mockProcess)
-        `when`(mockAdb.dumpsys(anyString(), anyLong())).thenReturn("port_is_bound 12345")
-        `when`(mockAdb.forward(anyInt(), anyInt())).thenAnswer { }
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenReturn(30)
+        `when`(mockAdb.install(anyString(), anyString(), anyList(), anyLong())).thenAnswer { }
+        `when`(
+            mockAdb.runInstrumentation(
+                anyString(),
+                anyString(),
+                anyString(),
+                anyMap()
+            )
+        ).thenReturn(
+            mockProcess
+        )
+        `when`(
+            mockAdb.dumpsys(
+                anyString(),
+                anyString(),
+                anyLong()
+            )
+        ).thenReturn("port_is_bound 12345")
+        `when`(mockAdb.forward(anyString(), anyInt(), anyInt())).thenAnswer { }
 
         val fakeTokenFile = tempFolder.newFile("fake_token.json")
-        fakeTokenFile.writeText("""
+        fakeTokenFile.writeText(
+            """
               {
                 "access_token": "fake_token",
                 "expires_in": 3600
@@ -381,7 +486,9 @@ class ProxyTest {
 
             mockStatic(NettyChannelBuilder::class.java).use { mockedNettyChannelBuilder ->
                 val mockChannelBuilder = mock(NettyChannelBuilder::class.java)
-                `when`(mockChannelBuilder.intercept(any<ClientInterceptor>())).thenReturn(mockChannelBuilder)
+                `when`(mockChannelBuilder.intercept(any<ClientInterceptor>())).thenReturn(
+                    mockChannelBuilder
+                )
                 `when`(mockChannelBuilder.build()).thenReturn(mock(ManagedChannel::class.java))
 
                 mockedNettyChannelBuilder.`when`<Any> { NettyChannelBuilder.forTarget(anyString()) }
@@ -402,26 +509,26 @@ class ProxyTest {
                         )
                     ).thenReturn(mockResult)
                 }.use {
-                    proxyWithFakeToken.executeJourney(validJourneyPath) {}
+                    proxyWithFakeToken.executeJourney("device-123", validJourneyPath) {}
                 }
             }
         }
 
-        verify(mockAdb).removeForward(anyInt())
-        verify(mockAdb).uninstall("com.example.app")
-        verify(mockAdb).uninstall(RoboConfigConstants.CRAWLER_PACKAGE_ID)
+        verify(mockAdb).removeForward(eq("device-123"), anyInt())
+        verify(mockAdb).uninstall(eq("device-123"), eq("com.example.app"))
+        verify(mockAdb).uninstall(eq("device-123"), eq(RoboConfigConstants.CRAWLER_PACKAGE_ID))
     }
 
     @Test
     fun testExecuteJourney_cleanupCalledOnFailure() {
-        `when`(mockAdb.getDeviceApiLevel()).thenThrow(RuntimeException("Test failure"))
+        `when`(mockAdb.getDeviceApiLevel(anyString())).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney(validJourneyPath) { }
+            proxy.executeJourney("device-123", validJourneyPath) { }
         }
 
-        verify(mockAdb).removeForward(anyInt())
-        verify(mockAdb).uninstall("com.example.app")
-        verify(mockAdb).uninstall(RoboConfigConstants.CRAWLER_PACKAGE_ID)
+        verify(mockAdb).removeForward(eq("device-123"), anyInt())
+        verify(mockAdb).uninstall(eq("device-123"), eq("com.example.app"))
+        verify(mockAdb).uninstall(eq("device-123"), eq(RoboConfigConstants.CRAWLER_PACKAGE_ID))
     }
 }

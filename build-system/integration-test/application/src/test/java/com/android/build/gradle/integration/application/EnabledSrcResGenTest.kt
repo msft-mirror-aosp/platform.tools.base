@@ -66,7 +66,8 @@ class EnabledSrcResGenTest {
     ) {
         // first do a build without enabling the feature to check the tasks do not exist in this
         // case (build both the APK and AAR).
-        var result = rootProject.executor().run("assembleDebug")
+        var result = rootProject.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false)
+            .run("assembleDebug")
         Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
         Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
 
@@ -77,7 +78,9 @@ class EnabledSrcResGenTest {
     ${booleanOption.propertyName}=true"""
             )
 
-        result = rootProject.executor().run("assembleDebug")
+        result = rootProject.executor()
+            .with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false)
+            .run("assembleDebug")
 
         Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
         Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
@@ -97,7 +100,8 @@ class EnabledSrcResGenTest {
         appProject.buildFile.appendText("android.buildFeatures.$propertyName = true")
         libProject.buildFile.appendText("android.buildFeatures.$propertyName = true")
 
-        result = rootProject.executor().run("assembleDebug")
+        result = rootProject.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false)
+            .run("assembleDebug")
 
         Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
         Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()

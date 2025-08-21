@@ -41,10 +41,6 @@ open class UnusableProductFlavorProxy(): ProductFlavor {
             throwUnusableError("ProductFlavor.dimension")
         }
 
-    override fun setDimension(dimension: String?): Void? {
-        throwUnusableError("ProductFlavor.setDimension")
-    }
-
     override val matchingFallbacks: MutableList<String>
         get() = throwUnusableError("ProductFlavor.matchingFallbacks")
 

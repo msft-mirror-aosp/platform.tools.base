@@ -16,17 +16,15 @@
 
 package com.android.tools.journeys.testengine.robo
 
-import org.w3c.dom.Element
-import org.w3c.dom.Node
-import org.w3c.dom.NodeList
 import java.io.InputStream
 import java.io.StringWriter
 import java.io.Writer
 import javax.xml.parsers.DocumentBuilderFactory
+import org.w3c.dom.Element
+import org.w3c.dom.Node
+import org.w3c.dom.NodeList
 
-/**
- * Converts journey XML files into Robo JSON scripts.
- */
+/** Converts journey XML files into Robo JSON scripts. */
 object RoboConverter {
 
     /**
@@ -41,20 +39,63 @@ object RoboConverter {
     }
 
     /**
+     * Obtains a list of all prompts from a journey input stream.
+     *
+     * @param journey The InputStream containing the journey XML data.
+     * @return The ordered list of all prompts in the journey.
+     * @throws IllegalArgumentException If the XML structure is invalid.
+     */
+    fun getPrompts(journey: InputStream): List<String> {
+        val actionElements = getRoboElements(journey)
+        return actionElements.map { element ->
+            if (element.tagName != "action") {
+                throw IllegalStateException("Unknown tag: ${element.tagName}")
+            }
+            element.textContent.trim()
+        }
+    }
+
+    /**
      * Retrieves the child elements of the `<actions>` element in the XML document.
      *
      * @param journey The InputStream containing the journey XML data.
      * @return A list of child elements within the `<actions>` element.
-     * @throws IllegalStateException If the `<actions>` element is not found.
+     * @throws IllegalStateException If the expected `<journey>` or `<actions>` element is not found.
      */
     fun getRoboElements(journey: InputStream): List<Element> {
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(journey)
-        val actionsElements = document.getElementsByTagName("actions")
-
-        if (actionsElements.length != 1) {
-            throw IllegalStateException("There should be one and only one <actions> element, found ${actionsElements.length}.")
+        val journeyElement = document.documentElement
+        if (journeyElement.tagName != "journey") {
+            throw IllegalStateException(
+                "The root element must be <journey>, but found <${journeyElement.tagName}>."
+            )
         }
-        val actionsElement = actionsElements.item(0) as Element
+        val childElements = journeyElement.childNodes.toList().mapNotNull { it as? Element }
+
+        val actionsElements = childElements.filter { it.tagName == "actions" }
+        val descriptionElements = childElements.filter { it.tagName == "description" }
+
+        if (actionsElements.size != 1) {
+            throw IllegalStateException(
+                "The <journey> element must have exactly one <actions> element, but found ${actionsElements.size}."
+            )
+        }
+
+        if (descriptionElements.size > 1) {
+            throw IllegalStateException(
+                "The <journey> element can have at most one <description> element, but found ${descriptionElements.size}."
+            )
+        }
+
+        if (childElements.size != actionsElements.size + descriptionElements.size) {
+            val unknownElements =
+                childElements.filter { it.tagName != "actions" && it.tagName != "description" }
+            throw IllegalStateException(
+                "The <journey> element contains unexpected child elements: ${unknownElements.joinToString { "<${it.tagName}>" }}"
+            )
+        }
+
+        val actionsElement = actionsElements.first()
         return actionsElement.childNodes.toList().mapNotNull { it as? Element }
     }
 
@@ -105,14 +146,10 @@ object RoboConverter {
     private fun Writer.addJsonAssertion(textContent: String) =
         write(assertionEntry.replace("\"%CONTENT%\"", textContent))
 
-    /**
-     * Converts a NodeList to a standard Kotlin List<Node>.
-     */
+    /** Converts a NodeList to a standard Kotlin List<Node>. */
     private fun NodeList.toList(): List<Node> = (0 until length).map { item(it) }
 
-    /**
-     * Creates a JSON string literal from a string, escaping special characters as necessary.
-     */
+    /** Creates a JSON string literal from a string, escaping special characters as necessary. */
     private fun String.toJsonStringLiteral(): String = buildString {
         append('"')
         for (c in this@toJsonStringLiteral) {

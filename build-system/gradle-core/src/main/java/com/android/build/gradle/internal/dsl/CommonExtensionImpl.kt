@@ -46,21 +46,12 @@ import java.util.function.Supplier
 
 /** Internal implementation of the 'new' DSL interface */
 abstract class CommonExtensionImpl<
-        BuildFeaturesT : BuildFeatures,
         BuildTypeT : com.android.build.api.dsl.BuildType,
         DefaultConfigT : DefaultConfig,
-        ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
-        AndroidResourcesT : AndroidResources,
-        InstallationT : Installation>(
+        ProductFlavorT : com.android.build.api.dsl.ProductFlavor>(
             protected val dslServices: DslServices,
             dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
-        ) : InternalCommonExtension<
-        BuildFeaturesT,
-        BuildTypeT,
-        DefaultConfigT,
-        ProductFlavorT,
-        AndroidResourcesT,
-        InstallationT> {
+        ) : InternalCommonExtension {
 
     private val sourceSetManager = dslContainers.sourceSetManager
 
@@ -102,22 +93,6 @@ abstract class CommonExtensionImpl<
         action.execute(aaptOptions)
     }
 
-    override fun androidResources(action: AndroidResourcesT.() -> Unit) {
-        action(androidResources)
-    }
-
-    override fun androidResources(action: Action<AndroidResourcesT>) {
-        action.execute(androidResources)
-    }
-
-    override fun installation(action: InstallationT.() -> Unit) {
-        action.invoke(installation)
-    }
-
-    override fun installation(action: Action<InstallationT>) {
-        action.execute(installation)
-    }
-
     override val adbOptions: AdbOptions get() = installation as AdbOptions
 
     override fun adbOptions(action: com.android.build.api.dsl.AdbOptions.() -> Unit) {
@@ -126,14 +101,6 @@ abstract class CommonExtensionImpl<
 
     override fun adbOptions(action: Action<AdbOptions>) {
         action.execute(adbOptions)
-    }
-
-    override fun buildFeatures(action: Action<BuildFeaturesT>) {
-        action.execute(buildFeatures)
-    }
-
-    override fun buildFeatures(action: BuildFeaturesT.() -> Unit) {
-        action(buildFeatures)
     }
 
     protected abstract var _namespace: String?
@@ -218,22 +185,6 @@ abstract class CommonExtensionImpl<
         action.execute(composeOptions)
     }
 
-    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
-        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
-    }
-
-    override fun buildTypes(action: NamedDomainObjectContainer<BuildTypeT>.() -> Unit) {
-        action.invoke(buildTypes)
-    }
-
-    override fun NamedDomainObjectContainer<BuildTypeT>.debug(action: BuildTypeT.() -> Unit) {
-        getByName("debug", action)
-    }
-
-    override fun NamedDomainObjectContainer<BuildTypeT>.release(action: BuildTypeT.() -> Unit)  {
-        getByName("release", action)
-    }
-
     override val dataBinding: DataBindingOptions =
         dslServices.newDecoratedInstance(
             DataBindingOptions::class.java,
@@ -262,14 +213,6 @@ abstract class CommonExtensionImpl<
 
     override fun viewBinding(action: ViewBinding.() -> Unit) {
         action.invoke(viewBinding)
-    }
-
-    override fun defaultConfig(action: Action<com.android.build.gradle.internal.dsl.DefaultConfig>) {
-        action.execute(defaultConfig as com.android.build.gradle.internal.dsl.DefaultConfig)
-    }
-
-    override fun defaultConfig(action: DefaultConfigT.() -> Unit) {
-        action.invoke(defaultConfig)
     }
 
     override val testCoverage: TestCoverage  = dslServices.newInstance(JacocoOptions::class.java)
@@ -316,14 +259,6 @@ abstract class CommonExtensionImpl<
         action.execute(packaging as com.android.build.gradle.internal.dsl.PackagingOptions)
     }
 
-    override fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>) {
-        action.execute(productFlavors as NamedDomainObjectContainer<ProductFlavor>)
-    }
-
-    override fun productFlavors(action: NamedDomainObjectContainer<ProductFlavorT>.() -> Unit) {
-        action.invoke(productFlavors)
-    }
-
     override fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>) {
         action.execute(signingConfigs)
     }
@@ -367,11 +302,6 @@ abstract class CommonExtensionImpl<
 
     override fun buildToolsVersion(buildToolsVersion: String) {
         this.buildToolsVersion = buildToolsVersion
-    }
-
-    override fun flavorDimensions(vararg dimensions: String) {
-        flavorDimensions.clear()
-        flavorDimensions.addAll(dimensions)
     }
 
     override fun useLibrary(name: String) {

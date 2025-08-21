@@ -57,7 +57,7 @@ fun GradleBuildDefinition.simpleProject() {
     }
 }
 
-fun AndroidProjectDefinition<out CommonExtension<*,*,*,*,*,*>>.addManagedDevice(deviceName: String) {
+fun AndroidProjectDefinition<out CommonExtension>.addManagedDevice(deviceName: String) {
     android {
         testOptions.managedDevices {
             localDevices.create(deviceName) {

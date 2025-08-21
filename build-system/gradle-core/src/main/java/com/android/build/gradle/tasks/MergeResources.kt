@@ -217,7 +217,7 @@ abstract class MergeResources : NewIncrementalTask() {
     abstract val mergedNotCompiledResourcesOutputDirectory: DirectoryProperty
 
     @get:Internal
-    abstract val aaptEnv: Property<String?>
+    abstract val aaptEnv: Property<String>
 
     @get:Internal
     abstract val projectRootDir: DirectoryProperty
@@ -829,7 +829,6 @@ abstract class MergeResources : NewIncrementalTask() {
             task.flags = flags
             task.resourcesComputer.initFromVariantScope(
                 creationConfig = creationConfig,
-                microApkResDir = creationConfig.services.fileCollection(),
                 libraryDependencies = null,
             )
             task.aapt2ThreadPoolBuildService.setDisallowChanges(
@@ -961,19 +960,12 @@ abstract class MergeResources : NewIncrementalTask() {
                     ArtifactScope.ALL,
                     AndroidArtifacts.ArtifactType.ANDROID_RES
                 ) else null
-            val microApk: FileCollection = creationConfig
-                .services
-                .fileCollection(
-                    creationConfig
-                        .artifacts
-                        .get(InternalArtifactType.MICRO_APK_RES)
-                )
+
             task.renderscriptGeneratedResDir.setDisallowChanges(
                 creationConfig.artifacts.get(InternalArtifactType.RENDERSCRIPT_GENERATED_RES))
 
             task.resourcesComputer.initFromVariantScope(
                 creationConfig = creationConfig,
-                microApkResDir = microApk,
                 libraryDependencies = libraryArtifacts,
             )
             val features = creationConfig.buildFeatures

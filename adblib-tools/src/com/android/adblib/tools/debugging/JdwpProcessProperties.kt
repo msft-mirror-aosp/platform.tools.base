@@ -282,6 +282,30 @@ internal fun JdwpProcessProperties.mergeWith(newer: JdwpProcessProperties): Jdwp
         jvmFlags = newer.jvmFlags.orElse(current.jvmFlags),
         isNativeDebuggable = newer.isNativeDebuggable.orElse(current.isNativeDebuggable),
         features = newer.features.orElse(current.features),
-        isWaitingForDebugger = newer.isWaitingForDebugger.orElse(current.isWaitingForDebugger),
+        // Once false, `isWaitingForDebugger` can never go back to `true`, because
+        // we assume that merging `JdwpProcessProperties` only happens when the
+        // process inventory server is used, which implies we use JDWP connection
+        // (see `UsingJdwpSessionFlowUpdater` class) to track the `isWaitingForDebugger` state.
+        // In this case, false is the terminal value.
+        isWaitingForDebugger = current.isWaitingForDebugger.mergeWithTerminalValue(
+            newer.isWaitingForDebugger,
+            terminalValue = false
+        ),
     )
+}
+
+/**
+ * Merges two [OptionalValue]s, treating a specific [terminalValue] in the receiver
+ * as a final state that should not be overwritten by a newer value.
+ */
+private fun <T : Any> OptionalValue<T>.mergeWithTerminalValue(
+    newer: OptionalValue<T>,
+    terminalValue: T
+): OptionalValue<T> {
+    // If the current value is the terminal state, don't change it.
+    if (this.getOrNull() == terminalValue) {
+        return this
+    }
+    // Otherwise, take the newer value, or fall back to the current one.
+    return newer.orElse(this)
 }

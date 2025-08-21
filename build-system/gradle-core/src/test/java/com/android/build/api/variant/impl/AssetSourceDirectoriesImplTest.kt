@@ -47,7 +47,7 @@ internal class AssetSourceDirectoriesImplTest {
     private val variantServices: VariantServices = mock()
 
     @Captor
-    lateinit var callableCaptor: ArgumentCaptor<Callable<*>>
+    lateinit var callableCaptor: ArgumentCaptor<Callable<Any?>>
 
     private lateinit var project: Project
 
@@ -84,8 +84,11 @@ internal class AssetSourceDirectoriesImplTest {
         whenever(variantServices.projectInfo).thenReturn(projectInfo)
         whenever(projectInfo.projectDirectory).thenReturn(project.layout.projectDirectory)
 
-        whenever(variantServices.provider(capture(callableCaptor))).thenAnswer {
-            project.provider(callableCaptor.value)
+        whenever(
+            variantServices.provider(capture(callableCaptor))
+        ).thenAnswer {
+            val capturedCallable: Callable<Any?> = callableCaptor.value
+            project.provider(Callable { capturedCallable.call()!! })
         }
         whenever(variantServices.newListPropertyForInternalUse(Directory::class.java)).also {
             var stub = it

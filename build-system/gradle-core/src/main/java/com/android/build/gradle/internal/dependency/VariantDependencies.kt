@@ -106,7 +106,6 @@ class VariantDependencies internal constructor(
     private val testedVariant: VariantCreationConfig?,
     private val project: Project,
     private val projectOptions: ProjectOptions,
-    val isLibraryConstraintsApplied: Boolean,
     isSelfInstrumenting: Boolean,
     val sourceSetConfigurationsMap: Map<String, Function<String, String>>,
 ): ResolutionResultProvider {
@@ -574,7 +573,6 @@ class VariantDependencies internal constructor(
                 testedVariant = null,
                 project = project,
                 projectOptions = projectOptions,
-                isLibraryConstraintsApplied = false,
                 isSelfInstrumenting = false,
                 sourceSetConfigurationsMap = kmpVariantApiOperationsRegistrar.sourceSetConfigurationsMap.toMap()
             )

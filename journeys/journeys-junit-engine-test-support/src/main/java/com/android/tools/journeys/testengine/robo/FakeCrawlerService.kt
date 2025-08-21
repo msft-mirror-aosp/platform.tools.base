@@ -21,7 +21,6 @@ import androidx.test.tools.crawler.proto.RemotePlatformRequest
 import androidx.test.tools.crawler.proto.RemotePlatformResponse
 import com.google.cloud.test.appcrawler.proto.Artifact
 import com.google.cloud.test.appcrawler.proto.CrawlResult
-import com.google.cloud.test.appcrawler.proto.CrawlSetup
 import com.google.cloud.test.appcrawler.proto.CrawlSetupResponse
 import com.google.cloud.test.appcrawler.proto.CrawlerRequest
 import com.google.cloud.test.appcrawler.proto.CrawlerResponse
@@ -30,39 +29,14 @@ import com.google.cloud.test.appcrawler.proto.EchoRequest
 import com.google.cloud.test.appcrawler.proto.EchoResponse
 import com.google.common.base.VerifyException
 import com.google.protobuf.Empty
-import com.google.protobuf.TextFormat
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
-import java.io.File
 import java.io.IOException
 
-class FakeCrawlerService private constructor(
-    private val shouldInduceServerError: Boolean,
-    private val shouldCompleteNormally: Boolean
+class FakeCrawlerService(
+    private val masterCrawl: Crawl,
+    private val shouldInduceServerError: Boolean
 ) : CrawlerServiceGrpc.CrawlerServiceImplBase() {
-
-    constructor() : this(false, true) {
-        val roboResultsPath = System.getProperty("FakeCrawlerServiceInput.roboResultsPath", null)
-        if (!roboResultsPath.isNullOrEmpty()) {
-            val content = File(roboResultsPath).readText()
-            masterCrawl = TextFormat.parse(content, Crawl::class.java)
-        }
-    }
-
-    private var crawlSetup: CrawlSetup = CrawlSetup.getDefaultInstance()
-    private var masterCrawl = Crawl.getDefaultInstance()
-
-    companion object {
-        @JvmStatic
-        fun withServerError(): FakeCrawlerService {
-            return FakeCrawlerService(true, true)
-        }
-
-        @JvmStatic
-        fun withInCompleteCrawl(): FakeCrawlerService {
-            return FakeCrawlerService(false, false)
-        }
-    }
 
     override fun echo(request: EchoRequest, responseObserver: StreamObserver<EchoResponse>) {
         responseObserver.onNext(EchoResponse.getDefaultInstance())
@@ -91,7 +65,6 @@ class FakeCrawlerService private constructor(
 
                     when (value.requestCase) {
                         CrawlerRequest.RequestCase.CRAWL_SETUP -> {
-                            crawlSetup = value.crawlSetup
                             responseObserver.onNext(
                                 CrawlerResponse.newBuilder()
                                     .setCrawlSetupResponse(CrawlSetupResponse.getDefaultInstance())
@@ -105,19 +78,20 @@ class FakeCrawlerService private constructor(
                             }
 
                             streamCrawlUpdates(responseObserver)
-                            if (shouldCompleteNormally) {
-                                responseObserver.onNext(
-                                    CrawlerResponse.newBuilder()
-                                        .setPlatformRequest(
-                                            RemotePlatformRequest.newBuilder()
-                                                .setCrawlOver(Empty.getDefaultInstance())
-                                        )
-                                        .build()
-                                )
-                            }
                             responseObserver.onNext(
                                 CrawlerResponse.newBuilder()
-                                    .setCrawlResult(CrawlResult.newBuilder().setOutcome(CrawlResult.Outcome.COMPLETED))
+                                    .setPlatformRequest(
+                                        RemotePlatformRequest.newBuilder()
+                                            .setCrawlOver(Empty.getDefaultInstance())
+                                    )
+                                    .build()
+                            )
+                            responseObserver.onNext(
+                                CrawlerResponse.newBuilder()
+                                    .setCrawlResult(
+                                        CrawlResult.newBuilder()
+                                            .setOutcome(CrawlResult.Outcome.COMPLETED)
+                                    )
                                     .build()
                             )
                             finished = true
@@ -128,7 +102,10 @@ class FakeCrawlerService private constructor(
                             if (!finished) {
                                 responseObserver.onNext(
                                     CrawlerResponse.newBuilder()
-                                        .setCrawlResult(CrawlResult.newBuilder().setOutcome(CrawlResult.Outcome.INCOMPLETE))
+                                        .setCrawlResult(
+                                            CrawlResult.newBuilder()
+                                                .setOutcome(CrawlResult.Outcome.INCOMPLETE)
+                                        )
                                         .build()
                                 )
                             }

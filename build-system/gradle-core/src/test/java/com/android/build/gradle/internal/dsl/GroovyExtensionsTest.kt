@@ -17,6 +17,8 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.internal.dsl.decorator.androidPluginDslDecorator
+import com.android.builder.core.ComponentType
+import com.android.builder.core.ComponentTypeImpl
 import com.android.utils.usLocaleCapitalize
 import com.android.utils.usLocaleDecapitalize
 import com.google.common.truth.Expect
@@ -50,27 +52,27 @@ class GroovyExtensionsTest {
 
     @Test
     fun testCommonExtension() {
-        validate(InternalCommonExtension::class.java, CommonExtensionImpl::class.java)
+        validate("", InternalCommonExtension::class.java, CommonExtensionImpl::class.java)
     }
 
     @Test
     fun testApplicationExtension() {
-        validate(InternalApplicationExtension::class.java, ApplicationExtensionImpl::class.java)
+        validate("Application", InternalApplicationExtension::class.java, ApplicationExtensionImpl::class.java)
     }
 
     @Test
     fun testLibraryExtension() {
-        validate(InternalLibraryExtension::class.java, LibraryExtensionImpl::class.java)
+        validate("Library", InternalLibraryExtension::class.java, LibraryExtensionImpl::class.java)
     }
 
     @Test
     fun testDynamicFeatureExtension() {
-        validate(InternalDynamicFeatureExtension::class.java, DynamicFeatureExtension::class.java)
+        validate("DynamicFeature", InternalDynamicFeatureExtension::class.java, DynamicFeatureExtension::class.java)
     }
 
     @Test
     fun testTestExtension() {
-        validate(InternalTestExtension::class.java, TestExtensionImpl::class.java)
+        validate("Test", InternalTestExtension::class.java, TestExtensionImpl::class.java)
     }
 
     private val Type.lowerBound
@@ -93,8 +95,7 @@ class GroovyExtensionsTest {
     // Handle known, acceptable discrepancies for blocks that are in BaseExtension.
     // New blocks should not be added to baseExtension, so the API type can be added.
     // i.e. this mapping should not be expanded
-    private val Type.normalizedTypeName: String
-        get() = when (typeName) {
+    private fun Type.normalizedTypeName(componentPrefix: String): String = when (typeName) {
             "com.android.build.gradle.internal.CompileOptions" -> "com.android.build.api.dsl.CompileOptions"
             "com.android.build.gradle.internal.coverage.JacocoOptions" -> "com.android.build.api.dsl.JacocoOptions"
             "com.android.build.gradle.internal.dsl.AaptOptions" -> "com.android.build.api.dsl.AaptOptions"
@@ -102,7 +103,7 @@ class GroovyExtensionsTest {
             "com.android.build.gradle.internal.dsl.BundleOptions" -> "com.android.build.api.dsl.Bundle"
             "com.android.build.gradle.internal.dsl.DataBindingOptions" -> "com.android.build.api.dsl.DataBinding"
             "com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl" -> "com.android.build.api.dsl.ViewBinding"
-            "com.android.build.gradle.internal.dsl.DefaultConfig" -> "DefaultConfigT"
+            "com.android.build.gradle.internal.dsl.DefaultConfig" -> "com.android.build.api.dsl.${componentPrefix}DefaultConfig"
             "com.android.build.gradle.internal.dsl.ExternalNativeBuild" -> "com.android.build.api.dsl.ExternalNativeBuild"
             "com.android.build.gradle.internal.dsl.LintOptions" -> "com.android.build.api.dsl.LintOptions"
             "com.android.build.gradle.internal.dsl.PackagingOptions" -> "com.android.build.api.dsl.Packaging"
@@ -111,16 +112,15 @@ class GroovyExtensionsTest {
             "org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.api.AndroidSourceSet>" ->
                 "org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidSourceSet>"
             "org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.BuildType>" ->
-                "org.gradle.api.NamedDomainObjectContainer<BuildTypeT>"
+                "org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.${componentPrefix}BuildType>"
             "org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.ProductFlavor>" ->
-                "org.gradle.api.NamedDomainObjectContainer<ProductFlavorT>"
+                "org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.${componentPrefix}ProductFlavor>"
             "org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.SigningConfig>" ->
                 "org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApkSigningConfig>"
-
             else -> typeName
         }
 
-    private fun validate(extensionClass : Class<*>, implClass: Class<*>) {
+    private fun validate(componentPrefix: String, extensionClass : Class<*>, implClass: Class<*>) {
 
         val actualOverrides = extensionClass.methods
             .filter { it.parameters.singleOrNull()?.type == Action::class.java }
@@ -145,7 +145,7 @@ class GroovyExtensionsTest {
 
 
         assertWithMessage("All action methods should have the same block type as the block method")
-            .that(actualOverrides.mapValues { it.value.normalizedTypeName })
+            .that(actualOverrides.mapValues { it.value.normalizedTypeName(componentPrefix) })
             .named("Map from method name to action receiver type")
             .containsExactlyEntriesIn(requiredOverrides.mapValues { it.value.typeName })
 

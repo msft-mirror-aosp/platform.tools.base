@@ -70,7 +70,7 @@ class AndroidResourcesFunctionalTest {
 
     private fun assertConsistency(project: Project, androidResources: AndroidResources) {
         val commonExtension = project.extensions.getByType(CommonExtension::class.java)
-        commonExtension.androidResources {
+        commonExtension.androidResources.apply {
             assertThat(commonExtension.androidResources).isSameInstanceAs(this)
             assertThat(androidResources).isSameInstanceAs(this)
             assertThat(commonExtension.androidResources.ignoreAssetsPatterns).contains("!.something")

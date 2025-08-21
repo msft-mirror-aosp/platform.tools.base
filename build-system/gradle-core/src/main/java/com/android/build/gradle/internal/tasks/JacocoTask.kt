@@ -231,7 +231,7 @@ abstract class JacocoTask : NewIncrementalTask() {
     abstract class InstrumentDirAction : WorkAction<InstrumentDirAction.Parameters> {
         abstract class Parameters : WorkParameters {
             abstract val changesToProcess: MapProperty<Action, MutableList<SerializableChange>>
-            abstract val output: Property<File?>
+            abstract val output: Property<File>
         }
 
         override fun execute() {
@@ -277,8 +277,8 @@ abstract class JacocoTask : NewIncrementalTask() {
 
     abstract class InstrumentJarAction : WorkAction<InstrumentJarAction.Parameters> {
         abstract class Parameters : WorkParameters {
-            abstract val root: Property<File?>
-            abstract val output: Property<File?>
+            abstract val root: Property<File>
+            abstract val output: Property<File>
         }
 
         override fun execute() {

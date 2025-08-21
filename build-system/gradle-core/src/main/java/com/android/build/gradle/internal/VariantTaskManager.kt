@@ -353,6 +353,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
     private fun configureKotlinPluginTasksIfNecessary() {
         if (!isKotlinPluginAppliedInTheSameClassloader(project)
+            && !globalConfig.services.projectOptions[BooleanOption.BUILT_IN_KOTLIN]
             && !project.pluginManager.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)) {
             return
         }

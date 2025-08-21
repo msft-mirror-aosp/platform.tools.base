@@ -66,7 +66,6 @@ kotlin_library(
     deps = [
         ":jacoco.core_neverlink",
         ":jacoco.report_neverlink",
-        ":jetbrains.kotlin-gradle-plugin_neverlink",
         ":proto",
         "//tools/analytics-library/crash:tools.analytics-crash",
         "//tools/analytics-library/shared:tools.analytics-shared",
@@ -125,6 +124,7 @@ kotlin_library(
         "@maven//:org.codehaus.groovy.groovy-all",  # TODO: Not in the pom, but required to compile (?)
         "@maven//:org.glassfish.jaxb.jaxb-runtime",
         "@maven//:org.jetbrains.dokka.dokka-core",
+        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.markdown",
@@ -146,15 +146,6 @@ java_library(
     name = "jacoco.report_neverlink",
     neverlink = 1,
     exports = ["@maven//:org.jacoco.org.jacoco.report"],
-)
-
-java_library(
-    name = "jetbrains.kotlin-gradle-plugin_neverlink",
-    #neverlink = 1,
-    exports = [
-        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
-        "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
-    ],
 )
 
 fileset(

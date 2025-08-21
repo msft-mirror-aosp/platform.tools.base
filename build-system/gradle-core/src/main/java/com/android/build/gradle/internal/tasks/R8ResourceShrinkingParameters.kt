@@ -146,28 +146,18 @@ abstract class R8ResourceShrinkingParameters {
 
 }
 
-/** Returns true if resource shrinking is enabled. */
+/** Returns true if R8 resource shrinking is enabled. */
 fun ApplicationCreationConfig.runResourceShrinking(): Boolean {
     return androidResourcesCreationConfig?.useResourceShrinker == true
 }
 
 /**
- * Returns true if resource shrinking is enabled AND it will be performed by [R8Task] instead of
- * a separate task.
- */
-fun ApplicationCreationConfig.runResourceShrinkingWithR8(): Boolean {
-    return runResourceShrinking()
-            && services.projectOptions[BooleanOption.R8_INTEGRATED_RESOURCE_SHRINKING]
-}
-
-/**
  * Returns true if R8 will run optimized shrinking for both code and resources. That is:
- *   - [runResourceShrinkingWithR8] == true, and
  *   - [BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING] == true, and
  *   - the feature additionally requires that [BooleanOption.USE_NON_FINAL_RES_IDS] == true
  */
-fun ApplicationCreationConfig.runOptimizedShrinkingWithR8(): Boolean {
-    return runResourceShrinkingWithR8()
+fun ApplicationCreationConfig.runOptimizedShrinking(): Boolean {
+    return runResourceShrinking()
             && services.projectOptions[BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING]
             && services.projectOptions[BooleanOption.USE_NON_FINAL_RES_IDS]
 }
@@ -201,7 +191,7 @@ fun R8ResourceShrinkingParameters.initialize(
     usePreciseShrinking.setDisallowChanges(
         creationConfig.services.projectOptions.get(BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE)
     )
-    optimizedShrinking.setDisallowChanges(creationConfig.runOptimizedShrinkingWithR8())
+    optimizedShrinking.setDisallowChanges(creationConfig.runOptimizedShrinking())
     logFile.setDisallowChanges(
         mappingFile.flatMap {
             creationConfig.services.fileProvider(

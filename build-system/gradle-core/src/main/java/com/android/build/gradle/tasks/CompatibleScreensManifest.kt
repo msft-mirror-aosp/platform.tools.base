@@ -75,7 +75,7 @@ abstract class CompatibleScreensManifest : NonIncrementalTask() {
 
     @get:Input
     @get:Optional
-    abstract val minSdkVersion: Property<String?>
+    abstract val minSdkVersion: Property<String>
 
     override fun doTaskAction() {
         BuiltArtifactsImpl(

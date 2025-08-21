@@ -187,7 +187,7 @@ public class AppPluginInternalTest {
 
         LinkedHashMap<String, Integer> map = new LinkedHashMap<>(3);
         map.put("appVariants", 3);
-        map.put("unitTests", 3);
+        map.put("unitTests", 1);
         map.put("androidTests", 1);
         TestCase.assertEquals(VariantCheckers.countVariants(map), components.size());
 
@@ -228,7 +228,7 @@ public class AppPluginInternalTest {
 
         LinkedHashMap<String, Integer> map = new LinkedHashMap<>(3);
         map.put("appVariants", 4);
-        map.put("unitTests", 4);
+        map.put("unitTests", 2);
         map.put("androidTests", 2);
         TestCase.assertEquals(VariantCheckers.countVariants(map), components.size());
 
@@ -284,7 +284,7 @@ public class AppPluginInternalTest {
         List<ComponentCreationConfig> components = getComponents(plugin.getVariantManager());
         LinkedHashMap<String, Integer> map = new LinkedHashMap<>(3);
         map.put("appVariants", 12);
-        map.put("unitTests", 12);
+        map.put("unitTests", 6);
         map.put("androidTests", 6);
         TestCase.assertEquals(VariantCheckers.countVariants(map), components.size());
 
@@ -377,7 +377,7 @@ public class AppPluginInternalTest {
         List<ComponentCreationConfig> components = getComponents(plugin.getVariantManager());
         LinkedHashMap<String, Integer> map = new LinkedHashMap<>(3);
         map.put("appVariants", 6);
-        map.put("unitTests", 6);
+        map.put("unitTests", 2);
         map.put("androidTests", 2);
         TestCase.assertEquals(VariantCheckers.countVariants(map), components.size());
 

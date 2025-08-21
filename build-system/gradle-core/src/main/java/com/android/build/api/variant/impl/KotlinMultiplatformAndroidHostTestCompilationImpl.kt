@@ -18,7 +18,6 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
-import com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvmCompilation
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 
 @OptIn(ExternalKotlinTargetApi::class)
@@ -26,6 +25,5 @@ class KotlinMultiplatformAndroidHostTestCompilationImpl(
     private val testOnJvm: KotlinMultiplatformAndroidHostTest,
     delegate: Delegate,
 ) : KotlinMultiplatformAndroidCompilationImpl(delegate),
-    KotlinMultiplatformAndroidTestOnJvmCompilation,
     KotlinMultiplatformAndroidHostTestCompilation,
     KotlinMultiplatformAndroidHostTest by testOnJvm

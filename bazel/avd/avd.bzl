@@ -31,6 +31,10 @@ def _avd_impl(ctx):
     if emulator == None:
         fail("Emulator executable not found in " + str(ctx.attr.emulator.label))
 
+    # Look for the java executable.
+    java_runtime = ctx.toolchains["@bazel_tools//tools/jdk:runtime_toolchain_type"].java_runtime
+    java_bin_path = java_runtime.java_executable_exec_path
+
     launcher = ctx.outputs.executable
     ctx.actions.expand_template(
         template = ctx.file._template,
@@ -43,6 +47,9 @@ def _avd_impl(ctx):
             "%snapshot_dir_path%": snapshot_output.path,
             "%snapshot_dir_short_path%": snapshot_output.short_path,
             "%emulator_path%": emulator.path,
+            "%proto_patcher_path%": ctx.file._proto_patcher.path,
+            "%proto_patcher_short_path%": ctx.file._proto_patcher.short_path,
+            "%java_bin_path%": java_bin_path,
         },
     )
 
@@ -51,7 +58,9 @@ def _avd_impl(ctx):
                 ctx.files.emulator +
                 ctx.files.platform +
                 ctx.files._platform_tools +
-                ctx.files.image,
+                ctx.files._proto_patcher +
+                ctx.files.image +
+                java_runtime.files.to_list(),
     )
 
     # Generates an AVD snapshot by running the AVD's launcher.
@@ -80,6 +89,10 @@ _avd = rule(
         "_platform_tools": attr.label(
             default = "//prebuilts/studio/sdk:platform-tools",
         ),
+        "_proto_patcher": attr.label(
+            default = "//tools/base/bazel/avd/snapshot:proto-patcher_deploy.jar",
+            allow_single_file = True,
+        ),
         "image": attr.label(
             mandatory = True,
         ),
@@ -88,6 +101,7 @@ _avd = rule(
         ),
     },
     executable = True,
+    toolchains = ["@bazel_tools//tools/jdk:runtime_toolchain_type"],
 )
 
 def _avd_macro_impl(name, target_compatible_with, **kwargs):

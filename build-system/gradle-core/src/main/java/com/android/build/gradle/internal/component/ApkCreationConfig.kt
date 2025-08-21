@@ -30,8 +30,6 @@ interface ApkCreationConfig: ConsumableCreationConfig {
     val targetSdk: AndroidVersion
     val targetSdkOverride: AndroidVersion?
 
-    val embedsMicroApp: Boolean
-
     // TODO: move to a non variant object (GlobalTaskScope?)
     val testOnlyApk: Boolean
 

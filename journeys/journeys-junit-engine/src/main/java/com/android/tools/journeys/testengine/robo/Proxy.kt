@@ -67,17 +67,19 @@ class Proxy(
      * Executes a journey defined by the script at the given path.
      * Manages instrumentation setup, crawl execution, and cleanup.
      *
+     * @param deviceId The ID of the target device.
      * @param journeyPath Path to the file containing the journey script definition.
      * @param artifactProcessor A lambda function to process any [Artifact] produced during the crawl.
      * @throws JourneyExecutionException if any stage of the execution fails.
      */
-    fun executeJourney(journeyPath: Path, artifactProcessor: (Artifact) -> Unit) {
+    fun executeJourney(deviceId: String, journeyPath: Path, artifactProcessor: (Artifact) -> Unit) {
         var hostPort = 0
         try {
             val journeyScript = readJourneyScript(journeyPath)
-            val instrumentationProcess = setupInstrumentation()
-            hostPort = setupAdbForward()
-            val result = connectToCrawlerBackend(hostPort, journeyScript, accessTokenPath, artifactProcessor)
+            val instrumentationProcess = setupInstrumentation(deviceId)
+            hostPort = setupAdbForward(deviceId)
+            val result =
+                connectToCrawlerBackend(hostPort, journeyScript, accessTokenPath, artifactProcessor)
             if (result.outcome().equals(GrpcClient.SUCCESS_RESULT)) {
                 stopInstrumentation(instrumentationProcess, true)
             } else {
@@ -92,7 +94,7 @@ class Proxy(
                 JourneyFailureReason.UNKNOWN_FAILURE
             )
         } finally {
-            cleanup(hostPort)
+            cleanup(deviceId, hostPort)
         }
     }
 
@@ -119,17 +121,18 @@ class Proxy(
     /**
      * Installs required apks and starts instrumentation
      *
+     * @param deviceId The ID of the target device.
      * @return The started instrumentation process.
      */
-    private fun setupInstrumentation(): Process {
+    private fun setupInstrumentation(deviceId: String): Process {
         try {
             // Install apks required for instrumentation process.
-            val deviceApiLevel = adb.getDeviceApiLevel()
+            val deviceApiLevel = adb.getDeviceApiLevel(deviceId)
             if (deviceApiLevel >= 33) {
                 // Disable "Unsafe app blocked" dialog. b/407500906.
-                adb.setGlobalSettingsValue("verifier_verify_adb_installs", "0")
+                adb.setGlobalSettingsValue(deviceId, "verifier_verify_adb_installs", "0")
             }
-            adb.install(crawlerAppApkPath, getCrawlerInstallFlags(deviceApiLevel))
+            adb.install(deviceId, crawlerAppApkPath, getCrawlerInstallFlags(deviceApiLevel))
             val appApkLocation = File(appApkPath)
             val appApkPath = if (appApkLocation.isDirectory()) {
                 // hopefully, there is only one APK in the directory, we don't handle
@@ -140,7 +143,7 @@ class Proxy(
                         ?: throw RuntimeException("no APK present in $appApkPath")
                 ).absolutePath
             } else appApkPath
-            adb.install(appApkPath, getAppInstallFlags(deviceApiLevel))
+            adb.install(deviceId, appApkPath, getAppInstallFlags(deviceApiLevel))
         } catch (e: Exception) {
             throw JourneyExecutionException(
                 "Installation failure: ${e.message}",
@@ -151,6 +154,7 @@ class Proxy(
 
         try {
             val instrumentation = adb.runInstrumentation(
+                deviceId,
                 RoboConfigConstants.CRAWLER_PACKAGE_ID,
                 RoboConfigConstants.TEST_RUNNER_CLASS,
                 args = mapOf(
@@ -213,23 +217,24 @@ class Proxy(
     /**
      * Clean up by removing host forwarding and uninstalling apks.
      *
+     * @param deviceId The ID of the target device.
      * @param hostPort The host port to remove forwarding from.
      */
-    private fun cleanup(hostPort: Int) {
+    private fun cleanup(deviceId: String, hostPort: Int) {
         try {
-            adb.removeForward(hostPort)
+            adb.removeForward(deviceId, hostPort)
         } catch (e: Exception) {
             System.err.println(e.message)
         }
 
         try {
-            adb.uninstall(applicationId)
+            adb.uninstall(deviceId, applicationId)
         } catch (e: Exception) {
             System.err.println(e.message)
         }
 
         try {
-            adb.uninstall(RoboConfigConstants.CRAWLER_PACKAGE_ID)
+            adb.uninstall(deviceId, RoboConfigConstants.CRAWLER_PACKAGE_ID)
         } catch (e: Exception) {
             System.err.println(e.message)
         }
@@ -269,10 +274,11 @@ class Proxy(
      * Sets up ADB forwarding by finding an available host port and forwarding it
      * to the port used by the Robo service on the device. Retries if necessary.
      *
+     * @param deviceId The ID of the target device.
      * @return The host port used for ADB forwarding.
      */
-    private fun setupAdbForward(): Int {
-        val roboDevicePort = extractRoboPortNumber()
+    private fun setupAdbForward(deviceId: String): Int {
+        val roboDevicePort = extractRoboPortNumber(deviceId)
         if (roboDevicePort == 0) {
             throw JourneyExecutionException(
                 "Could not determine Robo device port.",
@@ -285,7 +291,7 @@ class Proxy(
                 block = {
                     val hostPort = findAvailablePort()
                     if (hostPort != 0) {
-                        adb.forward(hostPort, roboDevicePort)
+                        adb.forward(deviceId, hostPort, roboDevicePort)
                         hostPort
                     } else {
                         0
@@ -308,13 +314,15 @@ class Proxy(
      * Extracts the robo port number from the ADB dumpsys output for the proxy service.
      * Retries if the port is not found.
      *
+     * @param deviceId The ID of the target device.
      * @return The robo port number, or `0` if it cannot be extracted after retries.
      */
-    private fun extractRoboPortNumber(): Int {
+    private fun extractRoboPortNumber(deviceId: String): Int {
         try {
             return retryIf(
                 block = {
                     val dumpsysOutput = adb.dumpsys(
+                        deviceId,
                         "${RoboConfigConstants.CRAWLER_PACKAGE_ID}/${RoboConfigConstants.PROXY_SERVICE}"
                     )
                     val matcher =

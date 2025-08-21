@@ -74,12 +74,6 @@ import javax.inject.Inject;
 /** Gradle plugin class for 'library' projects. */
 public class LibraryPlugin
         extends BasePlugin<
-                LibraryBuildFeatures,
-                com.android.build.api.dsl.LibraryBuildType,
-                com.android.build.api.dsl.LibraryDefaultConfig,
-                com.android.build.api.dsl.LibraryProductFlavor,
-                com.android.build.api.dsl.LibraryAndroidResources,
-                com.android.build.api.dsl.LibraryInstallation,
                 LibraryExtension,
                 LibraryAndroidComponentsExtension,
                 LibraryVariantBuilder,
@@ -113,14 +107,7 @@ public class LibraryPlugin
 
     @NonNull
     @Override
-    protected ExtensionData<
-                    LibraryBuildFeatures,
-                    com.android.build.api.dsl.LibraryBuildType,
-                    com.android.build.api.dsl.LibraryDefaultConfig,
-                    com.android.build.api.dsl.LibraryProductFlavor,
-                    com.android.build.api.dsl.LibraryAndroidResources,
-                    com.android.build.api.dsl.LibraryInstallation,
-                    LibraryExtension>
+    protected ExtensionData<LibraryExtension>
             createExtension(
                     @NonNull DslServices dslServices,
                     @NonNull

@@ -40,20 +40,6 @@ interface ApplicationBuildType :
     var isDebuggable: Boolean
 
     /**
-     * Whether a linked Android Wear app should be embedded in variant using this build type.
-     *
-     * Wear apps can be linked with the following code:
-     *
-     * ```
-     * dependencies {
-     *     freeWearApp project(:wear:free') // applies to variant using the free flavor
-     *     wearApp project(':wear:base') // applies to all other variants
-     * }
-     * ```
-     */
-    var isEmbedMicroApp: Boolean
-
-    /**
      * Whether to crunch PNGs.
      *
      * Setting this property to `true` reduces of PNG resources that are not already

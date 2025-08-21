@@ -33,6 +33,8 @@ class RoboConverterTest {
                     <action>Assert that field is empty</action>
                     <action>Click Next</action>
                     <action>     Verify that field is empty</action>
+                    <action> Action with spaces  </action>
+                    <action> <![CDATA[Action with "special" chars like >, &, <]]></action>
                 </actions>
             </journey>
         """
@@ -77,11 +79,56 @@ class RoboConverterTest {
                 "condition": "prompt",
                 "prompt": "Verify that field is empty"
               }
+            },{
+              "eventType": "AI_AGENT",
+              "aiAgentInstructions": {
+                "goal": "Action with spaces",
+                "hint": "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
+              }
+            },{
+              "eventType": "AI_AGENT",
+              "aiAgentInstructions": {
+                "goal": "Action with \"special\" chars like >, &, <",
+                "hint": "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
+              }
             },  ]
             }]
         """.trimIndent()
         val actualJson = RoboConverter.convert(inputStream)
         assertEquals(expectedJson, actualJson)
+    }
+
+    @Test
+    fun `convert throws error if journey element is missing`() {
+        val xml = "<unknownTag></unknownTag>"
+        val inputStream = ByteArrayInputStream(xml.toByteArray())
+        val exception = assertThrows(IllegalStateException::class.java) {
+            RoboConverter.convert(inputStream)
+        }
+        assertEquals(
+            "The root element must be <journey>, but found <unknownTag>.",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `convert throws error for unknown tag inside journey`() {
+        val xml = """
+            <journey>
+                <description>This is a test journey</description>
+                <actions><action>Action 1</action></actions>
+                <unknownTag1>This is not allowed</unknownTag1>
+                <unknownTag2>This is not allowed</unknownTag2>
+            </journey>
+        """.trimIndent()
+        val inputStream = ByteArrayInputStream(xml.toByteArray())
+        val exception = assertThrows(IllegalStateException::class.java) {
+            RoboConverter.convert(inputStream)
+        }
+        assertEquals(
+            "The <journey> element contains unexpected child elements: <unknownTag1>, <unknownTag2>",
+            exception.message
+        )
     }
 
     @Test
@@ -92,7 +139,7 @@ class RoboConverterTest {
             RoboConverter.convert(inputStream)
         }
         assertEquals(
-            "There should be one and only one <actions> element, found 0.",
+            "The <journey> element must have exactly one <actions> element, but found 0.",
             exception.message
         )
     }
@@ -114,7 +161,26 @@ class RoboConverterTest {
             RoboConverter.convert(inputStream)
         }
         assertEquals(
-            "There should be one and only one <actions> element, found 2.",
+            "The <journey> element must have exactly one <actions> element, but found 2.",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `convert throws error if multiple description elements are present`() {
+        val xml = """
+            <journey>
+                <actions></actions>
+                <description>Description 1</description>
+                <description>Description 2</description>
+            </journey>
+        """
+        val inputStream = ByteArrayInputStream(xml.toByteArray())
+        val exception = assertThrows(IllegalStateException::class.java) {
+            RoboConverter.convert(inputStream)
+        }
+        assertEquals(
+            "The <journey> element can have at most one <description> element, but found 2.",
             exception.message
         )
     }
@@ -155,6 +221,32 @@ class RoboConverterTest {
         assertEquals("Action 1", elements[0].textContent.trim())
         assertEquals("action", elements[1].tagName)
         assertEquals("Action 2", elements[1].textContent.trim())
+    }
+
+    @Test
+    fun `getPrompts returns correct prompts`() {
+        val xml = """
+            <journey>
+                <actions>
+                    <action>Action 1</action>
+                    <action>Action 2</action>
+                    <action> Action with spaces  </action>
+                    <action><![CDATA[Action with "special" chars like >, &, <]]></action>
+                </actions>
+            </journey>
+        """.trimIndent()
+        val inputStream = ByteArrayInputStream(xml.toByteArray())
+        val elements = RoboConverter.getPrompts(inputStream)
+
+        assertEquals(
+            elements,
+            listOf(
+                "Action 1",
+                "Action 2",
+                "Action with spaces",
+                "Action with \"special\" chars like >, &, <"
+            )
+        )
     }
 
     @Test

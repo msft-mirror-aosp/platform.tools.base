@@ -440,7 +440,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
     abstract class SplitterParams : DecoratedWorkParameters {
         abstract val variantOutput: Property<VariantOutputImpl.SerializedForm>
         abstract val outputHandler: Property<MultiOutputHandler>
-        abstract fun getProjectPath(): Property<String?>
+        abstract fun getProjectPath(): Property<String>
         abstract val androidResourcesFile: RegularFileProperty
         abstract val androidResourcesChanged: Property<Boolean>
         abstract val outputFile: RegularFileProperty

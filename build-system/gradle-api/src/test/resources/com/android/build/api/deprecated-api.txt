@@ -10,7 +10,6 @@ Deprecated from AGP 8.13.0
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.kotlinOptions: void (kotlin.jvm.functions.Function1<? super org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.kotlinOptions: void (org.gradle.api.Action<org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget$DefaultImpls.getPreset: org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset (com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidTarget$DefaultImpls.getPreset: org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset (com.android.build.api.dsl.KotlinMultiplatformAndroidTarget)
   * com.android.build.api.dsl.VariantDimension.getOptimization: com.android.build.api.dsl.Optimization ()
   * com.android.build.api.dsl.VariantDimension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization, kotlin.Unit>)
   * com.android.build.api.variant.ComponentBuilder.getEnabled: boolean ()
@@ -19,9 +18,6 @@ Deprecated from AGP 8.12.0
   * com.android.build.api.dsl.BaseFlavor.getMinSdkPreview: java.lang.String ()
   * com.android.build.api.dsl.BaseFlavor.setMinSdkPreview: void (java.lang.String)
 Deprecated from AGP 8.11.0
-  * com.android.build.api.dsl.DependencyVariantSelection
-  * com.android.build.api.dsl.DependencyVariantSelection.getBuildTypes: org.gradle.api.provider.ListProperty<java.lang.String> ()
-  * com.android.build.api.dsl.DependencyVariantSelection.getProductFlavors: org.gradle.api.provider.MapProperty<java.lang.String, java.util.List<java.lang.String>> ()
   * com.android.build.api.dsl.EmulatorSnapshots
   * com.android.build.api.dsl.EmulatorSnapshots.getCompressSnapshots: boolean ()
   * com.android.build.api.dsl.EmulatorSnapshots.getEnableForTestFailures: boolean ()
@@ -30,8 +26,6 @@ Deprecated from AGP 8.11.0
   * com.android.build.api.dsl.EmulatorSnapshots.setCompressSnapshots: void (boolean)
   * com.android.build.api.dsl.EmulatorSnapshots.setEnableForTestFailures: void (boolean)
   * com.android.build.api.dsl.EmulatorSnapshots.setMaxSnapshotsForTestFailures: void (int)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.dependencyVariantSelection: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getDependencyVariantSelection: com.android.build.api.dsl.DependencyVariantSelection ()
   * com.android.build.api.dsl.LibraryBuildFeatures.getAndroidResources: java.lang.Boolean ()
   * com.android.build.api.dsl.LibraryBuildFeatures.setAndroidResources: void (java.lang.Boolean)
   * com.android.build.api.dsl.TestOptions.emulatorSnapshots: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots, kotlin.Unit>)
@@ -46,15 +40,6 @@ Deprecated from AGP 8.8.0
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getDefaultSourceSetName: java.lang.String ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setCompilationName: void (java.lang.String)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setDefaultSourceSetName: void (java.lang.String)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withAndroidTestOnDevice: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withAndroidTestOnDeviceBuilder: com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest> (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withAndroidTestOnJvm: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withAndroidTestOnJvmBuilder: com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest> (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidTarget implements org.jetbrains.kotlin.gradle.plugin.KotlinTarget, com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidTarget.getCompilations: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation> ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidTarget.withJava: void ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnDeviceCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvmCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 Deprecated from AGP 8.7.0
   * com.android.build.api.dsl.ComposeOptions.getUseLiveLiterals: boolean ()
   * com.android.build.api.dsl.ComposeOptions.setUseLiveLiterals: void (boolean)
@@ -176,7 +161,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.CommonExtension.buildToolsVersion: void (java.lang.String)
   * com.android.build.api.dsl.CommonExtension.compileSdkVersion: void (int)
   * com.android.build.api.dsl.CommonExtension.compileSdkVersion: void (java.lang.String)
-  * com.android.build.api.dsl.CommonExtension.flavorDimensions: void (java.lang.String[])
   * com.android.build.api.dsl.CommonExtension.getAaptOptions: com.android.build.api.dsl.AaptOptions ()
   * com.android.build.api.dsl.CommonExtension.getAdbOptions: com.android.build.api.dsl.AdbOptions ()
   * com.android.build.api.dsl.CommonExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
@@ -273,7 +257,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
   * com.android.build.api.dsl.ManagedDevices.getDevices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> ()
-  * com.android.build.api.dsl.ProductFlavor.setDimension: java.lang.Void (java.lang.String)
   * com.android.build.api.dsl.ProductFlavor.setMatchingFallbacks: void (java.lang.String[])
   * com.android.build.api.dsl.ProductFlavor.setMatchingFallbacks: void (java.util.List<java.lang.String>)
   * com.android.build.api.dsl.TestBaseFlavor.maxSdkVersion: void (int)
@@ -285,79 +268,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.VariantDimension.getMultiDexKeepFile: java.io.File ()
   * com.android.build.api.dsl.VariantDimension.setManifestPlaceholders: java.lang.Void (java.util.Map<java.lang.String, ?>)
   * com.android.build.api.dsl.VariantDimension.setMultiDexKeepFile: void (java.io.File)
-  * com.android.build.api.transform.Context
-  * com.android.build.api.transform.Context.getLogging: org.gradle.api.logging.LoggingManager ()
-  * com.android.build.api.transform.Context.getPath: java.lang.String ()
-  * com.android.build.api.transform.Context.getProjectName: java.lang.String ()
-  * com.android.build.api.transform.Context.getTemporaryDir: java.io.File ()
-  * com.android.build.api.transform.Context.getVariantName: java.lang.String ()
-  * com.android.build.api.transform.Context.getWorkerExecutor: org.gradle.workers.WorkerExecutor ()
-  * com.android.build.api.transform.DirectoryInput implements com.android.build.api.transform.QualifiedContent
-  * com.android.build.api.transform.DirectoryInput.getChangedFiles: java.util.Map<java.io.File, com.android.build.api.transform.Status> ()
-  * com.android.build.api.transform.Format extends java.lang.Enum
-  * com.android.build.api.transform.Format.valueOf: com.android.build.api.transform.Format (java.lang.String)
-  * com.android.build.api.transform.Format.values: com.android.build.api.transform.Format[] ()
-  * com.android.build.api.transform.JarInput implements com.android.build.api.transform.QualifiedContent
-  * com.android.build.api.transform.JarInput.getStatus: com.android.build.api.transform.Status ()
-  * com.android.build.api.transform.QualifiedContent
-  * com.android.build.api.transform.QualifiedContent.getContentTypes: java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType> ()
-  * com.android.build.api.transform.QualifiedContent.getFile: java.io.File ()
-  * com.android.build.api.transform.QualifiedContent.getName: java.lang.String ()
-  * com.android.build.api.transform.QualifiedContent.getScopes: java.util.Set<? super com.android.build.api.transform.QualifiedContent$Scope> ()
-  * com.android.build.api.transform.SecondaryFile
-  * com.android.build.api.transform.SecondaryFile.<init>: com.android.build.api.transform.SecondaryFile (java.io.File, boolean)
-  * com.android.build.api.transform.SecondaryFile.getFile: java.io.File ()
-  * com.android.build.api.transform.SecondaryFile.getFileCollection: org.gradle.api.file.FileCollection ()
-  * com.android.build.api.transform.SecondaryFile.getFileCollection: org.gradle.api.file.FileCollection (org.gradle.api.Project)
-  * com.android.build.api.transform.SecondaryFile.incremental: com.android.build.api.transform.SecondaryFile (java.io.File)
-  * com.android.build.api.transform.SecondaryFile.incremental: com.android.build.api.transform.SecondaryFile (java.util.function.Supplier<org.gradle.api.file.FileCollection>)
-  * com.android.build.api.transform.SecondaryFile.incremental: com.android.build.api.transform.SecondaryFile (org.gradle.api.file.FileCollection)
-  * com.android.build.api.transform.SecondaryFile.nonIncremental: com.android.build.api.transform.SecondaryFile (java.io.File)
-  * com.android.build.api.transform.SecondaryFile.nonIncremental: com.android.build.api.transform.SecondaryFile (java.util.function.Supplier<org.gradle.api.file.FileCollection>)
-  * com.android.build.api.transform.SecondaryFile.nonIncremental: com.android.build.api.transform.SecondaryFile (org.gradle.api.file.FileCollection)
-  * com.android.build.api.transform.SecondaryFile.supportsIncrementalBuild: boolean ()
-  * com.android.build.api.transform.SecondaryInput
-  * com.android.build.api.transform.SecondaryInput.getSecondaryInput: com.android.build.api.transform.SecondaryFile ()
-  * com.android.build.api.transform.SecondaryInput.getStatus: com.android.build.api.transform.Status ()
-  * com.android.build.api.transform.Status extends java.lang.Enum
-  * com.android.build.api.transform.Status.valueOf: com.android.build.api.transform.Status (java.lang.String)
-  * com.android.build.api.transform.Status.values: com.android.build.api.transform.Status[] ()
-  * com.android.build.api.transform.Transform
-  * com.android.build.api.transform.Transform.<init>: com.android.build.api.transform.Transform ()
-  * com.android.build.api.transform.Transform.applyToVariant: boolean (com.android.build.api.variant.VariantInfo)
-  * com.android.build.api.transform.Transform.getInputTypes: java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType> ()
-  * com.android.build.api.transform.Transform.getName: java.lang.String ()
-  * com.android.build.api.transform.Transform.getOutputTypes: java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType> ()
-  * com.android.build.api.transform.Transform.getParameterInputs: java.util.Map<java.lang.String, java.lang.Object> ()
-  * com.android.build.api.transform.Transform.getReferencedScopes: java.util.Set<? super com.android.build.api.transform.QualifiedContent$Scope> ()
-  * com.android.build.api.transform.Transform.getScopes: java.util.Set<? super com.android.build.api.transform.QualifiedContent$Scope> ()
-  * com.android.build.api.transform.Transform.getSecondaryDirectoryOutputs: java.util.Collection<java.io.File> ()
-  * com.android.build.api.transform.Transform.getSecondaryFileInputs: java.util.Collection<java.io.File> ()
-  * com.android.build.api.transform.Transform.getSecondaryFileOutputs: java.util.Collection<java.io.File> ()
-  * com.android.build.api.transform.Transform.getSecondaryFiles: java.util.Collection<com.android.build.api.transform.SecondaryFile> ()
-  * com.android.build.api.transform.Transform.isCacheable: boolean ()
-  * com.android.build.api.transform.Transform.isIncremental: boolean ()
-  * com.android.build.api.transform.Transform.setOutputDirectory: void (org.gradle.api.provider.Property<org.gradle.api.file.Directory>)
-  * com.android.build.api.transform.Transform.setOutputFile: void (org.gradle.api.provider.Property<org.gradle.api.file.RegularFile>)
-  * com.android.build.api.transform.Transform.transform: void (com.android.build.api.transform.Context, java.util.Collection<com.android.build.api.transform.TransformInput>, java.util.Collection<com.android.build.api.transform.TransformInput>, com.android.build.api.transform.TransformOutputProvider, boolean) throws java.io.IOException, com.android.build.api.transform.TransformException, java.lang.InterruptedException
-  * com.android.build.api.transform.Transform.transform: void (com.android.build.api.transform.TransformInvocation) throws com.android.build.api.transform.TransformException, java.lang.InterruptedException, java.io.IOException
-  * com.android.build.api.transform.TransformException extends java.lang.Exception
-  * com.android.build.api.transform.TransformException.<init>: com.android.build.api.transform.TransformException (java.lang.String)
-  * com.android.build.api.transform.TransformException.<init>: com.android.build.api.transform.TransformException (java.lang.String, java.lang.Throwable)
-  * com.android.build.api.transform.TransformException.<init>: com.android.build.api.transform.TransformException (java.lang.Throwable)
-  * com.android.build.api.transform.TransformInput
-  * com.android.build.api.transform.TransformInput.getDirectoryInputs: java.util.Collection<com.android.build.api.transform.DirectoryInput> ()
-  * com.android.build.api.transform.TransformInput.getJarInputs: java.util.Collection<com.android.build.api.transform.JarInput> ()
-  * com.android.build.api.transform.TransformInvocation
-  * com.android.build.api.transform.TransformInvocation.getContext: com.android.build.api.transform.Context ()
-  * com.android.build.api.transform.TransformInvocation.getInputs: java.util.Collection<com.android.build.api.transform.TransformInput> ()
-  * com.android.build.api.transform.TransformInvocation.getOutputProvider: com.android.build.api.transform.TransformOutputProvider ()
-  * com.android.build.api.transform.TransformInvocation.getReferencedInputs: java.util.Collection<com.android.build.api.transform.TransformInput> ()
-  * com.android.build.api.transform.TransformInvocation.getSecondaryInputs: java.util.Collection<com.android.build.api.transform.SecondaryInput> ()
-  * com.android.build.api.transform.TransformInvocation.isIncremental: boolean ()
-  * com.android.build.api.transform.TransformOutputProvider
-  * com.android.build.api.transform.TransformOutputProvider.deleteAll: void () throws java.io.IOException
-  * com.android.build.api.transform.TransformOutputProvider.getContentLocation: java.io.File (java.lang.String, java.util.Set<com.android.build.api.transform.QualifiedContent$ContentType>, java.util.Set<? super com.android.build.api.transform.QualifiedContent$Scope>, com.android.build.api.transform.Format)
   * com.android.build.api.variant.AndroidComponentsExtension.finalizeDSl: void (org.gradle.api.Action<DslExtensionT>)
   * com.android.build.api.variant.VariantInfo
   * com.android.build.api.variant.VariantInfo.getBuildTypeName: java.lang.String ()

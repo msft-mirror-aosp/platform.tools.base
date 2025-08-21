@@ -24,6 +24,7 @@ import com.android.tools.agent.appinspection.proto.StringTable
 import com.android.tools.agent.appinspection.proto.createAppContext
 import com.android.tools.agent.appinspection.proto.createConfiguration
 import com.android.tools.agent.appinspection.proto.createPropertyGroup
+import com.android.tools.agent.appinspection.proto.getDisplayCompat
 import com.android.tools.agent.appinspection.proto.toNode
 import com.android.tools.agent.appinspection.util.ThreadUtils
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol
@@ -175,24 +176,17 @@ class CaptureExecutor(
         val appContext = rootView.createAppContext(stringTable)
         val configuration = rootView.createConfiguration(stringTable)
 
-        val (rootViewNode, rootOffset) = ThreadUtils.runOnMainThread {
-            val rootViewNode = rootView.toNode(stringTable)
-            val rootOffset = IntArray(2)
-            rootView.getLocationInSurface(rootOffset)
-
-            (rootViewNode to rootOffset)
-        }.get()
+        val rootView = parseRootView(rootView, stringTable).get()
 
         updateState(ProgressCheckpoint.VIEW_HIERARCHY_CAPTURED)
         val layout = createLayoutMessage(
-            stringTable,
-            appContext,
-            configuration,
-            rootViewNode,
-            isXr,
-            rootOffset,
-            screenshotSettings,
-            screenshot
+            stringTable = stringTable,
+            appContext = appContext,
+            rootView = rootView,
+            configuration = configuration,
+            isXr = isXr,
+            screenshotSettings = screenshotSettings,
+            screenshot = screenshot
         )
         if (snapshotResponse != null) {
             snapshotResponse.layout = layout
@@ -202,6 +196,24 @@ class CaptureExecutor(
                 layoutEvent = layout
             }
         }
+    }
+
+    private fun parseRootView(rootView: View, stringTable: StringTable) = ThreadUtils.runOnMainThread {
+        val node = rootView.toNode(stringTable)
+        val offset = IntArray(2)
+        rootView.getLocationInSurface(offset)
+        val display = rootView.getDisplayCompat()
+
+        LayoutInspectorViewProtocol.RootView.newBuilder().apply {
+            this.node = node
+            this.offset = LayoutInspectorViewProtocol.Point.newBuilder().apply {
+                x = offset[0]
+                y = offset[1]
+            }.build()
+            if (display != null) {
+                this.displayId = display.displayId
+            }
+        }.build()
     }
 
     private fun sendAllPropertiesEvent(
@@ -237,9 +249,8 @@ class CaptureExecutor(
         stringTable: StringTable,
         appContext: LayoutInspectorViewProtocol.AppContext,
         configuration: LayoutInspectorViewProtocol.Configuration,
-        rootView: LayoutInspectorViewProtocol.ViewNode,
+        rootView: LayoutInspectorViewProtocol.RootView,
         isXr: Boolean,
-        rootOffset: IntArray,
         screenshotSettings: ScreenshotSettings,
         screenshot: ByteString?
     ) = LayoutInspectorViewProtocol.LayoutEvent.newBuilder().apply {
@@ -247,12 +258,7 @@ class CaptureExecutor(
         this.configuration = configuration
         this.appContext = appContext
         this.rootView = rootView
-        this.rootOffset = LayoutInspectorViewProtocol.Point.newBuilder().apply {
-            x = rootOffset[0]
-            y = rootOffset[1]
-        }.build()
         this.isXr = isXr
-
 
         // only send a screenshot if bitmaps are enabled or if the current screenshot type is SKP
         if (state.enableBitmapScreenshot || screenshotSettings.type == LayoutInspectorViewProtocol.Screenshot.Type.SKP) {

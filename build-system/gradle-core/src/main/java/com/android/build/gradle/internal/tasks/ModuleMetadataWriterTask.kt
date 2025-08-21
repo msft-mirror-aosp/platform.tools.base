@@ -52,11 +52,11 @@ abstract class ModuleMetadataWriterTask : NonIncrementalTask() {
 
     @get:Input
     @get:Optional
-    abstract val versionCode: Property<Int?>
+    abstract val versionCode: Property<Int>
 
     @get:Input
     @get:Optional
-    abstract val versionName: Property<String?>
+    abstract val versionName: Property<String>
 
     @get:Input
     abstract val debuggable: Property<Boolean>

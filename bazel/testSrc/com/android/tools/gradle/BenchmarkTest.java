@@ -340,6 +340,7 @@ public class BenchmarkTest {
                         "-Pandroid.injected.attribution.file.location="
                                 + new File(out, "attribution_out").getAbsolutePath());
             }
+            gradle.addArgument("-Pandroid.uniquePackageNames=false");
 
             if (failOnWarning) {
                 gradle.addArgument("--warning-mode=fail");

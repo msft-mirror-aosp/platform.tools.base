@@ -593,7 +593,7 @@ class AndroidComponentsExtensionTest {
         return extensionContainer
     }
 
-    private inline fun <DslExtensionT: CommonExtension<*, *, *, *, *, *>, reified VariantBuilderT: VariantBuilder, VariantT: Variant> testAllSelection(
+    private inline fun <DslExtensionT: CommonExtension, reified VariantBuilderT: VariantBuilder, VariantT: Variant> testAllSelection(
             extension: AndroidComponentsExtensionImpl<DslExtensionT, VariantBuilderT, VariantT>,
             operationsRegistrar: VariantApiOperationsRegistrar<DslExtensionT, VariantBuilderT, VariantT>,
             variantType: Class<VariantBuilderT>) {
@@ -606,7 +606,7 @@ class AndroidComponentsExtensionTest {
         assertThat(visitedVariants).hasSize(1)
     }
 
-    private inline fun <DslExtensionT: CommonExtension<*, *, *, *, *, *>, reified VariantBuilderT: VariantBuilder, VariantT: Variant> testNoSelection(
+    private inline fun <DslExtensionT: CommonExtension, reified VariantBuilderT: VariantBuilder, VariantT: Variant> testNoSelection(
             extension: AndroidComponentsExtension<DslExtensionT, VariantBuilderT, VariantT>,
             operationsRegistrar: VariantApiOperationsRegistrar<DslExtensionT, VariantBuilderT, VariantT>,
             variantType: Class<VariantBuilderT>) {

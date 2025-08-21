@@ -28,13 +28,7 @@ import java.io.File
  *
  * Only the Android Gradle Plugin should create instances of this interface.
  */
-interface CommonExtension<
-        BuildFeaturesT : BuildFeatures,
-        BuildTypeT : BuildType,
-        DefaultConfigT : DefaultConfig,
-        ProductFlavorT : ProductFlavor,
-        AndroidResourcesT : AndroidResources,
-        InstallationT: Installation> {
+interface CommonExtension {
 
     /**
      * Specifies options for the Android Asset Packaging Tool (AAPT).
@@ -59,14 +53,7 @@ interface CommonExtension<
      *
      * For more information about the properties you can configure in this block, see [AndroidResources].
      */
-    val androidResources: AndroidResourcesT
-
-    /**
-     * Specifies options related to the processing of Android Resources.
-     *
-     * For more information about the properties you can configure in this block, see [AndroidResources].
-     */
-    fun androidResources(action: AndroidResourcesT.() -> Unit)
+    val androidResources: AndroidResources
 
     /**
      * Specifies options for the
@@ -97,16 +84,7 @@ interface CommonExtension<
      *
      * For more information about the properties you can configure in this block, see [AdbOptions].
      */
-    val installation: InstallationT
-
-    /**
-     * Specifies options for the
-     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
-     * such as APK installation options.
-     *
-     * For more information about the properties you can configure in this block, see [AdbOptions].
-     */
-    fun installation(action: InstallationT.() -> Unit)
+    val installation: Installation
 
     /**
      * Specifies Java compiler options, such as the language level of the Java source code and
@@ -128,12 +106,7 @@ interface CommonExtension<
     /**
      * A list of build features that can be enabled or disabled on the Android Project.
      */
-    val buildFeatures: BuildFeaturesT
-
-    /**
-     * A list of build features that can be enabled or disabled on the Android Project.
-     */
-    fun buildFeatures(action: BuildFeaturesT.() -> Unit)
+    val buildFeatures: BuildFeatures
 
     /**
      * Encapsulates all build type configurations for this project.
@@ -152,45 +125,7 @@ interface CommonExtension<
      *
      * @see BuildType
      */
-    val buildTypes: NamedDomainObjectContainer<out BuildTypeT>
-
-    /**
-     * Encapsulates all build type configurations for this project.
-     *
-     * For more information about the properties you can configure in this block, see [BuildType]
-     */
-    fun buildTypes(action: NamedDomainObjectContainer<BuildTypeT>.() -> Unit)
-
-    /**
-     * Shortcut extension method to allow easy access to the predefined `debug` [BuildType]
-     *
-     * For example:
-     * ```
-     *  android {
-     *      buildTypes {
-     *          debug {
-     *              // ...
-     *          }
-     *      }
-     * }
-     * ```
-     */
-    fun NamedDomainObjectContainer<BuildTypeT>.debug(action: BuildTypeT.() -> Unit)
-    /**
-     * Shortcut extension method to allow easy access to the predefined `release` [BuildType]
-     *
-     * For example:
-     * ```
-     *  android {
-     *      buildTypes {
-     *          release {
-     *              // ...
-     *          }
-     *      }
-     * }
-     * ```
-     */
-    fun NamedDomainObjectContainer<BuildTypeT>.release(action: BuildTypeT.() -> Unit)
+    val buildTypes: NamedDomainObjectContainer<out BuildType>
 
     /**
      * Specifies options for the
@@ -352,7 +287,6 @@ interface CommonExtension<
     /**
      * Encapsulates all product flavors configurations for this project.
      *
-     *
      * Product flavors represent different versions of your project that you expect to co-exist
      * on a single device, the Google Play store, or repository. For example, you can configure
      * 'demo' and 'full' product flavors for your app, and each of those flavors can specify
@@ -389,16 +323,7 @@ interface CommonExtension<
      *
      * @see [ProductFlavor]
      */
-    val productFlavors: NamedDomainObjectContainer<out ProductFlavorT>
-
-    /**
-     * Encapsulates all product flavors configurations for this project.
-     *
-     * For more information about the properties you can configure in this block,
-     * see [ProductFlavor]
-     */
-    fun productFlavors(action: NamedDomainObjectContainer<ProductFlavorT>.() -> Unit)
-
+    val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
 
     /**
      * Specifies defaults for variant properties that the Android plugin applies to all build
@@ -409,19 +334,7 @@ interface CommonExtension<
      *
      * For more information about the properties you can configure in this block, see [DefaultConfig].
      */
-    val defaultConfig: DefaultConfigT
-
-    /**
-     * Specifies defaults for variant properties that the Android plugin applies to all build
-     * variants.
-     *
-     * You can override any `defaultConfig` property when
-     * [configuring product flavors](https://developer.android.com/studio/build/build-variants.html#product-flavors)
-     *
-     * For more information about the properties you can configure in this block, see [DefaultConfig].
-     */
-    fun defaultConfig(action: DefaultConfigT.() -> Unit)
-
+    val defaultConfig: DefaultConfig
 
     /**
      * Encapsulates signing configurations that you can apply to [ ] and [ ] configurations.
@@ -611,9 +524,6 @@ interface CommonExtension<
      * [Combine multiple flavors](https://developer.android.com/studio/build/build-variants.html#flavor-dimensions).
      */
     val flavorDimensions: MutableList<String>
-
-    @Deprecated("Replaced by flavorDimensions property")
-    fun flavorDimensions(vararg dimensions: String)
 
     /**
      * Specifies this project's resource prefix to Android Studio for editor features, such as Lint

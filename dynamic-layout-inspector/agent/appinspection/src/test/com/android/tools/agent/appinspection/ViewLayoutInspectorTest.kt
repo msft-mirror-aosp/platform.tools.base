@@ -574,7 +574,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree1.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree1.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.SKP)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree1FakePicture1.bytes)
                 assertThat(layoutEvent.appContext.mainDisplayHeight).isEqualTo(3120)
@@ -589,7 +589,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree2.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree2.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree2FakePicture.bytes)
             }
         }
@@ -610,7 +610,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree1.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree1.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree1FakePicture2.bytes)
             }
         }
@@ -630,7 +630,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree1.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree1.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree1FakePicture3.bytes)
             }
         }
@@ -651,7 +651,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree1.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree1.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree1FakePicture4.bytes)
             }
         }
@@ -664,7 +664,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree3.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree3.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree3FakePicture.bytes)
             }
         }
@@ -756,7 +756,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree2.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree2.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.SKP)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree2FakePicture1.bytes)
             }
@@ -764,7 +764,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree2.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree2.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.SKP)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree2FakePicture2.bytes)
             }
@@ -777,7 +777,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree1.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree1.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.SKP)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree1FakePicture1.bytes)
             }
@@ -785,7 +785,7 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                assertThat(layoutEvent.rootView.id).isEqualTo(tree1.uniqueDrawingId)
+                assertThat(layoutEvent.rootView.node.id).isEqualTo(tree1.uniqueDrawingId)
                 assertThat(layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.SKP)
                 assertThat(layoutEvent.screenshot.bytes.toByteArray()).isEqualTo(tree1FakePicture3.bytes)
             }
@@ -1048,14 +1048,14 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                layoutEvent.rootOffset.let { rootOffset ->
+                layoutEvent.rootView.offset.let { rootOffset ->
                     assertThat(rootOffset.x).isEqualTo(0)
                     assertThat(rootOffset.y).isEqualTo(0)
                 }
 
-                val root = layoutEvent.rootView
+                val root = layoutEvent.rootView.node
                 val parent = root.getChildren(0)
-                assertThat(parent.getChildrenCount()).isEqualTo(3)
+                assertThat(parent.childrenCount).isEqualTo(3)
                 val child0 = parent.getChildren(0)
                 val child1 = parent.getChildren(1)
                 val child2 = parent.getChildren(2)
@@ -1104,12 +1104,12 @@ abstract class ViewLayoutInspectorTestBase {
         checkNonProgressEvent(eventQueue) { event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             event.layoutEvent.let { layoutEvent ->
-                layoutEvent.rootOffset.let { rootOffset ->
+                layoutEvent.rootView.offset.let { rootOffset ->
                     assertThat(rootOffset.x).isEqualTo(10)
                     assertThat(rootOffset.y).isEqualTo(20)
                 }
 
-                val root = layoutEvent.rootView
+                val root = layoutEvent.rootView.node
                 val parent = root.getChildren(0)
                 val child0 = parent.getChildren(0)
                 val child1 = parent.getChildren(1)
@@ -1201,8 +1201,8 @@ abstract class ViewLayoutInspectorTestBase {
         val check = { event: Event ->
             assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
             val strings = StringTable.fromStringEntries(event.layoutEvent.stringsList)
-            val root = event.layoutEvent.rootView
-            assertThat(root.getChildrenCount()).isEqualTo(3)
+            val root = event.layoutEvent.rootView.node
+            assertThat(root.childrenCount).isEqualTo(3)
             val text1 = root.getChildren(0)
             val text2 = root.getChildren(1)
             val button = root.getChildren(2)
@@ -1835,6 +1835,11 @@ abstract class ViewLayoutInspectorTestBase {
                 assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
                 assertThat(event.layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.BITMAP)
             }
+            // There will be a second one to capture the end of any animation.
+            checkNonProgressEvent(eventQueue) { event ->
+                assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
+                assertThat(event.layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.BITMAP)
+            }
         }
         val stopFetchCommand = Command.newBuilder().apply {
             stopFetchCommand = StopFetchCommand.getDefaultInstance()
@@ -1874,6 +1879,9 @@ abstract class ViewLayoutInspectorTestBase {
             checkNonProgressEvent(eventQueue) { event ->
                 assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
                 assertThat(event.layoutEvent.screenshot.type).isEqualTo(Screenshot.Type.SKP)
+            }
+            checkNonProgressEvent(eventQueue) { event ->
+                assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.PROPERTIES_EVENT)
             }
         }
     }

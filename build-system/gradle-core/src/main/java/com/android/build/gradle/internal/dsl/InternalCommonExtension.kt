@@ -41,20 +41,7 @@ import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
  * types, in order to enable the use of kotlin delegation from the original DSL classes
  * to the new implementations.
  */
-interface InternalCommonExtension<
-        BuildFeaturesT : com.android.build.api.dsl.BuildFeatures,
-        BuildTypeT : com.android.build.api.dsl.BuildType,
-        DefaultConfigT : com.android.build.api.dsl.DefaultConfig,
-        ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
-        AndroidResourcesT : com.android.build.api.dsl.AndroidResources,
-        InstallationT : com.android.build.api.dsl.Installation> :
-    CommonExtension<
-        BuildFeaturesT,
-        BuildTypeT,
-        DefaultConfigT,
-        ProductFlavorT,
-        AndroidResourcesT,
-        InstallationT>, Lockable {
+interface InternalCommonExtension: CommonExtension, Lockable {
 
     override val aaptOptions: AaptOptionsImpl
 
@@ -74,20 +61,14 @@ interface InternalCommonExtension<
     var compileSdkVersion: String?
 
     // See GroovyExtensionsTest
-    fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
-    fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
-    fun defaultConfig(action: Action<DefaultConfig>)
     fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
     fun aaptOptions(action: Action<AaptOptionsImpl>)
     fun adbOptions(action: Action<AdbOptionsImpl>)
-    fun androidResources(action: Action<AndroidResourcesT>)
-    fun buildFeatures(action: Action<BuildFeaturesT>)
     fun compileOptions(action: Action<CompileOptionsImpl>)
     fun composeOptions(action: Action<ComposeOptions>)
     fun dataBinding(action: Action<DataBindingOptionsImpl>)
     fun viewBinding(action: Action<ViewBindingOptionsImpl>)
     fun externalNativeBuild(action: Action<ExternalNativeBuildImpl>)
-    fun installation(action: Action<InstallationT>)
     fun jacoco(action: Action<JacocoOptionsImpl>)
     fun lint(action: Action<Lint>)
     fun lintOptions(action: Action<LintOptionsImpl>)

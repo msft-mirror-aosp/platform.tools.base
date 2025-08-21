@@ -142,8 +142,9 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
     override val minSdk: AndroidVersion
         get() = dslInfo.minSdkVersion
 
-    final override val builtInKotlinSupportMode = BuiltInKotlinSupportMode.NotSupported.KmpPluginApplied
-    final override val builtInKaptSupportMode = BuiltInKaptSupportMode.NotSupported.KmpPluginApplied
+    // Built-in Kotlin support is not available for KMP
+    final override val builtInKotlinSupportMode = BuiltInKotlinSupportMode.NotSupported
+    final override val builtInKaptSupportMode = BuiltInKaptSupportMode.NotSupported
 
     override val sources = KmpSourcesImpl(
         dslInfo,

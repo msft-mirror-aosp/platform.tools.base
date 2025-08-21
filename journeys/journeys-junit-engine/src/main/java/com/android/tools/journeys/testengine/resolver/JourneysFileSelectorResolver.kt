@@ -18,35 +18,18 @@ package com.android.tools.journeys.testengine.resolver
 
 import com.android.tools.journeys.testengine.JourneysTestEngineInput
 import com.android.tools.journeys.testengine.descriptor.JourneyFileDescriptor
-import com.android.tools.journeys.testengine.descriptor.PromptDescriptor
-import com.android.tools.journeys.testengine.robo.RoboConverter
-import org.junit.platform.engine.discovery.ClassSelector
+import com.android.tools.journeys.testengine.selector.DeviceSelector
 import org.junit.platform.engine.discovery.DirectorySelector
-import org.junit.platform.engine.discovery.DiscoverySelectors.selectDirectory
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectFile
 import org.junit.platform.engine.discovery.FileSelector
 import org.junit.platform.engine.support.discovery.SelectorResolver
 import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution.selectors
-import java.util.*
+import java.util.Optional
 import javax.xml.parsers.DocumentBuilderFactory
 
 class JourneysFileSelectorResolver : SelectorResolver {
-    override fun resolve(
-        selector: ClassSelector,
-        context: SelectorResolver.Context
-    ): Resolution {
-        // Gradle's Test task only supports class-selector. To work around the limitation,
-        // we use the "JourneysEntryPoint" class an entry point.
-        return if (selector.className == "JourneysEntryPoint"
-            && JourneysTestEngineInput.testDeviceId.isNotEmpty()
-        ) {
-            selectors(setOf(selectDirectory(JourneysTestEngineInput.journeysInputDir)))
-        } else {
-            Resolution.unresolved()
-        }
-    }
 
     override fun resolve(
         selector: DirectorySelector,
@@ -74,47 +57,22 @@ class JourneysFileSelectorResolver : SelectorResolver {
         if (filter.isNotEmpty() && file.name !in filter) {
             return Resolution.unresolved()
         }
-        val journeyName = file.inputStream().use { input ->
-            try {
-                val document =
-                    DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(input)
-                if (document.documentElement.tagName.lowercase() != "journey") {
-                    return Resolution.unresolved()
-                }
-                document.documentElement.getAttribute("name")
-            } catch (_: org.xml.sax.SAXException) {
-                return Resolution.unresolved()
-            }
-        }
 
-        return context.addToParent { parent ->
-            val journeysFileDescriptor =
-                JourneyFileDescriptor(
-                    parent.uniqueId,
-                    selector.file,
-                    journeyName
+        val match: Match? =
+            context.addToParent({
+                DeviceSelector(
+                    JourneysTestEngineInput.testDeviceId,
+                    JourneysTestEngineInput.testDeviceDisplayName
                 )
+            }) { parent ->
+                Optional.of(JourneyFileDescriptor(parent.uniqueId, selector.file))
+            }.map {
+                Match.exact(it)
+            }.orElse(null)
 
-            RoboConverter.getRoboElements(selector.file.inputStream())
-                .forEachIndexed { index, element ->
-                    val promptText = element.textContent.trim()
-                    // TODO(b/414570953): Remove once editor issue is fixed.
-                    if (promptText.isBlank()) {
-                        return@forEachIndexed
-                    }
-                    val promptDescriptor =
-                        PromptDescriptor(
-                            journeysFileDescriptor.uniqueId,
-                            promptText,
-                            index
-                        )
-                    journeysFileDescriptor.addChild(promptDescriptor)
-                }
-            Optional.of(journeysFileDescriptor)
-        }.map { journeyFileDesc ->
-            val match = Match.exact(journeyFileDesc)
+        return if (match != null) {
             Resolution.matches(setOf(match))
-        }.orElseGet {
+        } else {
             Resolution.unresolved()
         }
     }

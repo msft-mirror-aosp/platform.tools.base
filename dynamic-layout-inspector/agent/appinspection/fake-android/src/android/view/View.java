@@ -23,7 +23,9 @@ import android.graphics.HardwareRenderer;
 import android.graphics.Matrix;
 import android.graphics.Picture;
 import android.graphics.Point;
+import android.os.Binder;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 
 import androidx.annotation.Nullable;
@@ -372,5 +374,13 @@ public class View {
 
     public int getPaddingTop() {
         return mPaddingTop;
+    }
+
+    public Display getDisplay() {
+        return new Display(new Point(1, 1));
+    }
+
+    public IBinder getWindowToken() {
+        return new Binder();
     }
 }

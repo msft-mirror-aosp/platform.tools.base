@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.ide.v2
 
 import com.android.AndroidProjectTypes
 import com.android.build.api.component.impl.TestFixturesImpl
-import com.android.build.api.dsl.ApplicationAndroidResources
 import com.android.build.api.dsl.ApplicationBuildFeatures
 import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.ApplicationDefaultConfig
@@ -288,16 +287,7 @@ class SourceSetBuilderTest {
         return variant
     }
 
-    private fun createApplicationModelBuilder(variantModel: VariantModel):
-            ModelBuilder<
-                    ApplicationBuildFeatures,
-                    ApplicationBuildType,
-                    ApplicationDefaultConfig,
-                    ApplicationProductFlavor,
-                    ApplicationAndroidResources,
-                    ApplicationInstallation,
-                    ApplicationExtension> {
-
+    private fun createApplicationModelBuilder(variantModel: VariantModel): ModelBuilder<ApplicationExtension> {
         // for now create an app extension
 
         AndroidLocationsBuildService.RegistrationAction(project).execute()

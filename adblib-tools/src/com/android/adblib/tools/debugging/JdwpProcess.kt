@@ -21,20 +21,15 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.adbLogger
 import com.android.adblib.deviceProperties
-import com.android.adblib.tools.debugging.ExternalJdwpProcessCommandDispatcher.ProcessCommand.ResumeJdwpProcess
+import com.android.adblib.tools.debugging.impl.AbstractJdwpProcessDelegateProvider
 import com.android.adblib.tools.debugging.impl.JdwpProcessAllocationTrackerImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessProfilerImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessViewHierarchyImpl
 import com.android.adblib.tools.debugging.impl.ResumeProcessImpl
-import com.android.adblib.tools.debugging.packets.JdwpPacketBuilders
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
-import com.android.adblib.utils.runAlongOtherScope
-import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
-import kotlin.use
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 
 /**
  * A JDWP process tracked by [JdwpProcessTracker]. Each instance has a [pid] and a [StateFlow]
@@ -129,11 +124,15 @@ suspend fun JdwpProcess.executeGarbageCollector(progress: JdwpCommandProgress? =
  * instances via pre-registered [ExternalJdwpProcessCommandDispatcher] if needed.
  */
 suspend fun JdwpProcess.resumeProcess() {
-    resumeProcessImpl.resumeProcess()
+    if (this is AbstractJdwpProcessDelegateProvider) {
+        abstractJdwpProcess().resumeProcess()
+    } else {
+        resumeProcessImpl.resumeProcess()
+    }
 }
 
 private val resumeProcessImplKey =
-    CoroutineScopeCache.Key<ResumeProcessImpl>("ResumeProcessImpl")
+    CoroutineScopeCache.Key<ResumeProcessImpl>("${ResumeProcessImpl::class.java.simpleName}")
 
 internal val JdwpProcess.resumeProcessImpl: ResumeProcessImpl
     get() = cache.getOrPut(resumeProcessImplKey) { ResumeProcessImpl(this) }

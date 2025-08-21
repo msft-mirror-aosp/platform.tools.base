@@ -101,7 +101,7 @@ abstract class GenerateAdditionalApkSplitForDeploymentViaApk : NonIncrementalTas
 
     @get:Input
     @get:Optional
-    abstract val versionCode: Property<Int?>
+    abstract val versionCode: Property<Int>
 
     @get:Nested
     abstract val androidJarInput: AndroidJarInput
@@ -136,7 +136,7 @@ abstract class GenerateAdditionalApkSplitForDeploymentViaApk : NonIncrementalTas
         abstract val usesSdkLibrarySplitDir: DirectoryProperty
         abstract val runtimeConfigFile: RegularFileProperty
         abstract val applicationId: Property<String>
-        abstract val versionCode: Property<Int?>
+        abstract val versionCode: Property<Int>
         abstract val androidJar: RegularFileProperty
         abstract val aapt2: Property<Aapt2Input>
         abstract val apkSigningConfig: Property<SigningConfigData>
@@ -244,8 +244,7 @@ abstract class GenerateAdditionalApkSplitForDeploymentViaApk : NonIncrementalTas
                             }
             task.sdkSigningConfig.setDisallowChanges(
                     SigningConfigDataProvider(
-                            signingConfigData = experimentalPropSigningConfig
-                                    ?: defaultDebugConfig as Provider<SigningConfigData?>,
+                            signingConfigData = experimentalPropSigningConfig ?: defaultDebugConfig,
                             signingConfigFileCollection = null,
                             signingConfigValidationResultDir = null
                     )

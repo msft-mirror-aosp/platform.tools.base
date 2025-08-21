@@ -16,7 +16,8 @@
 
 package com.android.build.gradle.options
 
-import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.BUILD_CONFIG_GLOBAL_PROPERTY
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.EXCLUDE_LIBRARIES_FROM_CONSTRAINTS
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
 import com.android.build.gradle.options.Version.VERSION_3_5
@@ -155,25 +156,22 @@ enum class BooleanOption(
         ApiStage.Stable
     ),
 
-    EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS(
-        "android.dependency.excludeLibraryComponentsFromConstraints",
-        false,
-        ApiStage.Stable,
-        FutureStage(
-            true,
-            ApiStage.Stable,
-            Version.VERSION_9_0
-        )
-    ),
+    /**
+     * Applies dependency constraints to align compile and runtime classpath.
+     *
+     * Apps always has their android test runtime classpath aligned to the main artifact's runtime classpath regardless of this flag.
+     *
+     * To disable all the alignments, see [DISABLE_ALL_CONSTRAINTS]
+     *
+     * Libraries has no alignment by default. See [EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS].
+     */
+    USE_DEPENDENCY_CONSTRAINTS("android.dependency.useConstraints", false, ApiStage.Stable),
 
     /**
-     * This creates a sync issue when library constraints are enabled, because disabling them would
+     * This creates a sync issue when library constraints are applied, because disabling them would
      * result in a performance boost.
-     *
-     * It is intended to switch to on in the next major release alongside the related flag:
-     * `android.dependency.excludeLibraryComponentsFromConstraints`
      */
-    GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED("android.generateSyncIssueWhenLibraryConstraintsAreEnabled", false, ApiStage.Stable),
+    GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED("android.generateSyncIssueWhenLibraryConstraintsAreEnabled", true, ApiStage.Stable),
 
     /* ------------------
      * SUPPORTED FEATURES
@@ -184,14 +182,13 @@ enum class BooleanOption(
 
     ENFORCE_UNIQUE_PACKAGE_NAMES(
         "android.uniquePackageNames",
-        false,
+        true,
         FeatureStage.Supported,
         FutureStage(
             true,
-            FeatureStage.Supported,
-            Version.VERSION_9_0
-        )
-    ),
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_10_0
+        )),
 
     // Flag added to work around b/130596259.
     FORCE_JACOCO_OUT_OF_PROCESS("android.forceJacocoOutOfProcess", false, FeatureStage.Supported),
@@ -210,45 +207,15 @@ enum class BooleanOption(
         FutureStage(false, FeatureStage.Supported, Version.VERSION_9_0)
     ),
 
-
-    /**
-     * Enables R8 full mode
-     * (https://r8.googlesource.com/r8/+/refs/heads/8.8/compatibility-faq.md#r8-full-mode).
-     *
-     * Note that to help users migrate to R8 full mode, we provide 2 types of R8 full mode:
-     *   - Legacy full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = false): In this
-     *   mode, the default constructor is implicitly kept when a class is kept
-     *   (i.e., "-keep class A" is the same as "-keep class A { void <init>(); }")
-     *   - Strict full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = true): In this
-     *   mode, the default constructor is not implicitly kept when a class is kept
-     *   (i.e., "-keep class A" is different from "-keep class A { void <init>(); }").
-     *
-     * When migrating from legacy full mode to strict full mode, if the user's app or a library that
-     * the app uses contains a keep rule such as "-keep class A", then the app/library's author will
-     * need to manually update the rule to "-keep class A { void <init>(); }" if they want to keep
-     * the default constructor. If they don't want to keep the default constructor, then they can
-     * keep the rule as-is.
-     */
-    FULL_R8(
-        "android.enableR8.fullMode",
+    /** Enables R8 strict full mode for keep rules (see [FULL_R8] for more context). */
+    R8_STRICT_FULL_MODE_FOR_KEEP_RULES(
+        "android.r8.strictFullModeForKeepRules",
         defaultValue = true,
         FeatureStage.Supported,
         FutureStage(
             true,
-            FeatureStage.Deprecated(VERSION_10_0),
-            Version.VERSION_9_0
-        )
-    ),
-
-    /** Enables R8 strict full mode for keep rules (see [FULL_R8] for more context). */
-    R8_STRICT_FULL_MODE_FOR_KEEP_RULES(
-        "android.r8.strictFullModeForKeepRules",
-        defaultValue = false,
-        FeatureStage.Supported,
-        FutureStage(
-            true,
-            FeatureStage.Supported,
-            Version.VERSION_9_0
+            FeatureStage.SoftlyEnforced(VERSION_11_0),
+            Version.VERSION_10_0
         )
     ),
 
@@ -257,17 +224,26 @@ enum class BooleanOption(
      */
     ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE(
         "android.onlyEnableUnitTestForTheTestedBuildType",
-        false,
+        true,
+        FeatureStage.Supported
+    ),
+
+/**
+     * When enabled, R8 will perform resource shrinking in a more optimal way.
+     *
+     * Note: This flag takes effect only if resource shrinking is enabled AND
+     * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
+     */
+    R8_OPTIMIZED_RESOURCE_SHRINKING(
+        "android.r8.optimizedResourceShrinking",
+        true,
         FeatureStage.Supported,
         FutureStage(
             true,
-            FeatureStage.Supported,
-            Version.VERSION_9_0
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_10_0
         )
     ),
-
-
-
     /* -----------------
      * EXPERIMENTAL APIs
      */
@@ -275,24 +251,6 @@ enum class BooleanOption(
     BUILD_FEATURE_MLMODELBINDING("android.defaults.buildfeatures.mlmodelbinding", false, ApiStage.Experimental),
     ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG("android.experimental.useDefaultDebugSigningConfigForProfileableBuildtypes", false, ApiStage.Experimental),
 
-    /**
-     * Enables compile classpath and runtime classpath alignment (i.e., if the version of a
-     * dependency on compile classpath is lower than its version on runtime classpath, the version
-     * on compile classpath will be promoted to match the version on runtime classpath; if the
-     * version on compile classpath is higher than the version on runtime classpath, the build will
-     * fail).
-     *
-     * This option is enabled by default. The users can disable it if it causes issues (e.g., when
-     * the dependencies involve `com.google.guava:guava` and `com.google.guava:listenablefuture` --
-     * see bug 300760566 for details).
-     */
-    ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT("android.enableCompileRuntimeClasspathAlignment", true, ApiStage.Experimental,
-        FutureStage(
-            false,
-            FeatureStage.Supported,
-            Version.VERSION_9_0
-        )
-    ),
 
     /* ---------------------
      * EXPERIMENTAL FEATURES
@@ -349,16 +307,6 @@ enum class BooleanOption(
     /** When set R classes are treated as compilation classpath in libraries, rather than runtime classpath, with values set to 0. */
     ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT("android.enableAdditionalTestOutput", true, FeatureStage.Experimental),
 
-    ENABLE_APP_COMPILE_TIME_R_CLASS(
-        "android.enableAppCompileTimeRClass",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.SoftlyEnforced(VERSION_10_0),
-            Version.VERSION_9_0
-        )
-    ),
     ENABLE_EXTRACT_ANNOTATIONS("android.enableExtractAnnotations", true, FeatureStage.Experimental),
 
     // Marked as stable to avoid reporting deprecation twice.
@@ -372,7 +320,14 @@ enum class BooleanOption(
     ENABLE_NATIVE_COMPILER_SETTINGS_CACHE("android.enableNativeCompilerSettingsCache", false, FeatureStage.Experimental),
     ENABLE_CMAKE_BUILD_COHABITATION("android.enableCmakeBuildCohabitation", false, FeatureStage.Experimental),
     ENABLE_PROGUARD_RULES_EXTRACTION("android.proguard.enableRulesExtraction", true, FeatureStage.Experimental),
-    USE_DEPENDENCY_CONSTRAINTS("android.dependency.useConstraints", true, FeatureStage.Experimental),
+
+    /**
+     * Disables all constraints overriding all the other related flags.
+     *
+     * Intended use is to keep backwards compatibility for users who previously set android.dependency.useConstraints=false by turning this on.
+     */
+    DISABLE_ALL_CONSTRAINTS("android.dependency.disableAllConstraints", false, FeatureStage.Experimental),
+    ENABLE_CLASSPATH_CHECK_TASKS("android.enableClasspathCheckTasks", false, FeatureStage.Experimental),
     ENABLE_DUPLICATE_CLASSES_CHECK("android.enableDuplicateClassesCheck", true, FeatureStage.Experimental),
     MINIMAL_KEEP_RULES("android.useMinimalKeepRules", true, FeatureStage.Experimental),
     EXCLUDE_RES_SOURCES_FOR_RELEASE_BUNDLES("android.bundle.excludeResSourcesForRelease", true, FeatureStage.Experimental),
@@ -488,23 +443,6 @@ enum class BooleanOption(
     ),
 
     /**
-     * When enabled, R8 will perform resource shrinking in a more optimal way.
-     *
-     * Note: This flag takes effect only if resource shrinking is enabled AND
-     * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
-     */
-    R8_OPTIMIZED_RESOURCE_SHRINKING(
-        "android.r8.optimizedResourceShrinking",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.SoftlyEnforced(VERSION_10_0),
-            Version.VERSION_9_0
-        )
-    ),
-
-    /**
      * Whether to enable the deviceTargetingConfig option in app bundles.
      */
     ENABLE_DEVICE_TARGETING_CONFIG_API(
@@ -534,31 +472,12 @@ enum class BooleanOption(
     ENABLE_PROBLEMS_API("android.enableProblemsAPI", false, FeatureStage.Experimental),
 
     /**
-     * As of AGP 9.0 missing proguard files will throw a runtime exception.
-     */
-    FAIL_ON_MISSING_PROGUARD_FILES(
-        "android.proguard.failOnMissingFiles",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            Version.VERSION_9_0
-        )
-    ),
-
-    /**
      * Setting custom shader path is required with `glslc.dir` property
      */
     CUSTOM_SHADER_PATH_REQUIRED(
         "android.custom.shader.path.required",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_10_0
-        )
+        true,
+        FeatureStage.Experimental
     ),
 
     // Flag should only be used in test.
@@ -570,20 +489,6 @@ enum class BooleanOption(
             true,
             FeatureStage.Experimental,
             Version.VERSION_10_0
-        )
-    ),
-
-    /*
-     * As of AGP 9.0, if an app's targetSdk is not set, it will default to the compileSdk value.
-     */
-    DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET(
-        "android.sdk.defaultTargetSdkToCompileSdkIfUnset",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_9_0),
-            Version.VERSION_9_0
         )
     ),
 
@@ -631,8 +536,7 @@ enum class BooleanOption(
      * Whether to enable built-in Kotlin support (https://issuetracker.google.com/259523353).
      *
      * When this property is enabled, AGP provides Kotlin support for all [Project]s without
-     * requiring users to apply the `org.jetbrains.kotlin.android` plugin or the
-     * `com.android.experimental.built-in-kotlin` plugin.
+     * requiring users to apply the `org.jetbrains.kotlin.android` plugin.
      *   - If the user applies the `org.jetbrains.kotlin.android` plugin, the build will fail as AGP
      *   already provides Kotlin support.
      *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin, the build
@@ -642,9 +546,10 @@ enum class BooleanOption(
      * `com.android.experimental.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
      * plugin to have Kotlin support.
      *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin (recommended),
-     *   AGP will provide Kotlin support for the current project that the plugin is applied to.
+     *   AGP will provide Kotlin support for the current [Project] that the plugin is applied to.
      *   - If the user applies the `org.jetbrains.kotlin.android` plugin (legacy behavior), that
-     *   plugin will provide Kotlin support for the current project that the plugin is applied to.
+     *   plugin will provide Kotlin support for the current [Project] that the plugin is applied to.
+     *   - If the user applies both plugins, the build will fail.
      */
     BUILT_IN_KOTLIN(
         propertyName = "android.builtInKotlin",
@@ -709,19 +614,6 @@ enum class BooleanOption(
      */
     GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE("android.experimental.testOptions.managedDevices.customDevice", true, FeatureStage.SoftlyEnforced(VERSION_9_0)),
 
-    /**
-     * When enabled, the R8 task will perform resource shrinking in addition to code shrinking.
-     * When disabled, resource shrinking will be performed in a separate task after the R8 task has
-     * run.
-     *
-     * Note: If resource shrinking is not enabled, this flag has no effect.
-     */
-    R8_INTEGRATED_RESOURCE_SHRINKING(
-        "android.r8.integratedResourceShrinking",
-        true,
-        FeatureStage.SoftlyEnforced(VERSION_9_0)
-    ),
-
     PRIVACY_SANDBOX_SDK_ENABLE_LINT(
         "android.experimental.privacysandboxsdk.enableLint",
         true,
@@ -737,17 +629,57 @@ enum class BooleanOption(
         FeatureStage.SoftlyEnforced(VERSION_9_0)
     ),
 
+    DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET(
+        "android.sdk.defaultTargetSdkToCompileSdkIfUnset",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
+    /**
+     * Enables R8 full mode
+     * (https://r8.googlesource.com/r8/+/refs/heads/8.8/compatibility-faq.md#r8-full-mode).
+     *
+     * Note that to help users migrate to R8 full mode, we provide 2 types of R8 full mode:
+     *   - Legacy full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = false): In this
+     *   mode, the default constructor is implicitly kept when a class is kept
+     *   (i.e., "-keep class A" is the same as "-keep class A { void <init>(); }")
+     *   - Strict full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = true): In this
+     *   mode, the default constructor is not implicitly kept when a class is kept
+     *   (i.e., "-keep class A" is different from "-keep class A { void <init>(); }").
+     *
+     * When migrating from legacy full mode to strict full mode, if the user's app or a library that
+     * the app uses contains a keep rule such as "-keep class A", then the app/library's author will
+     * need to manually update the rule to "-keep class A { void <init>(); }" if they want to keep
+     * the default constructor. If they don't want to keep the default constructor, then they can
+     * keep the rule as-is.
+     */
+    FULL_R8(
+        "android.enableR8.fullMode",
+        defaultValue = true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
+    FAIL_ON_MISSING_PROGUARD_FILES(
+        "android.proguard.failOnMissingFiles",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
+    DEFAULT_MIN_COMPILE_SDK_IN_AAR_METADATA(
+        "android.aar.metadata.defaultMinCompileSdkToCompileSdk",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
+    ENABLE_APP_COMPILE_TIME_R_CLASS(
+        "android.enableAppCompileTimeRClass",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0),
+    ),
+
     /* -------------------
      * DEPRECATED FEATURES
      */
-
-    // TODO(b/254305041) move to ApiStage.Removed
-    BUILD_FEATURE_BUILDCONFIG(
-        "android.defaults.buildfeatures.buildconfig",
-        false,
-        ApiStage.Deprecated(BUILD_CONFIG_GLOBAL_PROPERTY),
-    )
-    ,
 
     // Flag used to indicate a "deploy as instant" run configuration.
     @Suppress("unused")
@@ -755,6 +687,18 @@ enum class BooleanOption(
 
     USE_NON_FINAL_RES_IDS("android.nonFinalResIds", true, ApiStage.Deprecated(VERSION_10_0)),
 
+    /**
+     * Controls whether libraries has the following constraints applied for classpaths:
+     *   - compile -> runtime
+     *   - androidTestRuntime -> runtime
+     *
+     * Only relevant when [USE_DEPENDENCY_CONSTRAINTS] is enabled.
+     */
+    EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS(
+        "android.dependency.excludeLibraryComponentsFromConstraints",
+        false,
+        ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
+    ),
     /* -----------------
      * ENFORCED FEATURES
      */
@@ -1097,6 +1041,13 @@ enum class BooleanOption(
         )
     ),
 
+    R8_INTEGRATED_RESOURCE_SHRINKING(
+        "android.r8.integratedResourceShrinking",
+        true,
+        FeatureStage.Enforced(Version.VERSION_9_0,
+            additionalMessage = "The android.r8.integratedResourceShrinking property does not have any effect. " +
+                    "R8 Integrated Resource Shrinking is always enabled.")
+    ),
 
     /* ----------------
      * REMOVED API
@@ -1122,6 +1073,13 @@ enum class BooleanOption(
     /* ----------------
      * REMOVED FEATURES
      */
+
+    @Suppress("unused")
+    BUILD_FEATURE_BUILDCONFIG(
+        "android.defaults.buildfeatures.buildconfig",
+        false,
+        ApiStage.Removed(Version.VERSION_9_0),
+    ),
 
     @Suppress("unused")
     ENABLE_IN_PROCESS_AAPT2(

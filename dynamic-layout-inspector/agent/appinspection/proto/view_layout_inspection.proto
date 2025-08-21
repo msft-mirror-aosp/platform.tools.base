@@ -425,12 +425,18 @@ message LayoutEvent {
     repeated StringEntry strings = 1;
     AppContext app_context = 2;
     Configuration configuration = 3;
-    ViewNode root_view = 4;
+    RootView root_view = 4;
+    optional Screenshot screenshot = 5;
+    bool is_xr = 6;
+}
+
+message RootView {
+    ViewNode node = 1;
     // The offset of the root view from the origin of the surface. Will always be 0,0 for
     // the main window, but can be positive for floating windows (e.g. dialogs).
-    Point root_offset = 5;
-    optional Screenshot screenshot = 6;
-    bool is_xr = 7;
+    Point offset = 2;
+    // The id of the display this view is attached to
+    optional int32 display_id = 3;
 }
 
 // An event fired whenever a new root is added or an old root is removed.

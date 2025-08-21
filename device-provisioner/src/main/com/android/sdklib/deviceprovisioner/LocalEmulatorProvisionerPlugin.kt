@@ -42,7 +42,6 @@ import com.android.sdklib.internal.avd.BootSnapshot
 import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.internal.avd.HardwareProperties
-import com.android.sdklib.internal.avd.QuickBoot
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
 import com.google.wireless.android.sdk.stats.DeviceInfo
 import com.intellij.icons.AllIcons
@@ -51,7 +50,6 @@ import java.io.IOException
 import java.nio.file.Path
 import java.time.Duration
 import javax.swing.Icon
-import kotlin.io.path.name
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.collections.immutable.ImmutableMap
@@ -156,14 +154,8 @@ internal constructor(
     /** Prompts the user to edit the given AVD. Returns true if the AVD was changed. */
     suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean
 
-    /** Quick boots the AVD from its default snapshot. */
-    suspend fun startAvd(avdInfo: AvdInfo)
-
-    /** Boots the AVD without using a snapshot. */
-    suspend fun coldBootAvd(avdInfo: AvdInfo)
-
-    /** Boots the AVD from the specified snapshot. */
-    suspend fun bootAvdFromSnapshot(avdInfo: AvdInfo, snapshot: LocalEmulatorSnapshot)
+    /** Boots the AVD using the given BootMode, or default if null. */
+    suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode)
 
     suspend fun stopAvd(avdInfo: AvdInfo)
 
@@ -643,18 +635,8 @@ internal constructor(
       override suspend fun activate() {
         activate {
           // Consult the config to see what the default boot method is.
-          when (val bootMode = BootMode.fromProperties(avdInfo.properties)) {
-            is BootSnapshot -> {
-              val snapshot =
-                bootSnapshotAction.snapshots().find { it.path.name == bootMode.snapshot }
-              when (snapshot) {
-                null -> avdManager.startAvd(avdInfo)
-                else -> avdManager.bootAvdFromSnapshot(avdInfo, snapshot)
-              }
-            }
-            ColdBoot -> avdManager.coldBootAvd(avdInfo)
-            QuickBoot -> avdManager.startAvd(avdInfo)
-          }
+          val bootMode = BootMode.fromProperties(avdInfo.properties)
+          avdManager.startAvd(avdInfo, bootMode)
         }
       }
     }
@@ -664,7 +646,7 @@ internal constructor(
       override val presentation = defaultPresentation.fromContext().enabledIfActivatable()
 
       override suspend fun activate() {
-        activate { avdManager.coldBootAvd(avdInfo) }
+        activate { avdManager.startAvd(avdInfo, ColdBoot) }
       }
     }
 
@@ -681,7 +663,10 @@ internal constructor(
       }
 
     override suspend fun activate(snapshot: Snapshot) {
-      activate { avdManager.bootAvdFromSnapshot(avdInfo, snapshot as LocalEmulatorSnapshot) }
+      activate {
+        val snapshotName = (snapshot as LocalEmulatorSnapshot).path.fileName.toString()
+        avdManager.startAvd(avdInfo, BootSnapshot(snapshotName))
+      }
     }
   }
 

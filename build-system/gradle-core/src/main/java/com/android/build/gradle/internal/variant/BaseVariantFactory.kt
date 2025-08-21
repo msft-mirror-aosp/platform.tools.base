@@ -212,7 +212,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
 
     override fun preVariantCallback(
         project: Project,
-        dslExtension: CommonExtension<*, *, *, *, *, *>,
+        dslExtension: CommonExtension,
         model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
     ) {
         if (project.pluginManager.hasPlugin(ANDROID_APT_PLUGIN_NAME)) {
@@ -235,8 +235,7 @@ abstract class BaseVariantFactory<VariantBuilderT : VariantBuilder, VariantDslIn
         model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
         buildConfig: Boolean?
     ) {
-        val finalResValues = buildConfig ?:
-            dslServices.projectOptions[BooleanOption.BUILD_FEATURE_BUILDCONFIG]
+        val finalResValues = buildConfig ?: false
 
         if (!finalResValues) {
             val issueReporter = dslServices.issueReporter

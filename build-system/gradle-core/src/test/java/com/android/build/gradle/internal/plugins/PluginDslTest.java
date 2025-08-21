@@ -179,7 +179,7 @@ public class PluginDslTest {
         plugin.createAndroidTasks(project);
         LinkedHashMap<String, Integer> map = new LinkedHashMap<>(3);
         map.put("appVariants", 3);
-        map.put("unitTest", 3);
+        map.put("unitTest", 1);
         map.put("androidTests", 1);
         assertThat(VariantCheckers.countVariants(map))
                 .isEqualTo(getComponents(plugin.getVariantManager()).size());
@@ -220,7 +220,7 @@ public class PluginDslTest {
         plugin.createAndroidTasks(project);
         LinkedHashMap<String, Integer> map = new LinkedHashMap<>(3);
         map.put("appVariants", 4);
-        map.put("unitTest", 4);
+        map.put("unitTest", 2);
         map.put("androidTests", 2);
         assertThat(VariantCheckers.countVariants(map))
                 .isEqualTo(getComponents(plugin.getVariantManager()).size());
@@ -302,7 +302,7 @@ public class PluginDslTest {
 
         plugin.createAndroidTasks(project);
         ImmutableMap<String, Integer> map =
-                ImmutableMap.of("appVariants", 12, "unitTests", 12, "androidTests", 6);
+                ImmutableMap.of("appVariants", 12, "unitTests", 6, "androidTests", 6);
         assertThat(VariantCheckers.countVariants(map))
                 .isEqualTo(getComponents(plugin.getVariantManager()).size());
 
@@ -698,7 +698,7 @@ public class PluginDslTest {
                 variants.stream().filter(it -> it.getName().equals("release")).findFirst().get();
 
         checkNestedComponents(debugVariant, true, true, false);
-        checkNestedComponents(releaseVariant, true, false, false);
+        checkNestedComponents(releaseVariant, false, false, false);
     }
 
     @Test
@@ -730,7 +730,7 @@ public class PluginDslTest {
                 variants.stream().filter(it -> it.getName().equals("release")).findFirst().get();
 
         checkNestedComponents(debugVariant, true, true, true);
-        checkNestedComponents(releaseVariant, true, false, true);
+        checkNestedComponents(releaseVariant, false, false, true);
     }
 
     @Test
@@ -794,7 +794,7 @@ public class PluginDslTest {
                 variants.stream().filter(it -> it.getName().equals("release")).findFirst().get();
 
         checkNestedComponents(debugVariant, true, false, false);
-        checkNestedComponents(releaseVariant, true, false, false);
+        checkNestedComponents(releaseVariant, false, false, false);
     }
 
     public void checkProguardFiles(Map<String, List<String>> expected) {

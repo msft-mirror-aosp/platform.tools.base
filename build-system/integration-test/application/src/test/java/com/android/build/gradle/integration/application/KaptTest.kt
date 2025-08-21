@@ -80,16 +80,20 @@ class KaptTest() {
     @Before
     @Throws(Exception::class)
     fun setUp() {
+        TestFileUtils.prependToFile(
+            project.file("build.gradle"),
+            """
+            apply from: "../commonHeader.gradle"
+            buildscript {
+                apply from: "../commonBuildScript.gradle"
+                dependencies {
+                    // Provides the 'kotlin-android' build plugin for the app
+                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${"$"}{libs.versions.kotlinVersion.get()}"
+                }
+            }
+            """.trimIndent()
+        )
         val buildScript = """
-apply from: "../../commonHeader.gradle"
-buildscript {
-    apply from: "../../commonBuildScript.gradle"
-    dependencies {
-        // Provides the 'android-kotlin' build plugin for the app
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${"$"}{libs.versions.kotlinVersion.get()}"
-    }
-}
-
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'

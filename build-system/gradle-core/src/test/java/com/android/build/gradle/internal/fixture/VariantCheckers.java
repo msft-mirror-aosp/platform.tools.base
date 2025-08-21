@@ -31,20 +31,23 @@ import com.android.build.gradle.api.TestVariant;
 import com.android.build.gradle.internal.api.TestedVariant;
 import com.android.build.gradle.internal.component.ComponentCreationConfig;
 import com.android.utils.StringHelper;
+
 import com.google.common.collect.Lists;
 import com.google.common.truth.Correspondence;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.gradle.api.DomainObjectSet;
 import org.gradle.api.Task;
 import org.gradle.api.resources.TextResource;
 import org.gradle.api.tasks.TaskDependency;
 import org.junit.Assert;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class VariantCheckers {
 
@@ -64,8 +67,7 @@ public class VariantCheckers {
 
     public static void checkDefaultVariants(List<ComponentCreationConfig> components) {
         assertThat(Lists.transform(components, ComponentCreationConfig::getName))
-                .containsExactly(
-                        "release", "debug", "debugAndroidTest", "releaseUnitTest", "debugUnitTest");
+                .containsExactly("release", "debug", "debugAndroidTest", "debugUnitTest");
     }
 
     /**

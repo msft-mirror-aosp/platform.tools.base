@@ -115,9 +115,6 @@ interface ProductFlavor : Named, BaseFlavor, ExtensionAware {
      */
     var dimension: String?
 
-    @Deprecated("Replaced with the dimension property")
-    fun setDimension(dimension: String?): Void?
-
     /**
      * Specifies a sorted list of product flavors that the plugin should try to use when a direct
      * variant match with a local module dependency is not possible.

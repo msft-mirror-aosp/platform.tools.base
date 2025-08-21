@@ -22,10 +22,12 @@ import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import java.time.Duration
 
+@Ignore("b/439806981")
 class PrivacySandboxSdkAppConnectedTest {
 
     @get:Rule

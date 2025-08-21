@@ -18,24 +18,23 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.DynamicFeatureAndroidResources
 import com.android.build.api.dsl.DynamicFeatureBuildFeatures
-import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.DynamicFeatureDefaultConfig
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.DynamicFeatureInstallation
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
 import com.android.build.api.dsl.PrivacySandbox
 import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
-interface InternalDynamicFeatureExtension :
-    DynamicFeatureExtension,
-    InternalTestedExtension<
-            DynamicFeatureBuildFeatures,
-            DynamicFeatureBuildType,
-            DynamicFeatureDefaultConfig,
-            DynamicFeatureProductFlavor,
-            DynamicFeatureAndroidResources,
-            DynamicFeatureInstallation> {
+interface InternalDynamicFeatureExtension: DynamicFeatureExtension, InternalTestedExtension {
+
+    fun androidResources(action: Action<DynamicFeatureAndroidResources>)
+    fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
+    fun defaultConfig(action: Action<DefaultConfig>)
+    fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>)
+    fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun installation(action: Action<DynamicFeatureInstallation>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

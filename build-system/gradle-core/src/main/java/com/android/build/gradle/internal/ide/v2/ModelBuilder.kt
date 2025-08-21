@@ -20,13 +20,10 @@ import com.android.SdkConstants
 import com.android.Version
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.component.impl.DeviceTestImpl
-import com.android.build.api.dsl.AndroidResources
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.DefaultConfig
-import com.android.build.api.dsl.Installation
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
@@ -84,7 +81,6 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AnchorTaskNames
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
-import com.android.build.gradle.internal.tasks.ExportConsumerProguardFilesTask.Companion.checkProguardFiles
 import com.android.build.gradle.internal.tasks.ExtractPrivacySandboxCompatApks
 import com.android.build.gradle.internal.tasks.GenerateAdditionalApkSplitForDeploymentViaApk
 import com.android.build.gradle.internal.tasks.getPublishedCustomLintChecks
@@ -145,20 +141,7 @@ import javax.xml.stream.events.EndElement
 import com.android.build.gradle.internal.dsl.BuildType as InternalBuildType
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalFlavor
 
-class ModelBuilder<
-        BuildFeaturesT : BuildFeatures,
-        BuildTypeT : BuildType,
-        DefaultConfigT : DefaultConfig,
-        ProductFlavorT : ProductFlavor,
-        AndroidResourcesT : AndroidResources,
-        InstallationT : Installation,
-        ExtensionT : CommonExtension<
-                BuildFeaturesT,
-                BuildTypeT,
-                DefaultConfigT,
-                ProductFlavorT,
-                AndroidResourcesT,
-                InstallationT>>(
+class ModelBuilder<ExtensionT : CommonExtension>(
     private val project: Project,
     private val variantModel: VariantModel,
     private val extension: ExtensionT,
@@ -294,7 +277,7 @@ class ModelBuilder<
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(16, 0, humanReadable = "Android Gradle Plugin 8.13")
+        val modelProducer = VersionImpl(17, 0, humanReadable = "Android Gradle Plugin 9.0")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.
@@ -722,19 +705,10 @@ class ModelBuilder<
     }
 
     private fun checkProguardFiles(component: VariantCreationConfig) {
-        // We check for default files unless it's a base module, which can include default files.
-        val isBaseModule = component.componentType.isBaseModule
-        val isDynamicFeature = component.componentType.isDynamicFeature
-        if (!isBaseModule) {
-            checkProguardFiles(
-                project.layout.buildDirectory,
-                isDynamicFeature,
-                component.optimizationCreationConfig.consumerProguardFilePaths
-            ) { errorMessage: String -> variantModel
-                .syncIssueReporter
-                .reportError(IssueReporter.Type.GENERIC, errorMessage)
-            }
-        }
+        // force calculation of the lazy consumerProguardFiles so possible errors are reported
+        // but do not resolve the providers as it contains tasks' dependencies.
+        @Suppress("NoOp")
+        component.optimizationCreationConfig.consumerProguardFiles
     }
 
     private fun buildAndroidDslModel(project: Project): AndroidDsl {
@@ -768,7 +742,7 @@ class ModelBuilder<
                 } else null
 
         val extensionImpl =
-            extension as? CommonExtensionImpl<*, *, *, *, *, *>
+            extension as? CommonExtensionImpl<*, *, *>
                 ?: throw RuntimeException("Wrong extension provided to v2 ModelBuilder")
         val compileSdkVersion = extensionImpl.compileSdkVersion ?: "unknown"
 
@@ -1672,7 +1646,18 @@ class ModelBuilder<
             )
             flags.put(
                 BooleanFlag.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT,
-                projectOptions[BooleanOption.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT]
+                variants.firstOrNull()?.let {
+                    val constraintsApplied = if (projectOptions[BooleanOption.DISABLE_ALL_CONSTRAINTS]) {
+                        false // No constraints applied at all
+                    } else if (!projectOptions[BooleanOption.USE_DEPENDENCY_CONSTRAINTS]) {
+                        false// Only android test is being constrained, but in this case we care about the main artifact
+                    } else if (projectOptions[BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS]) {
+                        it.componentType.isApk// Only apps are being constrained
+                    } else {
+                        true// All constraints applied
+                    }
+                    constraintsApplied
+                } == true // handling no variants with equality check, return value doesn't matter.
             )
             flags.put(
                 BooleanFlag.DATA_BINDING_ENABLED,

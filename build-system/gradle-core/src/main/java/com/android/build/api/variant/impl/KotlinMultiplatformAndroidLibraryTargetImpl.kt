@@ -20,7 +20,6 @@ import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
-import com.android.build.api.dsl.KotlinMultiplatformAndroidTarget
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.gradle.internal.dsl.CompileSdkDelegate
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
@@ -42,7 +41,6 @@ internal open class KotlinMultiplatformAndroidLibraryTargetImpl @Inject construc
     androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl
 ) : DecoratedExternalKotlinTarget(delegate),
     KotlinMultiplatformAndroidLibraryTarget,
-    KotlinMultiplatformAndroidTarget,
     KotlinMultiplatformAndroidLibraryExtension by androidExtension {
 
     internal var enableJavaSources = false

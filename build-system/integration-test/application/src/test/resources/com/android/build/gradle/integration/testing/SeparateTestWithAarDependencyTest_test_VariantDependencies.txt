@@ -11,13 +11,13 @@
                      > androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.activity:activity:1.6.0:
                         - requestedCoordinates = (null)
                         > dependencies:
-                           - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                           - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - requestedCoordinates = (null)
                               - dependencies         = []
                            > androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                               - requestedCoordinates = (null)
                               > dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  > androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0:
                                     - requestedCoordinates = (null)
@@ -36,29 +36,29 @@
                                  > androidx.lifecycle|lifecycle-runtime|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-runtime:2.5.1:
                                     - requestedCoordinates = (null)
                                     > dependencies:
-                                       - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                       - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                           - dependencies = "*visited*"
                                        - androidx.arch.core|core-common|2.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:2.1.0:
                                           - requestedCoordinates = (null)
                                           - dependencies:
-                                             - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                             - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                                 - dependencies = "*visited*"
                                        - androidx.lifecycle|lifecycle-common|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-common:2.5.1:
                                           - requestedCoordinates = (null)
                                           - dependencies:
-                                             - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                             - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                                 - dependencies = "*visited*"
                                     < dependencies
                                  < androidx.lifecycle|lifecycle-runtime|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-runtime:2.5.1
                                  > androidx.versionedparcelable|versionedparcelable|1.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.versionedparcelable:versionedparcelable:1.1.1:
                                     - requestedCoordinates = (null)
                                     - dependencies:
-                                       - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                       - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                           - dependencies = "*visited*"
                                        - androidx.collection|collection|1.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.collection:collection:1.1.0:
                                           - requestedCoordinates = (null)
                                           - dependencies:
-                                             - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                             - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                                 - dependencies = "*visited*"
                                  < androidx.versionedparcelable|versionedparcelable|1.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.versionedparcelable:versionedparcelable:1.1.1
                               < dependencies
@@ -68,21 +68,21 @@
                            - androidx.lifecycle|lifecycle-viewmodel|2.5.1|org.gradle.status>release|androidx.lifecycle:lifecycle-viewmodel:2.5.1:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
                                     - dependencies = "*visited*"
                            > androidx.lifecycle|lifecycle-viewmodel-savedstate|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1:
                               - requestedCoordinates = (null)
                               > dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core-ktx|1.2.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.core:core-ktx:1.2.0:
                                     - requestedCoordinates = (null)
                                     - dependencies:
                                        - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
                                           - dependencies = "*visited*"
-                                       - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                       - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                           - dependencies = "*visited*"
                                        - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                           - dependencies = "*visited*"
@@ -96,7 +96,7 @@
                                  - androidx.savedstate|savedstate|1.2.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.savedstate:savedstate:1.2.0:
                                     - requestedCoordinates = (null)
                                     - dependencies:
-                                       - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                       - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                           - dependencies = "*visited*"
                                        - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
                                           - dependencies = "*visited*"
@@ -145,19 +145,19 @@
                               - dependencies = "*visited*"
                         < dependencies
                      < androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.activity:activity:1.6.0
-                     - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                     - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                         - dependencies = "*visited*"
                      > androidx.appcompat|appcompat-resources|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.appcompat:appcompat-resources:1.6.1:
                         - requestedCoordinates = (null)
                         > dependencies:
-                           - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                           - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
                            - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                               - dependencies = "*visited*"
                            - androidx.vectordrawable|vectordrawable|1.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.vectordrawable:vectordrawable:1.1.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
@@ -171,7 +171,7 @@
                                  - androidx.interpolator|interpolator|1.0.0|org.gradle.status>release|androidx.interpolator:interpolator:1.0.0:
                                     - requestedCoordinates = (null)
                                     - dependencies:
-                                       - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                       - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                           - dependencies = "*visited*"
                                  - androidx.collection|collection|1.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.collection:collection:1.1.0:
                                     - dependencies = "*visited*"
@@ -184,19 +184,19 @@
                      - androidx.cursoradapter|cursoradapter|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.cursoradapter:cursoradapter:1.0.0:
                         - requestedCoordinates = (null)
                         - dependencies:
-                           - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                           - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
                      > androidx.drawerlayout|drawerlayout|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.drawerlayout:drawerlayout:1.0.0:
                         - requestedCoordinates = (null)
                         > dependencies:
-                           - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                           - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
                            - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                               - dependencies = "*visited*"
                            - androidx.customview|customview|1.0.0|org.gradle.status>release|androidx.customview:customview:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
@@ -205,7 +205,7 @@
                      > androidx.fragment|fragment|1.3.6|org.gradle.status>release|androidx.fragment:fragment:1.3.6:
                         - requestedCoordinates = (null)
                         > dependencies:
-                           - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                           - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
                            - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                               - dependencies = "*visited*"
@@ -214,7 +214,7 @@
                            - androidx.viewpager|viewpager|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.viewpager:viewpager:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
@@ -223,7 +223,7 @@
                            > androidx.loader|loader|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.loader:loader:1.0.0:
                               - requestedCoordinates = (null)
                               > dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
@@ -233,7 +233,7 @@
                                        - androidx.arch.core|core-runtime|2.0.0|org.gradle.status>release|androidx.arch.core:core-runtime:2.0.0:
                                           - requestedCoordinates = (null)
                                           - dependencies:
-                                             - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                             - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                                 - dependencies = "*visited*"
                                              - androidx.arch.core|core-common|2.1.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.arch.core:core-common:2.1.0:
                                                 - dependencies = "*visited*"
@@ -278,33 +278,33 @@
                      > androidx.legacy|legacy-support-core-utils|1.0.0|org.gradle.status>release|androidx.legacy:legacy-support-core-utils:1.0.0:
                         - requestedCoordinates = (null)
                         > dependencies:
-                           - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                           - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
                            - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                               - dependencies = "*visited*"
                            - androidx.documentfile|documentfile|1.0.0|org.gradle.status>release|androidx.documentfile:documentfile:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                            - androidx.loader|loader|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.loader:loader:1.0.0:
                               - dependencies = "*visited*"
                            - androidx.localbroadcastmanager|localbroadcastmanager|1.0.0|org.gradle.status>release|androidx.localbroadcastmanager:localbroadcastmanager:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                            - androidx.print|print|1.0.0|org.gradle.status>release|androidx.print:print:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                         < dependencies
                      < androidx.legacy|legacy-support-core-utils|1.0.0|org.gradle.status>release|androidx.legacy:legacy-support-core-utils:1.0.0
                      > androidx.legacy|legacy-support-core-ui|1.0.0|org.gradle.status>release|androidx.legacy:legacy-support-core-ui:1.0.0:
                         - requestedCoordinates = (null)
                         > dependencies:
-                           - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                           - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
                            - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                               - dependencies = "*visited*"
@@ -317,7 +317,7 @@
                            - androidx.coordinatorlayout|coordinatorlayout|1.0.0|org.gradle.status>release|androidx.coordinatorlayout:coordinatorlayout:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
@@ -328,7 +328,7 @@
                            - androidx.slidingpanelayout|slidingpanelayout|1.0.0|org.gradle.status>release|androidx.slidingpanelayout:slidingpanelayout:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
@@ -339,7 +339,7 @@
                            - androidx.swiperefreshlayout|swiperefreshlayout|1.0.0|org.gradle.status>release|androidx.swiperefreshlayout:swiperefreshlayout:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
@@ -348,7 +348,7 @@
                            - androidx.asynclayoutinflater|asynclayoutinflater|1.0.0|org.gradle.status>release|androidx.asynclayoutinflater:asynclayoutinflater:1.0.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                                 - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
@@ -376,12 +376,12 @@
          > androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:runner:1.4.0-alpha06:
             - requestedCoordinates = (null)
             > dependencies:
-               - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+               - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                   - dependencies = "*visited*"
                - androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:monitor:1.4.0-alpha06:
                   - requestedCoordinates = (null)
                   - dependencies:
-                     - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
+                     - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                         - dependencies = "*visited*"
                - androidx.test.services|storage|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test.services:storage:1.4.0-alpha06:
                   - requestedCoordinates = (null)
@@ -540,28 +540,6 @@
             - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/annotation-experimental-1.3.0/R.txt{F}
          < androidLibraryData
       < androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0
-      > androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
-         - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/androidx/annotation/annotation/1.0.0/annotation-1.0.0.jar{F}
-         - projectInfo        = (null)
-         > libraryInfo:
-            - group          = "androidx.annotation"
-            - name           = "annotation"
-            - version        = "1.0.0"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-api"
-            - capabilities:
-               * "androidx.annotation:annotation:1.0.0"
-         < libraryInfo
-         - lintJar            = (null)
-         - androidLibraryData = (null)
-      < androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0
       > androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.0.0:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/androidx/annotation/annotation/1.0.0/annotation-1.0.0.jar{F}
@@ -584,6 +562,30 @@
          - lintJar            = (null)
          - androidLibraryData = (null)
       < androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.0.0
+      > androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
+         - type               = JAVA_LIBRARY
+         - artifact           = {LOCAL_REPO}/androidx/annotation/annotation/1.3.0/annotation-1.3.0.jar{F}
+         - projectInfo        = (null)
+         > libraryInfo:
+            - group          = "androidx.annotation"
+            - name           = "annotation"
+            - version        = "1.3.0"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.dependency.bundling -> external"
+               * "org.gradle.jvm.version -> 8"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-api"
+            - capabilities:
+               * "androidx.annotation:annotation:1.3.0"
+         < libraryInfo
+         - lintJar            = (null)
+         - androidLibraryData = (null)
+      < androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0
       > androidx.appcompat|appcompat-resources|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.appcompat:appcompat-resources:1.6.1:
          - type        = ANDROID_LIBRARY
          - artifact    = {LOCAL_REPO}/androidx/appcompat/appcompat-resources/1.6.1/appcompat-resources-1.6.1.aar{F}

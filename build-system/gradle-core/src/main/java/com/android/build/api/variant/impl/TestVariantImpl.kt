@@ -196,10 +196,6 @@ open class TestVariantImpl @Inject constructor(
     override val targetSdkOverride: AndroidVersion?
         get() = variantBuilder.mutableTargetSdk?.sanitize()
 
-    // always false for this type
-    override val embedsMicroApp: Boolean
-        get() = false
-
     // always true for this kind
     override val testOnlyApk: Boolean
         get() = true

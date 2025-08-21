@@ -160,13 +160,13 @@ class AndroidXJetifierMatrixTest {
             model,
             IssueReporter.Type.ANDROID_X_PROPERTY_NOT_ENABLED,
             IssueReporter.Severity.ERROR,
-            message = "Configuration `:debugRuntimeClasspath` contains AndroidX dependencies, but the `android.useAndroidX` property is not enabled, which may cause runtime issues.\n" +
+            message = "Configuration `:debugAndroidTestCompileClasspath` contains AndroidX dependencies, but the `android.useAndroidX` property is not enabled, which may cause runtime issues.\n" +
                     "Set `android.useAndroidX=true` in the `gradle.properties` file and retry.\n" +
                     "The following AndroidX dependencies are detected:\n" +
-                    ":debugRuntimeClasspath -> depends-on-androidx:lib1:1.0 -> androidx.annotation:annotation:$ANDROIDX_VERSION\n" +
-                    ":debugRuntimeClasspath -> depends-on-androidx:lib2:1.0 -> androidx.collection:collection:$ANDROIDX_VERSION",
-            data = ":debugRuntimeClasspath -> depends-on-androidx:lib1:1.0 -> androidx.annotation:annotation:$ANDROIDX_VERSION," +
-                    ":debugRuntimeClasspath -> depends-on-androidx:lib2:1.0 -> androidx.collection:collection:$ANDROIDX_VERSION"
+                    ":debugAndroidTestCompileClasspath -> depends-on-androidx:lib1:1.0 -> androidx.annotation:annotation:$ANDROIDX_VERSION\n" +
+                    ":debugAndroidTestCompileClasspath -> depends-on-androidx:lib2:1.0 -> androidx.collection:collection:$ANDROIDX_VERSION",
+            data = ":debugAndroidTestCompileClasspath -> depends-on-androidx:lib1:1.0 -> androidx.annotation:annotation:$ANDROIDX_VERSION," +
+                    ":debugAndroidTestCompileClasspath -> depends-on-androidx:lib2:1.0 -> androidx.collection:collection:$ANDROIDX_VERSION"
         )
     }
 

@@ -492,23 +492,6 @@ class KotlinDslTest {
         }
     }
 
-
-    @Test
-    fun `productFlavor source compatibility`() {
-        android.productFlavors.create("t").apply {
-            setDimension("foo")
-            assertThat(dimension).isEqualTo("foo")
-            setMatchingFallbacks(listOf("bar"))
-            assertThat(matchingFallbacks).containsExactly("bar")
-        }
-    }
-
-    @Test
-    fun `flavorDimension source compatibility`() {
-        android.flavorDimensions("a")
-        assertThat(android.flavorDimensions).containsExactly("a")
-    }
-
     /** Regression test for https://b.corp.google.com/issues/155318103 */
     @Test
     fun `mergedFlavor source compatibility`() {

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.core.dsl.impl.features
 
+import com.android.build.api.component.impl.features.CommonOptimizationDslInfoImpl
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.ProductFlavor
@@ -23,7 +24,6 @@ import com.android.build.gradle.ProguardFiles
 import com.android.build.gradle.internal.ProguardFileType
 import com.android.build.gradle.internal.core.MergedOptimization
 import com.android.build.gradle.internal.core.PostProcessingOptions
-import com.android.build.gradle.internal.core.dsl.features.OptimizationDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.computeMergedOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.dsl.OptimizationImpl
@@ -32,7 +32,6 @@ import com.android.builder.core.ComponentType
 import com.android.builder.model.BaseConfig
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
-import org.gradle.api.provider.ListProperty
 import java.io.File
 import com.android.builder.core.ComponentTypeImpl.BASE_APK
 
@@ -43,7 +42,7 @@ class OptimizationDslInfoImpl(
     private val productFlavorList: List<ProductFlavor>,
     private val services: VariantServices,
     private val buildDirectory: DirectoryProperty,
-): OptimizationDslInfo {
+): CommonOptimizationDslInfoImpl(services) {
 
     private val mergedOptimization = MergedOptimization()
 
@@ -83,18 +82,6 @@ class OptimizationDslInfoImpl(
     override val keepRuleFiles: Set<File>
         get() = mergedOptimization.keepRuleFiles
 
-    override fun getProguardFiles(into: ListProperty<RegularFile>) {
-        val result: MutableList<File> = ArrayList(gatherProguardFiles(ProguardFileType.EXPLICIT))
-        if (result.isEmpty()) {
-            result.addAll(postProcessingOptions.getDefaultProguardFiles())
-        }
-
-        val projectDir = services.projectInfo.projectDirectory
-        result.forEach { file ->
-            into.add(projectDir.file(file.absolutePath))
-        }
-    }
-
     override val postProcessingOptions: PostProcessingOptions by lazy {
         object : PostProcessingOptions {
             override fun getProguardFiles(type: ProguardFileType): Collection<File> =
@@ -120,14 +107,21 @@ class OptimizationDslInfoImpl(
         }
     }
 
-    override fun gatherProguardFiles(type: ProguardFileType): Collection<File> {
-        val result: MutableList<File> = ArrayList(defaultConfig.getProguardFiles(type))
-        for (flavor in productFlavorList) {
-            result.addAll((flavor as com.android.build.gradle.internal.dsl.ProductFlavor).getProguardFiles(type))
+    override fun gatherProguardFiles(
+        type: ProguardFileType,
+        into: MutableList<RegularFile>
+    ) {
+        val projectDir = services.projectInfo.projectDirectory
+        fun addToList(itemsToAdd: Collection<File>) {
+            into.addAll(itemsToAdd.map { projectDir.file(it.absolutePath)})
         }
-        result.addAll(postProcessingOptions.getProguardFiles(type))
-        if (type == ProguardFileType.EXPLICIT) result.addAll(keepRuleFiles)
-        return result
+
+        addToList(defaultConfig.getProguardFiles(type))
+        for (flavor in productFlavorList) {
+            addToList((flavor as com.android.build.gradle.internal.dsl.ProductFlavor).getProguardFiles(type))
+        }
+        addToList(postProcessingOptions.getProguardFiles(type))
+        if (type == ProguardFileType.EXPLICIT) addToList(keepRuleFiles)
     }
 
     private fun BaseConfig.getProguardFiles(type: ProguardFileType): Collection<File> = when (type) {

@@ -95,11 +95,11 @@ abstract class GenerateBuildConfig : NonIncrementalTask() {
 
     @get:Input
     @get:Optional
-    abstract val versionName: Property<String?>
+    abstract val versionName: Property<String>
 
     @get:Input
     @get:Optional
-    abstract val versionCode: Property<Int?>
+    abstract val versionCode: Property<Int>
 
     // just to know whether to set versionCode/Name in the build config field.
     // For apps we want to put it whether the info is there or not because it might be set

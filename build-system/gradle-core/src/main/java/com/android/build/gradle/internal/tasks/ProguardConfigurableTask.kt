@@ -697,7 +697,7 @@ abstract class ProguardConfigurableTask(
             )
             task.configurationFiles.apply {
                 // R8's optimized shrinking does not need AAPT2-generated Proguard rules
-                if ((creationConfig as? ApplicationCreationConfig)?.runOptimizedShrinkingWithR8() != true) {
+                if ((creationConfig as? ApplicationCreationConfig)?.runOptimizedShrinking() != true) {
                     if (task.shrinkingWithDynamicFeatures.get()) {
                         from(creationConfig.artifacts.get(InternalArtifactType.MERGED_AAPT_PROGUARD_FILE))
                     } else {

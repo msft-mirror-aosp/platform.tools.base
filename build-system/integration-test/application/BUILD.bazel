@@ -105,7 +105,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/jacocoOnlySubprojectBuildScriptDependency",
     "//tools/base/build-system/integration-test:test-projects/jacocoWithButterKnife",
     "//tools/base/build-system/integration-test:test-projects/jarjarIntegration",
-    "//tools/base/build-system/integration-test:test-projects/jarjarIntegrationLib",
     "//tools/base/build-system/integration-test:test-projects/jetifier",
     "//tools/base/build-system/integration-test:test-projects/kotlinApp",
     "//tools/base/build-system/integration-test:test-projects/kotlinAppWithKsp",
@@ -174,7 +173,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/testFixturesKotlinApp",
     "//tools/base/build-system/integration-test:test-projects/testWithDep",
     "//tools/base/build-system/integration-test:test-projects/tictactoe",
-    "//tools/base/build-system/integration-test:test-projects/transformApiTest",
     "//tools/base/build-system/integration-test:test-projects/unitTesting",
     "//tools/base/build-system/integration-test:test-projects/unitTestingAndroidResources",
     "//tools/base/build-system/integration-test:test-projects/unitTestingBuildTypes",
@@ -755,7 +753,10 @@ gradle_integration_test(
     maven_repos = PRIVACY_SANDBOX_MAVEN_REPOS,
     resources = glob(["src/test/resources/**"]),
     shard_count = 5,
-    tags = ["noci:studio-win"],
+    tags = [
+        "manual",  # b/438949791
+        "noci:studio-win",
+    ],
     deps = TEST_DEPS,
 )
 
@@ -769,6 +770,9 @@ single_gradle_integration_test(
     ],
     maven_repos = PRIVACY_SANDBOX_MAVEN_REPOS,
     resources = glob(["src/test/resources/**"]),
+    tags = [
+        "manual",  # b/438949791
+    ],
     deps = TEST_DEPS,
 )
 
@@ -786,6 +790,9 @@ gradle_integration_test(
     maven_repos = PRIVACY_SANDBOX_MAVEN_REPOS,
     resources = glob(["src/test/resources/**"]),
     shard_count = 2,
+    tags = [
+        "manual",  # b/438949791
+    ],
     deps = TEST_DEPS,
 )
 

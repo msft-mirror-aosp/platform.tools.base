@@ -251,7 +251,7 @@
         interactions: {
           model   : "prt_poc"
           request : "gemini_pick_action_request"
-          response: "The current goal is to save the first post. The bookmark icon is available on the first post, so I will tap it."
+          response: "   "
         }
         artifacts: {
           key  : "annotated-screenshot-06.png"

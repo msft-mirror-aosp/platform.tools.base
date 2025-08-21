@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.getBuildService
+import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.gradle.Version
 import com.android.utils.appendCapitalized
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -354,10 +355,11 @@ fun syncAgpAndKgpSources(
     projectServices: ProjectServices,
     androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
 ) {
-    // Create Kotlin source sets if built-in Kotlin plugin is applied
+    // Create Kotlin source sets if built-in Kotlin support is available
     // (similar to what `kotlin-android` plugin does at
     // org.jetbrains.kotlin.gradle.plugin.sources.android.KotlinAndroidSourceSetFactory)
-    if (projectServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)) {
+    if (projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)
+        || projectServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)) {
         val kotlinSourceSetContainer =
             projectServices.builtInKotlinServices.kotlinAndroidProjectExtension.sourceSets
         androidSourceSets.forEach {

@@ -92,10 +92,6 @@ abstract class DependencyResourcesComputer {
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val microApkResDirectory: ConfigurableFileCollection
-
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val extraGeneratedResFolders: ConfigurableFileCollection
 
     @get:InputFiles
@@ -177,7 +173,6 @@ abstract class DependencyResourcesComputer {
 
         generatedResFolders.addAll(generatedResOutputDir.files)
         generatedResFolders.addAll(extraGeneratedResFolders.files)
-        generatedResFolders.addAll(microApkResDirectory.files)
         if (generatedLocaleConfig.isPresent) {
             generatedResFolders.add(generatedLocaleConfig.get().asFile)
         }
@@ -217,7 +212,6 @@ abstract class DependencyResourcesComputer {
 
     fun initFromVariantScope(
         creationConfig: ComponentCreationConfig,
-        microApkResDir: FileCollection,
         libraryDependencies: ArtifactCollection?,
     ) {
         val projectOptions = creationConfig.services.projectOptions
@@ -289,10 +283,6 @@ abstract class DependencyResourcesComputer {
             )
         }
         generatedLocaleConfig.disallowChanges()
-
-        if (creationConfig.taskContainer.generateApkDataTask != null) {
-            microApkResDirectory.from(microApkResDir)
-        }
     }
 
     @VisibleForTesting

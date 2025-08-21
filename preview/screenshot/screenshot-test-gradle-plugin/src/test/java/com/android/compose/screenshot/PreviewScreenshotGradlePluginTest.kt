@@ -54,7 +54,7 @@ class PreviewScreenshotGradlePluginTest {
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     lateinit var mockAndroidPlugin: AndroidComponentsExtension<*, *, *>
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    lateinit var mockCommonExtension: CommonExtension<*, *, *, *, *, *>
+    lateinit var mockCommonExtension: CommonExtension
 
     @Before
     fun setupMocks() {

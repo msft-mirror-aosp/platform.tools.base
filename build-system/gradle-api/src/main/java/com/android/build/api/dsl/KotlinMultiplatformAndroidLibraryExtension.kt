@@ -168,26 +168,6 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * Specifies options for doing variant selection for external Android dependencies
      * based on build types and product flavors
      *
-     * For more information about the properties you can configure in this block, see [DependencyVariantSelection].
-     */
-    @get:Incubating
-    @Deprecated("Use localDependencySelection instead. This API will be removed in AGP 9.0")
-    val dependencyVariantSelection: DependencyVariantSelection
-
-    /**
-     * Specifies options for doing variant selection for external Android dependencies
-     * based on build types and product flavors
-     *
-     * For more information about the properties you can configure in this block, see [DependencyVariantSelection].
-     */
-    @Incubating
-    @Deprecated("Use localDependencySelection instead. This API will be removed in AGP 9.0")
-    fun dependencyVariantSelection(action: DependencyVariantSelection.() -> Unit)
-
-    /**
-     * Specifies options for doing variant selection for external Android dependencies
-     * based on build types and product flavors
-     *
      * Note that this only affects dependency selection within this
      * gradle project and does not affect the resolution of dependencies in other Gradle
      * projects that depend on this project or the artifacts published from this project
@@ -301,11 +281,6 @@ interface KotlinMultiplatformAndroidLibraryExtension {
         action: KotlinMultiplatformAndroidHostTest.() -> Unit
     )
 
-    @Deprecated("Use withHostTest. This api will be removed in AGP 9.0")
-    fun withAndroidTestOnJvm(
-        action: KotlinMultiplatformAndroidHostTest.() -> Unit
-    )
-
     /**
      * Creates and configures a compilation for tests that run on the JVM (previously referred to as
      * unit tests). Invoking this method will create a [KotlinMultiplatformAndroidHostTestCompilation]
@@ -339,12 +314,6 @@ interface KotlinMultiplatformAndroidLibraryExtension {
         action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit
     ): HasConfigurableValue<KotlinMultiplatformAndroidHostTest>
 
-    @Deprecated("Use withHostTestBuilder. This api will be removed in AGP 9.0")
-    @Incubating
-    fun withAndroidTestOnJvmBuilder(
-        action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit
-    ): HasConfigurableValue<KotlinMultiplatformAndroidHostTest>
-
     /**
      * Creates and configures a compilation for tests that run on the device (previously referred to as
      * instrumented tests). Invoking this method will create a [KotlinMultiplatformAndroidDeviceTestCompilation]
@@ -368,11 +337,6 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * ```
      */
     fun withDeviceTest(
-        action: KotlinMultiplatformAndroidDeviceTest.() -> Unit
-    )
-
-    @Deprecated("Use withDeviceTest. This api will be removed in AGP 9.0")
-    fun withAndroidTestOnDevice(
         action: KotlinMultiplatformAndroidDeviceTest.() -> Unit
     )
 
@@ -406,12 +370,6 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * ```
      */
     fun withDeviceTestBuilder(
-        action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit
-    ): HasConfigurableValue<KotlinMultiplatformAndroidDeviceTest>
-
-    @Deprecated("Use withDeviceTestBuilder. This api will be removed in AGP 9.0")
-    @Incubating
-    fun withAndroidTestOnDeviceBuilder(
         action: KotlinMultiplatformAndroidCompilationBuilder.() -> Unit
     ): HasConfigurableValue<KotlinMultiplatformAndroidDeviceTest>
 

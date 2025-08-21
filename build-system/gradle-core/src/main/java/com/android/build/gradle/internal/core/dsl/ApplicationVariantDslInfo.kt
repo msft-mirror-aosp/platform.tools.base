@@ -55,8 +55,6 @@ interface ApplicationVariantDslInfo:
 
     val isWearAppUnbundled: Boolean?
 
-    val isEmbedMicroApp: Boolean
-
     val isProfileable: Boolean
 
     val generateLocaleConfig: Boolean

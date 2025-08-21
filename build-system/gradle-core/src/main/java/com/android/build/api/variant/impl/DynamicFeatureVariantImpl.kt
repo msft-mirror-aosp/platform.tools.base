@@ -188,10 +188,6 @@ open class DynamicFeatureVariantImpl @Inject constructor(
     override val targetSdkOverride: AndroidVersion?
         get() = variantBuilder.mutableTargetSdk?.sanitize()
 
-    // always false for this type
-    override val embedsMicroApp: Boolean
-        get() = false
-
     override val testOnlyApk: Boolean
         get() = isTestApk()
 

@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
 import com.android.builder.core.LibraryRequest
 import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
+import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
 abstract class DynamicFeatureExtension(
@@ -44,6 +45,11 @@ abstract class DynamicFeatureExtension(
     // the previous public API and not wanting to paramerterize that.
     override val buildTypes: NamedDomainObjectContainer<BuildType>
         get() = publicExtensionImpl.buildTypes as NamedDomainObjectContainer<BuildType>
+
+    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        action.execute(buildTypes)
+    }
+
     override val defaultConfig: DefaultConfig
         get() = publicExtensionImpl.defaultConfig as DefaultConfig
     override val productFlavors: NamedDomainObjectContainer<ProductFlavor>

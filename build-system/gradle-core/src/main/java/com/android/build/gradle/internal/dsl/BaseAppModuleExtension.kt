@@ -90,6 +90,10 @@ open class BaseAppModuleExtension(
     override val buildTypes: NamedDomainObjectContainer<out BuildType>
         get() = publicExtensionImpl.buildTypes as NamedDomainObjectContainer<BuildType>
 
+    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        action.execute(publicExtensionImpl.buildTypes as NamedDomainObjectContainer<BuildType>)
+    }
+
     override val defaultConfig: DefaultConfig
         get() = publicExtensionImpl.defaultConfig as DefaultConfig
 

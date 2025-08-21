@@ -19,8 +19,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.build.gradle.options.BooleanOption
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -29,12 +27,6 @@ class AppAndLibNoBuildConfigTest {
     val project: GradleTestProject = GradleTestProject.builder()
         .fromTestProject("applibtest")
         .create()
-
-    @Before
-    fun setUp() {
-        project.gradlePropertiesFile
-            .appendText("\n${BooleanOption.BUILD_FEATURE_BUILDCONFIG.propertyName}=false\n")
-    }
 
     @Test
     fun `ensure buildConfig is not in the APK`() {

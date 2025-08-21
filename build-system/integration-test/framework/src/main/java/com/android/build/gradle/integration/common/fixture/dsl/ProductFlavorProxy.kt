@@ -43,11 +43,6 @@ open class ProductFlavorProxy(
             dslRecorder.set("dimension", value)
         }
 
-    override fun setDimension(dimension: String?): Void? {
-        dslRecorder.set("dimension", dimension)
-        return null
-    }
-
     override val matchingFallbacks: MutableList<String>
         get() = ListProxy<String>(dslRecorder.createChainedRecorder("matchingFallbacks"))
 

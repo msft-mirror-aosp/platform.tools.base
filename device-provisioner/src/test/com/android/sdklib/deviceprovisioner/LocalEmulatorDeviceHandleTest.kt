@@ -18,6 +18,7 @@ package com.android.sdklib.deviceprovisioner
 import com.android.adblib.testing.FakeAdbLoggerFactory
 import com.android.adblib.utils.createChildScope
 import com.android.sdklib.internal.avd.AvdInfo
+import com.android.sdklib.internal.avd.BootMode
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
 import java.awt.Component
@@ -46,7 +47,7 @@ class LocalEmulatorDeviceHandleTest {
   fun activationTimeout() = runTest {
     val avdManager =
       object : StubAvdManager() {
-        override suspend fun startAvd(avdInfo: AvdInfo) {
+        override suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode) {
           delay(Long.MAX_VALUE)
         }
       }
@@ -89,14 +90,7 @@ open class StubAvdManager : LocalEmulatorProvisionerPlugin.AvdManager {
   override suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean =
     unsupportedOperation()
 
-  override suspend fun startAvd(avdInfo: AvdInfo): Unit = unsupportedOperation()
-
-  override suspend fun coldBootAvd(avdInfo: AvdInfo): Unit = unsupportedOperation()
-
-  override suspend fun bootAvdFromSnapshot(
-    avdInfo: AvdInfo,
-    snapshot: LocalEmulatorSnapshot,
-  ): Unit = unsupportedOperation()
+  override suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode): Unit = unsupportedOperation()
 
   override suspend fun stopAvd(avdInfo: AvdInfo): Unit = unsupportedOperation()
 

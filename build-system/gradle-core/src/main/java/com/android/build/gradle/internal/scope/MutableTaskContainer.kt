@@ -91,7 +91,6 @@ class MutableTaskContainer : TaskContainer {
     var bundleTask: TaskProvider<out Task>? = null
     lateinit var resourceGenTask: TaskProvider<out Task>
     lateinit var assetGenTask: TaskProvider<Task>
-    var microApkTask: TaskProvider<out Task>? = null
     var cxxConfigurationModel: CxxConfigurationModel? = null
     var packageSplitResourcesTask: TaskProvider<out Task>? = null
     var packageSplitAbiTask: TaskProvider<out Task>? = null

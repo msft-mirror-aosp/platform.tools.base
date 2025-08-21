@@ -18,9 +18,7 @@
 
 package com.android.build.api
 
-import com.android.build.api.annotations.ReplacedByIncubating
 import com.android.build.api.extension.DslExtensionTest
-import com.android.build.api.transform.SecondaryFileTest
 import com.google.common.base.Charsets
 import com.google.common.base.Splitter
 import com.google.common.io.Resources
@@ -29,7 +27,6 @@ import java.net.URL
 
 val nonApiClasses = listOf(
     DslExtensionTest::class,
-    SecondaryFileTest::class,
     AndroidPluginVersionTest::class,
     DeprecatedApiTest::class,
     DeprecatedApiUpdater::class,

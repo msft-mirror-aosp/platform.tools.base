@@ -38,7 +38,7 @@ class FakeGradleDirectoryProperty(private val directory: Directory?) : Directory
 
     override fun getOrElse(defaultValue: Directory): Directory = directory ?: defaultValue
 
-    override fun <S : Any?> map(transformer: Transformer<out S?, in Directory>): Provider<S> {
+    override fun <S : Any> map(transformer: Transformer<out S?, in Directory>): Provider<S> {
         TODO("Not yet implemented")
     }
 
@@ -46,7 +46,7 @@ class FakeGradleDirectoryProperty(private val directory: Directory?) : Directory
         TODO("Not yet implemented")
     }
 
-    override fun <S : Any?> flatMap(transformer: Transformer<out Provider<out S>?, in Directory>): Provider<S> {
+    override fun <S : Any> flatMap(transformer: Transformer<out Provider<out S>?, in Directory>): Provider<S> {
         TODO("Not yet implemented")
     }
 
@@ -62,7 +62,10 @@ class FakeGradleDirectoryProperty(private val directory: Directory?) : Directory
         TODO("Not yet implemented")
     }
 
-    override fun <U : Any?, R : Any?> zip(right: Provider<U>, combiner: BiFunction<in Directory, in U, out R?>): Provider<R> {
+    override fun <U : Any, R : Any> zip(
+        right: Provider<U>,
+        combiner: BiFunction<in Directory, in U, out R?>
+    ): Provider<R> {
         TODO("Not yet implemented")
     }
 

@@ -19,12 +19,8 @@ package com.android.build.gradle.internal.plugins;
 import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.dsl.ApplicationAndroidResources;
-import com.android.build.api.dsl.ApplicationBuildFeatures;
-import com.android.build.api.dsl.ApplicationBuildType;
 import com.android.build.api.dsl.ApplicationDefaultConfig;
 import com.android.build.api.dsl.ApplicationExtension;
-import com.android.build.api.dsl.ApplicationInstallation;
 import com.android.build.api.dsl.ApplicationProductFlavor;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.ApplicationAndroidComponentsExtensionImpl;
@@ -33,12 +29,10 @@ import com.android.build.api.variant.AndroidComponentsExtension;
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension;
 import com.android.build.api.variant.ApplicationVariant;
 import com.android.build.api.variant.ApplicationVariantBuilder;
-import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.component.ApplicationCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo;
 import com.android.build.gradle.internal.dsl.ApplicationExtensionImpl;
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension;
@@ -80,12 +74,6 @@ import javax.inject.Inject;
 /** Gradle plugin class for 'application' projects, applied on the base application module */
 public class AppPlugin
         extends AbstractAppPlugin<
-                ApplicationBuildFeatures,
-                ApplicationBuildType,
-                ApplicationDefaultConfig,
-                ApplicationProductFlavor,
-                ApplicationAndroidResources,
-                ApplicationInstallation,
                 com.android.build.api.dsl.ApplicationExtension,
                 ApplicationAndroidComponentsExtension,
                 ApplicationVariantBuilder,
@@ -120,14 +108,7 @@ public class AppPlugin
 
     @NonNull
     @Override
-    protected ExtensionData<
-                    ApplicationBuildFeatures,
-                    ApplicationBuildType,
-                    ApplicationDefaultConfig,
-                    ApplicationProductFlavor,
-                    ApplicationAndroidResources,
-                    ApplicationInstallation,
-                    ApplicationExtension>
+    protected ExtensionData<ApplicationExtension>
             createExtension(
                     @NonNull DslServices dslServices,
                     @NonNull

@@ -16,14 +16,6 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Incubating
-
-@Incubating
-@Deprecated("Use KotlinMultiplatformAndroidHostTestCompilation. This interface will be removed in AGP 9.0")
-interface KotlinMultiplatformAndroidTestOnJvmCompilation:
-    KotlinMultiplatformAndroidHostTest,
-    KotlinMultiplatformAndroidCompilation
-
 interface KotlinMultiplatformAndroidHostTestCompilation:
     KotlinMultiplatformAndroidHostTest,
     KotlinMultiplatformAndroidCompilation

@@ -25,22 +25,10 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 interface KotlinMultiplatformAndroidLibraryTarget:
-    KotlinMultiplatformAndroidTarget,
     KotlinTarget,
     KotlinMultiplatformAndroidLibraryExtension,
     HasConfigurableKotlinCompilerOptions<KotlinJvmCompilerOptions> {
 
-    override val compilations: NamedDomainObjectContainer<KotlinMultiplatformAndroidCompilation>
-
-    /**
-     * Enables compilation of java sources.
-     */
-    override fun withJava()
-}
-
-
-@Deprecated("Use KotlinMultiplatformAndroidLibraryTarget. This interface will be removed in AGP 9.0")
-interface KotlinMultiplatformAndroidTarget: KotlinTarget, KotlinMultiplatformAndroidLibraryExtension {
     override val compilations: NamedDomainObjectContainer<KotlinMultiplatformAndroidCompilation>
 
     /**

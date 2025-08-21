@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -33,7 +34,7 @@ class VulkanTest {
 
     @Test
     fun assembleDebug() {
-        project.executor().run("assembleDebug")
+        project.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false).run("assembleDebug")
 
         project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
             assertThat(apk).containsFile("lib/x86/libvktuts.so")

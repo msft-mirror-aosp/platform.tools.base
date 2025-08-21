@@ -1,0 +1,111 @@
+[
+  {
+    "type": "Friend",
+    "coordinates": {
+      "project": {
+        "buildName": ":",
+        "buildPath": ":",
+        "projectPath": ":kmpSecondLib",
+        "projectName": "kmpSecondLib"
+      },
+      "sourceSetName": "jvmMain"
+    },
+    "extras": {
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeFriendSourceDependencyResolver"
+    }
+  },
+  {
+    "type": "Friend",
+    "coordinates": {
+      "project": {
+        "buildName": ":",
+        "buildPath": ":",
+        "projectPath": ":kmpSecondLib",
+        "projectName": "kmpSecondLib"
+      },
+      "sourceSetName": "commonMain"
+    },
+    "extras": {
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeFriendSourceDependencyResolver"
+    }
+  },
+  {
+    "type": "Regular",
+    "coordinates": {
+      "buildName": ":",
+      "buildPath": ":",
+      "projectPath": ":kmpLibraryPlugin",
+      "projectName": "kmpLibraryPlugin"
+    },
+    "extras": {
+      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;artifactsClasspath": [
+        "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpLibraryPlugin/build/libs/kmpLibraryPlugin-jvm.jar"
+      ],
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kmpLibraryPlugin-jvm.jar (project :kmpLibraryPlugin)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{KOTLIN_VERSION_FOR_TESTS}/kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar"
+    ],
+    "coordinates": {
+      "group": "org.jetbrains.kotlin",
+      "module": "kotlin-stdlib",
+      "version": "{KOTLIN_VERSION_FOR_TESTS}",
+      "capabilities": [
+        {
+          "group": "org.jetbrains.kotlin",
+          "name": "kotlin-stdlib",
+          "version": "{KOTLIN_VERSION_FOR_TESTS}"
+        }
+      ],
+      "attributes": {
+        "artifactType": "jar",
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kotlin-stdlib-{KOTLIN_VERSION_FOR_TESTS}.jar (org.jetbrains.kotlin:kotlin-stdlib:{KOTLIN_VERSION_FOR_TESTS})",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
+    }
+  },
+  {
+    "binaryType": "KOTLIN_COMPILE",
+    "classpath": [
+      "{LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+    ],
+    "coordinates": {
+      "group": "org.jetbrains",
+      "module": "annotations",
+      "version": "13.0",
+      "capabilities": [
+        {
+          "group": "org.jetbrains",
+          "name": "annotations",
+          "version": "13.0"
+        }
+      ],
+      "attributes": {
+        "artifactType": "jar",
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.status": "release",
+        "org.gradle.usage": "java-api"
+      }
+    },
+    "extras": {
+      "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "annotations-13.0.jar (org.jetbrains:annotations:13.0)",
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
+      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
+        "{LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0-sources.jar"
+      ]
+    }
+  }
+]

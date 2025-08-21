@@ -1,0 +1,152 @@
+{
+  "targetName": "android",
+  "compilations": [
+    {
+      "compilationName": "main",
+      "defaultSourceSet": {
+        "sourceSetName": "androidMain",
+        "extras": {
+          "com.android.build.gradle.internal.ide.kmp.KotlinAndroidSourceSetMarker": {},
+          "org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage": "org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@{HASH_CODE}",
+          "com.android.kotlin.multiplatform.models.AndroidSourceSet;android-source-set-model": {
+            "sourceProvider": {
+              "manifestFile": {
+                "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpSecondLib/src/androidMain/AndroidManifest.xml"
+              }
+            }
+          }
+        }
+      },
+      "allSourceSets": [
+        {
+          "sourceSetName": "androidMain"
+        },
+        {
+          "sourceSetName": "commonMain"
+        }
+      ],
+      "extras": {
+        "org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage": "org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@{HASH_CODE}",
+        "org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier": {},
+        "com.android.kotlin.multiplatform.models.AndroidCompilation;android-compilation-model": {
+          "type": "MAIN",
+          "mainInfo": {
+            "namespace": "com.example.kmpsecondlib",
+            "compileSdkTarget": "DEFAULT_COMPILE_SDK_VERSION",
+            "minSdkVersion": {
+              "apiLevel": 22,
+              "codename": ""
+            },
+            "proguardFiles": [
+              {
+                "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpSecondLib/build/intermediates/default_proguard_files/global/proguard-android.txt-{AGP_Version}"
+              }
+            ],
+            "consumerProguardFiles": [],
+            "minificationEnabled": false
+          },
+          "defaultSourceSetName": "androidMain",
+          "assembleTaskName": "assembleAndroidMain",
+          "kotlinCompileTaskName": "compileAndroidMain"
+        }
+      }
+    }
+  ],
+  "extras": {
+    "org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage": "org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@{HASH_CODE}",
+    "com.android.kotlin.multiplatform.models.AndroidTarget;android-target-model": {
+      "agpVersion": "{AGP_Version}",
+      "projectPath": ":kmpSecondLib",
+      "buildDir": {
+        "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpSecondLib/build"
+      },
+      "bootClasspath": [
+        {
+          "absolutePath": "{ANDROID_SDK}/platforms/android-{COMPILE_SDK_VERSION}/android.jar"
+        }
+      ],
+      "testInfo": {
+        "animationsDisabled": false,
+        "additionalRuntimeApks": [],
+        "instrumentedTestTaskName": ""
+      },
+      "flags": {
+        "booleanFlagValues": [
+          {
+            "flag": "APPLICATION_R_CLASS_CONSTANT_IDS",
+            "value": false
+          },
+          {
+            "flag": "TEST_R_CLASS_CONSTANT_IDS",
+            "value": false
+          },
+          {
+            "flag": "TRANSITIVE_R_CLASS",
+            "value": false
+          },
+          {
+            "flag": "JETPACK_COMPOSE",
+            "value": false
+          },
+          {
+            "flag": "ML_MODEL_BINDING",
+            "value": false
+          },
+          {
+            "flag": "UNIFIED_TEST_PLATFORM",
+            "value": true
+          },
+          {
+            "flag": "USE_ANDROID_X",
+            "value": true
+          },
+          {
+            "flag": "ENABLE_VCS_INFO",
+            "value": false
+          },
+          {
+            "flag": "BUILD_FEATURE_ANDROID_RESOURCES",
+            "value": false
+          },
+          {
+            "flag": "EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS",
+            "value": false
+          },
+          {
+            "flag": "ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT",
+            "value": false
+          },
+          {
+            "flag": "DATA_BINDING_ENABLED",
+            "value": false
+          },
+          {
+            "flag": "GENERATE_MANIFEST_CLASS",
+            "value": false
+          },
+          {
+            "flag": "OLD_VARIANT_API_IN_USE",
+            "value": false
+          }
+        ]
+      },
+      "lintChecksJars": [],
+      "isCoreLibraryDesugaringEnabled": false,
+      "desugarLibConfig": [],
+      "groupId": "Kotlin Multiplatform.",
+      "buildToolsVersion": "DEFAULT_BUILD_TOOLS_REVISION",
+      "desugaredMethodsFiles": [
+        {
+          "absolutePath": "{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt"
+        }
+      ],
+      "rootBuildId": {
+        "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}"
+      },
+      "buildId": {
+        "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}"
+      },
+      "withJava": false
+    }
+  }
+}

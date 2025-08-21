@@ -54,7 +54,7 @@ interface VariantServices : BaseServices {
      * The property will be marked as [Property.finalizeValueOnRead], and will be locked
      * with [Property.disallowChanges] after the variant API(s) have run.
      */
-    fun <T> propertyOf(type: Class<T>, value: T): Property<T>
+    fun <T : Any> propertyOf(type: Class<T>, value: T): Property<T>
 
     /**
      * Creates a new property.
@@ -68,7 +68,7 @@ interface VariantServices : BaseServices {
      * The property will be marked as [Property.finalizeValueOnRead], and will be locked
      * with [Property.disallowChanges] after the variant API(s) have run.
      */
-    fun <T> propertyOf(type: Class<T>, value: Provider<T>): Property<T>
+    fun <T : Any> propertyOf(type: Class<T>, value: Provider<T>): Property<T>
 
     /**
      * Creates a new property.
@@ -82,7 +82,7 @@ interface VariantServices : BaseServices {
      * The property will be marked as [Property.finalizeValueOnRead], and will be locked
      * with [Property.disallowChanges] after the variant API(s) have run.
      */
-    fun <T> propertyOf(type: Class<T>, value: () -> T): Property<T>
+    fun <T : Any> propertyOf(type: Class<T>, value: () -> T): Property<T>
 
     /**
      * Creates a new property.
@@ -96,7 +96,7 @@ interface VariantServices : BaseServices {
      * The property will be marked as [Property.finalizeValueOnRead], and will be locked
      * with [Property.disallowChanges] after the variant API(s) have run.
      */
-    fun <T> propertyOf(type: Class<T>, value: Callable<T>): Property<T>
+    fun <T : Any> propertyOf(type: Class<T>, value: Callable<T>): Property<T>
 
     /**
      * Creates a new [ListProperty].
@@ -115,7 +115,7 @@ interface VariantServices : BaseServices {
      * [disallowUnsafeRead] should be set to true always, unless we need this for backward
      * compatibility. Do not set it to false for new code.
      */
-    fun <T> listPropertyOf(
+    fun <T : Any> listPropertyOf(
         type: Class<T>,
         value: Collection<T>,
         disallowUnsafeRead: Boolean = true,
@@ -129,7 +129,7 @@ interface VariantServices : BaseServices {
      * The [ListProperty] will be marked as [Property.finalizeValueOnRead], and will be locked
      * with [Property.disallowChanges] after the variant API(s) have run.
      */
-    fun <T> listPropertyOf(
+    fun <T : Any> listPropertyOf(
         type: Class<T>,
         fillAction: (ListProperty<T>) -> Unit,
     ): ListProperty<T>
@@ -145,7 +145,7 @@ interface VariantServices : BaseServices {
      * The [SetProperty] will be marked as [Property.finalizeValueOnRead], and will be locked
      * with [Property.disallowChanges] after the variant API(s) have run.
      */
-    fun <T> setPropertyOf(type: Class<T>, value: Callable<Collection<T>>): SetProperty<T>
+    fun <T : Any> setPropertyOf(type: Class<T>, value: Callable<Collection<T>>): SetProperty<T>
 
     /**
      * Creates a new [SetProperty].
@@ -161,7 +161,7 @@ interface VariantServices : BaseServices {
      * [disallowUnsafeRead] should be set to true always, unless we need this for backward
      * compatibility. Do not set it to false for new code.
      */
-    fun <T> setPropertyOf(
+    fun <T : Any> setPropertyOf(
         type: Class<T>,
         value: Collection<T>,
         disallowUnsafeRead: Boolean = true,
@@ -178,7 +178,7 @@ interface VariantServices : BaseServices {
      * The [MapProperty] will be marked as [Property.finalizeValueOnRead], and will be locked
      * with [Property.disallowChanges] after the variant API(s) have run.
      */
-    fun <K, V> mapPropertyOf(keyType: Class<K>, valueType: Class<V>, value: Map<K, V>, disallowUnsafeRead: Boolean = true): MapProperty<K, V>
+    fun <K : Any, V : Any> mapPropertyOf(keyType: Class<K>, valueType: Class<V>, value: Map<K, V>, disallowUnsafeRead: Boolean = true): MapProperty<K, V>
 
     /**
      * Creates a new property that is backing an old API returning T.
@@ -192,7 +192,7 @@ interface VariantServices : BaseServices {
      * The property will be locked with [Property.disallowChanges] after the variant API(s) have
      * run.
      */
-    fun <T> newPropertyBackingDeprecatedApi(type: Class<T>, value: T): Property<T>
+    fun <T : Any> newPropertyBackingDeprecatedApi(type: Class<T>, value: T): Property<T>
 
     /**
      * Creates a new property that is backing an old API returning T.
@@ -206,7 +206,7 @@ interface VariantServices : BaseServices {
      * The property will be locked with [Property.disallowChanges] after the variant API(s) have
      * run.
      */
-    fun <T> newPropertyBackingDeprecatedApi(type: Class<T>, value: Callable<T>): Property<T>
+    fun <T : Any> newPropertyBackingDeprecatedApi(type: Class<T>, value: Callable<T>): Property<T>
 
     /**
      * Creates a new property that is backing an old API returning T.
@@ -220,7 +220,7 @@ interface VariantServices : BaseServices {
      * The property will be locked with [Property.disallowChanges] after the variant API(s) have
      * run.
      */
-    fun <T> newPropertyBackingDeprecatedApi(type: Class<T>, value: Provider<T>): Property<T>
+    fun <T : Any> newPropertyBackingDeprecatedApi(type: Class<T>, value: Provider<T>): Property<T>
 
 
     /**
@@ -235,7 +235,7 @@ interface VariantServices : BaseServices {
      * The property will be locked with [Property.disallowChanges] after the variant API(s) have
      * run.
      */
-    fun <T> newProviderBackingDeprecatedApi(type: Class<T>, value: Provider<T>): Provider<T>
+    fun <T : Any> newProviderBackingDeprecatedApi(type: Class<T>, value: Provider<T>): Provider<T>
 
     /**
      * Creates a memoized Provider around the given provider
@@ -246,7 +246,7 @@ interface VariantServices : BaseServices {
      * [disallowUnsafeRead] should be set to true always, unless we need this for backward
      * compatibility. Do not set it to false for new code.
      */
-    fun <T> providerOf(
+    fun <T : Any> providerOf(
         type: Class<T>,
         value: Provider<T>,
         id: String = "",
@@ -259,7 +259,7 @@ interface VariantServices : BaseServices {
      * During configuration the property will be marked as [Property.disallowUnsafeRead] to disallow
      * unsafe reads (which will also finalize the value on read).
      */
-    fun <T> setProviderOf(type: Class<T>, value: Provider<out Iterable<T>?>): Provider<Set<T>?>
+    fun <T> setProviderOf(type: Class<T>, value: Provider<out Iterable<T>>): Provider<Set<T>>
 
     /**
      * Creates a memoized [Provider] of [Set] around the provided [Iterable] of values.
@@ -267,9 +267,9 @@ interface VariantServices : BaseServices {
      * During configuration the property will be marked as [Property.disallowUnsafeRead] to disallow
      * unsafe reads (which will also finalize the value on read).
      */
-    fun <T> setProviderOf(type: Class<T>, value: Iterable<T>?): Provider<Set<T>?>
+    fun <T> setProviderOf(type: Class<T>, value: Iterable<T>?): Provider<Set<T>>
 
-    fun <T> provider(callable: Callable<T>): Provider<T>
+    fun <T : Any> provider(callable: Callable<T?>): Provider<T>
 
     fun toRegularFileProvider(file: File): Provider<RegularFile>
 
@@ -286,7 +286,7 @@ interface VariantServices : BaseServices {
     fun directoryProperty(): DirectoryProperty
     fun fileTree(): ConfigurableFileTree
 
-    fun <T> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>): NamedDomainObjectContainer<T>
+    fun <T : Any> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>): NamedDomainObjectContainer<T>
 
     fun lockProperties()
 
@@ -299,5 +299,5 @@ interface VariantServices : BaseServices {
      * Creates a new [ListProperty] of [T] which is not protected and will not be automatically
      * locked.
      */
-    fun <T> newListPropertyForInternalUse(type: Class<T>): ListProperty<T>
+    fun <T : Any> newListPropertyForInternalUse(type: Class<T>): ListProperty<T>
 }

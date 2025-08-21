@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -28,18 +29,9 @@ import com.android.build.gradle.internal.fixtures.FakeObjectFactory;
 import com.android.builder.core.BuilderConstants;
 import com.android.ide.common.rendering.api.ResourceNamespace;
 import com.android.ide.common.resources.ResourceSet;
+
 import com.google.common.collect.Lists;
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.component.ComponentArtifactIdentifier;
@@ -55,6 +47,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class DependencyResourcesComputerTest {
 
@@ -161,22 +165,6 @@ public class DependencyResourcesComputerTest {
     }
 
     @Test
-    public void singleSetWithMicroApkRes() throws Exception {
-        File file = temporaryFolder.newFolder("src", "main");
-        ResourceSet mainSet =
-                createResourceSet(folderSets, BuilderConstants.MAIN, file);
-        ResourceSet generatedSet = createResourceSet(folderSets, BuilderConstants.GENERATED);
-
-        File microFile = temporaryFolder.newFolder("micro");
-        computer.getMicroApkResDirectory().from(microFile);
-        generatedSet.addSource(microFile);
-
-        assertThat(computer.compute(null, defaultEmptyProvider))
-                .containsExactly(mainSet, generatedSet);
-        assertThat(generatedSet.getSourceFiles()).containsExactly(microFile);
-    }
-
-    @Test
     public void singleSetWithExtraRes() throws Exception {
         File file = temporaryFolder.newFolder("src", "main");
         ResourceSet mainSet =
@@ -245,17 +233,13 @@ public class DependencyResourcesComputerTest {
         computer.getExtraGeneratedResFolders().from(extraFile);
         generatedSet.addSource(extraFile);
 
-        File microFile = temporaryFolder.newFolder("micro");
-        computer.getMicroApkResDirectory().from(microFile);
-        generatedSet.addSource(microFile);
 
         assertThat(computer.getLibraries().get().getArtifactFiles())
                 .containsExactly(libFile, libFile2);
         assertThat(computer.compute(null, renderscriptResProvider))
                 .containsExactly(librarySet2, librarySet, mainSet, debugSet, generatedSet)
                 .inOrder();
-        assertThat(generatedSet.getSourceFiles())
-                .containsExactly(rsFile, genFile, extraFile, microFile);
+        assertThat(generatedSet.getSourceFiles()).containsExactly(rsFile, genFile, extraFile);
         assertThat(computer.getLibraries().get().getArtifactFiles())
                 .containsExactly(libFile, libFile2);
     }

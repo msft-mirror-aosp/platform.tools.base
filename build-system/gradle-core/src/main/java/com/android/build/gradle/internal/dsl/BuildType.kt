@@ -84,7 +84,6 @@ abstract class BuildType @Inject constructor(
     @WithLazyInitialization
     fun lazyInit() {
         renderscriptOptimLevel = 3
-        isEmbedMicroApp = true
         enableUnitTestCoverage = dslServices.projectInfo.hasPlugin(JacocoPlugin.PLUGIN_EXTENSION_NAME)
     }
 
@@ -212,7 +211,6 @@ abstract class BuildType @Inject constructor(
     fun init() {
         if (BuilderConstants.DEBUG == name) {
             setDebuggable(true)
-            isEmbedMicroApp = false
             isCrunchPngsDefault = false
         }
     }
@@ -240,8 +238,6 @@ abstract class BuildType @Inject constructor(
     override fun _internal_getSigingConfig(): ApkSigningConfig? {
         return signingConfig
     }
-
-    abstract override var isEmbedMicroApp: Boolean
 
     override fun getIsDefault(): Property<Boolean> {
         return _isDefaultProperty

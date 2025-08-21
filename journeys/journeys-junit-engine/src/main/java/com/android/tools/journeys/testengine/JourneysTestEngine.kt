@@ -16,101 +16,84 @@
 
 package com.android.tools.journeys.testengine
 
-import androidx.test.tools.crawler.output.Crawl
-import com.android.tools.journeys.testengine.descriptor.JourneyFileDescriptor
-import com.android.tools.journeys.testengine.output.CrawlProcessingState
-import com.android.tools.journeys.testengine.output.ProgressReporter
+import com.android.tools.journeys.testengine.resolver.DeviceSelectorResolver
 import com.android.tools.journeys.testengine.resolver.JourneysFileSelectorResolver
 import com.android.tools.journeys.testengine.robo.Adb
 import com.android.tools.journeys.testengine.robo.ChannelProviderFactory
 import com.android.tools.journeys.testengine.robo.Proxy
-import com.android.tools.journeys.testengine.robo.RoboConfigConstants
-import com.google.cloud.test.appcrawler.proto.Artifact
 import org.junit.platform.engine.EngineDiscoveryRequest
+import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.ExecutionRequest
 import org.junit.platform.engine.TestDescriptor
-import org.junit.platform.engine.TestEngine
-import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.reporting.ReportEntry
+import org.junit.platform.engine.support.config.PrefixedConfigurationParameters
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import org.junit.platform.engine.support.discovery.EngineDiscoveryRequestResolver
-import java.nio.file.StandardOpenOption
+import org.junit.platform.engine.support.hierarchical.ForkJoinPoolHierarchicalTestExecutorService
+import org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine
+import org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutorService
 import java.util.ServiceLoader
-import kotlin.io.path.Path
-import kotlin.io.path.outputStream
 
-// TODO(saxenaankita): Update the engine to HierarchicalTestEngine, support multiple devices and improve error handling.
-class JourneysTestEngine : TestEngine {
+/**
+ * Journeys Test Engine for JUnit Platform.
+ */
+class JourneysTestEngine : HierarchicalTestEngine<JourneysExecutionContext>() {
 
     private val proxy: Proxy by lazy {
         val factory = ServiceLoader.load(ChannelProviderFactory::class.java).firstOrNull()
             ?: error("No ChannelProviderFactory implementation found on the classpath.")
         Proxy(
-            adb = Adb(
-                JourneysTestEngineInput.ProxyInput.adbPath.absolutePath,
-                JourneysTestEngineInput.testDeviceId
-            ),
+            Adb(JourneysTestEngineInput.ProxyInput.adbPath.absolutePath),
             JourneysTestEngineInput.ProxyInput.crawlerApkPath.absolutePath,
             JourneysTestEngineInput.ProxyInput.applicationId,
             JourneysTestEngineInput.ProxyInput.appApkPath.absolutePath,
             JourneysTestEngineInput.ProxyInput.accessTokenPath,
-            channelProvider = factory.createChannelProvider()
+            factory.createChannelProvider()
         )
     }
 
+    /**
+     * Returns the unique ID of this test engine.
+     */
     override fun getId(): String = "journeys-test-engine"
 
     override fun discover(request: EngineDiscoveryRequest, id: UniqueId): TestDescriptor {
         val engineDescriptor = EngineDescriptor(id, "Journeys Test Engine")
-
         EngineDiscoveryRequestResolver.builder<EngineDescriptor>()
+            .addSelectorResolver(DeviceSelectorResolver())
             .addSelectorResolver(JourneysFileSelectorResolver())
             .addTestDescriptorVisitor { _ ->
                 TestDescriptor.Visitor { it.prune() }
             }
             .build()
             .resolve(request, engineDescriptor)
-
         return engineDescriptor
     }
 
-    override fun execute(request: ExecutionRequest) {
-        val listener = request.engineExecutionListener
-        request.rootTestDescriptor.children.filterIsInstance<JourneyFileDescriptor>().forEach {
-            try {
-                val journeyFileName = it.getJourneyFileName()
-                val journeyPath =
-                    Path(
-                        JourneysTestEngineInput.journeysInputDir.absolutePath,
-                        journeyFileName
-                    )
-                val outputPath =
-                    Path(
-                        JourneysTestEngineInput.resultsDir.absolutePath,
-                        JourneysTestEngineInput.testDeviceId,
-                        journeyFileName.removeSuffix(".xml")
-                    )
-                outputPath.toFile().mkdirs()
-
-                val crawlProcessingState = CrawlProcessingState(it)
-                val reporter = ProgressReporter(crawlProcessingState, listener, outputPath)
-                val artifactProcessor = { artifact: Artifact ->
-                    val hostPath = outputPath.resolve(artifact.name)
-                    hostPath.outputStream(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-                        .use(artifact.data::writeTo)
-                    if (artifact.name == RoboConfigConstants.ROBO_RESULTS_FILE_NAME) {
-                        reporter.onCrawlReceived(Crawl.parseFrom(artifact.data))
+    override fun createExecutionContext(executionRequest: ExecutionRequest): JourneysExecutionContext {
+        val listener =
+            object : EngineExecutionListener by executionRequest.engineExecutionListener {
+                override fun reportingEntryPublished(
+                    testDescriptor: TestDescriptor,
+                    entry: ReportEntry
+                ) {
+                    entry.keyValuePairs.forEach { key, value ->
+                        executionRequest.engineExecutionListener.reportingEntryPublished(
+                            testDescriptor, entry
+                        )
+                        println("[additionalTestArtifacts]$key=$value")
                     }
                 }
-                listener.executionStarted(it)
-                println("[additionalTestArtifacts]deviceId=${JourneysTestEngineInput.testDeviceId}")
-                println("[additionalTestArtifacts]deviceDisplayName=${JourneysTestEngineInput.testDeviceDisplayName}")
-                proxy.executeJourney(journeyPath, artifactProcessor)
-                reporter.reportSkippedPrompts()
-                listener.executionFinished(it, TestExecutionResult.successful())
-            } catch (e: Exception) {
-                listener.executionFinished(it, TestExecutionResult.failed(e))
             }
-        }
+        return JourneysExecutionContext(listener, proxy)
+    }
+
+    override fun createExecutorService(request: ExecutionRequest): HierarchicalTestExecutorService? {
+        return ForkJoinPoolHierarchicalTestExecutorService(
+            PrefixedConfigurationParameters(
+                request.configurationParameters, "journeys.execution.parallel.config."
+            )
+        )
     }
 }

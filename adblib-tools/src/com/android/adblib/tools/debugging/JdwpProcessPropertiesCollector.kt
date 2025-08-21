@@ -19,6 +19,8 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.property
 import com.android.adblib.tools.AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_USE_APP_INFO_IF_AVAILABLE
+import com.android.adblib.tools.debugging.impl.AbstractJdwpProcessDelegateProvider
+import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorDelegate
 import com.android.adblib.tools.debugging.impl.JdwpProcessPropertiesCollectorImpl
 import kotlinx.coroutines.flow.StateFlow
 
@@ -48,7 +50,11 @@ interface JdwpProcessPropertiesCollector {
  */
 val JdwpProcess.jdwpPropertiesCollector: JdwpProcessPropertiesCollector
     get() = this.cache.getOrPut(jdwpProcessPropertiesCollectorKey) {
-        JdwpProcessPropertiesCollectorImpl(this)
+        if (this is AbstractJdwpProcessDelegateProvider) {
+            JdwpProcessPropertiesCollectorDelegate(this, this)
+        } else {
+            JdwpProcessPropertiesCollectorImpl(this)
+        }
     }
 
 private val jdwpProcessPropertiesCollectorKey =

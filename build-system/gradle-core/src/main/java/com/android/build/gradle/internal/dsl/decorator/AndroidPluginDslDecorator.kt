@@ -44,7 +44,6 @@ import com.android.build.api.dsl.ConsumerKeepRules
 import com.android.build.api.dsl.DataBinding
 import com.android.build.api.dsl.DensitySplit
 import com.android.build.api.dsl.DependenciesInfo
-import com.android.build.api.dsl.DependencyVariantSelection
 import com.android.build.api.dsl.DexPackaging
 import com.android.build.api.dsl.ExternalNativeBuild
 import com.android.build.api.dsl.FusedLibraryExtension
@@ -100,7 +99,6 @@ import com.android.build.gradle.internal.dsl.ConsumerKeepRulesImpl
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.dsl.DensitySplitOptions
 import com.android.build.gradle.internal.dsl.DependenciesInfoImpl
-import com.android.build.gradle.internal.dsl.DependencyVariantSelectionImpl
 import com.android.build.gradle.internal.dsl.DexPackagingImpl
 import com.android.build.gradle.internal.dsl.FusedLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.JniLibsPackagingImpl
@@ -189,7 +187,6 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
     SupportedPropertyType.Block(LibraryAndroidResources::class.java, LibraryAndroidResourcesImpl::class.java),
     SupportedPropertyType.Block(ConsumerKeepRules::class.java, ConsumerKeepRulesImpl::class.java),
     SupportedPropertyType.Block(LibraryKeepRules::class.java, LibraryKeepRulesImpl::class.java),
-    SupportedPropertyType.Block(DependencyVariantSelection::class.java, DependencyVariantSelectionImpl::class.java),
     SupportedPropertyType.Block(DependencySelection::class.java, DependencySelectionImpl::class.java),
     SupportedPropertyType.Block(MultiDexConfig::class.java, MultiDexConfigImpl::class.java),
     SupportedPropertyType.Block(VcsInfo::class.java, VcsInfoImpl::class.java),

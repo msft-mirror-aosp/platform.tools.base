@@ -22,8 +22,12 @@ import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.DynamicFeatureDefaultConfig
 import com.android.build.api.dsl.DynamicFeatureInstallation
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
+import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
+import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
+import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 import javax.inject.Inject
 
 abstract class DynamicFeatureExtensionImpl @Inject constructor(
@@ -35,11 +39,9 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
             SigningConfig>
 )  :
     TestedExtensionImpl<
-            DynamicFeatureBuildFeatures,
             DynamicFeatureBuildType,
             DynamicFeatureDefaultConfig,
             DynamicFeatureProductFlavor,
-            DynamicFeatureAndroidResources,
             DynamicFeatureInstallation>(
         dslServices,
         dslContainers
@@ -48,8 +50,62 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
 
     override val buildFeatures: DynamicFeatureBuildFeatures =
         dslServices.newInstance(DynamicFeatureBuildFeaturesImpl::class.java)
+
+    override fun buildFeatures(action: DynamicFeatureBuildFeatures.() -> Unit) {
+        action(buildFeatures)
+    }
+
+    override fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>) {
+        action.execute(buildFeatures)
+    }
+
+    override fun buildTypes(action: NamedDomainObjectContainer<DynamicFeatureBuildType>.() -> Unit) {
+        action(buildTypes)
+    }
+
+    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+    }
+
+    override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.debug(action: DynamicFeatureBuildType.() -> Unit) {
+        getByName("debug", action)
+    }
+
+    override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.release(action: DynamicFeatureBuildType.() -> Unit)  {
+        getByName("release", action)
+    }
+
+    override fun productFlavors(action: Action<NamedDomainObjectContainer<InternalProductFlavor>>) {
+        action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
+    }
+
+    override fun productFlavors(action: NamedDomainObjectContainer<DynamicFeatureProductFlavor>.() -> Unit) {
+        action.invoke(productFlavors)
+    }
+
+    override fun defaultConfig(action: Action<InternalDefaultConfig>) {
+        action.execute(defaultConfig as InternalDefaultConfig)
+    }
+
+    override fun defaultConfig(action: DynamicFeatureDefaultConfig.() -> Unit) {
+        action.invoke(defaultConfig)
+    }
+
     override val androidResources: DynamicFeatureAndroidResources
         = dslServices.newDecoratedInstance(DynamicFeatureAndroidResourcesImpl::class.java, dslServices)
+    override fun androidResources(action: DynamicFeatureAndroidResources.() -> Unit) {
+        action(androidResources)
+    }
+    override fun androidResources(action: Action<DynamicFeatureAndroidResources>) {
+        action.execute(androidResources)
+    }
     override val installation: DynamicFeatureInstallation
         = dslServices.newDecoratedInstance(DynamicFeatureInstallationImpl::class.java, dslServices)
+
+    override fun installation(action: DynamicFeatureInstallation.() -> Unit) {
+        action(installation)
+    }
+    override fun installation(action: Action<DynamicFeatureInstallation>) {
+        action.execute(installation)
+    }
 }

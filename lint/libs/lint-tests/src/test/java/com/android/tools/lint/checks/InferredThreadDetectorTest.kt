@@ -1621,6 +1621,92 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testLocalFunctionInsideClass() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+          import androidx.annotation.AnyThread
+
+          class Test {
+              @UiThread
+              fun main() {
+                  fun<X> id(x: X): X = x
+                  @UiThread fun ui() { id(42) }
+                  @WorkerThread fun work() { id("foo") }
+                  id(::ui)() //ok
+                  id(::work)() // ERROR
+              }
+          }
+          """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/Test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+                  id(::work)() // ERROR
+                  ~~~~~~~~~~~~
+          1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testSwappedArgumentByName() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.UiThread
+          import androidx.annotation.WorkerThread
+          import androidx.annotation.AnyThread
+
+          @UiThread fun ui() { }
+          @WorkerThread fun worker() { }
+
+          fun acceptCallbacks(used: () -> Unit, ignored: () -> Unit) = used()
+
+          @UiThread fun ok_unnamed() = acceptCallbacks(::ui, ::worker)
+
+          @UiThread fun ok_named_param() = acceptCallbacks(used = ::ui, ignored = ::worker)
+
+          @UiThread fun ok_named_param_swapped() = acceptCallbacks(ignored = ::worker, used = ::ui)
+
+          @UiThread fun error() = acceptCallbacks(::worker, ::ui)
+
+          @UiThread fun error_named_param() = acceptCallbacks(used = ::worker, ignored = ::ui)
+
+          @UiThread fun error_named_param_swapped() = acceptCallbacks(ignored = ::ui, used = ::worker)
+
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/test.kt:16: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          @UiThread fun error() = acceptCallbacks(::worker, ::ui)
+                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          src/test.kt:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          @UiThread fun error_named_param() = acceptCallbacks(used = ::worker, ignored = ::ui)
+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          src/test.kt:20: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+          @UiThread fun error_named_param_swapped() = acceptCallbacks(ignored = ::ui, used = ::worker)
+                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          3 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testOverloadedReceiver() {
     lint()
       .files(

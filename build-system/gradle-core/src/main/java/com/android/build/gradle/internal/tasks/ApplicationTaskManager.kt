@@ -135,8 +135,6 @@ class ApplicationTaskManager(
         taskFactory.register(AsarsToCompatSplitsTask.CreationAction(variant))
         createDynamicBundleTask(variantInfo)
 
-        handleMicroApp(variant)
-
         // This should match the implementation in [PackageAndroidArtifact] configure: vcsTaskRan
         if ((variant.includeVcsInfo == null && !variantInfo.variant.debuggable) ||
             variant.includeVcsInfo == true) {
@@ -174,43 +172,6 @@ class ApplicationTaskManager(
                     component.taskContainer.bundleTask = taskProvider
                 }
             }
-        )
-    }
-
-    /** Configure variantData to generate embedded wear application.  */
-    private fun handleMicroApp(appVariant: ApplicationCreationConfig) {
-        val componentType = appVariant.componentType
-        if (componentType.isBaseModule) {
-            val unbundledWearApp: Boolean? = appVariant.isWearAppUnbundled
-            if (unbundledWearApp == true) {
-                createGenerateMicroApkDataTask(appVariant)
-            }
-        }
-    }
-
-    /**
-     * Creates the task that will handle micro apk.
-     *
-     *
-     * New in 2.2, it now supports the unbundled mode, in which the apk is not bundled anymore,
-     * but we still have an XML resource packaged, and a custom entry in the manifest. This is
-     * triggered by passing a null [Configuration] object.
-     *
-     * @param appVariant the variant scope
-     * @param config an optional Configuration object. if non null, this will embed the micro apk,
-     * if null this will trigger the unbundled mode.
-     */
-    private fun createGenerateMicroApkDataTask(
-        appVariant: ApplicationCreationConfig,
-        config: FileCollection? = null
-    ) {
-        val generateMicroApkTask =
-            taskFactory.register(
-                GenerateApkDataTask.CreationAction(appVariant, config)
-            )
-        // the merge res task will need to run after this one.
-        appVariant.taskContainer.resourceGenTask.dependsOn(
-            generateMicroApkTask
         )
     }
 

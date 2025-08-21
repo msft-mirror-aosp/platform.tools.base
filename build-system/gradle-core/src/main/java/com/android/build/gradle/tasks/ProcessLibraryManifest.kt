@@ -207,15 +207,15 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
 
     @get:Optional
     @get:Input
-    abstract val minSdkVersion: Property<String?>
+    abstract val minSdkVersion: Property<String>
 
     @get:Optional
     @get:Input
-    abstract val targetSdkVersion: Property<String?>
+    abstract val targetSdkVersion: Property<String>
 
     @get:Optional
     @get:Input
-    abstract val maxSdkVersion: Property<Int?>
+    abstract val maxSdkVersion: Property<Int>
 
     @get:PathSensitive(PathSensitivity.NONE)
     @get:InputFiles // Use InputFiles rather than InputFile to allow the file not to exist
@@ -223,7 +223,7 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
 
     @get:Optional
     @get:Input
-    abstract val namespace: Property<String?>
+    abstract val namespace: Property<String>
 
     @get:Internal
     abstract val tmpDir: DirectoryProperty

@@ -42,6 +42,10 @@ class DataBindingWithDynamicFeaturesAppTest(useAndroidX: Boolean) {
             BooleanOption.USE_ANDROID_X.propertyName
                     + "=" + useAndroidX
         )
+
+        .addGradleProperties( // TODO(b/439806981): Remove this
+            "${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=true"
+        )
         // b/116109681 - Enforce unique package names disabled in this test due to test project
         // containing violation.
         .addGradleProperties(

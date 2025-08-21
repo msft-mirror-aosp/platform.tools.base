@@ -21,7 +21,6 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
-import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoReportTask
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
@@ -500,20 +499,26 @@ class AndroidTestTaskManager(
             creationConfig.mainVariant.componentType.isApk &&
             !creationConfig.mainVariant.componentType.isForTesting) {
 
-            val useDependencyConstraints = creationConfig
+            val disableAllConstraints = creationConfig
                 .services
-                .projectOptions[BooleanOption.USE_DEPENDENCY_CONSTRAINTS]
+                .projectOptions[BooleanOption.DISABLE_ALL_CONSTRAINTS]
 
+            val enableTask = creationConfig
+                .services
+                .projectOptions[BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS]
+
+            // Always register the prebuild task, regardless of whether it does anything as there
+            // are other places it's assumed to exist.
             val testPreBuildTask = taskFactory.register(
                 TestPreBuildTask.CreationAction(creationConfig)
             )
-            if (useDependencyConstraints) {
-                testPreBuildTask.configure { t: Task? -> t!!.enabled = false }
-            } else {
+            if (disableAllConstraints && enableTask) {
                 val classpathCheck = taskFactory.register(
                     AppClasspathCheckTask.CreationAction(creationConfig)
                 )
                 testPreBuildTask.dependsOn(classpathCheck)
+            } else {
+                testPreBuildTask.configure { t: Task? -> t!!.enabled = false }
             }
 
             return

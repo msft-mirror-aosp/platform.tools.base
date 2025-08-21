@@ -23,8 +23,6 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
-import com.google.common.truth.TruthJUnit.assume
-import org.gradle.util.GradleVersion
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -74,8 +72,6 @@ class KotlinMultiplatformModelSnapshotTest: BaseModelComparator {
 
     @Test
     fun testModels() {
-        assume().that(GradleVersion.current()).isLessThan(GradleVersion.version("9.0-milestone-1"))
-        // TODO significant snapshot differences
         KmpModelComparator(
             project = project,
             testClass = this,

@@ -66,8 +66,6 @@ https://issuetracker.google.com/328748349
   * com.android.build.api.dsl.LibraryKeepRules.getIgnoreFrom: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.LibraryKeepRules.getIgnoreFromAllExternalDependencies: boolean ()
   * com.android.build.api.dsl.LibraryKeepRules.setIgnoreFromAllExternalDependencies: void (boolean)
-https://issuetracker.google.com/328748351
-  * com.android.build.api.transform.Transform.applyToVariant: boolean (com.android.build.api.variant.VariantInfo)
 https://issuetracker.google.com/328748451
   * com.android.build.api.artifact.SingleArtifact$RUNTIME_SYMBOL_LIST extends com.android.build.api.artifact.SingleArtifact
 https://issuetracker.google.com/328748453
@@ -138,10 +136,6 @@ https://issuetracker.google.com/328748653
   * com.android.build.api.dsl.ExternalNativeBuildFlags.getExperimentalProperties: java.util.Map<java.lang.String, java.lang.Object> ()
   * com.android.build.api.dsl.ExternalNativeBuildFlags.getNdkBuild: com.android.build.api.dsl.NdkBuildFlags ()
   * com.android.build.api.dsl.ExternalNativeBuildFlags.ndkBuild: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.NdkBuildFlags, kotlin.Unit>)
-https://issuetracker.google.com/328748665
-  * com.android.build.api.dsl.DependencyVariantSelection
-  * com.android.build.api.dsl.DependencyVariantSelection.getBuildTypes: org.gradle.api.provider.ListProperty<java.lang.String> ()
-  * com.android.build.api.dsl.DependencyVariantSelection.getProductFlavors: org.gradle.api.provider.MapProperty<java.lang.String, java.util.List<java.lang.String>> ()
 https://issuetracker.google.com/328748669
   * com.android.build.api.variant.Component.getLifecycleTasks: com.android.build.api.variant.LifecycleTasks ()
 https://issuetracker.google.com/328748670
@@ -448,15 +442,9 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getEmulatorControl: com.android.build.api.dsl.EmulatorControl ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getMultidex: com.android.build.api.dsl.MultiDexConfig ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.multidex: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MultiDexConfig, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.dependencyVariantSelection: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DependencyVariantSelection, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getDependencyVariantSelection: com.android.build.api.dsl.DependencyVariantSelection ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getOptimization: com.android.build.api.dsl.KmpOptimization ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withAndroidTestOnDeviceBuilder: com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest> (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.withAndroidTestOnJvmBuilder: com.android.build.api.dsl.HasConfigurableValue<com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest> (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTargetKt.androidLibrary: void (org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnDeviceCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidTestOnJvmCompilation implements com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest, com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 https://issuetracker.google.com/328749318
   * com.android.build.api.variant.DeviceTestBuilder.getEnable: boolean ()
   * com.android.build.api.variant.DeviceTestBuilder.setEnable: void (boolean)
@@ -695,3 +683,6 @@ https://issuetracker.google.com/422422985
   * com.android.build.api.dsl.Optimization.getEnable: boolean ()
   * com.android.build.api.dsl.Optimization.getPackageScope: org.gradle.api.provider.SetProperty<java.lang.String> ()
   * com.android.build.api.dsl.Optimization.setEnable: void (boolean)
+https://issuetracker.google.com/438803230
+  * com.android.build.api.variant.CanProduceConsumerProguardFiles
+  * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()

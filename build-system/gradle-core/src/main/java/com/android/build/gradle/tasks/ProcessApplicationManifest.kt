@@ -44,7 +44,6 @@ import com.android.builder.dexing.DexingType
 import com.android.ide.common.resources.generateLocaleConfigManifestAttribute
 import com.android.manifmerger.ManifestMerger2
 import com.android.manifmerger.ManifestMerger2.Invoker
-import com.android.manifmerger.ManifestMerger2.WEAR_APP_SUB_MANIFEST
 import com.android.manifmerger.ManifestProvider
 import com.google.common.base.Preconditions
 import org.gradle.api.InvalidUserDataException
@@ -91,11 +90,6 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
     @get:InputFiles
     var dependencyFeatureNameArtifacts: FileCollection? = null
         private set
-
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:Optional
-    @get:InputFiles
-    abstract val microApkManifest: RegularFileProperty
 
     @get:Optional
     @get:Input
@@ -227,19 +221,6 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
                     )
             )
         }
-        if (microApkManifest.isPresent) {
-            // this is now always present if embedding is enabled, but it doesn't mean
-            // anything got embedded so the file may not run (the file path exists and is
-            // returned by the FC but the file doesn't exist.
-            val microManifest = microApkManifest.get().asFile
-            if (microManifest.isFile) {
-                providers.add(
-                        ManifestProviderImpl(
-                                microManifest, WEAR_APP_SUB_MANIFEST
-                        )
-                )
-            }
-        }
 
         if (featureManifests != null) {
             providers.addAll(computeProviders(featureManifests!!.artifacts))
@@ -272,15 +253,15 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
 
     @get:Optional
     @get:Input
-    abstract val minSdkVersion: Property<String?>
+    abstract val minSdkVersion: Property<String>
 
     @get:Optional
     @get:Input
-    abstract val targetSdkVersion: Property<String?>
+    abstract val targetSdkVersion: Property<String>
 
     @get:Optional
     @get:Input
-    abstract val maxSdkVersion: Property<Int?>
+    abstract val maxSdkVersion: Property<Int>
 
     @get:Input
     abstract val optionalFeatures: SetProperty<Invoker.Feature>
@@ -386,15 +367,6 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
                     ArtifactScope.ALL,
                     AndroidArtifacts.ArtifactType.MANIFEST
                 )
-            // optional manifest files too.
-            if (creationConfig.taskContainer.microApkTask != null
-                && creationConfig.embedsMicroApp
-            ) {
-                creationConfig.artifacts.setTaskInputToFinalProduct(
-                        InternalArtifactType.MICRO_APK_MANIFEST_FILE,
-                        task.microApkManifest
-                )
-            }
 
             task.applicationId.set(creationConfig.applicationId)
             task.applicationId.disallowChanges()

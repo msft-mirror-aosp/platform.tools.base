@@ -305,9 +305,9 @@ class PlatformConfiguratorTest {
             13,
             null)
         assertThat(platform).isEqualTo(14)
-        assertThat(logger.messageCount).isEqualTo(1)
-        assertThat(logger.warnings.single()).isEqualTo(
-            "C/C++: Platform version 13 is unsupported by this NDK, using 14 instead. Please change minSdk to at least 14 to avoid this warning.")
+        assertThat(logger.messageCount).isEqualTo(2)
+        assertThat(logger.errors.single()).isEqualTo(
+            "[CXX1110] Platform version 13 is unsupported by this NDK. Please change minSdk to at least 14 to avoid undefined behavior. To suppress this error, add android.ndk.suppressMinSdkVersionError=14 to the project's gradle.properties or set android.experimentalProperties[\"android.ndk.suppressMinSdkVersionError\"]=14 in the Gradle build file.")
     }
 
     @Test
@@ -344,9 +344,9 @@ class PlatformConfiguratorTest {
             13,
             null)
         assertThat(platform).isEqualTo(14)
-        assertThat(logger.messageCount).isEqualTo(1)
-        assertThat(logger.warnings.single()).isEqualTo(
-            "C/C++: Platform version 13 is unsupported by this NDK, using 14 instead. Please change minSdk to at least 14 to avoid this warning.")
+        assertThat(logger.messageCount).isEqualTo(2)
+        assertThat(logger.errors.single()).isEqualTo(
+            "[CXX1110] Platform version 13 is unsupported by this NDK. Please change minSdk to at least 14 to avoid undefined behavior. To suppress this error, add android.ndk.suppressMinSdkVersionError=14 to the project's gradle.properties or set android.experimentalProperties[\"android.ndk.suppressMinSdkVersionError\"]=14 in the Gradle build file.")
     }
 
     @Test
@@ -440,10 +440,10 @@ class PlatformConfiguratorTest {
             minSdkVersion = 13,
             codeName = null,
             expectedNdkR17MetaPlatforms())
-        assertThat(platform).isEqualTo(16)
+        assertThat(platform).isEqualTo(13)
         assertThat(logger.messageCount).isEqualTo(1)
-        assertThat(logger.warnings.single()).isEqualTo(
-            "C/C++: Platform version 13 is unsupported by this NDK, using 16 instead. Please change minSdk to at least 16 to avoid this warning.")
+        assertThat(logger.errors.single()).isEqualTo(
+            "[CXX1110] Platform version 13 is unsupported by this NDK. Please change minSdk to at least 16 to avoid undefined behavior. To suppress this error, add android.ndk.suppressMinSdkVersionError=16 to the project's gradle.properties or set android.experimentalProperties[\"android.ndk.suppressMinSdkVersionError\"]=16 in the Gradle build file.")
     }
 
     @Test

@@ -106,8 +106,6 @@ open class ApplicationVariantImpl @Inject constructor(
 
     override val applicationId: Property<String> = dslInfo.applicationId
 
-    override val embedsMicroApp: Boolean = dslInfo.isEmbedMicroApp
-
     override val dependenciesInfo: DependenciesInfo by lazy {
         DependenciesInfoImpl(
                 dependenciesInfoBuilder.includeInApk,

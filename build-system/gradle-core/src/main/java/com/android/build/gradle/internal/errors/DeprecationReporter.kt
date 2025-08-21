@@ -53,6 +53,8 @@ interface DeprecationReporter {
          */
         private val additionalMessage: String? = null
     ) {
+        VERSION_11_0(Version.VERSION_11_0),
+
         VERSION_10_0(Version.VERSION_10_0),
 
         VERSION_9_0(Version.VERSION_9_0),
@@ -116,6 +118,11 @@ interface DeprecationReporter {
                 "to this project's gradle.properties file."
         ),
 
+        EXCLUDE_LIBRARIES_FROM_CONSTRAINTS(
+            Version.VERSION_10_0,
+            "Following can be set instead to achieve a similar behaviour.\n" +
+            "    ${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=false"
+        )
         ;
 
         fun getDeprecationTargetMessage(): String {

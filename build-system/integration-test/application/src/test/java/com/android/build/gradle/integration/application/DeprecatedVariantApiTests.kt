@@ -19,24 +19,25 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.build.gradle.options.BooleanOption
-import com.google.common.truth.Truth
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class DeprecatedVariantApiTests {
     @get:Rule
     val project: GradleTestProject = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
         .create()
+
     @Before
     fun setUp() {
-        project.gradlePropertiesFile
-            .appendText("\n${BooleanOption.BUILD_FEATURE_BUILDCONFIG.propertyName}=true\n")
+        TestFileUtils.appendToFile(
+            project.buildFile,
+            "android.buildFeatures.buildConfig = true\n"
+        )
     }
+
     @Test
     fun `ensure buildConfig is generated when tasks are created eagerly`() {
         project.buildFile.appendText("""

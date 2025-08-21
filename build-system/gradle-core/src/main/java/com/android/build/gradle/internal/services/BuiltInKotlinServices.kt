@@ -32,6 +32,7 @@ import com.android.build.gradle.TestExtension
 import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.BuiltInKotlinBooleanOptionEnabled
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.BuiltInKotlinPluginApplied
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.KotlinAndroidPluginAppliedAndTestFixturesOrScreenshotTestEnabled
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
@@ -47,6 +48,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter.Type
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
@@ -65,7 +67,7 @@ class BuiltInKotlinServices(
 
     val kotlinBaseApiPlugin: KotlinBaseApiPlugin,
     val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
-    val baseExtension: BaseExtension? // Currently required (KT-77300)
+    val baseExtensionProvider: Provider<BaseExtension> // Currently required (KT-77300), can be null
 ) {
 
     val kgpVersion: KgpVersion = KgpVersion.parse(kotlinBaseApiPlugin.pluginVersion)
@@ -76,7 +78,7 @@ class BuiltInKotlinServices(
             reason: AvailabilityReason,
             kotlinBaseApiPlugin: KotlinBaseApiPlugin,
             kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
-            baseExtension: BaseExtension?,
+            baseExtensionProvider: Provider<BaseExtension>,
         ): BuiltInKotlinServices {
             getKotlinPluginVersionFromPlugin(kotlinBaseApiPlugin)?.let {
                 if (KgpVersion.parse(it) < MINIMUM_BUILT_IN_KOTLIN_VERSION) {
@@ -99,13 +101,18 @@ class BuiltInKotlinServices(
                 reason,
                 kotlinBaseApiPlugin,
                 kotlinAndroidProjectExtension,
-                baseExtension
+                baseExtensionProvider
             )
         }
     }
 
     /** The reason why [BuiltInKotlinServices] is available. */
     sealed interface AvailabilityReason {
+
+        /**
+         * [BuiltInKotlinServices] is available because [BooleanOption.BUILT_IN_KOTLIN] is enabled.
+         */
+        object BuiltInKotlinBooleanOptionEnabled: AvailabilityReason
 
         /** [BuiltInKotlinServices] is available because the built-in Kotlin plugin is applied. */
         object BuiltInKotlinPluginApplied: AvailabilityReason
@@ -125,6 +132,11 @@ sealed class BuiltInKotlinSupportMode {
 
     sealed class Supported : BuiltInKotlinSupportMode() {
 
+        /**
+         * Built-in Kotlin support is available because [BooleanOption.BUILT_IN_KOTLIN] is enabled.
+         */
+        object BuiltInKotlinBooleanOptionEnabled : Supported()
+
         /** Built-in Kotlin support is available because the built-in Kotlin plugin is applied. */
         object BuiltInKotlinPluginApplied : Supported()
 
@@ -142,17 +154,7 @@ sealed class BuiltInKotlinSupportMode {
         object TestFixturesSupportEnabledAndKgpApplied : Supported()
     }
 
-    sealed class NotSupported : BuiltInKotlinSupportMode() {
-
-        /**
-         * Built-in Kotlin support is not available because the built-in Kotlin plugin is not
-         * applied.
-         */
-        object BuiltInKotlinPluginNotApplied : NotSupported()
-
-        /** Built-in Kotlin support is not available because the KMP plugin is applied. */
-        object KmpPluginApplied : NotSupported()
-    }
+    object NotSupported : BuiltInKotlinSupportMode()
 }
 
 /** Indicates whether built-in Kapt support is available and why. */
@@ -177,29 +179,28 @@ sealed class BuiltInKaptSupportMode {
         object TestFixturesSupportEnabledAndKaptApplied : Supported()
     }
 
-    sealed class NotSupported : BuiltInKaptSupportMode() {
-
-        /**
-         * Built-in Kapt support is not available because the built-in Kapt plugin is not applied.
-         */
-        object BuiltInKaptPluginNotApplied : NotSupported()
-
-        /** Built-in Kapt support is not available because the KMP plugin is applied. */
-        object KmpPluginApplied : NotSupported()
-    }
+    object NotSupported : BuiltInKaptSupportMode()
 }
 
 /** Performs preliminary actions required for built-in Kotlin support. */
 fun initBuiltInKotlinSupportIfRequired(project: Project, projectServices: ProjectServices) {
-    // Handle the case when built-in Kotlin plugin is applied
-    project.pluginManager.withPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) {
-        initBuiltInKotlinSupport(project)
-        projectServices.initBuiltInKotlinServices(BuiltInKotlinPluginApplied)
+    // Provide built-in Kotlin support when the BooleanOption is enabled or the built-in Kotlin
+    // plugin is applied
+    if (projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)) {
+        initBuiltInKotlinSupport(project, projectServices)
+        projectServices.initBuiltInKotlinServices(BuiltInKotlinBooleanOptionEnabled)
+    } else {
+        project.pluginManager.withPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) {
+            initBuiltInKotlinSupport(project, projectServices)
+            projectServices.initBuiltInKotlinServices(BuiltInKotlinPluginApplied)
+        }
     }
 
     // Built-in Kapt plugin requires built-in Kotlin plugin
     project.pluginManager.withPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID) {
-        project.requirePlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID, ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
+        if (!projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)) {
+            project.requirePlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID, ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
+        }
     }
 
     // Handle the case when test-fixtures/screenshot-test feature is enabled
@@ -239,11 +240,23 @@ fun initBuiltInKotlinSupportIfRequired(project: Project, projectServices: Projec
     }
 }
 
-private fun initBuiltInKotlinSupport(project: Project) {
-    project.disallowPlugin(
-        mainPlugin = ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID,
-        incompatiblePlugin = KOTLIN_ANDROID_PLUGIN_ID
-    )
+private fun initBuiltInKotlinSupport(project: Project, projectServices: ProjectServices) {
+    if (projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)) {
+        project.pluginManager.withPlugin(KOTLIN_ANDROID_PLUGIN_ID) {
+            error(
+                """
+                The '$KOTLIN_ANDROID_PLUGIN_ID' plugin is no longer required for Kotlin support since AGP 9.0.
+                Remove the '$KOTLIN_ANDROID_PLUGIN_ID' plugin from this project's build file: ${project.buildFile}.
+                For more info, see https://issuetracker.google.com/438678642.
+                """.trimIndent()
+            )
+        }
+    } else {
+        project.disallowPlugin(
+            mainPlugin = ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID,
+            incompatiblePlugin = KOTLIN_ANDROID_PLUGIN_ID
+        )
+    }
 
     // Apply KotlinBaseApiPlugin
     val kotlinBaseApiPlugin = project.plugins.apply(KotlinBaseApiPlugin::class.java)

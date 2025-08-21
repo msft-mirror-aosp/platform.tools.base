@@ -26,6 +26,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
+import java.io.Serializable
 
 /**
  * Abstract class used to compare two configurations, and to report differences in versions of
@@ -79,7 +80,11 @@ abstract class ClasspathComparisonTask : NonIncrementalTask() {
 data class Info(
     val group: String,
     val module: String
-)
+) : Serializable {
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}
 
 fun Configuration.toVersionMap(): Map<Info, String> =
     incoming.resolutionResult.allComponents

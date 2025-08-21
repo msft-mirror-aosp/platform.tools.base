@@ -1815,7 +1815,7 @@ abstract class SdkVersionInput {
 
     @get:Input
     @get:Optional
-    abstract val codeName: Property<String?>
+    abstract val codeName: Property<String>
 
     internal fun initialize(version: com.android.build.api.variant.AndroidVersion) {
         apiLevel.setDisallowChanges(version.apiLevel)
@@ -1993,7 +1993,6 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             testedVariant = null,
             project = project,
             projectOptions = projectOptions,
-            isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
             sourceSetConfigurationsMap = emptyMap()
         )
@@ -2046,7 +2045,6 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             testedVariant = null,
             project = project,
             projectOptions = projectOptions,
-            isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
             sourceSetConfigurationsMap = emptyMap()
         )
@@ -2098,7 +2096,6 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             testedVariant = null,
             project = project,
             projectOptions = projectOptions,
-            isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
             sourceSetConfigurationsMap = emptyMap()
         )
@@ -2305,7 +2302,6 @@ abstract class JavaArtifactInput : ArtifactInput() {
             testedVariant = null,
             project = project,
             projectOptions = projectOptions,
-            isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
             sourceSetConfigurationsMap = emptyMap()
         )
@@ -2391,7 +2387,6 @@ abstract class JavaArtifactInput : ArtifactInput() {
             testedVariant = null,
             project = project,
             projectOptions = projectOptions,
-            isLibraryConstraintsApplied = false,
             isSelfInstrumenting = false,
             sourceSetConfigurationsMap = emptyMap()
         )

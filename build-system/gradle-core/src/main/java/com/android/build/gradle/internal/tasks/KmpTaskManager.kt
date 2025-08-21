@@ -206,7 +206,7 @@ class KmpTaskManager(
                     addCompileRClass = false
                 )
             )
-            if ((variant as? ApplicationCreationConfig)?.runResourceShrinkingWithR8() == true) {
+            if ((variant as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
                 // Also convert shrunk resources from proto format to binary format so it can be
                 // included in an APK
                 taskFactory.register(ConvertShrunkResourcesToBinaryTask.CreationAction(variant))
