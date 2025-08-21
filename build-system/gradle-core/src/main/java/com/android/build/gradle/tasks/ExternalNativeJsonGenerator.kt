@@ -190,7 +190,7 @@ abstract class ExternalNativeJsonGenerator internal constructor(
                                 abi.buildFileIndexFile,
                                 abi.additionalProjectFilesIndexFile,
                                 abi.compileCommandsJsonBinFile
-                            ),
+                            ) + abi.prefabPublicationFiles,
                             hardConfigureFiles = listOf(abi.metadataGenerationCommandFile)
                         )
                     }

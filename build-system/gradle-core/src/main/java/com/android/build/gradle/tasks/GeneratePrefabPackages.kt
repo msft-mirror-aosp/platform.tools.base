@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.cxx.prefab.PrefabPublicationType.Config
 import com.android.build.gradle.internal.cxx.prefab.PrefabPublicationType.HeaderOnly
 import com.android.build.gradle.internal.cxx.prefab.buildPrefabPackage
 import com.android.build.gradle.internal.cxx.prefab.copyAsSingleAbi
+import com.android.build.gradle.internal.cxx.prefab.publicationFileFrom
 import com.android.build.gradle.internal.cxx.prefab.readPublicationFileOrNull
 import com.android.build.gradle.internal.cxx.process.ExecuteProcessType.PREFAB_PROCESS
 import com.android.build.gradle.internal.cxx.process.createJavaExecuteProcessCommand
@@ -124,6 +125,17 @@ fun createPrefabBuildSystemGlue(
     }
 }
 
+/**
+ * Provide a list of Prefab publication files.
+ */
+val CxxAbiModel.prefabPublicationFiles get() =
+    variant.prefabPackageDirectoryList.flatMap { realPackage ->
+        listOf(
+            Configuration.publicationFileFrom(realPackage),
+             HeaderOnly.publicationFileFrom(realPackage)
+        )
+    }.filterNotNull()
+
 const val TEMP_FOLDER_NAME_BASE_NAME = "agp-prefab-staging"
 
 /**
@@ -187,7 +199,7 @@ private fun getPrefabCliInputs(
         // When purely building from the command-line then only 'Configuration' will be available.
         // When purely syncing from Android Studio then only 'HeaderOnly' will be available.
         // When both are available, use 'Configuration'. It is the same as 'HeaderOnly' but it
-        // also has libraru information (paths to .so files).
+        // also has library information (paths to .so files).
         Configuration.readPublicationFileOrNull(realPackage)
             ?: HeaderOnly.readPublicationFileOrNull(realPackage)
     }
