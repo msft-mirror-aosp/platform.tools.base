@@ -45,11 +45,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Represents a loaded xml document.
@@ -511,21 +514,41 @@ public class XmlDocument {
                     mergingReportBuilder);
             return true;
         } else {
-            String error =
-                    "The <uses-sdk> element was found in your AndroidManifest.xml file. Starting"
-                        + " with Android Gradle Plugin 9.0, this is a build-breaking error."
-                        + " Previously, this condition only generated a warning. However, the SDK"
-                        + " version properties defined in the DSL or the variant API have always"
-                        + " overridden the manifest values. To eliminate this source of confusion,"
-                        + " declaring <uses-sdk> in the manifest is no longer allowed.\n\n"
-                        + " Fix: Remove <uses-sdk> from your AndroidManifest.xml";
-
-            mergingReportBuilder.addMessage(
-                    new SourceFilePosition(getSourceFile(), usesSdk.get().getPosition()),
-                    MergingReport.Record.Severity.ERROR,
-                    error);
-            return false;
+            XmlElement usesSdkElement = usesSdk.get();
+            List<String> attributesUsed =
+                    usesSdkElement.getAttributes().stream()
+                            .map(item -> item.getName().getLocalName())
+                            .collect(Collectors.toList());
+            List<String> deprecatedAttributes =
+                    Arrays.asList("targetSdkVersion", "minSdkVersion", "maxSdkVersion");
+            List<String> usedDeprecatedAttributes =
+                    deprecatedAttributes.stream()
+                            .filter(attributesUsed::contains)
+                            .collect(Collectors.toList());
+            if (!usedDeprecatedAttributes.isEmpty()) {
+                String error =
+                        "The <uses-sdk> tag was detected in your main AndroidManifest.xml file."
+                            + " While its use is still permitted for specifying"
+                            + " tools:overrideLibrary, it is no longer allowed for controlling SDK"
+                            + " versions (e.g., "
+                                + String.join(", ", usedDeprecatedAttributes)
+                                + "). "
+                                + "Starting with Android Gradle Plugin 9.0.0, "
+                                + "these attributes have been deprecated within the manifest.\n\n"
+                                + "To fix: "
+                                + (usedDeprecatedAttributes.size() == attributesUsed.size()
+                                        ? "Remove <uses-sdk> from your AndroidManifest.xml."
+                                        : "Remove "
+                                                + String.join(", ", usedDeprecatedAttributes)
+                                                + " from your AndroidManifest.xml.");
+                mergingReportBuilder.addMessage(
+                        new SourceFilePosition(getSourceFile(), usesSdk.get().getPosition()),
+                        MergingReport.Record.Severity.ERROR,
+                        error);
+                return false;
+            }
         }
+        return true;
     }
 
     private void verifyVersion(
@@ -538,9 +561,10 @@ public class XmlDocument {
         if (rawValue != null && !rawValue.equals(usedValueSupplier.get())) {
             String warning =
                     String.format(
-                            "uses-sdk:%1$s value (%2$s) specified in the manifest file is ignored. "
-                                    + "It is overridden by the value declared in the DSL or the variant API, or 1 if not declared/present. "
-                                    + "Current value is (%3$s).",
+                            "uses-sdk:%1$s value (%2$s) specified in the manifest file is ignored."
+                                + " It is overridden by the value declared in the DSL or the"
+                                + " variant API, or 1 if not declared/present. Current value is"
+                                + " (%3$s).",
                             propertyName, rawValueSupplier.get(), usedValueSupplier.get());
             mergingReportBuilder.addMessage(
                     new SourceFilePosition(getSourceFile(), usesSdk.getPosition()),
@@ -666,11 +690,15 @@ public class XmlDocument {
                 && !checkUsesSdkMinVersion(lowerPriorityDocument, mergingReport)) {
             String error =
                     String.format(
-                            "uses-sdk:minSdkVersion %1$s cannot be smaller than version "
-                                    + "%2$s declared in library %3$s as the library might be using APIs not available in %1$s\n"
-                                    + "\tSuggestion: use a compatible library with a minSdk of at most %1$s,\n"
-                                    + "\t\tor increase this project's minSdk version to at least %2$s,\n"
-                                    + "\t\tor use tools:overrideLibrary=\"%4$s\" to force usage (may lead to runtime failures)",
+                            "uses-sdk:minSdkVersion %1$s cannot be smaller than version %2$s"
+                                + " declared in library %3$s as the library might be using APIs not"
+                                + " available in %1$s\n"
+                                + "\tSuggestion: use a compatible library with a minSdk of at most"
+                                + " %1$s,\n"
+                                + "\t\tor increase this project's minSdk version to at least"
+                                + " %2$s,\n"
+                                + "\t\tor use tools:overrideLibrary=\"%4$s\" to force usage (may"
+                                + " lead to runtime failures)",
                             getMinSdkVersion(mergingReport),
                             lowerPriorityDocument.getExplicitMinSdkVersionOrDefault(mergingReport),
                             lowerPriorityDocument.getSourceFile().print(false),
@@ -739,7 +767,8 @@ public class XmlDocument {
                         KeyAndReason.of(
                                 permission("READ_CALL_LOG"),
                                 lowerPriorityDocument.getNamespace()
-                                        + " has targetSdkVersion < 16 and requested READ_CONTACTS"));
+                                        + " has targetSdkVersion < 16 and requested"
+                                        + " READ_CONTACTS"));
             }
             if (lowerPriorityDocument.getByTypeAndKey(
                     USES_PERMISSION, permission("WRITE_CONTACTS")).isPresent()) {
@@ -747,7 +776,8 @@ public class XmlDocument {
                         KeyAndReason.of(
                                 permission("WRITE_CALL_LOG"),
                                 lowerPriorityDocument.getNamespace()
-                                        + " has targetSdkVersion < 16 and requested WRITE_CONTACTS"));
+                                        + " has targetSdkVersion < 16 and requested"
+                                        + " WRITE_CONTACTS"));
             }
         }
         return implicitElementKeys.build();

@@ -618,7 +618,9 @@ enum class BooleanOption(
     ),
 
     /**
-     * When enabled, the <uses-sdk> tag in AndroidManifest.xml will generate build errors.
+     * When enabled, the <uses-sdk> tag in AndroidManifest.xml will generate build errors if it is
+     * used to declare either minSdkVersion or targetSdkVersion. The only allowed use case
+     * will be tools:overrideLibrary.
      */
     DISALLOW_USES_SDK_IN_MANIFEST(
         "android.usesSdkInManifest.disallowed",

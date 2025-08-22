@@ -195,7 +195,7 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
             LoggerWrapper.getLogger(ProcessApplicationManifest::class.java),
             checkIfInstantModule = isDynamicFeature(),
             compileSdk = compileSdk.orNull,
-            usesSdkInManifestLenientHandling = !disallowUsesSdkInManifest.get()
+            usesSdkInManifestLenientHandling = !disallowSdkVersionsInUsesSdkInManifest.get()
         )
         outputMergeBlameContents(mergingReport, mergeBlameFile.get().asFile)
     }
@@ -300,7 +300,7 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
     abstract val versionName: Property<String>
 
     @get:Input
-    abstract val disallowUsesSdkInManifest: Property<Boolean>
+    abstract val disallowSdkVersionsInUsesSdkInManifest: Property<Boolean>
 
     private fun isDynamicFeature(): Boolean = featureName.isPresent
 
@@ -462,7 +462,7 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
                 (creationConfig is ApplicationCreationConfig) &&
                 (creationConfig.androidResources.generateLocaleConfig == true)
             )
-            task.disallowUsesSdkInManifest.setDisallowChanges(
+            task.disallowSdkVersionsInUsesSdkInManifest.setDisallowChanges(
                 creationConfig.services.projectOptions[BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST]
             )
         }

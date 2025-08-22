@@ -1881,7 +1881,11 @@ public class ManifestMerger2 {
 
             CHECK_INSTANT_FLAG,
 
-            /** Warns instead of throwing an error when the main manifest contains <uses-sdk>. */
+            /**
+             * Warns instead of throwing an error when the main manifest contains <uses-sdk> for the
+             * purpose of minSdkVersion, maxSdkVersion or targetSdkVersion. Starting with AGP 9.0.0
+             * this tag will be allowed for the purpose of `tools:overrideLibrary` only.
+             */
             USES_SDK_IN_MANIFEST_LENIENT_HANDLING,
         }
 
