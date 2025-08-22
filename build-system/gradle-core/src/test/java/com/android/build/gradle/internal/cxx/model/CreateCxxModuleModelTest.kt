@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.cxx.model
 import com.android.build.gradle.internal.cxx.RandomInstanceGenerator
 import com.android.build.gradle.internal.cxx.gradle.generator.tryCreateConfigurationParameters
 import com.android.build.gradle.internal.cxx.logging.PassThroughRecordingLoggingEnvironment
-import com.android.build.gradle.internal.fixtures.FakeProviderFactory
 import com.android.utils.FileUtils.join
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -136,5 +135,44 @@ class CreateCxxModuleModelTest {
                 val recoveredAbiString = recoveredAbi.toJsonString()
                 assertThat(abiString).isEqualTo(recoveredAbiString)
             }
+    }
+
+    @Test
+    fun `relative cmake dir from local properties`() {
+        val mock = BasicCmakeMock()
+        val relativeCmakeDir = "my-cmake"
+        whenever(mock.sdkComponents.cmakeDirFromProperties).thenReturn(relativeCmakeDir)
+
+        val configParams = tryCreateConfigurationParameters(
+            mock.projectOptions,
+            mock.variantImpl
+        )!!
+
+        val module = createCxxModuleModel(
+            mock.sdkComponents,
+            configParams
+        )
+
+        val expectedCmakeDir = File(mock.configurationParameters.rootDir, relativeCmakeDir)
+        assertThat(module.cmake!!.cmakeDirFromPropertiesFile).isEqualTo(expectedCmakeDir)
+    }
+
+    @Test
+    fun `absolute cmake dir from local properties`() {
+        val mock = BasicCmakeMock()
+        val absoluteCmakeDir = File(mock.projectRootDir, "my-cmake")
+        whenever(mock.sdkComponents.cmakeDirFromProperties).thenReturn(absoluteCmakeDir.absolutePath)
+
+        val configParams = tryCreateConfigurationParameters(
+            mock.projectOptions,
+            mock.variantImpl
+        )!!
+
+        val module = createCxxModuleModel(
+            mock.sdkComponents,
+            configParams
+        )
+
+        assertThat(module.cmake!!.cmakeDirFromPropertiesFile).isEqualTo(absoluteCmakeDir)
     }
 }
