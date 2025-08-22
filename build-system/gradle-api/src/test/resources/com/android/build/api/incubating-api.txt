@@ -642,6 +642,8 @@ https://issuetracker.google.com/422422985
 https://issuetracker.google.com/438803230
   * com.android.build.api.variant.CanProduceConsumerProguardFiles
   * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
+https://issuetracker.google.com/440427409
+  * com.android.build.api.artifact.MultipleArtifact$PRE_COMPILATION_CLASSES extends com.android.build.api.artifact.MultipleArtifact implements com.android.build.api.artifact.Artifact$Replaceable, com.android.build.api.artifact.Artifact$Appendable, com.android.build.api.artifact.Artifact$Transformable
 https://issuetracker.google.com/443174826
   * com.android.build.api.variant.HasTestSuitesBuilder
   * com.android.build.api.variant.HasTestSuitesBuilder.getSuites: java.util.Map<java.lang.String, com.android.build.api.variant.TestSuiteBuilder> ()

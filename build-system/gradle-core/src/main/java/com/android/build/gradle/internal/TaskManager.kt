@@ -19,6 +19,7 @@ import android.databinding.tool.DataBindingBuilder
 import com.android.SdkConstants.DOT_JAR
 import com.android.SdkConstants.DOT_RES
 import com.android.build.api.artifact.Artifact.Single
+import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
@@ -880,6 +881,16 @@ abstract class TaskManager(
                     InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR
                 )
         }
+
+        creationConfig
+            .artifacts
+            .forScope(ScopedArtifacts.Scope.PROJECT)
+            .setInitialContent(
+                ScopedArtifact.CLASSES,
+                creationConfig.services.fileCollection().from(
+                    creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES)
+                )
+            )
 
         creationConfig
            .artifacts

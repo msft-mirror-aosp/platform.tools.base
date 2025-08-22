@@ -149,6 +149,10 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.MultipleArtifact.NATIVE_SYMBOL_TABLES INSTANCE;
   }
 
+  @org.gradle.api.Incubating public static final class MultipleArtifact.PRE_COMPILATION_CLASSES extends com.android.build.api.artifact.MultipleArtifact<org.gradle.api.file.Directory> implements com.android.build.api.artifact.Artifact.Appendable com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
+    field public static final com.android.build.api.artifact.MultipleArtifact.PRE_COMPILATION_CLASSES INSTANCE;
+  }
+
   public interface MultipleArtifactTypeOutOperationRequest<FileTypeT extends org.gradle.api.file.FileSystemLocation> {
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Multiple<FileTypeT>> void toListenTo(ArtifactTypeT type);
   }

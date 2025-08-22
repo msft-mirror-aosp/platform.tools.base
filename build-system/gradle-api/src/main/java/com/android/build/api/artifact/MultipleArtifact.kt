@@ -16,6 +16,7 @@
 
 package com.android.build.api.artifact
 
+import org.gradle.api.Incubating
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFile
@@ -73,4 +74,24 @@ sealed class MultipleArtifact<FileTypeT : FileSystemLocation>(
             Appendable,
             Transformable
 
+    /**
+     * Directories containing generated code that will be added to compile classpath for the
+     * module.
+     *
+     * It is not possible to register such code generator through the DSL, one must use this
+     * Variant API.
+     *
+     * Classes added to this artifact will be used to compile Java classes and Kotlin classes
+     * present in the module. This is however limited to using the built-in kotlin compiler and
+     * is not available when using the deprecated KAGP plugin from JetBrains.
+     *
+     * Classes added to this artifacts will also be added to the [ScopedArtifact.CLASSES] for the
+     * [com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT] scope.
+     */
+    @Incubating
+    object PRE_COMPILATION_CLASSES:
+            MultipleArtifact<Directory>(ArtifactKind.DIRECTORY),
+            Replaceable,
+            Appendable,
+            Transformable
 }

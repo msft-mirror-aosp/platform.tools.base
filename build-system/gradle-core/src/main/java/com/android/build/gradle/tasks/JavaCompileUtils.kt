@@ -18,6 +18,7 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.component.impl.AnnotationProcessorImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -99,6 +100,7 @@ fun JavaCompile.configureProperties(creationConfig: ComponentCreationConfig) {
             // classes(e.g. android.jar) that were previously passed through bootstrapClasspath need to be provided
             // through classpath
             creationConfig.global.bootClasspath,
+            creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES),
             creationConfig.compileClasspath,
             creationConfig.getBuiltInKotlincOutput(),
             creationConfig.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR),
@@ -106,6 +108,7 @@ fun JavaCompile.configureProperties(creationConfig: ComponentCreationConfig) {
     } else {
         this.options.bootstrapClasspath = this.project.files(creationConfig.global.bootClasspath)
         this.classpath = project.files(
+            creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES),
             creationConfig.compileClasspath,
             creationConfig.getBuiltInKotlincOutput(),
             creationConfig.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR),

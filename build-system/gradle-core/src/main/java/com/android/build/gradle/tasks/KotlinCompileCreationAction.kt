@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.profile.PROPERTY_VARIANT_NAME_KEY
@@ -145,6 +146,7 @@ internal fun KotlinJvmCompile.configureKotlinJvmCompile(creationConfig: Componen
     }
 
     libraries.from(creationConfig.global.bootClasspath)
+    libraries.from(creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES))
     libraries.from(creationConfig.getJavaClasspath(COMPILE_CLASSPATH, CLASSES_JAR))
 
     // Set friendPaths to allow tests/test fixtures to access internal functions/properties of the
