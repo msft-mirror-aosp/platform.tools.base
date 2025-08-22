@@ -188,7 +188,7 @@ class KmpVariantDslInfoImpl(
         ) {
             val projectDir = services.projectInfo.projectDirectory
             into.addAll(postProcessingOptions.getProguardFiles(type)
-                .map { file -> projectDir.file(file.absolutePath) }
+                .map { file -> projectDir.file(file.path) }
             )
         }
     }

@@ -113,7 +113,7 @@ class OptimizationDslInfoImpl(
     ) {
         val projectDir = services.projectInfo.projectDirectory
         fun addToList(itemsToAdd: Collection<File>) {
-            into.addAll(itemsToAdd.map { projectDir.file(it.absolutePath)})
+            into.addAll(itemsToAdd.map { projectDir.file(it.path)})
         }
 
         addToList(defaultConfig.getProguardFiles(type))
