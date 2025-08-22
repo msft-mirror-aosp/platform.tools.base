@@ -639,14 +639,14 @@ enum class BooleanOption(
      * Note that to help users migrate to R8 full mode, we provide 2 types of R8 full mode:
      *   - Legacy full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = false): In this
      *   mode, the default constructor is implicitly kept when a class is kept
-     *   (i.e., "-keep class A" is the same as "-keep class A { void <init>(); }")
+     *   (i.e., `-keep class A` is the same as `-keep class A { <init>(); }`)
      *   - Strict full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = true): In this
      *   mode, the default constructor is not implicitly kept when a class is kept
-     *   (i.e., "-keep class A" is different from "-keep class A { void <init>(); }").
+     *   (i.e., `-keep class A` is different from `-keep class A { <init>(); }`).
      *
      * When migrating from legacy full mode to strict full mode, if the user's app or a library that
-     * the app uses contains a keep rule such as "-keep class A", then the app/library's author will
-     * need to manually update the rule to "-keep class A { void <init>(); }" if they want to keep
+     * the app uses contains a keep rule such as `-keep class A`, then the app/library's author will
+     * need to manually update the rule to `-keep class A { <init>(); }` if they want to keep
      * the default constructor. If they don't want to keep the default constructor, then they can
      * keep the rule as-is.
      */
