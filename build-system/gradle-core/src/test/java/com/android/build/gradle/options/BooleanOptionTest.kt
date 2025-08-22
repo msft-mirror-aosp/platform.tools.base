@@ -117,7 +117,6 @@ class BooleanOptionTest {
             BooleanOption.GRADUAL_R8_SHRINKING,
             BooleanOption.ENABLE_PROBLEMS_API,
             BooleanOption.R8_GRADUAL_API,
-            BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,
             BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS,
             BooleanOption.DISABLE_ALL_CONSTRAINTS
         )

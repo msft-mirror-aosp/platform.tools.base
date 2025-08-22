@@ -468,15 +468,6 @@ enum class BooleanOption(
 
     ENABLE_PROBLEMS_API("android.enableProblemsAPI", false, FeatureStage.Experimental),
 
-    /**
-     * Setting custom shader path is required with `glslc.dir` property
-     */
-    CUSTOM_SHADER_PATH_REQUIRED(
-        "android.custom.shader.path.required",
-        true,
-        FeatureStage.Experimental
-    ),
-
     // Flag should only be used in test.
     TEST_SIMULATE_AGP_VERSION_BEHAVIOR(
         "android.testSimulateAgpVersionBehavior",
@@ -565,6 +556,15 @@ enum class BooleanOption(
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */
+    /**
+     * Setting custom shader path is required with `glslc.dir` property
+     */
+    CUSTOM_SHADER_PATH_REQUIRED(
+        "android.custom.shader.path.required",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_9_0),
+    ),
+
     ENABLE_RESOURCE_OPTIMIZATIONS(
         "android.enableResourceOptimizations",
         true,
