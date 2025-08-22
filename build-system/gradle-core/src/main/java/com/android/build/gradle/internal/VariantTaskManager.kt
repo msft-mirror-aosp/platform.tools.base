@@ -33,13 +33,11 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dependency.AndroidXDependencySubstitution
 import com.android.build.gradle.internal.dsl.DataBindingOptions
-import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
 import com.android.build.gradle.internal.lint.LintTaskManager
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.CheckJetifierTask
-import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -53,7 +51,6 @@ import com.android.build.gradle.internal.utils.isComposeCompilerPluginApplied
 import com.android.build.gradle.internal.utils.isKotlinPluginAppliedInTheSameClassloader
 import com.android.build.gradle.internal.utils.maybeUseInlineScopesNumbers
 import com.android.build.gradle.internal.utils.recordKgpPropertiesForAnalytics
-import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.VariantModel
 import com.android.build.gradle.options.BooleanOption
@@ -245,24 +242,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     }
 
     private fun createReportTasks() {
-        taskFactory.register(
-            "androidDependencies",
-            DependencyReportTask::class.java
-        ) { task: DependencyReportTask ->
-            task.description = "Displays the Android dependencies of the project."
-            task.variants.setDisallowChanges(variantPropertiesList)
-            task.nestedComponents.setDisallowChanges(nestedComponents)
-            task.group = ANDROID_GROUP
-            task.mavenCoordinateCache.setDisallowChanges(
-                getBuildService(
-                    project.gradle.sharedServices,
-                    MavenCoordinatesCacheBuildService::class.java
-                ).get()
-            )
-            task.notCompatibleWithConfigurationCache(
-                "DependencyReportTask not compatible with config caching"
-            )
-        }
         val signingReportComponents = allPropertiesList.stream()
             .filter { component: ComponentCreationConfig ->
                 component is ApkCreationConfig
