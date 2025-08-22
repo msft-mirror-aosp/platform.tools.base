@@ -18,8 +18,8 @@ maven_library(
 filegroup(
     name = "agp_gradle_build_files",
     srcs = glob([
-        "src/main/**/*.java",
         "src/main/**/*.kt",
+        "previous-gradle-apis/**",
     ]) + [
         "NOTICE",
         "build.gradle",
