@@ -183,9 +183,6 @@ https://issuetracker.google.com/328748780
   * com.android.build.api.dsl.BundleCountrySet.getEnableSplit: java.lang.Boolean ()
   * com.android.build.api.dsl.BundleCountrySet.setDefaultSet: void (java.lang.String)
   * com.android.build.api.dsl.BundleCountrySet.setEnableSplit: void (java.lang.Boolean)
-https://issuetracker.google.com/328748781
-  * com.android.build.api.dsl.TestOptions.failureRetention: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.FailureRetention, kotlin.Unit>)
-  * com.android.build.api.dsl.TestOptions.getFailureRetention: com.android.build.api.dsl.FailureRetention ()
 https://issuetracker.google.com/328748784
   * com.android.build.api.variant.DeviceTest.getApplicationId: org.gradle.api.provider.Property<java.lang.String> ()
   * com.android.build.api.variant.DeviceTest.getProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
@@ -208,12 +205,6 @@ https://issuetracker.google.com/328748857
 https://issuetracker.google.com/328748858
   * com.android.build.api.variant.CanMinifyAndroidResources
   * com.android.build.api.variant.CanMinifyAndroidResources.getShrinkResources: boolean ()
-https://issuetracker.google.com/328748875
-  * com.android.build.api.dsl.FailureRetention implements com.android.build.api.dsl.EmulatorSnapshots
-  * com.android.build.api.dsl.FailureRetention.getEnable: boolean ()
-  * com.android.build.api.dsl.FailureRetention.getMaxSnapshots: int ()
-  * com.android.build.api.dsl.FailureRetention.setEnable: void (boolean)
-  * com.android.build.api.dsl.FailureRetention.setMaxSnapshots: void (int)
 https://issuetracker.google.com/328748877
   * com.android.build.api.dsl.PrivacySandboxKeepRules implements com.android.build.api.dsl.ConfigurableFiles
   * com.android.build.api.dsl.PrivacySandboxKeepRules.getIgnoreFrom: java.util.Set<java.lang.String> ()
@@ -351,15 +342,6 @@ https://issuetracker.google.com/328748959
   * com.android.build.api.dsl.LintOptions.textOutput: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
-https://issuetracker.google.com/328748995
-  * com.android.build.api.dsl.EmulatorSnapshots
-  * com.android.build.api.dsl.EmulatorSnapshots.getCompressSnapshots: boolean ()
-  * com.android.build.api.dsl.EmulatorSnapshots.getEnableForTestFailures: boolean ()
-  * com.android.build.api.dsl.EmulatorSnapshots.getMaxSnapshotsForTestFailures: int ()
-  * com.android.build.api.dsl.EmulatorSnapshots.retainAll: void ()
-  * com.android.build.api.dsl.EmulatorSnapshots.setCompressSnapshots: void (boolean)
-  * com.android.build.api.dsl.EmulatorSnapshots.setEnableForTestFailures: void (boolean)
-  * com.android.build.api.dsl.EmulatorSnapshots.setMaxSnapshotsForTestFailures: void (int)
 https://issuetracker.google.com/328748998
   * com.android.build.api.dsl.LibraryExtension.getAidlPackagedList: java.util.Collection<java.lang.String> ()
 https://issuetracker.google.com/328749001
@@ -382,9 +364,6 @@ https://issuetracker.google.com/328749020
   * com.android.build.api.dsl.ManagedVirtualDevice.setDevice: void (java.lang.String)
   * com.android.build.api.dsl.ManagedVirtualDevice.setRequire64Bit: void (boolean)
   * com.android.build.api.dsl.ManagedVirtualDevice.setSystemImageSource: void (java.lang.String)
-https://issuetracker.google.com/328749036
-  * com.android.build.api.dsl.TestOptions.emulatorSnapshots: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots, kotlin.Unit>)
-  * com.android.build.api.dsl.TestOptions.getEmulatorSnapshots: com.android.build.api.dsl.EmulatorSnapshots ()
 https://issuetracker.google.com/328749039
   * com.android.build.api.variant.Component.getJavaCompilation: com.android.build.api.variant.JavaCompilation ()
   * com.android.build.api.variant.JavaCompilation

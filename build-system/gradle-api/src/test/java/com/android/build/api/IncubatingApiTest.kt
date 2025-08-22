@@ -197,10 +197,6 @@ class IncubatingApiTest {
                 "com.android.build.api.dsl.NdkBuildFlags#getCppFlags",
                 "com.android.build.api.dsl.NdkBuildFlags#cppFlags",
                 "com.android.build.api.dsl.NdkBuildFlags#getTargets",
-                "com.android.build.api.dsl.FailureRetention#getEnable",
-                "com.android.build.api.dsl.FailureRetention#setEnable",
-                "com.android.build.api.dsl.FailureRetention#getMaxSnapshots",
-                "com.android.build.api.dsl.FailureRetention#setMaxSnapshots",
                 "com.android.build.api.dsl.TestFixtures#getAndroidResources",
                 "com.android.build.api.dsl.TestFixtures#getEnable",
                 "com.android.build.api.dsl.TestFixtures#setEnable",
@@ -220,13 +216,6 @@ class IncubatingApiTest {
                 "com.android.build.api.dsl.ManagedVirtualDevice#setSystemImageSource",
                 "com.android.build.api.dsl.ManagedVirtualDevice#getRequire64Bit",
                 "com.android.build.api.dsl.ManagedVirtualDevice#setRequire64Bit",
-                "com.android.build.api.dsl.EmulatorSnapshots#retainAll",
-                "com.android.build.api.dsl.EmulatorSnapshots#getEnableForTestFailures",
-                "com.android.build.api.dsl.EmulatorSnapshots#setEnableForTestFailures",
-                "com.android.build.api.dsl.EmulatorSnapshots#getMaxSnapshotsForTestFailures",
-                "com.android.build.api.dsl.EmulatorSnapshots#setMaxSnapshotsForTestFailures",
-                "com.android.build.api.dsl.EmulatorSnapshots#getCompressSnapshots",
-                "com.android.build.api.dsl.EmulatorSnapshots#setCompressSnapshots",
         )
     }
 }

@@ -17,8 +17,6 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
-import com.android.build.api.dsl.Device
-import com.android.build.api.dsl.DeviceGroup
 import com.android.build.gradle.internal.services.DslServices
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.apiVersionFromString
@@ -32,7 +30,6 @@ import com.google.common.base.Verify
 import org.gradle.api.Action
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
-import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.tasks.testing.Test
 import javax.inject.Inject
 
@@ -80,13 +77,6 @@ abstract class TestOptions @Inject constructor(
     @Incubating
     override val emulatorControl: com.android.build.api.dsl.EmulatorControl  =
         dslServices.newDecoratedInstance(EmulatorControl::class.java, dslServices)
-
-    override val emulatorSnapshots: com.android.build.api.dsl.EmulatorSnapshots =
-        dslServices.newInstance(EmulatorSnapshots::class.java, dslServices)
-
-    @Deprecated("Renamed to emulatorSnapshots", replaceWith = ReplaceWith("emulatorSnapshots"))
-    override val failureRetention: com.android.build.api.dsl.FailureRetention
-        get() = emulatorSnapshots as com.android.build.api.dsl.FailureRetention
 
     override fun unitTests(action: com.android.build.api.dsl.UnitTestOptions.() -> Unit) {
         action.invoke(unitTests)
@@ -142,27 +132,6 @@ abstract class TestOptions @Inject constructor(
     // Runtime only for groovy decorator to generate the closure based block
     fun emulatorControl(action: Action<com.android.build.api.dsl.EmulatorControl>) {
         action.execute(emulatorControl)
-    }
-
-    // (Implementing interface for kotlin)
-    override fun emulatorSnapshots(action: com.android.build.api.dsl.EmulatorSnapshots.() -> Unit) {
-        action.invoke(emulatorSnapshots)
-    }
-
-    // Runtime only for groovy decorator to generate the closure based block
-    fun emulatorSnapshots(action: Action<com.android.build.api.dsl.EmulatorSnapshots>) {
-        action.execute(emulatorSnapshots)
-    }
-
-    @Deprecated("Renamed to emulatorSnapshots", replaceWith = ReplaceWith("emulatorSnapshots"))
-    override fun failureRetention(action: com.android.build.api.dsl.FailureRetention.() -> Unit) {
-        action.invoke(failureRetention)
-    }
-
-    // Runtime only for groovy decorator to generate the closure based block
-    @Deprecated("Renamed to emulatorSnapshots", replaceWith = ReplaceWith("emulatorSnapshots"))
-    fun failureRetention(action: Action<com.android.build.api.dsl.FailureRetention>) {
-        action.execute(failureRetention)
     }
 
     private var targetSdkApiVersion: ApiVersion? = null

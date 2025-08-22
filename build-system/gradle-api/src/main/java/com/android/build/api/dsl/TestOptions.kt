@@ -16,10 +16,8 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Action
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
-import org.gradle.api.NamedDomainObjectContainer
 
 /** Options for running tests. */
 interface TestOptions {
@@ -101,44 +99,6 @@ interface TestOptions {
 
     @Incubating
     fun emulatorControl(action: EmulatorControl.() -> Unit)
-
-    /**
-     * Configures Android Test Retention.
-     *
-     * Android Test Retention automatically takes emulator snapshots on test failures. It can only
-     * work with Unified Test Platform (UTP).
-     *
-     * ```
-     * android {
-     *   testOptions {
-     *     emulatorSnapshots {
-     *       enableForTestFailures true
-     *       maxSnapshotsForTestFailures 2
-     *       compressSnapshots false
-     *     }
-     *   }
-     * }
-     * ```
-     */
-    /** @suppress */
-    @get:Incubating
-    @Deprecated("This feature is no longer developed and supported. API will be removed in AGP 9.0")
-    val emulatorSnapshots: EmulatorSnapshots
-
-    /** @suppress */
-    @Incubating
-    @Deprecated("This feature is no longer developed and supported. API will be removed in AGP 9.0")
-    fun emulatorSnapshots(action: EmulatorSnapshots.() -> Unit)
-
-    /** @suppress */
-    @get:Incubating
-    @Deprecated("This feature is no longer developed and supported. API will be removed in AGP 9.0")
-    val failureRetention: FailureRetention
-
-    /** @suppress */
-    @Incubating
-    @Deprecated("This feature is no longer developed and supported. API will be removed in AGP 9.0")
-    fun failureRetention(action: FailureRetention.() -> Unit)
 
     /**
      * Specifies value that overrides target sdk version number for tests in libraries.

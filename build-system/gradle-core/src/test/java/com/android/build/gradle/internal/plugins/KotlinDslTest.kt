@@ -669,22 +669,6 @@ class KotlinDslTest {
     }
 
     @Test
-    fun `test options failure retention`() {
-        android.testOptions {
-            emulatorSnapshots {
-                assertThat(enableForTestFailures).isFalse()
-                enableForTestFailures = true
-                assertThat(enableForTestFailures).isTrue()
-                maxSnapshotsForTestFailures = 2
-                assertThat(maxSnapshotsForTestFailures).isEqualTo(2)
-                assertThat(compressSnapshots).isFalse()
-                compressSnapshots = true
-                assertThat(compressSnapshots).isTrue()
-            }
-        }
-    }
-
-    @Test
     fun `compatibility for compile sdk`() {
         android.apply {
             compileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
