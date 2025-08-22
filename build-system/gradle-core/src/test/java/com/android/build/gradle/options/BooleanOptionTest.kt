@@ -144,7 +144,6 @@ class BooleanOptionTest {
             BooleanOption.FORCE_JACOCO_OUT_OF_PROCESS,
             BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES,
             BooleanOption.INCLUDE_DEPENDENCY_INFO_IN_APKS,
-            BooleanOption.ENABLE_LEGACY_API,
             BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE
         )
 
@@ -174,11 +173,15 @@ class BooleanOptionTest {
 
     @Test
     fun `check deprecated and removed features have default value 'false'`() {
+        val ignoreList = listOf(
+            BooleanOption.ENABLE_LEGACY_API,
+        )
         checkViolatingProjectOptions(
             violatingOptions = BooleanOption.entries.filter {
                 (it.stage is FeatureStage.Deprecated || it.stage is FeatureStage.Removed)
                         && it.defaultValue
             },
+            ignoreList = ignoreList,
             requirement = "Deprecated and removed features must have default value `false`."
         )
     }

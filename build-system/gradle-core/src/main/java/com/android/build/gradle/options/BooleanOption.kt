@@ -197,9 +197,6 @@ enum class BooleanOption(
 
     INCLUDE_DEPENDENCY_INFO_IN_APKS("android.includeDependencyInfoInApks", true, FeatureStage.Supported),
 
-    // FIXME switch to false once we know we don't use these getters internally.
-    ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Supported),
-
     /**
      * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
      */
@@ -699,6 +696,10 @@ enum class BooleanOption(
         false,
         ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
     ),
+
+    /** This flag is subsumed by android.enableLegacyVariantApi. */
+    ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Deprecated(VERSION_10_0)),
+
     /* -----------------
      * ENFORCED FEATURES
      */
