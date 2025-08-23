@@ -7,6 +7,7 @@ This initially is implemented as a bridge to Android Studio rules
 load("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 load("//tools/adt/idea/studio:studio.bzl", "LINUX", "PluginInfo", "studio_plugin")
 load("//tools/base/bazel:functions.bzl", "create_option_file")
+load("//tools/base/intellij-bazel:transitioned_java.bzl", "transitioned_java")
 
 PlatformConfigInfo = provider(fields = ["platform"])
 
@@ -166,29 +167,6 @@ def intellij_plugin(name, plugin_id, platforms, overwrite_since_until_builds = T
         visibility = ["@bazel_tools//tools/whitelists/function_transition_whitelist"] + kwargs.get("visibility", []),
     )
 
-def _fixed_intellij_platform_transition_impl(_settings, attr):
-    return {"//tools/base/intellij-bazel:intellij_platform": attr.platform}
-
-fixed_intellij_platform_transition = transition(
-    implementation = _fixed_intellij_platform_transition_impl,
-    inputs = [],
-    outputs = ["//tools/base/intellij-bazel:intellij_platform"],
-)
-
-# Transition the java target to be built under the different platform
-# See https://bazel.build/rules/lib/builtins/transition
-def _transitioned_java_impl(ctx):
-    return [ctx.attr.target[DefaultInfo], ctx.attr.target[JavaInfo]]
-
-_transitioned_java = rule(
-    attrs = {
-        "target": attr.label(providers = [JavaInfo]),
-        "platform": attr.string(),
-    },
-    implementation = _transitioned_java_impl,
-    cfg = fixed_intellij_platform_transition,
-)
-
 def _plugin_data_impl(ctx):
     info = ctx.attr.plugin[PluginBundleInfo]
     if sorted(info.platforms) != sorted(ctx.attr.platforms):
@@ -215,7 +193,7 @@ def _intellij_plugin_test(
         jvm_flags = [],
         runtime_deps = [],
         **kwargs):
-    _transitioned_java(
+    transitioned_java(
         name = name + "_module",
         platform = platform,
         testonly = 1,
