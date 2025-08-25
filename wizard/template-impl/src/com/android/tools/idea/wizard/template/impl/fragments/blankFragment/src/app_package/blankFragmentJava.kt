@@ -41,7 +41,6 @@ $applicationPackageBlock
  * A simple {@link Fragment} subclass.
  * Use the {@link ${className}#newInstance} factory method to
  * create an instance of this fragment.
- *
  */
 public class ${className} extends Fragment {
 
