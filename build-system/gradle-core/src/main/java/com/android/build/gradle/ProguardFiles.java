@@ -23,17 +23,20 @@ import com.android.Version;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
+
+import org.gradle.api.file.Directory;
+import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.provider.Provider;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.gradle.api.file.Directory;
-import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.provider.Provider;
 
 /**
  * Deals with the default ProGuard files for Gradle.
@@ -62,6 +65,13 @@ public class ProguardFiles {
     public static final String UNKNOWN_FILENAME_MESSAGE =
             "Supplied proguard configuration file name is unsupported. Valid values are: "
                     + KNOWN_FILE_NAMES;
+
+    public static final String DONTOPTIMIZE_DISALLOWED_MESSAGE =
+            "`getDefaultProguardFile('proguard-android.txt')` is no longer supported since it"
+                + " includes `-dontoptimize`, which prevents R8 from performing many optimizations."
+                + " Instead use `getDefaultProguardFile('proguard-android-optimize.txt)`, and if"
+                + " needed, temporarily use `-dontoptimize` in a custom keep rule file while fixing"
+                + " breakages.";
 
     /**
      * Creates and returns a new {@link File} with the requested default ProGuard file contents.
@@ -129,19 +139,22 @@ public class ProguardFiles {
             case DONT_OPTIMIZE:
                 sb.append(
                         "# Optimization is turned off by default. Dex does not like code run\n"
-                                + "# through the ProGuard optimize steps (and performs some\n"
-                                + "# of these optimizations on its own).\n"
-                                + "# Note that if you want to enable optimization, you cannot just\n"
-                                + "# include optimization flags in your own project configuration file;\n"
-                                + "# instead you will need to point to the\n"
-                                + "# \"proguard-android-optimize.txt\" file instead of this one from your\n"
-                                + "# project.properties file.\n"
-                                + "-dontoptimize\n");
+                            + "# through the ProGuard optimize steps (and performs some\n"
+                            + "# of these optimizations on its own).\n"
+                            + "# Note that if you want to enable optimization, you cannot just\n"
+                            + "# include optimization flags in your own project configuration"
+                            + " file;\n"
+                            + "# instead you will need to point to the\n"
+                            + "# \"proguard-android-optimize.txt\" file instead of this one from"
+                            + " your\n"
+                            + "# project.properties file.\n"
+                            + "-dontoptimize\n");
                 break;
             case OPTIMIZE:
                 sb.append(
-                        "# Optimizations: If you don't want to optimize, use the proguard-android.txt configuration file\n"
-                                + "# instead of this one, which turns off the optimization flags.\n");
+                        "# Optimizations: If you don't want to optimize, use the"
+                            + " proguard-android.txt configuration file\n"
+                            + "# instead of this one, which turns off the optimization flags.\n");
                 append(sb, "proguard-optimizations.txt");
                 break;
         }

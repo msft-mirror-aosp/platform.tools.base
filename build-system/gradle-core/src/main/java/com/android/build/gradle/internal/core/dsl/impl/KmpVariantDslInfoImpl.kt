@@ -44,6 +44,7 @@ import com.android.build.gradle.internal.dsl.LibraryKeepRulesImpl
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.core.DefaultVectorDrawablesOptions
 import com.android.builder.model.VectorDrawablesOptions
@@ -156,7 +157,11 @@ class KmpVariantDslInfoImpl(
                 override fun getDefaultProguardFiles(): List<File> =
                     listOf(
                         ProguardFiles.getDefaultProguardFile(
-                            ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName,
+                            if (services.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED]) {
+                                ProguardFiles.ProguardFile.OPTIMIZE
+                            } else {
+                                ProguardFiles.ProguardFile.DONT_OPTIMIZE
+                            }.fileName,
                             buildDirectory
                         )
                     )

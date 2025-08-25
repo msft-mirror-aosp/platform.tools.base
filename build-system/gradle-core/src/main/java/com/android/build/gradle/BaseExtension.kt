@@ -394,6 +394,15 @@ abstract class BaseExtension protected constructor(
         }
 
     open fun getDefaultProguardFile(name: String): File {
+        if (dslServices.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED] &&
+            name == ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName
+        ) {
+            dslServices
+                .issueReporter
+                .reportError(
+                    IssueReporter.Type.GENERIC, ProguardFiles.DONTOPTIMIZE_DISALLOWED_MESSAGE
+                )
+        }
         if (!ProguardFiles.KNOWN_FILE_NAMES.contains(name)) {
             dslServices
                 .issueReporter

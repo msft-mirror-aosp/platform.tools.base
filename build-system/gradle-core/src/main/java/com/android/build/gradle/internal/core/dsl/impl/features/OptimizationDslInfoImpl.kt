@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.core.dsl.impl.computeMergedOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.dsl.OptimizationImpl
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentType
 import com.android.builder.model.BaseConfig
 import org.gradle.api.file.DirectoryProperty
@@ -90,7 +91,11 @@ class OptimizationDslInfoImpl(
             override fun getDefaultProguardFiles(): List<File> =
                 listOf(
                     ProguardFiles.getDefaultProguardFile(
-                        ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName,
+                        if (services.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED]) {
+                            ProguardFiles.ProguardFile.OPTIMIZE
+                        } else {
+                            ProguardFiles.ProguardFile.DONT_OPTIMIZE
+                        }.fileName,
                         buildDirectory
                     )
                 )

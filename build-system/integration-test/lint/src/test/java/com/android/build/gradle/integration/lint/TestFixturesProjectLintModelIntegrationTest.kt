@@ -32,7 +32,10 @@ class TestFixturesProjectLintModelIntegrationTest(private val lintAnalysisPerCom
 
     @get:Rule
     val project: GradleTestProject =
-        GradleTestProject.builder().fromTestProject("testFixturesApp").create()
+        GradleTestProject.builder().fromTestProject("testFixturesApp")
+            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
+            .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
+            .create()
 
     companion object {
         @JvmStatic
@@ -84,7 +87,6 @@ class TestFixturesProjectLintModelIntegrationTest(private val lintAnalysisPerCom
                     methodWithUnavailablePermission();
             """.trimIndent()
         )
-        TestFileUtils.appendToFile(project.file("gradle.properties"), "android.useAndroidX=true")
 
         if (publishJavaLib) {
             TestFileUtils.searchAndReplace(

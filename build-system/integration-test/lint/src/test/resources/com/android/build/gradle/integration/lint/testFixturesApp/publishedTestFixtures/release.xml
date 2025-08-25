@@ -5,7 +5,7 @@
     targetSdkVersion="14"
     mergedManifest="build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml"
     manifestMergeReport="build/outputs/logs/manifest-merger-release-report.txt"
-    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android.txt-$androidGradlePluginVersion"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-$androidGradlePluginVersion"
     partialResultsDir="build/intermediates/lint_partial_results/release/lintAnalyzeRelease/out">
   <buildFeatures
       namespacing="REQUIRED"/>
