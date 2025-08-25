@@ -152,19 +152,13 @@ class TestEngineWiringTest(
 
     @Test
     fun testJunitWiringThroughDSL() {
-        assume().that(GradleVersion.current()).isLessThan(GradleVersion.version("9.0-milestone-1"))
-        /**
-         * TODO fix test
-         * Gradle 9.0.0-milestone-9 turns this into:
-         * expected to contain: :lib:testFirstDebugTestSuite
-         * but was            : [:lib:processDebugManifest]
-         */
         val result = rule.build
             .executor
             .expectFailure() // TODO: it fails because Gradle complains I have no tests.
             .run("testFirstT1DebugTestSuite")
-        Truth.assertThat(result.didWorkTasks).contains("$modulePath:testFirstT1DebugTestSuite")
-        result.assertFailureMessage().contains("Deprecated Gradle features were used in this build")
+        Truth.assertThat(result.failedTasks).contains("$modulePath:testFirstT1DebugTestSuite")
+        result.assertFailureMessage().contains(
+            "There are test sources present and no filters are applied, but the test task did not discover any tests to execute.")
     }
 
     @Test
