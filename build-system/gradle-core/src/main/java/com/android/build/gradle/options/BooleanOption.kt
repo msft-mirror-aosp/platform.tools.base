@@ -535,6 +535,20 @@ enum class BooleanOption(
         )
     ),
 
+    /**
+     * `getDefaultProguardRule(proguard-android.txt)` support will be dropped in 9.0
+     */
+    R8_PROGUARD_ANDROID_TXT_DISALLOWED(
+        "android.r8.proguardAndroidTxt.disallowed",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.SoftlyEnforced(VERSION_10_0),
+            Version.VERSION_9_0
+        )
+    ),
+
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
