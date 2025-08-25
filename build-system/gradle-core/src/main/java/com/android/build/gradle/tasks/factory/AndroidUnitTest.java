@@ -292,7 +292,23 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                     creationConfig
                             .getArtifacts()
                             .forScope(ScopedArtifacts.Scope.PROJECT)
-                            .getFinalArtifacts$gradle_core(ScopedArtifact.CLASSES.INSTANCE));
+                            .getFinalArtifacts$gradle_core(ScopedArtifact.CLASSES.INSTANCE)
+                            .filter(
+                                    file -> {
+                                        // filter out the R.jar from the test classes dir as it is
+                                        // contained in the PROJECT scoped CLASSES artifact.
+                                        // Removing it from there would probably create compilation
+                                        // issues to 3rd party plugins
+                                        // and moving it to the ALL scoped which is undoubtedly
+                                        // cleaner but carries a great chance of regressions.
+                                        // The solution is certainly relying on the fact the R.jar
+                                        // is an internal artifact limiting possible customizations.
+                                        return !file.getAbsolutePath()
+                                                .contains(
+                                                        InternalArtifactType
+                                                                .COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+                                                                .INSTANCE.getFolderName());
+                                    }));
             task.setClasspath(computeClasspath(creationConfig, includeAndroidResources));
 
             if (includeAndroidResources) {
