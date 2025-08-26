@@ -56,10 +56,12 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
         }
 
         if (diff is ImageDiffer.DiffResult.Different) {
+            val percentageString = diff.percentDiff?.trimEnd('%')
+            val percentageDouble = percentageString?.toDoubleOrNull()
             throw ImageComparisonAssertionError(
                 referenceImagePath,
                 newImagePath,
-                diff.percentDiff?.toDoubleOrNull(),
+                percentageDouble,
                 diffImageOutputPath
             )
         }
