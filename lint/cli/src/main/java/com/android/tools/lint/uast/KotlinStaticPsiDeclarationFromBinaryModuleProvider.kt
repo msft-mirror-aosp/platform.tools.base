@@ -223,9 +223,7 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
     val callableId = functionLikeSymbol.callableId ?: return emptyList()
     val classes =
       callableId.classId?.let { classId -> getClassesByClassId(classId) }
-        ?: getClassesInPackage(callableId.packageName).ifEmpty {
-          getClassesInKlib(callableId.packageName)
-        }
+        ?: getClassesInPackage(callableId.packageName)
     if (classes.isEmpty()) return emptyList()
 
     val jvmName = functionLikeSymbol.getJvmNameFromAnnotation()
