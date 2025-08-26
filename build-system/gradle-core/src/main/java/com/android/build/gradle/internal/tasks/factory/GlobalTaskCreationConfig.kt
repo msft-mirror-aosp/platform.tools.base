@@ -32,7 +32,6 @@ import com.android.build.gradle.internal.attribution.BuildAnalyzerIssueReporter
 import com.android.build.gradle.internal.core.SettingsOptions
 import com.android.build.gradle.internal.core.dsl.features.DeviceTestOptionsDslInfo
 import com.android.build.gradle.internal.core.dsl.features.UnitTestOptionsDslInfo
-import com.android.build.gradle.internal.dsl.LanguageSplitOptions
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.services.BaseServices
 import com.android.build.gradle.internal.testing.ManagedDeviceRegistry
@@ -95,7 +94,6 @@ interface GlobalTaskCreationConfig: BootClasspathConfig {
 
     val namespacedAndroidResources: Boolean
     val testOptionExecutionEnum: com.android.builder.model.TestOptions.Execution?
-    val legacyLanguageSplitOptions: LanguageSplitOptions
 
     /** the same as [prefab] but returns an empty set on unsupported variants */
     val prefabOrEmpty: Set<Prefab>

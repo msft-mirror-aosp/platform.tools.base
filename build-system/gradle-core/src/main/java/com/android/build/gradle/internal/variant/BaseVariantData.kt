@@ -44,7 +44,6 @@ abstract class BaseVariantData(
     private var rawAndroidResources: FileCollection? = null
 
     private lateinit var densityFilters: Set<String>
-    private lateinit var languageFilters: Set<String>
     private lateinit var abiFilters: Set<String>
 
     /**
@@ -114,7 +113,6 @@ abstract class BaseVariantData(
      */
     fun calculateFilters(splits: Splits) {
         densityFilters = getFilters(DiscoverableFilterType.DENSITY, splits)
-        languageFilters = getFilters(DiscoverableFilterType.LANGUAGE, splits)
         abiFilters = getFilters(DiscoverableFilterType.ABI, splits)
     }
 
@@ -127,15 +125,13 @@ abstract class BaseVariantData(
      * to invoking this method.
      */
     fun getFilters(filterType: VariantOutput.FilterType): Set<String> {
-        check(::densityFilters.isInitialized && ::languageFilters.isInitialized && ::abiFilters.isInitialized) {
+        check(::densityFilters.isInitialized && ::abiFilters.isInitialized) {
             "calculateFilters method not called"
         }
 
         return when (filterType) {
             VariantOutput.FilterType.DENSITY -> densityFilters
-            VariantOutput.FilterType.LANGUAGE -> languageFilters
             VariantOutput.FilterType.ABI -> abiFilters
-            else -> throw RuntimeException("Unhandled filter type")
         }
     }
 
@@ -146,11 +142,6 @@ abstract class BaseVariantData(
         DENSITY {
             override fun getConfiguredFilters(splits: Splits): Collection<String> {
                 return splits.densityFilters
-            }
-        },
-        LANGUAGE {
-            override fun getConfiguredFilters(splits: Splits): Collection<String> {
-                return (splits as com.android.build.gradle.internal.dsl.Splits).languageFilters
             }
         },
         ABI {

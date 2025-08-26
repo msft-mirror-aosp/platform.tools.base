@@ -37,7 +37,6 @@ import com.android.build.gradle.internal.core.dsl.impl.features.KmpDeviceTestOpt
 import com.android.build.gradle.internal.core.dsl.impl.features.KmpUnitTestOptionsDslInfoImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
-import com.android.build.gradle.internal.dsl.LanguageSplitOptions
 import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.build.gradle.internal.lint.getLocalCustomLintChecks
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -227,8 +226,6 @@ internal class KmpGlobalTaskCreationConfigImpl(
         get() = emptySet()
 
     override val splits: Splits
-        get() = throw IllegalAccessException("Not supported for kmp")
-    override val legacyLanguageSplitOptions: LanguageSplitOptions
         get() = throw IllegalAccessException("Not supported for kmp")
     override val versionedNdkHandler: SdkComponentsBuildService.VersionedNdkHandler
         get() = throw IllegalAccessException("Not supported for kmp")

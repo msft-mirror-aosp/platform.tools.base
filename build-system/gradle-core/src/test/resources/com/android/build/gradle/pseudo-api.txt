@@ -1697,15 +1697,6 @@ com.android.build.gradle.internal.dsl.JavaCompileOptions implements com.android.
 com.android.build.gradle.internal.dsl.JavaCompileOptions.<init>: com.android.build.gradle.internal.dsl.JavaCompileOptions ()
 com.android.build.gradle.internal.dsl.JavaCompileOptions.getAnnotationProcessorOptions: com.android.build.gradle.internal.dsl.AnnotationProcessorOptions ()
 com.android.build.gradle.internal.dsl.JavaCompileOptions.toString: java.lang.String ()
-com.android.build.gradle.internal.dsl.LanguageSplitOptions
-com.android.build.gradle.internal.dsl.LanguageSplitOptions.<init>: com.android.build.gradle.internal.dsl.LanguageSplitOptions ()
-com.android.build.gradle.internal.dsl.LanguageSplitOptions.getApplicationFilters: java.util.Set<java.lang.String> ()
-com.android.build.gradle.internal.dsl.LanguageSplitOptions.getInclude: java.util.Set<java.lang.String> ()
-com.android.build.gradle.internal.dsl.LanguageSplitOptions.include: void (java.lang.String[])
-com.android.build.gradle.internal.dsl.LanguageSplitOptions.isEnable: boolean ()
-com.android.build.gradle.internal.dsl.LanguageSplitOptions.setAuto: void (boolean)
-com.android.build.gradle.internal.dsl.LanguageSplitOptions.setEnable: void (boolean)
-com.android.build.gradle.internal.dsl.LanguageSplitOptions.setInclude: void (java.util.List<java.lang.String>)
 com.android.build.gradle.internal.dsl.LintOptions implements com.android.builder.model.LintOptions, com.android.build.api.dsl.LintOptions
 com.android.build.gradle.internal.dsl.LintOptions$WhenMappings
 com.android.build.gradle.internal.dsl.LintOptions.<init>: com.android.build.gradle.internal.dsl.LintOptions (com.android.build.gradle.internal.services.DslServices, com.android.build.gradle.internal.dsl.LintImpl)
@@ -1964,9 +1955,6 @@ com.android.build.gradle.internal.dsl.Splits.getAbiFilters: java.util.Set<java.l
 com.android.build.gradle.internal.dsl.Splits.getDensity: com.android.build.gradle.internal.dsl.DensitySplitOptions ()
 com.android.build.gradle.internal.dsl.Splits.getDensityFilters: java.util.Collection ()
 com.android.build.gradle.internal.dsl.Splits.getDensityFilters: java.util.Set<java.lang.String> ()
-com.android.build.gradle.internal.dsl.Splits.getLanguage: com.android.build.gradle.internal.dsl.LanguageSplitOptions ()
-com.android.build.gradle.internal.dsl.Splits.getLanguageFilters: java.util.Set<java.lang.String> ()
-com.android.build.gradle.internal.dsl.Splits.language: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.LanguageSplitOptions>)
 com.android.build.gradle.internal.dsl.TestOptions implements com.android.build.api.dsl.TestOptions
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions implements com.android.build.api.dsl.UnitTestOptions
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.<init>: com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions (com.android.build.gradle.internal.services.DslServices)
