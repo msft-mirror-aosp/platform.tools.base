@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.10.0-alpha03" type="baseline" client="" dependencies="true" name="" variant="all" version="8.10.0-alpha03">
+<issues format="6" by="lint 9.0.0-dev" type="baseline" client="" dependencies="true" name="" variant="all" version="9.0.0-dev">
 
     <issue
         id="CheckResult"
@@ -30,7 +30,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/variant/LegacyVariantInputManager.kt"
-            line="124"
+            line="140"
             column="32"/>
     </issue>
 
@@ -41,7 +41,7 @@
         errorLine2="                           ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/variant/LegacyVariantInputManager.kt"
-            line="129"
+            line="145"
             column="28"/>
     </issue>
 
@@ -52,7 +52,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/variant/LegacyVariantInputManager.kt"
-            line="134"
+            line="150"
             column="32"/>
     </issue>
 
@@ -76,17 +76,6 @@
             file="src/main/java/com/android/build/gradle/internal/dsl/ManagedDevices.kt"
             line="53"
             column="13"/>
-    </issue>
-
-    <issue
-        id="EagerGradleConfiguration"
-        message="Use register instead of create"
-        errorLine1="        final AndroidReportTask mergeReportsTask = project.getTasks().create(&quot;mergeAndroidReports&quot;,"
-        errorLine2="                                                                      ~~~~~~">
-        <location
-            file="src/main/java/com/android/build/gradle/internal/plugins/ReportingPlugin.java"
-            line="108"
-            column="71"/>
     </issue>
 
     <issue
@@ -129,7 +118,7 @@
         errorLine2="                                                                                                              ~~~~~~~">
         <location
             file="src/main/java/com/android/build/gradle/internal/res/LinkApplicationAndroidResourcesTask.kt"
-            line="1001"
+            line="1011"
             column="111"/>
     </issue>
 
