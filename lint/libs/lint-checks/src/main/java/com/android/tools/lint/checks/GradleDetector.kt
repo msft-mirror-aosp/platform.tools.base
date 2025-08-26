@@ -492,19 +492,30 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         checkDeprecatedConfigurations(property, context, propertyCookie)
       } else {
         var dependencyString = getStringLiteralValue(value, valueCookie)
+        var updatedCookie = valueCookie
         if (
           dependencyString == null &&
             (listOf("platform", "testFixtures", "enforcedPlatform").any {
               value.startsWith("$it(")
             } && value.endsWith(")"))
         ) {
-          val argumentString = value.substring(value.indexOf('(') + 1, value.length - 1)
-          dependencyString =
-            if (valueCookie is UCallExpression && valueCookie.valueArguments.size == 1) {
+          val argumentsStart = value.indexOf('(') + 1
+          val argumentString = value.substring(argumentsStart, value.length - 1)
+          if (valueCookie is UCallExpression && valueCookie.valueArguments.size == 1) {
+            dependencyString =
               getStringLiteralValue(argumentString, valueCookie.valueArguments.first())
-            } else {
-              getStringLiteralValue(argumentString, valueCookie)
-            }
+            updatedCookie = valueCookie.valueArguments.first()
+          } else {
+            dependencyString = getStringLiteralValue(argumentString, valueCookie)
+            val location = context.getLocation(valueCookie)
+            val start = location.start?.let { it.offset + argumentsStart }
+            val end = location.end?.let { it.offset - 1 }
+
+            updatedCookie =
+              if (start != null && end != null)
+                context.findElementByRange(valueCookie, start, end) ?: valueCookie
+              else valueCookie
+          }
         }
         if (dependencyString == null) {
           dependencyString = getNamedDependency(value)
@@ -554,7 +565,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
                     KEY_REVISION,
                     dependency.version?.toIdentifier(),
                   )
-              report(context, valueCookie, PLUS, message, fix)
+              report(context, updatedCookie, PLUS, message, fix)
             }
 
             val tomlLibraries = context.getTomlValue(VC_LIBRARIES)
@@ -568,18 +579,18 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             ) {
               val versionVar = getVersionVariable(value)
               val result =
-                createMoveToTomlFix(context, tomlLibraries, dependency, valueCookie, versionVar)
+                createMoveToTomlFix(context, tomlLibraries, dependency, updatedCookie, versionVar)
               if (result != null) {
                 val message = result.first ?: "Use version catalog instead"
                 val fix = result.second
-                report(context, valueCookie, SWITCH_TO_TOML, message, fix)
+                report(context, updatedCookie, SWITCH_TO_TOML, message, fix)
               }
             }
 
             // Check dependencies without the PSI read lock, because we
             // may need to make network requests to retrieve version info.
             context.driver.runLaterOutsideReadAction {
-              checkDependency(context, dependency, isResolved, valueCookie, statementCookie)
+              checkDependency(context, dependency, isResolved, updatedCookie, statementCookie)
             }
           }
           if (

@@ -687,6 +687,122 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testAddNewBomTomlDependencyGroovy() {
+    lint()
+      .files(
+        gradleToml(
+            """
+                [versions]
+                appCompat = "1.5.1"
+                androidxTest = "1.5.0"
+
+                [libraries]
+                androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                """
+          )
+          .indented(),
+        gradle(
+            """
+                dependencies {
+                   implementation platform("com.google.firebase:firebase-bom:34.0.0")
+                }
+                """
+          )
+          .indented(),
+      )
+      .issues(SWITCH_TO_TOML)
+      .run()
+      .expect(
+        """
+          build.gradle:2: Warning: Use version catalog instead [UseTomlInstead]
+             implementation platform("com.google.firebase:firebase-bom:34.0.0")
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+          """
+      )
+      .verifyFixes()
+      .window(1)
+      .expectFixDiffs(
+        """
+                Autofix for build.gradle line 2: Replace with new library catalog declaration for firebase-bom:
+                @@ -1,3 +1,3 @@
+                 dependencies {
+                -   implementation platform("com.google.firebase:firebase-bom:34.0.0")
+                +   implementation platform(libs.firebase.bom)
+                 }
+                gradle/libs.versions.toml:
+                @@ -3,2 +3,3 @@
+                 androidxTest = "1.5.0"
+                +firebaseBom = "34.0.0"
+
+                @@ -6,2 +7,3 @@
+                 androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                -androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                +androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                +firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+                """
+      )
+  }
+
+  fun testAddNewBomTomlDependencyKts() {
+    lint()
+      .files(
+        gradleToml(
+            """
+                [versions]
+                appCompat = "1.5.1"
+                androidxTest = "1.5.0"
+
+                [libraries]
+                androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                """
+          )
+          .indented(),
+        kts(
+            """
+                dependencies {
+                   implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+                }
+                """
+          )
+          .indented(),
+      )
+      .issues(SWITCH_TO_TOML)
+      .run()
+      .expect(
+        """
+          build.gradle.kts:2: Warning: Use version catalog instead [UseTomlInstead]
+             implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+          """
+      )
+      .verifyFixes()
+      .window(1)
+      .expectFixDiffs(
+        """
+                Autofix for build.gradle.kts line 2: Replace with new library catalog declaration for firebase-bom:
+                @@ -1,3 +1,3 @@
+                 dependencies {
+                -   implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
+                +   implementation(platform(libs.firebase.bom))
+                 }
+                gradle/libs.versions.toml:
+                @@ -3,2 +3,3 @@
+                 androidxTest = "1.5.0"
+                +firebaseBom = "34.0.0"
+
+                @@ -6,2 +7,3 @@
+                 androidx-appCompat = { module = "androidx.appcompat:appcompat", version.ref = "appCompat" }
+                -androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                +androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
+                +firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+                """
+      )
+  }
+
   fun testAddNewTomlDependencyFromVariable() {
     // Checks that (1) we pick a reasonable default library name, (2) when we are already
     // using version variables in build.gradle.kts we suggest the same variable name, and
@@ -7503,22 +7619,22 @@ class GradleDetectorTest : AbstractCheckTest() {
         """
         build.gradle:3: Warning: A newer version of androidx.compose:compose-bom than 2022.12.00 is available: 2023.01.00 [GradleDependency]
             implementation platform("androidx.compose:compose-bom:2022.12.00") // ERROR 1g
-                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         build.gradle:4: Warning: A newer version of androidx.compose:compose-bom than 2022.12.00 is available: 2023.01.00 [GradleDependency]
             implementation testFixtures("androidx.compose:compose-bom:2022.12.00") // ERROR 2g
-                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         build.gradle:5: Warning: A newer version of androidx.compose:compose-bom than 2022.12.00 is available: 2023.01.00 [GradleDependency]
             implementation(enforcedPlatform("androidx.compose:compose-bom:2022.12.00")) // ERROR 3g
-                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         build.gradle.kts:4: Warning: A newer version of androidx.compose:compose-bom than 2022.12.00 is available: 2023.01.00 [GradleDependency]
                     implementation(platform("androidx.compose:compose-bom:2022.12.00")) // ERROR 1k
-                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         build.gradle.kts:5: Warning: A newer version of androidx.compose:compose-bom than 2022.12.00 is available: 2023.01.00 [GradleDependency]
                     implementation(testFixtures("androidx.compose:compose-bom:2022.12.00")) // ERROR 2k
-                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         build.gradle.kts:6: Warning: A newer version of androidx.compose:compose-bom than 2022.12.00 is available: 2023.01.00 [GradleDependency]
                     implementation(enforcedPlatform("androidx.compose:compose-bom:2022.12.00")) // ERROR 3k
-                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         ../gradle/libs.versions.toml:2: Warning: A newer version of androidx.compose:compose-bom than 2022.12.00 is available: 2023.01.00 [GradleDependency]
         composeBom = "2022.12.00" # ERROR 1t
                      ~~~~~~~~~~~~

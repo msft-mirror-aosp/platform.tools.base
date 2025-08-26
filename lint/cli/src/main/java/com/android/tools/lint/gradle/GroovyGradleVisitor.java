@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.builder.AstBuilder;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -575,6 +576,24 @@ public class GroovyGradleVisitor extends GradleVisitor {
         ASTNode node = (ASTNode) cookie;
         Pair<Integer, Integer> offsets = getOffsets(node, context);
         return offsets.getFirst();
+    }
+
+    @Override
+    public Object findElementByRange(
+            @NonNull GradleContext context, @NonNull Object cookie, int start, int end) {
+        ASTNode node = (ASTNode) cookie;
+        final Object[] result = {null};
+        node.visit(
+                new CodeVisitorSupport() {
+                    @Override
+                    public void visitConstantExpression(ConstantExpression expression) {
+                        Pair<Integer, Integer> offset = getOffsets(expression, context);
+                        if (offset.getFirst() == start && offset.getSecond() == end) {
+                            result[0] = expression;
+                        }
+                    }
+                });
+        return result[0];
     }
 
     @NonNull

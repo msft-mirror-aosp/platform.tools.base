@@ -59,6 +59,13 @@ open class GradleVisitor {
 
   open fun getStartOffset(context: GradleContext, cookie: Any): Int = -1
 
+  open fun findElementByRange(
+    context: GradleContext,
+    cookie: Any,
+    startOffset: Int,
+    endOffset: Int,
+  ): Any? = null
+
   open fun createLocation(context: GradleContext, cookie: Any): Location = error("Not supported")
 
   /**
