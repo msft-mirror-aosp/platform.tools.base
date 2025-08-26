@@ -16,15 +16,21 @@
 
 package com.android.build.gradle.internal.coverage;
 
+import static com.android.build.gradle.internal.coverage.CoverageUtilsKt.generateReport;
+
+import static com.google.common.truth.Truth.assertThat;
+
 import com.android.annotations.NonNull;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
 import com.google.common.io.Resources;
 import com.google.common.truth.Expect;
-import kotlin.jvm.Throws;
+
+import org.gradle.api.logging.Logging;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -37,8 +43,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import static com.google.common.truth.Truth.assertThat;
 
 /**
  * Processes the coverage metadata file and makes sure that we display the information correctly.
@@ -69,41 +73,45 @@ import static com.google.common.truth.Truth.assertThat;
  * one connected device. This will generate the necessary coverage.ec file that you can copy to the
  * resources/jacocoReport/com/android/tools/build/tests/myapplication/ directory.
  */
-public class JacocoInstrumentationReportTaskTest {
+public class GenerateCoverageReportTest {
 
-    @Rule
-    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+    @Rule public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
 
-    @Rule
-    public Expect expect = Expect.createAndEnableStackTrace();
+    @Rule public Expect expect = Expect.createAndEnableStackTrace();
 
     @Test
     public void sanityCheckReport() throws IOException, URISyntaxException {
         // Coverage file generated from BasicTest project.
-        File coverageFile = copyResourceToFolder(
-                "jacocoReport/com/android/tools/build/tests/myapplication/coverage.ec",
-                mTemporaryFolder.newFolder());
+        File coverageFile =
+                copyResourceToFolder(
+                        "jacocoReport/com/android/tools/build/tests/myapplication/coverage.ec",
+                        mTemporaryFolder.newFolder());
         File sourceRoot = setUpSourceDirectory(mTemporaryFolder);
         File classDir = setUpClassDirectory(mTemporaryFolder);
         File reportDir = mTemporaryFolder.newFolder();
 
-        JacocoReportTask.JacocoReportWorkerAction.generateReport(
+        generateReport(
                 ImmutableList.of(coverageFile),
                 reportDir,
                 ImmutableList.of(classDir),
                 ImmutableList.of(sourceRoot),
                 4,
-                "debug");
+                "debug",
+                Logging.getLogger(this.getClass()));
 
         File indexHtml = new File(reportDir, "index.html");
-        Document document = Jsoup.parse(indexHtml, Charsets.UTF_8.name(),
-                indexHtml.getParentFile().toURI().toString());
+        Document document =
+                Jsoup.parse(
+                        indexHtml,
+                        Charsets.UTF_8.name(),
+                        indexHtml.getParentFile().toURI().toString());
 
         Elements totals = document.select("td:contains(48 of 53)");
         expect.that(totals).named("Total coverage table cell").hasSize(1);
 
-        document = navigateTo(
-                getLinkWithText(document, "com.android.tools.build.tests.myapplication"));
+        document =
+                navigateTo(
+                        getLinkWithText(document, "com.android.tools.build.tests.myapplication"));
         getLinkWithText(document, "MainActivity.new View.OnClickListener() {...}");
         expect.that(document.text()).doesNotContain("BuildConfig");
         document = navigateTo(getLinkWithText(document, "MainActivity"));
@@ -120,8 +128,13 @@ public class JacocoInstrumentationReportTaskTest {
         return document.select("a[href]").stream()
                 .filter(candidateLink -> candidateLink.text().equals(text))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError(
-                        "Could not find link with text " + text + " in document " + document));
+                .orElseThrow(
+                        () ->
+                                new AssertionError(
+                                        "Could not find link with text "
+                                                + text
+                                                + " in document "
+                                                + document));
     }
 
     @NonNull
@@ -147,12 +160,10 @@ public class JacocoInstrumentationReportTaskTest {
         File sourceRoot = tempFolder.newFolder();
         copyResourceToFolder(
                 "jacocoReport/com/android/tools/build/tests/myapplication/MainActivity.java",
-                sourceRoot
-        );
+                sourceRoot);
         copyResourceToFolder(
                 "jacocoReport/com/android/tools/build/tests/myapplication/BuildConfig.java",
-                sourceRoot
-        );
+                sourceRoot);
         return new File(sourceRoot, "jacocoReport");
     }
 
@@ -160,16 +171,13 @@ public class JacocoInstrumentationReportTaskTest {
         File sourceRoot = tempFolder.newFolder();
         copyResourceToFolder(
                 "jacocoReport/com/android/tools/build/tests/myapplication/MainActivity.class",
-                sourceRoot
-        );
+                sourceRoot);
         copyResourceToFolder(
                 "jacocoReport/com/android/tools/build/tests/myapplication/MainActivity$1.class",
-                sourceRoot
-        );
+                sourceRoot);
         copyResourceToFolder(
                 "jacocoReport/com/android/tools/build/tests/myapplication/BuildConfig.class",
-                sourceRoot
-        );
+                sourceRoot);
         return new File(sourceRoot, "jacocoReport");
     }
 }
