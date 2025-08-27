@@ -326,18 +326,6 @@ enum class BooleanOption(
 
     ENABLE_TEST_FIXTURES("android.experimental.enableTestFixtures", false, FeatureStage.Experimental),
 
-    /**
-     * Expose only the new DSL.
-     *
-     * No longer use the legacy implementation classes to back the DSL.
-     *
-     * The legacy implementation classes also includes the legacy variant API, so setting this
-     * subsumes setting `android.enableLegacyVariantApi`
-     */
-    USE_NEW_DSL("android.newDsl", false, FeatureStage.Experimental,
-        FutureStage(true, FeatureStage.SoftlyEnforced(VERSION_10_0), Version.VERSION_9_0),
-    ),
-
     USE_DECLARATIVE_INTERFACES("android.experimental.declarative", false, FeatureStage.Experimental),
 
     /** Whether to force the APK to be deterministic. */
@@ -709,6 +697,16 @@ enum class BooleanOption(
         defaultValue = true,
         stage = FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
+
+    /**
+     * Expose only the new DSL.
+     *
+     * No longer use the legacy implementation classes to back the DSL.
+     *
+     * The legacy implementation classes also includes the legacy variant API, so setting this
+     * subsumes setting `android.enableLegacyVariantApi`
+     */
+    USE_NEW_DSL("android.newDsl", true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
 
     DEFAULT_ANDROIDX_TEST_RUNNER(
         propertyName = "android.default.androidx.test.runner",

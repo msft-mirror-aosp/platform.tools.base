@@ -41,15 +41,14 @@ class NewDslImplementationSmokeTest {
                 targetProjectPath = ":app"
             }
         }
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, true)
-        }
     }
 
 
     @Test
     fun smokeTest() {
-        rule.build.executor.run(":app:tasks", ":lib:tasks", ":feature:tasks", ":test:tasks")
+        rule.build.executor
+            .with(BooleanOption.USE_NEW_DSL, true)
+            .run(":app:tasks", ":lib:tasks", ":feature:tasks", ":test:tasks")
     }
 }
 
@@ -85,14 +84,13 @@ class OldDslNotRegisteredTest {
         androidLibrary {
             pluginCallbacks += CheckDslAccessibility::class.java
         }
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, true)
-        }
     }
 
     @Test
     fun smokeTest() {
-        val result = rule.build.executor.run(":lib:tasks")
+        val result = rule.build.executor
+            .with(BooleanOption.USE_NEW_DSL, true)
+            .run(":lib:tasks")
         result.assertOutputContains("CheckDslAccessibility checks done")
     }
 }

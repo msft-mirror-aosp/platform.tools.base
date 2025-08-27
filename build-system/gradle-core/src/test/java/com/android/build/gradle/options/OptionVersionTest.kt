@@ -84,7 +84,6 @@ class OptionVersionTest {
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
             BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED,
             BooleanOption.TEST_SUITE_SUPPORT,
-            BooleanOption.USE_NEW_DSL,
             BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER
         )
 
