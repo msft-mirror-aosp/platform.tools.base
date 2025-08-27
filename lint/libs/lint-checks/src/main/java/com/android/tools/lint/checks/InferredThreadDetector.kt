@@ -77,8 +77,8 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(ThreadConstraint
             """
                 Ensures that a method which expects to be called on a specific thread, is \
                 actually called from that thread. For example, calls on methods in widgets \
-                should always be made on the UI thread. This new issue consolidates `WrongThread` \
-                and `WrongThreadInterprocedural`, accompanied by a check aiming to be more reliable \
+                should always be made on the UI thread. This new issue subsumes \
+                `WrongThreadInterprocedural`, accompanied by a check aiming to be more reliable \
                 and scalable.
                 """,
           moreInfo =
@@ -86,10 +86,10 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(ThreadConstraint
           category = Category.CORRECTNESS,
           priority = 6,
           severity = Severity.ERROR,
-          enabledByDefault = true,
+          enabledByDefault = false,
           androidSpecific = true,
           implementation = Impl,
         )
-        .setAliases(listOf(ThreadDetector.THREAD.id, WrongThreadInterproceduralDetector.ISSUE.id))
+        .setAliases(listOf(WrongThreadInterproceduralDetector.ISSUE.id))
   }
 }
