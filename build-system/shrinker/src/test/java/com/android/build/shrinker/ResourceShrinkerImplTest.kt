@@ -83,25 +83,22 @@ class ResourceShrinkerImplTest {
 
     @Test
     fun `test shrinking with proguard obfuscated classes`() {
-        check(CodeInput.PROGUARD, false, false)
-        check(CodeInput.PROGUARD, true, false)
+        check(CodeInput.PROGUARD, false)
     }
 
     @Test
     fun `test shrinking with no obfuscation`() {
-        check(CodeInput.NO_SHRINKER, false, false)
-        check(CodeInput.NO_SHRINKER, true, false)
+        check(CodeInput.NO_SHRINKER, false)
     }
 
     @Test
     fun `test shrinking with R8 obfuscation`() {
-        check(CodeInput.R8, false, false)
-        check(CodeInput.R8, true, false)
+        check(CodeInput.R8,  false)
     }
 
     @Test
     fun `test shrinking with CLI`() {
-        check(CodeInput.R8, true, true)
+        check(CodeInput.R8, true)
     }
 
     @Test
@@ -132,7 +129,6 @@ class ResourceShrinkerImplTest {
             ),
             debugReporter = NoDebugReporter,
             supportMultipackages = false,
-            usePreciseShrinking = false
         )
 
         analyzer.analyze()
@@ -210,7 +206,6 @@ class ResourceShrinkerImplTest {
             ),
             debugReporter = NoDebugReporter,
             supportMultipackages = false,
-            usePreciseShrinking = false
         )
 
         analyzer.analyze()
@@ -252,7 +247,7 @@ class ResourceShrinkerImplTest {
         )
     }
 
-    private fun check(codeInput: CodeInput, usesPreciseShrinking: Boolean, useCli: Boolean) {
+    private fun check(codeInput: CodeInput, useCli: Boolean) {
         val dir = sTemporaryFolder.newFolder()
 
         val (classes, mapping) = when (codeInput) {
@@ -297,7 +292,6 @@ class ResourceShrinkerImplTest {
                 ),
                 debugReporter = NoDebugReporter,
                 supportMultipackages = false,
-                usePreciseShrinking = usesPreciseShrinking
             )
 
             analyzer.analyze()
@@ -400,80 +394,65 @@ class ResourceShrinkerImplTest {
         val compressedFile = File(dir, "compressed.ap_")
         analyzer.rewriteResourcesInApkFormat(uncompressedFile, compressedFile, BINARY)
 
-        if (usesPreciseShrinking) {
-            assertEquals(
-                """
-                res/drawable-hdpi/
-                res/drawable-hdpi/ic_launcher.png
-                res/drawable-mdpi/
-                res/drawable-mdpi/ic_launcher.png
-                res/drawable-xxhdpi/
-                res/drawable-xxhdpi/ic_launcher.png
-                res/drawable/
-                res/layout/
-                res/layout/activity_main.xml
-                res/menu/
-                res/menu/main.xml
-                res/raw/
-                res/raw/android_wear_micro_apk.apk
-                res/values/
-                res/xml/
-                res/xml/android_wear_micro_apk.xml
-                resources.pb
-            """.trimIndent(),
-                dumpZipContents(compressedFile)
-            )
+        assertEquals(
+            """
+            res/drawable-hdpi/
+            res/drawable-hdpi/ic_launcher.png
+            res/drawable-mdpi/
+            res/drawable-mdpi/ic_launcher.png
+            res/drawable-xxhdpi/
+            res/drawable-xxhdpi/ic_launcher.png
+            res/drawable/
+            res/layout/
+            res/layout/activity_main.xml
+            res/menu/
+            res/menu/main.xml
+            res/raw/
+            res/raw/android_wear_micro_apk.apk
+            res/values/
+            res/xml/
+            res/xml/android_wear_micro_apk.xml
+            resources.pb
+        """.trimIndent(),
+            dumpZipContents(compressedFile)
+        )
 
-            val beforeOnly = listOf(
-                "res/drawable/avd_heart_fill.xml",
-                "res/drawable/avd_heart_fill_1.xml",
-                "res/drawable/avd_heart_fill_2.xml",
-                "res/drawable/unused.png",
-                "res/menu/menu2.xml",
-                "res/raw/index1.html",
-                "res/raw/my_js.js",
-                "res/raw/styles2.css")
+        val beforeOnly = listOf(
+            "res/drawable/avd_heart_fill.xml",
+            "res/drawable/avd_heart_fill_1.xml",
+            "res/drawable/avd_heart_fill_2.xml",
+            "res/drawable/unused.png",
+            "res/menu/menu2.xml",
+            "res/raw/index1.html",
+            "res/raw/my_js.js",
+            "res/raw/styles2.css")
 
-            val beforeAndAfter =
-                listOf("res/drawable-hdpi/ic_launcher.png",
-                       "res/drawable-mdpi/ic_launcher.png",
-                       "res/drawable-xxhdpi/ic_launcher.png",
-                       "res/layout/activity_main.xml",
-                       "res/menu/main.xml",
-                       "res/raw/android_wear_micro_apk.apk",
-                       "res/xml/android_wear_micro_apk.xml")
+        val beforeAndAfter =
+            listOf("res/drawable-hdpi/ic_launcher.png",
+                   "res/drawable-mdpi/ic_launcher.png",
+                   "res/drawable-xxhdpi/ic_launcher.png",
+                   "res/layout/activity_main.xml",
+                   "res/menu/main.xml",
+                   "res/raw/android_wear_micro_apk.apk",
+                   "res/xml/android_wear_micro_apk.xml")
 
-            val resourceTableBefore =
-                ResourceTable.parseFrom(getZipContents(uncompressedFile, "resources.pb"))
-            val resourceTableAfter =
-                ResourceTable.parseFrom(getZipContents(compressedFile, "resources.pb"))
+        val resourceTableBefore =
+            ResourceTable.parseFrom(getZipContents(uncompressedFile, "resources.pb"))
+        val resourceTableAfter =
+            ResourceTable.parseFrom(getZipContents(compressedFile, "resources.pb"))
 
-            assertFalse(resourceTableBefore.entriesSequence().none { it.entry.hasOverlayableItem() })
-            assertTrue(resourceTableAfter.entriesSequence().none { it.entry.hasOverlayableItem() })
+        assertFalse(resourceTableBefore.entriesSequence().none { it.entry.hasOverlayableItem() })
+        assertTrue(resourceTableAfter.entriesSequence().none { it.entry.hasOverlayableItem() })
 
-            for (beforeFile in beforeOnly) {
-                assertFalse(resourceTableAfter.containsString(beforeFile))
-                assertTrue(resourceTableBefore.containsString(beforeFile))
-            }
-            for (both in beforeAndAfter) {
-                assertTrue(resourceTableAfter.containsString(both))
-                assertTrue(resourceTableBefore.containsString(both))
-            }
-            validateResourceStore(analyzer.model)
-        } else {
-            assertEquals(
-                dumpZipContents(uncompressedFile),
-                dumpZipContents(compressedFile)
-            )
-            assertArrayEquals(
-                DummyContent.TINY_PNG,
-                getZipContents(compressedFile, "res/drawable/unused.png")
-            )
-            assertArrayEquals(
-                DummyContent.TINY_BINARY_XML,
-                getZipContents(compressedFile, "res/drawable/avd_heart_fill.xml")
-            )
+        for (beforeFile in beforeOnly) {
+            assertFalse(resourceTableAfter.containsString(beforeFile))
+            assertTrue(resourceTableBefore.containsString(beforeFile))
         }
+        for (both in beforeAndAfter) {
+            assertTrue(resourceTableAfter.containsString(both))
+            assertTrue(resourceTableBefore.containsString(both))
+        }
+        validateResourceStore(analyzer.model)
     }
 
     private fun validateResourceStore(model: ResourceShrinkerModel) {

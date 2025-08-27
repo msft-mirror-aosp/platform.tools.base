@@ -212,8 +212,8 @@ public class ResourceShrinkerCli {
                         options.usageLog != null
                                 ? new FileReporter(Paths.get(options.usageLog).toFile())
                                 : NoDebugReporter.INSTANCE,
-                        false, // TODO(b/245721267): Add support for bundles
-                        true);
+                        false // TODO(b/245721267): Add support for bundles
+                        );
         resourceShrinker.analyze();
 
         resourceShrinker.rewriteResourcesInApkFormat(

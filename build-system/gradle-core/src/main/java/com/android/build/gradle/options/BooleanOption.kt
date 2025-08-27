@@ -573,12 +573,6 @@ enum class BooleanOption(
         FeatureStage.SoftlyEnforced(VERSION_9_0),
     ),
 
-    ENABLE_NEW_RESOURCE_SHRINKER_PRECISE(
-        "android.enableNewResourceShrinker.preciseShrinking",
-        true,
-        FeatureStage.SoftlyEnforced(VERSION_9_0),
-    ),
-
     DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES(
         "android.disableMinifyLocalDependenciesForLibraries",
         true,
@@ -1065,6 +1059,13 @@ enum class BooleanOption(
         FeatureStage.Enforced(Version.VERSION_9_0,
             additionalMessage = "The android.r8.integratedResourceShrinking property does not have any effect. " +
                     "R8 Integrated Resource Shrinking is always enabled.")
+    ),
+
+    ENABLE_NEW_RESOURCE_SHRINKER_PRECISE(
+        "android.enableNewResourceShrinker.preciseShrinking", true, FeatureStage.Enforced(
+            Version.VERSION_9_0,
+            additionalMessage = "Precise shrinking is always enabled and this property no longer has any effect."
+        )
     ),
 
     /* ----------------

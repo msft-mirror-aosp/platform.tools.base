@@ -75,9 +75,6 @@ abstract class ShrinkAppBundleResourcesTask : NonIncrementalTask() {
     @get:Input
     abstract val baseNamespace: Property<String>
 
-    @get:Input
-    abstract val usePreciseShrinking: Property<Boolean>
-
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val featureSetMetadata: RegularFileProperty
@@ -95,7 +92,6 @@ abstract class ShrinkAppBundleResourcesTask : NonIncrementalTask() {
             it.originalBundle.set(originalBundle)
             it.shrunkBundle.set(shrunkBundle)
             it.modules.set(modules)
-            it.usePreciseShrinking.set(usePreciseShrinking)
             if (mappingFileSrc.isPresent) {
                 mappingFileSrc.get().asFile.parentFile?.let { logDir ->
                     it.report.set(File(logDir, "resources.txt"));
@@ -123,8 +119,6 @@ abstract class ShrinkAppBundleResourcesTask : NonIncrementalTask() {
 
         override fun configure(task: ShrinkAppBundleResourcesTask) {
             super.configure(task)
-            task.usePreciseShrinking.set(creationConfig.services.projectOptions.get(
-              BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE))
             task.baseNamespace.set(creationConfig.namespace)
 
             creationConfig.artifacts.setTaskInputToFinalProduct(
@@ -145,7 +139,6 @@ interface ResourceShrinkerParams : WorkParameters {
     val shrunkBundle: RegularFileProperty
     val report: RegularFileProperty
     val modules: MapProperty<String, String>
-    val usePreciseShrinking: Property<Boolean>
 }
 
 private abstract class ShrinkAppBundleResourcesAction @Inject constructor() :
@@ -208,7 +201,6 @@ private abstract class ShrinkAppBundleResourcesAction @Inject constructor() :
                     reportFile
                 ),
               supportMultipackages = true,
-              usePreciseShrinking = parameters.usePreciseShrinking.get()
             ).use { shrinker ->
                 shrinker.analyze()
 
