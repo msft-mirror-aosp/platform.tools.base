@@ -15,6 +15,9 @@
  */
 package com.android.tools.lint.uast
 
+import com.android.tools.lint.uast.PsiBuilderUtils.buildLightField
+import com.android.tools.lint.uast.PsiBuilderUtils.buildLightMethod
+import com.android.tools.lint.uast.PsiBuilderUtils.orAnonymous
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassInitializer
 import com.intellij.psi.PsiElement
@@ -24,12 +27,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierList
 import com.intellij.psi.PsiReferenceList
-import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameterList
-import com.intellij.psi.PsiTypes
-import com.intellij.psi.impl.compiled.ClsTypeElementImpl
-import com.intellij.psi.impl.light.LightFieldBuilder
-import com.intellij.psi.impl.light.LightMethodBuilder
 import com.intellij.psi.impl.light.LightModifierList
 import com.intellij.psi.impl.light.LightPsiClassBase
 import com.intellij.psi.impl.light.LightTypeParameterBuilder
@@ -37,13 +35,10 @@ import com.intellij.psi.impl.light.LightTypeParameterListBuilder
 import org.jetbrains.kotlin.asJava.classes.KotlinSuperTypeListBuilder
 import org.jetbrains.kotlin.asJava.classes.lazyPub
 import org.jetbrains.kotlin.psi.KtClassOrObject
-import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtProperty
-import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlin.psi.allConstructors
-import org.jetbrains.kotlin.psi.psiUtil.parameterIndex
 
 // We may not need this if https://youtrack.jetbrains.com/issue/KT-69114 is supported
 internal class LintFakeLightClassForKlib(
@@ -97,14 +92,7 @@ internal class LintFakeLightClassForKlib(
   private val _fields: Array<out PsiField> by lazyPub {
     ktOrigin.declarations
       .filterIsInstance<KtProperty>()
-      .map { ktProperty ->
-        LightFieldBuilder(
-            manager,
-            ktProperty.name.orAnonymous(ktProperty),
-            PsiTypes.voidType(), // TODO: property return type
-          )
-          .apply { containingClass = this@LintFakeLightClassForKlib }
-      }
+      .map { it.buildLightField(this) }
       .toTypedArray()
   }
 
@@ -112,37 +100,8 @@ internal class LintFakeLightClassForKlib(
 
   private val _methods: Array<out PsiMethod> by lazyPub {
     (ktOrigin.allConstructors + ktOrigin.declarations.filterIsInstance<KtNamedFunction>())
-      .map { ktFunction ->
-        LightMethodBuilder(manager, language, ktFunction.name.orAnonymous(ktFunction)).apply {
-          containingClass = this@LintFakeLightClassForKlib
-          isConstructor = ktFunction is KtConstructor<*>
-          if (!isConstructor) {
-            setMethodReturnType {
-              val ktTypeReference = ktFunction.typeReference ?: return@setMethodReturnType null
-              buildCompiledTypeFromReference(ktTypeReference)
-            }
-          }
-          for (param in ktFunction.valueParameters) {
-            val name = param.name ?: continue
-            val ktTypeReference = param.typeReference ?: continue
-            addParameter(name, buildCompiledTypeFromReference(ktTypeReference))
-          }
-          for (param in ktFunction.typeParameters) {
-            val name = param.name ?: continue
-            addTypeParameter(LightTypeParameterBuilder(name, this, param.parameterIndex()))
-          }
-        }
-      }
+      .map { it.buildLightMethod(this) }
       .toTypedArray()
-  }
-
-  private fun buildCompiledTypeFromReference(ktTypeReference: KtTypeReference): PsiType {
-    // TODO: This likely won't work for non-class types, and that would be a much harder issue to
-    // fix. Refer to
-    // https://github.com/JetBrains/kotlin/blob/master/compiler/light-classes/src/org/jetbrains/kotlin/asJava/classes/ultraLightUtils.kt#L202
-    // for a more sophisticated example.
-    val typeText = ktTypeReference.getTypeText()
-    return ClsTypeElementImpl(this, typeText, '\u0000').type
   }
 
   override fun getMethods(): Array<out PsiMethod?> = _methods

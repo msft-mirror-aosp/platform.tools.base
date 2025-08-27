@@ -18,10 +18,10 @@ package com.android.tools.lint.uast
 import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.ManualProject
 import com.android.tools.lint.UastEnvironment
-import com.android.tools.lint.useFirUast
 import com.android.tools.lint.checks.infrastructure.KlibTestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.detector.api.Project
+import com.android.tools.lint.useFirUast
 import com.google.common.truth.Truth.assertThat
 import com.intellij.mock.MockProject
 import com.intellij.openapi.vfs.impl.jar.CoreJarFileSystem
@@ -36,18 +36,20 @@ import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.annotations.KaAnnotationList
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.analysis.api.symbols.KaNamedFunctionSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaPropertySymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaValueParameterSymbol
 import org.jetbrains.kotlin.analysis.api.types.KaType
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration
 import org.junit.AfterClass
+import org.junit.Assume
+import org.junit.AssumptionViolatedException
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.Assume
-import org.junit.AssumptionViolatedException
 import org.junit.rules.TemporaryFolder
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.kotlin.any
@@ -322,6 +324,47 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
         .isEqualTo("kotlin.Int")
       assertThat(methodsResult.returnType?.canonicalText).isEqualTo("kotlin.Int.Companion")
     }
+  }
+
+  @Test
+  fun getGlobalSymbols() {
+    val projectScope = GlobalSearchScope.allScope(mockProject)
+
+    val factory = KotlinStaticPsiDeclarationProviderFactory(mockProject, CoreJarFileSystem())
+    val provider = factory.createPsiDeclarationProvider(projectScope)
+
+    val kaFunction =
+      mock<KaNamedFunctionSymbol> {
+        on { callableId } doReturn
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("libGlobalMethod"))
+      }
+
+    val globalMethod = provider.getFunctions(kaFunction)
+    assertThat(globalMethod).hasSize(1)
+    assertThat(globalMethod.single().name).isEqualTo("libGlobalMethod")
+
+    val kaExtensionProperty =
+      mock<KaPropertySymbol> {
+        on { callableId } doReturn
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("globalProperty"))
+        on { name } doReturn Name.guessByFirstCharacter("globalProperty")
+      }
+
+    val globalExtensionProperty = provider.getProperties(kaExtensionProperty)
+    assertThat(globalExtensionProperty).hasSize(1)
+    assertThat(globalExtensionProperty.single().name).isEqualTo("globalProperty")
+    assertThat(globalExtensionProperty.single().isExtensionDeclaration()).isTrue()
+
+    val kaConstProperty =
+      mock<KaPropertySymbol> {
+        on { callableId } doReturn
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("LIB_CONST"))
+        on { name } doReturn Name.guessByFirstCharacter("LIB_CONST")
+      }
+
+    val globalConstProperty = provider.getProperties(kaConstProperty)
+    assertThat(globalConstProperty).hasSize(1)
+    assertThat(globalConstProperty.single().name).isEqualTo("LIB_CONST")
   }
 }
 
