@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.testing.androidtest
 
 import com.android.build.gradle.internal.testing.androidtest.AdbApkInstaller.InstallOptions
+import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationRunner
 import java.io.File
 
 /**
@@ -28,6 +29,7 @@ import java.io.File
  *
  * @param adbApkInstaller An [AdbApkInstaller] instance used to handle APK installation and
  * uninstallation on the target device.
+ * @param instrumentationRunner Executes the `am instrument` command to run the tests.
  * @param testedApks A list of APK files for the application under test. This can be a single
  * base APK or multiple files for a split APK.
  * @param apkInstallOptions A list of additional command-line options to be used when
@@ -39,6 +41,7 @@ import java.io.File
  */
 class AndroidTestRunner(
     private val adbApkInstaller: AdbApkInstaller,
+    private val instrumentationRunner: AmInstrumentationRunner,
     private val testedApks: List<File>,
     private val apkInstallOptions: List<String>,
     private val testUtilApks: List<File>,
@@ -75,9 +78,7 @@ class AndroidTestRunner(
                 )
             }
 
-            // TODO: This class is still under construction. We will run am instrument command here
-            //  to run android test after setup is complete.
-
+            instrumentationRunner.runAmInstrumentCommand()
         } finally {
             adbApkInstaller.postTestCleanup()
             if (uninstallApksAfterTests) {
