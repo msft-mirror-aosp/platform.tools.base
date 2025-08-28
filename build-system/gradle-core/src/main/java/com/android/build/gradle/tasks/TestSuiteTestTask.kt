@@ -94,6 +94,9 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     @get:OutputDirectory
     abstract val resultsDir: DirectoryProperty
 
+    @get:OutputDirectory
+    abstract val coverageDir: DirectoryProperty
+
     @get:Nested
     abstract val deviceProviderFactory: DeviceProviderFactory
 
@@ -208,6 +211,10 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             TestEngineInputProperty(
                 TestEngineInputProperty.RESULTS_DIR,
                 providerToPath(resultsDir)
+            ),
+            TestEngineInputProperty(
+                TestEngineInputProperty.COVERAGE_DIR,
+                providerToPath(coverageDir)
             ),
             TestEngineInputProperty(
                 AgpTestSuiteInputParameters.ADB_EXECUTABLE.propertyName,
@@ -379,6 +386,10 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             task.resultsDir.set(
                 task.project.layout.buildDirectory
                     .dir("intermediates/${creationConfig.testedVariant.name}/$name/results")
+            )
+            task.coverageDir.set(
+                task.project.layout.buildDirectory
+                    .dir("intermediates/${creationConfig.testedVariant.name}/$name/coverage_data")
             )
             task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
             task.environment("junit.platform.commons.logging.level","debug")
