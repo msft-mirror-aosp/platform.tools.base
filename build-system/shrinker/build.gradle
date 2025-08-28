@@ -14,4 +14,5 @@ dependencies {
     testImplementation libs.truth
     testImplementation libs.com.android.tools.testutils
     compileOnly files('../../../../prebuilts/r8/r8.jar')
+    testImplementation files('../../../../prebuilts/r8/r8.jar')
 }
