@@ -1,0 +1,34 @@
+load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+
+py_binary(
+    name = "mutation",
+    srcs = ["mutation.py"],
+    deps = [
+        ":mutation_testing_py_proto",
+        "@com_google_protobuf//:protobuf_python",
+    ],
+)
+
+proto_library(
+    name = "mutation_testing_proto_lib",
+    srcs = [":proto/mutation.proto"],
+    visibility = ["//visibility:public"],
+)
+
+py_proto_library(
+    name = "mutation_testing_py_proto",
+    visibility = ["//visibility:public"],
+    deps = [":mutation_testing_proto_lib"],
+)
+
+py_test(
+    name = "mutation_test",
+    srcs = ["mutation_test.py"],
+    tags = ["noci:studio-win"],
+    deps = [
+        ":mutation",
+        "@absl-py//absl/testing:absltest",
+        "@absl-py//absl/testing:parameterized",
+    ],
+)
