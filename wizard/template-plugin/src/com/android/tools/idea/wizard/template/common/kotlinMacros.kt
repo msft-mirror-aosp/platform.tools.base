@@ -21,4 +21,4 @@ import com.android.ide.common.repository.AgpVersion
  * Starting with this AGP version, the Kotlin plugin is present by default and should not be
  * explicitly added (see b/259523353).
  */
-val AGP_VERSION_WITH_BUILT_IN_KOTLIN = AgpVersion.parse("9.1.0-alpha01")
+val AGP_VERSION_WITH_BUILT_IN_KOTLIN = AgpVersion.parse("9.0.0-alpha03")
