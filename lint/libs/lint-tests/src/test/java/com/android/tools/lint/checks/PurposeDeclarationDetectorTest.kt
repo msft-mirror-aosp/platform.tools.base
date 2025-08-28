@@ -177,7 +177,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         """
         src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted on API level(s) 37 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: validPurposeForSdk37+, validPurposeForSdk38+ [MissingPurpose]
           <uses-permission android:name="USE_FOO">
-          ^
+           ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
       )
@@ -546,7 +546,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         """
         src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted on API level(s) 38-39 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: validPurposeForSdk37+, validPurposeForSdk38+ [MissingPurpose]
           <uses-permission android:name="USE_FOO">
-          ^
+           ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
       )
@@ -592,10 +592,10 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         """
         src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted on API level(s) 38 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: fooValidPurpose1, fooValidPurpose2 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
-          ^
+           ~~~~~~~~~~~~~~~
         src/main/AndroidManifest.xml:7: Error: USE_BAR will not be granted on API level(s) 38 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: barValidPurpose1 [MissingPurpose]
           <uses-permission android:name="USE_BAR">
-          ^
+           ~~~~~~~~~~~~~~~
         2 errors, 0 warnings
         """
       )
@@ -758,7 +758,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         """
         src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted on API level(s) 37-38, 40, 43-45 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: validPurposeForSdk37+, validPurposeForSdk38+ [MissingPurpose]
           <uses-permission android:name="USE_FOO">
-          ^
+           ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
       )
