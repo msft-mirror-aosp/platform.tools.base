@@ -72,7 +72,7 @@ class FlavorlibTest : ModelComparator() {
     fun report() {
         executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("androidDependencies", "signingReport")
+            .run("signingReport")
         // run twice to verify config cached run works
         executor().run("signingReport")
     }

@@ -107,7 +107,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     abstract val namespacedAndroidResources: Property<Boolean>
 
     @get:Input
-    abstract val disallowUsesSdkInManifest: Property<Boolean>
+    abstract val disallowSdkVersionsInUsesSdkInManifest: Property<Boolean>
 
     override fun doTaskAction() {
         val manifestOutputFolder = packagedManifestOutputDirectory.get().asFile
@@ -310,7 +310,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                             ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
                             ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST,
                             ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
-                                disallowUsesSdkInManifest.get()
+                                disallowSdkVersionsInUsesSdkInManifest.get()
                             }
                         ).toTypedArray()
                     )
@@ -350,9 +350,15 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             )
                 .withFeatures(
                     *listOfNotNull(
+                        // Don't check the minSdk library because this is already handled by the
+                        // processMainManifest task. If we check it again here, it causes the
+                        // false-positive error because the generatedTestManifest input doesn't
+                        // have an overrideLibrary tag, b/436878535.
+                        ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
+
                         ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS,
                         ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
-                            disallowUsesSdkInManifest.get()
+                            disallowSdkVersionsInUsesSdkInManifest.get()
                         }
                     ).toTypedArray()
                 )
@@ -633,7 +639,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                 .setDisallowChanges(
                     parseTargetHash(creationConfig.global.compileSdkHashString).apiLevel
                 )
-            task.disallowUsesSdkInManifest.setDisallowChanges(
+            task.disallowSdkVersionsInUsesSdkInManifest.setDisallowChanges(
                 creationConfig.services.projectOptions[BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST]
             )
         }

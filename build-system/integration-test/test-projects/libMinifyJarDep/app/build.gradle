@@ -24,7 +24,7 @@ android {
         create("proguard").initWith(buildTypes.debug)
         proguard {
             minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'config.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'config.pro'
             testProguardFiles 'config_test.pro'
         }
     }

@@ -27,4 +27,4 @@
 
 </manifest>
 @errors
-ERROR:The <uses-sdk> element was found in your AndroidManifest.xml file. Starting with Android Gradle Plugin 9.0, this is a build-breaking error. Previously, this condition only generated a warning. However, the SDK version properties defined in the DSL or the variant API have always overridden the manifest values. To eliminate this source of confusion, declaring <uses-sdk> in the manifest is no longer allowed.[\s]*Fix: Remove <uses-sdk> from your AndroidManifest.xml
+ERROR:The \<uses-sdk\> tag was detected in your main AndroidManifest\.xml file\. While its use is still permitted for specifying tools:overrideLibrary, it is no longer allowed for controlling SDK versions \(e\.g\., targetSdkVersion, minSdkVersion\)\. Starting with Android Gradle Plugin 9\.0\.0, these attributes have been deprecated within the manifest\.[\s]*To fix: Remove <uses-sdk> from your AndroidManifest\.xml\.

@@ -114,7 +114,7 @@ public class MinifyTest {
                         "build/"
                                 + SdkConstants.FD_INTERMEDIATES
                                 + "/default_proguard_files/global"
-                                + "/proguard-android.txt"
+                                + "/proguard-android-optimize.txt"
                                 + "-"
                                 + Version.ANDROID_GRADLE_PLUGIN_VERSION);
         assertThat(defaultProguardFile).exists();
@@ -269,10 +269,7 @@ public class MinifyTest {
 
     @Test
     public void testProguardOptimizedBuildsSuccessfully() throws Exception {
-        TestFileUtils.searchAndReplace(
-                project.getBuildFile(),
-                "getDefaultProguardFile('proguard-android.txt')",
-                "getDefaultProguardFile('proguard-android-optimize.txt')");
+        TestFileUtils.searchAndReplace(project.getBuildFile(), ", 'dont-optimize.pro'", "");
         project.executor().run("assembleMinified");
     }
 

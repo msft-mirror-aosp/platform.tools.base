@@ -163,6 +163,11 @@ enum class StringOption(
      */
     SIMULATE_AGP_VERSION_BEHAVIOR("android.simulateAgpVersionBehavior", ApiStage.Experimental),
 
+    /**
+     * Path to a file containing properties understood by the configured test engine.
+     */
+    TEST_SUITE_TEST_TASK_ADDITIONAL_INPUTS_FILE("android.testSuite.testTaskAdditionalInputsFile", ApiStage.Experimental),
+
     /* ---------------
      * DEPRECATED APIs
      */

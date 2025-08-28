@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.testing.api.DeviceException
 import org.gradle.api.file.Directory
@@ -269,6 +270,19 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
                     it.from(sourceContainer.dependencies.runtimeClasspath)
                 }
+            }
+
+            // Get all project properties, and system properties (possibly overriding project
+            // properties) and register them for the test engine.
+            creationConfig.services.projectOptions.get(
+                StringOption.TEST_SUITE_TEST_TASK_ADDITIONAL_INPUTS_FILE
+            )?.let { additionalInputFilePath ->
+                task.systemProperty(
+                    StringOption.TEST_SUITE_TEST_TASK_ADDITIONAL_INPUTS_FILE.propertyName,
+                    additionalInputFilePath
+                )
+                // add the file to the task's inputs.
+                task.inputs.file(additionalInputFilePath)
             }
 
             task.androidDeviceSerials.setDisallowChanges(

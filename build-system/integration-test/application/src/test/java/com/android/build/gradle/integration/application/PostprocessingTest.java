@@ -42,7 +42,8 @@ public class PostprocessingTest {
                 project.getBuildFile(),
                 "android.buildTypes.release {\n"
                         + "minifyEnabled true\n"
-                        + "proguardFiles android.getDefaultProguardFile('proguard-android.txt'),"
+                        + "proguardFiles"
+                        + " android.getDefaultProguardFile('proguard-android-optimize.txt'),"
                         + " 'proguard-rules.pro'\n"
                         + "}\n");
 
@@ -54,7 +55,7 @@ public class PostprocessingTest {
         String proguardConfiguration =
                 Files.toString(project.file("build/proguard-config.txt"), StandardCharsets.UTF_8);
 
-        assertThat(proguardConfiguration).contains("-dontoptimize");
+        assertThat(proguardConfiguration).doesNotContain("-dontoptimize");
         assertThat(proguardConfiguration).doesNotContain("-dontshrink");
         assertThat(proguardConfiguration).doesNotContain("-dontobfuscate");
     }

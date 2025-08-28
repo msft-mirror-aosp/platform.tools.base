@@ -556,9 +556,14 @@ fun GradleBuildDefinition.buildExampleSdkConsumerApp(
                 applicationId = "com.example.privacysandbox.client"
                 minSdk = 23
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                targetSdk = 34
                 versionCode = 2
                 versionName = "1.01"
+            }
+            lint {
+                targetSdk = 34
+            }
+            testOptions {
+                targetSdk = 34
             }
             privacySandbox {
                 enable = true
@@ -1072,9 +1077,13 @@ fun GradleBuildDefinition.buildExampleSdkSandboxSdk(
             compileSdk = DEFAULT_COMPILE_SDK_VERSION
             defaultConfig {
                 minSdk = 21
+            }
+            lint {
                 targetSdk = 34
             }
-
+            testOptions {
+                targetSdk = 34
+            }
             compileOptions {
                 sourceCompatibility = JavaVersion.VERSION_17
                 targetCompatibility = JavaVersion.VERSION_17

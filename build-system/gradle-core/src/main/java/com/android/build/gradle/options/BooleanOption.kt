@@ -197,9 +197,6 @@ enum class BooleanOption(
 
     INCLUDE_DEPENDENCY_INFO_IN_APKS("android.includeDependencyInfoInApks", true, FeatureStage.Supported),
 
-    // FIXME switch to false once we know we don't use these getters internally.
-    ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Supported),
-
     /**
      * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
      */
@@ -471,15 +468,6 @@ enum class BooleanOption(
 
     ENABLE_PROBLEMS_API("android.enableProblemsAPI", false, FeatureStage.Experimental),
 
-    /**
-     * Setting custom shader path is required with `glslc.dir` property
-     */
-    CUSTOM_SHADER_PATH_REQUIRED(
-        "android.custom.shader.path.required",
-        true,
-        FeatureStage.Experimental
-    ),
-
     // Flag should only be used in test.
     TEST_SIMULATE_AGP_VERSION_BEHAVIOR(
         "android.testSimulateAgpVersionBehavior",
@@ -519,6 +507,20 @@ enum class BooleanOption(
     ),
 
     /**
+     * When enabled, registers code coverage and test results aggregation tasks.
+     */
+    REPORT_AGGREGATION_SUPPORT(
+        "android.experimental.reportAggregationSupport",
+        false,
+        FeatureStage.Experimental,
+        futureStage = FutureStage(
+            true,
+            FeatureStage.Experimental,
+            Version.VERSION_10_0
+        )
+    ),
+
+    /**
      * Temporary workaround to continue using R8 param of --main-dex-list
      */
     R8_MAIN_DEX_LIST_DISALLOWED(
@@ -532,42 +534,21 @@ enum class BooleanOption(
         )
     ),
 
-    /**
-     * Whether to enable built-in Kotlin support (https://issuetracker.google.com/259523353).
-     *
-     * When this property is enabled, AGP provides Kotlin support for all [Project]s without
-     * requiring users to apply the `org.jetbrains.kotlin.android` plugin.
-     *   - If the user applies the `org.jetbrains.kotlin.android` plugin, the build will fail as AGP
-     *   already provides Kotlin support.
-     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin, the build
-     *   doesn't fail, but it also doesn't have any further effect.
-     *
-     * When this property is disabled, the users will need to apply either the
-     * `com.android.experimental.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
-     * plugin to have Kotlin support.
-     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin (recommended),
-     *   AGP will provide Kotlin support for the current [Project] that the plugin is applied to.
-     *   - If the user applies the `org.jetbrains.kotlin.android` plugin (legacy behavior), that
-     *   plugin will provide Kotlin support for the current [Project] that the plugin is applied to.
-     *   - If the user applies both plugins, the build will fail.
-     */
-    BUILT_IN_KOTLIN(
-        propertyName = "android.builtInKotlin",
-        defaultValue = false,
-        stage = FeatureStage.Experimental,
-        futureStage = FutureStage(
-            defaultValue = true,
-            stage = FeatureStage.SoftlyEnforced(VERSION_10_0),
-            version = Version.VERSION_9_0
-        )
-    ),
-
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */
+    /**
+     * Setting custom shader path is required with `glslc.dir` property
+     */
+    CUSTOM_SHADER_PATH_REQUIRED(
+        "android.custom.shader.path.required",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_9_0),
+    ),
+
     ENABLE_RESOURCE_OPTIMIZATIONS(
         "android.enableResourceOptimizations",
         true,
@@ -621,7 +602,9 @@ enum class BooleanOption(
     ),
 
     /**
-     * When enabled, the <uses-sdk> tag in AndroidManifest.xml will generate build errors.
+     * When enabled, the <uses-sdk> tag in AndroidManifest.xml will generate build errors if it is
+     * used to declare either minSdkVersion or targetSdkVersion. The only allowed use case
+     * will be tools:overrideLibrary.
      */
     DISALLOW_USES_SDK_IN_MANIFEST(
         "android.usesSdkInManifest.disallowed",
@@ -642,14 +625,14 @@ enum class BooleanOption(
      * Note that to help users migrate to R8 full mode, we provide 2 types of R8 full mode:
      *   - Legacy full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = false): In this
      *   mode, the default constructor is implicitly kept when a class is kept
-     *   (i.e., "-keep class A" is the same as "-keep class A { void <init>(); }")
+     *   (i.e., `-keep class A` is the same as `-keep class A { <init>(); }`)
      *   - Strict full mode for keep rules ([R8_STRICT_FULL_MODE_FOR_KEEP_RULES] = true): In this
      *   mode, the default constructor is not implicitly kept when a class is kept
-     *   (i.e., "-keep class A" is different from "-keep class A { void <init>(); }").
+     *   (i.e., `-keep class A` is different from `-keep class A { <init>(); }`).
      *
      * When migrating from legacy full mode to strict full mode, if the user's app or a library that
-     * the app uses contains a keep rule such as "-keep class A", then the app/library's author will
-     * need to manually update the rule to "-keep class A { void <init>(); }" if they want to keep
+     * the app uses contains a keep rule such as `-keep class A`, then the app/library's author will
+     * need to manually update the rule to `-keep class A { <init>(); }` if they want to keep
      * the default constructor. If they don't want to keep the default constructor, then they can
      * keep the rule as-is.
      */
@@ -677,6 +660,31 @@ enum class BooleanOption(
         FeatureStage.SoftlyEnforced(VERSION_10_0),
     ),
 
+    /**
+     * Whether to enable built-in Kotlin support (https://issuetracker.google.com/259523353).
+     *
+     * When this property is enabled, AGP provides Kotlin support for all [Project]s without
+     * requiring users to apply the `org.jetbrains.kotlin.android` plugin.
+     *   - If the user applies the `org.jetbrains.kotlin.android` plugin, the build will fail as AGP
+     *   already provides Kotlin support.
+     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin, the build
+     *   doesn't fail, but it also doesn't have any further effect.
+     *
+     * When this property is disabled, the users will need to apply either the
+     * `com.android.experimental.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
+     * plugin to have Kotlin support.
+     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin (recommended),
+     *   AGP will provide Kotlin support for the current [Project] that the plugin is applied to.
+     *   - If the user applies the `org.jetbrains.kotlin.android` plugin (legacy behavior), that
+     *   plugin will provide Kotlin support for the current [Project] that the plugin is applied to.
+     *   - If the user applies both plugins, the build will fail.
+     */
+    BUILT_IN_KOTLIN(
+        propertyName = "android.builtInKotlin",
+        defaultValue = true,
+        stage = FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
     /* -------------------
      * DEPRECATED FEATURES
      */
@@ -699,6 +707,10 @@ enum class BooleanOption(
         false,
         ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
     ),
+
+    /** This flag is subsumed by android.enableLegacyVariantApi. */
+    ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Deprecated(VERSION_10_0)),
+
     /* -----------------
      * ENFORCED FEATURES
      */

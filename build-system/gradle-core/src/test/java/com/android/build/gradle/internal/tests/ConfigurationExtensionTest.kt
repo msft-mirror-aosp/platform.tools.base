@@ -113,7 +113,15 @@ class ConfigurationExtensionTest(private val pluginType: TestProjects.Plugin) {
             "testLollipopDemoDebugCompileOnly",
             "testLollipopDemoDebugImplementation",
             "testLollipopDemoImplementation",
-            "testLollipopImplementation")
+            "testLollipopImplementation",
+            // The following are created by KGP (probably not used)
+            "lollipopDemoDebugUnitTestCompilationCompileOnly",
+            "lollipopDemoDebugUnitTestCompileOnly",
+            "lollipopDemoDebugUnitTestCompilationImplementation",
+            "lollipopDemoDebugUnitTestCompilationApi",
+            "lollipopDemoDebugUnitTestApi",
+            "lollipopDemoDebugUnitTestImplementation",
+        )
 
     /**
      * Runtime Test to prod relationship, exhaustively listed.
@@ -136,7 +144,15 @@ class ConfigurationExtensionTest(private val pluginType: TestProjects.Plugin) {
             "testLollipopDemoRuntimeOnly",
             "testLollipopImplementation",
             "testLollipopRuntimeOnly",
-            "testRuntimeOnly")
+            "testRuntimeOnly",
+            // The following are created by KGP (probably not used)
+            "lollipopDemoDebugUnitTestCompilationRuntimeOnly",
+            "lollipopDemoDebugUnitTestRuntimeOnly",
+            "lollipopDemoDebugUnitTestCompilationImplementation",
+            "lollipopDemoDebugUnitTestCompilationApi",
+            "lollipopDemoDebugUnitTestApi",
+            "lollipopDemoDebugUnitTestImplementation",
+        )
 
     // forbidden relationship
     private val forbiddenVariantToRaw = multimapOf(

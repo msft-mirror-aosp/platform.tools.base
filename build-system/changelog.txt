@@ -113,7 +113,7 @@
             minified.initWith(buildTypes.debug)
             minified {
                 minifyEnabled true
-                proguardFiles getDefaultProguardFile('proguard-android.txt'), "proguard-rules.pro"
+                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), "proguard-rules.pro"
                 testProguardFile "test-proguard-rules.pro"
             }
         }

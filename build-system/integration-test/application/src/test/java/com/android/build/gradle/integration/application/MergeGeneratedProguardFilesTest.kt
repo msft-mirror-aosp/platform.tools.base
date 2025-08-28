@@ -112,7 +112,7 @@ class MergeGeneratedProguardFilesTest(
                     buildTypes {
                         debug {
                             minifyEnabled true // Enable R8 for debug builds
-                            proguardFiles android.getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+                            proguardFiles android.getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
                         }
                     }
                 }

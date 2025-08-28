@@ -118,7 +118,6 @@ import com.android.build.gradle.internal.tasks.PrepareLintJarForPublish
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask
 import com.android.build.gradle.internal.tasks.R8Task
 import com.android.build.gradle.internal.tasks.RecalculateStackFramesTask
-import com.android.build.gradle.internal.tasks.SourceSetsTask
 import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
@@ -2293,7 +2292,6 @@ abstract class TaskManager(
             taskFactory.register(ExtractProguardFiles.CreationAction(globalConfig)).configure {
                 it.dependsOn(globalConfig.taskNames.mainPreBuild)
             }
-            taskFactory.register(SourceSetsTask.CreationAction(sourceSetContainer))
             taskFactory.register(
                 ASSEMBLE_ANDROID_TEST
             ) { assembleAndroidTestTask: Task ->

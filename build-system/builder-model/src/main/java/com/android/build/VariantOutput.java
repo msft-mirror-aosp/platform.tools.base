@@ -46,7 +46,6 @@ public interface VariantOutput {
     enum FilterType {
         DENSITY,
         ABI,
-        LANGUAGE
     }
 
     /**
@@ -55,7 +54,6 @@ public interface VariantOutput {
     String DENSITY = FilterType.DENSITY.name();
 
     String ABI = FilterType.ABI.name();
-    String LANGUAGE = FilterType.LANGUAGE.name();
 
     /** Returns the output type of the referenced APK. */
     @NonNull

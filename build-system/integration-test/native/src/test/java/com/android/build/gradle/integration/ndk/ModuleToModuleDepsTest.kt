@@ -20,12 +20,16 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.model.deleteExistingStructuredLogs
+import com.android.build.gradle.integration.common.fixture.model.lastConfigureInvalidationState
 import com.android.build.gradle.integration.common.fixture.model.readStructuredLogs
 import com.android.build.gradle.internal.cxx.configure.decodeConfigureInvalidationState
 import com.android.build.gradle.internal.cxx.configure.shouldConfigure
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage
 import com.android.build.gradle.internal.cxx.logging.decodeLoggingMessage
+import com.android.build.gradle.internal.cxx.logging.infoln
 import com.android.build.gradle.internal.cxx.logging.text
+import com.android.build.gradle.internal.cxx.logging.warnln
+import com.android.build.gradle.internal.cxx.model.name
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assume
@@ -174,6 +178,17 @@ class ModuleToModuleDepsTest(
         getTestProject().modelV2()
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
             .fetchNativeModules(ModelBuilderV2.NativeModuleParams())
+    }
+
+    @Test
+    fun `test sync then build`() {
+        Assume.assumeFalse(expectGradleConfigureError())
+        // Simulate an IDE sync
+        getTestProject().modelV2()
+            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
+            .fetchNativeModules(ModelBuilderV2.NativeModuleParams())
+        // ... then a build. This originally triggered b/347342606 but now passes.
+        testAppBuild("arm64-v8a")
     }
 
     @Test

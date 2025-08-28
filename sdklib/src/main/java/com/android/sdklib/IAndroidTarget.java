@@ -71,6 +71,8 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     int UI_AUTOMATOR_JAR    = 27;
     /** OS path to the "core-for-system-modules.jar" file */
     int CORE_FOR_SYSTEM_MODULES_JAR = 28;
+    /** OS path to the "permission-versions.xml" file */
+    int PERMISSION_VERSIONS = 29;
 
     /** Returns the target location, including a trailing file separator. */
     @NonNull

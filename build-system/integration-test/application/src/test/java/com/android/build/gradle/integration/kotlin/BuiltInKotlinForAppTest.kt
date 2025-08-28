@@ -344,7 +344,9 @@ class BuiltInKotlinForAppTest(
                 applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
             }
         }
-        val result = build.executor.expectFailure().run(":app:assembleDebug")
+        val result = build.executor
+            .with(BooleanOption.BUILT_IN_KOTLIN, builtInKotlinBooleanOption)
+            .expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
             if (builtInKotlinBooleanOption) {
                 "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."

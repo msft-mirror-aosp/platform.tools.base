@@ -18,18 +18,8 @@ Deprecated from AGP 8.12.0
   * com.android.build.api.dsl.BaseFlavor.getMinSdkPreview: java.lang.String ()
   * com.android.build.api.dsl.BaseFlavor.setMinSdkPreview: void (java.lang.String)
 Deprecated from AGP 8.11.0
-  * com.android.build.api.dsl.EmulatorSnapshots
-  * com.android.build.api.dsl.EmulatorSnapshots.getCompressSnapshots: boolean ()
-  * com.android.build.api.dsl.EmulatorSnapshots.getEnableForTestFailures: boolean ()
-  * com.android.build.api.dsl.EmulatorSnapshots.getMaxSnapshotsForTestFailures: int ()
-  * com.android.build.api.dsl.EmulatorSnapshots.retainAll: void ()
-  * com.android.build.api.dsl.EmulatorSnapshots.setCompressSnapshots: void (boolean)
-  * com.android.build.api.dsl.EmulatorSnapshots.setEnableForTestFailures: void (boolean)
-  * com.android.build.api.dsl.EmulatorSnapshots.setMaxSnapshotsForTestFailures: void (int)
   * com.android.build.api.dsl.LibraryBuildFeatures.getAndroidResources: java.lang.Boolean ()
   * com.android.build.api.dsl.LibraryBuildFeatures.setAndroidResources: void (java.lang.Boolean)
-  * com.android.build.api.dsl.TestOptions.emulatorSnapshots: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorSnapshots, kotlin.Unit>)
-  * com.android.build.api.dsl.TestOptions.getEmulatorSnapshots: com.android.build.api.dsl.EmulatorSnapshots ()
 Deprecated from AGP 8.9.0
   * com.android.build.api.variant.GeneratesApkBuilder.getDebuggable: boolean ()
 Deprecated from AGP 8.8.0
@@ -97,10 +87,6 @@ Deprecated from AGP 8.0.0
   * com.android.build.api.dsl.Packaging.merge: void (java.lang.String)
   * com.android.build.api.dsl.Packaging.pickFirst: void (java.lang.String)
 Deprecated from AGP 7.4.0
-  * com.android.build.api.dsl.LibraryBaseFlavor.getTargetSdk: java.lang.Integer ()
-  * com.android.build.api.dsl.LibraryBaseFlavor.getTargetSdkPreview: java.lang.String ()
-  * com.android.build.api.dsl.LibraryBaseFlavor.setTargetSdk: void (java.lang.Integer)
-  * com.android.build.api.dsl.LibraryBaseFlavor.setTargetSdkPreview: void (java.lang.String)
   * com.android.build.api.dsl.PrivacySandboxSdkBundle.getPackageName: java.lang.String ()
   * com.android.build.api.dsl.PrivacySandboxSdkBundle.setPackageName: void (java.lang.String)
   * com.android.build.api.dsl.PrivacySandboxSdkExtension.getNamespace: java.lang.String ()
@@ -170,17 +156,9 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.CommonExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
   * com.android.build.api.dsl.ComposeOptions.getKotlinCompilerVersion: java.lang.String ()
   * com.android.build.api.dsl.ComposeOptions.setKotlinCompilerVersion: void (java.lang.String)
-  * com.android.build.api.dsl.FailureRetention implements com.android.build.api.dsl.EmulatorSnapshots
-  * com.android.build.api.dsl.FailureRetention.getEnable: boolean ()
-  * com.android.build.api.dsl.FailureRetention.getMaxSnapshots: int ()
-  * com.android.build.api.dsl.FailureRetention.setEnable: void (boolean)
-  * com.android.build.api.dsl.FailureRetention.setMaxSnapshots: void (int)
   * com.android.build.api.dsl.JacocoOptions implements com.android.build.api.dsl.TestCoverage
   * com.android.build.api.dsl.JacocoOptions.getVersion: java.lang.String ()
   * com.android.build.api.dsl.JacocoOptions.setVersion: void (java.lang.String)
-  * com.android.build.api.dsl.LibraryBaseFlavor.setTargetSdkVersion: void (java.lang.String)
-  * com.android.build.api.dsl.LibraryBaseFlavor.targetSdkVersion: void (int)
-  * com.android.build.api.dsl.LibraryBaseFlavor.targetSdkVersion: void (java.lang.String)
   * com.android.build.api.dsl.Lint.getIgnore: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.LintOptions
   * com.android.build.api.dsl.LintOptions.baseline: void (java.io.File)
@@ -263,8 +241,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.TestBaseFlavor.setTargetSdkVersion: void (java.lang.String)
   * com.android.build.api.dsl.TestBaseFlavor.targetSdkVersion: void (int)
   * com.android.build.api.dsl.TestBaseFlavor.targetSdkVersion: void (java.lang.String)
-  * com.android.build.api.dsl.TestOptions.failureRetention: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.FailureRetention, kotlin.Unit>)
-  * com.android.build.api.dsl.TestOptions.getFailureRetention: com.android.build.api.dsl.FailureRetention ()
   * com.android.build.api.dsl.VariantDimension.getMultiDexKeepFile: java.io.File ()
   * com.android.build.api.dsl.VariantDimension.setManifestPlaceholders: java.lang.Void (java.util.Map<java.lang.String, ?>)
   * com.android.build.api.dsl.VariantDimension.setMultiDexKeepFile: void (java.io.File)

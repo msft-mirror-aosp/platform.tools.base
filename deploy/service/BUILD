@@ -31,6 +31,7 @@ kotlin_library(
         "//tools/base/deploy/proto:deploy_java_proto",
         "@maven//:com.google.guava.guava",
         "@maven//:com.google.protobuf.protobuf-java",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 

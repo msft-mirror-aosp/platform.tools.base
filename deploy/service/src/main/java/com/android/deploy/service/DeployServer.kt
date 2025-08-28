@@ -29,6 +29,8 @@ import com.android.deploy.service.proto.Service.DeviceResponse
 import com.android.deploy.service.proto.Service.InstallApkRequest
 import com.android.deploy.service.proto.Service.InstallApkResponse
 import com.android.deploy.service.proto.Service.NetworkTest
+import com.android.deploy.service.proto.Service.ResumeProcessRequest
+import com.android.deploy.service.proto.Service.ResumeProcessResponse
 import com.android.tools.deploy.proto.Deploy
 import com.android.tools.deployer.AdbClient
 import com.android.tools.deployer.AdbInstaller
@@ -40,6 +42,7 @@ import com.android.tools.idea.io.grpc.netty.NettyServerBuilder
 import com.android.tools.idea.io.grpc.stub.StreamObserver
 import com.android.tools.idea.protobuf.ByteString
 import com.google.common.annotations.VisibleForTesting
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -154,6 +157,21 @@ class DeployServer : DeployServiceImplBase {
         response.port = selectedClient.debuggerListenPort
         responseObserver.onNext(response.build())
         responseObserver.onCompleted()
+    }
+
+    override fun resumeProcess(
+        request: ResumeProcessRequest, responseObserver: StreamObserver<ResumeProcessResponse>
+    ) {
+        val response = ResumeProcessResponse.newBuilder()
+        runBlocking {
+            try {
+                AdbHelper.resumeProcess(request.deviceId, request.pid)
+                responseObserver.onNext(response.build())
+                responseObserver.onCompleted()
+            } catch (e: Exception) {
+                responseObserver.onError(e)
+            }
+        }
     }
 
     override fun installApk(

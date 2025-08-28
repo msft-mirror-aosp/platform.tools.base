@@ -79,7 +79,10 @@ fun createCxxModuleModel(
     val ndkMetaAbiList = NdkAbiFile(ndkMetaAbisFile(ndk.ndkDirectory)).abiInfoList
     val cmake = if (configurationParameters.buildSystem == CMAKE) {
         CxxCmakeModuleModel(
-            cmakeDirFromPropertiesFile = sdkComponents.cmakeDirFromProperties?.let { File(it) },
+            cmakeDirFromPropertiesFile = sdkComponents.cmakeDirFromProperties?.let {
+                File(it).takeIf(File::isAbsolute)
+                    ?: File(configurationParameters.rootDir, it)
+                },
             cmakeVersionFromDsl = configurationParameters.cmakeVersion,
             cmakeExe = File(NDK_MODULE_CMAKE_EXECUTABLE.configurationPlaceholder)
         )

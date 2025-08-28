@@ -366,14 +366,15 @@ public class PluginDslTest {
                 "project",
                 project,
                 "\n"
-                    + "project.android {\n"
-                    + "    buildTypes {\n"
-                    + "        release {\n"
-                    + "            minifyEnabled true\n"
-                    + "            proguardFile getDefaultProguardFile('proguard-android.txt')\n"
-                    + "        }\n"
-                    + "    }\n"
-                    + "}\n");
+                        + "project.android {\n"
+                        + "    buildTypes {\n"
+                        + "        release {\n"
+                        + "            minifyEnabled true\n"
+                        + "            proguardFile"
+                        + " getDefaultProguardFile('proguard-android-optimize.txt')\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n");
 
         plugin.createAndroidTasks(project);
         VariantCheckers.checkDefaultVariants(getComponents(plugin.getVariantManager()));

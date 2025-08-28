@@ -297,3 +297,21 @@ class EnumFlag<T : Enum<T>>(
             java.lang.Enum.valueOf(enumClass, strValue.uppercase(Locale.US))
     }
 }
+
+object DEFAULT_DEBUG_FLAG_VALUE: FlagDefault<Boolean>("DebugFlags are only programmatically set") {
+    override fun get(): Boolean = java.lang.Boolean.getBoolean("flags.debug.enabled")
+}
+
+class DebugFlag(
+    group: FlagGroup,
+    name: String,
+    displayName: String,
+    description: String,
+) : Flag<Boolean>(group, name, displayName, description, DEFAULT_DEBUG_FLAG_VALUE, Converter) {
+
+    object Converter : ValueConverter<Boolean> {
+        override fun serialize(value: Boolean) = value.toString()
+
+        override fun deserialize(strValue: String) = strValue.toBoolean()
+    }
+}

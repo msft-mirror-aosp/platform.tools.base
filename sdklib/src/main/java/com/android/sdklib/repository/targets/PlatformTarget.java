@@ -303,6 +303,9 @@ public class PlatformTarget implements IAndroidTarget {
                 return location.resolve(SdkConstants.OS_PLATFORM_ANT_FOLDER);
             case CORE_FOR_SYSTEM_MODULES_JAR:
                 return location.resolve(SdkConstants.FN_CORE_FOR_SYSTEM_MODULES);
+            case PERMISSION_VERSIONS:
+                return location.resolve(SdkConstants.OS_PLATFORM_DATA_FOLDER)
+                        .resolve(SdkConstants.FN_PERMISSION_VERSIONS);
             default:
                 return location;
         }

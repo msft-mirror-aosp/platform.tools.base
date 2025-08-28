@@ -1,3 +1,4 @@
 -keep @com.android.tests.shrink.Layout public class *
 -keep class com.android.tests.shrink.RootActivity$ScreenType*
 -keepattributes *Annotation*
+-dontoptimize # test written when -dontoptimize was included by default from proguard-android.txt

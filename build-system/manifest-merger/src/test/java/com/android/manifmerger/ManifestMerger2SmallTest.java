@@ -3231,7 +3231,8 @@ public class ManifestMerger2SmallTest {
                     + "        <purpose android:name=\"minOnBoth\" android:minSdkVersion=\"18\"/>\n"
                     + "        <purpose android:name=\"lowerPriorityMax\"/>\n"
                     + "        <purpose android:name=\"higherPriorityOnly\"/>\n"
-                    + "        <purpose android:name=\"higherPriorityMin\" android:minSdkVersion=\"10\"/>\n"
+                    + "        <purpose android:name=\"higherPriorityMin\""
+                    + " android:minSdkVersion=\"10\"/>\n"
                     + "        <purpose android:name=\"maxOnBoth\" android:maxSdkVersion=\"35\"/>\n"
                     + "    </uses-permission>\n"
                     + "</manifest>";
@@ -3246,7 +3247,8 @@ public class ManifestMerger2SmallTest {
                     + "\n"
                     + "    <uses-permission android:name=\"android.permission.INTERNET\">\n"
                     + "        <purpose android:name=\"minOnBoth\" android:minSdkVersion=\"15\"/>\n"
-                    + "        <purpose android:name=\"lowerPriorityMax\" android:maxSdkVersion=\"35\"/>\n"
+                    + "        <purpose android:name=\"lowerPriorityMax\""
+                    + " android:maxSdkVersion=\"35\"/>\n"
                     + "        <purpose android:name=\"higherPriorityMin\"/>\n"
                     + "        <purpose android:name=\"maxOnBoth\" android:maxSdkVersion=\"30\"/>\n"
                     + "    </uses-permission>\n"
@@ -3342,35 +3344,35 @@ public class ManifestMerger2SmallTest {
         MockLog mockLog = new MockLog();
         String appInput =
                 "<manifest\n"
-                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                        + "    package=\"com.example.app1\">\n"
-                        + "\n"
-                        + "    <uses-permission android:name=\"a\">\n"
-                        + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"20\" />\n"
-                        + "    </uses-permission>\n"
-                        + "\n"
-                        + "    <uses-permission android:name=\"b\">\n"
-                        + "        <purpose android:name=\"purpose1\" android:maxSdkVersion=\"20\" />\n"
-                        + "    </uses-permission>\n"
-                        + "</manifest>";
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.app1\">\n"
+                    + "\n"
+                    + "    <uses-permission android:name=\"a\">\n"
+                    + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"20\" />\n"
+                    + "    </uses-permission>\n"
+                    + "\n"
+                    + "    <uses-permission android:name=\"b\">\n"
+                    + "        <purpose android:name=\"purpose1\" android:maxSdkVersion=\"20\" />\n"
+                    + "    </uses-permission>\n"
+                    + "</manifest>";
 
         File appFile = TestUtils.inputAsFile("purposeTagsHandlingLibApp", appInput);
         assertTrue(appFile.exists());
 
         String libInput =
                 "<manifest\n"
-                        + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "package=\"com.example.lib1\">\n"
-                        + "\n"
-                        + "    <uses-permission android:name=\"a\">\n"
-                        + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"15\"/>\n"
-                        + "    </uses-permission>\n"
-                        + "\n"
-                        + "    <uses-permission android:name=\"b\">\n"
-                        + "        <purpose android:name=\"purpose1\" android:maxSdkVersion=\"30\"/>\n"
-                        + "    </uses-permission>\n"
-                        + "</manifest>";
+                    + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "package=\"com.example.lib1\">\n"
+                    + "\n"
+                    + "    <uses-permission android:name=\"a\">\n"
+                    + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"15\"/>\n"
+                    + "    </uses-permission>\n"
+                    + "\n"
+                    + "    <uses-permission android:name=\"b\">\n"
+                    + "        <purpose android:name=\"purpose1\" android:maxSdkVersion=\"30\"/>\n"
+                    + "    </uses-permission>\n"
+                    + "</manifest>";
         File libFile = TestUtils.inputAsFile("purposeTagsHandlingLib", libInput);
 
         try {
@@ -3388,7 +3390,8 @@ public class ManifestMerger2SmallTest {
 
             // Check merged purpose on first permission
             Element permission1 = (Element) permissions.item(0);
-            assertThat(permission1.getAttributes().getNamedItem("android:name").getNodeValue()).isEqualTo("a");
+            assertThat(permission1.getAttributes().getNamedItem("android:name").getNodeValue())
+                    .isEqualTo("a");
             NodeList purposes1 = permission1.getElementsByTagName(SdkConstants.TAG_PURPOSE);
             assertThat(purposes1.getLength()).isEqualTo(1);
             Truth.assertThat(
@@ -3403,12 +3406,14 @@ public class ManifestMerger2SmallTest {
                                     .getNamedItem("android:minSdkVersion")
                                     .getNodeValue())
                     .isEqualTo("15");
-            Truth.assertThat(purposes1.item(0).getAttributes().getNamedItem("android:maxSdkVersion"))
+            Truth.assertThat(
+                            purposes1.item(0).getAttributes().getNamedItem("android:maxSdkVersion"))
                     .isEqualTo(null);
 
             // Check merged purpose on second permission
             Element permission2 = (Element) permissions.item(1);
-            assertThat(permission2.getAttributes().getNamedItem("android:name").getNodeValue()).isEqualTo("b");
+            assertThat(permission2.getAttributes().getNamedItem("android:name").getNodeValue())
+                    .isEqualTo("b");
             NodeList purposes2 = permission2.getElementsByTagName(SdkConstants.TAG_PURPOSE);
             assertThat(purposes1.getLength()).isEqualTo(1);
             Truth.assertThat(
@@ -3439,27 +3444,29 @@ public class ManifestMerger2SmallTest {
         MockLog mockLog = new MockLog();
         String appInput =
                 "<manifest\n"
-                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
-                        + "    package=\"com.example.app1\">\n"
-                        + "\n"
-                        + "    <uses-permission-sdk-23 android:name=\"android.permission.INTERNET\">\n"
-                        + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"22\" android:maxSdkVersion=\"35\"/>\n"
-                        + "    </uses-permission-sdk-23>\n"
-                        + "</manifest>";
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.app1\">\n"
+                    + "\n"
+                    + "    <uses-permission-sdk-23 android:name=\"android.permission.INTERNET\">\n"
+                    + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"22\""
+                    + " android:maxSdkVersion=\"35\"/>\n"
+                    + "    </uses-permission-sdk-23>\n"
+                    + "</manifest>";
 
         File appFile = TestUtils.inputAsFile("purposeTagsHandlingLibApp", appInput);
         assertTrue(appFile.exists());
 
         String libInput =
                 "<manifest\n"
-                        + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "package=\"com.example.lib1\">\n"
-                        + "\n"
-                        + "    <uses-permission-sdk-23 android:name=\"android.permission.INTERNET\">\n"
-                        + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"15\" android:maxSdkVersion=\"30\"/>\n"
-                        + "    </uses-permission-sdk-23>\n"
-                        + "</manifest>";
+                    + "xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "package=\"com.example.lib1\">\n"
+                    + "\n"
+                    + "    <uses-permission-sdk-23 android:name=\"android.permission.INTERNET\">\n"
+                    + "        <purpose android:name=\"purpose1\" android:minSdkVersion=\"15\""
+                    + " android:maxSdkVersion=\"30\"/>\n"
+                    + "    </uses-permission-sdk-23>\n"
+                    + "</manifest>";
         File libFile = TestUtils.inputAsFile("purposeTagsHandlingLib", libInput);
 
         try {
@@ -3490,14 +3497,122 @@ public class ManifestMerger2SmallTest {
                                     .getNamedItem("android:minSdkVersion")
                                     .getNodeValue())
                     .isEqualTo("15");
-            Truth.assertThat(purposes.item(0)
-                            .getAttributes()
-                            .getNamedItem("android:maxSdkVersion")
-                            .getNodeValue())
+            Truth.assertThat(
+                            purposes.item(0)
+                                    .getAttributes()
+                                    .getNamedItem("android:maxSdkVersion")
+                                    .getNodeValue())
                     .isEqualTo("35");
         } finally {
             assertThat(appFile.delete()).named("Overlay was deleted").isTrue();
         }
+    }
+
+    @Test
+    public void testUsesSdkContainingSdkVersionsIsForbidden() throws Exception {
+        String appInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + " <uses-sdk minSdkVersion=\"30\" targetSdkVersion=\"32\"/>\n"
+                        + "</manifest>";
+
+        MockLog mockLog = new MockLog();
+
+        File appFile = TestUtils.inputAsFile("appManifest", appInput);
+        assertTrue(appFile.exists());
+
+        MergingReport mergingReport =
+                ManifestMerger2.newMerger(appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .merge();
+        assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.ERROR);
+        String loggingRecordsString = mergingReport.getLoggingRecords().toString();
+        assertThat(loggingRecordsString)
+                .contains(
+                        "The <uses-sdk> tag was detected in your main AndroidManifest.xml file."
+                            + " While its use is still permitted for specifying"
+                            + " tools:overrideLibrary, it is no longer allowed for controlling SDK"
+                            + " versions (e.g., targetSdkVersion, minSdkVersion). Starting with"
+                            + " Android Gradle Plugin 9.0.0, these attributes have been deprecated"
+                            + " within the manifest.\n\n"
+                            + "To fix: Remove <uses-sdk> from your AndroidManifest.xml.");
+        assertThat(loggingRecordsString).contains(".xml:4:2-54 Error:");
+    }
+
+    @Test
+    public void testLenientUsesSdkContainingSdkVersions() throws Exception {
+        String appInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + " <uses-sdk minSdkVersion=\"30\" targetSdkVersion=\"32\"/>\n"
+                        + "</manifest>";
+
+        MockLog mockLog = new MockLog();
+
+        File appFile = TestUtils.inputAsFile("appManifest", appInput);
+        assertTrue(appFile.exists());
+
+        MergingReport mergingReport =
+                ManifestMerger2.newMerger(appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .withFeatures(Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING)
+                        .merge();
+        assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+    }
+
+    @Test
+    public void testUsesSdkContainingOverrideLibraryOnly() throws Exception {
+        String appInput =
+                "<manifest\n"
+                    + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.app1\">\n"
+                    + " <uses-sdk tools:overrideLibrary=\"androidx.wear.compose.foundation\"/>\n"
+                    + "</manifest>";
+
+        MockLog mockLog = new MockLog();
+
+        File appFile = TestUtils.inputAsFile("appManifest", appInput);
+        assertTrue(appFile.exists());
+
+        MergingReport mergingReport =
+                ManifestMerger2.newMerger(appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .merge();
+        assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+    }
+
+    @Test
+    public void testUsesSdkContainingOverrideLibraryAndSdkVersions() throws Exception {
+        String appInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + " <uses-sdk tools:overrideLibrary=\"androidx.wear.compose.foundation\""
+                        + "     minSdkVersion=\"30\" targetSdkVersion=\"32\"/>\n"
+                        + "</manifest>";
+
+        MockLog mockLog = new MockLog();
+
+        File appFile = TestUtils.inputAsFile("appManifest", appInput);
+        assertTrue(appFile.exists());
+
+        MergingReport mergingReport =
+                ManifestMerger2.newMerger(appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .merge();
+        assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.ERROR);
+        String loggingRecordsString = mergingReport.getLoggingRecords().toString();
+        assertThat(loggingRecordsString)
+                .contains(
+                        "The <uses-sdk> tag was detected in your main AndroidManifest.xml file."
+                            + " While its use is still permitted for specifying"
+                            + " tools:overrideLibrary, it is no longer allowed for controlling SDK"
+                            + " versions (e.g., targetSdkVersion, minSdkVersion). Starting with"
+                            + " Android Gradle Plugin 9.0.0, these attributes have been deprecated"
+                            + " within the manifest.\n\n"
+                            + "To fix: Remove targetSdkVersion, minSdkVersion from your"
+                            + " AndroidManifest.xml.");
+        assertThat(loggingRecordsString).contains(":5:2-115 Error:");
     }
 
     public static void validateFeatureName(

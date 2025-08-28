@@ -1,5 +1,6 @@
 """This module implements the iml_module rule."""
 
+load("//tools/base/intellij-bazel:transitioned_java.bzl", "DEFAULT_INTELLIJ_PLATFORM", "transitioned_java")
 load(":coverage.bzl", "coverage_baseline", "coverage_java_test")
 load(":functions.bzl", "create_option_file", "label_workspace_path")
 load(":kotlin.bzl", "kotlin_compile")
@@ -666,6 +667,8 @@ def iml_module(
 def iml_test(
         name,
         module,
+        intellij_platform = DEFAULT_INTELLIJ_PLATFORM,
+        jvm_flags = [],
         runtime_deps = [],
         tags = [],
         tags_linux = [],
@@ -677,6 +680,9 @@ def iml_test(
     Args:
         name: base name of the test.
         module: name of the module.
+        intellij_platform: optional name of the intellij platform for
+            the test, if 'None' it will use studio-sdk
+        jvm_flags: optional list of jvm flags
         runtime_deps: optional libraries to make available to the final
             test at runtime only.
         tags: optional list of tags to categorize the tests. These are
@@ -694,6 +700,8 @@ def iml_test(
         _iml_test(
             name = name,
             module = module,
+            intellij_platform = intellij_platform,
+            jvm_flags = jvm_flags,
             runtime_deps = runtime_deps,
             tags = tags,
             **kwargs
@@ -730,6 +738,8 @@ def iml_test(
         _iml_test(
             name = test_name,
             module = module,
+            intellij_platform = intellij_platform,
+            jvm_flags = jvm_flags,
             runtime_deps = runtime_deps,
             tags = all_tags,
             target_compatible_with = select({
@@ -748,11 +758,24 @@ def iml_test(
 def _iml_test(
         name,
         module,
+        intellij_platform = DEFAULT_INTELLIJ_PLATFORM,
+        jvm_flags = [],
         runtime_deps = [],
         **kwargs):
+    if intellij_platform != DEFAULT_INTELLIJ_PLATFORM:
+        transitioned_java(
+            name = name + "_module",
+            platform = intellij_platform,
+            testonly = 1,
+            target = module + "_testlib",
+        )
+        runtime_deps = runtime_deps + [":" + name + "_module"]
+    else:
+        runtime_deps = runtime_deps + [module + "_testlib"]
     native.java_test(
         name = name,
-        runtime_deps = runtime_deps + [module + "_testlib"],
+        jvm_flags = ["-Dintellij.plugin.test.platform=" + intellij_platform] + jvm_flags,
+        runtime_deps = runtime_deps,
         **kwargs
     )
 

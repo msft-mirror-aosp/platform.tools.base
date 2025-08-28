@@ -8,3 +8,5 @@ apiVersion = 3
 nativeApiVersion = 0
 
 lastStableBuildVersion = {LAST_STABLE_BUILD_VERSION}
+
+isAgpReleaseBranch = {IS_AGP_RELEASE_BRANCH}

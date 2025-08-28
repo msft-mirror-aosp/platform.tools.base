@@ -1098,7 +1098,7 @@ class ConnectedDeviceTest {
     }
 
     @Test
-    fun testActivityManagerCapabilitiesThrowsTimeoutIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
+    fun testActivityManagerCapabilitiesThrowsIOExceptionIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
         // Prepare
         val fakeDevice = addFakeConnectedDevice(sdk = 36)
         val delay = Duration.ofMillis(500)
@@ -1111,7 +1111,7 @@ class ConnectedDeviceTest {
         fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
 
         // Act
-        exceptionRule.expect(TimeoutException::class.java)
+        exceptionRule.expect(AdbIOTimeoutException::class.java)
         fakeDevice.activityManager.capabilities()
 
         // Assert
@@ -1550,6 +1550,47 @@ class ConnectedDeviceTest {
         Assert.assertTrue(finallyCalledDeferred.isCompleted)
     }
 
+    @Test
+    fun testActivityManagerForceStopThrowsIOExceptionIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeConnectedDevice(sdk = 36)
+        val delay = Duration.ofMillis(500)
+        setHostPropertyValue(
+            fakeDevice.session.host,
+            AdbLibProperties.AM_SERVICE_TIMEOUT,
+            delay
+        )
+        fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.AUTHORIZING
+        fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
+
+        // Act
+        exceptionRule.expect(AdbIOTimeoutException::class.java)
+        fakeDevice.activityManager.forceStop("com.app1")
+
+        // Assert
+        Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun testActivityManagerCrashThrowsIOExceptionIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = addFakeConnectedDevice(sdk = 36)
+        val delay = Duration.ofMillis(500)
+        setHostPropertyValue(
+            fakeDevice.session.host,
+            AdbLibProperties.AM_SERVICE_TIMEOUT,
+            delay
+        )
+        fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.AUTHORIZING
+        fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
+
+        // Act
+        exceptionRule.expect(AdbIOTimeoutException::class.java)
+        fakeDevice.activityManager.crash("com.app1")
+
+        // Assert
+        Assert.fail("Should not reach")
+    }
 
     open class TestSyncProgress : SyncProgress {
 

@@ -150,37 +150,6 @@ public class AnalyticsUtilTest {
             assertThat(proto.getDensityAuto()).isFalse();
             assertThat(proto.getDensityValuesList()).containsExactly(640, 480);
         }
-
-        splits.language(
-                it -> {
-                    it.setEnable(true);
-                });
-        {
-            GradleBuildSplits proto = AnalyticsUtil.toProto(splits);
-            assertThat(proto.getLanguageEnabled()).isTrue();
-            assertThat(proto.getLanguageAuto()).isFalse();
-            assertThat(proto.getLanguageIncludesList()).isEmpty();
-        }
-
-        splits.language(
-                it -> {
-                    it.include("en", null);
-                });
-        {
-            GradleBuildSplits proto = AnalyticsUtil.toProto(splits);
-            assertThat(proto.getLanguageEnabled()).isTrue();
-            assertThat(proto.getLanguageAuto()).isFalse();
-            assertThat(proto.getLanguageIncludesList()).containsExactly("en", "null");
-        }
-
-        // Check other field population is based on enable flag.
-        splits.language(it -> it.setEnable(false));
-        {
-            GradleBuildSplits proto = AnalyticsUtil.toProto(splits);
-            assertThat(proto.getLanguageEnabled()).isFalse();
-            assertThat(proto.getLanguageAuto()).isFalse();
-            assertThat(proto.getLanguageIncludesList()).isEmpty();
-        }
     }
 
     @Test

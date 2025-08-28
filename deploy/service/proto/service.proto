@@ -74,6 +74,13 @@ service DeployService {
    */
   rpc RunNetworkTest(NetworkTestRequest) returns (NetworkTestResponse) {
   }
+
+  /*
+   * Resumes the target process that must be currently in "Waiting for Debugger" state.
+   * Only available when the server is running in adblib mode.
+   */
+  rpc ResumeProcess(ResumeProcessRequest) returns (ResumeProcessResponse) {
+  }
 }
 
 
@@ -203,4 +210,12 @@ message DeployMetric {
     string status = 2;
     int64 startNs = 3;
     int64 endNs = 4;
+}
+
+message ResumeProcessRequest {
+    string device_id = 1;
+    uint32 pid = 2;
+}
+
+message ResumeProcessResponse {
 }

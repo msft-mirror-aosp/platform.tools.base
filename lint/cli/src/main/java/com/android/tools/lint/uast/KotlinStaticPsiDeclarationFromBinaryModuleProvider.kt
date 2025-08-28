@@ -223,23 +223,10 @@ private class KotlinStaticPsiDeclarationFromBinaryModuleProvider(
     val callableId = functionLikeSymbol.callableId ?: return emptyList()
     val classes =
       callableId.classId?.let { classId -> getClassesByClassId(classId) }
-        ?: getClassesInPackage(callableId.packageName).ifEmpty {
-          getClassesInKlib(callableId.packageName)
-        }
+        ?: getClassesInPackage(callableId.packageName)
     if (classes.isEmpty()) return emptyList()
 
-    val jvmName =
-      when (functionLikeSymbol) {
-        is KaPropertyGetterSymbol -> {
-          functionLikeSymbol.getJvmNameFromAnnotation()
-        }
-        is KaPropertySetterSymbol -> {
-          functionLikeSymbol.getJvmNameFromAnnotation()
-        }
-        else -> {
-          functionLikeSymbol.getJvmNameFromAnnotation()
-        }
-      }
+    val jvmName = functionLikeSymbol.getJvmNameFromAnnotation()
     val id = jvmName ?: callableId.callableName.identifier
     return classes
       .flatMap { psiClass ->

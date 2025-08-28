@@ -73,7 +73,7 @@ public class MinifyLibTest {
                 project.getSubproject(":lib").getBuildFile(),
                 "android {\n"
                         + "defaultConfig.consumerProguardFiles"
-                        + " getDefaultProguardFile('proguard-android.txt')\n"
+                        + " getDefaultProguardFile('proguard-android-optimize.txt')\n"
                         + "}\n");
 
         Collection<SyncIssue> syncIssues = project.modelV2()
@@ -88,7 +88,8 @@ public class MinifyLibTest {
         assertThat(issue.getSeverity()).isEqualTo(SyncIssue.SEVERITY_ERROR);
         assertThat(issue.getMessage())
                 .contains(
-                        "proguard-android.txt should not be used as a consumer configuration file");
+                        "proguard-android-optimize.txt should not be used as a consumer"
+                                + " configuration file");
     }
 
     @Test
@@ -192,8 +193,8 @@ public class MinifyLibTest {
                         + buildType
                         + " {\n"
                         + "        minifyEnabled true\n"
-                        + "        proguardFiles getDefaultProguardFile('proguard-android.txt'),"
-                        + " 'config.pro'\n"
+                        + "        proguardFiles"
+                        + " getDefaultProguardFile('proguard-android-optimize.txt'), 'config.pro'\n"
                         + "    }\n"
                         + "}");
         TestFileUtils.appendToFile(
@@ -203,7 +204,8 @@ public class MinifyLibTest {
                         + buildType
                         + " {\n"
                         + "        minifyEnabled true\n"
-                        + "        proguardFiles getDefaultProguardFile('proguard-android.txt')\n"
+                        + "        proguardFiles"
+                        + " getDefaultProguardFile('proguard-android-optimize.txt')\n"
                         + "    }\n"
                         + "}\n");
     }

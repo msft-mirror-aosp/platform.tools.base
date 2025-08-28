@@ -23,46 +23,4 @@ package com.android.build.api.dsl
  */
 interface LibraryBaseFlavor :
     BaseFlavor,
-    LibraryVariantDimension {
-
-    /**
-     * The target SDK version used for building the test APK.
-     *
-     * This is propagated in the library manifest, but that is only advisory for libraries that
-     * depend on this library.
-     *
-     * Setting this it will override previous calls of [targetSdk] and [targetSdkPreview] setters.
-     * Only one of [targetSdk] and [targetSdkPreview] should be set.
-     *
-     * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
-     */
-    @Deprecated("Will be removed from library DSL in AGP 9.0. "+
-            "Use testOptions.targetSdk or/and lint.targetSdk instead")
-    var targetSdk: Int?
-
-    @Deprecated("Will be removed from library DSL in AGP 9.0. "+
-            "Use testOptions.targetSdk or/and lint.targetSdk instead")
-    fun targetSdkVersion(targetSdkVersion: Int)
-
-    /**
-     * The target SDK version used for building the test APK.
-     *
-     * This is propagated in the library manifest, but that is only advisory for libraries that
-     * depend on this library.
-     *
-     * Setting this it will override previous calls of [targetSdk] and [targetSdkPreview] setters.
-     * Only one of [targetSdk] and [targetSdkPreview] should be set.
-     *
-     * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
-     */
-    @Deprecated("Will be removed from library DSL in AGP 9.0")
-    var targetSdkPreview: String?
-
-    @Deprecated("Will be removed from library DSL in AGP 9.0. "+
-            "Use testOptions.targetSdk or/and lint.targetSdk instead")
-    fun setTargetSdkVersion(targetSdkVersion: String?)
-
-    @Deprecated("Will be removed from library DSL in AGP 9.0. "+
-            "Use testOptions.targetSdk or/and lint.targetSdk instead")
-    fun targetSdkVersion(targetSdkVersion: String?)
-}
+    LibraryVariantDimension {}

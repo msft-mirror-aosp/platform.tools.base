@@ -182,7 +182,6 @@ fun View.createAppContext(stringTable: StringTable): AppContext {
     }
 
     val point = getDefaultDisplaySize()
-    val bounds = getWindowBounds(point)
     return AppContext.newBuilder().apply {
         createResource(stringTable, context.themeResId)?.let { themeResource ->
             theme = themeResource
@@ -191,7 +190,6 @@ fun View.createAppContext(stringTable: StringTable): AppContext {
         mainDisplayHeight = point.y
         mainDisplayOrientation = getDefaultDisplayRotation()
         displayType = appDisplayType
-        windowBounds = bounds
     }.build()
 }
 
@@ -226,21 +224,6 @@ fun View.getDefaultDisplaySize(): Point {
         val point = Point()
         display.getRealSize(point)
         return point
-    }
-}
-
-fun View.getWindowBounds(displaySize: Point): Rect {
-    if (Build.VERSION.SDK_INT >= 30) {
-        val windowManager = context.getSystemService(WindowManager::class.java)
-        return windowManager.getCurrentWindowMetrics().getBounds().toRect()
-    }
-    else {
-        // We cannot get the window bounds for API 29.
-        // Assume the app is in full screen mode.
-        return Rect.newBuilder().apply {
-            w = displaySize.x
-            h = displaySize.y
-        }.build()
     }
 }
 

@@ -15,21 +15,44 @@
  */
 package com.android.deploy.service
 
+import com.android.adblib.AdbSession
 import com.android.adblib.AdbSession.Companion.create
 import com.android.adblib.AdbSessionHost
+import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManagerFactory
 import com.android.adblib.ddmlibcompatibility.debugging.AdbLibClientManagerFactory.createClientManager
+import com.android.adblib.isOnline
+import com.android.adblib.serialNumber
+import com.android.adblib.waitForDevice
+import com.android.adblib.waitUntilOnline
+import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.jdwpProcessTracker
+import com.android.adblib.tools.debugging.jdwpPropertiesCollector
+import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.processinventory.ProcessInventoryServerConnection
+import com.android.adblib.tools.debugging.processinventory.installProcessInventoryJdwpProcessCommandDispatcherFactory
 import com.android.adblib.tools.debugging.processinventory.installProcessInventoryJdwpProcessPropertiesCollectorFactory
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
+import com.android.adblib.tools.debugging.resumeProcess
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AndroidDebugBridge
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.mapNotNull
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+
 import java.util.logging.Logger
 
 private val logger: Logger = Logger.getLogger(AdbHelper::class.java.getName())
 
 object AdbHelper {
+
+    private lateinit var session: AdbSession
 
     /**
      * Initializes the AndroidDebugBridge, using adblib or ddmlib.
@@ -38,7 +61,7 @@ object AdbHelper {
         if (System.getProperty("deploy.service.use.adblib").toBoolean()) {
             logger.info("adblib is enabled")
             val host = AdbSessionHost()
-            val session = create(host)
+            session = create(host)
 
             val inventoryServerEnabled = {
                 val enabled = System.getProperty("deploy.service.use.adblib.inventory.server").toBoolean()
@@ -53,6 +76,10 @@ object AdbHelper {
                 inventoryServerConnection,
                 inventoryServerEnabled,
             )
+            session.installProcessInventoryJdwpProcessCommandDispatcherFactory(
+                inventoryServerConnection,
+                inventoryServerEnabled,
+            )
             val options =
                 AdbInitOptions.Builder()
                     .setIDeviceManagerFactory(AdbLibIDeviceManagerFactory(session))
@@ -62,6 +89,28 @@ object AdbHelper {
             logger.info("adblib is disabled")
             AndroidDebugBridge.init(true)
         }
+    }
+
+    suspend fun resumeProcess(serialNumber: String, pid: Int) {
+        val process = withTimeoutOrNull(5.seconds) {
+            waitForProcess(serialNumber, pid)
+        } ?: throw Exception("Process $pid did not show up as isWaitingForDebugger on device $serialNumber")
+
+        withTimeout(5.seconds) {
+            process.resumeProcess()
+        }
+    }
+
+    suspend fun waitForProcess(deviceSerial: String, pid: Int): JdwpProcess {
+        val device = session.connectedDevicesTracker.waitForDevice(deviceSerial).also {
+            it.waitUntilOnline()
+        }
+
+        val process = device.jdwpProcessTracker.processesFlow.mapNotNull { processList ->
+            processList.firstOrNull { it.pid == pid }
+        }.first()
+
+        return process
     }
 }
 

@@ -73,7 +73,7 @@ interface VariantDimension {
     /**
      * Adds a new ProGuard configuration file.
      *
-     * `proguardFile getDefaultProguardFile('proguard-android.txt')`
+     * `proguardFile getDefaultProguardFile('proguard-android-optimize.txt')`
      *
      * There are two ProGuard rules files that ship with the Android plugin and are used by
      * default:

@@ -84,6 +84,12 @@ public class ProjectOptionsBuilder {
             booleans.put(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false);
             suppressWarnings.add(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS);
         }
+
+        // TODO(b/385745419): Migrate to built-in Kotlin
+        if (!booleans.containsKey(BooleanOption.BUILT_IN_KOTLIN)) {
+            booleans.put(BooleanOption.BUILT_IN_KOTLIN, false);
+            suppressWarnings.add(BooleanOption.BUILT_IN_KOTLIN);
+        }
     }
 
     private static void injectWarningSuppression(

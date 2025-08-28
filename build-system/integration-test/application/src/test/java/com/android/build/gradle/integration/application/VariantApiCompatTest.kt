@@ -39,7 +39,7 @@ class VariantApiCompatTest {
                 + "    buildTypes {\n"
                 + "        release {\n"
                 + "            minifyEnabled true\n"
-                + "            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'\n"
+                + "            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\n"
                 + "        }\n"
                 + "    }\n"
                 + "    applicationVariants.all { variant ->\n"

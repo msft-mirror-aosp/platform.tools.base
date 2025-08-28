@@ -1,0 +1,81 @@
+// Signature format: 4.0
+package com.android.build.api.dsl {
+
+  public interface CompileSdkReleaseSpec {
+    method public Integer? getMinorApiLevel();
+    method public Integer? getSdkExtension();
+    method public void setMinorApiLevel(Integer?);
+    method public void setSdkExtension(Integer?);
+    property public abstract Integer? minorApiLevel;
+    property public abstract Integer? sdkExtension;
+  }
+
+  public interface CompileSdkSpec {
+    method public com.android.build.api.dsl.CompileSdkVersion addon(String vendor, String name, int version);
+    method public com.android.build.api.dsl.CompileSdkVersion? getVersion();
+    method public com.android.build.api.dsl.CompileSdkVersion preview(String codeName);
+    method public com.android.build.api.dsl.CompileSdkVersion release(int version);
+    method public com.android.build.api.dsl.CompileSdkVersion release(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkReleaseSpec,kotlin.Unit> action);
+    method public void setVersion(com.android.build.api.dsl.CompileSdkVersion?);
+    property public abstract com.android.build.api.dsl.CompileSdkVersion? version;
+  }
+
+  public interface CompileSdkVersion {
+    method public String? getAddonName();
+    method public Integer? getApiLevel();
+    method public String? getCodeName();
+    method public Integer? getMinorApiLevel();
+    method public Integer? getSdkExtension();
+    method public String? getVendorName();
+    property public abstract String? addonName;
+    property public abstract Integer? apiLevel;
+    property public abstract String? codeName;
+    property public abstract Integer? minorApiLevel;
+    property public abstract Integer? sdkExtension;
+    property public abstract String? vendorName;
+  }
+
+  public interface MaxSdkSpec {
+    method public com.android.build.api.dsl.MaxSdkVersion? getVersion();
+    method public com.android.build.api.dsl.MaxSdkVersion release(int version);
+    method public void setVersion(com.android.build.api.dsl.MaxSdkVersion?);
+    property public abstract com.android.build.api.dsl.MaxSdkVersion? version;
+  }
+
+  public interface MaxSdkVersion {
+    method public int getApiLevel();
+    property public abstract int apiLevel;
+  }
+
+  public interface MinSdkSpec {
+    method public com.android.build.api.dsl.MinSdkVersion? getVersion();
+    method public com.android.build.api.dsl.MinSdkVersion preview(String codeName);
+    method public com.android.build.api.dsl.MinSdkVersion release(int version);
+    method public void setVersion(com.android.build.api.dsl.MinSdkVersion?);
+    property public abstract com.android.build.api.dsl.MinSdkVersion? version;
+  }
+
+  public interface MinSdkVersion {
+    method public Integer? getApiLevel();
+    method public String? getCodeName();
+    property public abstract Integer? apiLevel;
+    property public abstract String? codeName;
+  }
+
+  public interface TargetSdkSpec {
+    method public com.android.build.api.dsl.TargetSdkVersion? getVersion();
+    method public com.android.build.api.dsl.TargetSdkVersion preview(String codeName);
+    method public com.android.build.api.dsl.TargetSdkVersion release(int version);
+    method public void setVersion(com.android.build.api.dsl.TargetSdkVersion?);
+    property public abstract com.android.build.api.dsl.TargetSdkVersion? version;
+  }
+
+  public interface TargetSdkVersion {
+    method public Integer? getApiLevel();
+    method public String? getCodeName();
+    property public abstract Integer? apiLevel;
+    property public abstract String? codeName;
+  }
+
+}
+

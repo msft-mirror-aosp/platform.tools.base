@@ -142,14 +142,6 @@ public class AnalyticsUtil {
             }
         }
 
-        if (splits.getLanguage().isEnable()) {
-            builder.setLanguageEnabled(true);
-
-            for (String split : splits.getLanguage().getApplicationFilters()) {
-                builder.addLanguageIncludes(split != null ? split : "null");
-            }
-        }
-
         if (splits.getAbi().isEnable()) {
             builder.setAbiEnabled(true);
             builder.setAbiEnableUniversalApk(splits.getAbi().isUniversalApk());

@@ -30,7 +30,7 @@ import java.io.File
  * information that is available at a particular time during the Gradle lifecycle.
  * Two of the representations--PREFAB_PACKAGE_HEADER_ONLY and PREFAB_PACKAGE_CONFIGURATION
  * are "publications" and have a [PrefabPublicationType]. These don't carry a
- * payload of header files an source libraries. The third kind, PREFAB_PACKAGE, is a a
+ * payload of header files and source libraries. The third kind, PREFAB_PACKAGE, is a
  * standard unzipped AAR Prefab folder.
  *
  * ---------------------------------------------------------------------------------
@@ -100,7 +100,7 @@ fun PrefabPublicationType.writePublicationFile(publication : PrefabPublication) 
 /**
  * Get the name of the publication file of this type.
  */
-private fun PrefabPublicationType.publicationFileFrom(installationFolder: File) : File? {
+fun PrefabPublicationType.publicationFileFrom(installationFolder: File) : File? {
     val variantRoot = installationFolder.parentFile
     val variant = variantRoot.name
     val prefabRoot = variantRoot.parentFile

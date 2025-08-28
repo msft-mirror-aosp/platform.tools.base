@@ -1,11 +1,4 @@
 load("@rules_java//java:defs.bzl", "java_library", "java_test")
-load(
-    "//tools/base/common:version.bzl",
-    "DEV_BASE_VERSION",
-    "DEV_BUILD_VERSION",
-    "RELEASE_BASE_VERSION",
-    "RELEASE_BUILD_VERSION",
-)
 
 java_library(
     name = "agp-version",
@@ -32,16 +25,6 @@ java_library(
 java_test(
     name = "agp-version_test",
     srcs = ["VersionTest.java"],
-    jvm_flags = select({
-        "//tools/base/bazel:release": [
-            "-Dtest.version.baseVersion=" + RELEASE_BASE_VERSION,
-            "-Dtest.version.buildVersion=" + RELEASE_BUILD_VERSION,
-        ],
-        "//conditions:default": [
-            "-Dtest.version.baseVersion=" + DEV_BASE_VERSION,
-            "-Dtest.version.buildVersion=" + DEV_BUILD_VERSION,
-        ],
-    }),
     test_class = "com.android.VersionTest",
     deps = [
         ":agp-version",

@@ -856,8 +856,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         val configApkUrl = "https://d.android.com/topic/instant-apps/guides/config-splits.html"
         @Suppress("DEPRECATION")
         val generatePureSplits = extension.generatePureSplits
-        @Suppress("DEPRECATION")
-        val splits = extension.splits
 
         // The Play Store doesn't allow Pure splits
         if (generatePureSplits) {
@@ -866,15 +864,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
                 .reportWarning(
                     Type.GENERIC,
                     "Configuration APKs are supported by the Google Play Store only when publishing Android Instant Apps. To instead generate stand-alone APKs for different device configurations, set generatePureSplits=false. For more information, go to "
-                            + configApkUrl
-                )
-        }
-        if (!generatePureSplits && splits.language.isEnable) {
-            dslServices
-                .issueReporter
-                .reportWarning(
-                    Type.GENERIC,
-                    "Per-language APKs are supported only when building Android Instant Apps. For more information, go to "
                             + configApkUrl
                 )
         }

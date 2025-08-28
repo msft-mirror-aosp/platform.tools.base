@@ -39,7 +39,6 @@ import com.android.build.gradle.internal.core.dsl.features.UnitTestOptionsDslInf
 import com.android.build.gradle.internal.core.dsl.impl.features.DeviceTestOptionsDslInfoImpl
 import com.android.build.gradle.internal.core.dsl.impl.features.UnitTestOptionsDslInfoImpl
 import com.android.build.gradle.internal.dsl.CommonExtensionImpl
-import com.android.build.gradle.internal.dsl.LanguageSplitOptions
 import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.build.gradle.internal.lint.getLocalCustomLintChecks
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
@@ -193,9 +192,6 @@ class GlobalTaskCreationConfigImpl(
 
     override val hasNoBuildTypeMinified: Boolean
         get() = extension.buildTypes.none { it.isMinifyEnabled }
-
-    override val legacyLanguageSplitOptions: LanguageSplitOptions
-        get() = oldExtension.splits.language
 
     override val publishConsumerProguardRules: Boolean
         get() = true

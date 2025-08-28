@@ -580,7 +580,6 @@ abstract class ViewLayoutInspectorTestBase {
                 assertThat(layoutEvent.appContext.mainDisplayHeight).isEqualTo(3120)
                 assertThat(layoutEvent.appContext.mainDisplayWidth).isEqualTo(1440)
                 assertThat(layoutEvent.appContext.mainDisplayOrientation).isEqualTo(90)
-                assertThat(layoutEvent.appContext.windowBounds).isEqualTo(Rect(100, 200, 1540, 3320).toRect())
             }
         }
 

@@ -85,7 +85,7 @@ class DeviceUtilsTest {
     @Test
     fun testMdnsConnectionIsTrueForClearSerialNumber() {
         // Prepare
-        setUpDeviceSerialNumber("adb-435DT06WH-vWgJpq._adb._tcp.")
+        setUpDeviceSerialNumber("adb-435DT06WH-vWgJpq._adb._tcp")
 
         // Act
         val isClear = device.isMdnsAutoConnectUnencrypted

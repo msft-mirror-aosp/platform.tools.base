@@ -87,17 +87,6 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
             |}""".trimMargin()
         )
 
-        // DependencyReportTask is not compatible with configuration caching
-        // See (https://github.com/gradle/gradle/issues/17470)
-        project.buildFile.appendText(
-            """
-
-                tasks.findByPath(":dependencies").configure {
-                    notCompatibleWithConfigurationCache("broken")
-                }
-            """.trimIndent()
-        )
-
         val result = project.executor().run("dependencies")
         if (enableAlignment) {
             result.assertOutputContains(

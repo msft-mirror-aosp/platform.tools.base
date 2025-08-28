@@ -1445,15 +1445,6 @@ package com.android.build.api.dsl {
   }
 
   public interface LibraryBaseFlavor extends com.android.build.api.dsl.BaseFlavor com.android.build.api.dsl.LibraryVariantDimension {
-    method @Deprecated public Integer? getTargetSdk();
-    method @Deprecated public String? getTargetSdkPreview();
-    method @Deprecated public void setTargetSdk(Integer?);
-    method @Deprecated public void setTargetSdkPreview(String?);
-    method @Deprecated public void setTargetSdkVersion(String? targetSdkVersion);
-    method @Deprecated public void targetSdkVersion(int targetSdkVersion);
-    method @Deprecated public void targetSdkVersion(String? targetSdkVersion);
-    property @Deprecated public abstract Integer? targetSdk;
-    property @Deprecated public abstract String? targetSdkPreview;
   }
 
   public interface LibraryBuildFeatures extends com.android.build.api.dsl.BuildFeatures {

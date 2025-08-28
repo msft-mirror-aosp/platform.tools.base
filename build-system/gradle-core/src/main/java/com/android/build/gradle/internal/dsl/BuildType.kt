@@ -50,9 +50,9 @@ import javax.inject.Inject
 
 @ElementFactoryName("buildType")
 abstract class DeclarativeBuildType @Inject constructor(
-    private val name: String,
+    name: String,
     private val dslServices: DslServices,
-    private val componentType: ComponentType,
+    componentType: ComponentType,
     objectFactory: ObjectFactory
 ) : BuildType(name, dslServices, componentType, objectFactory) {
 
@@ -71,7 +71,7 @@ abstract class BuildType @Inject constructor(
     private val name: String,
     private val dslServices: DslServices,
     private val componentType: ComponentType,
-    private val objectFactory: ObjectFactory
+    objectFactory: ObjectFactory
 ) :
     AbstractBuildType(), CoreBuildType, Serializable,
     VariantDimensionBinaryCompatibilityFix,
@@ -142,13 +142,6 @@ abstract class BuildType @Inject constructor(
      * The checks are disabled during [.initWith].
      */
     private var dslChecksEnabled = true
-
-    /**
-     * Describes how code postProcessing is configured. We don't allow mixing the old and new DSLs.
-     */
-    enum class PostProcessingConfiguration {
-        POSTPROCESSING_BLOCK, OLD_DSL
-    }
 
     override val ndkConfig: NdkOptions = dslServices.newInstance(NdkOptions::class.java)
 

@@ -338,27 +338,6 @@ project.android {
     }
 
     @Test
-    fun testEmulatorSnapshots() {
-        Eval.me(
-            "project",
-            project,
-            ("""
-project.android {
-    testOptions {
-        emulatorSnapshots {
-          enableForTestFailures true
-          retainAll()
-          maxSnapshotsForTestFailures 2
-          compressSnapshots true
-        }
-    }
-}
-""")
-        )
-        plugin.createAndroidTasks(project)
-    }
-
-    @Test
     fun testResourceConfigurations() {
         Eval.me(
             "project",

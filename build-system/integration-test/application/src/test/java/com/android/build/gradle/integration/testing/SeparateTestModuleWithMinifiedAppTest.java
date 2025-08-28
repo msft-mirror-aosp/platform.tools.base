@@ -21,6 +21,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -42,7 +43,8 @@ public class SeparateTestModuleWithMinifiedAppTest {
                         + "    buildTypes {\n"
                         + "        debug {\n"
                         + "            minifyEnabled true\n"
-                        + "            proguardFiles getDefaultProguardFile('proguard-android.txt')\n"
+                        + "            proguardFiles"
+                        + " getDefaultProguardFile('proguard-android-optimize.txt')\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n");

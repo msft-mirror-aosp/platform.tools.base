@@ -197,7 +197,7 @@ class MinifyFeaturesTest {
                                 create("minified").initWith(buildTypes.debug)
                                 minified {
                                     minifyEnabled true
-                                    proguardFiles getDefaultProguardFile('proguard-android.txt'),
+                                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                                             "proguard-rules.pro"
                                 }
                             }
@@ -764,7 +764,7 @@ class MinifyFeaturesTest {
                     android {
                         buildTypes {
                             minified {
-                                proguardFiles getDefaultProguardFile('proguard-android.txt')
+                                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
                             }
                         }
                     }
