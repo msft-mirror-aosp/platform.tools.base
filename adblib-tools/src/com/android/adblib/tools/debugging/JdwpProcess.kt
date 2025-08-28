@@ -27,7 +27,9 @@ import com.android.adblib.tools.debugging.impl.JdwpProcessProfilerImpl
 import com.android.adblib.tools.debugging.impl.JdwpProcessViewHierarchyImpl
 import com.android.adblib.tools.debugging.impl.ResumeProcessImpl
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
+import com.android.adblib.utils.WarningsTracker
 import com.android.adblib.withProcessPrefix
+import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
@@ -183,6 +185,23 @@ enum class DdmsProtocolKind {
      */
     EmptyRepliesDiscarded
 }
+
+/**
+ * The [com.android.adblib.CoroutineScopeCache.Key] for the [WarningsTracker]
+ */
+private val WarningsTrackerKey =
+    CoroutineScopeCache.Key<WarningsTracker>("WarningsTrackerKey")
+
+/**
+ * [WarningsTracker] associated with this [JdwpProcess]
+ */
+val JdwpProcess.warningsTracker: WarningsTracker
+    get() = this.cache.getOrPut(WarningsTrackerKey) {
+        WarningsTracker(
+            staleThreshold = Duration.ofMinutes(60),
+            repeatLogPeriod = Duration.ofMinutes(10)
+        )
+    }
 
 private val ddmsProtocolKindKey = CoroutineScopeCache.Key<DdmsProtocolKind>("DdmsProtocolKind")
 

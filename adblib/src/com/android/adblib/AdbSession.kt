@@ -26,6 +26,7 @@ import com.android.adblib.impl.DeviceInfoTracker
 import com.android.adblib.impl.SessionDeviceTracker
 import com.android.adblib.impl.TrackerConnecting
 import com.android.adblib.impl.TrackerDisconnected
+import com.android.adblib.utils.WarningsTracker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
@@ -415,3 +415,19 @@ val AdbSession.activityManagerServices: AdbActivityManagerServices
  * The [Key] used to identify the [AdbActivityManagerServices] in [AdbSession.cache].
  */
 private object AdbActivityManagerServicesKey : Key<AdbActivityManagerServices>(AdbActivityManagerServices::class.java.simpleName)
+
+/**
+ * The [com.android.adblib.CoroutineScopeCache.Key] for the [WarningsTracker]
+ */
+private val WarningsTrackerKey = Key<WarningsTracker>(WarningsTracker::class.java.simpleName)
+
+/**
+ * [WarningsTracker] associated with this [AdbSession]
+ */
+val AdbSession.warningsTracker: WarningsTracker
+    get() = this.cache.getOrPut(WarningsTrackerKey) {
+        WarningsTracker(
+            staleThreshold = Duration.ofMinutes(60),
+            repeatLogPeriod = Duration.ofMinutes(10)
+        )
+    }
