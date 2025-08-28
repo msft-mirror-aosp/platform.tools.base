@@ -26,6 +26,7 @@ import com.google.common.truth.Truth.assertThat
 import com.intellij.mock.MockProject
 import com.intellij.openapi.vfs.impl.jar.CoreJarFileSystem
 import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeVisitor
@@ -43,10 +44,7 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration
 import org.junit.AfterClass
-import org.junit.Assume
-import org.junit.AssumptionViolatedException
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -70,12 +68,6 @@ class ProvideDeclarationFromKlibTest {
     @BeforeClass
     @JvmStatic
     fun beforeClass() {
-      try {
-        Assume.assumeTrue("App is running in K1 and this test will be skipped", useFirUast())
-      } catch (e: AssumptionViolatedException) {
-        println(e.message) // Otherwise the message will not print
-        throw e
-      }
       val klibFile =
         KlibTestFile(
           "/testdata.klib",
@@ -257,8 +249,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
 
     assertThat(targetClass.fields).hasLength(1)
     val libField = targetClass.fields.single { it.name == "libAttr" }
-    // Known issue: all fields have void type
-    assertThat(libField.type.canonicalText).isEqualTo("void")
+    assertThat(libField.type.canonicalText).isEqualTo("kotlin.Int")
   }
 
   @OptIn(KaExperimentalApi::class) // For mocking only
@@ -353,7 +344,9 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val globalExtensionProperty = provider.getProperties(kaExtensionProperty)
     assertThat(globalExtensionProperty).hasSize(1)
     assertThat(globalExtensionProperty.single().name).isEqualTo("globalProperty")
-    assertThat(globalExtensionProperty.single().isExtensionDeclaration()).isTrue()
+    assertThat(globalExtensionProperty.single()).isInstanceOf(PsiField::class.java)
+    assertThat((globalExtensionProperty.single() as PsiField).type.canonicalText)
+      .isEqualTo("com.testdata.LibClass")
 
     val kaConstProperty =
       mock<KaPropertySymbol> {
@@ -365,6 +358,9 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val globalConstProperty = provider.getProperties(kaConstProperty)
     assertThat(globalConstProperty).hasSize(1)
     assertThat(globalConstProperty.single().name).isEqualTo("LIB_CONST")
+    assertThat(globalConstProperty.single()).isInstanceOf(PsiField::class.java)
+    assertThat((globalConstProperty.single() as PsiField).type.canonicalText)
+      .isEqualTo("kotlin.String")
   }
 }
 

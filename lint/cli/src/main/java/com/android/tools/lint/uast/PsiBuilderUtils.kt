@@ -32,7 +32,6 @@ import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeReference
-import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import org.jetbrains.kotlin.psi.psiUtil.parameterIndex
 
 object PsiBuilderUtils {
@@ -41,7 +40,13 @@ object PsiBuilderUtils {
     LightFieldBuilder(
         manager,
         name.orAnonymous(this),
-        PsiTypes.voidType(), // TODO: property return type
+        // There's a little cycle dep here as LightFiled require `type` when constructed while the
+        // TypeElement used to get `type` need the LightField as `parent` when constructed. This is
+        // an API issue of `LightFieldBuilder` as it does not implement the super constructor with
+        // lazy type initialization. We assign `containingFile` as the parent here instead, which
+        // should be side effect free as the TypeElement cannot be fetched from LightField.
+        typeReference?.let { buildCompiledTypeFromReference(it, containingFile) }
+          ?: PsiTypes.nullType(),
       )
       .apply { this.containingClass = containingClass }
 
