@@ -178,9 +178,6 @@ internal class UsingJdwpSessionFlowUpdater(
                     }
 
                     else -> {
-                        logger.info(throwable) {
-                            "Exception while collecting process properties (${stateFlow.value.summaryForLogging()})"
-                        }
                         throwable // Record any other unexpected exception
                     }
                 }
@@ -196,7 +193,7 @@ internal class UsingJdwpSessionFlowUpdater(
 
                     // Delay and retry if we did not collect all properties we want
                     delay(session.property(PROCESS_PROPERTIES_RETRY_DURATION).toMillis())
-                    logger.info {
+                    logger.info(exceptionToRecord) {
                         "Retrying JDWP process properties collection (${stateFlow.value.summaryForLogging()}), " +
                                 "because previous attempt failed with an error ('${throwable.message}')"
                     }
@@ -217,7 +214,7 @@ internal class UsingJdwpSessionFlowUpdater(
                         previouslyFailedThrowable = previouslyFailedThrowable
                     )
                     exceptionToRecord?.also {
-                        logger.debug(exceptionToRecord) { "Exception when collecting properties" }
+                        logger.info(exceptionToRecord) { "Exception while collecting process properties (${stateFlow.value.summaryForLogging()})" }
                     }
                     logger.debug { "Successfully retrieved JDWP process properties: ${stateFlow.value}" }
                     break
