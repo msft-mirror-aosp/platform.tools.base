@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.core.dsl.InstrumentedTestComponentDslIn
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.dexing.DexingType
 import org.gradle.api.provider.Provider
 
@@ -33,6 +34,7 @@ internal class InstrumentedTestDslInfoImpl(
     private val services: VariantServices,
     override val instrumentationRunnerArguments: Map<String, String>
 ): InstrumentedTestComponentDslInfo {
+
     override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> {
         // first check whether the DSL has the info
         val fromFlavor =
@@ -46,14 +48,7 @@ internal class InstrumentedTestDslInfoImpl(
         }
 
         // else return the value from the Manifest
-        return dataProvider.manifestData.map {
-            it.instrumentationRunner
-                ?: if (dexingType.isLegacyMultiDex) {
-                    MULTIDEX_TEST_RUNNER
-                } else {
-                    DEFAULT_TEST_RUNNER
-                }
-        }
+        return computeInstrumentationTestRunner(dataProvider.manifestData, services, dexingType)
     }
 
     override val handleProfiling: Provider<Boolean>

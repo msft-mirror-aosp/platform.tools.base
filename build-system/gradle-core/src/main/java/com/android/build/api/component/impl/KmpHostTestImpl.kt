@@ -34,8 +34,8 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
 import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
-import com.android.build.gradle.internal.core.dsl.impl.DEFAULT_TEST_RUNNER
 import com.android.build.gradle.internal.core.dsl.impl.KmpUnitTestDslInfoImpl
+import com.android.build.gradle.internal.core.dsl.impl.getDefaultInstrumentationTestRunner
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.MutableTaskContainer
@@ -43,6 +43,7 @@ import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.VariantPathHelper
+import com.android.builder.dexing.DexingType
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
@@ -85,7 +86,7 @@ open class KmpHostTestImpl @Inject constructor(
     }
 
     override val instrumentationRunner: Provider<String>
-        get() = services.provider { DEFAULT_TEST_RUNNER }
+        get() = getDefaultInstrumentationTestRunner(internalServices, DexingType.MONO_DEX)
     override val testedApplicationId: Provider<String>
         get() = mainVariant.applicationId
     override val targetSdkVersion: AndroidVersion

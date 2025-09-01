@@ -710,6 +710,13 @@ enum class BooleanOption(
         stage = FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
+    DEFAULT_ANDROIDX_TEST_RUNNER(
+        propertyName = "android.default.androidx.test.runner",
+        defaultValue = true,
+        stage = FeatureStage.SoftlyEnforced(VERSION_9_0),
+    ),
+
+
     /* -------------------
      * DEPRECATED FEATURES
      */

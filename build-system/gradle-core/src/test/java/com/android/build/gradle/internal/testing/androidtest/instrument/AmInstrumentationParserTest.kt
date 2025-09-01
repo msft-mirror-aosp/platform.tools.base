@@ -537,7 +537,7 @@ class AmInstrumentationParserTest {
       """
       INSTRUMENTATION_STATUS: Error=Unable to find instrumentation info
       INSTRUMENTATION_STATUS_CODE: -1
-      INSTRUMENTATION_FAILED: com.fake/android.test.InstrumentationTestRunner
+      INSTRUMENTATION_FAILED: com.fake/androidx.test.runner.AndroidJUnitRunner
     """
         .trimIndent()
     )

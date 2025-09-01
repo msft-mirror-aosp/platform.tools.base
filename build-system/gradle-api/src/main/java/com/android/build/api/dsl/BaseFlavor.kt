@@ -108,7 +108,7 @@ interface BaseFlavor : VariantDimension {
      * Test instrumentation runner class name.
      *
      * This is a fully qualified class name of the runner, e.g.
-     * `android.test.InstrumentationTestRunner`
+     * `androidx.test.runner.AndroidJUnitRunner`
      *
      * See [instrumentation](http://developer.android.com/guide/topics/manifest/instrumentation-element.html).
      */
