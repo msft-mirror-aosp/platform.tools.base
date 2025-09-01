@@ -23,8 +23,6 @@ import com.android.resources.ResourceType
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
-import com.google.common.truth.Truth
-import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 
 import org.junit.Test

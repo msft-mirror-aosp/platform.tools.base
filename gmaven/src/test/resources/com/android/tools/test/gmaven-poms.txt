@@ -559,7 +559,6 @@ com.android.tools.build:gradle
     com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
     com.android.tools.utp:android-test-plugin-result-listener-gradle-proto (runtime)
     org.jetbrains.kotlin:kotlin-stdlib (runtime)
-    com.android.tools.build:transform-api (runtime)
     org.apache.httpcomponents:httpmime (runtime)
     commons-io:commons-io (runtime)
     org.ow2.asm:asm (runtime)
@@ -584,7 +583,6 @@ com.android.tools.build:gradle
     io.grpc:grpc-inprocess (runtime)
     com.google.crypto.tink:tink (runtime)
     com.google.testing.platform:core-proto (runtime)
-    com.google.flatbuffers:flatbuffers-java (runtime)
     org.tensorflow:tensorflow-lite-metadata (runtime)
 
 com.android.tools.build:gradle-api
