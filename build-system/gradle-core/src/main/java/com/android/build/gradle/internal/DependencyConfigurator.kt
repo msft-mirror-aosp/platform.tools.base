@@ -189,13 +189,10 @@ class DependencyConfigurator(
             // Namespaced resources code path is not optimized. Identity transforms are removed
             // otherwise.
             registerIdentityTransformWhenJetifierIsDisabled(jetifiedAarOutputType)
-        } else {
-            // Still register the transform if/when dagger plugin is applied
-            // TODO(b/288221106): Dagger plugin depends on our internal implementation,
-            // we need to eliminate their dependency on this to be able to remove the following.
-            project.plugins.withId("dagger.hilt.android.plugin") {
-                registerIdentityTransformWhenJetifierIsDisabled(jetifiedAarOutputType)
-            }
+        } else if (projectOptions[BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS]) {
+            // These should not be needed in most scenarios now, but keeping the option for
+            // backwards compatibility.
+            registerIdentityTransformWhenJetifierIsDisabled(jetifiedAarOutputType)
         }
 
         registerTransform(

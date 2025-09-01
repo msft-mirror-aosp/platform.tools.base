@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.dagger
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,6 +30,9 @@ class DaggerHiltFlavoredTest {
     @get:Rule
     var project = GradleTestProject.builder()
         .fromTestProject("dagger-hilt-flavored-project")
+        // We had a workaround specifically for dagger (which is now removed but is still needed in this case)
+        // as no Dagger plugin is released yet which doesn't rely on this workaround.
+        .addGradleProperty(BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS, true)
         .create()
 
     @Before

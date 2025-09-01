@@ -358,6 +358,20 @@ enum class BooleanOption(
             FeatureStage.Experimental
     ),
 
+    /** Force enables the identity transform for
+     * - aar -> processed-aar
+     * - jar -> processed-jar
+     *
+     * These should not be needed in most scenarios now, but keeping the option for backwards
+     * compatibility.
+     */
+    ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS(
+        "android.experimental.enableIdentityTransformsForProcessedArtifacts",
+        false,
+        FeatureStage.Experimental
+    ),
+
+
     PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT("android.experimental.privacysandboxsdk.plugin.enable",
             false,
             FeatureStage.Experimental),

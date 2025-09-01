@@ -116,7 +116,8 @@ class BooleanOptionTest {
             BooleanOption.ENABLE_PROBLEMS_API,
             BooleanOption.R8_GRADUAL_API,
             BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS,
-            BooleanOption.DISABLE_ALL_CONSTRAINTS
+            BooleanOption.DISABLE_ALL_CONSTRAINTS,
+            BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS
         )
 
         checkViolatingProjectOptions(
