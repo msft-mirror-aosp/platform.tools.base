@@ -542,12 +542,12 @@ enum class BooleanOption(
      */
     R8_MAIN_DEX_LIST_DISALLOWED(
         "android.r8.mainDexList.disallowed",
-        false,
+        true,
         FeatureStage.Experimental,
         FutureStage(
             true,
-            FeatureStage.Experimental,
-            Version.VERSION_9_0
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_10_0
         )
     ),
 
