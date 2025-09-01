@@ -20,8 +20,14 @@ import java.io.File
 import java.io.FileNotFoundException
 import javax.imageio.ImageIO
 
+data class VerificationResult(
+    val diffResult: ImageDiffer.DiffResult,
+    val diffPercent: String?
+)
+
 class ImageVerifier(private val imageDiffer: ImageDiffer) {
-    fun verify(newImagePath: String, referenceImagePath: String, diffImageOutputPath: String) {
+
+    fun verify(newImagePath: String, referenceImagePath: String, diffImageOutputPath: String): VerificationResult {
         val diffFile = File(diffImageOutputPath)
         if (diffFile.exists()) {
             diffFile.delete()
@@ -55,16 +61,13 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
             ImageIO.write(diff.highlights, "png", diffFile)
         }
 
-        if (diff is ImageDiffer.DiffResult.Different) {
-            val percentageString = diff.percentDiff?.trimEnd('%')
-            val percentageDouble = percentageString?.toDoubleOrNull()
-            throw ImageComparisonAssertionError(
-                referenceImagePath,
-                newImagePath,
-                percentageDouble,
-                diffImageOutputPath
-            )
+        // Extract percentDiff from the diff result
+        val diffPercentValue: String? = when (diff) {
+            is ImageDiffer.DiffResult.Similar -> diff.percentDiff
+            is ImageDiffer.DiffResult.Different -> diff.percentDiff
+            else -> null
         }
+        return VerificationResult(diff, diffPercentValue)
     }
 
     class ImageComparisonAssertionError(
