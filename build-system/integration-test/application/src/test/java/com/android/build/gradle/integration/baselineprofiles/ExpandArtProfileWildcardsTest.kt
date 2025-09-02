@@ -113,6 +113,7 @@ class ExpandArtProfileWildcardsTest {
                         defaultConfig {
                             minSdkVersion = 33
                         }
+                        buildTypes.release.proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'dontoptimize.pro'
                     }
 
                     androidComponents {
@@ -128,6 +129,7 @@ class ExpandArtProfileWildcardsTest {
                     }
                 """.trimIndent()
             )
+            File(project.getSubproject("app").projectDir, "dontoptimize.pro").writeText("-dontoptimize")
         }
 
         // Add a file whose class name will be included in the output after wildcards are expanded

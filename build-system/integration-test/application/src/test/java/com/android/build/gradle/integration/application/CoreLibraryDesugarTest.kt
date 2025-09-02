@@ -309,12 +309,16 @@ class CoreLibraryDesugarTest {
         app.buildFile.appendText("""
 
             android.buildTypes.release.minifyEnabled = true
+            android {
+                buildTypes.release.proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'dontoptimize.pro'
+            }
         """.trimIndent())
+        File(app.projectDir, "dontoptimize.pro").writeText("-dontoptimize")
 
         TestFileUtils.searchAndReplace(
-                FileUtils.join(app.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
-                "// onCreate",
-                "getText();"
+            FileUtils.join(app.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+            "// onCreate",
+            "getText();"
         )
 
         executor().run("app:assembleRelease")
@@ -778,7 +782,11 @@ class CoreLibraryDesugarTest {
         app.buildFile.appendText("""
 
             android.buildTypes.release.minifyEnabled = true
+            android {
+                buildTypes.release.proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'dontoptimize.pro'
+            }
         """.trimIndent())
+        File(app.projectDir, "dontoptimize.pro").writeText("-dontoptimize")
 
         TestFileUtils.searchAndReplace(
                 FileUtils.join(app.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
