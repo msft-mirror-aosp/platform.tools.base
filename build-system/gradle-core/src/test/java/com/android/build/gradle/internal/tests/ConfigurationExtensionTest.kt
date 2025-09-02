@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.tests
 
-import com.android.build.gradle.BaseExtension
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.fixture.createAndConfig
@@ -55,7 +55,7 @@ class ConfigurationExtensionTest(private val pluginType: TestProjects.Plugin) {
 
     private lateinit var project: Project
     private lateinit var plugin: BasePlugin<*, *, *, *, *, *>
-    private lateinit var android: BaseExtension
+    private lateinit var android: CommonExtension
     private lateinit var configExtensionMap: Multimap<String, String>
 
     // basic relationship
@@ -114,13 +114,6 @@ class ConfigurationExtensionTest(private val pluginType: TestProjects.Plugin) {
             "testLollipopDemoDebugImplementation",
             "testLollipopDemoImplementation",
             "testLollipopImplementation",
-            // The following are created by KGP (probably not used)
-            "lollipopDemoDebugUnitTestCompilationCompileOnly",
-            "lollipopDemoDebugUnitTestCompileOnly",
-            "lollipopDemoDebugUnitTestCompilationImplementation",
-            "lollipopDemoDebugUnitTestCompilationApi",
-            "lollipopDemoDebugUnitTestApi",
-            "lollipopDemoDebugUnitTestImplementation",
         )
 
     /**
@@ -145,13 +138,6 @@ class ConfigurationExtensionTest(private val pluginType: TestProjects.Plugin) {
             "testLollipopImplementation",
             "testLollipopRuntimeOnly",
             "testRuntimeOnly",
-            // The following are created by KGP (probably not used)
-            "lollipopDemoDebugUnitTestCompilationRuntimeOnly",
-            "lollipopDemoDebugUnitTestRuntimeOnly",
-            "lollipopDemoDebugUnitTestCompilationImplementation",
-            "lollipopDemoDebugUnitTestCompilationApi",
-            "lollipopDemoDebugUnitTestApi",
-            "lollipopDemoDebugUnitTestImplementation",
         )
 
     // forbidden relationship
@@ -164,15 +150,17 @@ class ConfigurationExtensionTest(private val pluginType: TestProjects.Plugin) {
         project = TestProjects.builder(projectDirectory.newFolder("project").toPath())
                 .withPlugin(pluginType)
                 .build()
-        android = project.extensions.getByType(pluginType.extensionClass) as BaseExtension
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
+        android = project.extensions.getByType(pluginType.extensionClass)
+        android.compileSdk {
+            version = release(TestConstants.COMPILE_SDK_VERSION)
+        }
         android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
         android.namespace = "com.example.namespace"
         plugin = project.plugins.getPlugin(pluginType.pluginClass)
             as BasePlugin<*, *, *, *, *, *>
 
         // manually call the DSL to configure the project.
-        android.flavorDimensions("api", "mode")
+        android.flavorDimensions += listOf("api", "mode")
 
         android.productFlavors.createAndConfig("demo") {
             dimension = "mode"

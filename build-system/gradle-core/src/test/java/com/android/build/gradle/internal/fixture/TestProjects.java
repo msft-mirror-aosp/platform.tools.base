@@ -18,12 +18,12 @@ package com.android.build.gradle.internal.fixture;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.AppExtension;
-import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.LibraryExtension;
-import com.android.build.gradle.TestExtension;
+import com.android.build.api.dsl.ApplicationExtension;
+import com.android.build.api.dsl.CommonExtension;
+import com.android.build.api.dsl.DynamicFeatureExtension;
+import com.android.build.api.dsl.LibraryExtension;
+import com.android.build.api.dsl.TestExtension;
 import com.android.build.gradle.internal.SdkLocator;
-import com.android.build.gradle.internal.dsl.DynamicFeatureExtension;
 import com.android.build.gradle.internal.plugins.AppPlugin;
 import com.android.build.gradle.internal.plugins.DynamicFeaturePlugin;
 import com.android.build.gradle.internal.plugins.LibraryPlugin;
@@ -31,31 +31,30 @@ import com.android.build.gradle.internal.plugins.TestPlugin;
 import com.android.build.gradle.options.Option;
 import com.android.testutils.OsType;
 import com.android.testutils.TestUtils;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+
 import org.gradle.api.Project;
 import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.provider.Provider;
 import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.initialization.GradlePropertiesController;
-import org.gradle.internal.service.DefaultServiceRegistry;
-import org.gradle.internal.service.scopes.ProjectScopeServices;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.gradle.tooling.events.OperationCompletionListener;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TestProjects {
 
     public enum Plugin {
-        APP("com.android.application", AppPlugin.class, AppExtension.class),
+        APP("com.android.application", AppPlugin.class, ApplicationExtension.class),
         LIBRARY("com.android.library", LibraryPlugin.class, LibraryExtension.class),
         DYNAMIC_FEATURE(
                 "com.android.dynamic-feature",
@@ -64,13 +63,13 @@ public class TestProjects {
         TEST("com.android.test", TestPlugin.class, TestExtension.class);
 
         @NonNull private final String pluginName;
-        @NonNull private final Class<? extends org.gradle.api.Plugin> pluginClass;
-        @NonNull private final Class<? extends BaseExtension> extensionClass;
+        @NonNull private final Class<? extends org.gradle.api.Plugin<?>> pluginClass;
+        @NonNull private final Class<? extends CommonExtension> extensionClass;
 
         Plugin(
                 @NonNull String pluginName,
-                @NonNull Class<? extends org.gradle.api.Plugin> pluginClass,
-                @NonNull Class<? extends BaseExtension> extensionClass) {
+                @NonNull Class<? extends org.gradle.api.Plugin<?>> pluginClass,
+                @NonNull Class<? extends CommonExtension> extensionClass) {
             this.pluginName = pluginName;
             this.pluginClass = pluginClass;
             this.extensionClass = extensionClass;
@@ -82,12 +81,12 @@ public class TestProjects {
         }
 
         @NonNull
-        public Class<? extends org.gradle.api.Plugin> getPluginClass() {
+        public Class<? extends org.gradle.api.Plugin<?>> getPluginClass() {
             return pluginClass;
         }
 
         @NonNull
-        public Class<? extends BaseExtension> getExtensionClass() {
+        public Class<? extends CommonExtension> getExtensionClass() {
             return extensionClass;
         }
 

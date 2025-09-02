@@ -163,7 +163,8 @@ public class AppPlugin
         if (getProjectServices()
                 .getProjectOptions()
                 .get(BooleanOption.USE_NEW_DSL)) {
-            project.getExtensions().add(new TypeOf<>() {}, "android", applicationExtension);
+            project.getExtensions()
+                    .add(new TypeOf<ApplicationExtension>() {}, "android", applicationExtension);
 
             initExtensionFromSettings(applicationExtension);
 

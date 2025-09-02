@@ -15,14 +15,9 @@
  */
 package com.android.build.gradle.internal.plugins
 
-import com.android.build.api.dsl.LibraryBuildFeatures
-import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.api.TestVariant
-import com.android.build.gradle.internal.dsl.SigningConfig
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
-import com.android.build.gradle.internal.fixture.VariantChecker
-import com.android.build.gradle.internal.fixture.VariantCheckers
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
 import com.android.builder.errors.EvalIssueException
 import com.google.common.truth.Truth
@@ -41,7 +36,6 @@ class LibraryPluginDslTest {
 
     private lateinit var plugin: LibraryPlugin
     private lateinit var android: LibraryExtension
-    private lateinit var checker: VariantChecker
     private lateinit var project: Project
 
     @Before
@@ -50,64 +44,15 @@ class LibraryPluginDslTest {
             .withPlugin(TestProjects.Plugin.LIBRARY)
             .build()
         android = project.extensions.getByType(LibraryExtension::class.java)
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
+        android.compileSdk {
+            version = release(TestConstants.COMPILE_SDK_VERSION)
+        }
         android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
         android.namespace = "com.example.namespace"
-        android.buildFeatures { buildFeatures: LibraryBuildFeatures ->
-            buildFeatures.aidl = true
+        android.buildFeatures {
+            aidl = true
         }
         plugin = project.plugins.getPlugin(LibraryPlugin::class.java)
-        checker = VariantCheckers.createLibraryChecker(android)
-    }
-
-    @Test
-    fun testBasic() {
-        plugin.createAndroidTasks(project)
-
-        val variants = checker.variants
-        Truth.assertThat(variants).hasSize(2)
-
-        val testVariants: Set<TestVariant?> = android.testVariants
-        Truth.assertThat(testVariants).hasSize(1)
-
-        checker.checkTestedVariant(
-            "debug", "debugAndroidTest", variants, testVariants)
-        checker.checkNonTestedVariant("release", variants)
-    }
-
-    @Test
-    fun testNewBuildType() {
-        android.buildTypes.create("custom")
-        plugin.createAndroidTasks(project)
-
-        val variants = checker.variants
-        Truth.assertThat(variants).hasSize(3)
-
-        val testVariants: Set<TestVariant?> = android.testVariants
-        Truth.assertThat(testVariants).hasSize(1)
-
-        checker.checkTestedVariant(
-            "debug", "debugAndroidTest", variants, testVariants)
-        checker.checkNonTestedVariant("release", variants)
-        checker.checkNonTestedVariant("custom", variants)
-    }
-
-    @Test
-    fun testNewBuildType_testBuildType() {
-        android.buildTypes.create("custom")
-        android.testBuildType = "custom"
-        plugin.createAndroidTasks(project)
-
-        val variants = checker.variants
-        Truth.assertThat(variants).hasSize(3)
-
-        val testVariants: Set<TestVariant?> = android.testVariants
-        Truth.assertThat(testVariants).hasSize(1)
-
-        checker.checkTestedVariant(
-            "custom", "customAndroidTest", variants, testVariants)
-        checker.checkNonTestedVariant("release", variants)
-        checker.checkNonTestedVariant("debug", variants)
     }
 
     /**
@@ -115,8 +60,8 @@ class LibraryPluginDslTest {
      */
     @Test
     fun testDebugSigningConfig() {
-        android.signingConfigs.getByName("debug") { debug: SigningConfig ->
-            debug.storePassword("foo")
+        android.signingConfigs.getByName("debug") { debug: com.android.build.api.dsl.SigningConfig ->
+            debug.storePassword = "foo"
         }
 
         val signingConfig =

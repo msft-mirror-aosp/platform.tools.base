@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
@@ -156,9 +157,11 @@ class BuildTypeTest {
                 "com.android.application"
             )
         )
-        project.extensions
-            .getByType(AppExtension::class.java)
-            .compileSdkVersion(SdkVersionInfo.HIGHEST_KNOWN_STABLE_API)
+        project.extensions.getByType(ApplicationExtension::class.java).apply {
+            compileSdk {
+                version = release(SdkVersionInfo.HIGHEST_KNOWN_STABLE_API)
+            }
+        }
         val buildTypeData =
             project.plugins
                 .getPlugin(AppPlugin::class.java)
