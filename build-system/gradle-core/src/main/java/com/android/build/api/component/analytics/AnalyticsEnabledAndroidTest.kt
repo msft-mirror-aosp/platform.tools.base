@@ -137,7 +137,7 @@ open class AnalyticsEnabledAndroidTest @Inject constructor(
         get() = generatesApk.minSdk
 
     override val targetSdkVersion: AndroidVersion
-        get() = generatesApk.targetSdkVersion
+        get() = generatesApk.targetSdk
 
     override val codeCoverageEnabled: Boolean
         get() {

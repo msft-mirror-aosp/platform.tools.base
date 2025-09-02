@@ -160,7 +160,7 @@ open class AnalyticsEnabledDeviceTest @Inject constructor(
         get() = generatesApk.targetSdk
 
     override val targetSdkVersion: AndroidVersion
-        get() = generatesApk.targetSdkVersion
+        get() = generatesApk.targetSdk
 
     override val minSdk: AndroidVersion
         get() = generatesApk.minSdk

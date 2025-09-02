@@ -22,6 +22,7 @@ import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.ExternalNativeBuild
 import com.android.build.api.variant.ExternalNdkBuildImpl
+import com.android.build.api.variant.GeneratesApk
 import com.android.build.api.variant.HasUnitTest
 import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ResValue
@@ -155,7 +156,7 @@ abstract class AnalyticsEnabledVariant (
         get() {
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
                 VariantPropertiesMethodType.MIN_SDK_VERSION_VALUE
-            return delegate.minSdkVersion
+            return delegate.minSdk
         }
 
     override val maxSdk: Int?
@@ -169,9 +170,10 @@ abstract class AnalyticsEnabledVariant (
         get() {
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
                 VariantPropertiesMethodType.MAX_SDK_VERSION_VALUE
-            return delegate.maxSdkVersion
+            return delegate.maxSdk
         }
 
+    @Suppress("DEPRECATION_ERROR")
     override val targetSdkVersion: AndroidVersion
         get()  {
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =

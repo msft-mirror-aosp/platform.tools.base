@@ -64,6 +64,9 @@ interface VariantOutput: VariantOutputConfiguration {
      *
      * It is safe to change the value in case a specific output should be disabled
      */
-    @Deprecated("Replaced by enabled", ReplaceWith("enabled"))
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "Replaced by enabled",
+        replaceWith = ReplaceWith("enabled"))
     val enable: Property<Boolean>
 }
