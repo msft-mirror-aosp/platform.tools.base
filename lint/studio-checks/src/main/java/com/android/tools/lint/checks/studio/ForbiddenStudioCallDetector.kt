@@ -31,6 +31,7 @@ import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UImportStatement
+import org.jetbrains.uast.USuperExpression
 
 /** Flags certain APIs that are forbidden in our codebase. */
 class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
@@ -162,6 +163,23 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
         platforms = STUDIO_PLATFORMS,
         implementation = IMPLEMENTATION,
       )
+
+    @JvmField
+    val DISPOSE_DIRECTLY =
+      Issue.create(
+        id = "DisposeDirectly",
+        briefDescription = "Do not call `Disposable.dispose()` directly",
+        explanation =
+          """
+            Calling `Disposable.dispose()` directly will not correctly dispose all the \
+            disposable tree, which will lead to a memory leak. Use 'Disposer.dispose()' \
+            instead.
+          """,
+        category = CORRECTNESS,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> =
@@ -199,7 +217,16 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableMethodNames(): List<String> =
-    listOf("intern", "copy", "when", "addArtifact", "applyPlugin", "addPlatformArtifact", "isEAP")
+    listOf(
+      "intern",
+      "copy",
+      "when",
+      "addArtifact",
+      "applyPlugin",
+      "addPlatformArtifact",
+      "isEAP",
+      "dispose",
+    )
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     // String#intern
@@ -295,6 +322,23 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
         node,
         context.getCallLocation(node, includeReceiver = false, includeArguments = true),
         "Do not use `PluginsModel.applyPlugin`, prefer `DependenciesHelper`",
+      )
+    }
+    // Disposible#dispose
+    if (
+      method.name == "dispose" &&
+        method.parameterList.parametersCount == 0 &&
+        context.evaluator.isMemberInClass(method, "com.intellij.openapi.Disposable")
+    ) {
+      val receiver = node.receiver
+      if (receiver is USuperExpression) {
+        return
+      }
+      context.report(
+        DISPOSE_DIRECTLY,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not call `Disposable.dispose()` directly, use `Disposer.dispose()` instead",
       )
     }
   }
