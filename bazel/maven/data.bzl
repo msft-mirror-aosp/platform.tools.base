@@ -962,6 +962,7 @@ DATA = [
     "org.jetbrains.jewel:jewel-markdown-ide-laf-bridge-styling:0.28.0-243.27100",
     "org.jetbrains.jewel:jewel-markdown-ide-laf-bridge-styling-241:0.27.0",
     "org.jetbrains.jewel:jewel-markdown-ide-laf-bridge-styling-242:0.27.0",
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.6.21",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.10",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.20",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.8.0",
