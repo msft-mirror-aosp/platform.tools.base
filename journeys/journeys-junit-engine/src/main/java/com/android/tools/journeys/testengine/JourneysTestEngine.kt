@@ -45,7 +45,6 @@ class JourneysTestEngine : HierarchicalTestEngine<JourneysExecutionContext>() {
             ?: error("No ChannelProviderFactory implementation found on the classpath.")
         Proxy(
             Adb(JourneysTestEngineInput.ProxyInput.adbPath.absolutePath),
-            JourneysTestEngineInput.ProxyInput.crawlerApkPath.absolutePath,
             JourneysTestEngineInput.ProxyInput.applicationId,
             JourneysTestEngineInput.ProxyInput.appApkPath.absolutePath,
             JourneysTestEngineInput.ProxyInput.accessTokenPath,

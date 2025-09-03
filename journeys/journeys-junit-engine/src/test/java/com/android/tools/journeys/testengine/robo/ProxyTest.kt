@@ -39,6 +39,7 @@ import org.mockito.Mockito.mockConstruction
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.argThat
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
@@ -65,7 +66,6 @@ class ProxyTest {
         mockProcess = mock(Process::class.java)
         proxy = Proxy(
             adb = mockAdb,
-            crawlerAppApkPath = "crawler.apk",
             applicationId = "com.example.app",
             appApkPath = "app.apk",
             accessTokenPath = "token.txt",
@@ -128,7 +128,7 @@ class ProxyTest {
         val installFlagsCaptor = argumentCaptor<List<String>>()
         verify(mockAdb).install(
             eq("device-123"),
-            eq("crawler.apk"),
+            argThat { contains("extracted_apk") && endsWith(".apk") },
             installFlagsCaptor.capture(),
             anyLong()
         )
@@ -163,12 +163,17 @@ class ProxyTest {
             proxy.executeJourney("device-123", validJourneyPath) { }
         }
 
-        verify(mockAdb, never()).setGlobalSettingsValue(anyString(), anyString(), anyString(), anyLong())
+        verify(mockAdb, never()).setGlobalSettingsValue(
+            anyString(),
+            anyString(),
+            anyString(),
+            anyLong()
+        )
 
         val installFlagsCaptor = argumentCaptor<List<String>>()
         verify(mockAdb).install(
             eq("device-123"),
-            eq("crawler.apk"),
+            argThat { contains("extracted_apk") && endsWith(".apk") },
             installFlagsCaptor.capture(),
             anyLong()
         )
@@ -200,12 +205,17 @@ class ProxyTest {
             proxy.executeJourney("device-123", validJourneyPath) { }
         }
 
-        verify(mockAdb, never()).setGlobalSettingsValue(anyString(), anyString(), anyString(), anyLong())
+        verify(mockAdb, never()).setGlobalSettingsValue(
+            anyString(),
+            anyString(),
+            anyString(),
+            anyLong()
+        )
 
         val installFlagsCaptor = argumentCaptor<List<String>>()
         verify(mockAdb).install(
             eq("device-123"),
-            eq("crawler.apk"),
+            argThat { contains("extracted_apk") && endsWith(".apk") },
             installFlagsCaptor.capture(),
             anyLong()
         )
@@ -422,7 +432,6 @@ class ProxyTest {
 
         val proxyWithMissingToken = Proxy(
             adb = mockAdb,
-            crawlerAppApkPath = "crawler.apk",
             applicationId = "com.example.app",
             appApkPath = "app.apk",
             accessTokenPath = tempDir.absolutePath,
@@ -472,7 +481,6 @@ class ProxyTest {
 
         val proxyWithFakeToken = Proxy(
             adb = mockAdb,
-            crawlerAppApkPath = "crawler.apk",
             applicationId = "com.example.app",
             appApkPath = "app.apk",
             accessTokenPath = fakeTokenFile.absolutePath,

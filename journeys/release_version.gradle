@@ -16,7 +16,6 @@
 
 if (findProperty('hybrid-build-embedded-in-bazel')?.toBoolean()) {
     version = getProperty('JOURNEYS_TEST_PLUGIN_VERSION')
-    project.ext.appcrawlerVersion = getProperty('APPCRAWLER_VERSION')
 } else {
     Properties properties = new Properties()
     File versionRootDir = rootDir
@@ -28,5 +27,4 @@ if (findProperty('hybrid-build-embedded-in-bazel')?.toBoolean()) {
     } else {
         version = properties.getProperty('JOURNEYS_TEST_PLUGIN_VERSION_DEV').replaceAll('"', '')
     }
-    project.ext.appcrawlerVersion = properties.getProperty('JOURNEYS_TEST_PLUGIN_VERSION_RELEASE').replaceAll('"', '')
 }

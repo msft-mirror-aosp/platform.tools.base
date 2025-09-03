@@ -71,10 +71,6 @@ abstract class JourneysValidationTask : Test() {
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val apkDirectories: ListProperty<Directory>
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val journeysCrawlerConfig: ConfigurableFileCollection
-
     @get:Internal
     abstract val adbExecutable: RegularFileProperty
 
@@ -145,7 +141,6 @@ abstract class JourneysValidationTask : Test() {
                 }
                 setTestEngineParam("Proxy.applicationId", applicationId.get())
                 setTestEngineParam("Proxy.adbPath", adbExecutable.get().asFile.absolutePath)
-                setTestEngineParam("Proxy.crawlerApkPath", journeysCrawlerConfig.singleFile.absolutePath)
                 accessTokenFilePath.orNull?.let { setTestEngineParam("Proxy.accessTokenPath", it) }
                 super.executeTests()
             } else {

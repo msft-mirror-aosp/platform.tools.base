@@ -51,16 +51,6 @@ class JourneysGradlePlugin : Plugin<Project> {
                     }
                 }
         }
-
-        val APPCRAWLER_VERSION: String by lazy {
-            requireNotNull(JourneysGradlePlugin::class.java.getResourceAsStream("/version.properties"))
-                .buffered().use { stream ->
-                    Properties().let { properties ->
-                        properties.load(stream)
-                        properties.getProperty("appcrawlerVersion")
-                    }
-                }
-        }
     }
 
     override fun apply(project: Project) {
@@ -96,7 +86,6 @@ class JourneysGradlePlugin : Plugin<Project> {
             }
 
             maybeCreateJourneysTestConfiguration(project)
-            maybeCreateCrawlerApkConfiguration(project)
 
             // TODO(saxenaankita): Remove the workaround to generate universal apk once
             // test suites is available.
@@ -130,10 +119,6 @@ class JourneysGradlePlugin : Plugin<Project> {
                     task.accessTokenFilePath.set(project.providers.gradleProperty("JourneysTestEngineInput.Proxy.accessTokenPath"))
 
                     task.isScanForTestClasses = false
-
-                    task.journeysCrawlerConfig.from(
-                        project.configurations.getByName(crawlerApkConfigName)
-                    )
 
                     task.useJUnitPlatform {
                         it.includeEngines("journeys-test-engine")
@@ -209,27 +194,8 @@ class JourneysGradlePlugin : Plugin<Project> {
             )
         }
     }
-
-    private fun maybeCreateCrawlerApkConfiguration(project: Project) {
-        val container = project.configurations
-        val dependencies = project.dependencies
-        if (container.findByName(crawlerApkConfigName) == null) {
-            container.create(crawlerApkConfigName).apply {
-                isVisible = false
-                isTransitive = true
-                isCanBeConsumed = false
-                description = "A configuration to resolve crawler app dependency."
-            }
-
-            dependencies.add(
-                crawlerApkConfigName,
-                "com.google.android.appcrawler:appcrawler-app:${APPCRAWLER_VERSION}@apk"
-            )
-        }
-    }
 }
 
 private const val journeysEngineConfigName = "_internal-journeys-validation-junit-engine"
-private const val crawlerApkConfigName = "_internal-journeys-crawler-apk"
 private const val journeysClassName = "JourneysEntryPoint"
 private const val journeysInputDir = "src/journeysTest"

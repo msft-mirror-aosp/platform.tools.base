@@ -24,7 +24,7 @@ import java.time.Duration
 object RoboConfigConstants {
 
     /** Package ID for the crawler application. */
-    const val CRAWLER_PACKAGE_ID = "com.google.appcrawler.platform"
+    const val CRAWLER_PACKAGE_ID = "com.google.robo.platform"
 
     /**
      * The relative class name for the ProxyService within the crawler package.
