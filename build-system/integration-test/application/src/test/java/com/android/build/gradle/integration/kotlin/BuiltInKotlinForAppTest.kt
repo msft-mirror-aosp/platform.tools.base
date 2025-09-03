@@ -338,7 +338,7 @@ class BuiltInKotlinForAppTest(
     }
 
     @Test
-    fun `fail when kotlin-android plugin is applied before built-in Kotlin plugin`() {
+    fun `fail when built-in Kotlin plugin is applied after kotlin-android plugin`() {
         val build = rule.build {
             androidApplication {
                 applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
@@ -348,11 +348,7 @@ class BuiltInKotlinForAppTest(
             .with(BooleanOption.BUILT_IN_KOTLIN, builtInKotlinBooleanOption)
             .expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
-            if (builtInKotlinBooleanOption) {
-                "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
-            } else {
-                "The 'org.jetbrains.kotlin.android' plugin is not compatible with the 'com.android.experimental.built-in-kotlin' plugin."
-            }
+            "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
         )
     }
 
