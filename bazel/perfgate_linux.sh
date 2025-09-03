@@ -79,9 +79,8 @@ fi
 
 BAZEL_EXITCODE_TEST_FAILURES=3
 
-# For post-submit builds, if the tests fail we still want to report success
-# otherwise ATP will think the build failed and there are no tests. b/152755167
-if [[ $is_post_submit && $bazel_status == $BAZEL_EXITCODE_TEST_FAILURES ]]; then
+# Test failures are reported through ATP/TreeHugger, see go/antswatcher.
+if [[ $bazel_status == $BAZEL_EXITCODE_TEST_FAILURES ]]; then
   exit 0
 else
   exit $bazel_status
