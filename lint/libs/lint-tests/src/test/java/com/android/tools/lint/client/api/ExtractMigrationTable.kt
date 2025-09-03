@@ -126,7 +126,7 @@ fun main() {
     }
   }
 
-  parentDisposable.dispose()
+  Disposer.dispose(parentDisposable)
 }
 
 private fun printMap(m: Map<String, String>, formatter: (String) -> String) {
