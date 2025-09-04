@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package com.android.tools.journeys.proto;
+
+import "google/protobuf/timestamp.proto";
+
+option java_package = 'com.android.tools.journeys.proto';
+option java_multiple_files = true;
+
+// Represents the final, complete result of a single Journey execution.
+message JourneyRunResult {
+    // Information available at the beginning of a run.
+    message Initialization {
+        // Unique identifier for this specific run.
+        // This is the same as the journey_run_id stored in JourneyRunEvent.
+        //  - We need it here to have it associated with the final journey result stored on disk.
+        //  - We need it in the event to distinguish between artifacts arriving from different
+        //    journeys running in parallel as there is no other way to distinguish them.
+        string id = 1;
+        // The list of user-provided prompts representing the Journey.
+        repeated string prompts = 2;
+        // Timestamp of when the run began.
+        google.protobuf.Timestamp start_timestamp = 3;
+        // Key-value pairs describing the test environment.
+        map<string, string> metadata = 4;
+    }
+
+    // Information available at the end of a run.
+    message Completion {
+        // The final result of the run.
+        Result result = 1;
+        // Timestamp of when the run finished.
+        google.protobuf.Timestamp end_timestamp = 2;
+        // A list of run-level artifacts.
+        repeated Artifact artifacts = 3;
+    }
+
+    // Populated when the run starts.
+    Initialization initialization = 1;
+    // A list of Step objects, populated as the run progresses.
+    repeated Step steps = 2;
+    // Populated when the run finishes.
+    Completion completion = 3;
+}
+
+// Represents the outcome of executing a single step (a user-provided prompt).
+message Step {
+    // Information available at the beginning of a step.
+    message Initialization {
+        // The text of the prompt being executed.
+        string prompt_text = 1;
+        // Timestamp of when the step began.
+        google.protobuf.Timestamp start_timestamp = 2;
+    }
+
+    // Information available at the end of a step.
+    message Completion {
+        // The result of this step.
+        Result result = 1;
+        // Timestamp of when the step finished.
+        // For ROBO backend: this will be same as the start time of the first action
+        // which happens immediately after the step is complete.
+        google.protobuf.Timestamp end_timestamp = 2;
+    }
+
+    // Populated when the step starts.
+    Initialization initialization = 1;
+    // Populated as the step progresses.
+    repeated Turn turns = 2;
+    // Populated when the step finishes.
+    Completion completion = 3;
+}
+
+
+// Represents the result of a single observe-reason-act cycle.
+message Turn {
+    // The artifacts of the app provided to the LLM before this turn.
+    repeated Artifact artifacts_before = 1;
+    // A high-level summary of the actions/assertions taken by the LLM.
+    string description = 2;
+    // The reason given by the LLM for the action taken.
+    string reasoning = 3;
+    // An optional list of Interaction objects detailing each action taken.
+    // May be empty if the LLM deemed no action was necessary.
+    repeated Interaction interactions = 4;
+}
+
+// Represents a single interaction with the device and its result.
+message Interaction {
+    // The specific command that was executed (e.g., "tap 123 456").
+    string command = 1;
+    // The type of the interaction.
+    CommandType type = 2;
+    // The result of this interaction.
+    Result result = 3;
+    // The artifacts of the app before the interaction starts.
+    repeated Artifact artifacts_before = 4;
+}
+
+// ===================================================================
+// Shared Data Models
+// ===================================================================
+
+// Represents the result of an operation.
+message Result {
+    // The final status of the operation.
+    Status status = 1;
+    // An optional, detailed error message if the status is FAILED or ERROR.
+    string error_message = 2;
+}
+
+// An enum for the status of a run, step, turn, or interaction.
+enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // The objective was met.
+    // For ROBO Backend: When journey completes without any issues.
+    SUCCEEDED = 1;
+    // The objective wasn't met, e.g. an assertion failed.
+    // For ROBO Backend: When a prompt failure occurs in the journey.
+    FAILED = 2;
+    // There was an issue with the test environment or ai agent, e.g. connection to device lost.
+    // For ROBO Backend: Any other exception being thrown in proxy.
+    ERROR = 3;
+    IN_PROGRESS = 4;
+}
+
+// An enum for the type of command executed.
+enum CommandType {
+    COMMAND_TYPE_UNSPECIFIED = 0;
+    LAUNCH = 1;
+    CLICK = 2;
+    LONG_PRESS = 3;
+    ENTER_TEXT = 4;
+    TYPE_TEXT = 5;
+    PRESS_IME = 6;
+    SWIPE_NATURAL = 7;
+    WAIT = 8;
+    NAVIGATE_BACK = 9;
+    NAVIGATE_HOME = 10;
+    POINT_TAP = 11;
+    ADB_COMMAND = 12;
+    TWO_POINT_GESTURE = 13;
+}
+
+enum ArtifactType {
+    ARTIFACT_TYPE_UNSPECIFIED = 0;
+    SCREENSHOT = 1;
+    SCREEN_RECORDING = 2;
+    LOGCAT = 3;
+    VIEW_HIERARCHY = 4;
+}
+
+// Top level artifact associated with a single journey run.
+message Artifact {
+    // The type of the artifact.
+    ArtifactType type = 1;
+    // The URI/path to the artifact resource.
+    string uri = 2;
+}

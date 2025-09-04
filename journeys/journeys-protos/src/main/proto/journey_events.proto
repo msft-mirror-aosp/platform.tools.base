@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package com.android.tools.journeys.proto;
+
+import "src/main/proto/journey_results.proto";
+
+option java_package = 'com.android.tools.journeys.proto';
+option java_multiple_files = true;
+
+message JourneyRunEvent {
+    // Unique identifier for this specific run.
+    string journey_run_id = 1;
+
+    // The info carried by each of these events can be checked in
+    // journeys/journeys-protos/src/main/proto/journey_results.proto.
+    oneof event_payload {
+        RunStarted run_started = 2;
+        StepStarted step_started = 3;
+        TurnAdded turn_added = 4;
+        StepFinished step_finished = 5;
+        RunFinished run_finished = 6;
+    }
+}
+
+message RunStarted {
+    // Contains all information about the start of a run.
+    JourneyRunResult.Initialization initialization = 1;
+}
+
+message StepStarted {
+    // Contains all information about the start of a step.
+    Step.Initialization initialization = 1;
+}
+
+message TurnAdded {
+    // Note: We do not have any timestamp for when turn is added since we currently
+    // do not use it in the UI.
+    Turn turn = 2;
+}
+
+message StepFinished {
+    // Contains all information about the completion of a step.
+    Step.Completion completion = 2;
+
+}
+
+message RunFinished {
+    // Contains all information about the completion of a run.
+    JourneyRunResult.Completion completion = 1;
+}
