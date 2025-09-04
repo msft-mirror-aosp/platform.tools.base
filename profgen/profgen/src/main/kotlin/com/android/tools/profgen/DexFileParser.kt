@@ -15,6 +15,7 @@
  */
 
 @file:OptIn(ExperimentalUnsignedTypes::class)
+
 package com.android.tools.profgen
 
 import java.nio.ByteBuffer
@@ -160,14 +161,51 @@ private fun parseClassDefinitionPool(buffer: ByteBuffer, dexFile: DexFile) {
     buffer.position(dexFile.header.classDefs.offset)
     for (i in 0 until dexFile.header.classDefs.size) {
         val classIdx = buffer.int
-        /* val accessFlags = */buffer.int
-        /* val superClassIdx = */buffer.int
-        /* val interfacesOffs = */buffer.int
-        /* val sourceFileIdx = */buffer.int
-        /* val annotationsOffset = */buffer.int
-        /* val classDataOffset = */buffer.int
-        /* val staticValuesOffset = */buffer.int
+        /* val accessFlags = */ buffer.int
+        /* val superClassIdx = */ buffer.int
+        /* val interfacesOffs = */ buffer.int
+        /* val sourceFileIdx = */ buffer.int
+        /* val annotationsOffset = */ buffer.int
+        val classDataOffset = buffer.int
+        /* val staticValuesOffset = */ buffer.int
         dexFile.classDefPool[i] = classIdx
+
+        if (classDataOffset == 0) {
+            continue
+        }
+
+        val oldPosition = buffer.position()
+        buffer.position(classDataOffset)
+        val staticFieldsSize = buffer.leb128
+        val instanceFieldsSize = buffer.leb128
+        val directMethodsSize = buffer.leb128
+        val virtualMethodsSize = buffer.leb128
+        repeat(staticFieldsSize) {
+            /* field_idx */ buffer.skipLeb128()
+            /* access_flags */ buffer.skipLeb128()
+        }
+        repeat(instanceFieldsSize) {
+            /* field_idx */ buffer.skipLeb128()
+            /* access_flags */ buffer.skipLeb128()
+        }
+        var accumulator = 0
+        repeat(directMethodsSize) {
+            val methodIdx = buffer.leb128
+            accumulator += methodIdx
+            dexFile.definedMethods.add(accumulator)
+            /* access_flags */ buffer.skipLeb128()
+            /* code_off */ buffer.skipLeb128()
+        }
+        accumulator = 0
+        repeat(virtualMethodsSize) {
+            val methodIdx = buffer.leb128
+            accumulator += methodIdx
+            dexFile.definedMethods.add(accumulator)
+            /* access_flags */ buffer.skipLeb128()
+            /* code_off */ buffer.skipLeb128()
+        }
+
+        buffer.position(oldPosition)
     }
 }
 

@@ -81,6 +81,7 @@ class DexFile internal constructor(
     internal val typePool = ArrayList<String>(header.typeIds.size)
     internal val protoPool = ArrayList<DexPrototype>(header.prototypeIds.size)
     internal val methodPool = ArrayList<DexMethod>(header.methodIds.size)
+    internal val definedMethods = HashSet<Int>()
 
     // we don't really care about any of the details of classes, just what index it corresponds to in the
     // type pool, and we can use the type pool to determine its descriptor, so in this case we only need an IntArray.

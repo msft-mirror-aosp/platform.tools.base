@@ -60,6 +60,15 @@ internal val ByteBuffer.leb128: Int
     }
 
 /**
+ * Skips an unsigned LEB128.
+ *
+ * This is a no-op that exists only to silence errors about unused return values.
+ */
+fun ByteBuffer.skipLeb128() {
+    val unused = leb128
+}
+
+/**
  * Modified UTF-8 as described in the dex file format spec.
  *
  *

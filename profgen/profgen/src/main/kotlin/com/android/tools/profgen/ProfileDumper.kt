@@ -51,6 +51,9 @@ fun dumpProfile(
         // Even if the checksums don't match we can try and dump as much information as possible.
 
         for ((key, method) in dexFileData.methods) {
+            if (key !in file.definedMethods) {
+                continue
+            }
             // Method data is not guaranteed to exist given they might be stored as
             // extra descriptors.
 
