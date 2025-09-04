@@ -45,6 +45,7 @@ import com.android.builder.core.ComponentType
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import java.io.File
 import java.util.function.Predicate
 
@@ -85,6 +86,13 @@ interface ComponentCreationConfig : ComponentIdentity {
 
     val useBuiltInKaptSupport: Boolean
         get() = builtInKaptSupportMode is BuiltInKaptSupportMode.Supported
+
+    val explicitApiModeProvider: Provider<ExplicitApiMode>
+        get() = if (componentType.isForTesting) {
+            services.provider { ExplicitApiMode.Disabled }
+        } else {
+            services.provider { services.builtInKotlinServices.kotlinAndroidProjectExtension.explicitApi }
+        }
 
     // ---------------------------------------------------------------------------------------------
     // OPTIONAL FEATURES

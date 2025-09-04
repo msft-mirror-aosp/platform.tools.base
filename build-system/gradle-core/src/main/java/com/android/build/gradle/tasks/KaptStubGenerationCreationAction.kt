@@ -18,12 +18,14 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
+import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.utils.KgpVersion
 import org.gradle.api.tasks.TaskProvider
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.KaptExtensionConfig
 import org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
@@ -54,7 +56,7 @@ class KaptStubGenerationCreationAction(
                 taskName,
                 kotlinCompileTaskProvider,
                 kaptExtension,
-                creationConfig.services.provider { kotlinServices.kotlinAndroidProjectExtension.explicitApi }
+                creationConfig.explicitApiModeProvider
             )
         }
         return kotlinJvmFactory.registerKaptGenerateStubsTask(taskName)
