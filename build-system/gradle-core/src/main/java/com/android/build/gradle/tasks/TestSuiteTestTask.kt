@@ -351,8 +351,10 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
                 val sourceSet =  sourceContainer.source
                 when (sourceSet) {
-                    is TestSuiteSourceSet.Assets ->
+                    is TestSuiteSourceSet.Assets -> {
                         task.sourceFolders.addAll(sourceSet.get().all)
+                        task.failOnNoDiscoveredTests.set(false)
+                    }
                     is TestSuiteSourceSet.HostJar ->
                         task.sourceFolders.addAll(sourceSet.get().all)
                     is TestSuiteSourceSet.TestApk ->

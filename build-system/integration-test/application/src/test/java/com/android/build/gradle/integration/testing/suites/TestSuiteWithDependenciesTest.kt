@@ -81,7 +81,7 @@ class TestSuiteWithDependenciesTest {
                             enginesDependencies.add("com.test:toy-junit-engine:1.0")
                             enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
                         }
-                        it.hostJar { }
+                        it.assets { }
                         it.targetVariants.add("debug")
                         it.targets.apply {
                             create("t1") { }
@@ -139,7 +139,6 @@ class TestSuiteWithDependenciesTest {
     fun testConfigurationBlockExecutes() {
         rule.build
             .executor
-            .expectFailure() // no test present.
             .run("app:testFirstT1DebugTestSuite")
     }
 }
