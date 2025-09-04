@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.options
 
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.EXCLUDE_LIBRARIES_FROM_CONSTRAINTS
-import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_9_0
 import com.android.build.gradle.options.Version.VERSION_3_5
 import com.android.build.gradle.options.Version.VERSION_3_6
@@ -97,12 +98,12 @@ enum class BooleanOption(
     // AndroidX & Jetifier
     USE_ANDROID_X(
         "android.useAndroidX",
-        false,
+        true,
         ApiStage.Stable,
         FutureStage(
             true,
-            ApiStage.Stable,
-            Version.VERSION_9_0
+            ApiStage.Deprecated(DeprecationTarget.VERSION_11_0),
+            Version.VERSION_10_0
         )
     ),
     ENABLE_JETIFIER("android.enableJetifier", false, ApiStage.Stable),
@@ -292,15 +293,6 @@ enum class BooleanOption(
      */
     GRADLE_MANAGED_DEVICE_ALLOW_OLD_API_LEVEL_DEVICES("android.experimental.testOptions.managedDevices.allowOldApiLevelDevices", false, FeatureStage.Experimental),
 
-    /**
-     * When enabled, Gradle Managed Device test results will be included in the mergeAndroidReports task from the
-     * android-reporting plugin.
-     *
-     * This will cause all managed devices to run for all variants in all subprojects when the mergeAndroidReports
-     * task is executed.
-     */
-    GRADLE_MANAGED_DEVICE_INCLUDE_MANAGED_DEVICES_IN_REPORTING("android.experimental.testOptions.managedDevices.includeInMergedReport", false, FeatureStage.Experimental),
-
     /** When set R classes are treated as compilation classpath in libraries, rather than runtime classpath, with values set to 0. */
     ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT("android.enableAdditionalTestOutput", true, FeatureStage.Experimental),
 
@@ -334,7 +326,6 @@ enum class BooleanOption(
 
     ENABLE_TEST_FIXTURES("android.experimental.enableTestFixtures", false, FeatureStage.Experimental),
 
-    USE_NEW_DSL_INTERFACES("android.experimental.newDslInterfaces", false, FeatureStage.Experimental),
     USE_DECLARATIVE_INTERFACES("android.experimental.declarative", false, FeatureStage.Experimental),
 
     /** Whether to force the APK to be deterministic. */
@@ -354,6 +345,20 @@ enum class BooleanOption(
             false,
             FeatureStage.Experimental
     ),
+
+    /** Force enables the identity transform for
+     * - aar -> processed-aar
+     * - jar -> processed-jar
+     *
+     * These should not be needed in most scenarios now, but keeping the option for backwards
+     * compatibility.
+     */
+    ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS(
+        "android.experimental.enableIdentityTransformsForProcessedArtifacts",
+        false,
+        FeatureStage.Experimental
+    ),
+
 
     PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT("android.experimental.privacysandboxsdk.plugin.enable",
             false,
@@ -525,11 +530,25 @@ enum class BooleanOption(
      */
     R8_MAIN_DEX_LIST_DISALLOWED(
         "android.r8.mainDexList.disallowed",
+        true,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_10_0
+        )
+    ),
+
+    /**
+     * `getDefaultProguardRule(proguard-android.txt)` support will be dropped in 9.0
+     */
+    R8_PROGUARD_ANDROID_TXT_DISALLOWED(
+        "android.r8.proguardAndroidTxt.disallowed",
         false,
         FeatureStage.Experimental,
         FutureStage(
             true,
-            FeatureStage.Experimental,
+            FeatureStage.SoftlyEnforced(VERSION_10_0),
             Version.VERSION_9_0
         )
     ),
@@ -563,12 +582,6 @@ enum class BooleanOption(
 
     ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM(
         "android.experimental.androidTest.useUnifiedTestPlatform",
-        true,
-        FeatureStage.SoftlyEnforced(VERSION_9_0),
-    ),
-
-    ENABLE_NEW_RESOURCE_SHRINKER_PRECISE(
-        "android.enableNewResourceShrinker.preciseShrinking",
         true,
         FeatureStage.SoftlyEnforced(VERSION_9_0),
     ),
@@ -685,6 +698,23 @@ enum class BooleanOption(
         stage = FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
+    /**
+     * Expose only the new DSL.
+     *
+     * No longer use the legacy implementation classes to back the DSL.
+     *
+     * The legacy implementation classes also includes the legacy variant API, so setting this
+     * subsumes setting `android.enableLegacyVariantApi`
+     */
+    USE_NEW_DSL("android.newDsl", true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
+
+    DEFAULT_ANDROIDX_TEST_RUNNER(
+        propertyName = "android.default.androidx.test.runner",
+        defaultValue = true,
+        stage = FeatureStage.SoftlyEnforced(VERSION_9_0),
+    ),
+
+
     /* -------------------
      * DEPRECATED FEATURES
      */
@@ -708,8 +738,11 @@ enum class BooleanOption(
         ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
     ),
 
-    /** This flag is subsumed by android.enableLegacyVariantApi. */
+    /** This flag is subsumed by android.enableLegacyVariantApi ([ENABLE_LEGACY_VARIANT_API]) */
     ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Deprecated(VERSION_10_0)),
+
+    /** This is subsumed by `android.newDsl` ([USE_NEW_DSL]) which also affects groovy scripts and plugins. */
+    USE_NEW_DSL_INTERFACES("android.experimental.newDslInterfaces", false, FeatureStage.Deprecated(VERSION_10_0)),
 
     /* -----------------
      * ENFORCED FEATURES
@@ -1061,6 +1094,13 @@ enum class BooleanOption(
                     "R8 Integrated Resource Shrinking is always enabled.")
     ),
 
+    ENABLE_NEW_RESOURCE_SHRINKER_PRECISE(
+        "android.enableNewResourceShrinker.preciseShrinking", true, FeatureStage.Enforced(
+            Version.VERSION_9_0,
+            additionalMessage = "Precise shrinking is always enabled and this property no longer has any effect."
+        )
+    ),
+
     /* ----------------
      * REMOVED API
      */
@@ -1203,6 +1243,24 @@ enum class BooleanOption(
         "android.r8.optimizedShrinking",
         false,
         FeatureStage.Removed(Version.VERSION_8_11)
+    ),
+
+
+    /**
+     * When enabled, Gradle Managed Device test results will be included in the mergeAndroidReports task from the
+     * android-reporting plugin.
+     *
+     * This will cause all managed devices to run for all variants in all subprojects when the mergeAndroidReports
+     * task is executed.
+     */
+    @Suppress("unused")
+    GRADLE_MANAGED_DEVICE_INCLUDE_MANAGED_DEVICES_IN_REPORTING(
+        "android.experimental.testOptions.managedDevices.includeInMergedReport",
+        false,
+        FeatureStage.Removed(
+            Version.VERSION_9_0,
+            "The managedDevices.includeInMergedReport property has no effect"
+        )
     ),
 
     ; // end of enums

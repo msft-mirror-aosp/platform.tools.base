@@ -51,14 +51,15 @@ fun runAndroidTest(
             .filter { it.state != IDevice.DeviceState.UNAUTHORIZED }
 
         onlineDevices.forEach { device ->
-            val deviceConfigProvider = DeviceConfigProviderImpl(device)
-            val testedApks = testData.findTestedApks(deviceConfigProvider)
-
             workQueue.submit(AndroidTestWorkAction::class.java) { params ->
+                val deviceConfigProvider = DeviceConfigProviderImpl(device)
+                val testedApks = testData.findTestedApks(deviceConfigProvider)
                 params.adbExecutable.setDisallowChanges(adbExecutable)
                 params.aaptExecutable.setDisallowChanges(aaptExecutable)
                 params.deviceSerial.setDisallowChanges(device.serialNumber)
                 params.deviceApiLevel.setDisallowChanges(deviceConfigProvider.apiLevel)
+                params.instrumentationRunnerClass.setDisallowChanges(testData.instrumentationRunner)
+                params.instrumentationTargetPackageId.setDisallowChanges(testData.instrumentationTargetPackageId)
                 params.testedApks.fromDisallowChanges(testedApks)
                 params.testUtilApks.fromDisallowChanges(testUtilApks)
                 params.apkInstallTimeOutInMs.setDisallowChanges(apkInstallTimeOutInMs)

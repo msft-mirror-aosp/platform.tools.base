@@ -16,8 +16,7 @@
 
 package com.android.build.gradle.internal.plugins
 
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.LibraryExtension
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
@@ -27,7 +26,6 @@ import org.gradle.api.Task
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.IOException
 import java.nio.file.Path
 import java.util.ArrayList
 import java.util.HashMap
@@ -49,14 +47,15 @@ class NoTaskOutputFileOverlapTest {
     }
 
     @Test
-    @Throws(IOException::class)
     fun testLibrary() {
         val projectDir = projectDirectory.newFolder("library").toPath()
         val project = TestProjects.builder(projectDir)
             .withPlugin(TestProjects.Plugin.LIBRARY)
             .build()
-        val android = project.extensions.getByType(LibraryExtension::class.java)
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
+        val android = project.extensions.getByType(com.android.build.api.dsl.LibraryExtension::class.java)
+        android.compileSdk {
+            version = release(TestConstants.COMPILE_SDK_VERSION)
+        }
         android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
         android.namespace = "com.example.namespace"
         val plugin = project.plugins.getPlugin(LibraryPlugin::class.java)
@@ -65,14 +64,15 @@ class NoTaskOutputFileOverlapTest {
         validateNoOverlappingTaskOutputs(project, projectDir)
     }
     @Test
-    @Throws(IOException::class)
     fun testApplication() {
         val projectDir = projectDirectory.newFolder("library").toPath()
         val project = TestProjects.builder(projectDir)
             .withPlugin(TestProjects.Plugin.APP)
             .build()
-        val android = project.extensions.getByType(AppExtension::class.java)
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
+        val android = project.extensions.getByType(ApplicationExtension::class.java)
+        android.compileSdk {
+            version = release(TestConstants.COMPILE_SDK_VERSION)
+        }
         android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
         android.namespace = "com.example.namespace"
         val plugin = project.plugins.getPlugin(AppPlugin::class.java)

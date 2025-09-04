@@ -187,11 +187,11 @@ fun initBuiltInKotlinSupportIfRequired(project: Project, projectServices: Projec
     // Provide built-in Kotlin support when the BooleanOption is enabled or the built-in Kotlin
     // plugin is applied
     if (projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)) {
-        initBuiltInKotlinSupport(project, projectServices)
+        initBuiltInKotlinSupport(project)
         projectServices.initBuiltInKotlinServices(BuiltInKotlinBooleanOptionEnabled)
     } else {
         project.pluginManager.withPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) {
-            initBuiltInKotlinSupport(project, projectServices)
+            initBuiltInKotlinSupport(project)
             projectServices.initBuiltInKotlinServices(BuiltInKotlinPluginApplied)
         }
     }
@@ -240,21 +240,24 @@ fun initBuiltInKotlinSupportIfRequired(project: Project, projectServices: Projec
     }
 }
 
-private fun initBuiltInKotlinSupport(project: Project, projectServices: ProjectServices) {
-    if (projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)) {
-        project.pluginManager.withPlugin(KOTLIN_ANDROID_PLUGIN_ID) {
-            error(
-                """
-                The '$KOTLIN_ANDROID_PLUGIN_ID' plugin is no longer required for Kotlin support since AGP 9.0.
-                Remove the '$KOTLIN_ANDROID_PLUGIN_ID' plugin from this project's build file: ${project.buildFile}.
-                For more info, see https://issuetracker.google.com/438678642.
-                """.trimIndent()
-            )
-        }
-    } else {
-        project.disallowPlugin(
-            mainPlugin = ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID,
-            incompatiblePlugin = KOTLIN_ANDROID_PLUGIN_ID
+private fun initBuiltInKotlinSupport(project: Project) {
+    project.pluginManager.withPlugin(KOTLIN_ANDROID_PLUGIN_ID) {
+        error(
+            """
+            The '$KOTLIN_ANDROID_PLUGIN_ID' plugin is no longer required for Kotlin support since AGP 9.0.
+            Remove the '$KOTLIN_ANDROID_PLUGIN_ID' plugin from this project's build file: ${project.buildFile}.
+            For more info, see https://issuetracker.google.com/438678642.
+            """.trimIndent()
+        )
+    }
+
+    project.pluginManager.withPlugin(KOTLIN_KAPT_PLUGIN_ID) {
+        error(
+            """
+            The '$KOTLIN_KAPT_PLUGIN_ID' plugin is not compatible with built-in Kotlin support.
+            Replace the '$KOTLIN_KAPT_PLUGIN_ID' plugin with the '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID' in this project's build file: ${project.buildFile}.
+            For more info, see https://issuetracker.google.com/438678642.
+            """.trimIndent()
         )
     }
 
@@ -289,11 +292,6 @@ fun initBuiltInKaptSupportIfRequired(project: Project) {
 }
 
 private fun initBuiltInKaptSupport(project: Project) {
-    project.disallowPlugin(
-        mainPlugin = ANDROID_BUILT_IN_KAPT_PLUGIN_ID,
-        incompatiblePlugin = KOTLIN_KAPT_PLUGIN_ID
-    )
-
     // Get KotlinBaseApiPlugin
     val kotlinBaseApiPlugin = project.plugins.getPlugin(KotlinBaseApiPlugin::class.java)
 

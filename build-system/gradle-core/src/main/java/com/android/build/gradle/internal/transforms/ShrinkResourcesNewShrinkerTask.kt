@@ -178,7 +178,6 @@ abstract class ShrinkProtoResourcesAction @Inject constructor() :
                     config.logFile
                 ),
                 supportMultipackages = false,
-                usePreciseShrinking = config.usePreciseShrinking
             ).use { shrinker ->
                 shrinker.analyze()
 

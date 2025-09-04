@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.plugins;
 
 import com.android.AndroidProjectTypes;
 import com.android.annotations.NonNull;
-import com.android.build.api.dsl.DynamicFeatureBuildFeatures;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.DynamicFeatureAndroidComponentsExtensionImpl;
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar;
@@ -26,12 +25,10 @@ import com.android.build.api.variant.AndroidComponentsExtension;
 import com.android.build.api.variant.DynamicFeatureAndroidComponentsExtension;
 import com.android.build.api.variant.DynamicFeatureVariant;
 import com.android.build.api.variant.DynamicFeatureVariantBuilder;
-import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
 import com.android.build.gradle.internal.core.dsl.DynamicFeatureVariantDslInfo;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
@@ -135,6 +132,29 @@ public class DynamicFeaturePlugin
 
         GradleBuildProject.Builder stats =
                 getConfiguratorService().getProjectBuilder(project.getPath());
+
+        if (getProjectServices()
+                .getProjectOptions()
+                .get(BooleanOption.USE_NEW_DSL)) {
+            project.getExtensions().add(new TypeOf<>() {}, "android", dynamicFeatureExtension);
+
+            initExtensionFromSettings(dynamicFeatureExtension);
+
+            // Create an instance of the old extension to pass around AGP internally.
+            // This is not exposed externally
+            // TODO(b/418804641): Clean up all the internal users of the BaseExtension hierarchy
+            DynamicFeatureExtension internalOnly =
+                    dslServices.newInstance(
+                            DynamicFeatureExtension.class,
+                            dslServices,
+                            bootClasspathConfig,
+                            buildOutputs,
+                            dslContainers.getSourceSetManager(),
+                            dynamicFeatureExtension,
+                            stats != null ? stats : GradleBuildProject.newBuilder());
+
+            return new ExtensionData<>(internalOnly, dynamicFeatureExtension, bootClasspathConfig);
+        }
 
         if (getProjectServices().getProjectOptions().get(BooleanOption.USE_NEW_DSL_INTERFACES)) {
             //noinspection unchecked,rawtypes I am so sorry.

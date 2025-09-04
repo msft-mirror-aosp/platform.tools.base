@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -119,7 +120,8 @@ fun My2DContent(onRequestFullSpaceMode: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             MainContent(modifier = Modifier.padding(48.dp))
-            if (LocalSession.current != null) {
+            // Preview does not current support XR sessions.
+            if (!LocalInspectionMode.current && LocalSession.current != null) {
                 FullSpaceModeIconButton(
                     onClick = onRequestFullSpaceMode,
                     modifier = Modifier.padding(32.dp)

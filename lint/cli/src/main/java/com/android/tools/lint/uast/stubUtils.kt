@@ -15,24 +15,23 @@
  */
 package com.android.tools.lint.uast
 
+import com.android.tools.lint.uast.PsiBuilderUtils.buildLightField
+import com.android.tools.lint.uast.PsiBuilderUtils.buildLightMethod
+import com.android.tools.lint.uast.PsiBuilderUtils.orAnonymous
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
-import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.util.indexing.FileContentImpl
 import org.jetbrains.kotlin.analysis.decompiler.konan.K2KotlinNativeMetadataDecompiler
 import org.jetbrains.kotlin.analysis.decompiler.konan.KlibMetaFileType
-import org.jetbrains.kotlin.psi.KtClass
-import org.jetbrains.kotlin.psi.KtEnumEntry
 import org.jetbrains.kotlin.psi.KtFile
-import org.jetbrains.kotlin.psi.KtNamedDeclaration
-import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtObjectDeclaration
-import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinClassStubImpl
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinFileStubImpl
+import org.jetbrains.kotlin.psi.stubs.impl.KotlinFunctionStubImpl
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinObjectStubImpl
+import org.jetbrains.kotlin.psi.stubs.impl.KotlinPropertyStubImpl
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinStubBaseImpl
 
 internal fun klibMetaFiles(root: VirtualFile): Collection<VirtualFile> {
@@ -57,11 +56,11 @@ internal fun buildStubByVirtualFile(file: VirtualFile): KotlinFileStubImpl? {
     as? KotlinFileStubImpl
 }
 
-internal fun buildPsiClassByKotlinClassStub(
+internal fun buildPsiSymbolByKotlinStub(
   psiManager: PsiManager,
   ktFile: KtFile,
   ktStub: KotlinStubBaseImpl<*>,
-): PsiClass? {
+): PsiNameIdentifierOwner? {
   return when (ktStub) {
     is KotlinClassStubImpl -> {
       val ktClass = ktStub.psi
@@ -71,18 +70,15 @@ internal fun buildPsiClassByKotlinClassStub(
       val ktObject = ktStub.psi
       LintFakeLightClassForKlib(ktObject, psiManager, ktObject.name.orAnonymous(ktObject), ktFile)
     }
+    // These declarations are top-level and have no containing class in Kotlin/Native
+    is KotlinPropertyStubImpl -> {
+      val ktProperty = ktStub.psi
+      ktProperty.buildLightField(containingClass = null)
+    }
+    is KotlinFunctionStubImpl -> {
+      val ktFunction = ktStub.psi
+      ktFunction.buildLightMethod(containingClass = null)
+    }
     else -> null
-  }
-}
-
-internal fun String?.orAnonymous(ktDeclaration: KtNamedDeclaration): String {
-  if (this != null) return this
-  return when (ktDeclaration) {
-    is KtEnumEntry -> "<anonymous enum entry>"
-    is KtClass -> "<anonymous class>"
-    is KtObjectDeclaration -> "<anonymous object>"
-    is KtNamedFunction -> "<anonymous function>"
-    is KtProperty -> "<anonymous property>"
-    else -> "<unknown ${ktDeclaration::class}>"
   }
 }

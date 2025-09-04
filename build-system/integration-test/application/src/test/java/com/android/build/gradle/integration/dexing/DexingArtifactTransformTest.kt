@@ -49,7 +49,9 @@ class DexingArtifactTransformTest {
         GradleTestProject.builder().fromTestApp(
             MinimalSubProject.app("com.example.test")
         ).addGradleProperties(
-                "${OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS.propertyName}=true"
+            "${OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS.propertyName}=true"
+        ).addGradleProperties(
+            "${BooleanOption.USE_ANDROID_X.propertyName}=false"
         ).withAdditionalMavenRepo(
                 MavenRepoGenerator(
                         listOf(
@@ -212,7 +214,7 @@ class DexingArtifactTransformTest {
 
     @Test
     fun testDesugaringDoesUseNewPipeline() {
-        project.buildFile.appendText("\nandroid.compileOptions.targetCompatibility 1.8")
+        project.buildFile.appendText("\nandroid.compileOptions.targetCompatibility 11")
         val result = executor().run("assembleDebug")
         assertThat(result.tasks).containsAllIn(listOf(":mergeExtDexDebug", ":mergeDexDebug"))
     }
@@ -241,7 +243,7 @@ class DexingArtifactTransformTest {
     fun testDesugaringWithMinSdk24() {
         project.buildFile.appendText("\n" + """
             android.defaultConfig.minSdkVersion 24
-            android.compileOptions.targetCompatibility 1.8
+            android.compileOptions.targetCompatibility 11
             dependencies {
                 implementation 'com.android.support:support-core-utils:$SUPPORT_LIB_VERSION'
             }

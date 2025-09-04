@@ -41,6 +41,7 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.declarative.dsl.model.annotations.Configuring
 import java.util.Collections
+import javax.inject.Inject
 
 open class LibraryExtensionInternal(
     dslServices: DslServices,
@@ -82,7 +83,7 @@ open class LibraryExtensionInternal(
  * href="https://developer.android.com/studio/projects/android-library.html">create an Android
  * library</a>.
  */
-open class LibraryExtension(
+open class LibraryExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
     buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,

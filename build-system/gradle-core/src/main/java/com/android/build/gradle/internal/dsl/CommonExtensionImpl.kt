@@ -324,4 +324,9 @@ abstract class CommonExtensionImpl<
     }
 
     override val experimentalProperties: MutableMap<String, Any> = mutableMapOf()
+
+    fun flavorDimensions(vararg dimensions: String) {
+        flavorDimensions.clear()
+        flavorDimensions.addAll(dimensions)
+    }
 }

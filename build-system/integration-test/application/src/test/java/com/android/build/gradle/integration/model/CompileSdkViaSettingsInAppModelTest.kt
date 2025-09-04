@@ -60,7 +60,7 @@ class CompileSdkViaSettingsInAppModelTest {
 
 /**
  * This tests uses a reference project where the compile SDK is set through the settings
- * plugin to 24.
+ * plugin to 30.
  *
  * Then the project is changed to override this at the project level with the current default
  * API level.
@@ -70,7 +70,7 @@ class CompileSdkViaSettingsOverriddenInAppModelTest: ReferenceModelComparator(
         settings {
             applyPlugin(PluginType.ANDROID_SETTINGS)
             android {
-                compileSdk = 24
+                compileSdk = 30
             }
         }
         androidApplication(createMinimumProject = false) {

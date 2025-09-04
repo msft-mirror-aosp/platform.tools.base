@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle
+package android.hardware.display;
 
-import org.gradle.api.Plugin
-import org.gradle.api.Project
+import android.view.Display;
 
-/**
- * The plugin applied with 'com.android.reporting'
- */
-class ReportingPlugin: Plugin<Project> {
-    override fun apply(project: Project) {
-        project.apply(VERSION_CHECK_PLUGIN_ID)
-        project.apply(INTERNAL_PLUGIN_ID)
+import androidx.annotation.VisibleForTesting;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class DisplayManager {
+    @VisibleForTesting public List<Display> testDisplays = new ArrayList<>(0);
+
+    @VisibleForTesting
+    public DisplayManager() {}
+
+    public Display[] getDisplays() {
+        return testDisplays.toArray(new Display[0]);
     }
 }
-
-private val INTERNAL_PLUGIN_ID = mapOf("plugin" to "com.android.internal.reporting")
-internal val VERSION_CHECK_PLUGIN_ID = mapOf("plugin" to "com.android.internal.version-check")

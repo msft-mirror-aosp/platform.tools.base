@@ -54,8 +54,9 @@ interface Variant : Component, HasAndroidResources {
     val minSdk: AndroidVersion
 
     @get:Deprecated(
-            "Will be removed in v9.0",
-            replaceWith = ReplaceWith("minSdk")
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in AGP 10.0",
+        replaceWith = ReplaceWith("minSdk")
     ) // b/368604254
     val minSdkVersion: AndroidVersion
 
@@ -65,8 +66,9 @@ interface Variant : Component, HasAndroidResources {
     val maxSdk: Int?
 
     @get:Deprecated(
-            "Will be removed in v9.0",
-            replaceWith = ReplaceWith("maxSdk")
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in AGP 10.0",
+        replaceWith = ReplaceWith("maxSdk")
     ) // b/368604254
     val maxSdkVersion: Int?
 
@@ -74,7 +76,8 @@ interface Variant : Component, HasAndroidResources {
      * Gets the target SDK Version for this variant.
      */
     @get:Deprecated(
-        "Will be removed in v9.0",
+        level = DeprecationLevel.ERROR,
+        message = "Will be removed in AGP 10.0",
         replaceWith = ReplaceWith("GeneratesApk.targetSdk")
     ) // b/368604254
     val targetSdkVersion: AndroidVersion

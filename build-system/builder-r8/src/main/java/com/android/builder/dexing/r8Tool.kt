@@ -361,9 +361,6 @@ private fun setupResourceShrinking(
     r8CommandBuilder.setAndroidResourceConsumer { _, _ ->  }
 
     r8CommandBuilder.setResourceShrinkerConfiguration {
-        if (!config.usePreciseShrinking) {
-            it.disablePreciseShrinking()
-        }
         if (config.optimizedShrinking) {
             it.enableOptimizedShrinkingWithR8()
         }
@@ -591,7 +588,6 @@ data class ResourceShrinkingConfig(
     val linkedResourcesInputFiles: List<File>,
     val mergedNotCompiledResourcesInputDirs: List<File>,
     val featureLinkedResourcesInputFiles: List<File>,
-    val usePreciseShrinking: Boolean,
     val optimizedShrinking: Boolean,
     val logFile: File?,
     val shrunkResourcesOutputFiles: List<File>,

@@ -52,7 +52,7 @@ class GradualR8Test {
             }
             kotlin {
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_1_8)
+                    jvmTarget.set(JvmTarget.JVM_11)
                 }
             }
             dependencies {
@@ -74,7 +74,7 @@ class GradualR8Test {
             }
             kotlin {
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_1_8)
+                    jvmTarget.set(JvmTarget.JVM_11)
                 }
             }
             files {
@@ -101,7 +101,7 @@ class GradualR8Test {
             }
             kotlin {
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_1_8)
+                    jvmTarget.set(JvmTarget.JVM_11)
                 }
             }
             files {

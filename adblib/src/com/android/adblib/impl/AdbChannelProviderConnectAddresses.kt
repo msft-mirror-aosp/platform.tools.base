@@ -21,13 +21,16 @@ import com.android.adblib.AdbServerChannelProvider
 import com.android.adblib.AdbSessionHost
 import com.android.adblib.impl.channels.AdbSocketChannelImpl
 import com.android.adblib.utils.SuppressedExceptions
+import com.android.adblib.utils.WarningsTracker
 import com.android.adblib.utils.closeOnException
+import com.android.adblib.utils.logInfo
 import com.android.adblib.utils.withSuppressed
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
 import java.nio.channels.AsynchronousSocketChannel
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 /**
@@ -45,6 +48,11 @@ internal class AdbChannelProviderConnectAddresses(
      */
     private val socketAddressesSupplier: suspend () -> List<InetSocketAddress>
 ) : AdbServerChannelProvider {
+
+    private val warningsTracker = WarningsTracker(
+        staleThreshold = Duration.ofMinutes(60),
+        repeatLogPeriod = Duration.ofMinutes(10)
+    )
 
     override suspend fun createChannel(timeout: Long, unit: TimeUnit): AdbChannel {
         val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
@@ -73,7 +81,12 @@ internal class AdbChannelProviderConnectAddresses(
             val message = "Cannot connect to an active ADB server on any of the following " +
                     "addresses: ${addresses.joinToString { it.toString() }}"
             val error = IOException(message).withSuppressed(suppressedExceptions)
-            host.logger.info(error) { "Error connecting to local ADB instance" }
+            warningsTracker.getLogAction(
+                this@AdbChannelProviderConnectAddresses.toString(),
+                message
+            ).logInfo(host.logger, error) {
+                "Error connecting to local ADB instance"
+            }
             throw error
         }
     }

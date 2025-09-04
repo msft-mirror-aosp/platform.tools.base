@@ -41,8 +41,8 @@ class DifferentCompileSdkPerModuleTest {
 
     @Before
     fun setUp() {
-        setupLibrary(":libA", "19", "com.example.androidLibA")
-        setupLibrary(":libB", "24", "com.example.androidLibB").also {
+        setupLibrary(":libA", "30", "com.example.androidLibA")
+        setupLibrary(":libB", "31", "com.example.androidLibB").also {
             it.file("src/main/java/libA").mkdirs()
             Files.asCharSink(
                 it.file("src/main/java/libA/TestClass.java"),
@@ -59,7 +59,7 @@ class DifferentCompileSdkPerModuleTest {
                     |}
                 """.trimMargin())
         }
-        setupLibrary(":libC", "23", "com.example.androidLibC")
+        setupLibrary(":libC", "32", "com.example.androidLibC")
     }
 
     @Test
@@ -73,13 +73,13 @@ class DifferentCompileSdkPerModuleTest {
         val container = project.modelV2().fetchModels().container
         Truth.assertThat(
             container.getProject(":libA").basicAndroidProject?.bootClasspath?.first()?.absolutePath
-        ).contains("android-19")
+        ).contains("android-30")
         Truth.assertThat(
             container.getProject(":libB").basicAndroidProject?.bootClasspath?.first()?.absolutePath
-        ).contains("android-24")
+        ).contains("android-31")
         Truth.assertThat(
             container.getProject(":libC").basicAndroidProject?.bootClasspath?.first()?.absolutePath
-        ).contains("android-23")
+        ).contains("android-32")
     }
 
     private fun setupLibrary(

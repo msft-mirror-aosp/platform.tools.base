@@ -2732,8 +2732,8 @@ package com.android.build.api.variant {
     method @Deprecated public void setIncludedInBundle(boolean);
     property public abstract boolean includeInApk;
     property public abstract boolean includeInBundle;
-    property @Deprecated public abstract boolean includedInApk;
-    property @Deprecated public abstract boolean includedInBundle;
+    property @Deprecated public boolean includedInApk;
+    property @Deprecated public boolean includedInBundle;
   }
 
   @org.gradle.api.Incubating public final class DeviceSpec {
@@ -2904,7 +2904,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.ApkPackaging packaging;
     property public abstract com.android.build.api.variant.Renderscript? renderscript;
     property public abstract com.android.build.api.variant.AndroidVersion targetSdk;
-    property @Deprecated public abstract com.android.build.api.variant.AndroidVersion targetSdkVersion;
+    property @Deprecated public com.android.build.api.variant.AndroidVersion targetSdkVersion;
   }
 
   public interface GeneratesApkBuilder {
@@ -3291,9 +3291,9 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.ExternalNativeBuild? externalNativeBuild;
     property public abstract org.gradle.api.provider.MapProperty<java.lang.String,java.lang.String> manifestPlaceholders;
     property public abstract Integer? maxSdk;
-    property @Deprecated public abstract Integer? maxSdkVersion;
+    property @Deprecated public Integer? maxSdkVersion;
     property public abstract com.android.build.api.variant.AndroidVersion minSdk;
-    property @Deprecated public abstract com.android.build.api.variant.AndroidVersion minSdkVersion;
+    property @Deprecated public com.android.build.api.variant.AndroidVersion minSdkVersion;
     property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.variant.Component> nestedComponents;
     property public abstract com.android.build.api.variant.Packaging packaging;
     property public abstract org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> proguardFiles;
@@ -3354,20 +3354,12 @@ package com.android.build.api.variant {
     property @Deprecated public abstract String name;
   }
 
-  @Deprecated public interface VariantInfo {
-    method @Deprecated public String getBuildTypeName();
-    method @Deprecated public com.google.common.collect.ImmutableList<java.lang.String!> getFlavorNames();
-    method @Deprecated public String getFullVariantName();
-    method @Deprecated public boolean isDebuggable();
-    method @Deprecated public boolean isTest();
-  }
-
   public interface VariantOutput extends com.android.build.api.variant.VariantOutputConfiguration {
     method @Deprecated public org.gradle.api.provider.Property<java.lang.Boolean> getEnable();
     method public org.gradle.api.provider.Property<java.lang.Boolean> getEnabled();
     method public org.gradle.api.provider.Property<java.lang.Integer> getVersionCode();
     method public org.gradle.api.provider.Property<java.lang.String> getVersionName();
-    property @Deprecated public abstract org.gradle.api.provider.Property<java.lang.Boolean> enable;
+    property @Deprecated public org.gradle.api.provider.Property<java.lang.Boolean> enable;
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enabled;
     property public abstract org.gradle.api.provider.Property<java.lang.Integer> versionCode;
     property public abstract org.gradle.api.provider.Property<java.lang.String> versionName;

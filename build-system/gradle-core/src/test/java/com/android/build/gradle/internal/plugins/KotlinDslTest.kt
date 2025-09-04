@@ -19,15 +19,18 @@ package com.android.build.gradle.internal.plugins
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.internal.dsl.AgpDslLockedException
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.packaging.defaultExcludes
 import com.android.build.gradle.internal.packaging.defaultMerges
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.TruthJUnit.assume
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
 import org.junit.Before
@@ -68,24 +71,31 @@ class KotlinDslTest {
         plugin = project.plugins.getPlugin(AppPlugin::class.java)
     }
 
+    private val ApplicationExtension.compileSdkHash: String? get() {
+        var result: String? = null
+        compileSdk {
+             version?.let { result = (it as CompileSdkVersionImpl).toHash() }
+        }
+        return result;
+    }
+
     @Test
     fun testCompileSdk() {
-        val androidImpl = android as BaseAppModuleExtension
 
         android.compileSdk = 28
-        assertThat(androidImpl.compileSdkVersion).isEqualTo("android-28")
+        assertThat(android.compileSdkHash).isEqualTo("android-28")
 
         android.compileSdkExtension = 2
-        assertThat(androidImpl.compileSdkVersion).isEqualTo("android-28-ext2")
+        assertThat(android.compileSdkHash).isEqualTo("android-28-ext2")
 
         android.compileSdk = null
-        assertThat(androidImpl.compileSdkVersion).isNull()
+        assertThat(android.compileSdkHash).isNull()
 
         android.compileSdk {
             version = preview("S")
             assertThat(version?.codeName).isEqualTo("S")
         }
-        assertThat(androidImpl.compileSdkPreview).isEqualTo("S")
+        assertThat(android.compileSdkPreview).isEqualTo("S")
 
         android.compileSdk {
             version = release(36)
@@ -102,7 +112,7 @@ class KotlinDslTest {
         // Ensure invoking compileSdk {} won't cause reset
         android.compileSdk {}
 
-        assertThat(androidImpl.compileSdkVersion).isEqualTo("android-36.1-ext18")
+        assertThat(android.compileSdkHash).isEqualTo("android-36.1-ext18")
     }
 
     @Test
@@ -381,10 +391,9 @@ class KotlinDslTest {
 
     /** Regression test for b/146488072 */
     @Test
-    fun `compile against variant specific external native build impl class`() {
-        (android as BaseAppModuleExtension).defaultConfig.apply {
+    fun `compile against variant specific external native build class`() {
+        android.defaultConfig.apply {
             // Check the getters return the more specific type
-            // (the arguments method is not on the interface)
             externalNativeBuild.ndkBuild.arguments("a")
             externalNativeBuild.cmake.arguments("x")
 
@@ -495,6 +504,8 @@ class KotlinDslTest {
     /** Regression test for https://b.corp.google.com/issues/155318103 */
     @Test
     fun `mergedFlavor source compatibility`() {
+        // TODO: Likely delete this test or migrate to an integration test(b/418804641)
+        assume().that(BooleanOption.USE_NEW_DSL.defaultValue).isFalse()
         val applicationVariants = (android as BaseAppModuleExtension).applicationVariants
         val fileF = File("f")
         val fileG = File("g")
@@ -556,7 +567,7 @@ class KotlinDslTest {
 
     @Test
     fun `matchingFallbacks source compatibility`() {
-        (android as BaseAppModuleExtension).productFlavors.create("example").apply {
+        android.productFlavors.create("example").apply {
             // Check the list can be mutated
             matchingFallbacks += "a"
             matchingFallbacks.add("b")
@@ -574,7 +585,7 @@ class KotlinDslTest {
             setMatchingFallbacks(matchingFallbacks)
             assertThat(matchingFallbacks).containsExactly("f")
         }
-        (android as BaseAppModuleExtension).buildTypes.create("qa").apply {
+        android.buildTypes.create("qa").apply {
             // Check the list can be mutated
             matchingFallbacks += "a"
             matchingFallbacks.add("b")

@@ -18,8 +18,8 @@ package com.android.build.gradle.integration.common.fixture.app
 
 import com.android.build.gradle.integration.common.fixture.BuildSrcProject
 import com.android.build.gradle.integration.common.fixture.GradleProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 
 /** A subproject with minimal contents. */
 class MinimalSubProject private constructor(
@@ -48,9 +48,9 @@ class MinimalSubProject private constructor(
         }
         if (addCompileAndSdkVersionToBuildFile) {
             buildScript += if (isMultiplatform) {
-                "kotlin.androidLibrary.compileSdk = ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}\n"
+                "kotlin.androidLibrary.compileSdk = ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}\n"
             } else {
-                "\n$androidExtension.compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}" +
+                "\n$androidExtension.compileSdkVersion ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}" +
                         "\n$androidExtension.defaultConfig.minSdkVersion $SUPPORT_LIB_MIN_SDK\n"
             }
         }

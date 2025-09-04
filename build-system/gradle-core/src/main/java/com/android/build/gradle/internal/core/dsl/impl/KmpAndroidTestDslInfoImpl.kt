@@ -125,14 +125,7 @@ class KmpAndroidTestDslInfoImpl(
         return testOnDeviceConfig.instrumentationRunner?.let {
             services.provider { it }
         } // else return the value from the Manifest
-            ?: dataProvider.manifestData.map {
-                it.instrumentationRunner
-                    ?: if (dexingType.isLegacyMultiDex) {
-                        MULTIDEX_TEST_RUNNER
-                    } else {
-                        DEFAULT_TEST_RUNNER
-                    }
-            }
+            ?:  computeInstrumentationTestRunner(dataProvider.manifestData, services, dexingType)
     }
 
     override val instrumentationRunnerArguments: Map<String, String>

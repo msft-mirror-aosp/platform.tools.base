@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.testing.androidtest
 
+import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationRunner
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -32,6 +33,8 @@ abstract class AndroidTestWorkAction : WorkAction<AndroidTestWorkAction.Paramete
         val aaptExecutable: RegularFileProperty
         val deviceSerial: Property<String>
         val deviceApiLevel: Property<Int>
+        val instrumentationRunnerClass: Property<String>
+        val instrumentationTargetPackageId: Property<String>
         val testedApks: ConfigurableFileCollection
         val testUtilApks: ConfigurableFileCollection
         val apkInstallTimeOutInMs: Property<Integer>
@@ -52,9 +55,14 @@ abstract class AndroidTestWorkAction : WorkAction<AndroidTestWorkAction.Paramete
         val adbApkInstaller = AdbApkInstaller(
             adb, aaptExecutable, deviceSerial, deviceApiLevel,
             apkInstallTimeOutInMs)
+        val instrumentationRunnerClass = parameters.instrumentationRunnerClass.get()
+        val instrumentationTargetPackageId = parameters.instrumentationTargetPackageId.get()
+        val instrumentationRunner = AmInstrumentationRunner(
+            adb, deviceSerial, instrumentationRunnerClass, instrumentationTargetPackageId)
 
         AndroidTestRunner(
             adbApkInstaller,
+            instrumentationRunner,
             testedApks,
             apkInstallOptions,
             testUtilApks,

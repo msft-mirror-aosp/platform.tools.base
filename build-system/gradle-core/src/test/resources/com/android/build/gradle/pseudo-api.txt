@@ -368,13 +368,6 @@ com.android.build.gradle.ProguardFiles.getDefaultProguardFileDirectory: org.grad
 com.android.build.gradle.PseudoApiUpdater
 com.android.build.gradle.PseudoApiUpdater.<init>: com.android.build.gradle.PseudoApiUpdater ()
 com.android.build.gradle.PseudoApiUpdater.main: void (java.lang.String[]) throws java.io.IOException
-com.android.build.gradle.ReportingPlugin implements org.gradle.api.Plugin
-com.android.build.gradle.ReportingPlugin.<init>: com.android.build.gradle.ReportingPlugin ()
-com.android.build.gradle.ReportingPlugin.apply: void (java.lang.Object)
-com.android.build.gradle.ReportingPlugin.apply: void (org.gradle.api.Project)
-com.android.build.gradle.ReportingPluginKt
-com.android.build.gradle.ReportingPluginKt.access$getINTERNAL_PLUGIN_ID$p: java.util.Map ()
-com.android.build.gradle.ReportingPluginKt.getVERSION_CHECK_PLUGIN_ID: java.util.Map<java.lang.String, java.lang.String> ()
 com.android.build.gradle.SettingsPlugin implements org.gradle.api.Plugin
 com.android.build.gradle.SettingsPlugin.<init>: com.android.build.gradle.SettingsPlugin ()
 com.android.build.gradle.SettingsPlugin.apply: void (java.lang.Object)

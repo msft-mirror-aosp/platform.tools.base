@@ -6,8 +6,8 @@
     maven="lintKotlin:app:unspecified"
     agpVersion="$androidGradlePluginVersion"
     buildFolder="build"
-    bootClassPath="${androidSdkDir}/platforms/android-${androidHighestKnownStableApi}/android.jar:${androidSdkDir}/build-tools/35.0.0/core-lambda-stubs.jar"
-    javaSourceLevel="1.8"
+    bootClassPath="${androidSdkDir}/platforms/android-${androidHighestKnownStableApi}/android.jar:${androidSdkDir}/build-tools/36.0.0/core-lambda-stubs.jar"
+    javaSourceLevel="11"
     compileTarget="android-${androidHighestKnownStableApi}"
     neverShrinking="true">
   <lintOptions

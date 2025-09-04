@@ -27,9 +27,17 @@ package com.android.build.api.variant
  * [Using third-party SDKs in your app](https://support.google.com/googleplay/android-developer/answer/10358880).
  */
 interface DependenciesInfoBuilder {
-    @Deprecated("This property is renamed to includeInApk", replaceWith = ReplaceWith("includeInApk"))
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "This property is renamed to includeInApk",
+        replaceWith = ReplaceWith("includeInApk")
+    )
     var includedInApk: Boolean
-    @Deprecated("This property is renamed to includeInBundle", replaceWith = ReplaceWith("includeInBundle"))
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "This property is renamed to includeInBundle",
+        replaceWith = ReplaceWith("includeInBundle")
+    )
     var includedInBundle: Boolean
 
     /**

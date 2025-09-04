@@ -106,7 +106,7 @@ open class AnalyticsEnabledGeneratesApk(
         get() {
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
                 VariantPropertiesMethodType.TARGET_SDK_VERSION_VALUE
-            return delegate.targetSdkVersion
+            return delegate.targetSdk
         }
 
     override val dexing: Dexing

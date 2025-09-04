@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Apk
 import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.TaskManager.Companion.COMPOSE_UI_VERSION
@@ -33,6 +32,7 @@ import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
+import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
 import com.android.testutils.truth.PathSubject
@@ -245,29 +245,43 @@ class BuiltInKaptTest {
     }
 
     @Test
-    fun testErrorWhenBuiltInKaptAndExternalKaptUsedInSameModule() {
+    fun `fail when built-in Kotlin plugin is applied before kotlin-kapt plugin`() {
         val app = project.getSubproject(":app")
-        with(app.buildFile) {
-            val current = readText()
-
-            writeText(
-                """
-                    plugins {
-                      id("${PluginType.KAPT.id}")
-                    }
-                    $current
-                """.trimIndent()
-            )
-        }
+        TestFileUtils.searchAndReplace(
+            app.buildFile,
+            "apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'",
+            """
+            apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'
+            apply plugin: '$KOTLIN_KAPT_PLUGIN_ID'
+            """.trimIndent(),
+        )
 
         val result = app.executor().expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
-            "The 'org.jetbrains.kotlin.kapt' plugin is not compatible with the 'com.android.legacy-kapt' plugin."
+            "The 'org.jetbrains.kotlin.kapt' plugin is not compatible with built-in Kotlin support."
         )
     }
 
     @Test
-    fun testErrorWhenBuiltInKaptAppliedWithoutBuiltInKotlin() {
+    fun `fail when built-in Kotlin plugin is applied after kotlin-kapt plugin`() {
+        val app = project.getSubproject(":app")
+        TestFileUtils.searchAndReplace(
+            app.buildFile,
+            "apply plugin: 'com.android.application'",
+            """
+            apply plugin: '$KOTLIN_KAPT_PLUGIN_ID'
+            apply plugin: 'com.android.application'
+            """.trimIndent(),
+        )
+
+        val result = app.executor().expectFailure().run(":app:assembleDebug")
+        result.assertErrorContains(
+            "The 'org.jetbrains.kotlin.kapt' plugin is not compatible with built-in Kotlin support."
+        )
+    }
+
+    @Test
+    fun `fail when built-in Kapt plugin is applied without built-in Kotlin plugin`() {
         val app = project.getSubproject(":app")
         TestFileUtils.searchAndReplace(
             app.buildFile,

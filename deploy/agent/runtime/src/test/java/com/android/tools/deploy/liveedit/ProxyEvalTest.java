@@ -16,6 +16,7 @@
 package com.android.tools.deploy.liveedit;
 
 import static com.android.tools.deploy.liveedit.ProxyTestClasses.Driver;
+import static com.android.tools.deploy.liveedit.ProxyTestClasses.LambdaFunction;
 import static com.android.tools.deploy.liveedit.ProxyTestClasses.ModifyStatic;
 import static com.android.tools.deploy.liveedit.ProxyTestClasses.Pythagorean;
 import static com.android.tools.deploy.liveedit.Utils.buildClass;
@@ -74,6 +75,50 @@ public class ProxyEvalTest {
                         "liveEditedMethod",
                         "(JJ)J",
                         new Object[] {null, null, 6L, 8L}));
+    }
+
+    @Test
+    public void testGeneratedProxy() throws Exception {
+        String driverName = "com/android/tools/deploy/liveedit/ProxyTestClasses$Driver";
+        String implName = "com/android/tools/deploy/liveedit/ProxyTestClasses$LambdaFunction";
+
+        LiveEditStubs.addClass(driverName, new Interpretable(buildClass(Driver.class)), false);
+        LiveEditStubs.addClass(implName, new Interpretable(buildClass(LambdaFunction.class)), true);
+
+        // Interpreted result w/ proxies should be the same as non-interpreted result.
+        String actual = Driver.usesLambda();
+        Assert.assertEquals(
+                actual,
+                LiveEditStubs.stubL(
+                        LiveEditStubs.getClassBytecode(driverName),
+                        "usesLambda",
+                        "()Ljava/lang/String;",
+                        new Object[] {null, null}));
+    }
+
+    @Test
+    public void testGeneratedProxySuperMethod() throws Exception {
+        String driverName = "com/android/tools/deploy/liveedit/ProxyTestClasses$Driver";
+        String implName = "com/android/tools/deploy/liveedit/ProxyTestClasses$LambdaFunction";
+
+        LiveEditStubs.addClass(driverName, new Interpretable(buildClass(Driver.class)), false);
+        LiveEditStubs.addClass(implName, new Interpretable(buildClass(LambdaFunction.class)), true);
+        new Interpretable(buildClass(Driver.class))
+                .getMethods()
+                .forEach(
+                        method -> {
+                            System.out.println(method.name + method.desc);
+                        });
+
+        // Interpreted result w/ proxies should be the same as non-interpreted result.
+        int actual = Driver.usesLambdaSuper();
+        Assert.assertEquals(
+                actual,
+                LiveEditStubs.stubL(
+                        LiveEditStubs.getClassBytecode(driverName),
+                        "usesLambdaSuper",
+                        "()I",
+                        new Object[] {null, null}));
     }
 
     // Test using a proxy class to change interface.

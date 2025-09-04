@@ -110,6 +110,8 @@ class ProfileableTest {
         val app = project.getSubproject(":app")
         app.buildFile.apply {
             appendText("android.compileSdk = 29\n")
+            appendText("android.compileOptions.sourceCompatibility = JavaVersion.VERSION_1_8\n")
+            appendText("android.compileOptions.targetCompatibility = JavaVersion.VERSION_1_8\n")
             appendText("""
             androidComponents {
                  beforeVariants(selector().withBuildType("release"), { builder ->
@@ -141,7 +143,9 @@ class ProfileableTest {
         val app = project.getSubproject(":app")
         app.buildFile.apply {
             appendText("android.buildTypes.release.profileable = true\n")
-            appendText("android.compileSdk = 29")
+            appendText("android.compileSdk = 29\n")
+            appendText("android.compileOptions.sourceCompatibility = JavaVersion.VERSION_1_8\n")
+            appendText("android.compileOptions.targetCompatibility = JavaVersion.VERSION_1_8\n")
         }
 
         project.executor()

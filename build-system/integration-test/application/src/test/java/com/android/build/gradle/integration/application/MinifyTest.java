@@ -103,8 +103,9 @@ public class MinifyTest {
                             .collect(Collectors.toSet()));
         }
 
-        assertThat(allClasses)
-                .containsExactly(
+        assertThat(allClasses.stream()
+                .filter(item -> !item.endsWith("$Condy0;"))
+                .collect(Collectors.toList())).containsExactly(
                         "Lcom/android/tests/basic/StringProvider;",
                         "Lcom/android/tests/basic/Main;",
                         "Lcom/android/tests/basic/IndirectlyReferencedClass;");

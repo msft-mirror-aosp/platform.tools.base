@@ -135,7 +135,7 @@ public class MinifyLibAndAppKeepRules {
                 ImmutableList.of(
                         "android.jar",
                         "android.car.jar",
-                        "core-lambda-stubs.jar",
+                        "core-for-system-modules.jar",
                         "org.apache.http.legacy.jar",
                         "android.test.mock.jar",
                         "android.test.base.jar",

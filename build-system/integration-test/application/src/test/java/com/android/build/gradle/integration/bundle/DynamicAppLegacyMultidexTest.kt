@@ -126,6 +126,7 @@ class DynamicAppLegacyMultidexTest {
     fun testPrimaryDexContainsAllNecessaryClasses() {
         project.executor()
             .with(BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED, false)
+            .with(BooleanOption.USE_ANDROID_X, false)
             .run("bundleIcsR8")
 
         project.getBundle(GradleTestProject.ApkType.of("icsR8", false)).use { aab ->

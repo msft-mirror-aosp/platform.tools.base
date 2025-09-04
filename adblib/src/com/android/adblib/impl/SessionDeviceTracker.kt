@@ -21,7 +21,9 @@ import com.android.adblib.AdbSession
 import com.android.adblib.DeviceList
 import com.android.adblib.ErrorLine
 import com.android.adblib.TrackedDeviceList
+import com.android.adblib.warningsTracker
 import com.android.adblib.adbLogger
+import com.android.adblib.utils.logInfo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -62,6 +64,10 @@ internal class SessionDeviceTracker(
                 }
                 .map { deviceList ->
                     logger.debug { "trackDevices(): mapping deviceList $deviceList" }
+                    session.warningsTracker.didRecover(key = this@SessionDeviceTracker.toString())
+                        .logInfo(logger) {
+                            "trackDevices() succeeded after a previous failure"
+                        }
                     TrackedDeviceList(connectionId, deviceList, null)
                 }
                 .retryWhen { throwable, _ ->
@@ -70,9 +76,19 @@ internal class SessionDeviceTracker(
                     } else {
                         connectionId++
                         if (throwable is EOFException) {
-                            logger.info { "trackDevices() reached EOF, will retry in ${retryDelay.toMillis()} millis, connection id=$connectionId" }
+                            session.warningsTracker.getLogAction(
+                                    key = this@SessionDeviceTracker.toString(),
+                                    "reached EOF"
+                                ).logInfo(logger) {
+                                    "trackDevices() reached EOF, will retry in ${retryDelay.toMillis()} millis, connection id=$connectionId"
+                                }
                         } else {
-                            logger.info(throwable) { "trackDevices() failed, will retry in ${retryDelay.toMillis()} millis, connection id=$connectionId" }
+                            session.warningsTracker.getLogAction(
+                                    key = this@SessionDeviceTracker.toString(),
+                                    throwable.message.orEmpty()
+                                ).logInfo(logger, throwable) {
+                                    "trackDevices() failed, will retry in ${retryDelay.toMillis()} millis, connection id=$connectionId"
+                                }
                         }
                         // emit TrackerDisconnected state while we wait to retry the collection
                         emit(TrackedDeviceList(connectionId, TrackerDisconnected.instance, throwable))

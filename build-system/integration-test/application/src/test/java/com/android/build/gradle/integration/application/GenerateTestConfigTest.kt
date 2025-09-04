@@ -228,7 +228,7 @@ class GenerateTestConfigTest {
                     android:targetSdkVersion="1" />
 
                 <instrumentation
-                    android:name="android.test.InstrumentationTestRunner"
+                    android:name="androidx.test.runner.AndroidJUnitRunner"
                     android:label="Tests for pkg.name.lib.test"
                     android:targetPackage="pkg.name.lib" />
 

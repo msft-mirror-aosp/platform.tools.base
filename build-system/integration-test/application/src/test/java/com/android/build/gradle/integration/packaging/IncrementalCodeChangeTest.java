@@ -108,7 +108,7 @@ public class IncrementalCodeChangeTest {
 
         // class from legacy multi-dex lib
         TruthHelper.assertThat(project.getSubproject("app").getApk("debug"))
-                .containsClass("Landroid/support/multidex/MultiDex;");
+                .containsClass("Landroidx/multidex/MultiDex;");
     }
 
     @Test

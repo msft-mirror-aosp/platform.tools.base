@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.databinding
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.FileSnapshot
 import com.google.common.truth.Expect
 import org.junit.Before
@@ -62,10 +63,12 @@ class DataBindingDeterminismTest {
 
     @get:Rule
     val project1 = GradleTestProject.builder().fromTestProject("databinding")
+        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=false")
         .withName("project1").create()
 
     @get:Rule
     val project2 = GradleTestProject.builder().fromTestProject("databinding")
+        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=false")
         .withName("project2").create()
 
     @Before

@@ -61,6 +61,9 @@ open class GradleContext(
     return startOffset >= 0 && isSuppressedWithComment(startOffset, issue)
   }
 
+  fun findElementByRange(cookie: Any, startOffset: Int, endOffset: Int): Any? =
+    gradleVisitor.findElementByRange(this, cookie, startOffset, endOffset)
+
   @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie"))
   fun getPropertyKeyCookie(cookie: Any): Any = cookie
 

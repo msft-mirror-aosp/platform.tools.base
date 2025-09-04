@@ -216,7 +216,12 @@ public class SdkAutoDownloadTest {
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
                         + BUILD_TOOLS_VERSION
-                        + "\"");
+                        + "\""
+                        + System.lineSeparator()
+                        + "android.compileOptions.sourceCompatibility \"1.8\""
+                        + System.lineSeparator()
+                        + "android.compileOptions.targetCompatibility \"1.8\""
+        );
 
         getExecutor().run("assembleDebug");
 
@@ -479,7 +484,11 @@ public class SdkAutoDownloadTest {
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
                         + BUILD_TOOLS_VERSION
-                        + "\"");
+                        + "\""
+                        + System.lineSeparator()
+                        + "android.compileOptions.sourceCompatibility \"1.8\""
+                        + System.lineSeparator()
+                        + "android.compileOptions.targetCompatibility \"1.8\"");
 
         GradleBuildResult result = getExecutor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());
@@ -545,7 +554,11 @@ public class SdkAutoDownloadTest {
                         + System.lineSeparator()
                         + "android.buildToolsVersion \""
                         + BUILD_TOOLS_VERSION
-                        + "\"");
+                        + "\""
+                        + System.lineSeparator()
+                        + "android.compileOptions.sourceCompatibility \"1.8\""
+                        + System.lineSeparator()
+                        + "android.compileOptions.targetCompatibility \"1.8\"");
 
         GradleBuildResult result = getExecutor().expectFailure().run("assembleDebug");
         assertNotNull(result.getException());

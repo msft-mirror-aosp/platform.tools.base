@@ -109,6 +109,9 @@ class R8StartupProfileDexOptimizationTest(
             it.appendToBuild("""
                     android.defaultConfig.minSdkVersion = 26
                     android.buildTypes.release.minifyEnabled = true
+                    android {
+                        buildTypes.release.proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'dontoptimize.pro'
+                    }
                     androidComponents {
                         // and turn on the feature if necessary
                         onVariants(selector().withName("release"), { variant ->
@@ -119,6 +122,7 @@ class R8StartupProfileDexOptimizationTest(
                         })
                     }
             """.trimIndent())
+            it.addFile("dontoptimize.pro", "-dontoptimize")
         }
 
     @JvmField

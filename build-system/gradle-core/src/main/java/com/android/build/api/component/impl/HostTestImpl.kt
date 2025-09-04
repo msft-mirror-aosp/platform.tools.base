@@ -33,7 +33,7 @@ import com.android.build.gradle.internal.component.features.BuildConfigCreationC
 import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.HostTestComponentDslInfo
-import com.android.build.gradle.internal.core.dsl.impl.DEFAULT_TEST_RUNNER
+import com.android.build.gradle.internal.core.dsl.impl.getDefaultInstrumentationTestRunner
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.MutableTaskContainer
@@ -47,6 +47,7 @@ import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.core.ComponentTypeImpl
+import com.android.builder.dexing.DexingType
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
@@ -108,7 +109,7 @@ abstract class HostTestImpl @Inject constructor(
      * the instrumentation tag to be present in the merged manifest to process android resources.
      */
     override val instrumentationRunner: Provider<String>
-        get() = services.provider { DEFAULT_TEST_RUNNER }
+        get() = getDefaultInstrumentationTestRunner(internalServices, DexingType.MONO_DEX)
 
     override val testedApplicationId: Provider<String>
         get() = mainVariant.applicationId

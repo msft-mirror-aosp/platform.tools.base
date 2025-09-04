@@ -65,7 +65,7 @@ class JacocoScopedArtifactsTest {
 
                 android {
                     namespace = "com.example.app"
-                    compileSdkVersion(${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION})
+                    compileSdkVersion(30)
                     buildTypes {
                         debug {
                             enableAndroidTestCoverage = true
@@ -221,8 +221,8 @@ class JacocoScopedArtifactsTest {
 
     private fun validateApkIsInstrumented() {
         project.getApk(GradleTestProject.ApkType.DEBUG).use { mainApk ->
-            assertThat(mainApk.getClass("Lcom/example/app/Example;")).hasField("\$jacocoData")
-            assertThat(mainApk.getClass("Lcom/google/common/collect/ImmutableList;")).hasField("\$jacocoData")
+            assertThat(mainApk.getClass("Lcom/example/app/Example;")).hasMethod("\$jacocoInit")
+            assertThat(mainApk.getClass("Lcom/google/common/collect/ImmutableList;")).hasMethod("\$jacocoInit")
         }
     }
 
@@ -271,7 +271,7 @@ class JacocoScopedArtifactsTest {
         val classNode = ClassNode(ASM_API_VERSION)
         classReader.accept(classNode, 0)
         if (jacocoPresent) {
-            Truth.assertThat(classNode.fields[0].name).isEqualTo("\$jacocoData")
+            Truth.assertThat(classNode.methods.firstOrNull { it.name == "\$jacocoInit"  }).isNotNull()
         } else {
             Truth.assertThat(classNode.fields).isEmpty()
         }
@@ -286,7 +286,7 @@ class JacocoScopedArtifactsTest {
             val classNode = ClassNode(ASM_API_VERSION)
             classReader.accept(classNode, 0)
             if (expectJacoco) {
-                Truth.assertThat(classNode.fields[0].name).isEqualTo("\$jacocoData")
+                Truth.assertThat(classNode.methods.firstOrNull { it.name == "\$jacocoInit"  }).isNotNull()
             } else {
                 Truth.assertThat(classNode.fields).isEmpty()
             }

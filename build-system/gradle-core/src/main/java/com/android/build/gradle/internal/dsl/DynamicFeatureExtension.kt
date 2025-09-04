@@ -27,8 +27,9 @@ import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import javax.inject.Inject
 
-abstract class DynamicFeatureExtension(
+abstract class DynamicFeatureExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
     buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,

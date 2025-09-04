@@ -994,7 +994,7 @@ abstract class TaskManager(
         // BaseVariant, so we currently can't create a KotlinCompilation instance and therefore
         // can't invoke Kotlin compiler plugins.
         // This will be fixed soon (tracked by b/429981132).
-        val baseVariant = kotlinServices.baseExtensionProvider.orNull.let { creationConfig.toBaseVariant(it) }
+        val baseVariant = kotlinServices.baseExtensionProvider.orNull?.let { creationConfig.toBaseVariant(it) }
         if (baseVariant != null) {
             val kotlinCompilation = creationConfig.createKotlinCompilation(baseVariant)
             addSubpluginOptionsForBuiltInKotlin(creationConfig, kotlinCompilation, kaptGenerateStubsProvider)

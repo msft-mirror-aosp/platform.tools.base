@@ -85,7 +85,7 @@ class AnalyticsEnabledVariantTest {
     @Test
     fun getMinSdkVersion() {
         val androidVersion = mock<AndroidVersion>()
-        whenever(delegate.minSdkVersion).thenReturn(androidVersion)
+        whenever(delegate.minSdk).thenReturn(androidVersion)
         Truth.assertThat(proxy.minSdkVersion).isEqualTo(androidVersion)
 
         Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
@@ -93,9 +93,10 @@ class AnalyticsEnabledVariantTest {
             stats.variantApiAccess.variantPropertiesAccessList.first().type
         ).isEqualTo(VariantPropertiesMethodType.MIN_SDK_VERSION_VALUE)
         verify(delegate, times(1))
-            .minSdkVersion
+            .minSdk
     }
 
+    @Suppress("DEPRECATION_ERROR")
     @Test
     fun getTargetSdkVersion() {
         val androidVersion = mock<AndroidVersion>()
@@ -112,7 +113,7 @@ class AnalyticsEnabledVariantTest {
 
     @Test
     fun getMaxSdkVersion() {
-        whenever(delegate.maxSdkVersion).thenReturn(23)
+        whenever(delegate.maxSdk).thenReturn(23)
         Truth.assertThat(proxy.maxSdkVersion).isEqualTo(23)
 
         Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
@@ -120,7 +121,7 @@ class AnalyticsEnabledVariantTest {
             stats.variantApiAccess.variantPropertiesAccessList.first().type
         ).isEqualTo(VariantPropertiesMethodType.MAX_SDK_VERSION_VALUE)
         verify(delegate, times(1))
-            .maxSdkVersion
+            .maxSdk
     }
 
     @Test

@@ -161,7 +161,6 @@ dependencies {
 
     implementation gradleApi()
     implementation libs.kotlin_stdlib
-    implementation libs.transform_api_deprecated
     implementation libs.apache_httpmime
     implementation libs.apache_commons_io
     implementation libs.asm
@@ -193,6 +192,7 @@ dependencies {
     implementation libs.grpc_inprocess
     implementation libs.tink
     implementation libs.unified_test_platform
+    implementation libs.tensorflow_lite_metadata
 
     compileOnly libs.kotlin_gradle_plugin_idea
     compileOnly libs.jacoco_core
@@ -207,7 +207,6 @@ dependencies {
 
     testImplementation libs.junit
     testImplementation libs.truth
-    testImplementation libs.truth_java8_extension
     testImplementation libs.kotlin_test
     testImplementation libs.mockito_core
     testImplementation libs.mockito_kotlin
@@ -217,8 +216,7 @@ dependencies {
     testImplementation libs.equalsverifier
     testImplementation project(':base:project-test-lib')
     testImplementation libs.com.android.tools.testutils
-    testImplementation 'org.jetbrains:annotations:13.0'
-    testImplementation libs.bouncycastle_prov
+    testImplementation libs.intellij_annotations
     testImplementation libs.jsoup
     testImplementation libs.jacoco_core
     testImplementation libs.jacoco_report
@@ -266,8 +264,6 @@ dependencies {
     }
     versionPropertiesSource libs.com.android.tools.common
 
-    implementation libs.flatbuffers
-    implementation libs.tensorflow_lite_metadata
     provided(project(':base:build-system:shrinker')) {
         transitive = false
     }

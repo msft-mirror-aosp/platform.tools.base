@@ -67,7 +67,7 @@ class CheckAarMetadataTaskTest {
 
     @Test
     fun testMinCompileSdkVersion_librarySubModule() {
-        // Add resource requiring API level 28 to library
+        // Add resource requiring API level 31 to library
         FileUtils.join(
             project.getSubproject("lib").projectDir,
             "src",
@@ -82,7 +82,7 @@ class CheckAarMetadataTaskTest {
                 <?xml version="1.0" encoding="utf-8"?>
                     <resources>
                         <style name="Foo">
-                            <item name="dialogCornerRadius">?android:attr/dialogCornerRadius</item>
+                            <item name="allowClickWhenDisabled">?android:attr/allowClickWhenDisabled</item>
                         </style>
                     </resources>
                 """.trimIndent()
@@ -97,18 +97,18 @@ class CheckAarMetadataTaskTest {
                 .contains("Android resource linking failed")
         }
 
-        // Set app's compileSdkVersion to 24, we set this after the check to ensure that
+        // Set app's compileSdkVersion to 30, we set this after the check to ensure that
         // minCompileSdkVersion does not default to the compileSdkVersion.
         project.getSubproject("app").buildFile
         TestFileUtils.searchRegexAndReplace(
             project.getSubproject("app").buildFile,
             "compileSdkVersion = \\d+",
-            "compileSdkVersion = 24"
+            "compileSdkVersion = 30"
         )
 
         // Then test that setting minCompileSdkVersion results in a better error message.
         project.getSubproject("lib").buildFile.appendText(
-            "android.defaultConfig.aarMetadata.minCompileSdk = 28"
+            "android.defaultConfig.aarMetadata.minCompileSdk = 31"
         )
         try {
             project.executor().run(":app:assembleDebug")
@@ -120,13 +120,13 @@ class CheckAarMetadataTaskTest {
                         An issue was found when checking AAR metadata:
 
                           1.  Dependency ':lib' requires libraries and applications that
-                              depend on it to compile against version 28 or later of the
+                              depend on it to compile against version 31 or later of the
                               Android APIs.
 
-                              :app is currently compiled against android-24.
+                              :app is currently compiled against android-30.
 
                               Recommended action: Update this project to use a newer compileSdk
-                              of at least 28, for example ${ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.apiLevel}.
+                              of at least 31, for example ${ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.apiLevel}.
 
                               Note that updating a library or application's compileSdk (which
                               allows newer APIs to be used) can be done separately from updating
@@ -140,7 +140,7 @@ class CheckAarMetadataTaskTest {
 
     @Test
     fun testMinCompileSdkVersion_aarFileDependency() {
-        // Add resource requiring API level 28 to library
+        // Add resource requiring API level 31 to library
         FileUtils.join(
             project.getSubproject("lib").projectDir,
             "src",
@@ -155,13 +155,13 @@ class CheckAarMetadataTaskTest {
                 <?xml version="1.0" encoding="utf-8"?>
                     <resources>
                         <style name="Foo">
-                            <item name="dialogCornerRadius">?android:attr/dialogCornerRadius</item>
+                            <item name="allowClickWhenDisabled">?android:attr/allowClickWhenDisabled</item>
                         </style>
                     </resources>
                 """.trimIndent()
         )
         project.getSubproject("lib").buildFile.appendText(
-            "android.defaultConfig.aarMetadata.minCompileSdk = 28"
+            "android.defaultConfig.aarMetadata.minCompileSdk = 31"
         )
         project.executor().run(":lib:assembleDebug")
         // Copy lib's .aar build output to the app's libs directory
@@ -173,12 +173,12 @@ class CheckAarMetadataTaskTest {
             )
         )
 
-        // Set app's compileSdkVersion to 24.
+        // Set app's compileSdkVersion to 30.
         project.getSubproject("app").buildFile
         TestFileUtils.searchRegexAndReplace(
             project.getSubproject("app").buildFile,
             "compileSdkVersion = \\d+",
-            "compileSdkVersion 24"
+            "compileSdkVersion 30"
         )
 
         // Replace app's dependency on the library module with a dependency on the AAR file
@@ -199,13 +199,13 @@ class CheckAarMetadataTaskTest {
                     An issue was found when checking AAR metadata:
 
                       1.  Dependency 'library.aar' requires libraries and applications that
-                          depend on it to compile against version 28 or later of the
+                          depend on it to compile against version 31 or later of the
                           Android APIs.
 
-                          :app is currently compiled against android-24.
+                          :app is currently compiled against android-30.
 
                           Recommended action: Update this project to use a newer compileSdk
-                          of at least 28, for example ${ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.apiLevel}.
+                          of at least 31, for example ${ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.apiLevel}.
 
                           Note that updating a library or application's compileSdk (which
                           allows newer APIs to be used) can be done separately from updating

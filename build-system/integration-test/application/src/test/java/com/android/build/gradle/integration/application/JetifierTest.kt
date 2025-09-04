@@ -74,10 +74,10 @@ class JetifierTest(private val withKotlin: Boolean) {
             TestFileUtils.appendToFile(
                 project.getSubproject(":app").buildFile,
                 """
-                android.kotlinOptions.jvmTarget = '1.8'
+                android.kotlinOptions.jvmTarget = '11'
                 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach {
                     compilerOptions {
-                        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+                        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
                     }
                 }
                 """.trimIndent()

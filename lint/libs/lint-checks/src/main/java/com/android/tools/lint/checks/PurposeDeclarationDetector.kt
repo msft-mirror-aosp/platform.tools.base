@@ -30,7 +30,6 @@ import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
-import com.android.tools.lint.detector.api.LocationType
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
@@ -78,7 +77,8 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     val requiresPurposeMinSdkVersion = permissionInfo.requiresPurposeSdkRange.min
     val projectMinSdk = context.mainProject.minSdkVersion.featureLevel
     val usesPermissionMinSdkVersion =
-      element.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)?.toIntOrNull() ?: -1
+      element.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)
+        .toIntOrNull() ?: MIN_SDK_VERSION_DEFAULT
     // Max of the above parameters provides the earliest SDK version for which the app is required
     // to provide purpose for this permission,
     val minSdk = maxOf(requiresPurposeMinSdkVersion, projectMinSdk, usesPermissionMinSdkVersion)
@@ -86,8 +86,8 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     val requiresPurposeMaxSdkVersion = permissionInfo.requiresPurposeSdkRange.max
     val projectTargetSdk = context.mainProject.targetSdkVersion.featureLevel
     val usesPermissionMaxSdkVersion =
-      element.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull()
-        ?: MAX_SDK_VERSION_DEFAULT
+      element.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION)
+        .toIntOrNull() ?: MAX_SDK_VERSION_DEFAULT
     // Min of the above parameters provides the last SDK version for which the app is required to
     // provide purpose for this permission.
     val maxSdk = minOf(requiresPurposeMaxSdkVersion, projectTargetSdk, usesPermissionMaxSdkVersion)
@@ -105,7 +105,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
       val message =
         "`$permissionName` will not be granted due to missing `<purpose>`. Possible valid purposes: " +
           "${permissionInfo.validPurposes.keys.joinToString()}"
-      context.report(MISSING_PURPOSE, context.getLocation(element, LocationType.VALUE), message)
+      context.report(MISSING_PURPOSE, context.getLocation(element), message)
       return
     }
 
@@ -126,7 +126,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
         "`$permissionName` will not be granted on API level(s) $formattedUncoveredRanges due to no " +
           "valid `<purpose>`. Ensure valid purpose(s) cover all API level(s). Possible valid " +
           "purposes: ${permissionInfo.validPurposes.keys.joinToString()}"
-      context.report(MISSING_PURPOSE, context.getLocation(element, LocationType.VALUE), message)
+      context.report(MISSING_PURPOSE, context.getLocation(element), message)
     }
   }
 
@@ -145,9 +145,10 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
 
         // The purpose's own min/max SDK attributes need to be considered.
         val purposeMinSdk =
-          purposeElement.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)?.toIntOrNull() ?: 1
+          purposeElement.getAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)
+            .toIntOrNull() ?: MIN_SDK_VERSION_DEFAULT
         val purposeMaxSdk =
-          purposeElement.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION)?.toIntOrNull()
+          purposeElement.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull()
             ?: MAX_SDK_VERSION_DEFAULT
 
         // The effective range for this single purpose is the intersection of its
@@ -220,6 +221,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     private const val ATTR_MAX = "max"
     private const val ATTR_REQUIRES_PURPOSE_MIN = "requiresPurposeMin"
     private const val ATTR_REQUIRES_PURPOSE_MAX = "requiresPurposeMax"
+    private const val MIN_SDK_VERSION_DEFAULT = 1
     // For convenience to avoid overflow errors with interval math when adding 1
     private const val MAX_SDK_VERSION_DEFAULT = 999999
 
@@ -324,7 +326,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
               )
           }
         }
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         return emptyMap()
       }
 

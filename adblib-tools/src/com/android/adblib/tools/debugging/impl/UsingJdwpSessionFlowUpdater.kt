@@ -38,6 +38,7 @@ import com.android.adblib.tools.debugging.fromLegacyDescription
 import com.android.adblib.tools.debugging.getOrNull
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.orElse
+import com.android.adblib.tools.debugging.warningsTracker
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
@@ -58,6 +59,7 @@ import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.receiveWhile
 import com.android.adblib.tools.debugging.rethrowCancellation
 import com.android.adblib.utils.ResizableBuffer
+import com.android.adblib.utils.logInfo
 import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -178,9 +180,6 @@ internal class UsingJdwpSessionFlowUpdater(
                     }
 
                     else -> {
-                        logger.info(throwable) {
-                            "Exception while collecting process properties (${stateFlow.value.summaryForLogging()})"
-                        }
                         throwable // Record any other unexpected exception
                     }
                 }
@@ -196,7 +195,10 @@ internal class UsingJdwpSessionFlowUpdater(
 
                     // Delay and retry if we did not collect all properties we want
                     delay(session.property(PROCESS_PROPERTIES_RETRY_DURATION).toMillis())
-                    logger.info {
+                    process.warningsTracker.getLogAction(
+                        key = this@UsingJdwpSessionFlowUpdater.toString(),
+                        throwable.message.orEmpty()
+                    ).logInfo(logger, exceptionToRecord) {
                         "Retrying JDWP process properties collection (${stateFlow.value.summaryForLogging()}), " +
                                 "because previous attempt failed with an error ('${throwable.message}')"
                     }
@@ -217,9 +219,14 @@ internal class UsingJdwpSessionFlowUpdater(
                         previouslyFailedThrowable = previouslyFailedThrowable
                     )
                     exceptionToRecord?.also {
-                        logger.debug(exceptionToRecord) { "Exception when collecting properties" }
+                        logger.info(exceptionToRecord) { "Exception while collecting process properties (${stateFlow.value.summaryForLogging()})" }
                     }
                     logger.debug { "Successfully retrieved JDWP process properties: ${stateFlow.value}" }
+                    process.warningsTracker.didRecover(
+                        key = this@UsingJdwpSessionFlowUpdater.toString()
+                    ).logInfo(logger) {
+                        "After previously failing, successfully retrieved JDWP process properties (${stateFlow.value.summaryForLogging()})"
+                    }
                     break
                 }
             }

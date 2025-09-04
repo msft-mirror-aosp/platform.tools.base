@@ -78,10 +78,6 @@ abstract class R8ResourceShrinkingParameters {
 
     @get:Input
     @get:Optional // Set iff enabled == true
-    abstract val usePreciseShrinking: Property<Boolean>
-
-    @get:Input
-    @get:Optional // Set iff enabled == true
     abstract val optimizedShrinking: Property<Boolean>
 
     @get:OutputFile
@@ -111,7 +107,6 @@ abstract class R8ResourceShrinkingParameters {
                     mergedNotCompiledNavigationResourcesInputDir.get().asFile
                 ),
                 featureLinkedResourcesInputFiles = featureLinkedResourcesInputFiles.files.toList(),
-                usePreciseShrinking = usePreciseShrinking.get(),
                 optimizedShrinking = optimizedShrinking.get(),
                 logFile = logFile.asFile.orNull,
                 shrunkResourcesOutputFiles = inputArtifacts.map { File(getOutputBuiltArtifact(it).outputFile) },
@@ -188,9 +183,6 @@ fun R8ResourceShrinkingParameters.initialize(
             )
         )
     }
-    usePreciseShrinking.setDisallowChanges(
-        creationConfig.services.projectOptions.get(BooleanOption.ENABLE_NEW_RESOURCE_SHRINKER_PRECISE)
-    )
     optimizedShrinking.setDisallowChanges(creationConfig.runOptimizedShrinking())
     logFile.setDisallowChanges(
         mappingFile.flatMap {

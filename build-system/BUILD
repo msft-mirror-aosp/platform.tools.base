@@ -584,6 +584,8 @@ maven_repository(
         "//tools/data-binding:tools.baseLibrarySupport",
         "//tools/data-binding:tools.compiler",
         "//tools/data-binding:tools.compilerCommon",
+        "@maven//:androidx.multidex.multidex-instrumentation_2.0.0",
+        "@maven//:androidx.multidex.multidex_2.0.0",
         "@maven//:androidx.privacysandbox.tools.tools-apigenerator_1.0.0-alpha13",
         "@maven//:com.android.tools.build.bundletool",
         "@maven//:com.android.tools.build.jetifier.jetifier-processor",

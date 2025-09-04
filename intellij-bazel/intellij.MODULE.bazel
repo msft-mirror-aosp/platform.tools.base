@@ -13,6 +13,11 @@ intellij.local_platform(
     spec = "@//prebuilts/studio/intellij-sdk:AI/spec.bzl",
     target = "@//prebuilts/studio/intellij-sdk:studio-sdk",
 )
+intellij.local_platform(
+    name = "sherlock-sdk",
+    spec = "@//prebuilts/studio/intellij-sdk:IC/spec.bzl",
+    target = "@//prebuilts/studio/intellij-sdk:sherlock-sdk",
+)
 intellij.remote_platform(
     name = "intellij_ce_2024_2",
     sha256 = "781cc03526d5811061c6ffd211942698b3d18ed2f055a04f384956686a7aa0a6",

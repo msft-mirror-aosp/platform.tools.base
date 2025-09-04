@@ -111,7 +111,7 @@ class JacocoWithMinificationIntegrationTest {
                 .containsClass("Lcom/example/helloworld/HelloWorld;")
             DexClassSubject.assertThat(
                 it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]
-            ).hasField("\$jacocoData")
+            ).hasMethod("\$jacocoInit")
             DexClassSubject.assertThat(
                 it.mainDexFile.get().classes["Lcom/example/helloworld/HelloWorld;"]
             ).doesNotHaveMethod("unusedMethod")

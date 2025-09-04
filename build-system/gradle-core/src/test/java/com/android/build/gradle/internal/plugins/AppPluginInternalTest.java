@@ -26,10 +26,10 @@ import static org.junit.Assert.assertNotNull;
 import com.android.annotations.NonNull;
 import com.android.build.api.dsl.ApkSigningConfig;
 import com.android.build.api.dsl.ApplicationExtension;
+import com.android.build.api.variant.AndroidComponents;
 import com.android.build.api.variant.ApplicationVariantBuilder;
 import com.android.build.api.variant.impl.ApplicationVariantImpl;
 import com.android.build.api.variant.impl.SigningConfigImpl;
-import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.component.ApplicationCreationConfig;
 import com.android.build.gradle.internal.component.ComponentCreationConfig;
@@ -55,6 +55,7 @@ import junit.framework.TestCase;
 
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
+import org.gradle.api.file.RegularFile;
 import org.gradle.api.internal.project.ProjectStateInternal;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.junit.Before;
@@ -86,8 +87,9 @@ public class AppPluginInternalTest {
                 TestProjects.builder(projectDirectory.newFolder("project").toPath())
                         .withPlugin(TestProjects.Plugin.APP)
                         .build();
-        AppExtension android = project.getExtensions().getByType(AppExtension.class);
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION);
+        ApplicationExtension android =
+                project.getExtensions().getByType(ApplicationExtension.class);
+        android.setCompileSdk(TestConstants.COMPILE_SDK_VERSION);
         android.setBuildToolsVersion(TestConstants.BUILD_TOOL_VERSION);
         android.setNamespace("com.example.namespace");
     }
@@ -208,7 +210,7 @@ public class AppPluginInternalTest {
                 project,
                 "\n"
                         + "project.android {\n"
-                        + "    flavorDimensions 'foo'\n"
+                        + "    flavorDimensions += ['foo']\n"
                         + "    productFlavors {\n"
                         + "        flavor1 {\n"
                         + "\n"
@@ -253,7 +255,7 @@ public class AppPluginInternalTest {
                 project,
                 "\n"
                         + "project.android {\n"
-                        + "    flavorDimensions   'dimension1', 'dimension2'\n"
+                        + "    flavorDimensions  += ['dimension1', 'dimension2']\n"
                         + "\n"
                         + "    productFlavors {\n"
                         + "        f1 {\n"
@@ -360,7 +362,7 @@ public class AppPluginInternalTest {
                         + "        }\n"
                         + "    }\n"
                         + "\n"
-                        + "    flavorDimensions 'foo'\n"
+                        + "    flavorDimensions += ['foo']\n"
                         + "    productFlavors {\n"
                         + "        flavor1 {\n"
                         + "        }\n"
@@ -466,7 +468,7 @@ public class AppPluginInternalTest {
                         + "        }\n"
                         + "    }\n"
                         + "\n"
-                        + "    flavorDimensions 'foo'\n"
+                        + "    flavorDimensions += ['foo']\n"
                         + "    productFlavors {\n"
                         + "        flavor1 {\n"
                         + "        }\n"
@@ -585,8 +587,9 @@ public class AppPluginInternalTest {
 
     @Test
     public void testJava8CompileBootclasspath() {
-        AppExtension android = project.getExtensions().getByType(AppExtension.class);
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION);
+        ApplicationExtension android =
+                project.getExtensions().getByType(ApplicationExtension.class);
+        android.setCompileSdk(TestConstants.COMPILE_SDK_VERSION);
         android.setBuildToolsVersion(TestConstants.BUILD_TOOL_VERSION);
         android.getCompileOptions().setSourceCompatibility(JavaVersion.VERSION_1_8);
         android.getCompileOptions().setTargetCompatibility(JavaVersion.VERSION_1_8);
@@ -601,7 +604,18 @@ public class AppPluginInternalTest {
                 compileDebugJavaWithJavac.getOptions().getBootstrapClasspath().getFiles();
         assertThat(bootclasspath.stream().map(File::getName).collect(Collectors.toSet()))
                 .containsExactly("android.jar", "core-lambda-stubs.jar");
-        assertThat(bootclasspath).containsExactlyElementsIn(android.getBootClasspath());
+
+        Set<File> apiReturnedBootClasspath =
+                project
+                        .getExtensions()
+                        .getByType(AndroidComponents.class)
+                        .getSdkComponents()
+                        .getBootClasspath()
+                        .get()
+                        .stream()
+                        .map(RegularFile::getAsFile)
+                        .collect(Collectors.toSet());
+        assertThat(bootclasspath).containsExactlyElementsIn(apiReturnedBootClasspath);
     }
 
     @Test

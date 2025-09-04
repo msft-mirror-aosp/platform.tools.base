@@ -3,6 +3,10 @@ Deprecated Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
+Deprecated from AGP 9.0.0
+  * com.android.build.api.variant.AndroidComponentsExtension.finalizeDSl: void (org.gradle.api.Action)
+  * com.android.build.api.variant.Component.transformClassesWith: void (java.lang.Class, com.android.build.api.instrumentation.InstrumentationScope, kotlin.jvm.functions.Function1)
+  * com.android.build.api.variant.VariantOutput.getEnable: org.gradle.api.provider.Property ()
 Deprecated from AGP 8.13.0
   * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation.getCompilerOptions: org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions> ()
@@ -112,7 +116,6 @@ Deprecated from AGP 7.2.0
   * com.android.build.api.dsl.BuildType.isTestCoverageEnabled: boolean ()
   * com.android.build.api.dsl.BuildType.setTestCoverageEnabled: void (boolean)
   * com.android.build.api.variant.Component.setAsmFramesComputationMode: void (com.android.build.api.instrumentation.FramesComputationMode)
-  * com.android.build.api.variant.Component.transformClassesWith: void (java.lang.Class<? extends com.android.build.api.instrumentation.AsmClassVisitorFactory<ParamT>>, com.android.build.api.instrumentation.InstrumentationScope, kotlin.jvm.functions.Function1<? super ParamT, kotlin.Unit>)
 Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.component.UnitTest implements com.android.build.api.variant.UnitTest
   * com.android.build.api.dsl.AaptOptions implements com.android.build.api.dsl.AndroidResources
@@ -244,11 +247,3 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.VariantDimension.getMultiDexKeepFile: java.io.File ()
   * com.android.build.api.dsl.VariantDimension.setManifestPlaceholders: java.lang.Void (java.util.Map<java.lang.String, ?>)
   * com.android.build.api.dsl.VariantDimension.setMultiDexKeepFile: void (java.io.File)
-  * com.android.build.api.variant.AndroidComponentsExtension.finalizeDSl: void (org.gradle.api.Action<DslExtensionT>)
-  * com.android.build.api.variant.VariantInfo
-  * com.android.build.api.variant.VariantInfo.getBuildTypeName: java.lang.String ()
-  * com.android.build.api.variant.VariantInfo.getFlavorNames: com.google.common.collect.ImmutableList<java.lang.String> ()
-  * com.android.build.api.variant.VariantInfo.getFullVariantName: java.lang.String ()
-  * com.android.build.api.variant.VariantInfo.isDebuggable: boolean ()
-  * com.android.build.api.variant.VariantInfo.isTest: boolean ()
-  * com.android.build.api.variant.VariantOutput.getEnable: org.gradle.api.provider.Property<java.lang.Boolean> ()

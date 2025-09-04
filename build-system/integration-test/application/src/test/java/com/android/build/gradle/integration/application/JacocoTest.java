@@ -32,15 +32,18 @@ import com.android.testutils.apk.Dex;
 import com.android.testutils.truth.DexClassSubject;
 import com.android.testutils.truth.DexSubject;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
 import com.google.common.truth.Truth8;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Scanner;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 
 public class JacocoTest {
 
@@ -217,19 +220,22 @@ public class JacocoTest {
         try (Apk mainApk = project.getApk(GradleTestProject.ApkType.DEBUG)) {
             Dex mainDexClasses = mainApk.getMainDexFile().get();
             DexClassSubject.assertThat(
-                    mainDexClasses.getClasses().get("Lcom/example/helloworld/HelloWorld;")
-            ).hasField("$jacocoData");
+                            mainDexClasses.getClasses().get("Lcom/example/helloworld/HelloWorld;"))
+                    .hasMethod("$jacocoInit");
         }
 
         // Check library androidTest apk test classes do not contain instrumentation.
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(), "com.android.application", "com.android.library");
         project.executor().run("clean", "assembleDebugAndroidTest");
-        try (Apk libraryAndroidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)) {
+        try (Apk libraryAndroidTestApk =
+                project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)) {
             Dex libraryDexClasses = libraryAndroidTestApk.getMainDexFile().get();
             DexClassSubject.assertThat(
-                            libraryDexClasses.getClasses().get("Lcom/example/helloworld/HelloWorldTest;"))
-                    .doesNotHaveField("$jacocoData");
+                            libraryDexClasses
+                                    .getClasses()
+                                    .get("Lcom/example/helloworld/HelloWorldTest;"))
+                    .doesNotHaveMethod("$jacocoInit");
         }
     }
 

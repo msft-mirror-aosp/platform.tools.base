@@ -90,6 +90,12 @@ public class ProjectOptionsBuilder {
             booleans.put(BooleanOption.BUILT_IN_KOTLIN, false);
             suppressWarnings.add(BooleanOption.BUILT_IN_KOTLIN);
         }
+
+        // TODO(b/418804641): Migrate to the new DSL
+        if (!booleans.containsKey(BooleanOption.USE_NEW_DSL)) {
+            booleans.put(BooleanOption.USE_NEW_DSL, false);
+            suppressWarnings.add(BooleanOption.USE_NEW_DSL);
+        }
     }
 
     private static void injectWarningSuppression(

@@ -36,18 +36,12 @@ import com.android.build.shrinker.util.stringEntry
 import com.android.build.shrinker.util.styleEntry
 import com.android.build.shrinker.util.xmlElement
 import com.android.build.shrinker.util.xmlFile
-import com.android.utils.FileUtils
 import com.android.utils.FileUtils.createFile
 import com.android.utils.FileUtils.writeToFile
 import com.google.common.io.Files as CommonIoFiles
 import com.google.common.io.Resources as CommonIoResources
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.file.Files
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
-import kotlin.streams.toList
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -87,7 +81,6 @@ class ResourceShrinkerImplMultiModuleTest{
           ),
           debugReporter = NoDebugReporter,
           supportMultipackages = true,
-          usePreciseShrinking = false
         )
 
         shrinker.analyze()
@@ -141,21 +134,6 @@ class ResourceShrinkerImplMultiModuleTest{
                     @example.app:raw/android_wear_micro_apk
             """.trimIndent().removeEmptyLines()
             )
-
-        val shrunkZip = temporaryFolder.newFile()
-        shrinker.rewriteResourcesInBundleFormat(
-            zipDirectory(app.root, temporaryFolder.newFile()),
-            shrunkZip,
-            mapOf("base" to "example.app", "feature" to "example.app.feature")
-        )
-
-        assertThat(getDummyEntries(shrunkZip)).containsExactly(
-            "feature/res/raw/keep.xml",
-            "feature/res/menu/menu2.xml",
-            "base/res/layout/layout_1.xml",
-            "base/res/drawable/unused.png",
-            "feature/res/layout/layout_feat.xml"
-        )
     }
 
     @Test
@@ -183,7 +161,6 @@ class ResourceShrinkerImplMultiModuleTest{
           ),
           debugReporter = NoDebugReporter,
           supportMultipackages = true,
-          usePreciseShrinking = false
         )
 
         shrinker.analyze()
@@ -239,22 +216,6 @@ class ResourceShrinkerImplMultiModuleTest{
                     @example.app:raw/android_wear_micro_apk
             """.trimIndent().removeEmptyLines()
             )
-
-        val shrunkZip = temporaryFolder.newFile()
-        shrinker.rewriteResourcesInBundleFormat(
-            zipDirectory(app.root, temporaryFolder.newFile()),
-            shrunkZip,
-            mapOf("base" to "example.app", "feature" to "example.app.feature")
-        )
-
-        assertThat(getDummyEntries(shrunkZip)).containsExactly(
-            "feature/res/raw/keep.xml",
-            "feature/res/menu/menu2.xml",
-            "base/res/layout/layout_1.xml",
-            "base/res/drawable/unused.png",
-            "feature/res/layout/layout_feat.xml",
-            "feature/res/raw/style.css"
-        )
     }
 
     @Test
@@ -283,7 +244,6 @@ class ResourceShrinkerImplMultiModuleTest{
           ),
           debugReporter = NoDebugReporter,
           supportMultipackages = true,
-          usePreciseShrinking = false
         )
 
         shrinker.analyze()
@@ -337,21 +297,6 @@ class ResourceShrinkerImplMultiModuleTest{
                     @example.app:raw/android_wear_micro_apk
             """.trimIndent().removeEmptyLines()
             )
-
-        val shrunkZip = temporaryFolder.newFile()
-        shrinker.rewriteResourcesInBundleFormat(
-            zipDirectory(app.root, temporaryFolder.newFile()),
-            shrunkZip,
-            mapOf("base" to "example.app", "feature" to "example.app.feature")
-        )
-
-        assertThat(getDummyEntries(shrunkZip)).containsExactly(
-            "feature/res/raw/keep.xml",
-            "feature/res/menu/menu2.xml",
-            "base/res/layout/layout_1.xml",
-            "feature/res/layout/layout_feat.xml",
-            "base/res/menu/main.xml"
-        )
     }
 
     @Test
@@ -381,7 +326,6 @@ class ResourceShrinkerImplMultiModuleTest{
           ),
           debugReporter = NoDebugReporter,
           supportMultipackages = true,
-          usePreciseShrinking = false
         )
 
         shrinker.analyze()
@@ -435,19 +379,6 @@ class ResourceShrinkerImplMultiModuleTest{
                     @example.app:raw/android_wear_micro_apk
             """.trimIndent().removeEmptyLines()
             )
-
-        val shrunkZip = temporaryFolder.newFile()
-        shrinker.rewriteResourcesInBundleFormat(
-            zipDirectory(app.root, temporaryFolder.newFile()),
-            shrunkZip,
-            mapOf("base" to "example.app", "feature" to "example.app.feature")
-        )
-
-        assertThat(getDummyEntries(shrunkZip)).containsExactly(
-            "feature/res/raw/keep.xml",
-            "feature/res/menu/menu2.xml",
-            "base/res/drawable/unused.png"
-        )
     }
 
     private fun createBasicMultiModuleApp(): MultiModuleApp {
@@ -884,39 +815,6 @@ class ResourceShrinkerImplMultiModuleTest{
             File(root, "feature/dex/getidentifier.dex"),
             dexContent
         )
-    }
-
-    private fun zipDirectory(root: File, out: File): File {
-        ZipOutputStream(FileOutputStream(out)).use { output ->
-            Files.walk(root.toPath())
-                .filter { Files.isRegularFile(it) }
-                .map { root.toPath().relativize(it) to Files.readAllBytes(it) }
-                .forEach { (relativePath, content) ->
-                    val zipPath = relativePath.toString().replace(File.separatorChar, '/')
-                    output.putNextEntry(ZipEntry(zipPath))
-                    output.write(content)
-                    output.closeEntry()
-                }
-        }
-        return out
-    }
-
-    private fun getDummyEntries(zip: File): List<String> {
-        FileUtils.createZipFilesystem(zip.toPath()).use { fs ->
-            return Files.walk(fs.getPath("/"))
-                .filter { Files.isRegularFile(it) }
-                .filter { path ->
-                    val dummy = when (path.last().toString().substringAfter('.')) {
-                        "png" -> DummyContent.TINY_PNG
-                        "xml" -> DummyContent.TINY_PROTO_XML
-                        "9.png" -> DummyContent.TINY_9PNG
-                        else -> ByteArray(0)
-                    }
-                    Files.readAllBytes(path).contentEquals(dummy)
-                }
-                .map { it.toString().removePrefix("/") }
-                .toList()
-        }
     }
 
     private fun writeBinaryFile(file: File, content: ByteArray): File {

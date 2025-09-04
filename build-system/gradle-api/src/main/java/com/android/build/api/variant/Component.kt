@@ -79,14 +79,20 @@ interface Component: ComponentIdentity {
     @get:Incubating
     val javaCompilation: JavaCompilation
 
-    @Deprecated("Will be removed in v9.0, use the instrumentation block.")
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in AGP 10.0, use the instrumentation block."
+    )
     fun <ParamT : InstrumentationParameters> transformClassesWith(
         classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
         scope: InstrumentationScope,
         instrumentationParamsConfig: (ParamT) -> Unit
     )
 
-    @Deprecated("Will be removed in v9.0, use the instrumentation block.")
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "Will be removed in AGP 10.0, use the instrumentation block."
+    )
     fun setAsmFramesComputationMode(mode: FramesComputationMode)
 
     /**

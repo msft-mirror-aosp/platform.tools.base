@@ -74,6 +74,7 @@ class DynamicAppTest {
     @get:Rule
     val project: GradleTestProject = GradleTestProject.builder()
         .fromTestProject("dynamicApp")
+        .addGradleProperty(BooleanOption.USE_ANDROID_X, false)
         .create()
 
     private val bundleContent: Array<String> = arrayOf(

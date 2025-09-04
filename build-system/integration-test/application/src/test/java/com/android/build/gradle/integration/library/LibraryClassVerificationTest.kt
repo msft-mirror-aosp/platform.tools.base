@@ -37,7 +37,7 @@ class LibraryClassVerificationTest {
             }
             kotlin {
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_1_8)
+                    jvmTarget.set(JvmTarget.JVM_11)
                 }
             }
             dependencies {
@@ -91,7 +91,7 @@ class LibraryClassVerificationTest {
             }
             kotlin {
                 compilerOptions {
-                    jvmTarget.set(JvmTarget.JVM_1_8)
+                    jvmTarget.set(JvmTarget.JVM_11)
                 }
             }
             files {

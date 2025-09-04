@@ -47,7 +47,7 @@ class BuiltInKotlinForAppTest2 {
             androidLibrary {
                 applyPlugin(PluginType.KOTLIN_ANDROID)
                 kotlin {
-                    compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
                 }
                 files.add(
                     "src/main/java/LibFoo.kt",

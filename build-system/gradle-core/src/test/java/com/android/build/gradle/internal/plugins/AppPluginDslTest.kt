@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.internal.plugins
 
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.internal.fixture.TestConstants
@@ -40,9 +41,8 @@ class AppPluginDslTest {
     val projectDirectory: TemporaryFolder = TemporaryFolder()
 
     private lateinit var plugin: AppPlugin
-    private lateinit var android: AppExtension
+    private lateinit var android: ApplicationExtension
     private lateinit var project: Project
-    private lateinit var checker: VariantChecker
     private val pluginType = TestProjects.Plugin.APP
 
     @Before
@@ -56,12 +56,13 @@ class AppPluginDslTest {
     }
 
     private fun initFieldsFromProject() {
-        android = project.extensions.getByType(pluginType.extensionClass) as AppExtension
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
+        android = project.extensions.getByType(pluginType.extensionClass) as ApplicationExtension
+        android.compileSdk {
+            version = release(TestConstants.COMPILE_SDK_VERSION)
+        }
         android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
         android.namespace = "com.example.namespace"
         plugin = project.plugins.getPlugin(pluginType.pluginClass) as AppPlugin
-        checker = VariantCheckers.createAppChecker(android)
     }
 
     @Test
@@ -71,14 +72,14 @@ class AppPluginDslTest {
             project,
             ("""
 project.android {
-    flavorDimensions 'foo'
+    flavorDimensions += 'foo'
     productFlavors {
         f1 {
         }
 
         f2  {
             vectorDrawables {
-                generatedDensities 'ldpi'
+                generatedDensities = ['ldpi']
                 generatedDensities += ['mdpi']
             }
         }
@@ -127,7 +128,7 @@ project.android {
             ("""
 project.android {
 
-    flavorDimensions 'foo'
+    flavorDimensions += 'foo'
     productFlavors {
         f1 {
         }
@@ -228,12 +229,15 @@ project.android {
     @Test
     fun testMinSdkVersionParsing() {
         android.defaultConfig.setMinSdkVersion("P")
-        Truth.assertThat(android.defaultConfig.minSdkVersion?.apiLevel)
-            .named("android.defaultConfig.minSdkVersion.apiLevel")
-            .isEqualTo(27)
-        Truth.assertThat(android.defaultConfig.minSdkVersion?.apiString)
-            .named("android.defaultConfig.minSdkVersion.apiLevel")
-            .isEqualTo("P")
+        android.defaultConfig.minSdk {
+            assertThat(version?.apiLevel)
+                .named("android.defaultConfig.minSdk.version.apiLevel")
+                .isEqualTo(27)
+            assertThat(version?.codeName)
+                .named("android.defaultConfig.minSdk.version.codeName")
+                .isEqualTo("P")
+        }
+
     }
 
     @Test
@@ -245,21 +249,21 @@ project.android {
             project,
             """
                 project.android {
-                    compileSdk 33
+                    compileSdk = 33
                     compileSdk { version = release(33) }
                     compileSdk { version = release(33) {} }
                     compileSdk { version = preview('S') }
                 }
 
                 project.android.defaultConfig {
-                    targetSdk 33
+                    targetSdk = 33
                     targetSdk { version = release(33) }
                     targetSdk { version = preview('S') }
 
-                    maxSdk 33
+                    maxSdk = 33
                     maxSdk { version = release(33) }
 
-                    minSdk 33
+                    minSdk = 33
                     minSdk { version = release(33) }
                 }
 
@@ -269,9 +273,8 @@ project.android {
 
     @Test
     fun testLegacyTargetSdkVersion() {
-        val androidImpl = android as BaseAppModuleExtension
 
-        androidImpl.defaultConfig {
+        android.defaultConfig {
             targetSdk = 33
             targetSdk {
                 assertThat(version?.apiLevel).isEqualTo(33)
@@ -314,9 +317,8 @@ project.android {
 
     @Test
     fun testLegacyMaxSdkVersion() {
-        val androidImpl = android as BaseAppModuleExtension
 
-        androidImpl.defaultConfig {
+        android.defaultConfig {
             maxSdk = 34
             maxSdk {
                 assertThat(version?.apiLevel).isEqualTo(34)

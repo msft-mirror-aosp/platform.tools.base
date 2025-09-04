@@ -35,8 +35,6 @@ public class DummyContent {
                     (byte) -126
             };
 
-    public static final long TINY_PNG_CRC = 0x88b2a3b0L;
-
     // A 3x3 pixel PNG of type BufferedImage.TYPE_INT_ARGB with 9-patch markers
     public static final byte[] TINY_9PNG =
             new byte[] {
@@ -54,8 +52,6 @@ public class DummyContent {
                     (byte) 0, (byte) 0, (byte) 0, (byte) 73, (byte) 69, (byte) 78,
                     (byte) 68, (byte) -82, (byte) 66, (byte) 96, (byte) -126
             };
-
-    public static final long TINY_9PNG_CRC = 0x1148f987L;
 
     // The XML document <x/> as binary-packed with AAPT
     public static final byte[] TINY_BINARY_XML =
@@ -79,8 +75,6 @@ public class DummyContent {
                     (byte) -1, (byte) -1, (byte) -1, (byte) -1, (byte) 0, (byte) 0,
                     (byte) 0, (byte) 0
             };
-
-    public static final long TINY_BINARY_XML_CRC = 0xd7e65643L;
 
     // The XML document <x/> as a proto packed with AAPT2
     public static final byte[] TINY_PROTO_XML =

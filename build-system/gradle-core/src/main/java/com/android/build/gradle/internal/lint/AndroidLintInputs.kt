@@ -2641,17 +2641,17 @@ abstract class ArtifactInput {
                 // lint model for publication, we want to model the base module dependency as a
                 // module dependency, not as an external dependency.)
                 ExternalLintModelArtifactHandler.create(
-                    dependencyCaches,
-                    projectRuntimeExplodedAars,
-                    projectCompileExplodedAars,
-                    null,
-                    artifactCollectionsInputs.compileClasspath.projectJars,
-                    artifactCollectionsInputs.runtimeClasspath!!.projectJars,
-                    baseModuleLintModel.orNull,
-                    runtimeLintModelMetadata.get(),
-                    compileLintModelMetadata.get(),
-                    runtimeLintPartialResults.orNull,
-                    compileLintPartialResults.orNull,
+                    dependencyCaches = dependencyCaches,
+                    projectRuntimeExplodedAars = projectRuntimeExplodedAars,
+                    projectCompileExplodedAars = projectCompileExplodedAars,
+                    testedProjectExplodedAars = null,
+                    compileProjectJars = artifactCollectionsInputs.compileClasspath.projectJars,
+                    runtimeProjectJars = artifactCollectionsInputs.runtimeClasspath!!.projectJars,
+                    baseModuleModelFile = baseModuleLintModel.orNull,
+                    compileLintModelMetadata = compileLintModelMetadata.get(),
+                    runtimeLintModelMetadata = runtimeLintModelMetadata.get(),
+                    compileLintPartialResults = compileLintPartialResults.orNull,
+                    runtimeLintPartialResults = runtimeLintPartialResults.orNull
                 )
             }
         val modelBuilder = LintDependencyModelBuilder(

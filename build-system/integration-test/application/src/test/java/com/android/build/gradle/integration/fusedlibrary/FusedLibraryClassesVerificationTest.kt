@@ -433,6 +433,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         }
     }
 
+    @Ignore("Disabled after useAndroidX=true by default")
     @Test
     fun checkPublishingFailsForLibrariesWithDatabinding() {
         val build = rule.build {

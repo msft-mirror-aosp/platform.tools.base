@@ -16,18 +16,7 @@
 
 package com.android.build.shrinker
 
-import com.android.SdkConstants.DOT_9PNG
-import com.android.SdkConstants.DOT_PNG
-import com.android.SdkConstants.DOT_XML
 import com.android.aapt.Resources
-import com.android.build.shrinker.DummyContent.TINY_9PNG
-import com.android.build.shrinker.DummyContent.TINY_9PNG_CRC
-import com.android.build.shrinker.DummyContent.TINY_BINARY_XML
-import com.android.build.shrinker.DummyContent.TINY_BINARY_XML_CRC
-import com.android.build.shrinker.DummyContent.TINY_PNG
-import com.android.build.shrinker.DummyContent.TINY_PNG_CRC
-import com.android.build.shrinker.DummyContent.TINY_PROTO_XML
-import com.android.build.shrinker.DummyContent.TINY_PROTO_XML_CRC
 import com.android.build.shrinker.gatherer.ResourcesGatherer
 import com.android.build.shrinker.graph.ResourcesGraphBuilder
 import com.android.build.shrinker.obfuscation.ObfuscationMappingsRecorder
@@ -38,7 +27,6 @@ import com.android.ide.common.resources.usage.ResourceUsageModel.Resource
 import com.android.resources.FolderTypeRelationship
 import com.android.resources.ResourceFolderType
 import com.android.resources.ResourceType
-import com.google.common.io.ByteStreams
 import com.google.common.io.Files
 import java.io.BufferedOutputStream
 import java.io.File
@@ -74,7 +62,6 @@ class ResourceShrinkerImpl(
     private val graphBuilders: List<ResourcesGraphBuilder>,
     private val debugReporter: ShrinkerDebugReporter,
     val supportMultipackages: Boolean,
-    private val usePreciseShrinking: Boolean
 ) : ResourceShrinker {
     val model = ResourceShrinkerModel(debugReporter, supportMultipackages)
     private lateinit var unused: List<Resource>
@@ -138,16 +125,10 @@ class ResourceShrinkerImpl(
                 // resource shrinker:
                 zos.setLevel(9)
                 zip.entries().asSequence().forEach {
-                    if (format.fileIsNotReachable(it)) {
-                        // If we don't use precise shrinking we don't remove the files, see:
-                        // https://b.corp.google.com/issues/37010152
-                        if (!usePreciseShrinking) {
-                            replaceWithDummyEntry(zos, it, format.resourcesFormat)
-                        }
-                    } else if (it.name.endsWith("resources.pb") && usePreciseShrinking) {
-                            removeResourceUnusedTableEntries(zip.getInputStream(it), zos, it)
-                    } else {
-                        copyToOutput(zip.getInputStream(it), zos, it)
+                    when {
+                        format.fileIsNotReachable(it) -> return@forEach
+                        it.name.endsWith("resources.pb") -> removeResourceUnusedTableEntries(zip.getInputStream(it), zos, it)
+                        else -> copyToOutput(zip.getInputStream(it), zos, it)
                     }
                 }
             }
@@ -191,43 +172,6 @@ class ResourceShrinkerImpl(
         zos.putNextEntry(outEntry)
         zos.write(bytes)
         zos.closeEntry()
-    }
-
-    /** Replaces the given entry with a minimal valid file of that type.  */
-    private fun replaceWithDummyEntry(
-        zos: JarOutputStream,
-        entry: ZipEntry,
-        format: LinkedResourcesFormat
-    ) {
-        // Create a new entry so that the compressed len is recomputed.
-        val name = entry.name
-        val (bytes, crc) = when {
-            // DOT_9PNG (.9.png) must be always before DOT_PNG (.png)
-            name.endsWith(DOT_9PNG) -> TINY_9PNG to TINY_9PNG_CRC
-            name.endsWith(DOT_PNG) -> TINY_PNG to TINY_PNG_CRC
-            name.endsWith(DOT_XML) && format == LinkedResourcesFormat.BINARY ->
-                TINY_BINARY_XML to TINY_BINARY_XML_CRC
-            name.endsWith(DOT_XML) && format == LinkedResourcesFormat.PROTO ->
-                TINY_PROTO_XML to TINY_PROTO_XML_CRC
-            else -> ByteArray(0) to 0L
-        }
-
-        val outEntry = JarEntry(name)
-        if (entry.time != -1L) {
-            outEntry.time = entry.time
-        }
-        if (entry.method == JarEntry.STORED) {
-            outEntry.method = JarEntry.STORED
-            outEntry.size = bytes.size.toLong()
-            outEntry.crc = crc
-        }
-        zos.putNextEntry(outEntry)
-        zos.write(bytes)
-        zos.closeEntry()
-        debugReporter.info {
-            "Skipped unused resource $name: ${entry.size} bytes (replaced with small dummy file " +
-            "of size ${bytes.size} bytes)"
-        }
     }
 
     private fun copyToOutput(zis: InputStream, zos: JarOutputStream, entry: ZipEntry) {
@@ -300,18 +244,4 @@ private fun ResourceStore.isJarPathReachable(
         .filterNot { it == ResourceType.ID }
         .flatMap { getResources(it, resourceName) }
         .any { it.isReachable }
-}
-
-private fun ResourceStore.getResourceId(
-    folder: String,
-    name: String
-): Int {
-    val folderType = ResourceFolderType.getFolderType(folder) ?: return -1
-    val resourceName = name.substringBefore('.')
-    return FolderTypeRelationship.getRelatedResourceTypes(folderType)
-        .filterNot { it == ResourceType.ID }
-        .flatMap { getResources(it, resourceName) }
-        .map { it.value }
-        .getOrElse(0) { -1 }
-
 }

@@ -1,12 +1,16 @@
 # Line format: <sdk package>
 
 platform-tools
-build-tools;35.0.0
+build-tools;36.0.0
+build-tools;35.0.1
 build-tools;34.0.0
 build-tools;33.0.1
 build-tools;30.0.3
+platforms;android-35
 platforms;android-31
 platforms;android-24
 cmake;3.22.1
 add-ons;addon-google_apis-google-24
 ndk-bundle
+emulator
+sources;android-35

@@ -285,7 +285,7 @@ class VariantDslInfoTest2(
         }
 
         expect {
-            instrumentationRunner = "android.test.InstrumentationTestRunner"
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
     }
 
@@ -307,7 +307,7 @@ class VariantDslInfoTest2(
         }
 
         expect {
-            instrumentationRunner = "com.android.test.runner.MultiDexTestRunner"
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
     }
 
@@ -785,7 +785,7 @@ class VariantDslInfoTest2(
         // if the variant type is a test, then make sure that the result is initialized
         // with the right defaults.
         if (given.componentType.isForTesting) {
-            result.instrumentationRunner = "android.test.InstrumentationTestRunner" // DEFAULT_TEST_RUNNER
+            result.instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
             result.handleProfiling = false // DEFAULT_HANDLE_PROFILING
             result.functionalTest = false //DEFAULT_FUNCTIONAL_TEST
             result.namespace = "${DEFAULT_NAMESPACE}.test"

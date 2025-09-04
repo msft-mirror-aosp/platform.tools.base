@@ -139,11 +139,11 @@ abstract class AnalyticsEnabledComponent(
                 }
             )
             .build()
-        delegate.transformClassesWith(
-            classVisitorFactoryImplClass,
-            scope,
-            instrumentationParamsConfig
-        )
+            delegate.instrumentation.transformClassesWith(
+                classVisitorFactoryImplClass,
+                scope,
+                instrumentationParamsConfig
+            )
     }
 
     @Deprecated("Will be removed in v9.0, use the instrumentation block.")
@@ -160,7 +160,7 @@ abstract class AnalyticsEnabledComponent(
                 FramesComputationMode.COMPUTE_FRAMES_FOR_ALL_CLASSES ->
                     AsmFramesComputationModeUpdate.Mode.COMPUTE_FRAMES_FOR_ALL_CLASSES
             }
-        delegate.setAsmFramesComputationMode(mode)
+        delegate.instrumentation.setAsmFramesComputationMode(mode)
     }
 
     override val buildType: String?

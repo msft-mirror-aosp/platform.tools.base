@@ -15,6 +15,7 @@
  */
 package com.android.tools.deploy.liveedit;
 
+
 public class ProxyTestClasses {
 
     public static interface Function2<A, B, R> {
@@ -48,6 +49,16 @@ public class ProxyTestClasses {
         public static int liveEditedMethod() {
             return ModifyStatic.proxiedStatic();
         }
+
+        public static String usesLambda() {
+            LambdaFunction f = new LambdaFunction(0);
+            return f.invoke();
+        }
+
+        public static int usesLambdaSuper() {
+            LambdaFunction f = new LambdaFunction(0);
+            return f.getArity();
+        }
     }
 
     public static class AddedMethods {
@@ -59,6 +70,18 @@ public class ProxyTestClasses {
     public static class ModifyStatic {
         public static int proxiedStatic() {
             return 0;
+        }
+    }
+
+    public static class LambdaFunction extends kotlin.jvm.internal.Lambda<String>
+            implements kotlin.jvm.functions.Function0<String> {
+        public LambdaFunction(int arity) {
+            super(arity);
+        }
+
+        @Override
+        public String invoke() {
+            return "My Test String";
         }
     }
 }

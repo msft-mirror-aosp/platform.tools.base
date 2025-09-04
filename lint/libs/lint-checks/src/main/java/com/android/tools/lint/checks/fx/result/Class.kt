@@ -102,7 +102,7 @@ sealed interface ClassId {
    * Imaginary class that's like [base], but is guarded by [guard]. The [guard] is treated opaquely,
    * but should have well-defined equality to be part of the identifier.
    */
-  data class Guarded internal constructor(val guard: Any?, val base: ClassId) : ClassId {
+  data class Guarded internal constructor(val guard: Any, val base: ClassId) : ClassId {
     override fun toString() = "$guard ◁ $base"
   }
 
@@ -150,8 +150,11 @@ sealed interface ClassId {
 
     fun of(fqn: String): ClassId = Common.entries.find { fqn in it.aliases } ?: Named.of(fqn)
 
-    internal fun of(guard: EffectAnnotation.Explicit<*>, base: PsiClass): ClassId =
-      Guarded(guard, of(base.qualifiedName!!))
+    /**
+     * Generate a [ClassId] specific to [base] and a [guard]. The [guard]'s type isn't tracked, but
+     * it should be a "tag" with well-defined equality, reflecting the guard's value.
+     */
+    internal fun of(guard: Any, base: PsiClass): ClassId = Guarded(guard, of(base.qualifiedName!!))
 
     // TODO: Is `canonicalText` always the fully qualified name??
     fun of(type: PsiClassType): ClassId = of(type.canonicalText)

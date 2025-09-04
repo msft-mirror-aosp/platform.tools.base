@@ -19,9 +19,7 @@ package com.android.build.gradle.internal.plugins;
 import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID;
 
 import com.android.annotations.NonNull;
-import com.android.build.api.dsl.ApplicationDefaultConfig;
 import com.android.build.api.dsl.ApplicationExtension;
-import com.android.build.api.dsl.ApplicationProductFlavor;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.ApplicationAndroidComponentsExtensionImpl;
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar;
@@ -160,6 +158,30 @@ public class AppPlugin
             initExtensionFromSettings(applicationExtension);
             setupDependencies(android);
             return new ExtensionData<>(android, applicationExtension, bootClasspathConfig);
+        }
+
+        if (getProjectServices()
+                .getProjectOptions()
+                .get(BooleanOption.USE_NEW_DSL)) {
+            project.getExtensions()
+                    .add(new TypeOf<ApplicationExtension>() {}, "android", applicationExtension);
+
+            initExtensionFromSettings(applicationExtension);
+
+            // Create an instance of the old extension to pass around AGP internally.
+            // This is not exposed externally
+            // TODO(b/418804641): Clean up all the internal users of the BaseExtension hierarchy
+            BaseAppModuleExtension internalOnly =
+                    dslServices.newInstance(
+                            BaseAppModuleExtension.class,
+                            dslServices,
+                            bootClasspathConfig,
+                            buildOutputs,
+                            dslContainers.getSourceSetManager(),
+                            applicationExtension,
+                            stats != null ? stats : GradleBuildProject.newBuilder());
+
+            return new ExtensionData<>(internalOnly, applicationExtension, bootClasspathConfig);
         }
 
         if (getProjectServices().getProjectOptions().get(BooleanOption.USE_NEW_DSL_INTERFACES)) {

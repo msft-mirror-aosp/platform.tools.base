@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tests
 
 import com.android.build.api.attributes.ProductFlavorAttr
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.fixture.TestConstants
@@ -25,6 +26,7 @@ import com.android.build.gradle.internal.fixture.createAndConfig
 import com.android.build.gradle.internal.plugins.AppPlugin
 import com.android.build.gradle.internal.plugins.runAfterEvaluate
 import com.google.common.truth.Truth
+import com.google.common.truth.TruthJUnit.assume
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
@@ -51,17 +53,20 @@ class FlavorSelectionTest(val variantApi: VariantApiType) {
 
     private lateinit var project: Project
     private lateinit var plugin: AppPlugin
-    private lateinit var android: AppExtension
+    private lateinit var android: ApplicationExtension
     private lateinit var variantConfiguration : Configuration
     private lateinit var attributeKeys: MutableSet<Attribute<*>>
 
     @Before
     fun setUp() {
+        assume().that(variantApi).isNotEqualTo(VariantApiType.OLD) // TODO(b/442520269): Clean up?
         project = TestProjects.builder(projectDirectory.newFolder("project").toPath())
                 .withPlugin(TestProjects.Plugin.APP)
                 .build()
-        android = project.extensions.getByType(TestProjects.Plugin.APP.extensionClass) as AppExtension
-        android.setCompileSdkVersion(TestConstants.COMPILE_SDK_VERSION)
+        android = project.extensions.getByType(TestProjects.Plugin.APP.extensionClass) as ApplicationExtension
+        android.compileSdk {
+            version = release(TestConstants.COMPILE_SDK_VERSION)
+        }
         android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
         android.namespace = "com.example.namespace"
         plugin = project.plugins.getPlugin(TestProjects.Plugin.APP.pluginClass) as AppPlugin
@@ -76,7 +81,7 @@ class FlavorSelectionTest(val variantApi: VariantApiType) {
         defaultConfig.missingDimensionStrategy("variant", "defaultValue")
 
         // add selection on flavors
-        android.flavorDimensions("dimension")
+        android.flavorDimensions += "dimension"
         android.productFlavors.createAndConfig("flavor") {
             missingDimensionStrategy("flavor", "other-flavor")
             missingDimensionStrategy("flavor-only", "other-flavor-only")
@@ -85,7 +90,7 @@ class FlavorSelectionTest(val variantApi: VariantApiType) {
         // now use the variant API to configure a specific variant
         when (variantApi) {
             VariantApiType.OLD -> {
-                android.applicationVariants.all {
+                (android as AppExtension).applicationVariants.all {
                     it.missingDimensionStrategy("variant", "variant")
                     it.missingDimensionStrategy("variant-only", "variant-only")
                 }
@@ -102,11 +107,7 @@ class FlavorSelectionTest(val variantApi: VariantApiType) {
 
         plugin.runAfterEvaluate(project)
 
-        // get the configuration for a given variant
-        variantConfiguration = android.applicationVariants.stream()
-                .filter { it.name == "flavorDebug"}
-                .map { it.compileConfiguration}
-                .findAny()?.get() ?: throw RuntimeException("can't find flavorDebug")
+        variantConfiguration = project.configurations.getByName("flavorDebugCompileClasspath")
 
         attributeKeys = variantConfiguration.attributes.keySet()
 

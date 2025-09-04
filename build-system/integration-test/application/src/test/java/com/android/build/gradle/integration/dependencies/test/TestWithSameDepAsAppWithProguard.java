@@ -64,7 +64,7 @@ public class TestWithSameDepAsAppWithProguard {
                         + "  buildTypes {\n"
                         + "    debug {\n"
                         + "      minifyEnabled true\n"
-                        + "      proguardFiles getDefaultProguardFile(\"proguard-android.txt\")\n"
+                        + "      proguardFiles getDefaultProguardFile(\"proguard-android-optimize.txt\")\n"
                         + "      }\n"
                         + "  }\n"
                         + "}\n"

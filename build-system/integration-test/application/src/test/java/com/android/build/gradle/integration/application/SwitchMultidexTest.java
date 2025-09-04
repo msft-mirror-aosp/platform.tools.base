@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application;
 import static com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.DEBUG;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.testutils.truth.DexSubject.assertThat;
+
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -26,18 +27,22 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 
 /** Assemble tests for multiDex. */
 public class SwitchMultidexTest {
@@ -46,6 +51,7 @@ public class SwitchMultidexTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+                    .addGradleProperty(BooleanOption.USE_ANDROID_X, false) // b/440266494
                     .create();
 
     @Before

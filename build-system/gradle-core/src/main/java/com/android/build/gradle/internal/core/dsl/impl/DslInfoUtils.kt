@@ -21,14 +21,38 @@ import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.VariantDimension
 import com.android.build.gradle.internal.core.MergedOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig
+import com.android.build.gradle.internal.manifest.ManifestData
+import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.variant.DimensionCombination
+import com.android.build.gradle.options.BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER
+import com.android.build.gradle.options.BooleanOption.USE_ANDROID_X
 import com.android.builder.core.ComponentType
+import com.android.builder.dexing.DexingType
 import com.android.utils.appendCapitalized
 import com.android.utils.combineAsCamelCase
+import org.gradle.api.provider.Provider
 
-internal const val DEFAULT_TEST_RUNNER = "android.test.InstrumentationTestRunner"
-internal const val MULTIDEX_TEST_RUNNER =
+private const val DEPRECATED_PLATFORM_TEST_RUNNER = "android.test.InstrumentationTestRunner"
+private const val DEPRECATED_MULTIDEX_TEST_RUNNER =
     "com.android.test.runner.MultiDexTestRunner"
+private const val ANDROIDX_TEST_RUNNER = "androidx.test.runner.AndroidJUnitRunner"
+
+internal fun computeInstrumentationTestRunner(manifestData: Provider<ManifestData>, services: VariantServices, dexingType: DexingType): Provider<String> {
+    return manifestData.zip(getDefaultInstrumentationTestRunner(services, dexingType)) { manifestData, fallback ->
+        manifestData.instrumentationRunner ?: fallback
+    }
+}
+
+internal fun getDefaultInstrumentationTestRunner(services: VariantServices, dexingType: DexingType): Provider<String> {
+    val options = services.projectOptions
+    val result = when {
+        options[USE_ANDROID_X] && options[DEFAULT_ANDROIDX_TEST_RUNNER] -> ANDROIDX_TEST_RUNNER
+        dexingType == DexingType.LEGACY_MULTIDEX -> DEPRECATED_MULTIDEX_TEST_RUNNER
+        else -> DEPRECATED_PLATFORM_TEST_RUNNER
+    }
+    return services.provider { result }
+}
+
 internal const val DEFAULT_HANDLE_PROFILING = false
 internal const val DEFAULT_FUNCTIONAL_TEST = false
 

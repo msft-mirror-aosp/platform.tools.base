@@ -76,7 +76,6 @@ class BooleanOptionTest {
             BooleanOption.UNINSTALL_INCOMPATIBLE_APKS,
             BooleanOption.GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING,
             BooleanOption.GRADLE_MANAGED_DEVICE_ALLOW_OLD_API_LEVEL_DEVICES,
-            BooleanOption.GRADLE_MANAGED_DEVICE_INCLUDE_MANAGED_DEVICES_IN_REPORTING,
             BooleanOption.ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT,
             BooleanOption.ENABLE_EXTRACT_ANNOTATIONS,
             BooleanOption.CONVERT_NON_NAMESPACED_DEPENDENCIES,
@@ -92,7 +91,6 @@ class BooleanOptionTest {
             BooleanOption.ENABLE_BUILD_CONFIG_AS_BYTECODE,
             BooleanOption.RUN_LINT_IN_PROCESS,
             BooleanOption.ENABLE_TEST_FIXTURES,
-            BooleanOption.USE_NEW_DSL_INTERFACES,
             BooleanOption.USE_DECLARATIVE_INTERFACES,
             BooleanOption.FORCE_DETERMINISTIC_APK,
             BooleanOption.SKIP_APKS_VIA_BUNDLE_IF_POSSIBLE,
@@ -118,7 +116,8 @@ class BooleanOptionTest {
             BooleanOption.ENABLE_PROBLEMS_API,
             BooleanOption.R8_GRADUAL_API,
             BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS,
-            BooleanOption.DISABLE_ALL_CONSTRAINTS
+            BooleanOption.DISABLE_ALL_CONSTRAINTS,
+            BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS
         )
 
         checkViolatingProjectOptions(
