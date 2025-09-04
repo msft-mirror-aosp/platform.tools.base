@@ -133,18 +133,7 @@ class MinimalSubProjectUsingKTS(
                 )
             }
 
-            fun feature(namespace: String): MinimalSubProjectUsingKTS {
-                return MinimalSubProjectUsingKTS(
-                    path = null,
-                    plugin = "com.android.feature",
-                    addCompileAndSdkVersionToBuildFile = true,
-                    addVersionCodeToBuildFile = false,
-                    addManifestFile = true,
-                    namespace = namespace
-                )
-            }
-
-            fun dynamicFeature(namespace: String): MinimalSubProjectUsingKTS {
+        fun dynamicFeature(namespace: String): MinimalSubProjectUsingKTS {
                 return MinimalSubProjectUsingKTS(
                     path = null,
                     plugin = "com.android.dynamic-feature",

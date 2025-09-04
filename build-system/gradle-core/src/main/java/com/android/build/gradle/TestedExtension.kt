@@ -13,8 +13,7 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.file.FileCollection
 
 /**
- * Provides test components that are common to [AppExtension], [LibraryExtension], and
- * [FeatureExtension].
+ * Provides test components that are common to [AppExtension] and [LibraryExtension].
  *
  * To learn more about testing Android projects, read
  * [Test your app](https://developer.android.com/studio/test/index.html)

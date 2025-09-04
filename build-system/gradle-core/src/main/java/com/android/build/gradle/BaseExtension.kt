@@ -81,7 +81,7 @@ import java.io.File
  *         [create an Android library](https://developer.android.com/studio/projects/android-library.html)
  * * [TestExtension]: `android` extension for the `com.android.test` plugin used to create
  *         a separate android test project.
- * * [DynamicFeatureExtension]: `android` extension for the `com.android.feature` plugin
+ * * [DynamicFeatureExtension]: `android` extension for the `com.android.dynamic-feature` plugin
  *         used to create dynamic features.
  *
  * The following applies the Android plugin to an app project `build.gradle` file:
