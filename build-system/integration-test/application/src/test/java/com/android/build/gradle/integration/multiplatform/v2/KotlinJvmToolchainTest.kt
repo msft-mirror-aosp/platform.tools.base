@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import org.gradle.api.Project
+import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
@@ -31,8 +32,12 @@ class KotlinJvmToolchainTest {
     val rule = GradleRule.from {
         androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
             android {
+                withJava()
                 namespace = "com.mylibrary.foo"
                 compileSdk = DEFAULT_COMPILE_SDK_VERSION
+
+                withHostTest { }
+                withDeviceTest {  }
             }
 
             // Add a simple kotlin source file so that kotlin compilation task does work.
@@ -42,6 +47,14 @@ class KotlinJvmToolchainTest {
                 """
                         package com.mylibrary.foo
                         class LibFoo {}
+                    """.trimIndent()
+            )
+            files.add(
+                "src/androidMain/java/JavaLibFoo.java",
+                //language=kotlin
+                """
+                        package com.mylibrary.foo;
+                        class JavaLibFoo {}
                     """.trimIndent()
             )
 
@@ -58,8 +71,9 @@ class KotlinJvmToolchainTest {
                 }
             }
         }
-        val result = build.executor.run("clean", ":library:compileAndroidMain")
-        ScannerSubject.assertThat(result.stdout).contains("jvm-target=21")
+        val result = build.executor.run("clean", ":library:assemble")
+        ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=21")
+        ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=21")
     }
 
     @Test
@@ -74,8 +88,9 @@ class KotlinJvmToolchainTest {
                 }
             }
         }
-        val result = build.executor.run("clean", ":library:compileAndroidMain")
-        ScannerSubject.assertThat(result.stdout).contains("jvm-target=11")
+        val result = build.executor.run("clean", ":library:assemble")
+        ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
+        ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=11")
     }
 
     class JvmTargetCallback: GenericCallback {
@@ -85,7 +100,15 @@ class KotlinJvmToolchainTest {
                     it.doLast { task ->
                         task as KotlinCompile
                         val jvmTarget = task.compilerOptions.jvmTarget.get().target
-                        println("jvm-target=$jvmTarget")
+                        println("kotlinc jvm-target=$jvmTarget")
+                    }
+                }
+
+                project.tasks.named("compileAndroidMainJavaWithJavac") {
+                    it.doLast { task ->
+                        task as JavaCompile
+                        val jvmTarget = task.targetCompatibility
+                        println("javac jvm-target=$jvmTarget")
                     }
                 }
             }
