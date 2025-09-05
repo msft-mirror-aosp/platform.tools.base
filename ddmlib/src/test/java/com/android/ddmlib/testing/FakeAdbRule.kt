@@ -197,6 +197,7 @@ class FakeAdbRule : ExternalResource() {
   }
 
   override fun after() {
+    AndroidDebugBridge.disconnectBridge()
     AndroidDebugBridge.terminate()
     AndroidDebugBridge.disableFakeAdbServerMode()
     DdmPreferences.enableJdwpProxyService(isJdwpProxyEnabledDefault)
