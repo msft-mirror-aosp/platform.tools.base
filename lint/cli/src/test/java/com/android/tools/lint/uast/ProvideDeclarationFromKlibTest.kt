@@ -21,7 +21,6 @@ import com.android.tools.lint.UastEnvironment
 import com.android.tools.lint.checks.infrastructure.KlibTestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.detector.api.Project
-import com.android.tools.lint.useFirUast
 import com.google.common.truth.Truth.assertThat
 import com.intellij.mock.MockProject
 import com.intellij.openapi.vfs.impl.jar.CoreJarFileSystem
@@ -202,7 +201,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val factory = KotlinStaticPsiDeclarationProviderFactory(mockProject, CoreJarFileSystem())
     val provider = factory.createPsiDeclarationProvider(projectScope)
 
-    val classId = ClassId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("LibClass"))
+    val classId = ClassId(FqName(TEST_DATA_PACKAGE), Name.identifier("LibClass"))
     val psiClasses = provider.getClassesByClassId(classId)
 
     assertThat(psiClasses).hasSize(1)
@@ -263,11 +262,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val symbol =
       mock<KaNamedFunctionSymbol> {
         on { callableId } doReturn
-          CallableId(
-            FqName(TEST_DATA_PACKAGE),
-            FqName("LibClass"),
-            Name.guessByFirstCharacter("libMethod"),
-          )
+          CallableId(FqName(TEST_DATA_PACKAGE), FqName("LibClass"), Name.identifier("libMethod"))
         on { annotations } doReturn emptyAnnotationList
         on { this.returnType } doReturn returnType
         on { valueParameters } doReturn listOf(valueParam)
@@ -327,7 +322,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val kaFunction =
       mock<KaNamedFunctionSymbol> {
         on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("libGlobalMethod"))
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("libGlobalMethod"))
       }
 
     val globalMethod = provider.getFunctions(kaFunction)
@@ -337,8 +332,8 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val kaExtensionProperty =
       mock<KaPropertySymbol> {
         on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("globalProperty"))
-        on { name } doReturn Name.guessByFirstCharacter("globalProperty")
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("globalProperty"))
+        on { name } doReturn Name.identifier("globalProperty")
       }
 
     val globalExtensionProperty = provider.getProperties(kaExtensionProperty)
@@ -351,8 +346,8 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val kaConstProperty =
       mock<KaPropertySymbol> {
         on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("LIB_CONST"))
-        on { name } doReturn Name.guessByFirstCharacter("LIB_CONST")
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("LIB_CONST"))
+        on { name } doReturn Name.identifier("LIB_CONST")
       }
 
     val globalConstProperty = provider.getProperties(kaConstProperty)
