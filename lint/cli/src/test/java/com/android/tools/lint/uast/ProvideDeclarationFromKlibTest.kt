@@ -367,11 +367,11 @@ private class MockPsiType(val matchTarget: String) : PsiType(emptyArray()) {
   }
 
   override fun getPresentableText(): String {
-    throw UnsupportedOperationException()
+    return matchTarget
   }
 
   override fun getCanonicalText(): String {
-    throw UnsupportedOperationException()
+    return matchTarget
   }
 
   override fun isValid(): Boolean {
