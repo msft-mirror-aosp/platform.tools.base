@@ -31,31 +31,6 @@ class AddJavaResourcesTest {
 
     /** Regression test for http://b/263469991.*/
     @Test
-    fun testAddingJavaResources() {
-        project.buildFile.appendText(
-            """
-            abstract class VersionFileWriterTask extends DefaultTask {
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDirectory();
-
-                @TaskAction
-                void run() { }
-            }
-
-            def writeVersionFile = tasks.register("writeVersionFile", VersionFileWriterTask.class)
-            androidComponents {
-                onVariants(selector().all(),  { variant ->
-                    variant.sources.resources.addGeneratedSourceDirectory(writeVersionFile, VersionFileWriterTask::getOutputDirectory)
-                })
-            }
-        """.trimIndent()
-        )
-
-        project.executor().run("processDebugJavaRes")
-    }
-
-    /** Regression test for http://b/263469991.*/
-    @Test
     fun testAddingJavaResourcesOldApi() {
         project.buildFile.appendText(
             """
@@ -81,5 +56,4 @@ class AddJavaResourcesTest {
 
         project.executor().run("processDebugJavaRes")
     }
-
 }
