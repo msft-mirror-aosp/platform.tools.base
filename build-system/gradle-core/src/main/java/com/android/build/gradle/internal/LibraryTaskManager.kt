@@ -354,10 +354,10 @@ class LibraryTaskManager(
             PublishedConfigSpec(PublishedConfigType.JAVA_DOC_PUBLICATION, componentName, isClassifierRequired)
         )
         component!!.addVariantsFromConfiguration(
-            apiPub, ConfigurationVariantMapping("compile", isClassifierRequired)
+            apiPub, ConfigurationVariantMapping("compile", optional = false)
         )
         component.addVariantsFromConfiguration(
-            runtimePub, ConfigurationVariantMapping("runtime", isClassifierRequired)
+            runtimePub, ConfigurationVariantMapping("runtime", optional = false)
         )
         if (sourcePub != null) {
             component.addVariantsFromConfiguration(
