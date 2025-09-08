@@ -20,8 +20,8 @@ import com.android.tools.journeys.testengine.JourneysExecutionContext
 import com.android.tools.journeys.testengine.JourneysTestEngineInput
 import com.android.tools.journeys.testengine.output.CrawlProcessingState
 import com.android.tools.journeys.testengine.output.ProgressReporter
-import com.android.tools.journeys.testengine.robo.RoboConfigConstants
-import com.android.tools.journeys.testengine.robo.RoboConverter
+import com.android.tools.journeys.testengine.robo.platform.RoboConfigConstants
+import com.android.tools.journeys.testengine.robo.platform.RoboConverter
 import com.google.cloud.test.appcrawler.proto.Artifact
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId

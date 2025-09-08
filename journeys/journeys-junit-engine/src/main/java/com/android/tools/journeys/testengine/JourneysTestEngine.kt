@@ -18,9 +18,9 @@ package com.android.tools.journeys.testengine
 
 import com.android.tools.journeys.testengine.resolver.DeviceSelectorResolver
 import com.android.tools.journeys.testengine.resolver.JourneysFileSelectorResolver
-import com.android.tools.journeys.testengine.robo.Adb
-import com.android.tools.journeys.testengine.robo.ChannelProviderFactory
-import com.android.tools.journeys.testengine.robo.Proxy
+import com.android.tools.journeys.testengine.robo.platform.Adb
+import com.android.tools.journeys.testengine.robo.platform.ChannelProviderFactory
+import com.android.tools.journeys.testengine.robo.platform.Proxy
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.ExecutionRequest

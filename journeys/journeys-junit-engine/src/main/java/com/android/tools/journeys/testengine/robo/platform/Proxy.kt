@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.journeys.testengine.robo
+package com.android.tools.journeys.testengine.robo.platform
 
 import androidx.test.tools.crawler.proto.CrawlGuidanceProto.CrawlParameter
 import com.google.cloud.test.appcrawler.proto.Artifact
@@ -71,14 +71,23 @@ class Proxy(
      * @param artifactProcessor A lambda function to process any [Artifact] produced during the crawl.
      * @throws JourneyExecutionException if any stage of the execution fails.
      */
-    fun executeJourney(deviceId: String, journeyPath: Path, artifactProcessor: (Artifact) -> Unit) {
+    fun executeJourney(
+        deviceId: String,
+        journeyPath: Path,
+        artifactProcessor: (Artifact) -> Unit
+    ) {
         var hostPort = 0
         try {
             val journeyScript = readJourneyScript(journeyPath)
             val instrumentationProcess = setupInstrumentation(deviceId)
             hostPort = setupAdbForward(deviceId)
             val result =
-                connectToCrawlerBackend(hostPort, journeyScript, accessTokenPath, artifactProcessor)
+                connectToCrawlerBackend(
+                    hostPort,
+                    journeyScript,
+                    accessTokenPath,
+                    artifactProcessor
+                )
             if (result.outcome().equals(GrpcClient.SUCCESS_RESULT)) {
                 stopInstrumentation(instrumentationProcess, true)
             } else {
@@ -251,10 +260,14 @@ class Proxy(
      * @param destroyIfActiveBeforeExit Whether to destroy the process before checking exit value
      * to exit gracefully. If crawl passed, we exit gracefully.
      */
-    private fun stopInstrumentation(instrumentation: Process, destroyIfActiveBeforeExit: Boolean) {
+    private fun stopInstrumentation(
+        instrumentation: Process,
+        destroyIfActiveBeforeExit: Boolean
+    ) {
         val stdout = instrumentation.inputStream.bufferedReader().use { it.readText() }
         val stderr = instrumentation.errorStream.bufferedReader().use { it.readText() }
         val fullOut = "$stdout\n$stderr"
+
         if (instrumentation.isAlive && destroyIfActiveBeforeExit) {
             instrumentation.destroy()
         }

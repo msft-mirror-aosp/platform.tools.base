@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.android.tools.journeys.testengine.robo
+package com.android.tools.journeys.testengine.robo.platform
 
-import com.android.tools.journeys.testengine.robo.Proxy.CallCredentialsInterceptor
 import com.google.api.client.auth.oauth2.TokenResponse
 import com.google.api.client.json.gson.GsonFactory
 import com.google.auth.oauth2.AccessToken
@@ -34,7 +33,7 @@ class ProductionChannelProviderFactory : ChannelProviderFactory {
     override fun createChannelProvider(): (targetEndpoint: String, accessTokenPath: String) -> ManagedChannel {
         return { targetEndpoint, accessTokenPath ->
             NettyChannelBuilder.forTarget(targetEndpoint).intercept(
-                CallCredentialsInterceptor(
+                Proxy.CallCredentialsInterceptor(
                     MoreCallCredentials.from(createCredentials(accessTokenPath))
                 )
             ).build()

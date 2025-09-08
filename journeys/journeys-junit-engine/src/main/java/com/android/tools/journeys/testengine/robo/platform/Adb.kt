@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.journeys.testengine.robo
+package com.android.tools.journeys.testengine.robo.platform
 
 /**
  * A class for interacting with the Android Debug Bridge (ADB).

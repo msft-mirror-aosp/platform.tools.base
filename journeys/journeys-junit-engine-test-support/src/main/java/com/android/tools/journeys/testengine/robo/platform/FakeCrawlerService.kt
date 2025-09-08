@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.journeys.testengine.robo
+package com.android.tools.journeys.testengine.robo.platform
 
 import androidx.test.tools.crawler.output.Crawl
 import androidx.test.tools.crawler.proto.RemotePlatformRequest
@@ -120,24 +120,16 @@ class FakeCrawlerService(
             }
 
             private fun streamCrawlUpdates(responseObserver: StreamObserver<CrawlerResponse>) {
-                val currentMasterCrawl = masterCrawl ?: run {
-                    responseObserver.onError(
-                        Status.INTERNAL.withDescription("No master Crawl proto provided to FakeCrawlerService.")
-                            .asRuntimeException()
-                    )
-                    return
-                }
-
-                for (actionIndex in currentMasterCrawl.actionsList.indices) {
-                    val currentAction = currentMasterCrawl.getActions(actionIndex)
-                    val currentDisplayState = currentMasterCrawl.displayStatesList.find {
+                for (actionIndex in masterCrawl.actionsList.indices) {
+                    val currentAction = masterCrawl.getActions(actionIndex)
+                    val currentDisplayState = masterCrawl.displayStatesList.find {
                         it.displayStateId == currentAction.displayStateId
                     }
 
                     currentDisplayState?.let {
                         val displayStatePartialCrawl = Crawl.newBuilder()
-                            .setCrawlIdentifier(currentMasterCrawl.crawlIdentifier)
-                            .setAppPackageId(currentMasterCrawl.appPackageId)
+                            .setCrawlIdentifier(masterCrawl.crawlIdentifier)
+                            .setAppPackageId(masterCrawl.appPackageId)
                             .addDisplayStates(it)
                             .setCrawlResult(Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT)
                             .build()
@@ -156,8 +148,8 @@ class FakeCrawlerService(
                     }
 
                     val actionPartialCrawl = Crawl.newBuilder()
-                        .setCrawlIdentifier(currentMasterCrawl.crawlIdentifier)
-                        .setAppPackageId(currentMasterCrawl.appPackageId)
+                        .setCrawlIdentifier(masterCrawl.crawlIdentifier)
+                        .setAppPackageId(masterCrawl.appPackageId)
                         .addActions(currentAction)
                         .setCrawlResult(Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT)
                         .build()

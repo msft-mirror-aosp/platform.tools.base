@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.journeys.testengine.robo
+package com.android.tools.journeys.testengine.robo.platform
 
 import java.util.concurrent.TimeUnit
 

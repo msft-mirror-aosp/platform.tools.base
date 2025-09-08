@@ -20,7 +20,7 @@ import androidx.test.tools.crawler.output.Action
 import androidx.test.tools.crawler.output.ActionDetails
 import androidx.test.tools.crawler.output.Crawl
 import androidx.test.tools.crawler.output.RoboScriptDetails
-import com.android.tools.journeys.testengine.robo.RoboConfigConstants
+import com.android.tools.journeys.testengine.robo.platform.RoboConfigConstants
 import org.junit.platform.engine.TestExecutionResult
 import java.io.IOException
 import java.nio.file.Files

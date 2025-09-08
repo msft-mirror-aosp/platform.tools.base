@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.journeys.testengine.robo
+package com.android.tools.journeys.testengine.robo.platform
 
 import androidx.test.tools.crawler.output.Crawl
 import com.google.protobuf.TextFormat
@@ -38,7 +38,11 @@ class MockChannelProviderFactory : ChannelProviderFactory {
             }
             val shouldInduceServerError =
                 System.getProperty("FakeCrawlerServiceInput.shouldInduceServerError").toBoolean()
-            val fakeCrawlerService = FakeCrawlerService(masterCrawl,shouldInduceServerError)
+            val fakeCrawlerService =
+                FakeCrawlerService(
+                    masterCrawl,
+                    shouldInduceServerError
+                )
             InProcessServerBuilder.forName(serverName)
                 .directExecutor()
                 .addService(fakeCrawlerService)

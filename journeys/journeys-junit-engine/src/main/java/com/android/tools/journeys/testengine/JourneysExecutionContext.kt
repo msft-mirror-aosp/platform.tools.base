@@ -15,7 +15,7 @@
  */
 package com.android.tools.journeys.testengine
 
-import com.android.tools.journeys.testengine.robo.Proxy
+import com.android.tools.journeys.testengine.robo.platform.Proxy
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
 
