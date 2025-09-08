@@ -55,8 +55,9 @@ TEST(CpuUsageDataSampler, TestSampleCpuUsage) {
   EventBuffer event_buffer(&clock);
   Daemon daemon(&clock, &config, &file_cache, &event_buffer);
   int32_t pid = 321;
-  Session session(0, pid, 0, &daemon, proto::ProfilerTaskType::UNSPECIFIED_TASK,
-                  false);
+  // CALLSTACK_SAMPLE task type adds a CpuUsageDataSampler
+  Session session(0, pid, 0, &daemon,
+                  proto::ProfilerTaskType::CALLSTACK_SAMPLE);
   CpuUsageDataSampler sampler(session, &clock, &event_buffer,
                               new FakeCpuUsageSampler(&clock));
 

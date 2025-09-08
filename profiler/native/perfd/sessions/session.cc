@@ -26,8 +26,7 @@
 namespace profiler {
 
 Session::Session(int64_t stream_id, int32_t pid, int64_t start_timestamp,
-                 Daemon* daemon, proto::ProfilerTaskType task_type,
-                 bool is_task_based_ux_enabled) {
+                 Daemon* daemon, proto::ProfilerTaskType task_type) {
   // TODO: Revisit uniqueness of this:
   info_.set_session_id(stream_id ^ (start_timestamp << 1));
   info_.set_stream_id(stream_id);
@@ -35,7 +34,7 @@ Session::Session(int64_t stream_id, int32_t pid, int64_t start_timestamp,
   info_.set_start_timestamp(start_timestamp);
   info_.set_end_timestamp(LLONG_MAX);
 
-  PopulateSamplers(daemon, task_type, is_task_based_ux_enabled);
+  PopulateSamplers(daemon, task_type);
 }
 
 bool Session::IsActive() const { return info_.end_timestamp() == LLONG_MAX; }
@@ -63,11 +62,9 @@ bool Session::End(int64_t timestamp) {
 }
 
 void Session::PopulateSamplers(Daemon* daemon,
-                               proto::ProfilerTaskType task_type,
-                               bool is_task_based_ux_enabled) {
+                               proto::ProfilerTaskType task_type) {
   // In the Task-Based UX, samplers are invoked only if the task requires it.
-  if (!is_task_based_ux_enabled ||
-      task_type == proto::ProfilerTaskType::CALLSTACK_SAMPLE ||
+  if (task_type == proto::ProfilerTaskType::CALLSTACK_SAMPLE ||
       task_type == proto::ProfilerTaskType::JAVA_KOTLIN_METHOD_RECORDING ||
       task_type == proto::ProfilerTaskType::LIVE_VIEW) {
     samplers_.push_back(
@@ -75,14 +72,12 @@ void Session::PopulateSamplers(Daemon* daemon,
             *this, daemon->clock(), daemon->buffer())));
   }
 
-  if (!is_task_based_ux_enabled ||
-      task_type == proto::ProfilerTaskType::LIVE_VIEW) {
+  if (task_type == proto::ProfilerTaskType::LIVE_VIEW) {
     samplers_.push_back(std::unique_ptr<Sampler>(new profiler::CpuThreadSampler(
         *this, daemon->clock(), daemon->buffer())));
   }
 
-  if (!is_task_based_ux_enabled ||
-      task_type == proto::ProfilerTaskType::JAVA_KOTLIN_ALLOCATIONS ||
+  if (task_type == proto::ProfilerTaskType::JAVA_KOTLIN_ALLOCATIONS ||
       task_type == proto::ProfilerTaskType::LIVE_VIEW) {
     samplers_.push_back(
         std::unique_ptr<Sampler>(new profiler::MemoryUsageSampler(

@@ -25,16 +25,11 @@ namespace profiler {
 
 class BeginSession : public CommandT<BeginSession> {
  public:
-  BeginSession(const proto::Command& command, const proto::BeginSession& data,
-               bool is_task_based_ux_enabled)
-      : CommandT(command),
-        data_(data),
-        is_task_based_ux_enabled_(is_task_based_ux_enabled) {}
+  BeginSession(const proto::Command& command, const proto::BeginSession& data)
+      : CommandT(command), data_(data) {}
 
-  static Command* Create(const proto::Command& command,
-                         bool is_task_based_ux_enabled) {
-    return new BeginSession(command, command.begin_session(),
-                            is_task_based_ux_enabled);
+  static Command* Create(const proto::Command& command) {
+    return new BeginSession(command, command.begin_session());
   }
 
   virtual grpc::Status ExecuteOn(Daemon* daemon) override;
@@ -49,7 +44,6 @@ class BeginSession : public CommandT<BeginSession> {
           .count();
 
   proto::BeginSession data_;
-  bool is_task_based_ux_enabled_;
 };
 
 }  // namespace profiler

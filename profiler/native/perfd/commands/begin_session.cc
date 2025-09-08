@@ -57,7 +57,7 @@ Status BeginSession::ExecuteOn(Daemon* daemon) {
   }
 
   SessionsManager::Instance()->BeginSession(daemon, command().stream_id(), pid,
-                                            data_, is_task_based_ux_enabled_);
+                                            data_);
 
   auto session = SessionsManager::Instance()->GetLastSession();
   session->StartSamplers();

@@ -54,8 +54,8 @@ TEST(MemoryUsageSampler, TestSampleMemoryUsage) {
   FileCache file_cache(std::unique_ptr<FileSystem>(new MemoryFileSystem()),
                        "/");
   Daemon daemon(&clock, &config, &file_cache, &event_buffer);
-  Session session(0, 0, 0, &daemon, proto::ProfilerTaskType::UNSPECIFIED_TASK,
-                  false);
+  Session session(0, 0, 0, &daemon,
+                  proto::ProfilerTaskType::JAVA_KOTLIN_ALLOCATIONS);
   MemoryUsageSampler sampler(session, &clock, &event_buffer,
                              new FakeMemoryUsageReader());
   sampler.Sample();

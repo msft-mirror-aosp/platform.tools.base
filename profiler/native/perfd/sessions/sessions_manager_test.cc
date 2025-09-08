@@ -76,7 +76,7 @@ TEST_F(SessionsManagerTest, BeginSessionSendsQueuedEvents) {
       [&writer, &event_buffer] { event_buffer.WriteEventsTo(&writer); });
 
   proto::BeginSession begin_session;
-  manager->BeginSession(&daemon, 0, 0, begin_session, false);
+  manager->BeginSession(&daemon, 0, 0, begin_session);
 
   std::mutex mutex;
   {
@@ -125,7 +125,7 @@ TEST_F(SessionsManagerTest,
   proto::BeginSession begin_session;
   begin_session.set_task_type(proto::ProfilerTaskType::LIVE_VIEW);
   const int kPid = 1234;
-  manager->BeginSession(&daemon, 0, kPid, begin_session, true);
+  manager->BeginSession(&daemon, 0, kPid, begin_session);
 
   auto session_groups = event_buffer.Get(proto::Event::SESSION, 0, LLONG_MAX);
   // Verify that a LIVE_VIEW_STATUS event was sent.

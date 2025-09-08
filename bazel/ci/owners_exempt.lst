@@ -72,7 +72,6 @@ tools/adt/idea/adt-ui-model/src/main/java/com/android/tools/adtui/model/formatte
 tools/adt/idea/adt-ui-model/src/main/java/com/android/tools/adtui/model/formatter/SingleUnitAxisFormatter.java
 tools/adt/idea/adt-ui-model/src/main/java/com/android/tools/adtui/model/formatter/TimeAxisFormatter.java
 tools/adt/idea/adt-ui-model/src/main/java/com/android/tools/adtui/model/formatter/TimeFormatter.java
-tools/adt/idea/adt-ui-model/src/main/java/com/android/tools/adtui/model/formatter/UserCounterAxisFormatter.java
 tools/adt/idea/adt-ui-model/src/main/java/com/android/tools/adtui/model/legend/EventLegend.java
 tools/adt/idea/adt-ui-model/src/main/java/com/android/tools/adtui/model/legend/FixedLegend.java
 tools/adt/idea/adt-ui-model/src/main/java/com/android/tools/adtui/model/legend/Legend.java
@@ -125,7 +124,6 @@ tools/adt/idea/adt-ui-model/testSrc/com/android/tools/adtui/model/formatter/Numb
 tools/adt/idea/adt-ui-model/testSrc/com/android/tools/adtui/model/formatter/PercentAxisFormatterTest.kt
 tools/adt/idea/adt-ui-model/testSrc/com/android/tools/adtui/model/formatter/SingleUnitAxisFormatterTest.kt
 tools/adt/idea/adt-ui-model/testSrc/com/android/tools/adtui/model/formatter/TimeFormatterTest.kt
-tools/adt/idea/adt-ui-model/testSrc/com/android/tools/adtui/model/formatter/UserCounterAxisFormatter.kt
 tools/adt/idea/adt-ui-model/testSrc/com/android/tools/adtui/model/legend/SeriesLegendTest.java
 tools/adt/idea/adt-ui-model/testSrc/com/android/tools/adtui/model/trackgroup/BooleanSelectable.kt
 tools/adt/idea/adt-ui-model/testSrc/com/android/tools/adtui/model/trackgroup/StringSelectable.kt

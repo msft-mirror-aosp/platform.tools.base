@@ -86,8 +86,8 @@ TEST(CpuThreadSamplerTest, SampleCpuThreads) {
   EventBuffer event_buffer(&clock);
   Daemon daemon(&clock, &config, &file_cache, &event_buffer);
   int32_t pid = 1;
-  Session session(0, pid, 0, &daemon, ProfilerTaskType::UNSPECIFIED_TASK,
-                  false);
+  // LIVE_VIEW task type adds a CpuThreadSampler
+  Session session(0, pid, 0, &daemon, ProfilerTaskType::LIVE_VIEW);
   DiskFileSystem fs;
   CpuThreadSampler sampler(session, &clock, &event_buffer,
                            new MockProcfsFiles(&clock, fs.GetWorkingDir()));

@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_library")
 load("//:coverage.bzl", "combine_report_definitions", "coverage_report")
 
 # This should be a py_binary, but due to a Bazel bug
@@ -429,7 +430,6 @@ coverage_report(
         "tools/adt/idea/profilers/src/com/android/tools/profilers/memory/AllocationStage.kt",
         "tools/adt/idea/profilers/src/com/android/tools/profilers/memory/MainMemoryProfilerStage.kt",
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/memory/AllocationStageView.kt",
-        "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/memory/MainMemoryProfilerStageView.kt",
     ],
     tests = [
         "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",
@@ -558,11 +558,8 @@ coverage_report(
         "tools/adt/idea/profilers/src/com/android/tools/profilers/memory/MainMemoryProfilerStage.kt",
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/StudioProfilersView.java",
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/DismissibleMessage.kt",
-        "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/sessions/SessionsView.kt",
-        "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/sessions/SessionItemView.java",
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/cpu/CpuProfilersView.kt",
         "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/memory/BaseMemoryTimelineComponent.kt",
-        "tools/adt/idea/profilers-ui/src/com/android/tools/profilers/memory/MainMemoryProfilerStageView.kt",
     ],
     tests = [
         "//tools/adt/idea/profilers:intellij.android.profilers.tests_tests",

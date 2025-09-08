@@ -34,8 +34,8 @@ SessionsManager* SessionsManager::Instance() {
 }
 
 void SessionsManager::BeginSession(Daemon* daemon, int64_t stream_id,
-                                   int32_t pid, const proto::BeginSession& data,
-                                   bool is_task_based_ux_enabled) {
+                                   int32_t pid,
+                                   const proto::BeginSession& data) {
   int64_t now = daemon->clock()->GetCurrentTime();
   if (!sessions_.empty()) {
     DoEndSession(daemon, sessions_.back().get(), now);
@@ -56,8 +56,8 @@ void SessionsManager::BeginSession(Daemon* daemon, int64_t stream_id,
   }
 
   auto task_type = data.task_type();
-  std::unique_ptr<Session> session(new Session(
-      stream_id, pid, now, daemon, task_type, is_task_based_ux_enabled));
+  std::unique_ptr<Session> session(
+      new Session(stream_id, pid, now, daemon, task_type));
   proto::Event event;
   event.set_pid(pid);
   event.set_group_id(session->info().session_id());
@@ -78,11 +78,10 @@ void SessionsManager::BeginSession(Daemon* daemon, int64_t stream_id,
   session_started->set_exposure_level(data.exposure_level());
   daemon->buffer()->Add(event);
 
-  // For task-based UX, if the task type is LIVE_VIEW, send a LIVE_VIEW_STATUS
-  // event. This allows this task to be distinguished from others. This event is
-  // sent after the main SESSION event to ensure correct ordering.
-  if (is_task_based_ux_enabled &&
-      task_type == proto::ProfilerTaskType::LIVE_VIEW) {
+  // If the task type is LIVE_VIEW, send a LIVE_VIEW_STATUS event. This allows
+  // this task to be distinguished from others. This event is sent after the
+  // main SESSION event to ensure correct ordering.
+  if (task_type == proto::ProfilerTaskType::LIVE_VIEW) {
     proto::Event lv_event;
     lv_event.set_group_id(session->info().session_id());
     lv_event.set_pid(pid);

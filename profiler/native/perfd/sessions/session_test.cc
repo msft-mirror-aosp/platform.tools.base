@@ -49,25 +49,6 @@ class MockSampler final : public Sampler {
 };
 }  // namespace
 
-TEST(Session, SamplersAdded) {
-  FakeClock clock;
-  EventBuffer event_buffer(&clock);
-  FileCache file_cache(std::unique_ptr<FileSystem>(new MemoryFileSystem()),
-                       "/");
-  proto::DaemonConfig daemon_config;
-  DaemonConfig config1(daemon_config);
-  Daemon daemon1(&clock, &config1, &file_cache, &event_buffer);
-  Session session1(0, 0, 0, &daemon1, ProfilerTaskType::UNSPECIFIED_TASK,
-                   false);
-  EXPECT_EQ(session1.samplers().size(), 3);
-
-  DaemonConfig config2(daemon_config);
-  Daemon daemon2(&clock, &config2, &file_cache, &event_buffer);
-  Session session2(0, 0, 0, &daemon2, ProfilerTaskType::UNSPECIFIED_TASK,
-                   false);
-  EXPECT_EQ(session2.samplers().size(), 3);
-}
-
 TEST(Session, SamplersAddedInTaskBasedUx) {
   FakeClock clock;
   EventBuffer event_buffer(&clock);
@@ -78,22 +59,22 @@ TEST(Session, SamplersAddedInTaskBasedUx) {
   proto::DaemonConfig daemon_config;
   DaemonConfig config1(daemon_config);
   Daemon daemon1(&clock, &config1, &file_cache, &event_buffer);
-  Session session1(0, 0, 0, &daemon1, ProfilerTaskType::LIVE_VIEW, true);
+  Session session1(0, 0, 0, &daemon1, ProfilerTaskType::LIVE_VIEW);
   EXPECT_EQ(session1.samplers().size(), 3);
 
   // Java/Kotlin Allocations task should only have one sampler added as it
   // requires only the memory usage sampler.
   DaemonConfig config2(daemon_config);
   Daemon daemon2(&clock, &config2, &file_cache, &event_buffer);
-  Session session2(0, 0, 0, &daemon2, ProfilerTaskType::JAVA_KOTLIN_ALLOCATIONS,
-                   true);
+  Session session2(0, 0, 0, &daemon2,
+                   ProfilerTaskType::JAVA_KOTLIN_ALLOCATIONS);
   EXPECT_EQ(session2.samplers().size(), 1);
 
   // Callstack Sample task should only have one sampler added as it requires
   // only the CPU usage sampler.
   DaemonConfig config3(daemon_config);
   Daemon daemon3(&clock, &config3, &file_cache, &event_buffer);
-  Session session3(0, 0, 0, &daemon3, ProfilerTaskType::CALLSTACK_SAMPLE, true);
+  Session session3(0, 0, 0, &daemon3, ProfilerTaskType::CALLSTACK_SAMPLE);
   EXPECT_EQ(session3.samplers().size(), 1);
 
   // Java/Kotlin Method Recording task should only have one sampler added as it
@@ -101,7 +82,7 @@ TEST(Session, SamplersAddedInTaskBasedUx) {
   DaemonConfig config4(daemon_config);
   Daemon daemon4(&clock, &config4, &file_cache, &event_buffer);
   Session session4(0, 0, 0, &daemon3,
-                   ProfilerTaskType::JAVA_KOTLIN_METHOD_RECORDING, true);
+                   ProfilerTaskType::JAVA_KOTLIN_METHOD_RECORDING);
   EXPECT_EQ(session4.samplers().size(), 1);
 }
 
@@ -113,14 +94,12 @@ TEST(Session, SamplerDeallocatedWhenSessionDies) {
   proto::DaemonConfig daemon_config;
   DaemonConfig config1(daemon_config);
   Daemon daemon1(&clock, &config1, &file_cache, &event_buffer);
-  Session session1(0, 0, 0, &daemon1, ProfilerTaskType::UNSPECIFIED_TASK,
-                   false);
+  Session session1(0, 0, 0, &daemon1, ProfilerTaskType::LIVE_VIEW);
   EXPECT_EQ(session1.samplers().size(), 3);
 
   DaemonConfig config2(daemon_config);
   Daemon daemon2(&clock, &config2, &file_cache, &event_buffer);
-  Session session2(0, 0, 0, &daemon2, ProfilerTaskType::UNSPECIFIED_TASK,
-                   false);
+  Session session2(0, 0, 0, &daemon2, ProfilerTaskType::LIVE_VIEW);
   EXPECT_EQ(session2.samplers().size(), 3);
 
   // Create a new instance of sampler that's mocked to monitor the destructor.

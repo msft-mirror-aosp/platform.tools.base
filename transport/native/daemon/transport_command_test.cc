@@ -116,6 +116,9 @@ TEST_F(TransportServiceCommandTest, TestBeginSessionCommand) {
   command->set_type(proto::Command::BEGIN_SESSION);
   command->set_pid(1000);
   command->mutable_begin_session();
+  // Using LIVE_VIEW to test both CPU_USAGE and MEMORY_USAGE events at once
+  command->mutable_begin_session()->set_task_type(
+      proto::ProfilerTaskType::LIVE_VIEW);
 
   proto::ExecuteResponse res;
   clock_.SetCurrentTime(2);
@@ -129,10 +132,10 @@ TEST_F(TransportServiceCommandTest, TestBeginSessionCommand) {
   EXPECT_TRUE(event->has_session());
   EXPECT_TRUE(event->session().has_session_started());
 
-  // Consume events from samplers. We get one CPU_USAGE, and one MEMORY_USAGE
-  // event. We don't get CPU_THREAD events because this test does not set up a
-  // fake procfs.
-  const int NUM_EVENTS = 2;
+  // Consume the LIVE_VIEW_STATUS event and the events from samplers. We get one
+  // CPU_USAGE, and one MEMORY_USAGE event. We don't get CPU_THREAD events
+  // because this test does not set up a fake procfs.
+  const int NUM_EVENTS = 3;
   for (int i = 0; i < NUM_EVENTS; i++) {
     event = PopEvent();
     EXPECT_NE(nullptr, event);
@@ -157,7 +160,7 @@ TEST_F(TransportServiceCommandTest, TestBeginSessionCommand) {
   EXPECT_TRUE(event->has_session());
   EXPECT_TRUE(event->session().has_session_started());
 
-  // Consume events from samplers.
+  // Consume the LIVE_VIEW_STATUS event and the events from samplers.
   for (int i = 0; i < NUM_EVENTS; i++) {
     event = PopEvent();
     EXPECT_NE(nullptr, event);
