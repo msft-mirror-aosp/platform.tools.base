@@ -34,6 +34,7 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.compile.JavaCompile
 
 abstract class AnalyticsEnabledComponent(
     open val delegate: Component,
@@ -215,5 +216,11 @@ abstract class AnalyticsEnabledComponent(
         stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
             VariantPropertiesMethodType.GET_RESOLVABLE_CONFIGURATION_VALUE
         return delegate.getResolvableConfiguration(sourceSetConfigurationsAffix)
+    }
+
+    override fun configureJavaCompileTask(action: (JavaCompile) -> Unit) {
+        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+            VariantPropertiesMethodType.CONFIGURE_JAVA_COMPILE_TASK_VALUE
+        delegate.configureJavaCompileTask(action)
     }
 }

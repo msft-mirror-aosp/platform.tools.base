@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import org.gradle.api.Project
@@ -93,6 +95,24 @@ class KotlinJvmToolchainTest {
         ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=11")
     }
 
+    @Test
+    fun testSettingJavaCompileTargetUsingVariantApi() {
+        val build = rule.build {
+            androidKotlinMultiplatformLibrary(":library") {
+                kotlin {
+                    jvmToolchain(21)
+                }
+                android {
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
+                }
+                pluginCallbacks += KmpVariantApiCallback::class.java
+            }
+        }
+        val result = build.executor.run("clean", ":library:assemble")
+        ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
+        ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=17")
+    }
+
     class JvmTargetCallback: GenericCallback {
         override fun handleProject(project: Project) {
             project.afterEvaluate {
@@ -110,6 +130,19 @@ class KotlinJvmToolchainTest {
                         val jvmTarget = task.targetCompatibility
                         println("javac jvm-target=$jvmTarget")
                     }
+                }
+            }
+        }
+    }
+
+    class KmpVariantApiCallback: AndroidKotlinMultiplatformLibraryComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            extension: KotlinMultiplatformAndroidComponentsExtension
+        ) {
+            extension.onVariants { variant ->
+                variant.configureJavaCompileTask { task ->
+                    task.targetCompatibility = "17"
                 }
             }
         }

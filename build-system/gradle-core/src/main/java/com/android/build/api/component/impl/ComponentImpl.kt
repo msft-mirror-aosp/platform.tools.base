@@ -72,6 +72,8 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 import java.io.File
 import java.util.Locale
 import java.util.function.Predicate
@@ -194,9 +196,22 @@ abstract class ComponentImpl<DslInfoT: ComponentDslInfo>(
         return configuration
     }
 
+    override fun configureJavaCompileTask(action: (JavaCompile) -> Unit) {
+        javaCompileTaskConfigActions.add(action)
+    }
+
+    override fun attachRegisteredActionsToJavaCompileTask(taskProvider: TaskProvider<out JavaCompile>) {
+        javaCompileTaskConfigActions.forEach {
+            taskProvider.configure { task -> it(task) }
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // INTERNAL API
     // ---------------------------------------------------------------------------------------------
+
+    private val javaCompileTaskConfigActions = mutableListOf<(JavaCompile) -> Unit>()
+
     override val componentType: ComponentType = dslInfo.componentType
 
     override val dirName: String
