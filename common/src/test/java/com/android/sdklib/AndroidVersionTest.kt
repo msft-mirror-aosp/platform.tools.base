@@ -88,7 +88,7 @@ class AndroidVersionTest {
         assertBaseExtensionLevel(34).isEqualTo(7)
         assertBaseExtensionLevel(35).isEqualTo(13)
         assertBaseExtensionLevel(36).isEqualTo(17)
-        assertBaseExtensionLevel(AndroidApiLevel(36, 1)).isEqualTo(19)
+        assertBaseExtensionLevel(AndroidApiLevel(36, 1)).isEqualTo(20)
     }
 
     @Test
@@ -102,9 +102,9 @@ class AndroidVersionTest {
         assertFromStringBaseExtension("36.0-ext17").isTrue()
         assertFromStringBaseExtension("36.0-ext18").isFalse()
         assertFromStringBaseExtension("36.1").isTrue()
-        assertFromStringBaseExtension("36.1-ext18").isTrue()
         assertFromStringBaseExtension("36.1-ext19").isTrue()
-        assertFromStringBaseExtension("36.1-ext20").isFalse()
+        assertFromStringBaseExtension("36.1-ext20").isTrue()
+        assertFromStringBaseExtension("36.1-ext21").isFalse()
     }
 
 }
