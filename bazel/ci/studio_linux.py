@@ -1,11 +1,8 @@
 """Implements studio-linux CI scripts."""
 
-import itertools
 import pathlib
 import shutil
-import tempfile
-from typing import List, Sequence
-import zipfile
+from typing import List
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import studio
@@ -53,6 +50,7 @@ _EXTRA_TARGETS = [
     '//tools/vendor/google/ml:aiplugin',
     '//tools/vendor/google/ml:studiobot-dogfood-plugin',
     '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
+    '//tools/base/bazel:owners.zip',
 ]
 
 
@@ -107,6 +105,8 @@ _ARTIFACTS = [
     ('tools/base/environment-services/libtools.environment-services.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
     ('tools/base/build-system/android_gradle_plugin_9.zip', 'artifacts'),
+
+    ('tools/base/bazel/owners.zip', 'owners.zip'),
 ]
 
 
@@ -242,20 +242,6 @@ def copy_agp_supported_versions(build_env: bazel.BuildEnv) -> None:
   )
 
 
-def write_owners_zip(build_env: bazel.BuildEnv) -> None:
-  """Writes all OWNERS files to an owners.zip file."""
-  workspace_path = pathlib.Path(build_env.workspace_dir)
-  dist_path = pathlib.Path(build_env.dist_dir)
-
-  with zipfile.ZipFile(dist_path / 'owners.zip', 'w') as owners_zip:
-    owners_paths = itertools.chain(
-        workspace_path.glob('tools/**/OWNERS'),
-        workspace_path.glob('prebuilts/**/OWNERS'),
-    )
-    for path in owners_paths:
-      owners_zip.write(path, arcname=path.relative_to(workspace_path))
-
-
 def copy_artifacts(
     build_env: bazel.BuildEnv,
     missing_ok: bool = False,
@@ -264,4 +250,3 @@ def copy_artifacts(
   dist_path = pathlib.Path(build_env.dist_dir)
   (dist_path / 'artifacts').mkdir(parents=True, exist_ok=True)
   studio.copy_artifacts(build_env, _ARTIFACTS, missing_ok)
-  write_owners_zip(build_env)
