@@ -58,6 +58,7 @@ import com.android.tools.lint.detector.api.XmlContext
 import com.android.utils.XmlUtils.getFirstSubTagByName
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiField
 import java.io.File
 import kotlin.io.path.isRegularFile
@@ -66,7 +67,9 @@ import kotlin.streams.toList
 import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
+import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.fir.utils.KaFirCacheCleaner
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.psi.KtClass
@@ -2458,6 +2461,77 @@ class ProjectInitializerTest {
     )
   }
 
+  @Test
+  fun testAnalysisAPIServices() {
+    assumeTrue(useFirUast())
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="common" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="com/example/Common.kt"/>
+                </module>
+                <module name="desktop" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="com/example/Desktop.kt"/>
+                  <dep module="common" kind="dependsOn" />
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          kotlin(
+              "com/example/Common.kt",
+              """
+              package com.example
+
+              interface Platform {
+                val name: String
+              }
+              expect fun getPlatform(): Platform
+              """,
+            )
+            .indented(),
+          kotlin(
+              "com/example/Desktop.kt",
+              """
+              package com.example
+
+              class DesktopPlatform : Platform {
+                override val name: String
+                get() = "Desktop"
+              }
+
+              actual fun getPlatform(): Platform = DesktopPlatform()
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context?.project?.ideaProject?.checkAnalysisApiServices()
+          }
+          else -> {}
+        }
+      },
+    )
+  }
+
   @OptIn(KaExperimentalApi::class)
   @Test
   fun testExpectActualWithJustJvm() {
@@ -4441,6 +4515,13 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
   @After
   fun tearDown() {
     UastEnvironment.disposeApplicationEnvironment()
+  }
+
+  @OptIn(KaImplementationDetail::class)
+  private fun Project.checkAnalysisApiServices() {
+    val cacheCleaner = KaFirCacheCleaner.getInstance(this)
+    // Can't test type since all implementations are `private`
+    assertEquals("KaFirNoOpCacheCleaner", cacheCleaner::class.simpleName)
   }
 
   companion object {

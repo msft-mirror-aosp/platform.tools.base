@@ -24,6 +24,7 @@ import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.pom.java.LanguageLevel
 import java.io.File
 import kotlin.concurrent.withLock
@@ -151,6 +152,10 @@ private fun createAnalysisSession(
     }
   appLock.withLock {
     configureFirApplicationEnvironment(analysisSession.coreApplicationEnvironment)
+    // https://youtrack.jetbrains.com/issue/KT-80366
+    // To not trigger warnings on reading unloaded registry key,
+    // this should be _after_ [configureApplicationEnvironment].
+    Registry.get("kotlin.analysis.lowMemoryCacheCleanup").setValue(false)
   }
   configureFirProjectEnvironment(analysisSession, config)
 
