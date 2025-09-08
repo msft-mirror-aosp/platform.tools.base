@@ -77,7 +77,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Assume.assumeTrue
 import org.junit.ClassRule
 import org.junit.Test
@@ -2623,7 +2622,7 @@ class ProjectInitializerTest {
   fun testGeneratedAndTestFile() {
     // Test/generated sources cannot be in the same root as non-test/non-generated sources with
     // Lint's K1 project structure, so we can only test on K2.
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
@@ -2894,7 +2893,7 @@ class ProjectInitializerTest {
 
   @Test
   fun testKMPProjectK2() {
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
     val shared =
       project(
           kt(
@@ -3306,7 +3305,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
 
   @Test
   fun testKMPProjectK2_explicitPlatform() {
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
     val shared =
       project(
           kt(
@@ -3718,7 +3717,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
 
   @Test
   fun testKMPProjectK2_common_klib() {
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
     val shared =
       project(
           // TODO
@@ -4132,7 +4131,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
   /** Copied from [testKMPProjectK2], with klib removed and `iosApp/Hello.kt` added */
   @Test
   fun testLightClassSupportForNonJvm() {
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
 
     val shared =
       project(
