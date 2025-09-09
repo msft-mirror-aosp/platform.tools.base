@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.fixture.TestVersions;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.AndroidProjectUtilsV2;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.builder.model.v2.ide.AndroidArtifact;
 import com.android.builder.model.v2.ide.CodeShrinker;
 import com.android.builder.model.v2.ide.SyncIssue;
 import com.android.builder.model.v2.models.AndroidProject;
@@ -69,15 +70,27 @@ public class MinifyTest {
                         .getProject(null, ":")
                         .getAndroidProject();
 
-        CodeShrinker minifiedShrinker =
-                AndroidProjectUtilsV2.getVariantByName(model, "minified")
-                        .getMainArtifact()
-                        .getCodeShrinker();
+        AndroidArtifact mainArtifact =
+                AndroidProjectUtilsV2.getVariantByName(model, "minified").getMainArtifact();
+
+        CodeShrinker minifiedShrinker = mainArtifact.getCodeShrinker();
         assertThat(minifiedShrinker).isEqualTo(CodeShrinker.R8);
+
+        File minifiedMappingFile = mainArtifact.getMappingR8TextFile();
+        assertThat(minifiedMappingFile).isNotNull();
+        assertThat(minifiedMappingFile.getAbsolutePath())
+                .isEqualTo(
+                        project.file("build/outputs/mapping/minified/mapping.txt")
+                                .getAbsolutePath());
 
         CodeShrinker debugShrinker =
                 AndroidProjectUtilsV2.getDebugVariant(model).getMainArtifact().getCodeShrinker();
         assertThat(debugShrinker).isNull();
+        File debugMappingFile =
+                AndroidProjectUtilsV2.getDebugVariant(model)
+                        .getMainArtifact()
+                        .getMappingR8TextFile();
+        assertThat(debugMappingFile).isNull();
     }
 
     @Test

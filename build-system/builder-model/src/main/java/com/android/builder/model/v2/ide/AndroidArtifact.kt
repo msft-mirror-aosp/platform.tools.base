@@ -153,4 +153,9 @@ interface AndroidArtifact : AbstractArtifact, AndroidModel {
     val desugaredMethodsFiles: Collection<File>
 
     val generatedAssetsFolders: Collection<File>
+
+    /**
+     * R8 Optimization mapping file if exists. `OBFUSCATION_MAPPING_FILE` public artifact.
+     */
+    val mappingR8TextFile: File?
 }
