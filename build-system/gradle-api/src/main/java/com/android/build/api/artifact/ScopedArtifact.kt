@@ -16,12 +16,12 @@
 
 package com.android.build.api.artifact
 
-import org.gradle.api.file.RegularFile
+import org.gradle.api.file.Directory
 
 /**
  * List of [ScopedArtifacts.Scope] artifacts.
  */
-sealed class ScopedArtifact: Artifact.Single<RegularFile>(FILE, Category.INTERMEDIATES) {
+sealed class ScopedArtifact: Artifact.Single<Directory>(DIRECTORY, Category.INTERMEDIATES) {
 
     /**
      * .class files, result of sources compilation and/or external dependencies depending on the

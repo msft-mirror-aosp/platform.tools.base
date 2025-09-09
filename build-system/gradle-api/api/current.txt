@@ -160,7 +160,7 @@ package com.android.build.api.artifact {
     method public com.android.build.api.artifact.OutOperationRequest<FileTypeT> withName(String name);
   }
 
-  public abstract sealed class ScopedArtifact extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.RegularFile> {
+  public abstract sealed class ScopedArtifact extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.Directory> {
   }
 
   public static final class ScopedArtifact.CLASSES extends com.android.build.api.artifact.ScopedArtifact implements com.android.build.api.artifact.Artifact.Appendable com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
