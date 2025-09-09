@@ -506,7 +506,7 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
                     task.appMetadata
                 )
                 artifacts.setTaskInputToFinalProduct(
-                    InternalArtifactType.VERSION_CONTROL_INFO_FILE,
+                    SingleArtifact.VERSION_CONTROL_INFO_FILE,
                     task.versionControlInfoMetadata
                 )
             }

@@ -665,3 +665,5 @@ https://issuetracker.google.com/422422985
 https://issuetracker.google.com/438803230
   * com.android.build.api.variant.CanProduceConsumerProguardFiles
   * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
+https://issuetracker.google.com/443976533
+  * com.android.build.api.artifact.SingleArtifact$VERSION_CONTROL_INFO_FILE extends com.android.build.api.artifact.SingleArtifact

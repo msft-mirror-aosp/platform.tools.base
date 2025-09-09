@@ -16,12 +16,11 @@
 
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.builder.internal.packaging.IncrementalPackager.VERSION_CONTROL_INFO_FILE_NAME
 import com.android.tools.idea.insights.proto.BuildStamp
 import com.android.tools.idea.insights.proto.RepositoryInfo
 import com.android.tools.idea.insights.proto.VersionControlSystem
@@ -148,8 +147,7 @@ abstract class ExtractVersionControlInfoTask: NonIncrementalTask() {
             creationConfig.artifacts.setInitialProvider(
                 taskProvider,
                 ExtractVersionControlInfoTask::vcInfoFile
-            ).withName(VERSION_CONTROL_INFO_FILE_NAME)
-                .on(InternalArtifactType.VERSION_CONTROL_INFO_FILE)
+            ).on(SingleArtifact.VERSION_CONTROL_INFO_FILE)
         }
 
         override fun configure(task: ExtractVersionControlInfoTask) {

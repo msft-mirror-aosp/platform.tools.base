@@ -19,6 +19,7 @@ package com.android.build.gradle.tasks
 import com.android.SdkConstants
 import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.ArtifactTransformationRequest
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.BuiltArtifact
 import com.android.build.api.variant.FilterConfiguration
 import com.android.build.api.variant.MultiOutputHandler
@@ -672,7 +673,7 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                     creationConfig
                             .artifacts
                             .setTaskInputToFinalProduct(
-                                    VERSION_CONTROL_INFO_FILE,
+                                SingleArtifact.VERSION_CONTROL_INFO_FILE,
                                     packageAndroidArtifact.versionControlInfoFile)
                 }
                 if (isDeterministic(creationConfig)) {

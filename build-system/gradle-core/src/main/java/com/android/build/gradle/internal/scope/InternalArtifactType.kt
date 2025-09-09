@@ -22,7 +22,6 @@ import com.android.build.api.artifact.ArtifactKind
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.internal.api.BaselineProfiles
 import com.android.build.gradle.internal.tasks.GenerateRuntimeEnabledSdkTableTask
-import com.android.builder.internal.packaging.IncrementalPackager.VERSION_CONTROL_INFO_FILE_NAME
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFile
@@ -656,11 +655,6 @@ InternalArtifactType<T : FileSystemLocation>(
     // Directory containing the dex metadata files to be installed as baseline profiles on devices
     // It should also contain a file which writes out mappings from API level to ".dm" file
     object DEX_METADATA_DIRECTORY: InternalArtifactType<Directory>(DIRECTORY)
-
-    object VERSION_CONTROL_INFO_FILE: InternalArtifactType<RegularFile>(
-        FILE,
-        fileName = VERSION_CONTROL_INFO_FILE_NAME
-    )
 
     object RUNTIME_ENABLED_SDK_TABLE : InternalArtifactType<RegularFile>(
             FILE,

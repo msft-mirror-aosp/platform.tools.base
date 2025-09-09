@@ -39,17 +39,17 @@ sealed class SingleArtifact<T : FileSystemLocation>(
     override fun getFileSystemLocationName(): String {
         return fileName ?: ""
     }
+
     /**
      * Directory where APK files will be located. Some builds can be optimized for testing when
      * invoked from Android Studio. In such cases, the APKs are not suitable for deployment to
      * Play Store.
      */
-    object APK:
+    object APK :
         SingleArtifact<Directory>(DIRECTORY),
         ContainsMany,
         Replaceable,
         Transformable
-
 
     /**
      * Merged manifest file that will be used in the APK, Bundle and InstantApp packages.
@@ -62,28 +62,29 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      * For each module, unit test and android test variants will not have a manifest file
      * available.
      */
-    object MERGED_MANIFEST:
+    object MERGED_MANIFEST :
         SingleArtifact<RegularFile>(FILE, Category.INTERMEDIATES, "AndroidManifest.xml"),
         Replaceable,
         Transformable
 
-    object OBFUSCATION_MAPPING_FILE:
+    object OBFUSCATION_MAPPING_FILE :
         SingleArtifact<RegularFile>(FILE, Category.OUTPUTS, "mapping.txt") {
-            override fun getFolderName(): String = "mapping"
-        }
+
+        override fun getFolderName(): String = "mapping"
+    }
 
     /**
      * The final Bundle ready for consumption at Play Store.
      * This is only valid for the base module.
      */
-    object BUNDLE:
+    object BUNDLE :
         SingleArtifact<RegularFile>(FILE, Category.OUTPUTS),
         Transformable
 
     /**
      * The final AAR file as it would be published.
      */
-    object AAR:
+    object AAR :
         SingleArtifact<RegularFile>(FILE, Category.OUTPUTS),
         Transformable
 
@@ -102,7 +103,7 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      *
      * See [Choose resources to make public](https://developer.android.com/studio/projects/android-library.html#PrivateResources).
      */
-    object PUBLIC_ANDROID_RESOURCES_LIST: SingleArtifact<RegularFile>(FILE)
+    object PUBLIC_ANDROID_RESOURCES_LIST : SingleArtifact<RegularFile>(FILE)
 
     /**
      * The metadata for the library dependencies.
@@ -112,10 +113,9 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      */
 
     @Incubating
-    object METADATA_LIBRARY_DEPENDENCIES_REPORT: SingleArtifact<RegularFile>(FILE),
+    object METADATA_LIBRARY_DEPENDENCIES_REPORT : SingleArtifact<RegularFile>(FILE),
         Replaceable,
         Transformable
-
 
     /**
      * Assets that will be packaged in the resulting AAR, APK or Bundle.
@@ -126,7 +126,7 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      * To add new folders to [ASSETS], you must use [com.android.build.api.variant.Sources.assets]
      */
     @Incubating
-    object ASSETS:
+    object ASSETS :
         SingleArtifact<Directory>(DIRECTORY),
         Replaceable,
         Transformable
@@ -142,7 +142,7 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      *  check the universal APK as produced from a .aab file, prefer [APK].
      */
     @Incubating
-    object APK_FROM_BUNDLE:
+    object APK_FROM_BUNDLE :
         SingleArtifact<RegularFile>(FILE, Category.OUTPUTS)
 
     /**
@@ -153,7 +153,7 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      * (though some of them might already be stripped if they are from remote dependencies).
      */
     @Incubating
-    object MERGED_NATIVE_LIBS: SingleArtifact<Directory>(DIRECTORY)
+    object MERGED_NATIVE_LIBS : SingleArtifact<Directory>(DIRECTORY)
 
     /**
      * The text symbol output file (R.txt) containing a list of resources and their ids
@@ -161,5 +161,15 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      */
     @Incubating
     object RUNTIME_SYMBOL_LIST :
-            SingleArtifact<RegularFile>(FILE)
+        SingleArtifact<RegularFile>(FILE)
+
+    /**
+     * Points to the Version control information when VCS tagging is enabled (which is by default
+     * in release builds)
+     */
+    @Incubating
+    object VERSION_CONTROL_INFO_FILE : SingleArtifact<RegularFile>(
+        FILE,
+        fileName = "version-control-info.textproto"
+    )
 }
