@@ -3,19 +3,22 @@ WORKSPACE="$(pwd)"
 
 if [[ "$OSTYPE" = "linux"* ]]; then
   PLATFORM="linux-x86_64"
-  JDK_HOME="prebuilts/studio/jdk/jbr-next/linux/bin/"
+  JDK_HOME="${WORKSPACE}/prebuilts/studio/jdk/jbr-next/linux/bin/"
+  PYTHON3_HOME="${WORKSPACE}/prebuilts/python/linux-x86/bin/"
 elif [[ "$OSTYPE" = "darwin"* && ("$(arch)" == "x86_64" || "$(arch)" == "i386") ]]; then
   PLATFORM="darwin-x86_64"
-  JDK_HOME="prebuilts/studio/jdk/jbr-next/mac/Contents/Home/bin/"
+  JDK_HOME="${WORKSPACE}/prebuilts/studio/jdk/jbr-next/mac/Contents/Home/bin/"
+  PYTHON3_HOME="${WORKSPACE}/prebuilts/python/mac-x86/bin/"
 elif [[ "$OSTYPE" = "darwin"* && "$(arch)" == "arm64" ]]; then
   PLATFORM="darwin-arm64"
-  JDK_HOME="prebuilts/studio/jdk/jbr-next/mac-arm64/Contents/Home/bin/"
+  JDK_HOME="${WORKSPACE}/prebuilts/studio/jdk/jbr-next/mac-arm64/Contents/Home/bin/"
+  PYTHON3_HOME="${WORKSPACE}/prebuilts/python/mac-arm64/bin/"
 else
   echo "Unsupported platform: $OSTYPE"
   exit 1
 fi
 
 # Add JDK to the PATH, so rules_jvm_external can find the 'java' binary.
-export PATH="${WORKSPACE}/${JDK_HOME}:${PATH}"
+export PATH="${JDK_HOME}:${PYTHON3_HOME}:${PATH}"
 BAZELISK="$WORKSPACE/prebuilts/tools/$PLATFORM/bazel/bazelisk"
 "$BAZELISK" --max_idle_secs=60 run --config=ci //tools/base/bazel/ci -- $1
