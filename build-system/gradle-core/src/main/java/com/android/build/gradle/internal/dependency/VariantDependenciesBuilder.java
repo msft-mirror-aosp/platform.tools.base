@@ -731,18 +731,14 @@ public class VariantDependenciesBuilder {
         if (projectOptions.get(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP)) {
             return false;
         }
-        boolean kotlinPluginApplied =
+        boolean legacyOrBuiltInKotlinPluginApplied =
                 kgpApplied()
                         || projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)
                         || project.getPluginManager().hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID);
         // If KGP (legacy or built-in) is not applied, AGP should add the attribute.
         // If KGP (legacy or built-in) is applied, it will add the attribute, so AGP should not
-        // add it, except for screenshot-test and test-fixture components (these components are
-        // handled slightly differently and do not trigger the KGP code path that adds the
-        // attribute, so AGP should still add it).
-        return !kotlinPluginApplied
-                || componentType.isForScreenshotPreview()
-                || componentType.isTestFixturesComponent();
+        // add it.
+        return !legacyOrBuiltInKotlinPluginApplied;
     }
 
     private boolean kgpApplied() {

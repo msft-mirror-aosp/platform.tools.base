@@ -81,7 +81,6 @@ import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.createKotlinCompilation
 import com.android.build.gradle.internal.services.getBuildService
-import com.android.build.gradle.internal.services.toBaseVariant
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
 import com.android.build.gradle.internal.tasks.CheckDuplicateClassesTask
@@ -989,16 +988,8 @@ abstract class TaskManager(
             maybeCreateKotlinExtensionConfiguration()
         }
 
-        // Creating a KotlinCompilation instance currently requires access to the old BaseVariant (KT-77300).
-        // For a screenshot-test or test-fixtures component, there isn't a corresponding old
-        // BaseVariant, so we currently can't create a KotlinCompilation instance and therefore
-        // can't invoke Kotlin compiler plugins.
-        // This will be fixed soon (tracked by b/429981132).
-        val baseVariant = kotlinServices.baseExtensionProvider.orNull?.let { creationConfig.toBaseVariant(it) }
-        if (baseVariant != null) {
-            val kotlinCompilation = creationConfig.createKotlinCompilation(baseVariant)
-            addSubpluginOptionsForBuiltInKotlin(creationConfig, kotlinCompilation, kaptGenerateStubsProvider)
-        }
+        val kotlinCompilation = creationConfig.createKotlinCompilation()
+        addSubpluginOptionsForBuiltInKotlin(creationConfig, kotlinCompilation, kaptGenerateStubsProvider)
     }
 
     /**
