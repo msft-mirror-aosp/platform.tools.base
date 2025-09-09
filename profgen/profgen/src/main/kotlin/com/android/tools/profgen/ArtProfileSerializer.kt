@@ -257,7 +257,7 @@ enum class ArtProfileSerializer(
                 val sectionContents = mutableMapOf<FileSectionType, ByteArray>()
                 // Number of sections
                 os.writeUInt32(sections.size.toLong())
-                sections.forEach { section ->
+                for (section in sections) {
                     // File Section Type
                     os.writeUInt32(section.type.value)
                     // Offset
@@ -283,7 +283,7 @@ enum class ArtProfileSerializer(
                     }
                 }
                 // Write contents
-                sectionContents.forEach { (_, contents) ->
+                for ((_, contents) in sectionContents) {
                     os.write(contents)
                 }
             }
@@ -300,7 +300,7 @@ enum class ArtProfileSerializer(
                 // Number of Dex files
                 expectedSize += UINT_16_SIZE
                 out.writeUInt16(profileData.size)
-                profileData.forEach { entry ->
+                for (entry in profileData) {
                     val dexFile = entry.key
                     // Checksum
                     expectedSize += UINT_32_SIZE
