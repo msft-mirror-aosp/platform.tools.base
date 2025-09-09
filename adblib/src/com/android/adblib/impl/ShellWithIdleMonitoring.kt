@@ -82,7 +82,7 @@ internal abstract class ShellWithIdleMonitoring<T, TShellCollector, Command>(
         //    cancels the whole flow with a `TimeoutException`.
         val heartbeat = HeartbeatRecorder(host.timeProvider)
         val forwardingCollector = createForwardingCollector(host, heartbeat, parameters.shellCollector)
-        val heartbeatDetector = HeartbeatDetector(host, heartbeat, parameters.commandOutputTimeout)
+        val heartbeatDetector = HeartbeatDetector(host, heartbeat, parameters.commandOutputTimeout, parameters.command)
         coroutineScope {
             // Launch our command (in)activity detector
             launch {
@@ -187,10 +187,11 @@ internal abstract class ShellWithIdleMonitoring<T, TShellCollector, Command>(
      * A coroutine helper class that ensures [heartbeat] is updated at least every
      * [commandIdleTimeout] duration.
      */
-    protected class HeartbeatDetector(
+    protected class HeartbeatDetector<Command>(
       private val host: AdbSessionHost,
       private val heartbeat: HeartbeatRecorder,
-      private val commandIdleTimeout: Duration
+      private val commandIdleTimeout: Duration,
+      private val command: Command
     ) {
         private val timeProvider: SystemNanoTimeProvider
             get() = host.timeProvider
@@ -226,7 +227,7 @@ internal abstract class ShellWithIdleMonitoring<T, TShellCollector, Command>(
             val nanosFromLastHeartbeat = timeProvider.nanoTime() - heartbeat.lastRecorded.nanos
             val timeoutNanos = commandIdleTimeout.toSafeNanos()
             if (nanosFromLastHeartbeat >= timeoutNanos) {
-                throw TimeoutException("Command has been inactive for more than " +
+                throw TimeoutException("Command `$command` has been inactive for more than " +
                                        "${commandIdleTimeout.toSafeMillis()} millis")
             }
         }

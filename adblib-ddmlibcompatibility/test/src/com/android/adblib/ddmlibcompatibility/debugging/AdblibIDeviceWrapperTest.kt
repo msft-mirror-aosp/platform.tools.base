@@ -304,7 +304,7 @@ class AdblibIDeviceWrapperTest {
         val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
         val listReceiver = ListReceiver()
         exceptionRule.expect(TimeoutException::class.java)
-        exceptionRule.expectMessage("Command has been inactive for more than 1000 millis")
+        exceptionRule.expectMessage("Command `logcat -v long` has been inactive for more than 1000 millis")
 
         // Act
         // Logcat command never exits, and so this should timeout due to no output after one second
