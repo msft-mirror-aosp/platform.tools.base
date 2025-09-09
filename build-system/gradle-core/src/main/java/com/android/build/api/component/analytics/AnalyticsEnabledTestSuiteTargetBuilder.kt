@@ -16,44 +16,29 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.variant.JUnitEngineSpecBuilder
 import com.android.build.api.variant.PropertyAccessNotAllowedException
-import com.android.build.api.variant.TestSuiteBuilder
 import com.android.build.api.variant.TestSuiteTargetBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 
-open class AnalyticsEnabledTestSuiteBuilder(
-    private val delegate: TestSuiteBuilder,
+open class AnalyticsEnabledTestSuiteTargetBuilder(
+    private val delegate: TestSuiteTargetBuilder,
     val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
-): TestSuiteBuilder {
+): TestSuiteTargetBuilder {
 
     override var enable: Boolean
         get() = throw PropertyAccessNotAllowedException("enable", "HostTestBuilder")
         set(value) {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.UNIT_TEST_ENABLED_VALUE
+                VariantMethodType.TEST_SUITE_TARGET_BUILDER_ENABLE_VALUE
             delegate.enable = value
         }
 
-    override val junitEngineSpec: JUnitEngineSpecBuilder
+    override val targetDevices: MutableList<String>
         get() {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.JUNIT_ENGINE_SPEC_BUILDER_VALUE
-            return AnalyticsEnabledJUnitEngineSpecBuilder(
-                delegate.junitEngineSpec,
-                stats)
+                VariantMethodType.TEST_SUITE_TARGET_BUILDER_TARGET_DEVICES_VALUE
+            return delegate.targetDevices
         }
 
     override fun getName(): String = delegate.name
-
-    override val targets: Map<String, TestSuiteTargetBuilder>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TEST_SUITE_BUILDER_TARGETS_VALUE
-            return delegate.targets.mapValues { target ->
-                AnalyticsEnabledTestSuiteTargetBuilder(
-                    target.value,
-                    stats)
-            }
-        }
 }

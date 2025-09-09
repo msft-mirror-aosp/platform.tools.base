@@ -19,11 +19,11 @@ package com.android.build.gradle.integration.testing.suites
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.HasTestSuites
+import com.android.build.api.variant.TestSuite
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.internal.testsuites.HasTestSuites
 import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
-import com.android.build.gradle.internal.testsuites.TestSuite
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.gradle.api.Project

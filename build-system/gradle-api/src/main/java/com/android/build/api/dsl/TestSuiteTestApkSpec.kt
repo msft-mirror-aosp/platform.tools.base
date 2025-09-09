@@ -22,7 +22,6 @@ import org.gradle.api.Incubating
  * Definition of device test sources for a test suite. Device test source files are compiled and
  * therefore dependencies can be attached to them.
  */
-/** @suppress */
 @Incubating
 interface TestSuiteTestApkSpec {
 

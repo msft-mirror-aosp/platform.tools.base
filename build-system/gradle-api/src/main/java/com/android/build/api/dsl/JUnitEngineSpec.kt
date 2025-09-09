@@ -23,7 +23,6 @@ import org.gradle.api.provider.Provider
 /**
  * Spec for running a JUnit engine against a test suite.
  */
-/** @suppress */
 @Incubating
 interface JUnitEngineSpec {
 

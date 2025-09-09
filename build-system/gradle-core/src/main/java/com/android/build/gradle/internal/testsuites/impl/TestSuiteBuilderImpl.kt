@@ -17,13 +17,13 @@
 package com.android.build.gradle.internal.testsuites.impl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.api.dsl.JUnitEngineSpec
+import com.android.build.api.variant.JUnitEngineSpecBuilder
+import com.android.build.api.variant.TestSuiteBuilder
 import com.android.build.gradle.internal.core.dsl.AgpTestSuiteDslInfo
-import com.android.build.gradle.internal.dsl.TestSuiteAssetsSpecImpl
 import com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl
+import com.android.build.gradle.internal.dsl.TestSuiteAssetsSpecImpl
 import com.android.build.gradle.internal.services.BaseServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
-import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter
@@ -91,7 +91,7 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
     }
 
 
-    override val junitEngineSpec: JUnitEngineSpec =
+    override val junitEngineSpec: JUnitEngineSpecBuilder =
         JUnitEngineSpecForVariantBuilder(
             objects,
             testSuiteDslInfo.testSuite.useJunitEngine as JUnitEngineSpecImpl
@@ -117,7 +117,7 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
 internal class JUnitEngineSpecForVariantBuilder(
     objects: ObjectFactory,
     dslDefinedJUnitEngineSpec: JUnitEngineSpecImpl
-): JUnitEngineSpec {
+): JUnitEngineSpecBuilder {
     override val includeEngines: MutableSet<String> =
         mutableSetOf<String>().also { list ->
             list.addAll(dslDefinedJUnitEngineSpec.includeEngines)

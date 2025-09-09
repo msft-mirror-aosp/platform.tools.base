@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testsuites
+package com.android.build.api.variant
 
+/**
+ * [Variant] that optionally have [TestSuite]s.
+ */
 interface HasTestSuites {
 
     /**
-     * Variant's [TestSuite] configuration to configure test suites associated with this
+     * Variant's [com.android.build.gradle.internal.testsuites.TestSuite] configuration to configure test suites associated with this
      * variant.
      *
      * @return a [Map] which keys are unique names within the test suites

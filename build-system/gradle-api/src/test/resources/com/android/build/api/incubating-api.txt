@@ -665,6 +665,23 @@ https://issuetracker.google.com/422422985
 https://issuetracker.google.com/438803230
   * com.android.build.api.variant.CanProduceConsumerProguardFiles
   * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
+https://issuetracker.google.com/443174826
+  * com.android.build.api.variant.JUnitEngineSpec
+  * com.android.build.api.variant.JUnitEngineSpec.addInputProperty: void (java.lang.String, java.lang.String)
+  * com.android.build.api.variant.JUnitEngineSpec.addInputProperty: void (java.lang.String, org.gradle.api.provider.Provider<java.lang.String>)
+  * com.android.build.api.variant.JUnitEngineSpec.getEnginesDependencies: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.variant.JUnitEngineSpec.getIncludeEngines: java.util.Set<java.lang.String> ()
+  * com.android.build.api.variant.JUnitEngineSpec.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
+  * com.android.build.api.variant.JUnitEngineSpecBuilder implements com.android.build.api.variant.JUnitEngineSpec
+  * com.android.build.api.variant.JUnitEngineSpecBuilder.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
+  * com.android.build.api.variant.TestSuite.getJunitEngineSpec: com.android.build.api.variant.JUnitEngineSpec ()
+  * com.android.build.api.variant.TestSuiteTarget implements org.gradle.api.Named
+  * com.android.build.api.variant.TestSuiteTarget.getEnabled: boolean ()
+  * com.android.build.api.variant.TestSuiteTarget.getTargetDevices: java.util.Collection<java.lang.String> ()
+  * com.android.build.api.variant.TestSuiteTargetBuilder implements org.gradle.api.Named
+  * com.android.build.api.variant.TestSuiteTargetBuilder.getEnable: boolean ()
+  * com.android.build.api.variant.TestSuiteTargetBuilder.getTargetDevices: java.util.List<java.lang.String> ()
+  * com.android.build.api.variant.TestSuiteTargetBuilder.setEnable: void (boolean)
 https://issuetracker.google.com/443715703
   * com.android.build.api.variant.Component.configureJavaCompileTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.compile.JavaCompile, kotlin.Unit>)
 https://issuetracker.google.com/443976533

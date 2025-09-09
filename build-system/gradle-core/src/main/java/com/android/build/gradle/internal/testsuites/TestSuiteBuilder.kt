@@ -16,32 +16,9 @@
 
 package com.android.build.gradle.internal.testsuites
 
-import com.android.build.api.dsl.JUnitEngineSpec
-import org.gradle.api.Named
-
 /**
- * Interface to configure [TestSuite] during the [com.android.build.api.variant.AndroidComponentsExtension.beforeVariants]
+ * Interface to configure [com.android.build.api.variant.TestSuite] during the [com.android.build.api.variant.AndroidComponentsExtension.beforeVariants]
  * callbacks.
  *
  * TODO : Provide example before moving to public interfaces
  */
-/** @suppress */
-interface TestSuiteBuilder: Named {
-
-    /**
-     * Enables or disable the test suite for the current variant.
-     */
-    var enable: Boolean
-
-    /**
-     * Configure the [JUnitEngineSpec] for this test suite in this variant.
-     */
-    val junitEngineSpec: JUnitEngineSpec
-
-    /**
-     * Configure the list of [TestSuiteTargetBuilder] for this test suite in this variant.
-     *
-     * The [Map] keys are the test suite names.
-     */
-    val targets: Map<String, TestSuiteTargetBuilder>
-}

@@ -16,10 +16,9 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.dsl.JUnitEngineSpec
-import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
-import com.android.build.gradle.internal.testsuites.TestSuiteTarget
-import com.android.build.gradle.internal.testsuites.TestSuiteTargetBuilder
+import com.android.build.api.variant.JUnitEngineSpecBuilder
+import com.android.build.api.variant.TestSuiteBuilder
+import com.android.build.api.variant.TestSuiteTargetBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -47,11 +46,13 @@ class AnalyticsEnabledTestSuiteBuilderTest {
 
     @Test
     fun junitEngineSpec() {
-        val junitEngineSpec = Mockito.mock<JUnitEngineSpec>()
-        Mockito.`when`(proxy.junitEngineSpec).thenReturn(junitEngineSpec)
+        val junitEngineSpec = Mockito.mock<JUnitEngineSpecBuilder>()
+        Mockito.`when`(delegate.junitEngineSpec).thenReturn(junitEngineSpec)
         val junitEngineSpecProxy = proxy.junitEngineSpec
 
-        Truth.assertThat(junitEngineSpecProxy).isEqualTo(junitEngineSpec)
+        Truth.assertThat(junitEngineSpecProxy).isInstanceOf(
+            AnalyticsEnabledJUnitEngineSpecBuilder::class.java
+        )
 
         Truth.assertThat(
             stats.variantApiAccess.variantAccessList.first().type

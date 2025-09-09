@@ -23,11 +23,11 @@ import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.DeviceTest
 import com.android.build.api.variant.HasHostTests
+import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.HasUnitTest
 import com.android.build.api.variant.LibraryVariant
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.TestedComponentPackaging
-import com.android.build.gradle.internal.ProguardFileType
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -43,19 +43,18 @@ import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
-import com.android.build.gradle.internal.testsuites.HasTestSuites
+import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableMap
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.BuilderConstants
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import com.android.build.gradle.internal.utils.parseTargetHash
-import com.android.build.gradle.options.BooleanOption
 import javax.inject.Inject
 
 open class LibraryVariantImpl @Inject constructor(

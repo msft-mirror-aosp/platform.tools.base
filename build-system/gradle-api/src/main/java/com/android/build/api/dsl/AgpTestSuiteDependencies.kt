@@ -22,7 +22,6 @@ import org.gradle.api.artifacts.dsl.DependencyCollector
 /**
  * DSL element to add dependencies to an [AgpTestSuite]
  */
-/** @suppress */
 @Incubating
 interface AgpTestSuiteDependencies {
 

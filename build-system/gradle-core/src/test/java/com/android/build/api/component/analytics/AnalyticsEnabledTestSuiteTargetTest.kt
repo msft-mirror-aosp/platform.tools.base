@@ -16,9 +16,7 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.variant.JUnitEngineSpecBuilder
-import com.android.build.api.variant.TestSuite
-import com.android.build.gradle.internal.fixtures.FakeObjectFactory
+import com.android.build.api.variant.TestSuiteTarget
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -29,45 +27,39 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
-import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
-class AnalyticsEnabledTestSuiteTest {
+class AnalyticsEnabledTestSuiteTargetTest {
     @get:Rule
     val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestSuite = mock()
+    private val delegate: TestSuiteTarget = mock()
 
     private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledTestSuite by lazy {
-        object: AnalyticsEnabledTestSuite(delegate, stats, FakeObjectFactory.factory) {}
+    private val proxy: AnalyticsEnabledTestSuiteTarget by lazy {
+        object: AnalyticsEnabledTestSuiteTarget(delegate, stats) {}
     }
 
     @Test
-    fun junitEngineSpec() {
-        val junitEngineSpec = Mockito.mock<JUnitEngineSpecBuilder>()
-        Mockito.`when`(delegate.junitEngineSpec).thenReturn(junitEngineSpec)
-        val junitEngineSpecProxy = proxy.junitEngineSpec
-
-        Truth.assertThat(junitEngineSpecProxy).isInstanceOf(
-            AnalyticsEnabledJUnitEngineSpec::class.java
-        )
+    fun testEnable() {
+        Mockito.`when`(delegate.enabled).thenReturn(true)
+        Truth.assertThat(proxy.enabled).isTrue()
+        Mockito.verify(delegate, times(1)).enabled
 
         Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.JUNIT_ENGINE_SPEC_VALUE)
-        verify(delegate, times(1))
-            .junitEngineSpec
+            stats.variantApiAccess.variantAccessList.first().type
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGET_ENABLE_VALUE)
     }
 
     @Test
-    fun target() {
-        proxy.targets
+    fun testTargetDevices() {
+        val targetDevices = listOf("device1")
+        Mockito.`when`(proxy.targetDevices).thenReturn(targetDevices)
+        Truth.assertThat(proxy.targetDevices).containsExactly("device1")
 
         Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGETS_VALUE)
-        verify(delegate, times(1))
-            .targets
+            stats.variantApiAccess.variantAccessList.first().type
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGET_TARGET_DEVICES_VALUE)
+        Mockito.verify(delegate, times(1)).targetDevices
     }
 }

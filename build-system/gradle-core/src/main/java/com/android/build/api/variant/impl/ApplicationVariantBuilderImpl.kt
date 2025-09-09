@@ -24,12 +24,12 @@ import com.android.build.api.variant.DependenciesInfoBuilder
 import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.PropertyAccessNotAllowedException
+import com.android.build.api.variant.TestSuiteBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
 import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
-import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.builder.errors.IssueReporter
 import com.google.wireless.android.sdk.stats.GradleBuildVariant

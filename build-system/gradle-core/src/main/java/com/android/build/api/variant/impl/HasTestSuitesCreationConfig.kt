@@ -16,8 +16,8 @@
 
 package com.android.build.api.variant.impl
 
+import com.android.build.api.variant.TestSuiteBuilder
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
-import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
 
 interface HasTestSuitesCreationConfig {
 

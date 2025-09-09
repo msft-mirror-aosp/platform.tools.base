@@ -14,30 +14,36 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testsuites
+package com.android.build.api.variant
 
 import com.android.build.api.dsl.TestTaskContext
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 import org.gradle.api.tasks.testing.Test
 
+/**
+ * Model for test suites.
+ *
+ * This object is accessible on subtypes of [Variant] that implement [HasTestSuites], via
+ * [HasTestSuites.suites].
+ */
 interface TestSuite: Named {
 
     /**
      * Configure the test tasks for this test target.
      *
-     * There can be one to many instances of [Test] tasks for a particular test suite target. For
-     * instance, if the test suite targets more than one device, AGP may decide to create one [Test]
+     * There can be one to many instances of [org.gradle.api.tasks.testing.Test] tasks for a particular test suite target. For
+     * instance, if the test suite targets more than one device, AGP may decide to create one [org.gradle.api.tasks.testing.Test]
      * instance per device.
      *
      * The configuration block can use the [action]'s context parameter to disambiguate between each
-     * [Test] task instance.
+     * [org.gradle.api.tasks.testing.Test] task instance.
      *
-     * Do not make assumption about how AGP decides to allocate [Test] task instances per device, as
+     * Do not make assumption about how AGP decides to allocate [org.gradle.api.tasks.testing.Test] task instances per device, as
      * each AGP version can potentially change it in future release, always use the context object to
-     * determine what the [Test] task applies to.
+     * determine what the [org.gradle.api.tasks.testing.Test] task applies to.
      *
-     * @param action a block to configure the [Test] tasks associated with this test suite target.
+     * @param action a block to configure the [org.gradle.api.tasks.testing.Test] tasks associated with this test suite target.
      *
      * Example :
      * ```(kotlin)
@@ -53,7 +59,7 @@ interface TestSuite: Named {
      *      }
      *  }
      * ```
-     * @param action to configure the [Test] task.
+     * @param action to configure the [org.gradle.api.tasks.testing.Test] task.
      */
     fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
 

@@ -18,9 +18,9 @@ package com.android.build.gradle.integration.testing.suites
 
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.HasTestSuites
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.internal.testsuites.HasTestSuites
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
 import org.junit.Rule

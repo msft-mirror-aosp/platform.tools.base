@@ -30,6 +30,7 @@ import com.android.build.api.variant.DependenciesInfoBuilder
 import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.DeviceTest
 import com.android.build.api.variant.HasHostTests
+import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.HasUnitTest
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.VariantOutputConfiguration
@@ -48,7 +49,6 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
-import com.android.build.gradle.internal.testsuites.HasTestSuites
 import com.android.build.gradle.internal.utils.DefaultApkOutput
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableMap

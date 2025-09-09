@@ -18,11 +18,11 @@ package com.android.build.gradle.internal.component
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.JUnitEngineSpec
+import com.android.build.api.variant.TestSuite
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
-import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
-import com.android.build.gradle.internal.testsuites.TestSuite
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 

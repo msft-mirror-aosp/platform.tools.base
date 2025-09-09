@@ -14,11 +14,24 @@
  * limitations under the License.
  */
 
-package com.android.build.api.dsl
+package com.android.build.api.variant
+
+import org.gradle.api.Incubating
+import org.gradle.api.Named
 
 /**
- * Definition of asset sources for a test suite. These source files are not compiled therefore
- * there is no notion of dependencies attached to them.
+ * Model for running a [TestSuite] in a context (local attached devices, gmd, etc...)
  */
-interface TestSuiteAssetsSpec {
+@Incubating
+interface TestSuiteTarget: Named {
+
+    @get:Incubating
+    val enabled: Boolean
+
+    /**
+     * GMD identifier to deploy APKs to. The identifier must be defined in the
+     * [com.android.build.api.dsl.ManagedDevices] for this module.
+     */
+    @get:Incubating
+    val targetDevices: Collection<String>
 }

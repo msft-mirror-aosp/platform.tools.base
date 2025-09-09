@@ -14,28 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testsuites
+package com.android.build.api.variant
 
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import org.gradle.api.Incubating
-import org.gradle.api.Named
 
-/**
- * Test suite target builder.
- */
 @Incubating
-interface TestSuiteTargetBuilder: Named {
-
-    @get:Incubating
-    @set:Incubating
-    var enable: Boolean
-
+interface JUnitEngineSpecBuilder: JUnitEngineSpec {
     /**
-     * Targeted devices for this test suite in this variant.
+     * Returns a mutable list of inputs required by the junit engine running the test suite.
      *
-     * AGP may choose to allocate multiple Test tasks for running the test suites depending on the
-     * targeted devices, so the list of devices must be fixed before the
-     * [com.android.build.api.variant.AndroidComponentsExtension.onVariants] run.
      */
     @get:Incubating
-    val targetDevices: MutableList<String>
+    override val inputs: MutableList<AgpTestSuiteInputParameters>
 }
