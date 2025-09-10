@@ -3073,7 +3073,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
                 are incompatible, or can lead to bugs. One such incompatibility is \
                 compiling with a version of the Android support libraries that is not \
                 the latest version (or in particular, a version lower than your \
-                `targetSdkVersion`).""",
+                `targetSdk`).""",
         category = Category.CORRECTNESS,
         priority = 8,
         severity = Severity.FATAL,
@@ -3298,7 +3298,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
                 from significant security and performance improvements, while still allowing \
                 your app or sdk to run on older Android versions (down to the `minSdkVersion`).
 
-                To update your `targetSdkVersion`, follow the steps from \
+                To update your `targetSdk`, follow the steps from \
                 "Meeting Google Play requirements for target API level", \
                 https://developer.android.com/distribute/best-practices/develop/target-sdk.html
                 """,
@@ -3352,12 +3352,12 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           explanation =
             """
                 When your application or sdk runs on a version of Android that is more recent than your \
-                `targetSdkVersion` specifies that it has been tested with, various compatibility modes \
+                `targetSdk` specifies that it has been tested with, various compatibility modes \
                 kick in. This ensures that your application continues to work, but it may look out of \
-                place. For example, if the `targetSdkVersion` is less than 14, your app may get an \
+                place. For example, if the `targetSdk` is less than 14, your app may get an \
                 option button in the UI.
 
-                To fix this issue, set the `targetSdkVersion` to the highest available value. Then test \
+                To fix this issue, set the `targetSdk` to the highest available value. Then test \
                 your app to make sure everything works correctly. You may want to consult the \
                 compatibility notes to see what changes apply to each version you are adding support \
                 for: https://developer.android.com/reference/android/os/Build.VERSION_CODES.html as well \
@@ -3382,10 +3382,10 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         briefDescription = "Manually Edited TargetSdkVersion",
         explanation =
           """
-        Updating the `targetSdkVersion` of an app is seemingly easy: just increment the \
-        `targetSdkVersion` number in the manifest file!
+        Updating the `targetSdk` of an app is seemingly easy: just increment the \
+        `targetSdk` number in the build script!
 
-        But that's not actually safe. The `targetSdkVersion` controls a wide range of \
+        But that's not actually safe. The `targetSdk` controls a wide range of \
         behaviors that change from release to release, and to update, you should carefully \
         consult the documentation to see what has changed, how your app may need to adjust, \
         and then of course, carefully test everything.
@@ -3396,12 +3396,12 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         your app.
 
         This lint check does something very simple: it just detects whether it looks like \
-        you've manually edited the targetSdkVersion field in a build.gradle file. Obviously, \
+        you've manually edited the targetSdk field in a build script. Obviously, \
         as part of doing the above careful steps, you may end up editing the value, which \
         would trigger the check -- and it's safe to ignore it; this lint check *only* runs \
         in the IDE, not from the command line; it's sole purpose to bring *awareness* to the \
         (many) developers who haven't been aware of this issue and have just bumped the \
-        targetSdkVersion, recompiled, and uploaded their updated app to the Google Play Store, \
+        targetSdk, recompiled, and uploaded their updated app to the Google Play Store, \
         sometimes leading to crashes or other problems on newer devices.
         """,
         category = Category.CORRECTNESS,
