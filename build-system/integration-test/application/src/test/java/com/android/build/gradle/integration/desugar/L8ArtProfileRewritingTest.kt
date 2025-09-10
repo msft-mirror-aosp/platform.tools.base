@@ -86,7 +86,7 @@ class L8ArtProfileRewritingTest {
             """
                 -keep class com.example.helloworld.Data { <methods>; }
             """.trimIndent()
-        FileUtils.createFile(
+        FileUtils.writeToFile(
             project.file("app/proguard-rules.pro"), proguardRulesFileContent
         )
 

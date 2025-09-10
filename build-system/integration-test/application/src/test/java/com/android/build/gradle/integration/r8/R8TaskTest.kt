@@ -50,6 +50,7 @@ class R8TaskTest {
                 }
                 testBuildType = "release"
             }
+            files.add("proguard-rules.pro", "")
         }
     }
 
@@ -86,7 +87,7 @@ class R8TaskTest {
                             "foo()Ltest/B;", "bar()Ltest/C;")
                     })
                 }
-                files.add("proguard-rules.pro", "-keep class test.A { *; }")
+                files.update("proguard-rules.pro").replaceWith( "-keep class test.A { *; }")
             }
         }
         val app = build.androidApplication()
@@ -191,8 +192,8 @@ class R8TaskTest {
                         }
                     """.trimIndent()
                 )
-                files.add(
-                    "proguard-rules.pro",
+                files.update(
+                    "proguard-rules.pro").replaceWith(
                     """
                         -keep class example.MyInterface* { *; }
                         -dontobfuscate

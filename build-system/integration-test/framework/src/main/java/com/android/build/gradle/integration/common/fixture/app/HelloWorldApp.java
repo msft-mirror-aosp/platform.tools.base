@@ -155,6 +155,10 @@ public class HelloWorldApp extends GradleProject {
                         + "}\n");
     }
 
+    protected TestSourceFile getProguardRules() {
+        return new TestSourceFile("proguard-rules.pro", "");
+    }
+
     protected HelloWorldApp() {
         this(NAMESPACE);
     }
@@ -166,7 +170,8 @@ public class HelloWorldApp extends GradleProject {
                 getResValuesSource(),
                 getResLayoutSource(),
                 getManifest(),
-                getAndroidTestSource());
+                getAndroidTestSource(),
+                getProguardRules());
     }
 
     protected HelloWorldApp(String namespace, String plugin) {
