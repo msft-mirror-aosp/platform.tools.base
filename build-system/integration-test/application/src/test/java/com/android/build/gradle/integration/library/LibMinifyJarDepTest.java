@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.library;
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 
 import org.junit.After;
@@ -34,9 +33,7 @@ public class LibMinifyJarDepTest {
 
     @Before
     public void setUp() throws IOException, InterruptedException {
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("clean", "assembleDebug", "assembleAndroidTest");
+        project.executor().run("clean", "assembleDebug", "assembleAndroidTest");
     }
 
     @After

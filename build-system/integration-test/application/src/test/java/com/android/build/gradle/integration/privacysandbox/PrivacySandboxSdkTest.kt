@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.privacysandbox
 
 import com.android.SdkConstants
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -47,7 +46,6 @@ class PrivacySandboxSdkTest {
     val rule = privacySandboxSampleProject()
 
     private fun GradleBuild.configuredExecutor() = executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
             .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
             .withPerTestPrefsRoot(true)

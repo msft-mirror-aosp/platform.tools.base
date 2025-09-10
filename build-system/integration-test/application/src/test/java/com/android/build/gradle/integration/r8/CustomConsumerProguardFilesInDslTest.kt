@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.r8
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -49,11 +48,9 @@ class CustomConsumerProguardFilesInDslTest {
                 files.add("proguard-rules.pro", "some proguard statements")
             }
         }
-        project.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("clean")
+        project.executor.run("clean")
 
-        project.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("assemble")
+        project.executor.run("assemble")
 
         // check the resulting aar.
         project.kotlinMultiplatformLibrary(":lib").assertAar(AarSelector.NO_BUILD_TYPE) {

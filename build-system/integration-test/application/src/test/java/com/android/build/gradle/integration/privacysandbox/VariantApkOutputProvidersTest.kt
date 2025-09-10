@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.privacysandbox
 
 import com.android.build.api.variant.ApkOutput
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 
@@ -36,7 +35,6 @@ class VariantApkOutputProvidersTest {
     }
 
     private fun executor() = rule.build.executor
-        .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
         .withPerTestPrefsRoot(true)
         .with(BooleanOption.ENABLE_PROFILE_JSON, true) // Regression test for b/237278679
