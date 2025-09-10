@@ -306,6 +306,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
                 tomlVersion,
                 tomlValue.getText(),
                 statementCookie,
+                property,
                 false,
               )
             }
@@ -313,7 +314,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         } else if (version < 0) {
           checkIntegerAsString(context, value, statementCookie, valueCookie)
         } else {
-          checkTargetSdkVersion(context, version, value, statementCookie)
+          checkTargetSdkVersion(context, version, value, statementCookie, property)
         }
       } else if (property == "minSdkVersion" || property == "minSdk") {
         val version = getSdkVersion(value, valueCookie)
@@ -714,6 +715,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     version: Int,
     versionString: String,
     statementCookie: Any,
+    property: String,
     includeFix: Boolean = true,
   ) {
     if (version > 0 && version < context.client.highestKnownApiLevel) {
@@ -774,7 +776,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           lastTargetSdkVersionFile = context.file
         } else if (version > lastTargetSdkVersion) {
           val message =
-            "It looks like you just edited the `targetSdkVersion` from $lastTargetSdkVersion to $version in the editor. " +
+            "It looks like you just edited the `$property` from $lastTargetSdkVersion to $version in the editor. " +
               "Be sure to consult the documentation on the behaviors that change as result of this. " +
               "The Android SDK Upgrade Assistant can help with safely migrating."
           report(
@@ -2055,7 +2057,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           val targetSdkString = value.getActualValue()?.toString() ?: continue
           val targetSdk = getSdkVersion(targetSdkString, value)
           if (targetSdk != -1) {
-            checkTargetSdkVersion(context, targetSdk, targetSdkString, value)
+            checkTargetSdkVersion(context, targetSdk, targetSdkString, value, key)
           }
         }
       }

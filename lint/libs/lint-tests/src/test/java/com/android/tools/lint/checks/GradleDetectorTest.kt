@@ -5215,7 +5215,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun testTargetEdited() {
+  fun testTargetSdkVersionEdited() {
     val temporaryFolder = TemporaryFolder()
     temporaryFolder.create()
     try {
@@ -5281,6 +5281,80 @@ class GradleDetectorTest : AbstractCheckTest() {
           settings.gradle:5: Error: It looks like you just edited the targetSdkVersion from 32 to 33 in the editor. Be sure to consult the documentation on the behaviors that change as result of this. The Android SDK Upgrade Assistant can help with safely migrating. [EditedTargetSdkVersion]
                   targetSdkVersion 33
                   ~~~~~~~~~~~~~~~~~~~
+          1 errors, 0 warnings
+          """
+        )
+    } finally {
+      temporaryFolder.delete()
+    }
+  }
+
+  fun testTargetSdkEdited() {
+    val temporaryFolder = TemporaryFolder()
+    temporaryFolder.create()
+    try {
+      val rootDirectory = temporaryFolder.root.canonicalFile
+
+      fun createLintTask(targetSdkVersion: Int, name: String = "build.gradle"): TestLintTask {
+        return lint()
+          .rootDirectory(rootDirectory)
+          .files(
+            gradle(
+              name,
+              """
+                apply plugin: 'com.android.application'
+
+                android {
+                    defaultConfig {
+                        targetSdk $targetSdkVersion
+                    }
+                }
+                """,
+            )
+              .indented()
+          )
+          .issues(EDITED_TARGET_SDK_VERSION)
+          .incremental(name)
+          .clientFactory {
+            com.android.tools.lint.checks.infrastructure
+              .TestLintClient(LintClient.CLIENT_STUDIO)
+              .apply { addCleanupDir(rootDirectory) }
+          }
+          .testModes(TestMode.DEFAULT)
+      }
+
+      // Initial edit: no problem
+      createLintTask(31).run().expectClean()
+
+      // Lower version: no problem
+      createLintTask(30).run().expectClean()
+
+      // Higher person: problem
+      createLintTask(32)
+        .run()
+        .expect(
+          """
+          build.gradle:5: Error: It looks like you just edited the targetSdk from 31 to 32 in the editor. Be sure to consult the documentation on the behaviors that change as result of this. The Android SDK Upgrade Assistant can help with safely migrating. [EditedTargetSdkVersion]
+                  targetSdk 32
+                  ~~~~~~~~~~~~
+          1 errors, 0 warnings
+          """
+        )
+
+      // Ok if you change it back
+      createLintTask(31).run().expectClean()
+
+      // OK on a different file
+      createLintTask(32, "settings.gradle").run().expectClean()
+
+      // ...until we edit it there too
+      createLintTask(33, "settings.gradle")
+        .run()
+        .expect(
+          """
+          settings.gradle:5: Error: It looks like you just edited the targetSdk from 32 to 33 in the editor. Be sure to consult the documentation on the behaviors that change as result of this. The Android SDK Upgrade Assistant can help with safely migrating. [EditedTargetSdkVersion]
+                  targetSdk 33
+                  ~~~~~~~~~~~~
           1 errors, 0 warnings
           """
         )
