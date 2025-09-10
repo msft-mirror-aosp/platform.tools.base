@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.integration.dagger
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
@@ -44,8 +43,6 @@ class DaggerHiltFlavoredTest {
 
     @Test
     fun doBuild() {
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:assembleMinApi21DemoDebug")
+        project.executor().run(":app:assembleMinApi21DemoDebug")
     }
 }
