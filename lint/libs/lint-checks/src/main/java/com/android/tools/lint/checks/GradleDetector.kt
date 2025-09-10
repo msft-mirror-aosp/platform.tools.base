@@ -408,7 +408,14 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           if (level != -1) {
             val includeFix =
               context.driver.isIsolated() || !isCompileSdkTomlVersionKey(tomlValue.getKey()!!)
-            checkCompileSdkVersionLatest(context, level, statementCookie, includeFix, tomlValue)
+            checkCompileSdkVersionLatest(
+              context,
+              level,
+              statementCookie,
+              property,
+              includeFix,
+              tomlValue,
+            )
           }
         }
       } else {
@@ -417,7 +424,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       if (version <= 0) {
         checkIntegerAsString(context, value, statementCookie, valueCookie)
       } else {
-        checkCompileSdkVersionLatest(context, version, statementCookie)
+        checkCompileSdkVersionLatest(context, version, statementCookie, property)
       }
     } else if (parent == "plugins") {
       val plugin =
@@ -786,16 +793,17 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     context: Context,
     version: Int,
     cookie: Any,
+    property: String,
     includeFix: Boolean = true,
     fixCookie: Any? = null,
   ) {
     if (version < HIGHEST_KNOWN_STABLE_ANDROID_API) {
       val message =
-        "A newer version of `compileSdkVersion` than $version is available: $HIGHEST_KNOWN_STABLE_ANDROID_API"
+        "A newer version of `$property` than $version is available: $HIGHEST_KNOWN_STABLE_ANDROID_API"
       val fix =
         if (includeFix) {
           fix()
-            .name("Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_ANDROID_API")
+            .name("Set $property to $HIGHEST_KNOWN_STABLE_ANDROID_API")
             .replace()
             .text(version.toString())
             .with(HIGHEST_KNOWN_STABLE_ANDROID_API.toString())
@@ -2037,7 +2045,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           // >= 30: Since we're guessing purpose based on name, validate that
           // it's in the neighborhood of a valid compileSdkVersion to make sure
           if (compileSdk >= 30) {
-            checkCompileSdkVersionLatest(context, compileSdk, value)
+            checkCompileSdkVersionLatest(context, compileSdk, value, key)
           }
         } else if (isMinSdkTomlVersionKey(key)) {
           val minSdkString = value.getActualValue()?.toString() ?: continue

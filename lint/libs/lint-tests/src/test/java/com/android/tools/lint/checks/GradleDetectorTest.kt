@@ -1818,22 +1818,22 @@ class GradleDetectorTest : AbstractCheckTest() {
         ../gradle/libs.versions.toml:12: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
         targetSdk = "34"           # ERROR 9
                     ~~~~
-        build.gradle.kts:2: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        build.gradle.kts:2: Warning: A newer version of compileSdk than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
             compileSdk = libs.versions.compile.sdk.version.get().toInt() // ERROR 12
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        build.gradle.kts:3: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        build.gradle.kts:3: Warning: A newer version of compileSdk than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
             compileSdk = libs.versions.keys.csv.get().toInt() // ERROR 13
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        ../gradle/libs.versions.toml:2: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        ../gradle/libs.versions.toml:2: Warning: A newer version of compile_sdk_version than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
         compile_sdk_version = "34" # ERROR 1
                               ~~~~
         ../gradle/libs.versions.toml:6: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
         compileSdkVersion = "34"   # ERROR 4
                             ~~~~
-        ../gradle/libs.versions.toml:10: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        ../gradle/libs.versions.toml:10: Warning: A newer version of compileSdk than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
         compileSdk = "34"          # ERROR 7
                      ~~~~
-        ../gradle/libs.versions.toml:16: Warning: A newer version of compileSdkVersion than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        ../gradle/libs.versions.toml:16: Warning: A newer version of android-compileSdk than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
         android-compileSdk = "34"  # ERROR 11
                              ~~~~
         build.gradle.kts:5: Warning: The value of minSdkVersion (15) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
@@ -1857,59 +1857,59 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         """
         Fix for gradle/libs.versions.toml line 4: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
-        @@ -4 +4
-        - target_sdk_version = "34"  # ERROR 3
-        + target_sdk_version = "$HIGHEST_KNOWN_STABLE_API"  # ERROR 3
+        @@ -4 +4 @@
+        -target_sdk_version = "34"  # ERROR 3
+        +target_sdk_version = "$HIGHEST_KNOWN_STABLE_API"  # ERROR 3
         Fix for gradle/libs.versions.toml line 8: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
-        @@ -8 +8
-        - targetSdkVersion = "34"    # ERROR 6
-        + targetSdkVersion = "$HIGHEST_KNOWN_STABLE_API"    # ERROR 6
+        @@ -8 +8 @@
+        -targetSdkVersion = "34"    # ERROR 6
+        +targetSdkVersion = "$HIGHEST_KNOWN_STABLE_API"    # ERROR 6
         Fix for gradle/libs.versions.toml line 12: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
-        @@ -12 +12
-        - targetSdk = "34"           # ERROR 9
-        + targetSdk = "$HIGHEST_KNOWN_STABLE_API"           # ERROR 9
-        Fix for build.gradle.kts line 3: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        @@ -12 +12 @@
+        -targetSdk = "34"           # ERROR 9
+        +targetSdk = "$HIGHEST_KNOWN_STABLE_API"           # ERROR 9
+        Fix for build.gradle.kts line 3: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
         gradle/libs.versions.toml:
-        @@ -19 +19
-        - keys-csv = "34"            # ERROR 12
-        + keys-csv = "$HIGHEST_KNOWN_STABLE_API"            # ERROR 12
-        Fix for gradle/libs.versions.toml line 2: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
-        @@ -2 +2
-        - compile_sdk_version = "34" # ERROR 1
-        + compile_sdk_version = "$HIGHEST_KNOWN_STABLE_API" # ERROR 1
+        @@ -19 +19 @@
+        -keys-csv = "34"            # ERROR 12
+        +keys-csv = "$HIGHEST_KNOWN_STABLE_API"            # ERROR 12
+        Fix for gradle/libs.versions.toml line 2: Set compile_sdk_version to $HIGHEST_KNOWN_STABLE_API:
+        @@ -2 +2 @@
+        -compile_sdk_version = "34" # ERROR 1
+        +compile_sdk_version = "$HIGHEST_KNOWN_STABLE_API" # ERROR 1
         Fix for gradle/libs.versions.toml line 6: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
-        @@ -6 +6
-        - compileSdkVersion = "34"   # ERROR 4
-        + compileSdkVersion = "$HIGHEST_KNOWN_STABLE_API"   # ERROR 4
-        Fix for gradle/libs.versions.toml line 10: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
-        @@ -10 +10
-        - compileSdk = "34"          # ERROR 7
-        + compileSdk = "$HIGHEST_KNOWN_STABLE_API"          # ERROR 7
-        Fix for gradle/libs.versions.toml line 16: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
-        @@ -16 +16
-        - android-compileSdk = "34"  # ERROR 11
-        + android-compileSdk = "$HIGHEST_KNOWN_STABLE_API"  # ERROR 11
+        @@ -6 +6 @@
+        -compileSdkVersion = "34"   # ERROR 4
+        +compileSdkVersion = "$HIGHEST_KNOWN_STABLE_API"   # ERROR 4
+        Fix for gradle/libs.versions.toml line 10: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -10 +10 @@
+        -compileSdk = "34"          # ERROR 7
+        +compileSdk = "$HIGHEST_KNOWN_STABLE_API"          # ERROR 7
+        Fix for gradle/libs.versions.toml line 16: Set android-compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -16 +16 @@
+        -android-compileSdk = "34"  # ERROR 11
+        +android-compileSdk = "$HIGHEST_KNOWN_STABLE_API"  # ERROR 11
         Fix for build.gradle.kts line 5: Update minSdkVersion to 16:
         gradle/libs.versions.toml:
-        @@ -20 +20
-        - keys-msv = "15"            # ERROR 13
-        + keys-msv = "16"            # ERROR 13
+        @@ -20 +20 @@
+        -keys-msv = "15"            # ERROR 13
+        +keys-msv = "16"            # ERROR 13
         Fix for gradle/libs.versions.toml line 3: Update minSdkVersion to 16:
-        @@ -3 +3
-        - min_sdk_version = "15"     # ERROR 2
-        + min_sdk_version = "16"     # ERROR 2
+        @@ -3 +3 @@
+        -min_sdk_version = "15"     # ERROR 2
+        +min_sdk_version = "16"     # ERROR 2
         Fix for gradle/libs.versions.toml line 7: Update minSdkVersion to 16:
-        @@ -7 +7
-        - minSdkVersion = "15"       # ERROR 5
-        + minSdkVersion = "16"       # ERROR 5
+        @@ -7 +7 @@
+        -minSdkVersion = "15"       # ERROR 5
+        +minSdkVersion = "16"       # ERROR 5
         Fix for gradle/libs.versions.toml line 11: Update minSdkVersion to 16:
-        @@ -11 +11
-        - minSdk = "15"              # ERROR 8
-        + minSdk = "16"              # ERROR 8
+        @@ -11 +11 @@
+        -minSdk = "15"              # ERROR 8
+        +minSdk = "16"              # ERROR 8
         Fix for gradle/libs.versions.toml line 15: Update minSdkVersion to 16:
-        @@ -15 +15
-        - android-minSdk = "15"      # ERROR 10
-        + android-minSdk = "16"      # ERROR 10
+        @@ -15 +15 @@
+        -android-minSdk = "15"      # ERROR 10
+        +android-minSdk = "16"      # ERROR 10
         """
       )
   }
@@ -1969,7 +1969,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        settings.gradle.dcl:3: Warning: A newer version of compileSdkVersion than 28 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        settings.gradle.dcl:3: Warning: A newer version of compileSdk than 28 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
              compileSdk = 28
              ~~~~~~~~~~~~~~~
         0 errors, 1 warning
@@ -1977,7 +1977,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-        Fix for settings.gradle.dcl line 3: Set compileSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        Fix for settings.gradle.dcl line 3: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
         @@ -3 +3
         -      compileSdk = 28
         +      compileSdk = $HIGHEST_KNOWN_STABLE_API
@@ -9224,23 +9224,23 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(
         if (useFirUast()) {
           """
-          ../common.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+          ../common.gradle:2: Warning: A newer version of compileSdk than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 30 // ERROR 1
               ~~~~~~~~~~~~~
-          ../common2.gradle:2: Warning: A newer version of compileSdkVersion than 32 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+          ../common2.gradle:2: Warning: A newer version of compileSdk than 32 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 32 // ERROR 2
               ~~~~~~~~~~~~~
           0 errors, 2 warnings
           """
         } else {
           """
-          ../common.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+          ../common.gradle:2: Warning: A newer version of compileSdk than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 30 // ERROR 1
               ~~~~~~~~~~~~~
-          ../common2.gradle:2: Warning: A newer version of compileSdkVersion than 32 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+          ../common2.gradle:2: Warning: A newer version of compileSdk than 32 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 32 // ERROR 2
               ~~~~~~~~~~~~~
-          ../common3.gradle.kts:2: Warning: A newer version of compileSdkVersion than 33 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+          ../common3.gradle.kts:2: Warning: A newer version of compileSdk than 33 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk = 33 // ERROR 3
               ~~~~~~~~~~~~~~~
           0 errors, 3 warnings
@@ -9274,7 +9274,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        toml-updater-config.gradle:2: Warning: A newer version of compileSdkVersion than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+        toml-updater-config.gradle:2: Warning: A newer version of compileSdk than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
             compileSdk 30 // ERROR 1
             ~~~~~~~~~~~~~
         0 errors, 1 warning
