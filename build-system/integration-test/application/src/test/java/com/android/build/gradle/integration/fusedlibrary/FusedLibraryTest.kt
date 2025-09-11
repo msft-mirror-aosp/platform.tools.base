@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSI
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.output.JarSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
@@ -60,23 +61,66 @@ class FusedLibraryTest {
             androidLibrary(":androidLib1") {
                 android {
                     namespace = "com.example.androidLib1"
+                    publishing {
+                        multipleVariants {
+                            withSourcesJar()
+                            allVariants()
+                        }
+                    }
                 }
                 dependencies {
                     implementation("junit:junit:4.12")
                     implementation(project(":androidLib3"))
                 }
-                files.add(
-                    "src/main/res/values/strings.xml",
-                    //language=xml
-                    """
+                files {
+                    add(
+                        "src/main/res/values/strings.xml",
+                        //language=xml
+                        """
                         <resources>
                             <string name="string_from_android_lib_1">androidLib2</string>
                         </resources>
-                    """.trimIndent())
+                    """.trimIndent()
+                    )
+                    add(
+                        "src/main/java/com/example/androidLib1/ClassFromAndroidLib1.java",
+                        //language=java
+                        """
+                            package com.example.androidLib2;
+
+                            public class ClassFromAndroidLib1 {
+                                int bar() {
+                                    return 1;
+                                }
+                            }
+                        """.trimIndent()
+                    )
+                }
             }
             androidLibrary(":androidLib2") {
                 android {
                     namespace = "com.example.androidLib2"
+                    publishing {
+                        multipleVariants {
+                            withSourcesJar()
+                            allVariants()
+                        }
+                    }
+                }
+                files {
+                    add(
+                        "src/main/java/com/example/androidLib2/ClassFromAndroidLib2.java",
+                        //language=java
+                        """
+                            package com.example.androidLib2;
+
+                            public class ClassFromAndroidLib2 {
+                                int foo() {
+                                    return 1;
+                                }
+                            }
+                        """.trimIndent()
+                    )
                 }
             }
             androidLibrary(":androidLib3") {
@@ -180,6 +224,16 @@ class FusedLibraryTest {
                     "com.remotedep.remoteaar.b:remoteaar-b:1.0 scope:runtime"
                 )
             )
+
+            val publishedSourcesJar =
+                publishedLibRepoDir.resolve("$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}-sources.jar")
+            JarSubject.assertThat(publishedSourcesJar) {
+                resources().containsExactly(
+                    "com/example/androidLib1/ClassFromAndroidLib1.java",
+                    "com/example/androidLib2/ClassFromAndroidLib2.java"
+                )
+                classes().isEmpty()
+            }
         }
     }
 

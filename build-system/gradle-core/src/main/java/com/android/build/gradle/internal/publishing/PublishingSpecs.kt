@@ -286,6 +286,7 @@ class PublishingSpecs {
                 runtime(InternalArtifactType.LIBRARY_ART_PROFILE, ArtifactType.ART_PROFILE)
                 runtime(SUPPORTED_LOCALE_LIST, ArtifactType.SUPPORTED_LOCALE_LIST)
                 runtime(PACKAGES_FOR_R8, ArtifactType.PACKAGES_FOR_R8)
+                runtime(InternalArtifactType.SOURCE_JAR, ArtifactType.SOURCES_JAR)
 
                 // Publish lint artifacts to API_AND_RUNTIME_ELEMENTS to support compileOnly module
                 // dependencies.

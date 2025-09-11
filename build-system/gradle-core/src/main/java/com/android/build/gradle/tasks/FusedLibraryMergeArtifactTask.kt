@@ -17,27 +17,29 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
+import com.android.SdkConstants.DOT_JAVA
+import com.android.SdkConstants.DOT_KT
+import com.android.SdkConstants.FN_NAVIGATION_JSON
 import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.ArtifactKind
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_AAR_METADATA
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_AIDL
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_ASSETS
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_JNI
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_NAVIGATION_JSON
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_PREFAB_PACKAGE
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_PREFAB_PACKAGE_CONFIGURATION
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_RENDERSCRIPT_HEADERS
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.*
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.AAR_METADATA_FILE_NAME
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.AAR_METADATA_RELATIVE_PATH
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
+import com.android.builder.packaging.JarFlinger
 import com.android.utils.usLocaleCapitalize
+import org.gradle.api.attributes.DocsType
+import org.gradle.api.attributes.Usage
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -130,6 +132,23 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                             it.toString().substringAfterLast("${File.separator}jni${File.separator}")
                         }
                     }
+                    ArtifactType.SOURCES_JAR -> {
+                        output.get().asFile.createNewFile()
+                        JarFlinger(output.get().asFile.toPath()).use { jarFlinger ->
+                            input.files.forEach {
+                                jarFlinger.addJar(
+                                    it.toPath(),
+                                    // Avoid merging non-code artifacts for now, as this would need
+                                    // to fully emulate the plugin's logic.
+                                    {
+                                        it.endsWith(DOT_JAVA) ||
+                                                it.endsWith(DOT_KT)
+                                    },
+                                    null
+                                )
+                            }
+                        }
+                    }
                     else -> {
                         val supportedArtifacts = mergeArtifactMap.map { it.first }
                         if (currentArtifactType !in supportedArtifacts) {
@@ -145,7 +164,7 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
     class CreateActionFusedLibrary(
         private val creationConfig: FusedLibraryGlobalScope,
         private val androidArtifactType: ArtifactType,
-        private val internalArtifactType: Artifact.Single<*>
+        private val fusedArtifact: FusedArtifact
     ) : GlobalTaskCreationAction<FusedLibraryMergeArtifactTask>() {
 
         override val name: String
@@ -156,19 +175,19 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
         override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeArtifactTask>) {
             super.handleProvider(taskProvider)
 
-            when (internalArtifactType.kind) {
-                ArtifactKind.DIRECTORY ->
+            when (fusedArtifact) {
+                is FusedArtifact.Directory ->
                     creationConfig.artifacts.setInitialProvider(
                             taskProvider,
                             FusedLibraryMergeArtifactTask::outputDir
-                    ).withName(androidArtifactType.name.lowercase())
-                            .on(internalArtifactType as Artifact.Single<Directory>)
-                ArtifactKind.FILE ->
+                    ).withName(fusedArtifact.artifactType.name().lowercase())
+                            .on(fusedArtifact.artifactType as Artifact.Single<Directory>)
+                is FusedArtifact.File ->
                     creationConfig.artifacts.setInitialProvider(
                             taskProvider,
                             FusedLibraryMergeArtifactTask::outputFile
-                    ).withName(androidArtifactType.name.lowercase())
-                            .on(internalArtifactType as Artifact.Single<RegularFile>)
+                    ).withName(fusedArtifact.filename)
+                            .on(fusedArtifact.artifactType as Artifact.Single<RegularFile>)
             }
         }
 
@@ -176,11 +195,29 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
             super.configure(task)
 
             task.artifactFiles.setFrom(
-                    creationConfig.dependencies.getArtifactFileCollection(
+                when (androidArtifactType) {
+                    ArtifactType.SOURCES_JAR -> {
+                        val fusedSources = task.project.configurations.getByName(
+                            FusedLibraryConstants.FUSED_SOURCES_CONFIGURATION_NAME
+                        )
+                        fusedSources.incoming.artifactView { config ->
+                            config.attributes {
+                                it.attribute(
+                                    AndroidArtifacts.ARTIFACT_TYPE,
+                                    ArtifactType.SOURCES_JAR.type
+                                )
+                            }
+                        }.files
+                    }
+                    else -> {
+                        creationConfig.dependencies.getArtifactFileCollection(
                             AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
                             androidArtifactType
-                    )
+                        )
+                    }
+                }
             )
+
             task.artifactType.setDisallowChanges(androidArtifactType)
 
             creationConfig.aarMetadata.minAgpVersion?.let {
@@ -256,16 +293,17 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
 
     companion object {
 
-        private val mergeArtifactMap: List<Pair<ArtifactType, Artifact.Single<*>>> =
+        private val mergeArtifactMap: List<Pair<ArtifactType, FusedArtifact>> =
                 listOf(
-                        ArtifactType.AIDL to MERGED_AIDL,
-                        ArtifactType.RENDERSCRIPT to MERGED_RENDERSCRIPT_HEADERS,
-                        ArtifactType.PREFAB_PACKAGE to MERGED_PREFAB_PACKAGE,
-                        ArtifactType.PREFAB_PACKAGE_CONFIGURATION to MERGED_PREFAB_PACKAGE_CONFIGURATION,
-                        ArtifactType.ASSETS to MERGED_ASSETS,
-                        ArtifactType.JNI to MERGED_JNI,
-                        ArtifactType.NAVIGATION_JSON to MERGED_NAVIGATION_JSON,
-                        ArtifactType.AAR_METADATA to MERGED_AAR_METADATA,
+                        ArtifactType.AIDL to FusedArtifact.Directory(MERGED_AIDL),
+                        ArtifactType.RENDERSCRIPT to FusedArtifact.Directory(MERGED_RENDERSCRIPT_HEADERS),
+                        ArtifactType.PREFAB_PACKAGE to FusedArtifact.Directory(MERGED_PREFAB_PACKAGE),
+                        ArtifactType.PREFAB_PACKAGE_CONFIGURATION to FusedArtifact.Directory(MERGED_PREFAB_PACKAGE_CONFIGURATION),
+                        ArtifactType.ASSETS to FusedArtifact.Directory(MERGED_ASSETS),
+                        ArtifactType.JNI to FusedArtifact.Directory(MERGED_JNI),
+                        ArtifactType.NAVIGATION_JSON to FusedArtifact.File(MERGED_NAVIGATION_JSON, FN_NAVIGATION_JSON),
+                        ArtifactType.SOURCES_JAR to FusedArtifact.File(MERGED_SOURCES_JAR, "${DocsType.SOURCES}.jar"),
+                        ArtifactType.AAR_METADATA to FusedArtifact.File(MERGED_AAR_METADATA, AAR_METADATA_FILE_NAME),
                 )
         fun getCreationActions(creationConfig: FusedLibraryGlobalScope) :
                 List<CreateActionFusedLibrary> {
@@ -273,7 +311,15 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
         }
         fun getCreationActions(creationConfig: PrivacySandboxSdkVariantScope) :
                 List<CreateActionPrivacySandboxSdk> {
-            return mergeArtifactMap.map { CreateActionPrivacySandboxSdk(creationConfig, it.first, it.second) }
+            return mergeArtifactMap.map { CreateActionPrivacySandboxSdk(creationConfig, it.first, it.second.artifactType) }
         }
     }
+}
+
+sealed class FusedArtifact(val artifactType: Artifact.Single<*>) {
+    internal class Directory(artifactType: Artifact.Single<org.gradle.api.file.Directory>) :
+        FusedArtifact(artifactType)
+
+    internal class File(artifactType: Artifact.Single<RegularFile>, val filename: String) :
+        FusedArtifact(artifactType)
 }

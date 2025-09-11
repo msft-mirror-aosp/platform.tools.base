@@ -126,7 +126,7 @@ abstract class FusedLibraryBundleAar: FusedLibraryBundle() {
 
             task.from(creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_AAR_METADATA)) {
                 it.rename(
-                        "aar_metadata",
+                        "aar-metadata.properties",
                         AarMetadataTask.AAR_METADATA_ENTRY_PATH
                 )
             }

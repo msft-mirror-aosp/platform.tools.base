@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.plugins
 
-import com.android.SdkConstants
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.attributes.BuildTypeAttr
@@ -63,7 +62,10 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.attributes.Bundling
+import org.gradle.api.attributes.Bundling.BUNDLING_ATTRIBUTE
 import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.Category.CATEGORY_ATTRIBUTE
+import org.gradle.api.attributes.DocsType
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.java.TargetJvmEnvironment
@@ -74,6 +76,9 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.build.event.BuildEventsListenerRegistry
+import org.jdom2.DocType
+import shadow.bundletool.com.android.SdkConstants
+import shadow.bundletool.com.android.tools.r8.internal.tR
 import javax.inject.Inject
 
 @Suppress("UnstableApiUsage")
@@ -146,36 +151,80 @@ class FusedLibraryPlugin @Inject constructor(
                 .artifacts
                 .getArtifactContainer(FusedLibraryInternalArtifactType.BUNDLED_LIBRARY)
                 .getFinalProvider()
+        val sourcesJarProvider = variantScope
+            .artifacts
+            .getArtifactContainer(FusedLibraryInternalArtifactType.MERGED_SOURCES_JAR)
+            .getFinalProvider()
 
-        val runtimePublication = project.configurations.register("runtimePublication") {
-            it.isCanBeConsumed = false
-            it.isCanBeResolved = false
-            it.isVisible = false
-            it.attributes.attribute(
+        val runtimePublication = if (bundleTaskProvider != null) {
+            project.configurations.register("runtimePublication") {
+                it.isCanBeConsumed = false
+                it.isCanBeResolved = false
+                it.isVisible = false
+                it.attributes.attribute(
                     Usage.USAGE_ATTRIBUTE,
                     project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME)
-            )
-            it.attributes.attribute(
+                )
+                it.attributes.attribute(
                     Bundling.BUNDLING_ATTRIBUTE,
                     project.objects.named(Bundling::class.java, Bundling.EXTERNAL)
-            )
-            it.attributes.attribute(
+                )
+                it.attributes.attribute(
                     Category.CATEGORY_ATTRIBUTE,
                     project.objects.named(Category::class.java, Category.LIBRARY)
-            )
-            it.attributes.attribute(
+                )
+                it.attributes.attribute(
                     LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
                     project.objects.named(
-                            LibraryElements::class.java,
-                            AndroidArtifacts.ArtifactType.AAR.type
+                        LibraryElements::class.java,
+                        AndroidArtifacts.ArtifactType.AAR.type
                     )
-            )
-            it.dependencies.addAllLater(fusedAarRuntimeDependenciesProvider)
-            it.outgoing.artifact(bundleTaskProvider) { artifact ->
-                artifact.type = AndroidArtifacts.ArtifactType.AAR.type
-                artifact.extension = SdkConstants.EXT_AAR
+                )
+
+                it.dependencies.addAllLater(fusedAarRuntimeDependenciesProvider)
+                it.outgoing.artifact(bundleTaskProvider) { artifact ->
+                    artifact.type = AndroidArtifacts.ArtifactType.AAR.type
+                    artifact.extension = SdkConstants.EXT_AAR
+                }
             }
-        }
+        } else null
+
+        val runtimeSourcePublication = if (sourcesJarProvider != null) {
+            project.configurations.register("runtimeSourcePublication") {
+                it.isCanBeConsumed = false
+                it.isCanBeResolved = false
+                it.isVisible = false
+                it.attributes.attribute(
+                    Usage.USAGE_ATTRIBUTE,
+                    project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME)
+                )
+                it.attributes.attribute(
+                    Bundling.BUNDLING_ATTRIBUTE,
+                    project.objects.named(Bundling::class.java, Bundling.EXTERNAL)
+                )
+                it.attributes.attribute(
+                    Category.CATEGORY_ATTRIBUTE,
+                    project.objects.named(Category::class.java, Category.DOCUMENTATION)
+                )
+                it.attributes.attribute(
+                    DocsType.DOCS_TYPE_ATTRIBUTE,
+                    project.objects.named(DocsType::class.java, DocsType.SOURCES)
+                )
+                it.attributes.attribute(
+                    LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                    project.objects.named(
+                        LibraryElements::class.java,
+                        AndroidArtifacts.ArtifactType.JAR.type
+                    )
+                )
+
+                it.outgoing.artifact(sourcesJarProvider) {
+                    it.type = AndroidArtifacts.ArtifactType.SOURCES_JAR.type
+                    it.extension = SdkConstants.EXT_JAR
+                    it.classifier = "sources"
+                }
+            }
+        } else null
 
         // create an adhoc component, this will be used for publication
         val adhocComponent = softwareComponentFactory.adhoc(
@@ -183,8 +232,13 @@ class FusedLibraryPlugin @Inject constructor(
         // add it to the list of components that this project declares
         project.components.add(adhocComponent)
 
-        adhocComponent.addVariantsFromConfiguration(runtimePublication.get()) {
-            it.mapToMavenScope("runtime")
+        listOfNotNull(
+            runtimePublication,
+            runtimeSourcePublication
+        ).forEach { outgoingRuntimeConfigurationProvider ->
+            adhocComponent.addVariantsFromConfiguration(outgoingRuntimeConfigurationProvider.get()) {
+                it.mapToMavenScope("runtime")
+            }
         }
 
         project.afterEvaluate {
@@ -354,12 +408,30 @@ class FusedLibraryPlugin @Inject constructor(
                 runtimeClasspath.extendsFrom(include.get())
             }
 
+        val sourcesConfiguration =
+            project.configurations.register(FusedLibraryConstants.FUSED_SOURCES_CONFIGURATION_NAME) { sourcesConfig ->
+                sourcesConfig.isCanBeConsumed = false
+                sourcesConfig.isCanBeResolved = true
+                sourcesConfig.isTransitive = false
+
+                sourcesConfig.attributes.attribute(
+                    CATEGORY_ATTRIBUTE,
+                    project.objects.named(Category::class.java, Category.DOCUMENTATION)
+                )
+                sourcesConfig.attributes.attribute(
+                    DocsType.DOCS_TYPE_ATTRIBUTE,
+                    project.objects.named(DocsType::class.java, DocsType.SOURCES)
+                )
+                sourcesConfig.extendsFrom(include.get())
+            }
+
         val consumerConfigurations: List<Configuration> = listOf(
             include.get(),
             includeTransitiveApiResolved,
             includeTransitiveRuntimeResolved,
             fusedApi.get(),
-            fusedRuntime.get()
+            fusedRuntime.get(),
+            sourcesConfiguration.get()
         )
         applyCommonConsumptionAttributes(project, consumerConfigurations)
 

@@ -55,6 +55,7 @@ object FusedLibraryConstants {
     const val INCLUDE_CONFIGURATION_NAME = "include"
     const val FUSED_API_CONFIGURATION_NAME = "fusedApi"
     const val FUSED_RUNTIME_CONFIGURATION_NAME = "fusedRuntime"
+    const val FUSED_SOURCES_CONFIGURATION_NAME = "fusedSources"
     const val VALIDATE_DEPENDENCIES_TASK_NAME = "validateDependencies"
     const val FUSED_LIBRARY_PUBLICATION_COMPONENT_NAME = "fusedLibraryComponent"
 }
