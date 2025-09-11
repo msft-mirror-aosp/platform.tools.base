@@ -165,9 +165,39 @@ class AdbInstallerChannel implements AutoCloseable {
             read(bufferMarker, timeOutMs);
 
             if (!Arrays.equals(MAGIC_NUMBER, bufferMarker.array())) {
+
+                // With the current communication protocol, there is no distinction between
+                // STDOUT and STDERR. Should the installer binaries produce any warnings that is
+                // outside our control, especially warnings from the linker, we would see that
+                // before the MAGIC_NUMBER reply. Without completely redesigning the protocol,
+                // we can try to skip over some known warnings so we don't have to assume
+                // installer always fails. So far, we have only observe this in Android 7.0
+                // (API 24). 
                 String garbage = new String(bufferMarker.array(), Charsets.UTF_8);
-                logger.info("Read '" + garbage + "' from socket");
-                return null;
+                String installerLoc = Sites.installerPath();
+                String linkerWarning =
+                        "WARNING: linker: "
+                                + installerLoc
+                                + ": unsupported flags DT_FLAGS_1=0x8000001\n";
+
+                if (!linkerWarning.startsWith(garbage)) {
+                    logger.info("Expecting MAGIC_NUMBER but read '" + garbage + "' from socket");
+                    return null;
+                }
+
+                bufferMarker = ByteBuffer.allocate(linkerWarning.length() - MAGIC_NUMBER.length);
+                read(bufferMarker, timeOutMs);
+
+                String result = new String(bufferMarker.array(), Charsets.UTF_8);
+                logger.info("Read warning'" + result + "' from socket");
+
+                bufferMarker = ByteBuffer.allocate(MAGIC_NUMBER.length);
+                read(bufferMarker, timeOutMs);
+
+                if (!Arrays.equals(MAGIC_NUMBER, bufferMarker.array())) {
+                    logger.info("Expecting MAGIC_NUMBER but read '" + garbage + "' from socket");
+                    return null;
+                }
             }
 
             ByteBuffer bufferSize =
