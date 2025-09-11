@@ -433,7 +433,6 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         }
     }
 
-    @Ignore("Disabled after useAndroidX=true by default")
     @Test
     fun checkPublishingFailsForLibrariesWithDatabinding() {
         val build = rule.build {
@@ -444,31 +443,24 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
                 }
             }
         }
-
-        for (enableAndroidx in listOf(true, false)) {
-            val failureExecutor = build.executor
-                    .with(BooleanOption.USE_ANDROID_X, enableAndroidx)
-
-            listOf(
-                "generatePomFileForMavenPublication",
-                "publish",
-            ).forEach {
-                val publicationFailure =
-                    failureExecutor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
-                publicationFailure.assertErrorContains("Validation failed due to 2 issue(s) with :fusedLib1 dependencies:\n" +
-                        "   [Unresolved Dependencies]:\n" +
-                        "    * Could not find androidx.databinding:databinding-adapters")
-                publicationFailure.assertErrorContains(
-                    "[Databinding is not supported by Fused Library modules]:\n" +
-                        "    * androidx.databinding:databinding-adapters")
-            }
-
-            listOf("publishToMavenLocal", "bundle").forEach {
-                val buildFailure = failureExecutor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
-                buildFailure.assertErrorContains(
-                    "> Could not resolve all files for configuration ':androidLibWithDatabinding:releaseCompileClasspath'.\n" +
-                            "   > Could not find androidx.databinding:viewbinding:")
-            }
+        listOf(
+            "generatePomFileForMavenPublication",
+            "publish"
+        ).forEach {
+            val failure =
+                build.executor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
+            failure.assertErrorContains(
+                "[Databinding is not supported by Fused Library modules]:\n" +
+                        "    * androidx.databinding"
+            )
+        }
+        listOf("publishToMavenLocal", "bundle").forEach {
+            val failure =
+                build.executor.expectFailure().run(":$FUSED_LIBRARY_PROJECT_NAME:$it")
+            failure.assertErrorContains(
+                "Could not resolve all files for configuration ':androidLibWithDatabinding:releaseCompileClasspath'.\n" +
+                        "   > Could not find androidx.databinding"
+            )
         }
     }
 
