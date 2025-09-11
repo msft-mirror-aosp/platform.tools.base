@@ -56,6 +56,7 @@ class GenerateResValuesIntegrationTest {
             //language=groovy
             """
                 android {
+                    buildFeatures { resValues = true }
                     def vMajor = 0
                     def vMinor = 1
                     defaultConfig {

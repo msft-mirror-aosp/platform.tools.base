@@ -1,9 +1,9 @@
 package com.android.build.gradle.integration.testing;
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.testutils.apk.Apk;
+
 import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -27,9 +27,7 @@ public class SeparateTestWithDependenciesTest {
     @Test
     public void checkAppContainsAllDependentClasses()
             throws Exception {
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("clean", "assemble");
+        project.executor().run("clean", "assemble");
         try (Apk apk = project.getSubproject("app").getApk("debug")) {
             TruthHelper.assertThatApk(apk)
                     .containsClass("Lcom/android/tests/jarDep/JarDependencyUtil;");
@@ -44,9 +42,7 @@ public class SeparateTestWithDependenciesTest {
     @Test
     public void checkTestAppDoesNotContainAnyMinifiedApplicationDependentClasses()
             throws Exception {
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("clean", ":test:assemble");
+        project.executor().run("clean", ":test:assemble");
         try (Apk apk = project.getSubproject("test").getApk("debug")) {
             TruthHelper.assertThatApk(apk)
                     .doesNotContainClass("Lcom/android/tests/jarDep/JarDependencyUtil;");

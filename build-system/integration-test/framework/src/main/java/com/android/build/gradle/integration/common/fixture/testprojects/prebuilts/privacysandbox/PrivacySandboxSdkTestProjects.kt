@@ -47,7 +47,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
  * need to use a lower version than [com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS]
  * (b/412597247).
  */
-const val KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS = "2.2.0"
+const val KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS = "2.2.10"
 
 /**
  * KSP version used for privacy-sandbox tests.
@@ -56,7 +56,7 @@ const val KOTLIN_VERSION_FOR_PRIVACY_SANDBOX_TESTS = "2.2.0"
  * need to use a lower version than [com.android.testutils.TestUtils.KSP_VERSION_FOR_TESTS]
  * (b/412597247).
  */
-const val KSP_VERSION_FOR_PRIVACY_SANDBOX_TESTS = "2.2.0-2.0.2"
+const val KSP_VERSION_FOR_PRIVACY_SANDBOX_TESTS = "2.2.10-2.0.2"
 
 fun GradleBuildDefinition.createGradleProjectWithPrivacySandboxLibrary(
     action: GradleBuildDefinition.() -> Unit

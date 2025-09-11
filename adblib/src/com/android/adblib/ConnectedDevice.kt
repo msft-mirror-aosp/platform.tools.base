@@ -467,6 +467,10 @@ class ActivityManager(val device: ConnectedDevice) {
         }
     }
 
+    /**
+     * Returns the result of the [amCommand]. Retries it if the `am` service is not running.
+     * Returns `null` if the [amCommand] is not supported by the device.
+     */
     private suspend fun <R> retryUntilDeviceReady(
         amCommandName: String,
         timeout: Duration,

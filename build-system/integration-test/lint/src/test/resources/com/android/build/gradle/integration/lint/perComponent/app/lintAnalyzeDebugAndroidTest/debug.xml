@@ -24,7 +24,6 @@
   <artifact
       type="INSTRUMENTATION_TEST"
       applicationId="com.example.android.lint.kotlin.test"
-      generatedResourceFolders="build/generated/res/resValues/androidTest/debug"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </artifact>
 </variant>

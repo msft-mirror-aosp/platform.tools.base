@@ -96,7 +96,9 @@ class AdbActivityManagerException(
      * ```
      */
     val isCommandNotSupported: Boolean
-        get() = errorOutput.contains("unknown command: ", ignoreCase = true)
+        get() =
+            errorOutput.contains("unknown command: ", ignoreCase = true) ||
+            errorOutput.contains("unknown command ", ignoreCase = true)
 
     /**
      * The `activity` service is not running (probably because the device is still in the

@@ -114,6 +114,13 @@ class ConfigurationExtensionTest(private val pluginType: TestProjects.Plugin) {
             "testLollipopDemoDebugImplementation",
             "testLollipopDemoImplementation",
             "testLollipopImplementation",
+            // The following are created by KGP (probably not used)
+            "lollipopDemoDebugUnitTestCompilationCompileOnly",
+            "lollipopDemoDebugUnitTestCompileOnly",
+            "lollipopDemoDebugUnitTestCompilationImplementation",
+            "lollipopDemoDebugUnitTestCompilationApi",
+            "lollipopDemoDebugUnitTestApi",
+            "lollipopDemoDebugUnitTestImplementation",
         )
 
     /**
@@ -138,6 +145,13 @@ class ConfigurationExtensionTest(private val pluginType: TestProjects.Plugin) {
             "testLollipopImplementation",
             "testLollipopRuntimeOnly",
             "testRuntimeOnly",
+            // The following are created by KGP (probably not used)
+            "lollipopDemoDebugUnitTestCompilationRuntimeOnly",
+            "lollipopDemoDebugUnitTestRuntimeOnly",
+            "lollipopDemoDebugUnitTestCompilationImplementation",
+            "lollipopDemoDebugUnitTestCompilationApi",
+            "lollipopDemoDebugUnitTestApi",
+            "lollipopDemoDebugUnitTestImplementation",
         )
 
     // forbidden relationship

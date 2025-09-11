@@ -41,6 +41,7 @@ class LintModelPerComponentIntegrationTest {
             // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
             .addGradleProperties("${BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName}=true")
             .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
+            .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
             .dontOutputLogOnFailure()
             .create()
 

@@ -191,7 +191,7 @@ java.lang.IllegalArgumentException: $message
                 in 1..25 -> {
                     // API <= 25: Usage info, stderr message and exit code=0
                     printUsage(shellCommandOutput)
-                    shellCommandOutput.writeStderr("Error: Unknown command: $command")
+                    shellCommandOutput.writeStderr("Error: unknown command '$command'")
                     shellCommandOutput.writeExitCode(0)
                 }
                 else -> {

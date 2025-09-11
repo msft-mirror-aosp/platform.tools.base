@@ -16,8 +16,10 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.Packaging
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -295,6 +297,20 @@ abstract class MergeJavaResourceTask
         ) {
             super.configure(task)
 
+            // Add all JAVA_RES artifacts that were added through the variant API, using
+            // the ScopedArtifact APIs. This will not include all generated or static
+            // directories that are added to the variant's sources interface.
+            task.projectJavaRes.from(
+                creationConfig.artifacts.forScope(
+                    ScopedArtifacts.Scope.PROJECT
+                ).getFinalArtifacts(
+                ScopedArtifact.JAVA_RES
+                )
+            )
+
+            // Add the copied source files which will include the source set folders as
+            // well as all the generated or static directories added through the variant's
+            // Sources APIs.
             task.projectJavaRes.fromDisallowChanges(creationConfig.artifacts.get(JAVA_RES))
 
             run {

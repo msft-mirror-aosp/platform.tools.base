@@ -463,4 +463,89 @@ class ForbiddenStudioCallDetectorTest {
           """
       )
   }
+
+  @Test
+  fun testDisposableDispose() {
+    studioLint()
+      .files(
+        kotlin(
+            """
+                    package test.pkg
+
+                    import com.intellij.openapi.Disposable
+                    import com.intellij.openapi.util.Disposer
+
+                    class MyDisposable : Disposable {
+                        override fun dispose() {
+                            super.dispose()
+                        }
+
+                        fun testDisposerCall(disposable: Disposable) {
+                            Disposer.dispose(disposable)
+                        }
+
+                        fun testOtherDispose() {
+                           otherDispose(123)
+                        }
+
+                        fun testDisposerNoParam() {
+                            Disposer.dispose()
+                        }
+
+                        fun testDirectCall(disposable: Disposable) {
+                            disposable.dispose()
+                        }
+
+                        fun otherDispose(value: Int) {}
+                    }
+                    """
+          )
+          .indented(),
+        // Stub for Disposable
+        java(
+            """
+                    package com.intellij.openapi;
+
+                    public interface Disposable {
+                        void dispose();
+                    }
+                    """
+          )
+          .indented(),
+        // Stub for Disposer
+        java(
+            """
+                    package com.intellij.openapi.util;
+
+                    import com.intellij.openapi.Disposable;
+
+                    public class Disposer {
+
+                        public static void dispose(Disposable disposable) {
+                            disposable.dispose();
+                        }
+
+                        @Override
+                        public void dispose() {
+                            // Internal disposal logic
+                        }
+                    }
+                    """
+          )
+          .indented(),
+      )
+      .issues(ForbiddenStudioCallDetector.DISPOSE_DIRECTLY)
+      .run()
+      .expect(
+        """
+                src/com/intellij/openapi/util/Disposer.java:8: Error: Do not call Disposable.dispose() directly, use Disposer.dispose() instead [DisposeDirectly]
+                        disposable.dispose();
+                                   ~~~~~~~~~
+                src/test/pkg/MyDisposable.kt:24: Error: Do not call Disposable.dispose() directly, use Disposer.dispose() instead [DisposeDirectly]
+                        disposable.dispose()
+                                   ~~~~~~~~~
+                2 errors, 0 warnings
+                """
+      )
+  }
 }

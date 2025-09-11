@@ -23,7 +23,9 @@ import com.android.build.gradle.integration.common.truth.TaskStateList.Execution
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.SKIPPED
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.UP_TO_DATE
 import com.android.build.gradle.integration.common.utils.CacheabilityTestHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -117,6 +119,22 @@ class MinifyCacheabilityTest {
             .withName(projectName)
             .fromTestProject("minify")
             .create()
+    }
+
+    @Before
+    fun setUp() {
+        for (project in listOf(projectCopy1, projectCopy2)) {
+            // Set up the project such that we can check the cacheability of AndroidUnitTest task
+            TestFileUtils.appendToFile(
+                project.buildFile,
+                """
+                    android {
+                        testOptions { unitTests { includeAndroidResources = true } }
+                        buildFeatures { resValues = true }
+                    }
+                """.trimIndent()
+            )
+        }
     }
 
     @Test

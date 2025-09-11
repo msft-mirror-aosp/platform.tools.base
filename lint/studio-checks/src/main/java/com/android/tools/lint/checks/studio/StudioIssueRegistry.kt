@@ -89,6 +89,7 @@ class StudioIssueRegistry : IssueRegistry() {
       ForbiddenStudioCallDetector.INTERN,
       ForbiddenStudioCallDetector.KOTLIN_JS_PACKAGE,
       ForbiddenStudioCallDetector.MOCKITO_WHEN,
+      ForbiddenStudioCallDetector.DISPOSE_DIRECTLY,
       ForkJoinPoolDetector.COMMON_FJ_POOL,
       ForkJoinPoolDetector.NEW_FJ_POOL,
       GradleApiUsageDetector.ISSUE,

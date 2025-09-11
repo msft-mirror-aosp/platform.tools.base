@@ -217,9 +217,6 @@ interface RecipeExecutor {
    */
   fun setViewBinding(value: Boolean)
 
-  /** Sets Compose Options field values */
-  fun setComposeOptions(kotlinCompilerExtensionVersion: String?)
-
   /** Sets Cpp Options field values */
   fun setCppOptions(cppFlags: String, cppPath: String, cppVersion: String)
 

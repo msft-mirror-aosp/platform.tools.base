@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.application;
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 
@@ -44,9 +43,7 @@ public class PrivateResourceTest {
 
     @BeforeClass
     public static void setup() throws IOException, InterruptedException {
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("clean", "assemble");
+        project.executor().run("clean", "assemble");
     }
 
     @AfterClass

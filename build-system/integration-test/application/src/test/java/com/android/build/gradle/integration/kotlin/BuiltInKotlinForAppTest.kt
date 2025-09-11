@@ -353,7 +353,7 @@ class BuiltInKotlinForAppTest(
     }
 
     @Test
-    fun testKotlinDsl() {
+    fun testExplicitApiModeStrictForMain() {
         val build = rule.build {
             androidApplication {
                 files {
@@ -376,6 +376,59 @@ class BuiltInKotlinForAppTest(
         build.executor.expectFailure().run(":app:compileDebugKotlin").assertErrorContains(
             "Visibility must be specified in explicit API mode"
         )
+    }
+
+    @Test
+    fun testExplicitApiModeDisabledOnUnitTest() {
+        val build = rule.build {
+            androidApplication {
+                dependencies {
+                    testImplementation("junit:junit:4.12")
+                }
+
+                files {
+                    add("src/test/kotlin/AppFooTest.kt",
+                        //language=kotlin
+                        """
+                        package com.foo.application.test
+
+                        class AppFooTest {
+                          @org.junit.Test
+                          fun testSample() {}
+                        }
+                        """.trimIndent()
+                    )
+                }
+                kotlin {
+                    explicitApi()
+                }
+            }
+        }
+        build.executor.expectFailure().run(":app:compileDebugUnitTestKotlin")
+    }
+
+    @Test
+    fun testExplicitApiModeDisabledOnAndroidTest() {
+        val build = rule.build {
+            androidApplication {
+                dependencies {
+                    testImplementation("junit:junit:4.12")
+                }
+
+                files {
+                    add("src/androidTest/java/AppFooTest.kt",
+                        //language=kotlin
+                        """
+                            package com.foo.application
+                            class AppFooTest
+                        """.trimIndent())
+                }
+                kotlin {
+                    explicitApi()
+                }
+            }
+        }
+        build.executor.expectFailure().run(":app:compileDebugAndroidHostTestKotlin")
     }
 
     /**

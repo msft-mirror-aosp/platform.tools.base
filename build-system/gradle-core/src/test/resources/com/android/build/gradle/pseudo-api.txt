@@ -174,12 +174,6 @@ com.android.build.gradle.DynamicFeaturePlugin.apply: void (java.lang.Object)
 com.android.build.gradle.DynamicFeaturePlugin.apply: void (org.gradle.api.Project)
 com.android.build.gradle.DynamicFeaturePluginKt
 com.android.build.gradle.DynamicFeaturePluginKt.access$getINTERNAL_PLUGIN_ID$p: java.util.Map ()
-com.android.build.gradle.FeatureExtension
-com.android.build.gradle.FeatureExtension.<init>: com.android.build.gradle.FeatureExtension ()
-com.android.build.gradle.FeaturePlugin implements org.gradle.api.Plugin
-com.android.build.gradle.FeaturePlugin.<init>: com.android.build.gradle.FeaturePlugin ()
-com.android.build.gradle.FeaturePlugin.apply: void (java.lang.Object)
-com.android.build.gradle.FeaturePlugin.apply: void (org.gradle.api.Project)
 com.android.build.gradle.LibraryExtension extends com.android.build.gradle.TestedExtension implements com.android.build.gradle.internal.dsl.InternalLibraryExtension
 com.android.build.gradle.LibraryExtension.<init>: com.android.build.gradle.LibraryExtension (com.android.build.gradle.internal.services.DslServices, com.android.build.gradle.internal.tasks.factory.BootClasspathConfig, org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.api.BaseVariantOutput>, com.android.build.gradle.internal.dependency.SourceSetManager, com.android.build.gradle.internal.dsl.LibraryExtensionImpl, com.google.wireless.android.sdk.stats.GradleBuildProject$Builder)
 com.android.build.gradle.LibraryExtension.aaptOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AaptOptions, kotlin.Unit>)

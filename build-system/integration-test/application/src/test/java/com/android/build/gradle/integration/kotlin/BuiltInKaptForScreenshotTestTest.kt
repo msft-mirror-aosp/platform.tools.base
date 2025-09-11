@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.kotlin
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AnnotationProcessorLib
@@ -118,9 +117,7 @@ class BuiltInKaptForScreenshotTestTest {
                 }
                 """.trimIndent(),
         )
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("app:compileDebugScreenshotTestJavaWithJavac")
+        project.executor().run("app:compileDebugScreenshotTestJavaWithJavac")
         val kaptGeneratedTestDir =
             app.buildDir.resolve("generated/source/kapt/screenshotTest/debug/com/example")
         PathSubject.assertThat(kaptGeneratedTestDir.resolve("FooStringValue.java")).exists()

@@ -488,9 +488,9 @@ maven_repository(
 maven_repository(
     name = "kotlin_dependencies_for_built_in_kapt_tests",
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.2.0",
-        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.2.10",
+        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.2.10",
     ],
     visibility = [":__subpackages__"],
 )

@@ -242,6 +242,36 @@ class LibraryPublishingTest {
         }
     }
 
+    @Test
+    fun testMultiVariantPublishingPomFile() {
+        addPublication(DEFAULT)
+        TestFileUtils.appendToFile(
+            library.buildFile,
+            """
+
+                android {
+                    publishing {
+                        multipleVariants {
+                            allVariants()
+                        }
+                    }
+                }
+
+                dependencies {
+                    api "com.android.support:support-v4:${'$'}{libs.versions.supportLibVersion.get()}"
+                }
+            """.trimIndent()
+        )
+        library.execute("clean", "publish")
+        // check dependency is not optional
+        val module = project.projectDir
+            .resolve("testrepo/com/example/android/myLib/1.0/myLib-1.0.pom")
+        assertThat(module).exists()
+        assertThat(module).doesNotContain(
+            """<optional>true</optional>"""
+        )
+    }
+
     // Regression test for b/241076233
     @Test
     fun testMultipleVariantPublishingWithNoBuildTypeAttribute() {

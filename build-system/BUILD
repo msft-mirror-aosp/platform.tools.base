@@ -135,6 +135,16 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+maven_repository(
+    name = "gradle-8.13-runtime-maven",
+    # keep sorted
+    artifacts = [
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.1.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 filegroup(
     name = "gradle-distrib-8.11.1",
     srcs = ["//tools/external/gradle:gradle-distrib-8.11.1"],
@@ -635,7 +645,9 @@ maven_repository(
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
         "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.21",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.0",  # AGP depends on kotlin-reflect:2.2.10, but Gradle downgrades it to kotlin-reflect:2.2.0
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.0",  # AGP depends on kotlin-stdlib:2.2.10, but Gradle downgrades it to kotlin-stdlib:2.2.0
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",
         "@maven//:org.jetbrains.markdown",

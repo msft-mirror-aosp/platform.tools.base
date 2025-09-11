@@ -21,8 +21,10 @@ import com.android.build.gradle.integration.common.truth.TaskStateList.Execution
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.SKIPPED
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.UP_TO_DATE
 import com.android.build.gradle.integration.common.utils.TaskStateAssertionHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -131,6 +133,26 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
         EmptyActivityProjectBuilder()
             .addAndroidLibrary(subprojectName = "lib", addImplementationDependencyFromApp = true)
             .build()
+
+    @Before
+    fun setUp() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("app").buildFile,
+            """
+                android {
+                    buildFeatures { resValues = true }
+                }
+            """.trimIndent()
+        )
+        TestFileUtils.appendToFile(
+            project.getSubproject("lib").buildFile,
+            """
+                android {
+                    buildFeatures { resValues = true }
+                }
+            """.trimIndent()
+        )
+    }
 
     @Test
     fun `check task states`() {

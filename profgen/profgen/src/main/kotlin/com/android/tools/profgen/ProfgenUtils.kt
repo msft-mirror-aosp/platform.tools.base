@@ -30,7 +30,7 @@ fun expandWildcards(
     require(hrpFile.exists()) { "File not found: $hrpPath" }
 
     val outFile = Path(outPath).toFile()
-    require(outFile.parentFile.exists()) { "Directory does not exist: ${outFile.parent}" }
+    require(outFile.parentFile!!.exists()) { "Directory does not exist: ${outFile.parent}" }
 
     require(programPaths.isNotEmpty()) { "Must pass at least one program source" }
 

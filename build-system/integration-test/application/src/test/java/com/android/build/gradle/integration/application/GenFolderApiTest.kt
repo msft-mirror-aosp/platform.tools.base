@@ -211,7 +211,7 @@ class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         Truth.assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("old_variant_api.build.gradle")))
-            .isEqualTo("f048e4df45934e6bbb8c48efb55cb1732bf6f903")
+            .isEqualTo("685cde8e5eb7ca006bb2f518c4aecf5fcb8b7499")
         Truth.assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("new_variant_api.build.gradle")))
             .isEqualTo("3b98a3744866d60e9034538ca805f1b0285ab873")
     }

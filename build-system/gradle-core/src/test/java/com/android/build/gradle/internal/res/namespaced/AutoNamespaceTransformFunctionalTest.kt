@@ -33,14 +33,11 @@ import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.transform.TransformSpec
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE
-import org.gradle.api.problems.internal.InternalProblems
-import org.gradle.api.problems.internal.ProblemsProgressEventEmitterHolder
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.mockito.Mockito
 import java.io.File
 import java.nio.file.Path
 
@@ -95,9 +92,6 @@ class AutoNamespaceTransformFunctionalTest {
             reg.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.PROCESSED_JAR.type)
             reg.parameters.projectName.set(project.name)
         }
-
-        // TODO (b/400789167): initialize problems service (new failure from Gradle 8.12)
-        ProblemsProgressEventEmitterHolder.init(Mockito.mock<InternalProblems?>(InternalProblems::class.java))
     }
 
     /** Check that the jar does not interfere with the AAR processing */

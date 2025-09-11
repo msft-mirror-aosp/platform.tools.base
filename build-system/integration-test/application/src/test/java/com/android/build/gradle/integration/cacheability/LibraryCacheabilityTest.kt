@@ -24,7 +24,9 @@ import com.android.build.gradle.integration.common.truth.TaskStateList.Execution
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.SKIPPED
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.UP_TO_DATE
 import com.android.build.gradle.integration.common.utils.CacheabilityTestHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -114,6 +116,28 @@ class LibraryCacheabilityTest {
             .withName(projectName)
             .dontOutputLogOnFailure()
             .create()
+    }
+
+    @Before
+    fun setUp() {
+        for (project in listOf(projectCopy1, projectCopy2)) {
+            TestFileUtils.appendToFile(
+                project.getSubproject("app").buildFile,
+                """
+                    android {
+                        buildFeatures { resValues = true }
+                    }
+                """.trimIndent()
+            )
+            TestFileUtils.appendToFile(
+                project.getSubproject("lib").buildFile,
+                """
+                    android {
+                        buildFeatures { resValues = true }
+                    }
+                """.trimIndent()
+            )
+        }
     }
 
     @Test

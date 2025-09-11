@@ -153,6 +153,7 @@ class CacheabilityTest {
                     defaultConfig { versionCode = 1 }
                     testOptions { unitTests { includeAndroidResources = true } }
                     buildTypes { debug { testCoverageEnabled = true } }
+                    buildFeatures { resValues = true }
                 }
                 """.trimMargin()
             )

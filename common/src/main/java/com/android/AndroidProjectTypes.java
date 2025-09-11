@@ -35,7 +35,7 @@ public class AndroidProjectTypes {
     public static final int PROJECT_TYPE_INSTANTAPP = 4;
 
     /** com.android.feature module. */
-    public static final int PROJECT_TYPE_FEATURE = 5;
+    @Deprecated public static final int PROJECT_TYPE_FEATURE = 5;
 
     /** com.android.dynamic-feature module. */
     public static final int PROJECT_TYPE_DYNAMIC_FEATURE = 6;

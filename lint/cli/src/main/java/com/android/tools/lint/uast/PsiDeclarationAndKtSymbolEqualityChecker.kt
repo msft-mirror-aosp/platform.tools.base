@@ -157,17 +157,22 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
       }
     }
     val ktTypeRendered = kaType.asPsiType(context, allowErrorTypes = true, mode) ?: return false
-    return if (isVararg) {
-      if (isVarargs) {
-        // last vararg
-        PsiEllipsisType(ktTypeRendered) == psi
+    val ktTypeToCompare =
+      if (isVararg) {
+        if (isVarargs) {
+          // last vararg
+          PsiEllipsisType(ktTypeRendered)
+        } else {
+          // non-last vararg
+          PsiArrayType(ktTypeRendered)
+        }
       } else {
-        // non-last vararg
-        PsiArrayType(ktTypeRendered) == psi
+        ktTypeRendered
       }
-    } else {
-      ktTypeRendered == psi
-    }
+    // b/443080986: `PsiType.equals()` triggers the type resolution.
+    // With more "fake" declarations that might not have a proper parent hierarchy,
+    // type resolution is not only expensive, but also prone to errors / corner cases.
+    return ktTypeToCompare.canonicalText == psi.canonicalText
   }
 
   private const val OBJECT_TYPE = "java.lang.Object"

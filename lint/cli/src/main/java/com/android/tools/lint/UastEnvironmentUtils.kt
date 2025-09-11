@@ -30,6 +30,7 @@ import com.intellij.codeInsight.CustomExceptionHandler
 import com.intellij.codeInsight.ExternalAnnotationsManager
 import com.intellij.codeInsight.InferredAnnotationsManager
 import com.intellij.core.CoreApplicationEnvironment
+import com.intellij.diagnostic.LoadingState
 import com.intellij.lang.LanguageASTFactory
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
@@ -444,6 +445,10 @@ internal fun configureApplicationEnvironment(
     DeclarativeASTFactory(),
   )
   appEnv.registerParserDefinition(DeclarativeParserDefinition())
+
+  // Mark the app as "started" to avoid early bailout paths in Registry.is() and more.
+  @Suppress("UnstableApiUsage")
+  LoadingState.setCurrentState(LoadingState.APP_STARTED)
 
   appConfigured = true
   Disposer.register(appEnv.parentDisposable, Disposable { appConfigured = false })

@@ -63,7 +63,7 @@ class BuiltInKotlinCompilerPluginTest(
         result.assertOutputContains("Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation 'debug'")
 
         // Also check KotlinCompilation details
-        result.assertOutputContains("KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugUnitTest, release, releaseUnitTest]")
+        result.assertOutputContains("KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugScreenshotTest, debugUnitTest, release, releaseScreenshotTest, releaseUnitTest]")
         result.assertOutputContains(
             """
             Details of KotlinCompilation 'debug':
@@ -101,9 +101,9 @@ class BuiltInKotlinCompilerPluginTest(
             toString = compilation 'debug' (target  (androidJvm))
             """.trimIndent()
         )
-        // Check KotlinCompilation 'debugUnitTest' too as there could be some confusion around the
-        // name of defaultSourceSet ('debugUnitTest') vs. the name of the source directories
-        // ('testDebug/kotlin' and others).
+        // Check KotlinCompilation 'debugUnitTest' too as it is slightly different from
+        // KotlinCompilation `debug`: The kotlinSourceSets directory names do not
+        // contain the Kotlin compilation name.
         result.assertOutputContains(
             """
             Details of KotlinCompilation 'debugUnitTest':
@@ -141,13 +141,44 @@ class BuiltInKotlinCompilerPluginTest(
             toString = compilation 'debugUnitTest' (target  (androidJvm))
             """.trimIndent()
         )
-        // Also check screenshot test as screenshot-test and test-fixture components are handled
-        // slightly differently.
-        // Currently, the KotlinCompilation instances for these components don't exist, but this
-        // will be fixed soon (tracked by b/429161295).
-        result.assertOutputDoesNotContain(
+        // Check KotlinCompilation 'debugScreenshotTest' too as it is slightly different from
+        // KotlinCompilation 'debug': It is supported only by built-in Kotlin, not the
+        // `kotlin-android` plugin.
+        result.assertOutputContains(
             """
             Details of KotlinCompilation 'debugScreenshotTest':
+            allAssociatedCompilations = []
+            allKotlinSourceSets = [[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]]
+            apiConfigurationName = debugScreenshotTestCompilationApi
+            associateWith = []
+            associatedCompilations = []
+            compilationName = debugScreenshotTest
+            compileAllTaskName = debugScreenshotTestClasses
+            compileDependencyConfigurationName = debugScreenshotTestCompileClasspath
+            compileDependencyFiles = <can't resolve at this point as it is too early>
+            compileKotlinTask = task ':app:compileDebugScreenshotTestKotlin'
+            compileKotlinTaskName = compileDebugScreenshotTestKotlin
+            compileKotlinTaskProvider = provider(task 'compileDebugScreenshotTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
+            compileOnlyConfigurationName = debugScreenshotTestCompilationCompileOnly
+            compileTaskProvider = provider(task 'compileDebugScreenshotTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
+            compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
+            defaultSourceSet = [src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]
+            defaultSourceSetName = debugScreenshotTest
+            disambiguatedName = debugScreenshotTest
+            extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=None]
+            getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
+            getName = debugScreenshotTest
+            implementationConfigurationName = debugScreenshotTestCompilationImplementation
+            kotlinOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}kotlinOptions$1@<hash-code>
+            kotlinSourceSets = [[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]]
+            output = org.jetbrains.kotlin.gradle.plugin.mpp.DefaultKotlinCompilationOutput@<hash-code>
+            platformType = androidJvm
+            project = project ':app'
+            runtimeDependencyConfigurationName = debugScreenshotTestRuntimeClasspath
+            runtimeDependencyFiles = <can't resolve at this point as it is too early>
+            runtimeOnlyConfigurationName = debugScreenshotTestCompilationRuntimeOnly
+            target = target  (androidJvm)
+            toString = compilation 'debugScreenshotTest' (target  (androidJvm))
             """.trimIndent()
         )
     }

@@ -34,6 +34,9 @@ class ArtProfile internal constructor(
                 obf.deobfuscate(type).forEach { os.println(it) }
             }
             for ((methodIndex, methodData) in data.methods) {
+                if (methodIndex !in dexFile.definedMethods) {
+                    continue
+                }
                 val method = dexFile.methodPool[methodIndex]
                 val deobfuscated = obf.deobfuscate(method)
                 methodData.print(os)
@@ -162,6 +165,9 @@ fun ArtProfile(
         val profileMethods = mutableMapOf<Int, MethodData>()
 
         for (iMethod in methods.indices) {
+            if (iMethod !in dex.definedMethods) {
+                continue
+            }
             val method = methods[iMethod]
             val deobfuscated = obf.deobfuscate(method)
             val flags = hrp.match(deobfuscated)
@@ -252,7 +258,7 @@ internal fun buildDexMetadata(
     infoList.forEachIndexed { i, info ->
         // Name should match the name of the APK.
         val output = File(File(outputDir, "$i"), "$apkName.dm")
-        require(output.parentFile.mkdirs())
+        require(output.parentFile!!.mkdirs())
         output.outputStream()
                 .writeDm(
                         profile,
@@ -265,7 +271,7 @@ internal fun buildDexMetadata(
             fileMap[info.apiLevels.first] = output
             fileMap[info.apiLevels.last] = output
         } else {
-            info.apiLevels.forEach { apiLevel ->
+            for (apiLevel in info.apiLevels) {
                 fileMap[apiLevel] = output
             }
         }

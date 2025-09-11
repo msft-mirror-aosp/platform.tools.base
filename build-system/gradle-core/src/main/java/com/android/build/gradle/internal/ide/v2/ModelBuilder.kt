@@ -19,12 +19,10 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.SdkConstants
 import com.android.Version
 import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.component.impl.DeviceTestImpl
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.dsl.DefaultConfig
-import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
@@ -277,7 +275,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(17, 0, humanReadable = "Android Gradle Plugin 9.0")
+        val modelProducer = VersionImpl(18, 0, humanReadable = "Android Gradle Plugin 9.0")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.
@@ -1251,8 +1249,12 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             generatedClassPaths = generatedClassPaths,
             bytecodeTransformations = getBytecodeTransformations(component),
             generatedAssetsFolders = getGeneratedAssetsFolders(component),
+            mappingR8TextFile = getR8MappingFile(component)
         )
     }
+
+    private fun getR8MappingFile(component: ComponentCreationConfig): File? =
+        component.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE).orNull?.asFile
 
     private fun getApplicationId(component: ComponentCreationConfig): String? {
         if (!component.componentType.isApk || component.componentType.isDynamicFeature) {

@@ -43,6 +43,7 @@ class LintResValuesTest {
                                     abortOnError = false
                                     textOutput = file("lint-results.txt")
                                 }
+                                buildFeatures { resValues = true }
                             }
                         """.trimIndent()
                     )

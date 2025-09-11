@@ -32,6 +32,22 @@ KGP_FOR_TESTS = [
 ]
 
 # Previous versions of KGP. This is used for Gradle recipe testing
+KGP_2_1_20 = [
+    "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.1.20",
+    "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.1.20",
+    "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-android-extensions-runtime_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-compiler_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.1.20",
+    "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+]
+
 KGP_1_9_22 = [
     "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_1.9.22",
     "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_1.9.22",

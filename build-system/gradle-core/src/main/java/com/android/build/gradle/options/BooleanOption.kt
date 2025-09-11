@@ -73,17 +73,7 @@ enum class BooleanOption(
 
     // Features' default values
     BUILD_FEATURE_DATABINDING("android.defaults.buildfeatures.databinding", false, ApiStage.Stable),
-    // TODO(b/366029616) deprecate and then remove BUILD_FEATURE_RESVALUES
-    BUILD_FEATURE_RESVALUES(
-        "android.defaults.buildfeatures.resvalues",
-        true,
-        ApiStage.Stable,
-        FutureStage(
-            false,
-            ApiStage.Stable,
-            Version.VERSION_9_0
-        )
-    ),
+
     BUILD_FEATURE_SHADERS(
         "android.defaults.buildfeatures.shaders",
         false,
@@ -539,20 +529,6 @@ enum class BooleanOption(
         )
     ),
 
-    /**
-     * `getDefaultProguardRule(proguard-android.txt)` support will be dropped in 9.0
-     */
-    R8_PROGUARD_ANDROID_TXT_DISALLOWED(
-        "android.r8.proguardAndroidTxt.disallowed",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.SoftlyEnforced(VERSION_10_0),
-            Version.VERSION_9_0
-        )
-    ),
-
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
@@ -714,10 +690,25 @@ enum class BooleanOption(
         stage = FeatureStage.SoftlyEnforced(VERSION_9_0),
     ),
 
+    /**
+     * `getDefaultProguardRule(proguard-android.txt)` no longer supported in 9.0
+     */
+    R8_PROGUARD_ANDROID_TXT_DISALLOWED(
+        "android.r8.proguardAndroidTxt.disallowed",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
 
     /* -------------------
-     * DEPRECATED FEATURES
-     */
+     * DEPRECATED API
+    */
+
+    // TODO(b/366029616) move to ApiStage.Removed
+    BUILD_FEATURE_RESVALUES(
+        "android.defaults.buildfeatures.resvalues",
+        false,
+        ApiStage.Deprecated(VERSION_10_0),
+    ),
 
     // Flag used to indicate a "deploy as instant" run configuration.
     @Suppress("unused")
@@ -737,6 +728,10 @@ enum class BooleanOption(
         false,
         ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
     ),
+
+    /* -------------------
+     * DEPRECATED FEATURES
+    */
 
     /** This flag is subsumed by android.enableLegacyVariantApi ([ENABLE_LEGACY_VARIANT_API]) */
     ENABLE_LEGACY_API("android.compatibility.enableLegacyApi", true, FeatureStage.Deprecated(VERSION_10_0)),

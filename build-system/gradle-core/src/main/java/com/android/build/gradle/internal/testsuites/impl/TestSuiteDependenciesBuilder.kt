@@ -25,12 +25,15 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.internal.dependency.VariantAwareDependenciesBuilder
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.dsl.DependencyCollector
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.attributes.Category
@@ -86,8 +89,8 @@ class TestSuiteDependenciesBuilder internal constructor(
             compileClasspath,
             testSuiteDependencies?.let {
                 listOf(
-                    testSuiteDependencies.compileOnly,
-                    testSuiteDependencies.implementation
+                    it.compileOnly,
+                    it.implementation
                 )
             } ?: listOf()
         )
@@ -105,8 +108,8 @@ class TestSuiteDependenciesBuilder internal constructor(
             runtimeClasspath,
             testSuiteDependencies?.let {
                 listOf(
-                    testSuiteDependencies.implementation,
-                    testSuiteDependencies.runtimeOnly,
+                    it.implementation,
+                    it.runtimeOnly,
                     enginesDependencies
                 )
             } ?: listOf(enginesDependencies)
@@ -115,6 +118,11 @@ class TestSuiteDependenciesBuilder internal constructor(
             testedVariant.variantDependencies.runtimeClasspath
         )
         addAttributes(runtimeClasspath, factory.named(Usage::class.java, Usage.JAVA_RUNTIME))
+        runtimeClasspath.attributes.attribute(
+            ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
+            ArtifactType.CLASSES_JAR.type
+        )
+
 
         return TestSuiteSourceClasspath(
             compileClasspath = compileClasspath,

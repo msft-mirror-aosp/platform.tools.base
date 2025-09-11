@@ -81,6 +81,7 @@ class DexFile internal constructor(
     internal val typePool = ArrayList<String>(header.typeIds.size)
     internal val protoPool = ArrayList<DexPrototype>(header.prototypeIds.size)
     internal val methodPool = ArrayList<DexMethod>(header.methodIds.size)
+    internal val definedMethods = HashSet<Int>()
 
     // we don't really care about any of the details of classes, just what index it corresponds to in the
     // type pool, and we can use the type pool to determine its descriptor, so in this case we only need an IntArray.
@@ -88,13 +89,8 @@ class DexFile internal constructor(
 
     companion object : Comparator<DexFile> {
 
-        override fun compare(o1: DexFile?, o2: DexFile?): Int {
-            return when {
-                o1 == null && o2 == null -> 0
-                o1 == null -> -1
-                o2 == null -> 1
-                else -> o1.name.compareTo(o2.name)
-            }
+        override fun compare(o1: DexFile, o2: DexFile): Int {
+            return o1.name.compareTo(o2.name)
         }
     }
 }
@@ -280,14 +276,13 @@ object MethodFlags {
     /** Combined value of flags */
     const val ALL = HOT or STARTUP or POST_STARTUP
 
-    inline fun isHot(flags: Int): Boolean = isFlagSet(flags, MethodFlags.HOT)
+    fun isHot(flags: Int): Boolean = isFlagSet(flags, MethodFlags.HOT)
 
-    inline fun isStartup(flags: Int): Boolean = isFlagSet(flags, MethodFlags.STARTUP)
+    fun isStartup(flags: Int): Boolean = isFlagSet(flags, MethodFlags.STARTUP)
 
-    inline fun isPostStartup(flags: Int): Boolean = isFlagSet(flags, MethodFlags.POST_STARTUP)
+    fun isPostStartup(flags: Int): Boolean = isFlagSet(flags, MethodFlags.POST_STARTUP)
 
-    @Suppress("NOTHING_TO_INLINE")
-    inline fun isFlagSet(flags: Int, flag: Int): Boolean {
+    fun isFlagSet(flags: Int, flag: Int): Boolean {
         return (flags and flag) == flag
     }
 }

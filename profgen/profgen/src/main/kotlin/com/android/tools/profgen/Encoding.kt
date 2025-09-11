@@ -17,7 +17,6 @@
 package com.android.tools.profgen
 
 import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.UTFDataFormatException
@@ -54,10 +53,19 @@ internal val ByteBuffer.leb128: Int
         var idx = 0
         do {
             b = ubyte
-            value = value or (b and MASK shl idx++ * 7)
+            value = value or (b and MASK shl (idx++ * 7))
         } while (b and MASK.inv() != 0)
         return value
     }
+
+/**
+ * Skips an unsigned LEB128.
+ *
+ * This is a no-op that exists only to silence errors about unused return values.
+ */
+fun ByteBuffer.skipLeb128() {
+    val unused = leb128
+}
 
 /**
  * Modified UTF-8 as described in the dex file format spec.
@@ -134,7 +142,7 @@ internal fun byteArrayOf(vararg chars: Char) = ByteArray(chars.size) { chars[it]
 internal fun OutputStream.writeUInt(value: Long, numberOfBytes: Int) {
     val buffer = ByteArray(numberOfBytes)
     for (i in 0 until numberOfBytes) {
-        buffer[i] = (value shr i * java.lang.Byte.SIZE and 0xff).toByte()
+        buffer[i] = (value shr (i * java.lang.Byte.SIZE) and 0xff).toByte()
     }
     write(buffer)
 }
@@ -235,7 +243,7 @@ internal fun InputStream.readUInt(numberOfBytes: Int): Long {
     var value: Long = 0
     for (k in 0 until numberOfBytes) {
         val next = buffer[k].toUByte().toLong()
-        value += next shl k * java.lang.Byte.SIZE
+        value += next shl (k * java.lang.Byte.SIZE)
     }
     return value
 }

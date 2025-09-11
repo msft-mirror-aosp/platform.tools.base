@@ -11,6 +11,7 @@ android {
     namespace = "com.android.tests.basic"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
+    buildFeatures { resValues = true }
 }
 
 public class GenerateCode extends DefaultTask {

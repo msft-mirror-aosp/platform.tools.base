@@ -6,7 +6,7 @@
     debuggable="true"
     mergedManifest="build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml"
     manifestMergeReport="build/outputs/logs/manifest-merger-debug-report.txt"
-    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android.txt-$androidGradlePluginVersion"
+    proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-$androidGradlePluginVersion"
     partialResultsDir="build/intermediates/lint_partial_results/debug/lintAnalyzeDebug/out">
   <buildFeatures
       coreLibraryDesugaring="true"
@@ -38,12 +38,10 @@
       type="MAIN"
       applicationId="com.example.android.lint.kotlin.library"
       generatedSourceFolders="build/generated/ap_generated_sources/debug/out"
-      generatedResourceFolders="build/generated/res/resValues/debug"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/desugar_jdk_libs_configuration-1.1.5-desugar-lint.txt:${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </artifact>
   <androidTestArtifact
       applicationId="com.example.android.lint.kotlin.library.test"
-      generatedResourceFolders="build/generated/res/resValues/androidTest/debug"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/desugar_jdk_libs_configuration-1.1.5-desugar-lint.txt:${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </androidTestArtifact>
   <testArtifact>

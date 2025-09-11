@@ -47,7 +47,7 @@ class TestTaskCustomConfigurationBlock {
                                 "[engine:toy-junit-engine-for-tests]"
                             )
                         }
-                        it.hostJar { }
+                        it.assets { }
                         it.targetVariants.add("redDebug")
                         it.targetVariants.add("blueDebug")
                         it.targets.apply {
@@ -67,9 +67,11 @@ class TestTaskCustomConfigurationBlock {
 
     @Test
     fun testConfigurationBlockExecutes() {
+        // no need to run the task, we just want to check which ones are configured and which ones
+        // are not.
         val result = rule.build
             .executor
-            .expectFailure() // no test present.
+            .withArgument("--dry-run")
             .run("app:testFirstT1BlueDebugTestSuite")
         result.assertOutputContains("Task testFirstT1BlueDebugTestSuite configured with")
         result.assertOutputContains("Task testFirstT1BlueDebugTestSuite configured from variant block")

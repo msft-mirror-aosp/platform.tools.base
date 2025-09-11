@@ -21,11 +21,11 @@ import com.android.tools.lint.UastEnvironment
 import com.android.tools.lint.checks.infrastructure.KlibTestFile
 import com.android.tools.lint.checks.infrastructure.TestFiles.kotlin
 import com.android.tools.lint.detector.api.Project
-import com.android.tools.lint.useFirUast
 import com.google.common.truth.Truth.assertThat
 import com.intellij.mock.MockProject
 import com.intellij.openapi.vfs.impl.jar.CoreJarFileSystem
 import com.intellij.psi.PsiClassType
+import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeVisitor
@@ -43,10 +43,7 @@ import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
-import org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration
 import org.junit.AfterClass
-import org.junit.Assume
-import org.junit.AssumptionViolatedException
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -70,12 +67,6 @@ class ProvideDeclarationFromKlibTest {
     @BeforeClass
     @JvmStatic
     fun beforeClass() {
-      try {
-        Assume.assumeTrue("App is running in K1 and this test will be skipped", useFirUast())
-      } catch (e: AssumptionViolatedException) {
-        println(e.message) // Otherwise the message will not print
-        throw e
-      }
       val klibFile =
         KlibTestFile(
           "/testdata.klib",
@@ -210,7 +201,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val factory = KotlinStaticPsiDeclarationProviderFactory(mockProject, CoreJarFileSystem())
     val provider = factory.createPsiDeclarationProvider(projectScope)
 
-    val classId = ClassId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("LibClass"))
+    val classId = ClassId(FqName(TEST_DATA_PACKAGE), Name.identifier("LibClass"))
     val psiClasses = provider.getClassesByClassId(classId)
 
     assertThat(psiClasses).hasSize(1)
@@ -257,8 +248,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
 
     assertThat(targetClass.fields).hasLength(1)
     val libField = targetClass.fields.single { it.name == "libAttr" }
-    // Known issue: all fields have void type
-    assertThat(libField.type.canonicalText).isEqualTo("void")
+    assertThat(libField.type.canonicalText).isEqualTo("kotlin.Int")
   }
 
   @OptIn(KaExperimentalApi::class) // For mocking only
@@ -272,11 +262,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val symbol =
       mock<KaNamedFunctionSymbol> {
         on { callableId } doReturn
-          CallableId(
-            FqName(TEST_DATA_PACKAGE),
-            FqName("LibClass"),
-            Name.guessByFirstCharacter("libMethod"),
-          )
+          CallableId(FqName(TEST_DATA_PACKAGE), FqName("LibClass"), Name.identifier("libMethod"))
         on { annotations } doReturn emptyAnnotationList
         on { this.returnType } doReturn returnType
         on { valueParameters } doReturn listOf(valueParam)
@@ -336,7 +322,7 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val kaFunction =
       mock<KaNamedFunctionSymbol> {
         on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("libGlobalMethod"))
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("libGlobalMethod"))
       }
 
     val globalMethod = provider.getFunctions(kaFunction)
@@ -346,25 +332,30 @@ FUfg391nHVzWMuIR4cRl6kLrIIuxkL2YyMzd6G8QL2jlE8L4i2N8yxBZYf0XRy36xzMXAAA=
     val kaExtensionProperty =
       mock<KaPropertySymbol> {
         on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("globalProperty"))
-        on { name } doReturn Name.guessByFirstCharacter("globalProperty")
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("globalProperty"))
+        on { name } doReturn Name.identifier("globalProperty")
       }
 
     val globalExtensionProperty = provider.getProperties(kaExtensionProperty)
     assertThat(globalExtensionProperty).hasSize(1)
     assertThat(globalExtensionProperty.single().name).isEqualTo("globalProperty")
-    assertThat(globalExtensionProperty.single().isExtensionDeclaration()).isTrue()
+    assertThat(globalExtensionProperty.single()).isInstanceOf(PsiField::class.java)
+    assertThat((globalExtensionProperty.single() as PsiField).type.canonicalText)
+      .isEqualTo("com.testdata.LibClass")
 
     val kaConstProperty =
       mock<KaPropertySymbol> {
         on { callableId } doReturn
-          CallableId(FqName(TEST_DATA_PACKAGE), Name.guessByFirstCharacter("LIB_CONST"))
-        on { name } doReturn Name.guessByFirstCharacter("LIB_CONST")
+          CallableId(FqName(TEST_DATA_PACKAGE), Name.identifier("LIB_CONST"))
+        on { name } doReturn Name.identifier("LIB_CONST")
       }
 
     val globalConstProperty = provider.getProperties(kaConstProperty)
     assertThat(globalConstProperty).hasSize(1)
     assertThat(globalConstProperty.single().name).isEqualTo("LIB_CONST")
+    assertThat(globalConstProperty.single()).isInstanceOf(PsiField::class.java)
+    assertThat((globalConstProperty.single() as PsiField).type.canonicalText)
+      .isEqualTo("kotlin.String")
   }
 }
 
@@ -376,11 +367,11 @@ private class MockPsiType(val matchTarget: String) : PsiType(emptyArray()) {
   }
 
   override fun getPresentableText(): String {
-    throw UnsupportedOperationException()
+    return matchTarget
   }
 
   override fun getCanonicalText(): String {
-    throw UnsupportedOperationException()
+    return matchTarget
   }
 
   override fun isValid(): Boolean {

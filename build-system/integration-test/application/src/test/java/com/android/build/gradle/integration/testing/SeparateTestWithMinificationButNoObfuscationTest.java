@@ -1,10 +1,11 @@
 package com.android.build.gradle.integration.testing;
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import java.io.IOException;
+
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Test for a separate test module that has minification turned on but no obfuscation (no
@@ -21,11 +22,7 @@ public class SeparateTestWithMinificationButNoObfuscationTest {
     @Test
     public void testBuilding() throws IOException, InterruptedException {
         // just building fine is enough to test the regression.
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("clean");
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("assemble");
+        project.executor().run("clean");
+        project.executor().run("assemble");
     }
 }

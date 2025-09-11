@@ -116,6 +116,7 @@ class SharedLibraryTest {
         val build = consumerRule.build {
             androidApplication {
                 addSharedDependency()
+                android { buildFeatures { resValues = true } }
             }
         }
         val result = build.executor.expectFailure().run("assembleDebug")
@@ -132,6 +133,9 @@ class SharedLibraryTest {
     @Test
     fun `token resolution fails when dependency not included`() {
         val build = consumerRule.build {
+            androidApplication {
+                android { buildFeatures { resValues = true } }
+            }
             gradleProperties {
                 add(BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES, true)
             }

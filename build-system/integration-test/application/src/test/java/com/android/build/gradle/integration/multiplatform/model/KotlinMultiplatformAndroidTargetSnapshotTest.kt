@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.multiplatform.model
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.model.BaseModelComparator
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
@@ -27,6 +28,7 @@ class KotlinMultiplatformAndroidTargetSnapshotTest: BaseModelComparator {
     @get:Rule
     val project = GradleTestProjectBuilder()
         .fromTestProject("kotlinMultiplatform")
+        .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
         .create()
 
     @Test

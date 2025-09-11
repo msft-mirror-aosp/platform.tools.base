@@ -7,7 +7,7 @@
       - applicationIdSuffix                = (null)
       - versionNameSuffix                  = (null)
       - buildConfigFields                  = (null)
-      - resValues                          = []
+      - resValues                          = (null)
       - proguardFiles                      = []
       - consumerProguardFiles              = []
       - testProguardFiles                  = []
@@ -45,7 +45,7 @@
          - applicationIdSuffix      = (null)
          - versionNameSuffix        = (null)
          - buildConfigFields        = (null)
-         - resValues                = []
+         - resValues                = (null)
          - proguardFiles            = []
          - consumerProguardFiles    = []
          - testProguardFiles        = []
@@ -70,7 +70,7 @@
          - applicationIdSuffix      = (null)
          - versionNameSuffix        = (null)
          - buildConfigFields        = (null)
-         - resValues                = []
+         - resValues                = (null)
          - proguardFiles            = []
          - consumerProguardFiles    = []
          - testProguardFiles        = []

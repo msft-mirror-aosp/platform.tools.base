@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
+import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.profile.PROPERTY_VARIANT_NAME_KEY
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.PublishingSpecs
@@ -31,6 +32,7 @@ import com.android.build.gradle.internal.utils.KgpVersion
 import org.gradle.api.JavaVersion
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
@@ -50,7 +52,7 @@ class KotlinCompileCreationAction(
             return kotlinJvmFactory.registerKotlinJvmCompileTask(
                 taskName,
                 kotlinAndroidProjectExtension.compilerOptions,
-                creationConfig.services.provider { kotlinAndroidProjectExtension.explicitApi }
+                creationConfig.explicitApiModeProvider
             )
         }
         return kotlinJvmFactory.registerKotlinJvmCompileTask(taskName, creationConfig.name)
@@ -197,4 +199,3 @@ internal fun KotlinJvmCompile.applyCompilerOptions(options: KotlinJvmCompilerOpt
         verbose.convention(options.verbose)
     }
 }
-

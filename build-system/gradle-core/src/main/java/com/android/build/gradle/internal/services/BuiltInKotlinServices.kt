@@ -25,12 +25,6 @@ import com.android.build.api.variant.impl.ApplicationVariantImpl
 import com.android.build.api.variant.impl.DynamicFeatureVariantImpl
 import com.android.build.api.variant.impl.LibraryVariantImpl
 import com.android.build.api.variant.impl.TestVariantImpl
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.TestExtension
-import com.android.build.gradle.TestedExtension
-import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.BuiltInKotlinBooleanOptionEnabled
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.BuiltInKotlinPluginApplied
@@ -41,20 +35,20 @@ import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KgpVersion
 import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUILT_IN_KOTLIN_VERSION
-import com.android.build.gradle.internal.utils.disallowPlugin
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
 import com.android.build.gradle.internal.utils.requirePlugin
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.IssueReporter.Type
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
-import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
+import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilationFactory
+import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
 
 /**
  * Services related to the built-in Kotlin support, to be used when
@@ -67,7 +61,6 @@ class BuiltInKotlinServices(
 
     val kotlinBaseApiPlugin: KotlinBaseApiPlugin,
     val kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
-    val baseExtensionProvider: Provider<BaseExtension> // Currently required (KT-77300), can be null
 ) {
 
     val kgpVersion: KgpVersion = KgpVersion.parse(kotlinBaseApiPlugin.pluginVersion)
@@ -78,7 +71,6 @@ class BuiltInKotlinServices(
             reason: AvailabilityReason,
             kotlinBaseApiPlugin: KotlinBaseApiPlugin,
             kotlinAndroidProjectExtension: KotlinAndroidProjectExtension,
-            baseExtensionProvider: Provider<BaseExtension>,
         ): BuiltInKotlinServices {
             getKotlinPluginVersionFromPlugin(kotlinBaseApiPlugin)?.let {
                 if (KgpVersion.parse(it) < MINIMUM_BUILT_IN_KOTLIN_VERSION) {
@@ -101,7 +93,6 @@ class BuiltInKotlinServices(
                 reason,
                 kotlinBaseApiPlugin,
                 kotlinAndroidProjectExtension,
-                baseExtensionProvider
             )
         }
     }
@@ -299,19 +290,17 @@ private fun initBuiltInKaptSupport(project: Project) {
     project.extensions.add("kapt", kotlinBaseApiPlugin.kaptExtension)
 }
 
-internal fun ComponentCreationConfig.createKotlinCompilation(
-    baseVariant: BaseVariant,
-): KotlinCompilation<Any> {
+@OptIn(InternalKotlinGradlePluginApi::class)
+internal fun ComponentCreationConfig.createKotlinCompilation(): KotlinCompilation<Any> {
     val kotlinServices = services.builtInKotlinServices
 
-    // TODO(b/409528883): Use KGP API to create a KotlinCompilation instance once it is
-    // available (KT-77023).
-    // For now, we need to make use of KotlinJvmAndroidCompilationFactory, and because its
-    // constructor is `internal`, we need to use reflection.
-    val constructor = KotlinJvmAndroidCompilationFactory::class.java.getConstructor(KotlinAndroidTarget::class.java, BaseVariant::class.java)
-    constructor.isAccessible = true
-    val kotlinCompilationFactory = constructor.newInstance(kotlinServices.kotlinAndroidProjectExtension.target, baseVariant)
-    val kotlinCompilation = kotlinCompilationFactory.create(name)
+    val kotlinCompilation: KotlinJvmAndroidCompilation =
+        kotlinServices.kotlinBaseApiPlugin.createKotlinAndroidCompilation(
+            name = name,
+            androidTarget = kotlinServices.kotlinAndroidProjectExtension.target,
+            androidVariantJavaCompileTask = taskContainer.javacTask as TaskProvider<JavaCompile>,
+            androidVariantType = toAndroidVariantType()
+        )
 
     // Set Kotlin source directories. Note that we're setting instead of adding the directories
     // because we want to overwrite any directories that were previously set and make it consistent
@@ -321,7 +310,8 @@ internal fun ComponentCreationConfig.createKotlinCompilation(
     // `src/test/java`, `src/testDebug/kotlin`, `src/testDebug/java`.
     kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.directories))
 
-    // Also add kotlinCompilation to KotlinAndroidTarget.compilations
+    // Also add kotlinCompilation to KotlinAndroidTarget.compilations (the IDE requires this info to
+    // configure Kotlin).
     @Suppress("UNCHECKED_CAST")
     (kotlinServices.kotlinAndroidProjectExtension.target.compilations as NamedDomainObjectContainer<KotlinJvmAndroidCompilation>)
         .add(kotlinCompilation)
@@ -329,24 +319,21 @@ internal fun ComponentCreationConfig.createKotlinCompilation(
     return kotlinCompilation
 }
 
-/**
- * Returns the corresponding old [BaseVariant] for this component, or null if such an instance
- * doesn't exist (for screenshot-test and test-fixtures components).
- */
-internal fun ComponentCreationConfig.toBaseVariant(baseExtension: BaseExtension): BaseVariant? {
+@OptIn(InternalKotlinGradlePluginApi::class)
+private fun ComponentCreationConfig.toAndroidVariantType(): AndroidVariantType {
     return when (this) {
         is ComponentImpl<*> -> when (this) {
-            is ApplicationVariantImpl, is DynamicFeatureVariantImpl -> (baseExtension as AppExtension).applicationVariants.single { it.name == name }
-            is LibraryVariantImpl -> (baseExtension as LibraryExtension).libraryVariants.single { it.name == name }
-            is TestVariantImpl -> (baseExtension as TestExtension).applicationVariants.single { it.name == name }
+            is ApplicationVariantImpl -> AndroidVariantType.Main
+            is DynamicFeatureVariantImpl -> AndroidVariantType.Main
+            is LibraryVariantImpl -> AndroidVariantType.Main
+            is TestVariantImpl -> AndroidVariantType.Main
             is HostTestImpl -> if (hostTestName == com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE) {
-                (baseExtension as TestedExtension).unitTestVariants.single { it.name == name }
+                AndroidVariantType.UnitTest
             } else {
-                check(hostTestName == com.android.build.api.variant.HostTestBuilder.SCREENSHOT_TEST_TYPE)
-                null // Not available screenshot-test components
+                AndroidVariantType.Unknown // Not available a screenshot-test component
             }
-            is DeviceTestImpl -> (baseExtension as TestedExtension).testVariants.single { it.name == name }
-            is TestFixturesImpl -> null // Not available for test-fixtures components
+            is DeviceTestImpl -> AndroidVariantType.InstrumentedTest
+            is TestFixturesImpl -> AndroidVariantType.Unknown  // Not available for a test-fixtures component
             else -> error("Unknown component: ${this::class.java.name}")
         }
         is KmpComponentImpl<*> -> error("KmpComponentImpl is not expected here (built-in Kotlin support is not available for KMP)")

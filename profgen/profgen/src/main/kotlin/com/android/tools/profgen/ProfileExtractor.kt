@@ -44,8 +44,8 @@ fun extractProfileAsDm(
             "Apk must contain profile at assets/dexopt/baseline.prof " +
                     "and assets/dexopt/baseline.profm"
         }
-        val profInputStream = zipFile.getInputStream(profEntry)
-        val profmInputStream = zipFile.getInputStream(profmEntry)
+        val profInputStream = zipFile.getInputStream(profEntry)!!
+        val profmInputStream = zipFile.getInputStream(profmEntry)!!
         val prof = ArtProfile(profInputStream)
         check(prof != null) {
             "Unable to read profile from apk ${apkFile.absolutePath}"
@@ -54,7 +54,7 @@ fun extractProfileAsDm(
         check(profmSerializer != null) {
             "Unable to read profile metadata from apk ${apkFile.absolutePath}"
         }
-        val metadata = ArtProfile(profmSerializer.read(profmInputStream))
+        val metadata = ArtProfile(profmSerializer.read(profmInputStream!!))
         val merged = prof.addMetadata(metadata, profmSerializer.metadataVersion!!)
         outputStream.writeDm(merged, metadata, profileSerializer, metadataSerializer)
     }

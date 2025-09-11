@@ -46,15 +46,12 @@ import groovy.util.Eval;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFile;
-import org.gradle.api.problems.internal.InternalProblems;
-import org.gradle.api.problems.internal.ProblemsProgressEventEmitterHolder;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
 
 import java.io.File;
 import java.util.Collection;
@@ -293,8 +290,6 @@ public class PluginDslTest {
         Map.Entry<String, VariantCreationConfig> vsentry =
                 componentMap.entrySet().iterator().next();
 
-        // TODO (b/400789167): initialize problems service (new failure from Gradle 8.12)
-        ProblemsProgressEventEmitterHolder.init(Mockito.mock(InternalProblems.class));
         File mockableJarFile =
                 vsentry.getValue().getGlobal().getMockableJarArtifact().getSingleFile();
         assertThat(mockableJarFile).isNotNull();

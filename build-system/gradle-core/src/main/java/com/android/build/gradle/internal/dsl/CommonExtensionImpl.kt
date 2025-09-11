@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.utils.validateNamespaceValue
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.LibraryRequest
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.errors.IssueReporter
@@ -313,6 +314,15 @@ abstract class CommonExtensionImpl<
     }
 
     override fun getDefaultProguardFile(name: String): File {
+        if (dslServices.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED] &&
+            name == ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName
+        ) {
+            dslServices
+                .issueReporter
+                .reportError(
+                    IssueReporter.Type.GENERIC, ProguardFiles.DONTOPTIMIZE_DISALLOWED_MESSAGE
+                )
+        }
         if (!ProguardFiles.KNOWN_FILE_NAMES.contains(name)) {
             dslServices
                 .issueReporter

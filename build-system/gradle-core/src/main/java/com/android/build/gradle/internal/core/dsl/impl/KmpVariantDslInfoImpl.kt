@@ -41,9 +41,10 @@ import com.android.build.gradle.internal.core.dsl.features.ShadersDslInfo
 import com.android.build.gradle.internal.dsl.KmpOptimizationImpl
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.LibraryKeepRulesImpl
-import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME
+import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.VariantServices
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.core.DefaultVectorDrawablesOptions
 import com.android.builder.model.VectorDrawablesOptions
@@ -89,7 +90,7 @@ class KmpVariantDslInfoImpl(
             ?: throw RuntimeException(
                 "Namespace not specified. Specify a namespace in the module's build file like so:\n" +
                         "kotlin {\n" +
-                        "    $DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
+                        "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
                         "        namespace = \"com.example.namespace\"\n" +
                         "    }\n" +
                         "}\n"
@@ -156,7 +157,11 @@ class KmpVariantDslInfoImpl(
                 override fun getDefaultProguardFiles(): List<File> =
                     listOf(
                         ProguardFiles.getDefaultProguardFile(
-                            ProguardFiles.ProguardFile.DONT_OPTIMIZE.fileName,
+                            if (services.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED]) {
+                                ProguardFiles.ProguardFile.OPTIMIZE
+                            } else {
+                                ProguardFiles.ProguardFile.DONT_OPTIMIZE
+                            }.fileName,
                             buildDirectory
                         )
                     )

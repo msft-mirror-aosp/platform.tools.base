@@ -98,12 +98,7 @@ import java.util.Properties
                             enginesDependencies.add("com.test:toy-junit-engine:1.0")
                             enginesDependencies.add("org.junit.platform:junit-platform-engine:1.12.0")
                         }
-                        it.hostJar {
-                            dependencies.apply {
-                                implementation.add("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
-                                implementation.add("com.google.code.gson:gson:2.11.0")
-                            }
-                        }
+                        it.assets {}
                         it.targetVariants.add("debug")
                         it.targets.create("t1") { }
                     }
@@ -119,10 +114,8 @@ import java.util.Properties
         val project = rule.build
         val result = project
             .executor
-            .expectFailure() // TODO: it fails because Gradle complains I have no tests.
             .run("testFirstT1DebugTestSuite")
-        // ensure our test Task has at last executed even if it failed.
-        Truth.assertThat(result.failedTasks).contains(":app:testFirstT1DebugTestSuite")
+        Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
 
         // lookup the test engine logging file.
         val loggingFile = File(project.subProject(":app").buildDir.toFile(),

@@ -25,10 +25,12 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationActionImpl
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.errors.EvalIssueException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
@@ -58,6 +60,9 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
     @get:Internal("only for task execution")
     abstract val buildDirectory: DirectoryProperty
 
+    @get:Input
+    abstract val failOnMissingProguardFiles: Property<Boolean>
+
     @Throws(IOException::class)
     public override fun doTaskAction() {
         val consumerProguardFiles = consumerProguardFiles.files
@@ -74,13 +79,21 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
             if (file.isFile) {
                 // do nothing
             } else if (file.isDirectory) {
-                logger.warn("Directories as consumer proguard configuration are not supported: ${file.path}")
+                reportMissingFile("Directories as consumer proguard configuration are not supported: ${file.path}")
             } else {
-                logger.warn("Supplied consumer proguard configuration does not exist: ${file.path}")
+                reportMissingFile("Supplied consumer proguard configuration does not exist: ${file.path}")
             }
         }
 
         super.doTaskAction()
+    }
+
+    private fun reportMissingFile(message: String) {
+        if (failOnMissingProguardFiles.get() == true) {
+            throw RuntimeException(message)
+        } else {
+            logger.warn(message)
+        }
     }
 
     class CreationAction(
@@ -121,6 +134,11 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
                                     .get(GENERATED_PROGUARD_FILE))
             task.inputFiles.from(inputFiles)
             task.inputFiles.disallowChanges()
+            task.failOnMissingProguardFiles.setDisallowChanges(
+                creationConfig.services.projectOptions.get(
+                    BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES
+                )
+            )
             task.buildDirectory.setDisallowChanges(task.project.layout.buildDirectory)
         }
     }

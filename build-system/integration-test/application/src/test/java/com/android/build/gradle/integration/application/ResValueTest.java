@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application;
 
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -31,14 +32,17 @@ import com.android.builder.model.v2.dsl.BuildType;
 import com.android.builder.model.v2.dsl.ClassField;
 import com.android.builder.model.v2.dsl.ProductFlavor;
 import com.android.builder.model.v2.models.AndroidDsl;
+
 import com.google.common.collect.Maps;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Test for Res Values declared in build type, flavors, and variant and how they override each other
@@ -68,6 +72,7 @@ public class ResValueTest {
                         + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION
                         + "\"\n"
                         + "\n"
+                        + "                buildFeatures { resValues = true }\n"
                         + "                defaultConfig {\n"
                         + "                    resValue \"string\", \"VALUE_DEFAULT\", \"1\"\n"
                         + "                    resValue \"string\", \"VALUE_DEBUG\",   \"1\"\n"
@@ -77,8 +82,10 @@ public class ResValueTest {
                         + "\n"
                         + "                buildTypes {\n"
                         + "                    debug {\n"
-                        + "                        resValue \"string\", \"VALUE_DEBUG\",   \"100\"\n"
-                        + "                        resValue \"string\", \"VALUE_VARIANT\", \"100\"\n"
+                        + "                        resValue \"string\", \"VALUE_DEBUG\",  "
+                        + " \"100\"\n"
+                        + "                        resValue \"string\", \"VALUE_VARIANT\","
+                        + " \"100\"\n"
                         + "                    }\n"
                         + "                }\n"
                         + "\n"
@@ -98,7 +105,8 @@ public class ResValueTest {
                         + "\n"
                         + "                applicationVariants.all { variant ->\n"
                         + "                    if (variant.buildType.name == \"debug\") {\n"
-                        + "                        variant.resValue \"string\", \"VALUE_VARIANT\", \"1000\"\n"
+                        + "                        variant.resValue \"string\", \"VALUE_VARIANT\","
+                        + " \"1000\"\n"
                         + "                    }\n"
                         + "                }\n"
                         + "            }\n"
@@ -123,22 +131,21 @@ public class ResValueTest {
     @Test
     public void buildFlavor1Debug() {
         String expected =
-                ""
-                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                        + "<resources>\n"
-                        + "\n"
-                        + "    <!-- Automatically generated file. DO NOT MODIFY -->\n"
-                        + "\n"
-                        + "    <!-- Value from build type: debug -->\n"
-                        + "    <string name=\"VALUE_DEBUG\" translatable=\"false\">100</string>\n"
-                        + "    <!-- Value from the variant -->\n"
-                        + "    <string name=\"VALUE_VARIANT\" translatable=\"false\">1000</string>\n"
-                        + "    <!-- Value from product flavor: flavor1 -->\n"
-                        + "    <string name=\"VALUE_FLAVOR\" translatable=\"false\">10</string>\n"
-                        + "    <!-- Value from default config. -->\n"
-                        + "    <string name=\"VALUE_DEFAULT\" translatable=\"false\">1</string>\n"
-                        + "\n"
-                        + "</resources>";
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<resources>\n"
+                    + "\n"
+                    + "    <!-- Automatically generated file. DO NOT MODIFY -->\n"
+                    + "\n"
+                    + "    <!-- Value from build type: debug -->\n"
+                    + "    <string name=\"VALUE_DEBUG\" translatable=\"false\">100</string>\n"
+                    + "    <!-- Value from the variant -->\n"
+                    + "    <string name=\"VALUE_VARIANT\" translatable=\"false\">1000</string>\n"
+                    + "    <!-- Value from product flavor: flavor1 -->\n"
+                    + "    <string name=\"VALUE_FLAVOR\" translatable=\"false\">10</string>\n"
+                    + "    <!-- Value from default config. -->\n"
+                    + "    <string name=\"VALUE_DEFAULT\" translatable=\"false\">1</string>\n"
+                    + "\n"
+                    + "</resources>";
         checkBuildConfig(expected, "flavor1/debug");
     }
 
@@ -154,22 +161,21 @@ public class ResValueTest {
     @Test
     public void buildFlavor2Debug() throws IOException {
         String expected =
-                ""
-                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                        + "<resources>\n"
-                        + "\n"
-                        + "    <!-- Automatically generated file. DO NOT MODIFY -->\n"
-                        + "\n"
-                        + "    <!-- Value from build type: debug -->\n"
-                        + "    <string name=\"VALUE_DEBUG\" translatable=\"false\">100</string>\n"
-                        + "    <!-- Value from the variant -->\n"
-                        + "    <string name=\"VALUE_VARIANT\" translatable=\"false\">1000</string>\n"
-                        + "    <!-- Value from product flavor: flavor2 -->\n"
-                        + "    <string name=\"VALUE_FLAVOR\" translatable=\"false\">20</string>\n"
-                        + "    <!-- Value from default config. -->\n"
-                        + "    <string name=\"VALUE_DEFAULT\" translatable=\"false\">1</string>\n"
-                        + "\n"
-                        + "</resources>";
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<resources>\n"
+                    + "\n"
+                    + "    <!-- Automatically generated file. DO NOT MODIFY -->\n"
+                    + "\n"
+                    + "    <!-- Value from build type: debug -->\n"
+                    + "    <string name=\"VALUE_DEBUG\" translatable=\"false\">100</string>\n"
+                    + "    <!-- Value from the variant -->\n"
+                    + "    <string name=\"VALUE_VARIANT\" translatable=\"false\">1000</string>\n"
+                    + "    <!-- Value from product flavor: flavor2 -->\n"
+                    + "    <string name=\"VALUE_FLAVOR\" translatable=\"false\">20</string>\n"
+                    + "    <!-- Value from default config. -->\n"
+                    + "    <string name=\"VALUE_DEFAULT\" translatable=\"false\">1</string>\n"
+                    + "\n"
+                    + "</resources>";
         checkBuildConfig(expected, "flavor2/debug");
     }
 

@@ -160,7 +160,7 @@ package com.android.build.api.artifact {
     method public com.android.build.api.artifact.OutOperationRequest<FileTypeT> withName(String name);
   }
 
-  public abstract sealed class ScopedArtifact extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.RegularFile> {
+  public abstract sealed class ScopedArtifact extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.Directory> {
   }
 
   public static final class ScopedArtifact.CLASSES extends com.android.build.api.artifact.ScopedArtifact implements com.android.build.api.artifact.Artifact.Appendable com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
@@ -216,6 +216,10 @@ package com.android.build.api.artifact {
 
   @org.gradle.api.Incubating public static final class SingleArtifact.RUNTIME_SYMBOL_LIST extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
     field public static final com.android.build.api.artifact.SingleArtifact.RUNTIME_SYMBOL_LIST INSTANCE;
+  }
+
+  @org.gradle.api.Incubating public static final class SingleArtifact.VERSION_CONTROL_INFO_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.VERSION_CONTROL_INFO_FILE INSTANCE;
   }
 
   public interface TaskBasedOperation<TaskT extends org.gradle.api.Task> {

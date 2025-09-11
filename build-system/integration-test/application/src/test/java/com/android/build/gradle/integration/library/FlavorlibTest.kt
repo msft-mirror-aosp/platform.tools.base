@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.library
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
@@ -70,9 +69,7 @@ class FlavorlibTest : ModelComparator() {
 
     @Test
     fun report() {
-        executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("signingReport")
+        executor().run("signingReport")
         // run twice to verify config cached run works
         executor().run("signingReport")
     }

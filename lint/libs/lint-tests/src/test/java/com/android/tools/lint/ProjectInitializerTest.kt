@@ -58,6 +58,7 @@ import com.android.tools.lint.detector.api.XmlContext
 import com.android.utils.XmlUtils.getFirstSubTagByName
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiField
 import java.io.File
 import kotlin.io.path.isRegularFile
@@ -66,7 +67,9 @@ import kotlin.streams.toList
 import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
+import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.fir.utils.KaFirCacheCleaner
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.psi.KtClass
@@ -77,7 +80,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Assume.assumeTrue
 import org.junit.ClassRule
 import org.junit.Test
@@ -2459,6 +2461,77 @@ class ProjectInitializerTest {
     )
   }
 
+  @Test
+  fun testAnalysisAPIServices() {
+    assumeTrue(useFirUast())
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="common" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="com/example/Common.kt"/>
+                </module>
+                <module name="desktop" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                  <src file="com/example/Desktop.kt"/>
+                  <dep module="common" kind="dependsOn" />
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          kotlin(
+              "com/example/Common.kt",
+              """
+              package com.example
+
+              interface Platform {
+                val name: String
+              }
+              expect fun getPlatform(): Platform
+              """,
+            )
+            .indented(),
+          kotlin(
+              "com/example/Desktop.kt",
+              """
+              package com.example
+
+              class DesktopPlatform : Platform {
+                override val name: String
+                get() = "Desktop"
+              }
+
+              actual fun getPlatform(): Platform = DesktopPlatform()
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context?.project?.ideaProject?.checkAnalysisApiServices()
+          }
+          else -> {}
+        }
+      },
+    )
+  }
+
   @OptIn(KaExperimentalApi::class)
   @Test
   fun testExpectActualWithJustJvm() {
@@ -2623,7 +2696,7 @@ class ProjectInitializerTest {
   fun testGeneratedAndTestFile() {
     // Test/generated sources cannot be in the same root as non-test/non-generated sources with
     // Lint's K1 project structure, so we can only test on K2.
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
@@ -2894,7 +2967,7 @@ class ProjectInitializerTest {
 
   @Test
   fun testKMPProjectK2() {
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
     val shared =
       project(
           kt(
@@ -3306,7 +3379,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
 
   @Test
   fun testKMPProjectK2_explicitPlatform() {
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
     val shared =
       project(
           kt(
@@ -3718,7 +3791,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
 
   @Test
   fun testKMPProjectK2_common_klib() {
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
     val shared =
       project(
           // TODO
@@ -4132,7 +4205,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
   /** Copied from [testKMPProjectK2], with klib removed and `iosApp/Hello.kt` added */
   @Test
   fun testLightClassSupportForNonJvm() {
-    Assume.assumeTrue(useFirUast())
+    assumeTrue(useFirUast())
 
     val shared =
       project(
@@ -4442,6 +4515,13 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
   @After
   fun tearDown() {
     UastEnvironment.disposeApplicationEnvironment()
+  }
+
+  @OptIn(KaImplementationDetail::class)
+  private fun Project.checkAnalysisApiServices() {
+    val cacheCleaner = KaFirCacheCleaner.getInstance(this)
+    // Can't test type since all implementations are `private`
+    assertEquals("KaFirNoOpCacheCleaner", cacheCleaner::class.simpleName)
   }
 
   companion object {

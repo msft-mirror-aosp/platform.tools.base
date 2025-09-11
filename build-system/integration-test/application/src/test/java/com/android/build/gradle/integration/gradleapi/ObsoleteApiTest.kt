@@ -82,7 +82,7 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
                             "${DeprecationReporter.DeprecationTarget.TASK_ACCESS_VIA_VARIANT.getDeprecationTargetMessage()}\n" +
                             "For more information, see https://d.android.com/r/tools/task-configuration-avoidance.\n" +
                             "\n" +
-                            "REASON: Called from: ${project.projectDir}${File.separatorChar}build.gradle:33\n" +
+                            "REASON: Called from: ${project.projectDir}${File.separatorChar}build.gradle:34\n" +
                             "WARNING: Debugging obsolete API calls can take time during configuration. It's recommended to not keep it on at all times.")
             }
             else -> throw RuntimeException("Unsupported type")
@@ -107,7 +107,7 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
                                 "${DeprecationReporter.DeprecationTarget.TASK_ACCESS_VIA_VARIANT.getDeprecationTargetMessage()}\n" +
                                 "For more information, see https://d.android.com/r/tools/task-configuration-avoidance.\n" +
                                 "\n" +
-                                "REASON: Called from: ${project.projectDir}${File.separatorChar}build.gradle:33\n" +
+                                "REASON: Called from: ${project.projectDir}${File.separatorChar}build.gradle:34\n" +
                                 "WARNING: Debugging obsolete API calls can take time during configuration. It's recommended to not keep it on at all times.")
                 }
                 else -> throw RuntimeException("Unsupported type")

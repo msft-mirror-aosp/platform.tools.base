@@ -252,7 +252,28 @@ class DynamicFeaturesCacheabilityTest {
             // Set up the project such that we can check the cacheability of AndroidUnitTest task
             TestFileUtils.appendToFile(
                 project.getSubproject("app").buildFile,
-                "android { testOptions { unitTests { includeAndroidResources = true } } }"
+                """
+                    android {
+                        testOptions { unitTests { includeAndroidResources = true } }
+                        buildFeatures { resValues = true }
+                    }
+                """.trimIndent()
+            )
+            TestFileUtils.appendToFile(
+                project.getSubproject("feature1").buildFile,
+                """
+                    android {
+                        buildFeatures { resValues = true }
+                    }
+                """.trimIndent()
+            )
+            TestFileUtils.appendToFile(
+                project.getSubproject("feature2").buildFile,
+                """
+                    android {
+                        buildFeatures { resValues = true }
+                    }
+                """.trimIndent()
             )
         }
     }
