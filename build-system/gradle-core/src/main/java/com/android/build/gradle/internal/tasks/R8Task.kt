@@ -788,13 +788,17 @@ abstract class R8Task @Inject constructor(
 
     // Merge creation config included/excluded patterns with package.txt with merged R8 packages
     private fun aggregatePartialShrinkingConfig(): PartialShrinkingConfig? {
+        // loading include/exclude from custom properties
         val creationConfig = partialShrinkingConfig.orNull
-
-        val packages = loadR8AllowedPackages() + (gradualShrinkingPackages.orNull ?: listOf())
+        // load from files and from new gradual r8 dsl
         val includePatterns = creationConfig?.includedPatterns?.split(",") ?: listOf()
-        if (packages.isNotEmpty() || includePatterns.isNotEmpty() || partialShrinkingEnabled.orNull == true) {
-            val updatedPackages = packages + includePatterns
-
+        val fileIncludes = loadR8AllowedPackages()
+        val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
+        if (hasPartialScope(packages) ||
+            containsPartialRule(includePatterns) ||
+            containsPartialRule(fileIncludes)
+        ) {
+            val updatedPackages = packages + includePatterns + fileIncludes
             return PartialShrinkingConfig(
                 updatedPackages.joinToString(","),
                 creationConfig?.excludedPatterns
@@ -802,6 +806,17 @@ abstract class R8Task @Inject constructor(
         }
         return null
     }
+
+    private fun containsPartialRule(packages: List<String>): Boolean =
+        packages.any { it != "**" }
+
+    // check if user set anything in `packageScope`
+    // having "**" means it's not partial
+    // having empty list means user set it to empty
+    private fun hasPartialScope(packages: List<String>): Boolean =
+        if (packages.isNotEmpty()) {
+            containsPartialRule(packages)
+        } else partialShrinkingEnabled.orNull == true
 
     private fun loadR8AllowedPackages(): List<String> {
         val packageFile = packageList.orNull
