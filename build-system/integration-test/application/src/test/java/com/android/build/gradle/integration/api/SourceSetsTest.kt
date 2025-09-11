@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -160,6 +161,7 @@ class SourceSetsTest {
         }
 
         build.executor
+            .with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false)
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .run(":app:mapDebugSourceSetPaths")
 

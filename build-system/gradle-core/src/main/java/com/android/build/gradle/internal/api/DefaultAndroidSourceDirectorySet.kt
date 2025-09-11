@@ -22,6 +22,8 @@ import com.android.build.api.variant.impl.SourceDirectoriesImpl
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.internal.api.artifact.SourceArtifactType
 import com.android.build.gradle.internal.scope.getDirectories
+import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.ProjectOptionService
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
@@ -32,6 +34,7 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.FileTreeElement
+import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.api.tasks.util.PatternSet
@@ -59,6 +62,10 @@ class DefaultAndroidSourceDirectorySet(
      */
     private val lateAdditionsDelegates = mutableListOf<SourceDirectoriesImpl>()
 
+    private val disallowProviderInAndroidSourceSet =
+        ProjectOptionService.RegistrationAction(project).execute().get().projectOptions.get(
+            BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET)
+
     override fun getName(): String {
         return "$sourceSetName $name"
     }
@@ -71,6 +78,21 @@ class DefaultAndroidSourceDirectorySet(
                 src?.let { srcDir(it) }
             }
             return this
+        }
+        if (srcDir is Provider<*>) {
+            if (disallowProviderInAndroidSourceSet) {
+                throw RuntimeException(
+                    "Error : You cannot add Provider instances to the Android SourceSet API.\n" +
+                            "It is not possible for Android Studio to determine if the Provider points\n" +
+                            "to a directory that contains generated (read-only) or static (read-write) files. \n\n" +
+                            "Instead you should use the Sources interface in the Variant API, in particular\n" +
+                            "SourceDirectories.addGeneratedDirectory and SourceDirectories.addStaticDirectories.\n" +
+                            "\n" +
+                            "You can re-enable the behavior by setting the " +
+                            "`${BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET.propertyName}=false` to gradle.properties.\n" +
+                            "However, be aware that any Gradle Task dependency will not be automatically carried."
+                )
+            }
         }
         source.add(srcDir)
         if (lateAdditionsDelegates.isNotEmpty()) {

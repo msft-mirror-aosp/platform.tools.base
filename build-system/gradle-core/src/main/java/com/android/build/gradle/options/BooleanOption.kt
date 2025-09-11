@@ -685,6 +685,16 @@ enum class BooleanOption(
      */
     USE_NEW_DSL("android.newDsl", true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
 
+    /**
+     * Disallows users to pass Provider<*> instances to the Android sources set
+     * APIs like srcDir and srcDirs.
+     *
+     * It is not supported by default because the old variant API keeps on resolving it too early,
+     * and it is not possible for Android Studio to know if the directory contains generated or
+     * static files which is important to make the files read-only or not.
+     */
+    DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET("android.sourceset.disallowProvider", true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
+
     DEFAULT_ANDROIDX_TEST_RUNNER(
         propertyName = "android.default.androidx.test.runner",
         defaultValue = true,
