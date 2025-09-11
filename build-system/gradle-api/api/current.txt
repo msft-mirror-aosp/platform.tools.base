@@ -700,7 +700,7 @@ package com.android.build.api.dsl {
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getBuildConfig();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getCompose();
     method public Boolean? getPrefab();
-    method public Boolean? getRenderScript();
+    method @Deprecated public Boolean? getRenderScript();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getResValues();
     method public Boolean? getShaders();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getViewBinding();
@@ -708,7 +708,7 @@ package com.android.build.api.dsl {
     method public void setBuildConfig(Boolean?);
     method public void setCompose(Boolean?);
     method public void setPrefab(Boolean?);
-    method public void setRenderScript(Boolean?);
+    method @Deprecated public void setRenderScript(Boolean?);
     method public void setResValues(Boolean?);
     method public void setShaders(Boolean?);
     method public void setViewBinding(Boolean?);
@@ -716,7 +716,7 @@ package com.android.build.api.dsl {
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? buildConfig;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? compose;
     property public abstract Boolean? prefab;
-    property public abstract Boolean? renderScript;
+    property @Deprecated public abstract Boolean? renderScript;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? resValues;
     property public abstract Boolean? shaders;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? viewBinding;
