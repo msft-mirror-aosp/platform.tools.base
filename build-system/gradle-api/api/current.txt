@@ -210,6 +210,10 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE INSTANCE;
   }
 
+  public static final class SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE INSTANCE;
+  }
+
   public static final class SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
     field public static final com.android.build.api.artifact.SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST INSTANCE;
   }

@@ -60,7 +60,8 @@ data class AndroidArtifactImpl(
     override val generatedClassPaths: Map<String, File>,
     override val bytecodeTransformations: Collection<BytecodeTransformation>,
     override val generatedAssetsFolders:  Collection<File>,
-    override val mappingR8TextFile: File?
+    override val mappingR8TextFile: File?,
+    override val mappingR8PartitionFile: File?,
 ) : AndroidArtifact, Serializable {
 
     @Deprecated("Was never used, removed in AGP 8.3")

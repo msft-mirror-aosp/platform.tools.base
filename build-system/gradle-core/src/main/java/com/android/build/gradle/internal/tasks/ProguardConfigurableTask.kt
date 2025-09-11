@@ -106,6 +106,7 @@ abstract class ProguardConfigurableTask(
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val testedMappingFile: ConfigurableFileCollection
 
+
     @get:Classpath
     abstract val classes: ConfigurableFileCollection
 
@@ -150,6 +151,9 @@ abstract class ProguardConfigurableTask(
 
     @get:OutputFile
     abstract val mappingFile: RegularFileProperty
+
+    @get:OutputFile
+    abstract val mappingPartitionFile: RegularFileProperty
 
     @get:Input
     abstract val hasAllAccessTransformers: Property<Boolean>
@@ -281,6 +285,11 @@ abstract class ProguardConfigurableTask(
                 .setInitialProvider(taskProvider,
                     ProguardConfigurableTask::mappingFile)
                 .on(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+
+            creationConfig.artifacts
+                .setInitialProvider(taskProvider,
+                    ProguardConfigurableTask::mappingPartitionFile)
+                .on(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
         }
 
         override fun configure(
@@ -534,6 +543,11 @@ abstract class ProguardConfigurableTask(
                 .setInitialProvider(taskProvider,
                 ProguardConfigurableTask::mappingFile)
                 .on(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+
+            creationConfig.artifacts
+                .setInitialProvider(taskProvider,
+                    ProguardConfigurableTask::mappingPartitionFile)
+                .on(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
         }
 
         override fun configure(

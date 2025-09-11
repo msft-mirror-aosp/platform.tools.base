@@ -742,6 +742,7 @@ abstract class R8Task @Inject constructor(
                 })
             it.resourcesJar.set(resourcesJar)
             it.mappingFile.set(mappingFile.get().asFile)
+            it.mappingPartitionFile.set(mappingPartitionFile.get().asFile)
             it.proguardSeedsOutput.set(getProguardSeedsOutput().get())
             it.proguardUsageOutput.set(getProguardUsageOutput().get())
             it.proguardConfigurationOutput.set(getProguardConfigurationOutput().get())
@@ -837,6 +838,7 @@ abstract class R8Task @Inject constructor(
             inputProguardMapping: File?,
             proguardConfigurations: MutableList<String>,
             mappingFile: File,
+            mappingPartitionFile: File,
             proguardSeedsOutput: File,
             proguardUsageOutput: File,
             proguardConfigurationOutput: File,
@@ -872,6 +874,7 @@ abstract class R8Task @Inject constructor(
             val proguardOutputFiles =
                 ProguardOutputFiles(
                     mappingFile.toPath(),
+                    mappingPartitionFile.toPath(),
                     proguardSeedsOutput.toPath(),
                     proguardUsageOutput.toPath(),
                     proguardConfigurationOutput.toPath(),
@@ -967,6 +970,7 @@ abstract class R8Task @Inject constructor(
             abstract val inputProguardMapping: RegularFileProperty
             abstract val proguardConfigurations: ListProperty<String>
             abstract val mappingFile: RegularFileProperty
+            abstract val mappingPartitionFile: RegularFileProperty
             abstract val proguardSeedsOutput: RegularFileProperty
             abstract val proguardUsageOutput: RegularFileProperty
             abstract val proguardConfigurationOutput: RegularFileProperty
@@ -1013,6 +1017,7 @@ abstract class R8Task @Inject constructor(
                     parameters.inputProguardMapping.orNull?.asFile,
                     parameters.proguardConfigurations.get(),
                     parameters.mappingFile.get().asFile,
+                    parameters.mappingPartitionFile.get().asFile,
                     parameters.proguardSeedsOutput.get().asFile,
                     parameters.proguardUsageOutput.get().asFile,
                     parameters.proguardConfigurationOutput.get().asFile,

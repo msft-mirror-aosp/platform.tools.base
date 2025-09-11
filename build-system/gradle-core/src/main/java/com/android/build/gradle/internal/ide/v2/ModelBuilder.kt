@@ -275,7 +275,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(18, 0, humanReadable = "Android Gradle Plugin 9.0")
+        val modelProducer = VersionImpl(19, 0, humanReadable = "Android Gradle Plugin 9.0")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.
@@ -1249,12 +1249,16 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             generatedClassPaths = generatedClassPaths,
             bytecodeTransformations = getBytecodeTransformations(component),
             generatedAssetsFolders = getGeneratedAssetsFolders(component),
-            mappingR8TextFile = getR8MappingFile(component)
+            mappingR8TextFile = getR8MappingFile(component),
+            mappingR8PartitionFile = getR8PartitionFile(component),
         )
     }
 
     private fun getR8MappingFile(component: ComponentCreationConfig): File? =
         component.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE).orNull?.asFile
+
+    private fun getR8PartitionFile(component: ComponentCreationConfig): File? =
+        component.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE).orNull?.asFile
 
     private fun getApplicationId(component: ComponentCreationConfig): String? {
         if (!component.componentType.isApk || component.componentType.isDynamicFeature) {
