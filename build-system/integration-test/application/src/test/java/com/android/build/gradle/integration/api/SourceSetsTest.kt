@@ -20,25 +20,18 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationCallbackPlugin
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
-import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
-import com.android.build.gradle.internal.utils.ApkSources
-import com.android.testutils.on
 import com.google.common.truth.Truth
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.TaskProvider
-import org.jetbrains.kotlin.gradle.utils.`is`
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
-import kotlin.io.path.exists
 import kotlin.io.path.readText
 
 class SourceSetsTest {
@@ -75,9 +68,7 @@ class SourceSetsTest {
 
     @Test
     fun sourceRegistrationShouldBeSuccessful() {
-        val result = rule.build.executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:assembleDebug")
+        val result = rule.build.executor.run(":app:assembleDebug")
         Truth.assertThat(result.didWorkTasks.contains(":app:debugReproTask")).isTrue()
         Truth.assertThat(result.stdout.findAll("ReproducerTask called !").count())
             .isEqualTo(1)

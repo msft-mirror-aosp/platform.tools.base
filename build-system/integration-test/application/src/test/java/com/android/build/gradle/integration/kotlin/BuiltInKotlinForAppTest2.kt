@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.kotlin
 
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
@@ -72,9 +71,7 @@ class BuiltInKotlinForAppTest2 {
             }
         }
 
-        build.executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
             classes().containsExactly(
                 "com/foo/application/AppFooKt",

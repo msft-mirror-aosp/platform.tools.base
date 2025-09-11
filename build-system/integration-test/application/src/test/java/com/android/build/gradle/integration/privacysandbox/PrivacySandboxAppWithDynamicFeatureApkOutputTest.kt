@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.privacysandbox
 
 import com.android.build.api.variant.ApkOutput
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.privacySandboxSampleProjectWithDynamicFeature
 import com.android.build.gradle.options.BooleanOption
@@ -32,7 +31,6 @@ class PrivacySandboxAppWithDynamicFeatureApkOutputTest {
     val rule = privacySandboxSampleProjectWithDynamicFeature()
 
     private fun GradleBuild.configuredExecutor() = executor
-        .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
         .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
         .withPerTestPrefsRoot(true)
