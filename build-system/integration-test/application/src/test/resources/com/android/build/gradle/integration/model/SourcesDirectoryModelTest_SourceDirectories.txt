@@ -171,28 +171,7 @@
             - custom                  = []
          < sourceProvider
          - androidTestSourceProvider  = (null)
-         > unitTestSourceProvider:
-            - name                    = "testRelease"
-            - manifestFile            = {PROJECT}/app/src/testRelease/AndroidManifest.xml{!}
-            - javaDirectories:
-               * {PROJECT}/app/src/testRelease/java{!}
-            - kotlinDirectories:
-               * {PROJECT}/app/src/testRelease/java{!}
-               * {PROJECT}/app/src/testRelease/kotlin{!}
-            - resourcesDirectories:
-               * {PROJECT}/app/src/testRelease/resources{!}
-            - aidlDirectories         = (null)
-            - renderscriptDirectories = (null)
-            - resDirectories:
-               * {PROJECT}/app/src/testRelease/res{!}
-            - assetsDirectories:
-               * {PROJECT}/app/src/testRelease/assets{!}
-            - jniLibsDirectories:
-               * {PROJECT}/app/src/testRelease/jniLibs{!}
-            - shadersDirectories      = (null)
-            - mlModelsDirectories     = (null)
-            - custom                  = []
-         < unitTestSourceProvider
+         - unitTestSourceProvider     = (null)
          - testFixturesSourceProvider = (null)
       < release
    < buildTypes
@@ -223,9 +202,7 @@
             - variantSourceProvider     = (null)
             - multiFlavorSourceProvider = (null)
          - androidTestArtifact  = (null)
-         - unitTestArtifact:
-            - variantSourceProvider     = (null)
-            - multiFlavorSourceProvider = (null)
+         - unitTestArtifact     = (null)
          - testFixturesArtifact = (null)
       < release
    < variants

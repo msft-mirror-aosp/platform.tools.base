@@ -17,17 +17,22 @@
 package com.android.build.gradle.integration.testing.unit;
 
 import static com.android.build.gradle.integration.testing.unit.JUnitResults.Outcome.PASSED;
+
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.fail;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+
 import com.google.common.base.Throwables;
+
 import org.gradle.tooling.BuildException;
 import org.junit.ClassRule;
 import org.junit.Test;
 
 /** Meta-level tests for the app-level unit testing support. */
 public class UnitTestingBuildTypesSupportTest {
+
     @ClassRule
     public static GradleTestProject flavorsProject =
             GradleTestProject.builder().fromTestProject("unitTestingBuildTypes").create();
@@ -45,22 +50,12 @@ public class UnitTestingBuildTypesSupportTest {
         assertThat(results.outcome("resourcesOnClasspath")).isEqualTo(PASSED);
         assertThat(results.outcome("useDebugOnlyDependency")).isEqualTo(PASSED);
 
-        flavorsProject.execute("clean", "testBuildTypeWithResource");
-        results =
-                new JUnitResults(
-                        flavorsProject.file(
-                                "build/test-results/testBuildTypeWithResourceUnitTest/TEST-com.android.tests.UnitTest.xml"));
-
-        assertThat(results.outcome("javaResourcesOnClasspath")).isEqualTo(PASSED);
-        assertThat(results.outcome("prodJavaResourcesOnClasspath")).isEqualTo(PASSED);
-
         try {
             // Tests for release try to compile against a debug-only class.
             flavorsProject.execute("testRelease");
             fail();
         } catch (BuildException e) {
-            assertThat(Throwables.getRootCause(e).toString())
-                    .contains("CompilationFailedException");
+            assertThat(Throwables.getRootCause(e).toString()).contains("TaskSelectionException");
         }
     }
 }

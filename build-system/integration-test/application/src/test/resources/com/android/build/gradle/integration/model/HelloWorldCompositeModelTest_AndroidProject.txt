@@ -118,18 +118,7 @@
             - privacySandboxSdkInfo         = (null)
          < mainArtifact
          - androidTestArtifact    = (null)
-         > unitTestArtifact:
-            - compileTaskName       = "compileReleaseUnitTestSources"
-            - assembleTaskName      = "assembleReleaseUnitTest"
-            - classesFolders:
-               * {INCLUDED_BUILD(:other-build)}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/releaseUnitTest/generateReleaseUnitTestStubRFile/R.jar{!}
-               * {INCLUDED_BUILD(:other-build)}/lib/build/intermediates/javac/releaseUnitTest/compileReleaseUnitTestJavaWithJavac/classes{!}
-            - ideSetupTaskNames     = ["createMockableJar"]
-            - generatedSourceFolders:
-               * {INCLUDED_BUILD(:other-build)}/lib/build/generated/ap_generated_sources/releaseUnitTest/out{!}
-            - mockablePlatformJar   = {GRADLE_CACHE}/{CHECKSUM}/transformed/android.jar{F}
-            - runtimeResourceFolder = {INCLUDED_BUILD(:other-build)}/lib/build/intermediates/java_res/releaseUnitTest/processReleaseUnitTestJavaRes/out{!}
-         < unitTestArtifact
+         - unitTestArtifact       = (null)
          - testFixturesArtifact   = (null)
          - testedTargetVariant    = (null)
          - desugaredMethods       = [{GRADLE_CACHE}/{CHECKSUM}/transformed/D8BackportedDesugaredMethods.txt{F}]

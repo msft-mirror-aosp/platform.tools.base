@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
 import static org.junit.Assert.assertNotNull;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
@@ -25,12 +26,14 @@ import com.android.builder.model.v2.ide.AndroidArtifact;
 import com.android.builder.model.v2.ide.JavaArtifact;
 import com.android.builder.model.v2.ide.Variant;
 import com.android.builder.model.v2.models.AndroidProject;
+
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.junit.Rule;
-import org.junit.Test;
 
 /** Tests for addJavaSourceFoldersToModel Variant API. */
 public class GenFolderApi2Test {
@@ -47,6 +50,10 @@ public class GenFolderApi2Test {
         File buildDir = new File(projectDir, "build");
 
         for (Variant variant : androidProject.getVariants()) {
+
+            // Unit tests are only enabled for the tested build type.
+            if (variant.getUnitTestArtifact() == null) continue;
+
             AndroidArtifact mainInfo = variant.getMainArtifact();
             assertNotNull(
                     "Null-check on mainArtifactInfo for " + variant.getDisplayName(), mainInfo);
@@ -84,6 +91,6 @@ public class GenFolderApi2Test {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("build.gradle")))
-                .isEqualTo("af425d3291d1fb29abfa1bfaaa74426186e627d1");
+                .isEqualTo("fd908858c2e56649a8556edb58ef6322ba5b36b8");
     }
 }

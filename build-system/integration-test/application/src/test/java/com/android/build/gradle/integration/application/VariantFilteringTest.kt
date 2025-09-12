@@ -65,22 +65,26 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
             variant { name = "x86GingerbreadDebug" }
             variant {
                 name = "x86GingerbreadRelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "mipsGingerbreadDebug" }
             variant {
                 name = "mipsGingerbreadRelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "armGingerbreadDebug" }
             variant {
                 name = "armGingerbreadRelease"
+                unitTest = false
                 androidTest = false
             }
 
             variant { name = "armCupcakeDebug" }
             variant {
                 name = "armCupcakeRelease"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -100,6 +104,7 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
 
         expect {
             variant { name = "release"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -120,6 +125,7 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "release"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -139,6 +145,7 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "release"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -172,6 +179,7 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
             variant { name = "flavor2Debug" }
             variant {
                 name = "flavor2Release"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -214,16 +222,19 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
             variant { name = "flavor1FlavorBDebug" }
             variant {
                 name = "flavor1FlavorBRelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2FlavorADebug" }
             variant {
                 name = "flavor2FlavorARelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2FlavorBDebug" }
             variant {
                 name = "flavor2FlavorBRelease"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -258,11 +269,13 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "flavor1Release"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2Debug" }
             variant {
                 name = "flavor2Release"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -297,11 +310,13 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "flavor1Release"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2Debug" }
             variant {
                 name = "flavor2Release"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -343,21 +358,25 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "flavor1FlavorARelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor1FlavorBDebug" }
             variant {
                 name = "flavor1FlavorBRelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2FlavorADebug" }
             variant {
                 name = "flavor2FlavorARelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2FlavorBDebug" }
             variant {
                 name = "flavor2FlavorBRelease"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -399,22 +418,26 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "flavor1FlavorARelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor1FlavorBDebug" }
             variant {
                 name = "flavor1FlavorBRelease"
+                unitTest = false
                 androidTest = false
             }
 
             variant { name = "flavor2FlavorADebug" }
             variant {
                 name = "flavor2FlavorARelease"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2FlavorBDebug" }
             variant {
                 name = "flavor2FlavorBRelease"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -448,11 +471,13 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "flavor1Release"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2Debug" }
             variant {
                 name = "flavor2Release"
+                unitTest = false
                 androidTest = false
             }
         }
@@ -472,6 +497,7 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "release"
+                unitTest = false
                 androidTest = false
             }
             variant {
@@ -495,6 +521,7 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
         expect {
             variant {
                 name = "release"
+                unitTest = false
                 androidTest = false
             }
             variant {
@@ -527,6 +554,7 @@ class VariantFilteringTest: AbstractReturnGivenBuildResultTest<String,
             variant {
                 name = "release"
                 testFixtures = true
+                unitTest = false
                 androidTest = false
             }
             variant {

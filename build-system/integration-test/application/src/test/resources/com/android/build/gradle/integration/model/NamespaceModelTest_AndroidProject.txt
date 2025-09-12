@@ -20,8 +20,5 @@
                * {PROJECT}/app/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}{ADDED}
                * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/processReleaseResources/R.jar{!}{REMOVED}
             - bundleInfo{REMOVED} = (null)
-         - unitTestArtifact:
-            - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/processReleaseResources/R.jar{!}{REMOVED}
    < variants
 < AndroidProject

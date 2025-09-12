@@ -63,7 +63,7 @@ class BuiltInKotlinCompilerPluginTest(
         result.assertOutputContains("Applying ExampleKotlinCompilerGradlePlugin to Kotlin compilation 'debug'")
 
         // Also check KotlinCompilation details
-        result.assertOutputContains("KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugScreenshotTest, debugUnitTest, release, releaseScreenshotTest, releaseUnitTest]")
+        result.assertOutputContains("KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugScreenshotTest, debugUnitTest, release, releaseScreenshotTest]")
         result.assertOutputContains(
             """
             Details of KotlinCompilation 'debug':

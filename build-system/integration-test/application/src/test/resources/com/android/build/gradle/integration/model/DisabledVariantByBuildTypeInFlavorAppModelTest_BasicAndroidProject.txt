@@ -1,13 +1,16 @@
 > BasicAndroidProject:
    - defaultConfig:
       - androidTestSourceProvider{REMOVED} = (null)
+      - unitTestSourceProvider{REMOVED}    = (null)
    - buildTypes:
       - debug{REMOVED} = (null)
    - productFlavors:
       - one:
          - androidTestSourceProvider{REMOVED} = (null)
+         - unitTestSourceProvider{REMOVED}    = (null)
       - two:
          - androidTestSourceProvider{REMOVED} = (null)
+         - unitTestSourceProvider{REMOVED}    = (null)
    - variants:
       - oneDebug{REMOVED} = (null)
       - twoDebug{REMOVED} = (null)

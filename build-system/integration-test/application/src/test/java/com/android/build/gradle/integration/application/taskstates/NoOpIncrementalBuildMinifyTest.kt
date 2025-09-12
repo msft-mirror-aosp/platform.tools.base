@@ -39,8 +39,7 @@ class NoOpIncrementalBuildMinifyTest {
                 ":assembleDebugAndroidTest",
                 ":assembleRelease",
                 ":bundleDebugClassesToCompileJar",
-                ":bundleReleaseClassesToCompileJar",
-                ":bundleReleaseClassesToRuntimeJar",
+                ":bundleDebugClassesToRuntimeJar",
                 ":checkDebugAarMetadata",
                 ":checkDebugAndroidTestAarMetadata",
                 ":checkDebugAndroidTestDuplicateClasses",
@@ -79,9 +78,9 @@ class NoOpIncrementalBuildMinifyTest {
                 ":generateReleaseResValues",
                 ":generateReleaseResources",
                 ":javaPreCompileDebug",
+                ":javaPreCompileDebugUnitTest",
                 ":javaPreCompileDebugAndroidTest",
                 ":javaPreCompileRelease",
-                ":javaPreCompileReleaseUnitTest",
                 ":lintAnalyzeDebug",
                 ":lintAnalyzeDebugAndroidTest",
                 ":lintAnalyzeDebugUnitTest",
@@ -116,7 +115,7 @@ class NoOpIncrementalBuildMinifyTest {
                 ":preDebugBuild",
                 ":preDebugUnitTestBuild",
                 ":preReleaseBuild",
-                ":preReleaseUnitTestBuild",
+                ":preDebugUnitTestBuild",
                 ":processDebugAndroidTestManifest",
                 ":processDebugAndroidTestNavigationResources",
                 ":processDebugAndroidTestResources",
@@ -137,7 +136,7 @@ class NoOpIncrementalBuildMinifyTest {
                 ":writeReleaseSigningConfigVersions"
             ),
             SKIPPED to setOf(
-                ":compileReleaseUnitTestJavaWithJavac",
+                ":compileDebugUnitTestJavaWithJavac",
                 ":extractReleaseNativeSymbolTables",
                 ":lint",
                 ":mergeDebugAndroidTestNativeLibs",
@@ -146,11 +145,12 @@ class NoOpIncrementalBuildMinifyTest {
                 ":mergeReleaseNativeLibs",
                 ":preDebugAndroidTestBuild",
                 ":processDebugAndroidTestJavaRes",
+                ":processDebugJavaRes",
                 ":processReleaseJavaRes",
-                ":processReleaseUnitTestJavaRes",
+                ":processDebugUnitTestJavaRes",
                 ":stripDebugAndroidTestDebugSymbols",
                 ":stripReleaseDebugSymbols",
-                ":testReleaseUnitTest",
+                ":testDebugUnitTest",
             ),
             /*
              * If you add a task to this DID_WORK set, please add an explanation and/or file a bug.
@@ -188,7 +188,7 @@ class NoOpIncrementalBuildMinifyTest {
     fun `check task states`() {
         val result = project.executor().run {
             val tasks =
-                listOf("assembleRelease", "testReleaseUnitTest", "assembleDebugAndroidTest", "lint")
+                listOf("assembleRelease", "testDebugUnitTest", "assembleDebugAndroidTest", "lint")
             run(tasks)
             run(tasks)
         }
