@@ -40,7 +40,10 @@ import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.util.InheritanceUtil
+import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget
+import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtImportDirective
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UArrayAccessExpression
 import org.jetbrains.uast.UBinaryExpression
@@ -477,6 +480,28 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
 
     override fun visitField(node: UField): Boolean {
       eachDetectorVisit(node, UElementHandler::visitField)
+
+      // After https://youtrack.jetbrains.com/issue/KTIJ-33663
+      // any annotations with default or property use-sites are dropped from the (JVM) field.
+      // Although that is technically correct, to keep the old behavior
+      // (of all existing detectors), we examine the annotations at the source level.
+      //
+      // Caveats:
+      // `uAnnotations` has a nullity annotation whereas `sourceAnnotations` does not.
+      // But, users may annotate nullity explicitly, so we can't do any fancy bail out.
+      if (node.sourcePsi is KtProperty && node.sourceAnnotations.isNotEmpty()) {
+        // NB: annotations in `uAnnotations` are already (or will be) visited.
+        val annotationsWithoutUseSite = node.sourceAnnotations.toSet() - node.uAnnotations.toSet()
+        for (anno in annotationsWithoutUseSite) {
+          val annotationEntry = anno.sourcePsi as? KtAnnotationEntry ?: continue
+          val useSiteTarget = annotationEntry.useSiteTarget?.getAnnotationUseSiteTarget()
+          // Only care about annotations with default or property use-sites
+          if (useSiteTarget == null || useSiteTarget == AnnotationUseSiteTarget.PROPERTY) {
+            eachDetectorVisit(anno, UElementHandler::visitAnnotation)
+          }
+        }
+      }
+
       return super.visitField(node)
     }
 

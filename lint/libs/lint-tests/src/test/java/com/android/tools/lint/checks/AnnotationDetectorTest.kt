@@ -1298,7 +1298,6 @@ class AnnotationDetectorTest : AbstractCheckTest() {
   }
 
   fun testAdditionalFlagScenarios() {
-    // TODO(b/439078858): handle annotation on property with default use-site
     lint()
       .files(
         java(
@@ -1441,14 +1440,14 @@ class AnnotationDetectorTest : AbstractCheckTest() {
                 @Retention(AnnotationRetention.SOURCE)
                 private annotation class DialogStyle5
 
-                @field:DialogStyle
+                @DialogStyle
                 private val sAppOpsToNote = ByteArray(5) // OK 17
 
-                @field:DialogStyle
+                @DialogStyle
                 private val sAppOpsToNote2 = ShortArray(5) // OK 18
 
                 // Error; message should ask if you meant to use @StringDef?
-                @field:DialogStyle var EXTRA_AUDIO_CODEC : String? = null // ERROR 4
+                @DialogStyle var EXTRA_AUDIO_CODEC : String? = null // ERROR 4
             }
             """
           )
@@ -1473,9 +1472,9 @@ class AnnotationDetectorTest : AbstractCheckTest() {
         src/test/pkg/TypedefWarnings.java:51: Error: This annotation does not apply for type String; expected int. Should @DialogStyle be annotated with @StringDef instead? [SupportAnnotationUsage]
             public static @DialogStyle String EXTRA_AUDIO_CODEC; // ERROR 1
                           ~~~~~~~~~~~~
-        src/test/pkg/TypedefWarningsKotlin.kt:75: Error: This annotation does not apply for type String; expected int. Should @field:DialogStyle be annotated with @StringDef instead? [SupportAnnotationUsage]
-            @field:DialogStyle var EXTRA_AUDIO_CODEC : String? = null // ERROR 4
-            ~~~~~~~~~~~~~~~~~~
+        src/test/pkg/TypedefWarningsKotlin.kt:75: Error: This annotation does not apply for type String; expected int. Should @DialogStyle be annotated with @StringDef instead? [SupportAnnotationUsage]
+            @DialogStyle var EXTRA_AUDIO_CODEC : String? = null // ERROR 4
+            ~~~~~~~~~~~~
         4 errors, 0 warnings
         """
       )

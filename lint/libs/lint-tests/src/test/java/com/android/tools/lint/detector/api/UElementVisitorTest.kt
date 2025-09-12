@@ -270,7 +270,13 @@ src/test/pkg/Anno.kt:6: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
 src/test/pkg/Anno.kt:8: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @set:Anno
   ~~~~~~~~~
-0 errors, 2 warnings
+src/test/pkg/Anno.kt:10: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @property:Anno
+  ~~~~~~~~~~~~~~
+src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
+  @Anno
+  ~~~~~
+0 errors, 4 warnings
         """
       )
   }
