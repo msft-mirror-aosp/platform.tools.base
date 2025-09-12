@@ -157,6 +157,7 @@ data class ModuleTemplateData(
   val useGenericInstrumentedTests: Boolean,
   val commonSrcDir: File? = null,
   val iosSrcDir: File? = null,
+  val currentVariant: String?,
 ): TemplateData() {
   val isDynamic: Boolean
     get() = baseFeature != null

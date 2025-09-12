@@ -15,5 +15,7 @@ iml_module(
         "//tools/base/wizard/template-plugin:studio.intellij.android.wizardTemplate.plugin",
         "//tools/base/common:studio.android.sdktools.common",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
+        "//tools/adt/idea/android-common:intellij.android.common",
+        "//tools/base/flags:studio.android.sdktools.flags",
     ],
 )

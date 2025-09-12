@@ -15,35 +15,40 @@
  */
 package com.android.tools.idea.wizard.template.impl.other.files.journeyFile
 
+import com.android.tools.idea.flags.StudioFlags
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.other.files.journeyFile.res.journeyXml
-import java.io.File
 
 fun RecipeExecutor.journeyFileRecipe(
   moduleData: ModuleTemplateData,
   name: String,
   description: String,
   fileName: String,
+  testSuiteName: String,
+  targetVariant: String?,
 ) {
-  addJourneyFile(moduleData, name, description, fileName)
+  if (
+    StudioFlags.AGP_TEST_SUITES_ENABLED.get() && StudioFlags.JOURNEYS_WITH_GEMINI_TEST_SUITE.get()
+  ) {
+    addJourneysTestSuite(testSuiteName, targetVariant)
+  }
+
+  addJourneyFile(moduleData, testSuiteName, name, description, fileName)
 }
 
 private fun RecipeExecutor.addJourneyFile(
   moduleData: ModuleTemplateData,
+  testSuiteName: String,
   name: String,
   description: String,
   fileName: String,
 ) {
-  val directory = getJourneyDirectoryForModuleRoot(moduleData.rootDir)
+  val directory = moduleData.rootDir.resolve("src").resolve(testSuiteName)
   createDirectory(directory)
 
   val file = directory.resolve("$fileName.xml")
 
   save(journeyXml(name, description), file)
   open(file)
-}
-
-private fun getJourneyDirectoryForModuleRoot(moduleRootDir: File): File {
-  return moduleRootDir.resolve("src").resolve("journeysTest")
 }

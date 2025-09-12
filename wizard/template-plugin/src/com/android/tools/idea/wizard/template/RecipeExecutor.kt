@@ -208,6 +208,19 @@ interface RecipeExecutor {
   /** Adds a module dependency to global settings.gradle[.kts] file. */
   fun addIncludeToSettings(moduleName: String)
 
+  /**
+   * Adds and configures a new test suite in the module's `build.gradle` file for running Journey tests.
+   *
+   * This creates a `testSuites` block and sets the `targetVariant` for the new suite. If a test
+   * suite with the given name already exists, then the configuration is updated to support running
+   * Journey tests.
+   *
+   * @param testSuiteName The name for the new test suite (e.g., "journeys").
+   * @param targetVariant The build variant that the test suite will target. If `null`, a
+   *   placeholder comment is added, prompting the user to specify the target variant.
+   */
+  fun addJourneysTestSuite(testSuiteName: String, targetVariant: String?)
+
   /** Adds a new build feature to android block. For example, may enable compose. */
   fun setBuildFeature(name: String, value: Boolean)
 
