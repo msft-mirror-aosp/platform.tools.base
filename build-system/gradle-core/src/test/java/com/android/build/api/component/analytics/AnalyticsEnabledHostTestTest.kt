@@ -49,7 +49,7 @@ class AnalyticsEnabledHostTestTest {
         Truth.assertThat(
             stats.variantApiAccess.variantPropertiesAccessList.first().type
         ).isEqualTo(VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE)
-        verify(delegate, times(1))
+        verify(delegate)
             .configureTestTask(action)
     }
 
@@ -60,7 +60,18 @@ class AnalyticsEnabledHostTestTest {
         Truth.assertThat(
             stats.variantApiAccess.variantPropertiesAccessList.first().type
         ).isEqualTo(VariantPropertiesMethodType.HOST_TEST_CODE_COVERAGE_ENABLED_VALUE)
-        verify(delegate, times(1))
+        verify(delegate)
             .codeCoverageEnabled
+    }
+
+    @Test
+    fun includeAndroidResources() {
+        proxy.androidResourcesIncluded
+
+        Truth.assertThat(
+            stats.variantApiAccess.variantPropertiesAccessList.first().type
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_ANDROID_RESOURCES_ENABLED_VALUE)
+        verify(delegate)
+            .androidResourcesIncluded
     }
 }

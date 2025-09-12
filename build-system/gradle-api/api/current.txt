@@ -2263,7 +2263,10 @@ package com.android.build.api.dsl {
   @org.gradle.api.Incubating public interface TestSuiteHostJarSpec {
     method @org.gradle.api.Incubating public void dependencies(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies,kotlin.Unit> action);
     method @org.gradle.api.Incubating public com.android.build.api.dsl.AgpTestSuiteDependencies getDependencies();
+    method @org.gradle.api.Incubating public boolean getEnableAndroidResources();
+    method @org.gradle.api.Incubating public void setEnableAndroidResources(boolean);
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AgpTestSuiteDependencies dependencies;
+    property @org.gradle.api.Incubating public abstract boolean enableAndroidResources;
   }
 
   @org.gradle.api.Incubating public interface TestSuiteTestApkSpec {
@@ -3075,18 +3078,23 @@ package com.android.build.api.variant {
 
   public interface HostTest extends com.android.build.api.variant.TestComponent {
     method public void configureTestTask(kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.testing.Test,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public boolean getAndroidResourcesIncluded();
     method @org.gradle.api.Incubating public boolean getCodeCoverageEnabled();
+    property @org.gradle.api.Incubating public abstract boolean androidResourcesIncluded;
     property @org.gradle.api.Incubating public abstract boolean codeCoverageEnabled;
   }
 
   @org.gradle.api.Incubating public interface HostTestBuilder {
     method @org.gradle.api.Incubating public boolean getEnable();
     method @Deprecated @org.gradle.api.Incubating public boolean getEnableCodeCoverage();
+    method @Deprecated @org.gradle.api.Incubating public boolean getIncludeAndroidResources();
     method @org.gradle.api.Incubating public String getType();
     method @org.gradle.api.Incubating public void setEnable(boolean);
     method @org.gradle.api.Incubating public void setEnableCodeCoverage(boolean);
+    method @org.gradle.api.Incubating public void setIncludeAndroidResources(boolean);
     property @org.gradle.api.Incubating public abstract boolean enable;
     property @Deprecated @org.gradle.api.Incubating public abstract boolean enableCodeCoverage;
+    property @Deprecated @org.gradle.api.Incubating public abstract boolean includeAndroidResources;
     property @org.gradle.api.Incubating public abstract String type;
     field public static final com.android.build.api.variant.HostTestBuilder.Companion Companion;
     field @org.gradle.api.Incubating public static final String SCREENSHOT_TEST_TYPE = "ScreenshotTest";

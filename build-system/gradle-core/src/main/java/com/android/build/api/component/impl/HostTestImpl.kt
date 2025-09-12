@@ -94,6 +94,8 @@ abstract class HostTestImpl @Inject constructor(
     final override val builtInKotlinSupportMode: BuiltInKotlinSupportMode
     final override val builtInKaptSupportMode: BuiltInKaptSupportMode
 
+    override val androidResourcesIncluded: Boolean = hostTestBuilder.includeAndroidResources
+
     // ---------------------------------------------------------------------------------------------
     // INTERNAL API
     // ---------------------------------------------------------------------------------------------

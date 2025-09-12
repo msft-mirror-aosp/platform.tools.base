@@ -543,7 +543,7 @@ abstract class TaskManager(
                 null,
                 taskProviderCallback)
 
-        if (creationConfig is HostTestCreationConfig && globalConfig.unitTestOptions.isIncludeAndroidResources) {
+        if (creationConfig is HostTestCreationConfig && creationConfig.androidResourcesIncluded) {
             creationConfig.taskContainer.compileTask.dependsOn(mergeResourcesTask)
         }
         return mergeResourcesTask

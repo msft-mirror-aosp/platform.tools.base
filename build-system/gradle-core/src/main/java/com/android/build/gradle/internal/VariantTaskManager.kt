@@ -20,6 +20,7 @@ import android.databinding.tool.DataBindingBuilder
 import com.android.SdkConstants
 import com.android.SdkConstants.DATA_BINDING_KTX_LIB_ARTIFACT
 import com.android.build.api.dsl.DataBinding
+import com.android.build.api.variant.HostTest
 import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.attribution.CheckJetifierBuildService
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -151,9 +152,15 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
             maybeCreateKotlinTasks(it)
         }
 
+        val anyHostTestUsingAndroidResources = testComponents.filterIsInstance<HostTest>()
+            .any {
+                it.androidResourcesIncluded
+            }
+
         // must run this after scopes are created so that we can configure kotlin
         // kapt tasks
-        addBindingDependenciesIfNecessary(globalConfig.dataBinding)
+        addBindingDependenciesIfNecessary(globalConfig.dataBinding,
+            anyHostTestUsingAndroidResources)
 
         // configure Kotlin compilation if needed.
         configureKotlinPluginTasksIfNecessary()
@@ -389,7 +396,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         }
     }
 
-    private fun addBindingDependenciesIfNecessary(dataBindingOptions: DataBinding) {
+    private fun addBindingDependenciesIfNecessary(
+        dataBindingOptions: DataBinding,
+        anyHostTestUsingAndroidResources: Boolean
+    ) {
         val viewBindingEnabled = allPropertiesList.stream()
             .anyMatch { componentProperties: ComponentCreationConfig -> componentProperties.buildFeatures.viewBinding }
         val dataBindingEnabled = allPropertiesList.stream()
@@ -430,7 +440,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
                     SdkConstants.DATA_BINDING_ANNOTATION_PROCESSOR_ARTIFACT + ":" + version
                 project.dependencies
                     .add("androidTestAnnotationProcessor", dataBindingArtifact)
-                if (globalConfig.unitTestOptions.isIncludeAndroidResources) {
+                if (anyHostTestUsingAndroidResources) {
                     project.dependencies.add("testAnnotationProcessor", dataBindingArtifact)
                 }
             }

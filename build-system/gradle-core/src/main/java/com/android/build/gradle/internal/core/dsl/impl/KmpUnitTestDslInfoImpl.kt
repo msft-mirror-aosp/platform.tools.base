@@ -86,7 +86,8 @@ class KmpUnitTestDslInfoImpl(
     override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest>
         get() = listOf(
             ComponentDslInfo.DslDefinedHostTest(HostTestBuilder.UNIT_TEST_TYPE,
-                testOnJvmConfig.enableCoverage)
+                testOnJvmConfig.enableCoverage,
+                testOnJvmConfig.isIncludeAndroidResources)
         )
 
     override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> =

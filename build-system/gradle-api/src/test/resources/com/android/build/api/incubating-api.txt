@@ -665,3 +665,9 @@ https://issuetracker.google.com/443715703
   * com.android.build.api.variant.Component.configureJavaCompileTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.compile.JavaCompile, kotlin.Unit>)
 https://issuetracker.google.com/443976533
   * com.android.build.api.artifact.SingleArtifact$VERSION_CONTROL_INFO_FILE extends com.android.build.api.artifact.SingleArtifact
+https://issuetracker.google.com/444699160
+  * com.android.build.api.dsl.TestSuiteHostJarSpec.getEnableAndroidResources: boolean ()
+  * com.android.build.api.dsl.TestSuiteHostJarSpec.setEnableAndroidResources: void (boolean)
+  * com.android.build.api.variant.HostTest.getAndroidResourcesIncluded: boolean ()
+  * com.android.build.api.variant.HostTestBuilder.getIncludeAndroidResources: boolean ()
+  * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)

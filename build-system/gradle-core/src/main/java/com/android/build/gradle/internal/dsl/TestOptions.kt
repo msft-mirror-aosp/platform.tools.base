@@ -33,6 +33,7 @@ import com.google.common.base.Verify
 import org.gradle.api.Action
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
+import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.tasks.testing.Test
 import javax.inject.Inject
 
@@ -191,13 +192,27 @@ abstract class TestOptions @Inject constructor(
         }
     }
 
-    override val suites: ExtensiblePolymorphicDomainObjectContainer< AgpTestSuite> =
-        dslServices.polymorphicDomainObjectContainer( AgpTestSuite::class.java).apply {
-            registerBinding(
+
+    override val suites: ExtensiblePolymorphicDomainObjectContainer< AgpTestSuite> by lazy {
+        class AgpTestSuiteFactory : NamedDomainObjectFactory<AgpTestSuite> {
+
+            override fun create(name: String): AgpTestSuite {
+                return dslServices.newInstance(
+                    AgpTestSuiteImpl::class.java,
+                    name,
+                    dslServices,
+                    unitTests.isIncludeAndroidResources
+                )
+            }
+
+        }
+        dslServices.polymorphicDomainObjectContainer(AgpTestSuite::class.java).apply {
+            registerFactory(
                 AgpTestSuite::class.java,
-                AgpTestSuiteImpl::class.java
+                AgpTestSuiteFactory()
             )
         }
+    }
 
     private fun createTargetSdkSpec(): TargetSdkSpecImpl {
         return dslServices.newDecoratedInstance(TargetSdkSpecImpl::class.java, dslServices).also {

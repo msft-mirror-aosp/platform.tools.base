@@ -771,7 +771,7 @@ class VariantManager<
                         dslExtension.buildFeatures,
                         dslExtension.dataBinding,
                         projectServices,
-                        globalTaskCreationConfig.unitTestOptions.isIncludeAndroidResources,
+                        (testBuilder as HostTestBuilderImpl).includeAndroidResources,
                         ComponentTypeImpl.UNIT_TEST
                     ),
                     testComponentDslInfo as HostTestComponentDslInfo,

@@ -1948,6 +1948,7 @@ com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.setIncludeAndr
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.setReturnDefaultValues: void (boolean)
 com.android.build.gradle.internal.dsl.TestOptions.<init>: com.android.build.gradle.internal.dsl.TestOptions (com.android.build.gradle.internal.services.DslServices)
 com.android.build.gradle.internal.dsl.TestOptions.access$checkNonLibraryModule: void (com.android.build.gradle.internal.dsl.TestOptions, com.android.build.api.dsl.TargetSdkVersion)
+com.android.build.gradle.internal.dsl.TestOptions.access$getDslServices$p: com.android.build.gradle.internal.services.DslServices (com.android.build.gradle.internal.dsl.TestOptions)
 com.android.build.gradle.internal.dsl.TestOptions.access$setTargetSdkVersion$p: void (com.android.build.gradle.internal.dsl.TestOptions, com.android.build.api.dsl.TargetSdkVersion)
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (org.gradle.api.Action<com.android.build.api.dsl.EmulatorControl>)

@@ -48,6 +48,7 @@ interface ComponentDslInfo {
     class DslDefinedHostTest(
         val type: String,
         val codeCoverageEnabled: Boolean,
+        val isIncludeAndroidResources: Boolean,
     )
 
     class DslDefinedDeviceTest(

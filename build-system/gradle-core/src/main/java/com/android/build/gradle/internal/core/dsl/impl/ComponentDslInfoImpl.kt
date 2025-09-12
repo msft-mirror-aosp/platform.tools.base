@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.core.dsl.impl
 
-import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.BuildType
@@ -144,11 +143,13 @@ internal abstract class ComponentDslInfoImpl internal constructor(
         get() = listOf(
             ComponentDslInfo.DslDefinedHostTest(
                 HostTestBuilder.UNIT_TEST_TYPE,
-                buildTypeObj.enableUnitTestCoverage || buildTypeObj.isTestCoverageEnabled
+                buildTypeObj.enableUnitTestCoverage || buildTypeObj.isTestCoverageEnabled,
+                extension.testOptions.unitTests.isIncludeAndroidResources
             ),
             ComponentDslInfo.DslDefinedHostTest(
                 HostTestBuilder.SCREENSHOT_TEST_TYPE,
-                false
+                codeCoverageEnabled = false,
+                isIncludeAndroidResources = false
             ),
         )
 

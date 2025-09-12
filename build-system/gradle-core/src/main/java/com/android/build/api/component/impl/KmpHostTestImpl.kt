@@ -25,6 +25,7 @@ import com.android.build.api.instrumentation.FramesComputationMode
 import com.android.build.api.instrumentation.InstrumentationParameters
 import com.android.build.api.instrumentation.InstrumentationScope
 import com.android.build.api.variant.AndroidVersion
+import com.android.build.api.variant.HostTest
 import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.UnitTest
 import com.android.build.api.variant.impl.AndroidResourcesImpl
@@ -79,7 +80,7 @@ open class KmpHostTestImpl @Inject constructor(
     global,
     androidKotlinCompilation,
     manifestFile
-), HostTestCreationConfig, UnitTest, com.android.build.api.component.UnitTest {
+), HostTestCreationConfig, HostTest, UnitTest, com.android.build.api.component.UnitTest {
 
     override fun <T> onTestedVariant(action: (VariantCreationConfig) -> T): T {
         return action.invoke(mainVariant)
@@ -104,7 +105,7 @@ open class KmpHostTestImpl @Inject constructor(
         get() = manifestPlaceholdersCreationConfig.placeholders
 
     override val androidResourcesCreationConfig: AndroidResourcesCreationConfig? by lazy {
-        if (global.unitTestOptions.isIncludeAndroidResources) {
+        if (androidResourcesIncluded) {
             AndroidResourcesCreationConfigImpl(
                 this,
                 dslInfo,
@@ -118,6 +119,9 @@ open class KmpHostTestImpl @Inject constructor(
 
     override val codeCoverageEnabled: Boolean
         get() = global.androidTestOptions.codeCoverageEnabled
+
+    override val androidResourcesIncluded: Boolean
+        get() = buildFeatures.androidResources
 
     override fun <ParamT : InstrumentationParameters> transformClassesWith(
         classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
@@ -136,7 +140,7 @@ open class KmpHostTestImpl @Inject constructor(
     }
 
     override val androidResources: AndroidResourcesImpl? =
-        if (global.unitTestOptions.isIncludeAndroidResources) {
+        if (androidResourcesIncluded) {
             initializeAaptOptionsFromDsl(dslInfo.androidResourcesDsl!!.androidResources, buildFeatures, internalServices)
         } else {
             null
