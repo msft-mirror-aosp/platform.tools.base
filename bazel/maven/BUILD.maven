@@ -86559,6 +86559,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-core_1.8.1",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-core/1.8.1/kotlinx-serialization-core-1.8.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-core/1.8.1",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.8.1",
+        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.8.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm_1.5.1",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.5.1/kotlinx-serialization-json-jvm-1.5.1.pom",
     repo_root_path = "repository",
@@ -86601,6 +86613,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm_1.8.1",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.8.1/kotlinx-serialization-json-jvm-1.8.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.8.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.8.1",
+        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.8.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-serialization-json_1.5.1",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-json/1.5.1/kotlinx-serialization-json-1.5.1.pom",
     repo_root_path = "repository",
@@ -86632,6 +86657,18 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm_1.6.3",
         "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-json_1.8.1",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-json/1.8.1/kotlinx-serialization-json-1.8.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-json/1.8.1",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm_1.8.1",
+        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.8.1",
     ],
     visibility = ["//visibility:public"],
 )
