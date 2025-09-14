@@ -231,6 +231,96 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun test443237701_obtainStyle() {
+    // Regression test for b/443237701
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            import android.content.Context
+            import android.util.AttributeSet
+            import android.widget.LinearLayout
+
+            class MyView @JvmOverloads constructor(
+                context: Context,
+                attrs: AttributeSet? = null,
+                defStyle: Int = 0,
+                defStyleRes: Int = 0
+            ) : LinearLayout(context, attrs, defStyle, defStyleRes) {
+                init {
+                    attrs?.let {
+                        context.obtainStyledAttributes(it, R.styleable.Capability, defStyle, defStyleRes)
+                            .also { styleAttrs ->
+                                val x = styleAttrs.getString(R.styleable.Capability_queryPatterns)
+                                println(x)
+                            }
+                            .recycle()
+                    }
+                }
+            }
+
+            @Suppress("ClassName","MayBeConstant")
+            object R {
+                object styleable {
+                    val Capability = intArrayOf()
+                    val Capability_queryPatterns = 1
+                }
+            }
+            """
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expectClean()
+  }
+
+  fun test442989234_sharedPrefs() {
+    // Regression test for 442989234
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            import android.content.SharedPreferences
+
+            fun f(sharedPreferences: SharedPreferences) {
+                with(sharedPreferences.edit()) {
+                    putString("key", "value")
+                    apply()
+                }
+            }
+            """
+          )
+          .indented()
+      )
+      .skipTestModes(TestMode.PARENTHESIZED)
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:6: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            with(sharedPreferences.edit()) {
+                 ~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for src/test/pkg/test.kt line 6: Replace with the edit extension function:
+        @@ -3,0 +4 @@
+        +import androidx.core.content.edit
+        @@ -6 +7 @@
+        -    with(sharedPreferences.edit()) {
+        +    sharedPreferences.edit {
+        @@ -8 +8,0 @@
+        -        apply()
+        """
+      )
+  }
+
   fun testObtainStyledAttributesWithScopingFunctions() {
     // TODO: Other methods that have the contract
     //   callsInPlace(block, InvocationKind.EXACTLY_ONCE)

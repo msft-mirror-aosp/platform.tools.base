@@ -368,6 +368,10 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
       return
     }
 
+    if (scopingFunction != null && scopingFunction.methodName == "also") {
+      return
+    }
+
     val source = context.getContents() ?: call.containingFile?.text ?: return
     // delete the left hand side of the variable; we don't need that anymore
     val deleteLhsStart = variable?.sourcePsi?.startOffset ?: -1
@@ -377,7 +381,14 @@ class UseKtxDetector : Detector(), SourceCodeScanner, XmlScanner {
     var replaceAnchorEnd = startCall.methodIdentifier?.sourcePsi?.endOffset ?: return
 
     val rParen = call.valueArgumentList?.rightParenthesis ?: return
-    val rParenStart = rParen.startOffset
+    val rParenStart =
+      rParen.startOffset.let {
+        if (extensionMethod == "edit" && it < source.length - 2 && source[it + 1] == ')') {
+          it + 1
+        } else {
+          it
+        }
+      }
     val rParenEnd = rParenStart + 1
 
     var replacedAnchor = extensionMethod
