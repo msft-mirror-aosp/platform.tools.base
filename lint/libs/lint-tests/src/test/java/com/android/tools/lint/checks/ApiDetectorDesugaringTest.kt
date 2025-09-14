@@ -573,6 +573,43 @@ class ApiDetectorDesugaringTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testLibraryDesugaredCasts2() {
+    // Regression test for b/441076971
+    lint()
+      .files(
+        manifest().minSdk(21),
+        java(
+            """
+            package test.pkg;
+
+            import java.util.Comparator;
+            import java.util.Map;
+            import java.util.stream.Stream;
+
+            public abstract class BiStream<K, V> implements AutoCloseable {
+                @SuppressWarnings("unchecked") // Immutable Map.Entry<> is covariant.
+                private BiStream<K, V> sorted(Comparator<? super Map.Entry<K, V>> entryComparator) {
+                    return fromEntries(((Stream<Map.Entry<K, V>>) mapToEntry()).sorted(entryComparator));
+                }
+
+                static <K, V, E extends Map.Entry<? extends K, ? extends V>> BiStream<K, V> fromEntries(
+                        Stream<E> entryStream) {
+                    throw new UnsupportedOperationException("TODO");
+                }
+
+                Stream<? extends Map.Entry<? extends K, ? extends V>> mapToEntry() {
+                    throw new UnsupportedOperationException("TODO");
+                }
+            }
+            """
+          )
+          .indented(),
+      )
+      .desugaring(Desugaring.FULL)
+      .run()
+      .expectClean()
+  }
+
   fun testNioCompatWarnings() {
     // Regression test for b/381126163
     val testFiles =
