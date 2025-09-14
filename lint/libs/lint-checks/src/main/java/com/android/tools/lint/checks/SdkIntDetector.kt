@@ -30,6 +30,7 @@ import com.android.tools.lint.detector.api.PartialResult
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.UastLintUtils.Companion.getAnnotationLongValue
 import com.android.tools.lint.detector.api.VersionChecks.Companion.CHECKS_SDK_INT_AT_LEAST_ANNOTATION
 import com.android.tools.lint.detector.api.VersionChecks.Companion.SDK_INT
 import com.android.tools.lint.detector.api.VersionChecks.Companion.SDK_INT_FULL
@@ -356,7 +357,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
       val api = apiValue as? Int
       if (api != null) {
         val apiAtLeast = if (isGreaterOrEquals) api else api + 1
-        if (!annotated(context, method, apiAtLeast)) {
+        if (!checkAnnotated(context, method, apiAtLeast)) {
           val buildCode =
             getBuildCode(apiAtLeast, sdkId, if (isGreaterOrEquals) apiOperand else null)
           val location = context.getNameLocation(method).withOriginalSource(method)
@@ -388,7 +389,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
         val parameter = apiOperand.resolve()
         if (parameter is PsiParameter) {
           val index = getParameterIndex(parameter)
-          if (index != -1 && !annotated(context, method, -1)) {
+          if (index != -1 && !checkAnnotated(context, method, -1)) {
             val args =
               "parameter=$index${if (lambda != -1) ", lambda=$lambda" else ""}${if (sdkId != ANDROID_SDK_ID)", extension=${getSdkConstant(context, sdkId)}" else ""}"
             val message = "This method should be annotated with `@ChecksSdkIntAtLeast($args)`"
@@ -456,7 +457,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
       val value = apiOperand.evaluate() ?: ConstantEvaluator.evaluate(context, apiOperand)
       val api = value as? Int ?: return
       val atLeast = if (isGreaterOrEquals) api else api + 1
-      if (!annotated(context, field, atLeast)) {
+      if (!checkAnnotated(context, field, atLeast)) {
         val buildCode = getBuildCode(atLeast, sdkId, if (isGreaterOrEquals) apiOperand else null)
         val args =
           "api=$buildCode${if (sdkId != ANDROID_SDK_ID)", extension=${getSdkConstant(context, sdkId)}" else ""}"
@@ -478,7 +479,7 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
     }
 
     private fun checkFieldAlias(context: JavaContext, field: UField, sdkId: Int) {
-      if (context.evaluator.isPublic(field) && !annotated(context, field, -1)) {
+      if (context.evaluator.isPublic(field) && !checkAnnotated(context, field, -1)) {
         val args = "extension=${getSdkConstant(context, sdkId)}"
         val message = "This field should be annotated with `ChecksSdkIntAtLeast($args)`"
         val location = context.getNameLocation(field).withOriginalSource(field)
@@ -494,11 +495,38 @@ class SdkIntDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    private fun annotated(context: JavaContext, annotated: UAnnotated, api: Int): Boolean {
-      // TODO: If annotated, warn if it's not set to the correct API level
-      return context.evaluator.getAllAnnotations(annotated, false).any {
-        it.qualifiedName == CHECKS_SDK_INT_AT_LEAST_ANNOTATION
+    /**
+     * Checks whether a given UAnnotated element (method, field, etc.) has the
+     * `@ChecksSdkIntAtLeast` annotation and optionally checks if the annotated API level matches
+     * the expected minimum API level.
+     *
+     * @return true if the element is annotated, false otherwise.
+     */
+    private fun checkAnnotated(
+      context: JavaContext,
+      annotated: UAnnotated,
+      apiAtLeast: Int,
+      warn: Boolean = true,
+    ): Boolean {
+      val annotations = context.evaluator.getAllAnnotations(annotated, false)
+      for (annotation in annotations) {
+        if (annotation.qualifiedName == CHECKS_SDK_INT_AT_LEAST_ANNOTATION) {
+          if (warn && apiAtLeast != -1) {
+            val lang = getAnnotationLongValue(annotation, "api", -1)
+            if (lang != apiAtLeast.toLong()) {
+              context.report(
+                ISSUE,
+                annotation,
+                context.getLocation(annotation),
+                "API level discrepancy: annotation says $lang and code checks $apiAtLeast",
+              )
+            }
+          }
+          return true
+        }
       }
+
+      return false
     }
   }
 }

@@ -975,6 +975,66 @@ class SdkIntDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testWrongAnnotation() {
+    // Regression test for b/441536820
+    lint()
+      .files(
+        manifest().minSdk(4),
+        projectProperties().library(true),
+        kotlin(
+            """
+            @file:Suppress("unused", "RemoveRedundantQualifierName")
+
+            package test.pkg
+            import android.os.Build
+            import android.os.Build.VERSION
+            import android.os.Build.VERSION_CODES
+            import androidx.annotation.ChecksSdkIntAtLeast
+
+            @ChecksSdkIntAtLeast(api=VERSION_CODES.N_MR1)
+            fun isNougat(): Boolean = VERSION.SDK_INT >= VERSION_CODES.N
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import android.os.Build;
+            import static android.os.Build.VERSION.SDK_INT;
+            import static android.os.Build.VERSION_CODES.O;
+            import androidx.annotation.ChecksSdkIntAtLeast;
+
+            public class JavaVersionChecks {
+                @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N)
+                public static boolean isNougat2() {
+                    return SDK_INT >= O;
+                }
+
+                @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.LOLLIPOP)
+                public static final boolean SUPPORTS_LETTER_SPACING2 = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/JavaVersionChecks.java:8: Warning: API level discrepancy: annotation says 24 and code checks 26 [AnnotateVersionCheck]
+            @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/JavaVersionChecks.java:13: Warning: API level discrepancy: annotation says 21 and code checks 23 [AnnotateVersionCheck]
+            @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.LOLLIPOP)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:9: Warning: API level discrepancy: annotation says 25 and code checks 24 [AnnotateVersionCheck]
+        @ChecksSdkIntAtLeast(api=VERSION_CODES.N_MR1)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 3 warnings
+        """
+      )
+  }
+
   override fun getDetector(): Detector {
     return SdkIntDetector()
   }
