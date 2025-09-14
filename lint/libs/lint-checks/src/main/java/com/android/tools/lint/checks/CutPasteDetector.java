@@ -39,6 +39,7 @@ import com.android.tools.lint.detector.api.SourceCodeScanner;
 import com.google.common.collect.Maps;
 import com.intellij.psi.PsiMethod;
 
+import com.intellij.psi.PsiVariable;
 import org.jetbrains.uast.UArrayAccessExpression;
 import org.jetbrains.uast.UBinaryExpression;
 import org.jetbrains.uast.UBlockExpression;
@@ -170,6 +171,14 @@ public class CutPasteDetector extends Detector implements SourceCodeScanner {
                         if (!isReachableFrom(method, earlierCall, call)) {
                             return;
                         }
+
+                        // We only report if both calls are assigned to a variable, as that is more likely to be a mistake.
+                        PsiVariable earlierVar = CleanupDetector.getVariableElement(earlierCall, true, true);
+                        PsiVariable laterVar = CleanupDetector.getVariableElement(call, true, true);
+                        if (earlierVar == null || laterVar == null) {
+                            return;
+                        }
+
                         Location location = context.getLocation(call);
                         Location secondary = context.getLocation(earlierCall);
                         secondary.setMessage("First usage here");

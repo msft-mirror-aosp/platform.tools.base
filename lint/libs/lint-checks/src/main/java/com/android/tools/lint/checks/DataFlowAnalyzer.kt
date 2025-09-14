@@ -1027,6 +1027,10 @@ abstract class DataFlowAnalyzer(
         }
       }
 
+      if (parent is UBinaryExpressionWithType) {
+        parent = skipParenthesizedExprUp(parent.uastParent)
+      }
+
       if (parent != null && parent.isAssignment()) {
         val assignment = parent as UBinaryExpression
         val lhs = assignment.leftOperand

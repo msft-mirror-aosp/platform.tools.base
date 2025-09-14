@@ -896,4 +896,42 @@ public class CutPasteDetectorTest extends AbstractCheckTest {
                                 + "                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                                 + "0 errors, 2 warnings");
     }
+
+    public void test439891431() {
+        lint().files(
+                        kotlin(
+                                ""
+                                        + "package test.pkg\n"
+                                        + "\n"
+                                        + "import android.app.Activity\n"
+                                        + "import android.view.View\n"
+                                        + "\n"
+                                        + "class MyActivity : Activity() {\n"
+                                        + "    private var containerView: View? = null\n"
+                                        + "    fun test(activity: Activity) {\n"
+                                        + "        activity.findViewById<View>(R.id.tab_featured_carousel_video_preview_container)?.visibility =\n"
+                                        + "            View.VISIBLE\n"
+                                        + "        containerView = activity.findViewById(R.id.tab_featured_carousel_video_preview_container)\n"
+                                        + "    }\n"
+                                        + "}"),
+                        // Like the above, but with the order reversed
+                        kotlin(
+                                ""
+                                        + "package test.pkg\n"
+                                        + "\n"
+                                        + "import android.app.Activity\n"
+                                        + "import android.view.View\n"
+                                        + "\n"
+                                        + "class MyActivity2 : Activity() {\n"
+                                        + "    private var containerView: View? = null\n"
+                                        + "    fun test(activity: Activity) {\n"
+                                        + "        containerView = activity.findViewById(R.id.tab_featured_carousel_video_preview_container)\n"
+                                        + "        activity.findViewById<View>(R.id.tab_featured_carousel_video_preview_container)?.visibility =\n"
+                                        + "            View.VISIBLE\n"
+                                        + "    }\n"
+                                        + "}"),
+                        rClass("test.pkg", "@id/tab_featured_carousel_video_preview_container"))
+                .run()
+                .expectClean();
+    }
 }
