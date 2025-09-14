@@ -836,21 +836,15 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
     // Find and copy a real SDK to a temporary directory.
     val realSdk = TestUtils.getSdk().toFile()
     val mockSdk = tempFolder.newFolder(MOCK_SDK_DIR)
-    realSdk.copyRecursively(target = mockSdk, overwrite = true)
-
-    // Find the platform directory (e.g., "platforms/android-{VERSION}").
-    val platformsDir = File(mockSdk, FD_PLATFORMS)
-    val targetPlatformDir =
-      platformsDir.listFiles()?.find { it.isDirectory && it.name.startsWith("android-") }
-    targetPlatformDir!!
-
-    // Create the data directory within that platform.
-    val dataDir = File(targetPlatformDir, FD_DATA)
+    val sourcePlatformDir =
+      File(realSdk, FD_PLATFORMS).listFiles()?.find {
+        it.isDirectory && it.name.startsWith("android-")
+      }!!
+    val platformsDir = File(mockSdk, FD_PLATFORMS + File.separator + sourcePlatformDir.name)
+    sourcePlatformDir.copyRecursively(target = platformsDir, overwrite = true)
+    val dataDir = File(platformsDir, FD_DATA)
     dataDir.mkdir()
-
-    // Write the custom XML content into data/
     File(dataDir, FN_PERMISSION_VERSIONS).writeText(xmlContent)
-
     return mockSdk
   }
 }
