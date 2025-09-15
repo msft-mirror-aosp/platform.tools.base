@@ -44,6 +44,7 @@ import com.android.tools.idea.wizard.template.impl.activities.settingsActivity.s
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.tabbedActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.viewModelActivity.viewModelActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.xrActivity.xrActivityTemplate
+import com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity.xrGlassesActivityTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.blankFragment.blankFragmentTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.fullscreenFragment.fullscreenFragmentTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment.googleAdMobAdsFragmentTemplate
@@ -80,6 +81,7 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
       composeNavigationUiActivityMaterial3Template,
       archStarterActivityTemplate,
       xrActivityTemplate,
+      xrGlassesActivityTemplate,
     androidTVActivityTemplate,
     basicActivityTemplate,
     composeWearActivityWithTileAndComplicationTemplate,
