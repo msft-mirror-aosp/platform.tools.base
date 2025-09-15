@@ -20,8 +20,12 @@ import com.android.testutils.TestUtils
 import com.android.tools.lint.LintCliFlags
 import com.android.tools.lint.MainTest
 import com.android.tools.lint.checks.AbstractCheckTest.SUPPORT_ANNOTATIONS_JAR
+import com.android.tools.lint.checks.ApiDetector
+import com.android.tools.lint.checks.ApiLookupTest
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestFile
+import com.android.tools.lint.checks.infrastructure.TestFiles
+import com.android.tools.lint.checks.infrastructure.TestFiles.binaryStub
 import com.android.tools.lint.checks.infrastructure.TestFiles.java
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
@@ -1294,6 +1298,160 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             Object o = MyApi.class; // ERROR 3
                        ~~~~~~~~~~~
         3 errors
+        """
+      )
+  }
+
+  fun testFlaggedApiAppearsInApiVersionsXml() {
+    // Regression test for b/437399045
+    ApiLookupTest.runLintWithCustomLookup(
+        """
+        <api version="4">
+          <class name="java/lang/Object" since="2">
+            <method name="&lt;init>()V"/>
+            <method name="equals(Ljava/lang/Object;)Z"/>
+            <method name="hashCode()I"/>
+            <method name="toString()Ljava/lang/String;"/>
+          </class>
+          <class name="test/api/FooManager" since="30">
+            <extends name="java/lang/Object"/>
+            <method name="&lt;init>()V"/>
+            <method name="someMethod()V" since="35"/>
+            <method name="newUnfinalizedMethod()V" since="10000"/>
+            <method name="newUnflaggedUnfinalizedMethod()V" since="10000"/>
+            <method name="newFinalizedMethod()V" since="37"/>
+          </class>
+        </api>
+        """,
+        false,
+        {
+          lint()
+            .files(
+              manifest().minSdk(30),
+              // Use binary stub for the API file since lint's API check
+              // ignores API elements found in source files
+              binaryStub(
+                "libs/api.jar",
+                java(
+                    """
+                    package test.api;
+                    import android.annotation.FlaggedApi;
+                    import com.example.foobar.Flags;
+
+                    class FooManager {
+                       void someMethod();
+                       @FlaggedApi(Flags.FLAG_FOOBAR)
+                       void newUnfinalizedMethod();
+                       @FlaggedApi(Flags.FLAG_FOOBAR)
+                       void newFinalizedMethod();
+                       void newUnflaggedUnfinalizedMethod();
+                    }
+                    """
+                  )
+                  .indented(),
+                // Generated
+                java(
+                    """
+                    package com.example.foobar;
+                    import androidx.annotation.ChecksSdkIntAtLeast;
+
+                    public class Flags {
+                        public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                        @ChecksSdkIntAtLeast(api=37)
+                        public static boolean foobar() { return true; }
+                    }
+                    """
+                  )
+                  .indented(),
+                flaggedApiAnnotationStub,
+                TestFiles.java(
+                    """
+                    package androidx.annotation;
+                    import static java.lang.annotation.ElementType.FIELD;
+                    import static java.lang.annotation.ElementType.METHOD;
+                    import static java.lang.annotation.RetentionPolicy.CLASS;
+                    import java.lang.annotation.Documented;
+                    import java.lang.annotation.Retention;
+                    import java.lang.annotation.Target;
+                    @Documented
+                    @Retention(CLASS)
+                    @Target({METHOD, FIELD})
+                    public @interface ChecksSdkIntAtLeast {
+                        int api() default -1;
+                        String codename() default "";
+                        int parameter() default -1;
+                        int lambda() default -1;
+                        int extension() default 0;
+                    }
+                    """
+                  )
+                  .indented(),
+              ),
+              // Usage
+              java(
+                  """
+                  package test.pkg;
+                  import test.api.FooManager;
+                  import com.example.foobar.Flags;
+                  import android.os.Build;
+
+                  public class Test {
+                    public void test(FooManager fooManager) {
+                      // Flagged API not yet finalized: should *only* be reported as FlaggedApi:
+                      fooManager.newUnfinalizedMethod(); // ERROR 1 (FlaggedApi)
+
+                      if (Flags.foobar()) {
+                        fooManager.newUnfinalizedMethod(); // OK 1: properly checked by flag
+                        fooManager.newFinalizedMethod(); // OK 2, thanks to @ChecksSdkIntAtLeast(37)
+                      }
+
+                      if (Build.VERSION.SDK_INT >= 37) {
+                        fooManager.someMethod(); // OK 3
+                        fooManager.newFinalizedMethod(); // OK 4
+                        // Unfinalized API: should only be reported as FlaggedApi
+                        fooManager.newUnfinalizedMethod(); // ERROR 2 (FlaggedAPi)
+                      }
+
+                      // Finalized API; should only be reported as NewApi
+                      fooManager.newFinalizedMethod(); // ERROR 3 (NewApi)
+                      // Not flagged API (just flagged by NewApi)
+                      fooManager.someMethod(); // ERROR 4 (NewApi)
+
+                      fooManager.newUnflaggedUnfinalizedMethod(); // ERROR 5
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CUR_DEVELOPMENT) {
+                        fooManager.newUnflaggedUnfinalizedMethod(); // OK 5
+                      }
+                    }
+                  }
+                  """
+                )
+                .indented(),
+              flaggedApiAnnotationStub,
+            )
+        },
+        FlaggedApiDetector.ISSUE,
+        ApiDetector.UNSUPPORTED,
+        ApiDetector.INLINED,
+        ApiDetector.OBSOLETE_SDK,
+      )
+      .expect(
+        """
+        src/test/pkg/Test.java:9: Error: Method newUnfinalizedMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+            fooManager.newUnfinalizedMethod(); // ERROR 1 (FlaggedApi)
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:20: Error: Method newUnfinalizedMethod() is a flagged API and should be inside an if (Flags.foobar()) check (or annotate the surrounding method test with @FlaggedApi(Flags.FLAG_FOOBAR) to transfer requirement to caller) [FlaggedApi]
+              fooManager.newUnfinalizedMethod(); // ERROR 2 (FlaggedAPi)
+              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:24: Error: Call requires API level 37 (current min is 30): test.api.FooManager#newFinalizedMethod [NewApi]
+            fooManager.newFinalizedMethod(); // ERROR 3 (NewApi)
+                       ~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:26: Error: Call requires API level 35 (current min is 30): test.api.FooManager#someMethod [NewApi]
+            fooManager.someMethod(); // ERROR 4 (NewApi)
+                       ~~~~~~~~~~
+        src/test/pkg/Test.java:28: Error: Call requires API level CUR_DEVELOPMENT/10000 (current min is 30): test.api.FooManager#newUnflaggedUnfinalizedMethod [NewApi]
+            fooManager.newUnflaggedUnfinalizedMethod(); // ERROR 5
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        5 errors
         """
       )
   }

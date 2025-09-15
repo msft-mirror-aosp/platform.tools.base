@@ -61,6 +61,7 @@ import com.android.ide.common.resources.resourceNameToFieldName
 import com.android.resources.ResourceFolderType
 import com.android.resources.ResourceType
 import com.android.sdklib.SdkVersionInfo
+import com.android.sdklib.SdkVersionInfo.CUR_DEVELOPMENT
 import com.android.tools.lint.checks.ApiLookup.UnsupportedVersionException
 import com.android.tools.lint.checks.ApiLookup.equivalentName
 import com.android.tools.lint.checks.ApiLookup.startsWithEquivalentPrefix
@@ -69,6 +70,7 @@ import com.android.tools.lint.checks.DesugaredMethodLookup.Companion.isDesugared
 import com.android.tools.lint.checks.DesugaredMethodLookup.Companion.isDesugaredField
 import com.android.tools.lint.checks.DesugaredMethodLookup.Companion.isDesugaredMethod
 import com.android.tools.lint.checks.RtlDetector.ATTR_SUPPORTS_RTL
+import com.android.tools.lint.checks.optional.FlaggedApiDetector
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.client.api.ResourceReference
 import com.android.tools.lint.client.api.ResourceRepositoryScope.LOCAL_DEPENDENCIES
@@ -1282,6 +1284,10 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       min: ApiConstraint,
       desugaring: Desugaring? = null,
     ) {
+      if (isHandledByFlaggedApiDetector(requires, node)) {
+        return
+      }
+
       val incident =
         Incident(
           issue = issue,
@@ -1313,6 +1319,18 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           }
         }
       context.report(incident, map)
+    }
+
+    /**
+     * Returns true if the given node is referencing an API that is in development, and is flagged
+     * (`@FlaggedApi`), and the [FlaggedApiDetector] is active. If so, we'll let that detector
+     * enforce usage.
+     */
+    private fun isHandledByFlaggedApiDetector(requires: ApiConstraint, node: UElement): Boolean {
+      return requires.getSdk() == ANDROID_SDK_ID &&
+        requires.min() == CUR_DEVELOPMENT &&
+        context.isEnabled(FlaggedApiDetector.ISSUE) &&
+        FlaggedApiDetector.isAlreadyAnnotated(node)
     }
 
     override fun visitAnnotation(node: UAnnotation) {

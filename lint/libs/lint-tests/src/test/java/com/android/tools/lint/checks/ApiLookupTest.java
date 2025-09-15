@@ -30,6 +30,7 @@ import com.android.tools.lint.checks.infrastructure.TestLintTask;
 import com.android.tools.lint.checks.infrastructure.TestMode;
 import com.android.tools.lint.client.api.PlatformLookup;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.Pair;
 
@@ -929,9 +930,21 @@ public class ApiLookupTest extends AbstractCheckTest {
     }
 
     public static TestLintResult runApiCheckWithCustomLookup(
-            @Language("XML") @NonNull String apiXml,
+            @Language("XML") @Nullable String apiXml,
             boolean force2ByteFormat,
             @NonNull CreateLintTask createTask) {
+      return runLintWithCustomLookup(apiXml, force2ByteFormat, createTask,
+          ApiDetector.UNSUPPORTED,
+          ApiDetector.INLINED,
+          ApiDetector.OBSOLETE_SDK,
+          ApiDetector.UNUSED);
+    }
+
+    public static TestLintResult runLintWithCustomLookup(
+            @Language("XML") @Nullable String apiXml,
+            boolean force2ByteFormat,
+            @NonNull CreateLintTask createTask,
+            @NotNull Issue... issues) {
         // this is here to prevent the SoftReference in the ApiLookup's
         // instance table from getting gc'ed
         @SuppressWarnings("WriteOnlyObject")
@@ -960,11 +973,7 @@ public class ApiLookupTest extends AbstractCheckTest {
                                     }
                                 };
                             })
-                    .issues(
-                            ApiDetector.UNSUPPORTED,
-                            ApiDetector.INLINED,
-                            ApiDetector.OBSOLETE_SDK,
-                            ApiDetector.UNUSED)
+                    .issues(issues)
                     .testModes(TestMode.DEFAULT)
                     .run();
         } finally {

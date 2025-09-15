@@ -17,6 +17,8 @@
 package com.android.tools.lint.checks.optional
 
 import com.android.SdkConstants.ATTR_VALUE
+import com.android.sdklib.SdkVersionInfo.CUR_DEVELOPMENT
+import com.android.tools.lint.checks.ApiLookup
 import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.checks.TypedefDetector
 import com.android.tools.lint.client.api.JavaEvaluator
@@ -24,9 +26,11 @@ import com.android.tools.lint.detector.api.AnnotationInfo
 import com.android.tools.lint.detector.api.AnnotationOrigin
 import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
+import com.android.tools.lint.detector.api.ApiConstraint
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.ConstantEvaluator
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
@@ -34,14 +38,17 @@ import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
+import com.android.tools.lint.detector.api.getInternalMethodName
 import com.android.tools.lint.detector.api.getMethodName
 import com.android.tools.lint.detector.api.isUnconditionalReturn
 import com.android.utils.SdkUtils.constantNameToCamelCase
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiCompiledElement
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLiteralValue
+import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiNamedElement
 import org.jetbrains.uast.UAnnotated
@@ -96,6 +103,27 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
       )
 
     private const val FLAGGED_API_ANNOTATION = "android.annotation.FlaggedApi"
+
+    /** Is the given [element] referencing an annotated element */
+    fun isAlreadyAnnotated(element: UElement?): Boolean {
+      val resolved = element?.tryResolve() ?: return false
+      return isAlreadyAnnotated(resolved)
+    }
+
+    /** Is the given [resolved] class/method/field annotated with a `@FlaggedApi` annotation? */
+    fun isAlreadyAnnotated(resolved: PsiElement?): Boolean {
+      if (resolved !is PsiMember) return false
+
+      val modifierList = resolved.modifierList
+      if (modifierList != null && modifierList.hasAnnotation(FLAGGED_API_ANNOTATION)) {
+        return true
+      }
+      val classModifierList = resolved.containingClass?.modifierList
+      if (classModifierList != null && classModifierList.hasAnnotation(FLAGGED_API_ANNOTATION)) {
+        return true
+      }
+      return false
+    }
   }
 
   override fun applicableAnnotations(): List<String> {
@@ -144,6 +172,10 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
             null
           }
         if (flag == null && flagString != null) {
+          if (isFinalized(context, element, annotationInfo.annotated)) {
+            return
+          }
+
           // Flags class missing from class path. We still want to flag
           // these as errors, and we don't need to check to see if you've
           // added explicit flags checks since clearly you haven't -- the
@@ -180,7 +212,49 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
       return
     }
 
+    // Make sure the API hasn't already been finalized; once it is, it will already be
+    // checked by ApiDetector, and we don't want duplicate warnings.
+    if (isFinalized(context, element, annotationInfo.annotated)) {
+      return
+    }
+
     reportError(context, element, flagClass.name ?: "", flagName, flagMethodName)
+  }
+
+  private fun isFinalized(
+    context: JavaContext,
+    reference: UElement,
+    annotated: PsiElement?,
+  ): Boolean {
+    val apiDatabase =
+      ApiLookup.getOrNull(context.client, context.project.buildTarget) ?: return false
+
+    val element = reference.tryResolve() ?: annotated ?: return false
+    when (element) {
+      is PsiClass -> {
+        val qualifiedName = element.qualifiedName ?: return false
+        return apiDatabase.getClassVersions(qualifiedName).isFinalized()
+      }
+      is PsiMember -> {
+        val cls = element.containingClass ?: return false
+        val qualifiedName = cls.qualifiedName ?: return false
+        if (element is PsiField) {
+          return apiDatabase.getFieldVersions(qualifiedName, element.name).isFinalized()
+        } else if (element is PsiMethod) {
+          val desc = context.evaluator.getMethodDescription(element, false, false)
+          if (desc != null) {
+            val internalName = getInternalMethodName(element)
+            return apiDatabase.getMethodVersions(qualifiedName, internalName, desc).isFinalized()
+          }
+        } // PsiClass is also a PsiMember
+      }
+    }
+
+    return false
+  }
+
+  private fun ApiConstraint.isFinalized(): Boolean {
+    return getSdk() == ANDROID_SDK_ID && min() < CUR_DEVELOPMENT
   }
 
   private fun getFlagMethodName(flagName: String): String =
