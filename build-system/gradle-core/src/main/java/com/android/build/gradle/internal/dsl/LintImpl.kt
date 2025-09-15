@@ -17,15 +17,11 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.Lint
-import com.android.build.api.variant.AndroidVersion
-import com.android.build.api.variant.impl.AndroidVersionImpl
 import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 import com.android.build.gradle.internal.services.DslServices
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.apiVersionFromString
-import com.android.builder.errors.IssueReporter
 import com.android.builder.model.ApiVersion
-import com.android.builder.model.v2.ide.ProjectType
 import com.android.tools.lint.model.LintModelSeverity
 import java.io.File
 import java.util.Collections
