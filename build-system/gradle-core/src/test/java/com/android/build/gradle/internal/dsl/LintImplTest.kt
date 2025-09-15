@@ -256,12 +256,32 @@ class LintImplTest {
     }
 
     @Test
+    fun testTargetSdkSpecRelease() {
+        lint {
+            targetSdk {
+                version = release(5)
+            }
+        }
+        assertThat(lint.targetSdk).named("lint.targetSdk").isEqualTo(5)
+    }
+
+    @Test
     fun testTargetSdkPreview() {
         lint {
             targetSdkPreview = "M"
         }
-        assertThat(lint.targetSdkPreview).named("lint.targetSdkVersion").isNotNull()
+        assertThat(lint.targetSdkPreview).named("lint.targetSdkPreview").isNotNull()
         assertThat(lint.targetSdkPreview!!).isEqualTo("M")
+    }
+
+    @Test
+    fun testTargetSdkSpecPreview() {
+        lint {
+            targetSdk {
+                version = preview("J")
+            }
+        }
+        assertThat(lint.targetSdkPreview).named("lint.targetSdkPreview").isEqualTo("J")
     }
 
     @Test

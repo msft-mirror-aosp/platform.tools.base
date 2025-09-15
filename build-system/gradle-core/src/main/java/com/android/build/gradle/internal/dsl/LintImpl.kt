@@ -17,15 +17,16 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.Lint
+import com.android.build.api.dsl.TargetSdkSpec
+import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
 import com.android.build.gradle.internal.services.DslServices
-import com.android.builder.core.DefaultApiVersion
-import com.android.builder.core.apiVersionFromString
-import com.android.builder.model.ApiVersion
+import com.android.build.gradle.internal.utils.updateIfChanged
 import com.android.tools.lint.model.LintModelSeverity
 import java.io.File
 import java.util.Collections
 import javax.inject.Inject
+import org.gradle.api.Action
 
 abstract class LintImpl
 @Inject constructor(
@@ -292,16 +293,52 @@ abstract class LintImpl
         }
     }
 
-    private var targetSdkApiVersion: ApiVersion? = null
+    private var targetSdkApiVersion: TargetSdkVersion? = null
 
-    override var targetSdk:Int?
+    override var targetSdk: Int?
         get() = targetSdkApiVersion?.apiLevel
         set(value) {
-            targetSdkApiVersion = if (value == null) null else DefaultApiVersion(value)
+            targetSdk { version = value?.let { release(it) } }
         }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `targetSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("targetSdk { version = release(value) }")
+    )
+    open fun targetSdk(version: Int?) {
+        this.targetSdk = version
+    }
+
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        createTargetSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(targetSdkApiVersion, it.version ) { version ->
+                targetSdkApiVersion = version
+            }
+        }
+    }
+
+    open fun targetSdk(action: Action<TargetSdkSpec>) {
+        createTargetSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(targetSdkApiVersion, it.version) { version ->
+                targetSdkApiVersion = version
+            }
+        }
+    }
+
     override var targetSdkPreview: String?
-        get() = targetSdkApiVersion?.codename
+        get() = targetSdkApiVersion?.codeName
         set(value) {
-            targetSdkApiVersion = apiVersionFromString(value)
+            targetSdk {
+                version = value?.let { preview(it) }
+            }
         }
+
+    private fun createTargetSdkSpec(): TargetSdkSpecImpl {
+        return dslServices.newDecoratedInstance(TargetSdkSpecImpl::class.java, dslServices).also {
+            it.version = targetSdkApiVersion
+        }
+    }
 }

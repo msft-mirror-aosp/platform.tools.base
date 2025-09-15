@@ -19,7 +19,6 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
@@ -262,6 +261,32 @@ class LintModelPerComponentIntegrationTest {
             .assertErrorContains(
                 "lint.targetSdk (15) for non library is smaller than android.targetSdk (16) for variants debug, release. "
                     + "Please change the values such that lint.targetSdk is greater than or equal to android.targetSdk."
+            )
+    }
+
+    @Test
+    fun checkLintModelTargetSdkSpecFailForApplication() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("app").buildFile,
+            """
+                android {
+                    defaultConfig {
+                        targetSdk {
+                            version = release(16)
+                        }
+                    }
+                    lint {
+                        targetSdk {
+                            version = release(15)
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+        executor().expectFailure().run(":app:tasks")
+            .assertErrorContains(
+                "lint.targetSdk (15) for non library is smaller than android.targetSdk (16) for variants debug, release. "
+                        + "Please change the values such that lint.targetSdk is greater than or equal to android.targetSdk."
             )
     }
 

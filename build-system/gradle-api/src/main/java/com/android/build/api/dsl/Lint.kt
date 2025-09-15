@@ -295,6 +295,14 @@ interface Lint {
     var targetSdk: Int?
 
     /**
+     * Configures all aspects regarding target sdk used when generating a
+     * lint report for a library. Must be equal or higher than main target
+     * SDK. Must be set for libraries only. See [TargetSdkSpec] for
+     * available options.
+     */
+    fun targetSdk(action: TargetSdkSpec.() -> Unit)
+
+    /**
      * The target sdk preview version used when generating a lint report for a library.
      * Must be set for libraries only.
      */

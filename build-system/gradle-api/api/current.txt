@@ -1654,6 +1654,7 @@ package com.android.build.api.dsl {
     method public void setWarningsAsErrors(boolean);
     method public void setXmlOutput(java.io.File?);
     method public void setXmlReport(boolean);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean abortOnError;
     property public abstract boolean absolutePaths;
     property public abstract java.io.File? baseline;
