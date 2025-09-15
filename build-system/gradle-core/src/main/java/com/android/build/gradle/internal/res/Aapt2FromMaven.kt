@@ -136,13 +136,12 @@ class Aapt2FromMaven(val aapt2Directory: FileCollection, val version: String) {
                         }
 
             val configuration = project.configurations.detachedConfiguration(
-                project.dependencies.create(
-                    mapOf(
-                        "group" to "com.android.tools.build",
-                        "name" to "aapt2",
-                        "version" to version,
-                        "classifier" to classifier
-                    )
+                project.dependencyFactory.create(
+                    "com.android.tools.build",
+                    "aapt2",
+                    version,
+                    classifier,
+                    null
                 )
             )
             configuration.isCanBeConsumed = false
