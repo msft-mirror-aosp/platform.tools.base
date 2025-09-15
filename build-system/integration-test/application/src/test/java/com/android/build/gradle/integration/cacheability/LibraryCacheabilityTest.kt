@@ -57,6 +57,7 @@ class LibraryCacheabilityTest {
                 ),
                 FROM_CACHE to setOf(
                     ":lib:compileReleaseJavaWithJavac",
+                    ":lib:compileReleaseNavigationResources",
                     ":lib:extractDeepLinksForAarRelease",
                     ":lib:extractReleaseAnnotations",
                     ":lib:generateReleaseResources",

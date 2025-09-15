@@ -57,9 +57,11 @@ import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -107,6 +109,11 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
     @get:Nested
     abstract val androidJarInput: AndroidJarInput
 
+    @get:Classpath
+    @get:Optional
+    @get:Incremental
+    abstract val navigationUpdatedFolder: DirectoryProperty
+
     private lateinit var manifestMergeBlameFile: Provider<RegularFile>
 
     override fun doTaskAction(inputChanges: InputChanges) {
@@ -121,6 +128,7 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             params.inputs.set(inputChanges.getChangesInSerializableForm(inputDirectory))
             params.manifestFile.set(File(manifestFile))
             params.compiledDependenciesResources.from(compiledDependenciesResources)
+            params.navigationDir.set(navigationUpdatedFolder)
             params.manifestMergeBlameFile.set(manifestMergeBlameFile)
             params.compiledDirectory.set(compiledDirectory)
             params.mergeBlameFolder.set(mergeBlameFolder)
@@ -134,6 +142,7 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
         abstract val inputs: Property<SerializableInputChanges>
         abstract val manifestFile: RegularFileProperty
         abstract val compiledDependenciesResources: ConfigurableFileCollection
+        abstract val navigationDir: DirectoryProperty
         abstract val manifestMergeBlameFile: RegularFileProperty
         abstract val compiledDirectory: DirectoryProperty
         abstract val mergeBlameFolder: DirectoryProperty
@@ -174,19 +183,12 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             val identifiedSourceSetMap =
                     mergeIdentifiedSourceSetFiles(parameters.sourceSetMaps.files.filterNotNull())
             val linkedApk = tempOutput.resolve("linked.apk")
-            val config = AaptPackageConfig.Builder()
-                .setManifestFile(manifestFile = parameters.manifestFile.get().asFile)
-                .setResourceOutputApk(linkedApk)
-                .addResourceDirectories(compiledDependenciesResourcesDirs)
-                .addResourceDir(resourceDir = compiledResources)
-                .setLibrarySymbolTableFiles(ImmutableSet.of())
-                .setOptions(AaptOptions())
-                .setComponentType(ComponentTypeImpl.LIBRARY)
-                .setAndroidTarget(androidJar = parameters.androidJar.get().asFile)
-                .setMergeBlameDirectory(parameters.mergeBlameFolder.get().asFile)
-                .setManifestMergeBlameFile(parameters.manifestMergeBlameFile.get().asFile)
-                .setIdentifiedSourceSetMap(identifiedSourceSetMap)
-                .build()
+            val config = buildAaptPackageConfig(
+                    linkedApk,
+                    compiledDependenciesResourcesDirs,
+                    compiledResources,
+                    identifiedSourceSetMap
+                )
 
             workerExecutor.await() // All compilation must be done before linking.
             try {
@@ -200,6 +202,32 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             } finally {
                 Files.deleteIfExists(linkedApk.toPath())
             }
+        }
+
+        private fun buildAaptPackageConfig(
+            linkedApk: File,
+            compiledDependenciesResourcesDirs: List<File>,
+            compiledResources: File,
+            identifiedSourceSetMap: Map<String, String>
+        ): AaptPackageConfig = with(parameters) {
+            AaptPackageConfig.Builder()
+                .setManifestFile(manifestFile = manifestFile.get().asFile)
+                .setResourceOutputApk(linkedApk)
+                .addResourceDirectories(compiledDependenciesResourcesDirs)
+                .addResourceDir(resourceDir = compiledResources)
+                .setLibrarySymbolTableFiles(ImmutableSet.of())
+                .setOptions(AaptOptions())
+                .setComponentType(ComponentTypeImpl.LIBRARY)
+                .setAndroidTarget(androidJar = androidJar.get().asFile)
+                .setMergeBlameDirectory(mergeBlameFolder.get().asFile)
+                .setManifestMergeBlameFile(manifestMergeBlameFile.get().asFile)
+                .setIdentifiedSourceSetMap(identifiedSourceSetMap)
+                .apply {
+                    if (navigationDir.isPresent) {
+                        addResourceDir(navigationDir.get().asFile)
+                    }
+                }
+                .build()
         }
     }
 
@@ -263,6 +291,11 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                     creationConfig.services.fileCollection(sourceSetMap)
             )
             task.dependsOn(sourceSetMap)
+
+            creationConfig.artifacts.setTaskInputToFinalProduct(
+                InternalArtifactType.COMPILED_NAVIGATION_RES,
+                task.navigationUpdatedFolder
+            )
         }
     }
 
