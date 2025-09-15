@@ -8,8 +8,7 @@
     manifestMergeReport="build/outputs/logs/manifest-merger-debug-report.txt"
     proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-$androidGradlePluginVersion"
     partialResultsDir="build/intermediates/lint_partial_results/debug/lintAnalyzeDebug/out">
-  <buildFeatures
-      namespacing="REQUIRED"/>
+  <buildFeatures/>
   <sourceProviders>
     <sourceProvider
         manifests="src/main/AndroidManifest.xml"

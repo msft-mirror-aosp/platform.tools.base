@@ -7,8 +7,7 @@
     mergedManifest="build/intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml"
     partialResultsDir="build/intermediates/android_test_lint_partial_results/debug/lintAnalyzeDebugAndroidTest/out"
     desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
-  <buildFeatures
-      namespacing="REQUIRED"/>
+  <buildFeatures/>
   <sourceProviders>
   </sourceProviders>
   <testSourceProviders>

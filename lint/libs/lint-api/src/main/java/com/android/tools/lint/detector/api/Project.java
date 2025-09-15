@@ -75,7 +75,6 @@ import com.android.tools.lint.model.LintModelLibrary;
 import com.android.tools.lint.model.LintModelMavenName;
 import com.android.tools.lint.model.LintModelModule;
 import com.android.tools.lint.model.LintModelModuleType;
-import com.android.tools.lint.model.LintModelNamespacingMode;
 import com.android.tools.lint.model.LintModelVariant;
 
 import com.google.common.base.CharMatcher;
@@ -467,32 +466,10 @@ public class Project {
         }
     }
 
-    /** Gets the namespacing mode used for this project */
-    @NonNull
-    private LintModelNamespacingMode getNamespacingMode() {
-        LintModelVariant variant = getBuildVariant();
-        if (variant != null) {
-            return variant.getBuildFeatures().getNamespacingMode();
-        } else {
-            return LintModelNamespacingMode.DISABLED;
-        }
-    }
-
-    private ResourceNamespace namespace;
-
     /** Returns the namespace for resources in this module/project */
     @NonNull
     public ResourceNamespace getResourceNamespace() {
-        if (namespace == null) {
-            String packageName = getPackage();
-            if (packageName == null || getNamespacingMode() == LintModelNamespacingMode.DISABLED) {
-                namespace = ResourceNamespace.RES_AUTO;
-            } else {
-                namespace = ResourceNamespace.fromPackageName(packageName);
-            }
-        }
-
-        return namespace;
+        return ResourceNamespace.RES_AUTO;
     }
 
     @Override

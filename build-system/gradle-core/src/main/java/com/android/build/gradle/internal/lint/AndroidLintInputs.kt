@@ -92,7 +92,6 @@ import com.android.tools.lint.model.LintModelLibrary
 import com.android.tools.lint.model.LintModelLintOptions
 import com.android.tools.lint.model.LintModelModule
 import com.android.tools.lint.model.LintModelModuleType
-import com.android.tools.lint.model.LintModelNamespacingMode
 import com.android.tools.lint.model.LintModelSeverity
 import com.android.tools.lint.model.LintModelSourceProvider
 import com.android.tools.lint.model.LintModelVariant
@@ -1544,34 +1543,22 @@ abstract class BuildFeaturesInput {
     @get:Input
     abstract val coreLibraryDesugaringEnabled: Property<Boolean>
 
-    @get:Input
-    abstract val namespacingMode: Property<LintModelNamespacingMode>
-
     fun initialize(creationConfig: ComponentCreationConfig) {
         viewBinding.setDisallowChanges(creationConfig.buildFeatures.viewBinding)
         coreLibraryDesugaringEnabled.setDisallowChanges(
             (creationConfig as? ConsumableCreationConfig)?.isCoreLibraryDesugaringEnabledLintCheck
                 ?: false
         )
-        namespacingMode.setDisallowChanges(
-            if (creationConfig.global.namespacedAndroidResources) {
-                LintModelNamespacingMode.DISABLED
-            } else {
-                LintModelNamespacingMode.REQUIRED
-            }
-        )
     }
     fun initializeForStandalone() {
         viewBinding.setDisallowChanges(false)
         coreLibraryDesugaringEnabled.setDisallowChanges(false)
-        namespacingMode.setDisallowChanges(LintModelNamespacingMode.DISABLED)
     }
 
     fun toLintModel(): LintModelBuildFeatures {
         return DefaultLintModelBuildFeatures(
             viewBinding.get(),
             coreLibraryDesugaringEnabled.get(),
-            namespacingMode.get(),
         )
     }
 }
