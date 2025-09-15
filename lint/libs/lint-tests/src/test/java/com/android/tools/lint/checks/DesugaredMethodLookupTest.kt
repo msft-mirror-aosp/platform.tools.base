@@ -414,7 +414,9 @@ class DesugaredMethodLookupTest {
           // Make sure we don't match on partial field name (unless we support
           // the whole class; in that case, it doesn't list individual fields)
           if (partialClassSupport) {
-            assertFalse(entry, lookup.isDesugaredField(owner, name.substring(0, name.length - 2)))
+            if (name.length > 1) {
+              assertFalse(entry, lookup.isDesugaredField(owner, name.substring(0, name.length - 1)))
+            }
           }
           continue
         }
