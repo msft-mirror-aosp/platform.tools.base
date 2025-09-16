@@ -219,4 +219,79 @@ class CustomViewDetectorTest : AbstractCheckTest() {
         """
       )
   }
+
+  fun testKtx() {
+    // Regression test for https://issuetracker.google.com/443107136
+    // CustomViewStyleable false negative with withStyledAttributes KTX
+    // (Same as testObtainOnCall but ported to Kotlin and switched
+    // from platform obtainStyledAttributes to KTX withStyledAttributes.)
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+
+            import android.content.Context
+            import android.util.AttributeSet
+            import android.view.View
+            import androidx.core.content.withStyledAttributes
+
+            class AppBulletView(context: Context?, attrs: AttributeSet?, defStyle: Int) : View(context, attrs, defStyle) {
+                private fun parseAttributes(attrs: AttributeSet?) {
+                    context.withStyledAttributes(attrs, R.styleable.Bullet)  {
+                        // ...
+                    }
+                }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+
+            public final class R {
+                public static final class styleable {
+                    public static final int[] Bullet = {
+                        0x7f010000, 0x7f010001, 0x7f010002, 0x7f010003
+                    };
+                }
+            }
+            """
+          )
+          .indented(),
+        // KTX stub
+        kotlin(
+            "src/androidx/core/content/Context.kt",
+            """
+            // HIDE-FROM-DOCUMENTATION
+            package androidx.core.content
+
+            import android.content.Context
+            import android.content.res.TypedArray
+            import android.util.AttributeSet
+
+            @Suppress("UnusedReceiverParameter")
+            inline fun Context.withStyledAttributes(
+                set: AttributeSet? = null,
+                attrs: IntArray,
+                defStyleAttr: Int = 0,
+                defStyleRes: Int = 0,
+                block: TypedArray.() -> Unit
+            ) {
+            }
+            """,
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/AppBulletView.kt:10: Warning: By convention, the custom view (AppBulletView) and the declare-styleable (Bullet) should have the same name (various editor features rely on this convention) [CustomViewStyleable]
+                context.withStyledAttributes(attrs, R.styleable.Bullet)  {
+                                                    ~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
 }

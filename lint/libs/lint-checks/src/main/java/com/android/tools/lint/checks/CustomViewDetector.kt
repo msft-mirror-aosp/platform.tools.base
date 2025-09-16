@@ -38,28 +38,44 @@ import org.jetbrains.uast.getParentOfType
 class CustomViewDetector : Detector(), SourceCodeScanner {
   // ---- implements SourceCodeScanner ----
   override fun getApplicableMethodNames(): List<String> {
-    return listOf(OBTAIN_STYLED_ATTRIBUTES)
+    return listOf(OBTAIN_STYLED_ATTRIBUTES, WITH_STYLED_ATTRIBUTES)
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-    if (!context.evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT, false)) {
-      return
-    }
     val arguments = node.valueArguments
     val size = arguments.size
-    // Which parameter contains the styleable (attrs) ?
-    val parameterIndex =
-      if (size == 1) {
-        // obtainStyledAttributes(int[] attrs)
-        0
-      } else {
-        // obtainStyledAttributes(int resid, int[] attrs)
-        // obtainStyledAttributes(AttributeSet set, int[] attrs)
-        // obtainStyledAttributes(AttributeSet set, int[] attrs, int defStyleAttr, int
-        // defStyleRes)
-        1
+
+    val parameterIndex: Int
+    if (method.name == OBTAIN_STYLED_ATTRIBUTES) {
+      if (!context.evaluator.isMemberInSubClassOf(method, CLASS_CONTEXT, false)) {
+        return
       }
-    val expression = arguments[parameterIndex]
+
+      parameterIndex =
+        if (size == 1) {
+          // obtainStyledAttributes(int[] attrs)
+          0
+        } else {
+          // obtainStyledAttributes(int resid, int[] attrs)
+          // obtainStyledAttributes(AttributeSet set, int[] attrs)
+          // obtainStyledAttributes(AttributeSet set, int[] attrs, int defStyleAttr, int
+          //   defStyleRes)
+          1
+        }
+    } else {
+      if (
+        !context.evaluator.isMemberInSubClassOf(method, "androidx.core.content.ContextKt", false)
+      ) {
+        return
+      }
+
+      // withStyledAttributes(Context, AttributeSet set, int[] attrs, int defStyleAttr, int
+      // defStyleRes, block)
+      // withStyledAttributes(Context, int resId, int[] attrs, int, int, block)
+      parameterIndex = 2
+    }
+
+    val expression = node.getArgumentForParameter(parameterIndex) ?: return
     val reference = get(expression)
     if (reference == null || reference.type != ResourceType.STYLEABLE) {
       return
@@ -122,5 +138,6 @@ class CustomViewDetector : Detector(), SourceCodeScanner {
       )
 
     private const val OBTAIN_STYLED_ATTRIBUTES = "obtainStyledAttributes"
+    private const val WITH_STYLED_ATTRIBUTES = "withStyledAttributes"
   }
 }
