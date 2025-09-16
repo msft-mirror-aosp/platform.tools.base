@@ -67,27 +67,6 @@ class BuiltInKotlinAutomaticStdlibTest {
     }
 
     @Test
-    fun testKotlinCoreLibrariesVersion() {
-        val build = rule.build {
-            androidApplication {
-                kotlin {
-                    // This version number should not be changed when upgrading Kotlin. If it must
-                    // be changed, it should be set to a version other than KOTLIN_VERSION_FOR_TESTS
-                    // to test that this version is used instead of KOTLIN_VERSION_FOR_TESTS.
-                    coreLibrariesVersion = "1.9.0"
-                }
-            }
-        }
-        val result =
-            build.executor
-                .run(":app:dependencies", "--configuration", "debugCompileClasspath")
-        result.assertOutputContains("--- org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0")
-        result.assertOutputDoesNotContain(
-            "--- org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}"
-        )
-    }
-
-    @Test
     fun testKotlinStdlibDefaultDependencyFalse() {
         val build =
             rule.build {
@@ -101,5 +80,22 @@ class BuiltInKotlinAutomaticStdlibTest {
         result.assertOutputDoesNotContain(
             "--- org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.KOTLIN_VERSION_FOR_TESTS}"
         )
+    }
+
+    /** Regression test for b/443037365. */
+    @Test
+    fun testKotlinStdlibWithoutVersion() {
+        val build = rule.build {
+            androidApplication {
+                dependencies {
+                    implementation("org.jetbrains.kotlin:kotlin-stdlib")
+                }
+            }
+            gradleProperties {
+                add("kotlin.stdlib.default.dependency", "false")
+            }
+        }
+        val result = build.executor.run(":app:dependencies", "--configuration", "debugCompileClasspath")
+        result.assertOutputContains("--- org.jetbrains.kotlin:kotlin-stdlib -> 2.2.10")
     }
 }
