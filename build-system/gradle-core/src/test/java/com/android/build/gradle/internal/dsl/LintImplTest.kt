@@ -17,10 +17,8 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.Lint
-import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
-import com.android.builder.model.v2.ide.ProjectType
 import com.android.tools.lint.model.LintModelSeverity
 import com.android.tools.lint.model.LintModelSeverity.DEFAULT_ENABLED
 import com.android.tools.lint.model.LintModelSeverity.ERROR
