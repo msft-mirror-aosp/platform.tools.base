@@ -71,7 +71,7 @@ open class DefaultJavaEvaluator(
 
   override val dependencies: LintModelDependencies?
     get() {
-      if (myLintProject != null && myLintProject.isAndroidProject) {
+      if (myLintProject != null) {
         val variant = myLintProject.buildVariant
         if (variant != null) {
           return variant.artifact.dependencies
