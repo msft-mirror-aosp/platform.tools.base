@@ -253,7 +253,6 @@ enum class BooleanOption(
     CONSUME_DEPENDENCIES_AS_SHARED_LIBRARIES("android.consumeDependenciesAsSharedLibraries", false, FeatureStage.Experimental),
     SUPPORT_OEM_TOKEN_LIBRARIES("android.enableOemTokenLibraries", false, FeatureStage.Experimental),
     DISABLE_EARLY_MANIFEST_PARSING("android.disableEarlyManifestParsing", false, FeatureStage.Experimental),
-    ENABLE_RESOURCE_NAMESPACING_DEFAULT("android.enableResourceNamespacingDefault", false, FeatureStage.Experimental),
     CONDITIONAL_KEEP_RULES("android.useConditionalKeepRules", false, FeatureStage.Experimental),
     KEEP_SERVICES_BETWEEN_BUILDS("android.keepWorkerActionServicesBetweenBuilds", false, FeatureStage.Experimental),
     ENABLE_PARTIAL_R_INCREMENTAL_BUILDS("android.enablePartialRIncrementalBuilds", false, FeatureStage.Experimental),
@@ -288,9 +287,6 @@ enum class BooleanOption(
     ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT("android.enableAdditionalTestOutput", true, FeatureStage.Experimental),
 
     ENABLE_EXTRACT_ANNOTATIONS("android.enableExtractAnnotations", true, FeatureStage.Experimental),
-
-    // Marked as stable to avoid reporting deprecation twice.
-    CONVERT_NON_NAMESPACED_DEPENDENCIES("android.convertNonNamespacedDependencies", true, FeatureStage.Experimental),
 
     /** Set to true to build native .so libraries only for the device it will be run on. */
     BUILD_ONLY_TARGET_ABI("android.buildOnlyTargetAbi", true, FeatureStage.Experimental),
@@ -1129,6 +1125,25 @@ enum class BooleanOption(
     /* ----------------
      * REMOVED API
      */
+
+    ENABLE_RESOURCE_NAMESPACING_DEFAULT(
+        "android.enableResourceNamespacingDefault",
+        false,
+        ApiStage.Removed(
+            Version.VERSION_9_0,
+            "The android.enableResourceNamespacingDefault property has no effect"
+        )
+    ),
+    // flag does not work without namespace that's been removed
+    CONVERT_NON_NAMESPACED_DEPENDENCIES(
+        "android.convertNonNamespacedDependencies",
+        false,
+        ApiStage.Removed(
+            Version.VERSION_9_0,
+            "The android.convertNonNamespacedDependencies property has no effect"
+        )
+    ),
+
     BUILD_FEATURE_RENDERSCRIPT(
         "android.defaults.buildfeatures.renderscript",
         false,
