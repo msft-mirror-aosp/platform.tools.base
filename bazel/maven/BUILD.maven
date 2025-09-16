@@ -68511,6 +68511,67 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.squareup.leakcanary.shark-android_2.14",
+    pom = "repository/com/squareup/leakcanary/shark-android/2.14/shark-android-2.14.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/leakcanary/shark-android/2.14",
+    deps = [
+        "com.squareup.leakcanary.shark_2.14",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.3.72",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.leakcanary.shark-graph_2.14",
+    pom = "repository/com/squareup/leakcanary/shark-graph/2.14/shark-graph-2.14.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/leakcanary/shark-graph/2.14",
+    deps = [
+        "com.squareup.leakcanary.shark-hprof_2.14",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.3.72",
+        "com.squareup.okio.okio_2.2.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.leakcanary.shark-hprof_2.14",
+    pom = "repository/com/squareup/leakcanary/shark-hprof/2.14/shark-hprof-2.14.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/leakcanary/shark-hprof/2.14",
+    deps = [
+        "com.squareup.leakcanary.shark-log_2.14",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.3.72",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.leakcanary.shark-log_2.14",
+    pom = "repository/com/squareup/leakcanary/shark-log/2.14/shark-log-2.14.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/leakcanary/shark-log/2.14",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.3.72",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.leakcanary.shark_2.14",
+    pom = "repository/com/squareup/leakcanary/shark/2.14/shark-2.14.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/leakcanary/shark/2.14",
+    deps = [
+        "com.squareup.leakcanary.shark-graph_2.14",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.3.72",
+        "com.squareup.okio.okio_2.2.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.squareup.okhttp3.logging-interceptor_4.12.0",
     pom = "repository/com/squareup/okhttp3/logging-interceptor/4.12.0/logging-interceptor-4.12.0.pom",
     repo_root_path = "repository",
@@ -68711,6 +68772,18 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/squareup/okio/okio/1.6.0",
     parent = "com.squareup.okio.okio-parent_1.6.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.okio.okio_2.2.2",
+    pom = "repository/com/squareup/okio/okio/2.2.2/okio-2.2.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/okio/okio/2.2.2",
+    deps = [
+        "com.squareup.okio.okio_2.2.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.2.60",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -82604,6 +82677,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.2.60",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.2.60/kotlin-stdlib-common-1.2.60.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.2.60",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.2.71",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.2.71/kotlin-stdlib-common-1.2.71.pom",
     repo_root_path = "repository",
@@ -84034,6 +84115,18 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib/1.2.50",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.2.50",
+        "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib_1.2.60",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/1.2.60/kotlin-stdlib-1.2.60.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/1.2.60",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-common_1.2.60",
         "org.jetbrains.annotations_13.0",
     ],
     visibility = ["//visibility:public"],
