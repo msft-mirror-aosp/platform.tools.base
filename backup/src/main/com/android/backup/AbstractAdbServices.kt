@@ -372,19 +372,24 @@ abstract class AbstractAdbServices(
   }
 
   override suspend fun setTransport(transport: String, verify: Boolean): String {
-    val out = executeCommand("bmgr transport $transport", TRANSPORT_NOT_SELECTED).stdout.trim()
+    val selectTransportOut =
+      executeCommand("bmgr transport $transport", TRANSPORT_NOT_SELECTED).stdout.trim()
     val result =
-      TRANSPORT_COMMAND_REGEX.matchEntire(out)
+      TRANSPORT_COMMAND_REGEX.matchEntire(selectTransportOut)
         ?: throw BackupException(
           TRANSPORT_NOT_SELECTED,
-          "Unexpected result from 'bmgr transport' command: $out",
+          "Unexpected result from 'bmgr transport' command: $selectTransportOut",
         )
 
     if (verify) {
-      val transports = executeCommand("bmgr list transports", TRANSPORT_NOT_SELECTED).stdout.lines()
+      val listTransportsOut = executeCommand("bmgr list transports", TRANSPORT_NOT_SELECTED).stdout
+      val transports = listTransportsOut.lines()
       val currentTransport = transports.find { it.startsWith("  *") }?.dropPrefix("  * ")
       if (currentTransport != transport) {
-        throw BackupException(TRANSPORT_NOT_SELECTED, "Requested transport was not set: $out")
+        throw BackupException(
+          TRANSPORT_NOT_SELECTED,
+          "Requested transport was not set: $listTransportsOut",
+        )
       }
     }
     return result.getGroup("old")
