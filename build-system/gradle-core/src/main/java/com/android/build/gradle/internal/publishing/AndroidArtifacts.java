@@ -226,6 +226,7 @@ public class AndroidArtifacts {
 
     public static final String PATH_SHARED_LIBRARY_RESOURCES_APK =
             "shared/" + FN_RESOURCE_STATIC_LIBRARY;
+    public static final String TYPE_TEST_RESULTS = "android-test-results";
 
     public enum ConsumedConfigType {
         COMPILE_CLASSPATH("compileClasspath", API_ELEMENTS, true),
@@ -664,7 +665,9 @@ public class AndroidArtifacts {
 
         NAVIGATION_XML(TYPE_NAVIGATION_XML),
 
-        CODE_COVERAGE_DATA(TYPE_CODE_COVERAGE_DATA);
+        CODE_COVERAGE_DATA(TYPE_CODE_COVERAGE_DATA),
+
+        TEST_RESULTS(TYPE_TEST_RESULTS);
 
         @NonNull private final String type;
         @Nullable private final ArtifactCategory category;

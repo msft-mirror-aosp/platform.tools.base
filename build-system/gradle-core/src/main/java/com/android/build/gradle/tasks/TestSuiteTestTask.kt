@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.DeviceProviderFactory
@@ -62,6 +63,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
 import shadow.bundletool.com.android.utils.PathUtils
@@ -88,9 +90,19 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:OutputDirectory abstract val resultsDir: DirectoryProperty
 
+  @get:OutputDirectory abstract val xmlResultsDir: DirectoryProperty
+
   @get:OutputDirectory abstract val coverageDir: DirectoryProperty
 
   @get:Nested abstract val deviceProviderFactory: DeviceProviderFactory
+
+  @get:Internal abstract val modulePath: Property<String>
+
+  @get:Internal abstract val testedVariantName: Property<String>
+
+  @get:Internal abstract val testSuiteName: Property<String>
+
+  @get:Internal abstract val testSuiteTarget: Property<String>
 
   /**
    * Specifies the target devices for test execution using a comma-separated list of serial numbers.
@@ -217,11 +229,18 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
     super.executeTests()
 
-    // Read the junit engine logging file and output it.
-    // This is probably a temporary solution until something better is figured out.
-    if (logFile.get().asFile.exists()) {
-      this.logger.info(logFile.get().asFile.readText())
-    }
+    val metadataDir = this.xmlResultsDir.get().asFile.also { it.mkdirs() }
+    val metadataFile = File(metadataDir, TEST_RESULT_METADATA_FILE)
+
+    metadataFile.writeText(
+      """
+            $TEST_RESULT_METADATA_MODULE_KEY=${this.modulePath.get()}
+            $TEST_RESULT_METADATA_VARIANT_KEY=${this.testedVariantName.get()}
+            $TEST_RESULT_METADATA_SUITE_KEY=${this.testSuiteName.get()}
+            $TEST_RESULT_METADATA_TARGET_KEY=${this.testSuiteTarget.get()}
+        """
+        .trimIndent()
+    )
   }
 
   private fun providerToPath(value: Provider<out FileSystemLocation>): String = value.get().asFile.absolutePath
@@ -342,6 +361,27 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         val serverArg: String = if (debugJunitEngine.equals("socket-listen", ignoreCase = true)) "n" else "y"
         task.jvmArgs("-agentlib:jdwp=transport=dt_socket,server=$serverArg,suspend=y,address=5006")
       }
+
+      val testTaskReports = task.reports
+      val xmlReport = testTaskReports.junitXml
+      xmlReport.outputLocation.set(task.xmlResultsDir)
+
+      val htmlReport = testTaskReports.html
+      htmlReport.outputLocation.fileProvider(creationConfig.services.projectInfo.getTestReportFolder().map { it.dir(task.name).asFile })
+
+      task.modulePath.set(creationConfig.services.projectInfo.path)
+      task.testedVariantName.set(creationConfig.testedVariant.name)
+      task.testSuiteName.set(creationConfig.name)
+      task.testSuiteTarget.set(testSuiteTarget.name)
+    }
+
+    override fun handleProvider(taskProvider: TaskProvider<TestSuiteTestTask>) {
+      super.handleProvider(taskProvider)
+
+      creationConfig.testedVariant.artifacts
+        .use(taskProvider)
+        .wiredWith(TestSuiteTestTask::xmlResultsDir)
+        .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
     }
   }
 
@@ -361,5 +401,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         properties.store(FileWriter(into), "Input properties for test engine")
       }
     }
+  }
+
+  companion object {
+    const val TEST_RESULT_METADATA_FILE = "metadata.txt"
+    const val TEST_RESULT_METADATA_MODULE_KEY = "modulePath"
+    const val TEST_RESULT_METADATA_VARIANT_KEY = "testedVariantName"
+    const val TEST_RESULT_METADATA_SUITE_KEY = "testSuiteName"
+    const val TEST_RESULT_METADATA_TARGET_KEY = "testTarget"
   }
 }

@@ -242,27 +242,26 @@ public class JacocoTest {
 
     @Test
     public void checkJacocoAntConfiguration() throws IOException, InterruptedException {
-        // Verify jacoco ant configuration is not set when android test coverage disabled.
+        // jacoco ant configuration exists by default due to the usage from
+        // CodeCoverageCollectionTask for the aggregated test reporting feature
+        GradleBuildResult result = project.executor().run(":dep");
+        try (Scanner scanner = result.getStdout()) {
+            ScannerSubject.assertThat(scanner)
+                    .contains(JacocoConfigurations.ANT_CONFIGURATION_NAME);
+        }
+        // jacoco ant configuration is not set when android test coverage disabled and
+        // aggregated test reporting is disabled
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(),
                 "android.buildTypes.debug.enableAndroidTestCoverage = true",
                 "android.buildTypes.debug.enableAndroidTestCoverage = false");
-        GradleBuildResult result = project.executor().run(":dep");
+        result =
+                project.executor()
+                        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+                        .run(":dep");
         try (Scanner scanner = result.getStdout()) {
             ScannerSubject.assertThat(scanner)
                     .doesNotContain(JacocoConfigurations.ANT_CONFIGURATION_NAME);
-        }
-
-        // Once enableAndroidTestCoverage is enabled in a variant, we expect the configuration to be
-        // present.
-        TestFileUtils.searchAndReplace(
-                project.getBuildFile(),
-                "android.buildTypes.debug.enableAndroidTestCoverage = false",
-                "android.buildTypes.debug.enableAndroidTestCoverage = true");
-        result = project.executor().run(":dep");
-        try (Scanner scanner = result.getStdout()) {
-            ScannerSubject.assertThat(scanner)
-                    .contains(JacocoConfigurations.ANT_CONFIGURATION_NAME);
         }
     }
 }

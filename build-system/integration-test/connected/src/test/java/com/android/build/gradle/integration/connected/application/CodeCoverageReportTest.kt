@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.connected.utils.getEmulator
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
@@ -165,7 +164,6 @@ class CodeCoverageReportTest {
           kotlin { jvmToolchain(17) }
         }
       }
-      gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
     }
 
   private val gson = Gson()

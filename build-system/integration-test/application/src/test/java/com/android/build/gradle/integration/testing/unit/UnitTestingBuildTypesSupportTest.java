@@ -52,7 +52,7 @@ public class UnitTestingBuildTypesSupportTest {
 
         try {
             // Tests for release try to compile against a debug-only class.
-            flavorsProject.execute("testRelease");
+            flavorsProject.execute("testReleaseUnitTest");
             fail();
         } catch (BuildException e) {
             assertThat(Throwables.getRootCause(e).toString()).contains("TaskSelectionException");

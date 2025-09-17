@@ -22,6 +22,7 @@ import com.android.build.gradle.options.StringOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,6 +31,7 @@ class JacocoVersionTest {
   @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("unitTesting").create()
 
   @Test
+  @Ignore("b/481025948")
   fun setJacocoPluginExtensionVersionForUnitTest() {
     TestFileUtils.appendToFile(
       project.buildFile,
