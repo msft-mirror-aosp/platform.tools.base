@@ -239,9 +239,6 @@ internal class FusedLibraryMergeArtifactsTest {
                 include("com.remoteaar:missing-min-compile-sdk:1.0")
             }
         }
-        gradleProperties {
-            add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
-        }
     }
     class AddMyIssueRegistryManifestAttribute: GenericCallback {
         override fun handleProject(project: Project) {

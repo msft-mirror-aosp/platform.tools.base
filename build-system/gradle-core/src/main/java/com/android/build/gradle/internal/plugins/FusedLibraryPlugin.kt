@@ -325,23 +325,6 @@ class FusedLibraryPlugin @Inject constructor(
     override fun apply(project: Project) {
         super.applyBaseServices(project, buildFeatures)
 
-        val unstableNotice =
-            "*Important* Fused Library Plugin is currently in an early testing phase. Artifacts published by the\n" +
-                    "plugin and plugin behaviour may not be stable at this time. Take caution before distributing\n" +
-                    "published artifacts created by the plugin; there is no guarantee of correctness.\n" +
-                    "As an early adopter, please be aware that there may be frequent breaking changes that may require\n" +
-                    "you to make changes to your project.\n"
-        if (projectServices.projectOptions[BooleanOption.FUSED_LIBRARY_SUPPORT]) {
-            syncIssueReporter.reportWarning(IssueReporter.Type.GENERIC, unstableNotice)
-        }
-        else {
-            syncIssueReporter.reportError(IssueReporter.Type.GENERIC,
-                unstableNotice +
-                        "If you still wish to use the plugin, acknowledge the warning by " +
-                        "setting `${BooleanOption.FUSED_LIBRARY_SUPPORT.propertyName}=true` to gradle.properties"
-            )
-        }
-
         // 'include' is the configuration that users will use to indicate which dependencies should
         // be fused.
         val include = project.configurations.register(FusedLibraryConstants.INCLUDE_CONFIGURATION_NAME) { include ->

@@ -331,12 +331,6 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
-    FUSED_LIBRARY_SUPPORT(
-        "android.experimental.fusedLibrarySupport",
-        false,
-        FeatureStage.Experimental
-    ),
-
     FUSED_LIBRARY_PUBLICATION_ONLY_MODE(
         "android.experimental.fusedLibrarySupport.publicationOnly",
         true,
@@ -1113,6 +1107,13 @@ enum class BooleanOption(
         FeatureStage.Enforced(Version.VERSION_9_0)
     ),
 
+
+    @Suppress("unused")
+    FUSED_LIBRARY_SUPPORT(
+        "android.fusedLibrarySupport",
+        true,
+        FeatureStage.Enforced(Version.VERSION_9_0),
+    ),
 
     /* ----------------
      * REMOVED API
