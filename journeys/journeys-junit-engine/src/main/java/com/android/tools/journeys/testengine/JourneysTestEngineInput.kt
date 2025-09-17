@@ -25,7 +25,7 @@ object JourneysTestEngineInput {
     val testDeviceId: String
     val testDeviceDisplayName: String
     val journeysFilter: List<String> =
-        getStringListFromSystemPropertyOrEnvVar("journeysFilter", "JOURNEY_FILTER")
+        getStringListFromSystemPropertyOrEnvVar("journeysFilter", "JOURNEYS_FILTER")
     val resultsDir: File
 
     init {
