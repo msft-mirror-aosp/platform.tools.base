@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import org.gradle.api.JavaVersion
 import org.junit.Rule
@@ -207,46 +208,49 @@ class ExtractNativeLibsPackagingTest(
         task: String,
         apkSelector: ApkSelector
     ) {
-        val result = build.executor.run(task)
-        result.stdout.use {
-            val resolvedUseLegacyPackaging: Boolean = useLegacyPackaging ?: (minSdk < 23)
-            when {
-                resolvedUseLegacyPackaging && expectedCompression == STORED -> {
-                    assertThat(it).contains(
-                        "PackagingOptions.jniLibs.useLegacyPackaging should be set to false"
-                    )
-                }
-                !resolvedUseLegacyPackaging && expectedCompression == DEFLATED -> {
-                    assertThat(it).contains(
-                        "PackagingOptions.jniLibs.useLegacyPackaging should be set to true"
-                    )
-                }
-                else -> assertThat(it).doesNotContain("PackagingOptions.jniLibs.useLegacyPackaging")
+        val resolvedUseLegacyPackaging: Boolean = useLegacyPackaging ?: (minSdk < 23)
+        when {
+            resolvedUseLegacyPackaging && expectedCompression == STORED -> {
+                val result = build.executor.expectFailure().run(task)
+                assertThat(result.stderrAsText).contains(
+                    "Avoid setting android:extractNativeLibs=\"false\" explicitly in AndroidManifest.xml"
+                )
             }
-        }
-        result.stdout.use {
-            if (sourceManifestValue != null) {
-                assertThat(it).contains("android:extractNativeLibs should not be specified")
-            } else {
-                assertThat(it).doesNotContain("android:extractNativeLibs should not be specified")
+            !resolvedUseLegacyPackaging && expectedCompression == DEFLATED -> {
+                val result = build.executor.expectFailure().run(task)
+                assertThat(result.stderrAsText).contains(
+                    "Avoid setting android:extractNativeLibs=\"true\" explicitly in AndroidManifest.xml"
+                )
             }
-        }
+            else -> {
+                val result = build.executor.run(task)
+                assertThat(result.stdout).doesNotContain("PackagingOptions.jniLibs.useLegacyPackaging")
 
-        project.assertApk(apkSelector) {
-            // check merged manifest
-            manifest().apply {
-                when (expectedMergedManifestValue) {
-                    null -> {
-                        doesNotContain("http://schemas.android.com/apk/res/android:extractNativeLibs")
-                    }
-                    else -> {
-                        contains("http://schemas.android.com/apk/res/android:extractNativeLibs=$expectedMergedManifestValue")
+                result.stdout.use {
+                    if (sourceManifestValue != null) {
+                        assertThat(it).contains("android:extractNativeLibs should not be specified")
+                    } else {
+                        assertThat(it).doesNotContain("android:extractNativeLibs should not be specified")
                     }
                 }
-            }
 
-            // check compression
-            zipEntry("lib/x86/fake.so").hasCompressionMethod(expectedCompression)
+                project.assertApk(apkSelector) {
+                    // check merged manifest
+                    manifest().apply {
+                        when (expectedMergedManifestValue) {
+                            null -> {
+                                doesNotContain("http://schemas.android.com/apk/res/android:extractNativeLibs")
+                            }
+                            else -> {
+                                contains("http://schemas.android.com/apk/res/android:extractNativeLibs=$expectedMergedManifestValue")
+                            }
+                        }
+                    }
+
+                    // check compression
+                    zipEntry("lib/x86/fake.so").hasCompressionMethod(expectedCompression)
+                }
+            }
         }
     }
 }

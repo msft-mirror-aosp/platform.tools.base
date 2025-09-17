@@ -74,6 +74,7 @@ import com.google.common.base.Joiner
 import com.google.common.collect.Sets
 import com.google.common.io.ByteStreams
 import org.gradle.api.file.*
+import org.gradle.api.GradleException
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
@@ -1050,29 +1051,30 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                     THROW_ON_ERROR_ISSUE_REPORTER)
             val nativeLibsPackagingMode = PackagingUtils.getNativeLibrariesLibrariesPackagingMode(
                     manifestData.extractNativeLibs)
-            // Warn if params.getJniLibsUseLegacyPackaging() is not compatible with
+            // Error if params.getJniLibsUseLegacyPackaging() is not compatible with
             // nativeLibsPackagingMode. We currently fall back to what's specified in the manifest, but
             // in future versions of AGP, we should use what's specified via
             // params.getJniLibsUseLegacyPackaging().
             val logger = LoggerWrapper(Logging.getLogger(PackageAndroidArtifact::class.java))
             if (params.jniLibsUseLegacyPackaging.get()) {
-                // TODO (b/149770867) make this an error in future AGP versions.
                 if (nativeLibsPackagingMode == NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED) {
-                    logger.warning(
-                            "PackagingOptions.jniLibs.useLegacyPackaging should be set to false "
-                                    + "because android:extractNativeLibs is set to \"false\" in "
+                    throw GradleException(
+                        "android:extractNativeLibs is set to \"false\" in "
                                     + "AndroidManifest.xml. Avoid setting "
                                     + "android:extractNativeLibs=\"false\" explicitly in "
                                     + "AndroidManifest.xml, and instead set "
-                                    + "android.packagingOptions.jniLibs.useLegacyPackaging to false in "
-                                    + "the build.gradle file.")
+                                    + "android.packagingOptions.jniLibs.useLegacyPackaging to "
+                                    + "false in the build script.")
                 }
             } else {
                 if (nativeLibsPackagingMode == NativeLibrariesPackagingMode.COMPRESSED) {
-                    logger.warning(
-                            "PackagingOptions.jniLibs.useLegacyPackaging should be set to true "
-                                    + "because android:extractNativeLibs is set to \"true\" in "
-                                    + "AndroidManifest.xml.")
+                    throw GradleException(
+                        "android:extractNativeLibs is set to \"true\" in "
+                                + "AndroidManifest.xml.Avoid setting "
+                                + "android:extractNativeLibs=\"true\" explicitly in "
+                                + "AndroidManifest.xml, and instead set "
+                                + "android.packagingOptions.jniLibs.useLegacyPackaging to true in "
+                                + "the build script.")
                 }
             }
             val useEmbeddedDex = manifestData.useEmbeddedDex
