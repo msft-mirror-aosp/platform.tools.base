@@ -62,7 +62,7 @@ public class SystemImageTags {
 
     /** Tag to apply to system images for XR Glasses devices. */
     public static final IdDisplay XR_GLASSES_TAG =
-            IdDisplay.create("android-xr-glasses", "Android XR");
+            IdDisplay.create("android-xr-glasses", "Android XR Glasses");
 
     /** Tag to apply to system images for Chrome OS device. */
     public static final IdDisplay CHROMEOS_TAG = IdDisplay.create("chromeos", "Chrome OS Device");

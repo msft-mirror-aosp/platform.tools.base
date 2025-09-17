@@ -84,4 +84,75 @@
         </d:state>
         <d:tag-id>android-xr</d:tag-id>
     </d:device>
+    <d:device>
+        <d:name>XR Glasses</d:name>
+        <d:id>xr_glasses_device</d:id>
+        <d:manufacturer>Google</d:manufacturer>
+        <d:hardware>
+            <d:screen>
+                <d:screen-size>normal</d:screen-size>
+                <d:diagonal-length>1.0</d:diagonal-length>
+                <d:pixel-density>mdpi</d:pixel-density>
+                <d:screen-ratio>notlong</d:screen-ratio>
+                <d:dimensions>
+                    <d:x-dimension>200</d:x-dimension>
+                    <d:y-dimension>200</d:y-dimension>
+                </d:dimensions>
+                <d:xdpi>160</d:xdpi>
+                <d:ydpi>160</d:ydpi>
+                <d:touch>
+                    <d:multitouch>jazz-hands</d:multitouch>
+                    <d:mechanism>finger</d:mechanism>
+                    <d:screen-type>notouch</d:screen-type>
+                </d:touch>
+            </d:screen>
+            <d:networking>
+                Wifi
+                Bluetooth
+            </d:networking>
+            <d:sensors>
+                Accelerometer
+                Compass
+                Gyroscope
+                LightSensor
+                ProximitySensor
+            </d:sensors>
+            <d:mic>true</d:mic>
+            <d:camera>
+                <d:location>front</d:location>
+                <d:autofocus>false</d:autofocus>
+                <d:flash>false</d:flash>
+            </d:camera>
+            <d:keyboard>nokeys</d:keyboard>
+            <d:nav>nonav</d:nav>
+            <d:ram unit="GiB">4</d:ram>
+            <d:buttons>soft</d:buttons>
+            <d:internal-storage unit="GiB">10</d:internal-storage>
+            <d:removable-storage unit="MiB">0</d:removable-storage>
+            <d:cpu>Generic CPU</d:cpu>
+            <d:gpu>Generic GPU</d:gpu>
+            <d:abi>
+                armeabi
+                armeabi-v7a
+                arm64-v8a
+            </d:abi>
+            <d:dock> </d:dock>
+            <d:power-type>battery</d:power-type>
+        </d:hardware>
+        <d:software>
+            <d:api-level>36</d:api-level>
+            <d:live-wallpaper-support>false</d:live-wallpaper-support>
+            <d:bluetooth-profiles> </d:bluetooth-profiles>
+            <d:gl-version>3.2</d:gl-version>
+            <d:gl-extensions/>
+            <d:status-bar>false</d:status-bar>
+        </d:software>
+        <d:state name="Landscape" default="true">
+            <d:description>The device in landscape view</d:description>
+            <d:screen-orientation>land</d:screen-orientation>
+            <d:keyboard-state>keyshidden</d:keyboard-state>
+            <d:nav-state>nonav</d:nav-state>
+        </d:state>
+        <d:tag-id>android-xr-glasses</d:tag-id>
+    </d:device>
 </d:devices>
