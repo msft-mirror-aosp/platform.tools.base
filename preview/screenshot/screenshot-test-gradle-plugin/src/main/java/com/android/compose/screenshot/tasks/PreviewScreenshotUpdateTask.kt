@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,13 +20,14 @@ import com.android.compose.screenshot.services.AnalyticsService
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.testing.Test
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault
-abstract class PreviewScreenshotUpdateTask : JavaExec() {
+abstract class PreviewScreenshotUpdateTask : Test() {
+
     @get:Nested
     abstract val testEngineInput: PreviewScreenshotTestEngineInput
 
@@ -40,6 +41,9 @@ abstract class PreviewScreenshotUpdateTask : JavaExec() {
                 testEngineInput.mainRuntimeClassDirs, testEngineInput.mainRuntimeJars
             )
         }
+        testClassesDirs = objectFactory.fileCollection().apply {
+            from(testEngineInput.testProjectJars, testEngineInput.testProjectClassDirs)
+        }
         testEngineInput.recordingModeEnabled.set(true)
     }
 
@@ -48,19 +52,12 @@ abstract class PreviewScreenshotUpdateTask : JavaExec() {
     }
 
     @TaskAction
-    override fun exec() = analyticsService.get().recordTaskAction(path) {
+    override fun executeTests() = analyticsService.get().recordTaskAction(path) {
         if (testEngineInput.testProjectJars.get().isEmpty() &&
             testEngineInput.testProjectClassDirs.get().isEmpty()) {
             return@recordTaskAction
         }
-
-        testEngineInput.testProjectJars.get().forEach {
-            args("--scan-class-path=${it.asFile.absolutePath}")
-        }
-        testEngineInput.testProjectClassDirs.get().forEach {
-            args("--scan-class-path=${it.asFile.absolutePath}")
-        }
         testEngineInput.copyJvmArgsTo(::jvmArgs)
-        super.exec()
+        super.executeTests()
     }
 }
