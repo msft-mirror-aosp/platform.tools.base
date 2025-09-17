@@ -28,7 +28,7 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
-import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager

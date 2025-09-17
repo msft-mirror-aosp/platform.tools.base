@@ -20,7 +20,7 @@ import com.android.build.api.variant.impl.AndroidVersionImpl
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.AdbHelper
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.builder.testing.api.DeviceConnector
 import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.workers.ExecutorServiceAdapter
@@ -33,7 +33,6 @@ import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import com.google.testing.platform.proto.api.service.ServerConfigProto.ServerConfig
 import org.gradle.api.provider.Provider
-import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
 import org.junit.Rule

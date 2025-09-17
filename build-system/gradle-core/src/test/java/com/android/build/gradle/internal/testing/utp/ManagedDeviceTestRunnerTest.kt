@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.testing.StaticTestData
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.testutils.SystemPropertyOverrides
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.Environment

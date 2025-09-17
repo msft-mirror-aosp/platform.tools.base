@@ -16,21 +16,7 @@
 
 package com.android.build.gradle.internal.tasks;
 
-import javax.inject.Inject;
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
-
-import static com.android.build.gradle.internal.testing.utp.EmulatorControlConfigKt.createEmulatorControlConfig;
+import static com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfigKt.createEmulatorControlConfig;
 import static com.android.builder.core.BuilderConstants.CONNECTED;
 import static com.android.builder.core.BuilderConstants.DEVICE;
 import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
@@ -72,12 +58,12 @@ import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
 import com.android.build.gradle.internal.testing.TestRunner;
 import com.android.build.gradle.internal.testing.androidtest.AndroidTestUtilsKt;
-import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig;
 import com.android.build.gradle.internal.testing.utp.UtpDependencies;
 import com.android.build.gradle.internal.testing.utp.UtpDependencyUtilsKt;
 import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager;
 import com.android.build.gradle.internal.testing.utp.UtpTestResultListener;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.IntegerOption;
 import com.android.build.gradle.options.ProjectOptions;
@@ -91,11 +77,13 @@ import com.android.ide.common.workers.ExecutorServiceAdapter;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.JavaVersion;
@@ -128,6 +116,21 @@ import org.gradle.internal.logging.ConsoleRenderer;
 import org.gradle.process.ExecOperations;
 import org.gradle.work.DisableCachingByDefault;
 import org.gradle.workers.WorkerExecutor;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
 
 /** Run instrumentation tests for a given variant */
 @DisableCachingByDefault
@@ -646,13 +649,13 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @Option(
             option = "serial",
             description =
-                    "The serial of the device to test against. This will take "
-                            + "precedence over the serials specified in the ANDROID_SERIAL environment "
-                            + "variable. In addition, when this argument is specified the test task "
-                            + "will fail if it cannot connect to the device. \n\n"
-                            + "Multiple devices can be specified by specifying the command multiple "
-                            + "times. i.e. myAndroidTestTask --serial deviceSerial1 --serial "
-                            + "deviceSerial2")
+                    "The serial of the device to test against. This will take precedence over the"
+                        + " serials specified in the ANDROID_SERIAL environment variable. In"
+                        + " addition, when this argument is specified the test task will fail if it"
+                        + " cannot connect to the device. \n\n"
+                        + "Multiple devices can be specified by specifying the command multiple"
+                        + " times. i.e. myAndroidTestTask --serial deviceSerial1 --serial "
+                        + "deviceSerial2")
     public void setSerialOption(List<String> serials) {
         getTestRunnerFactory().getDeviceSerialValues().addAll(serials);
     }

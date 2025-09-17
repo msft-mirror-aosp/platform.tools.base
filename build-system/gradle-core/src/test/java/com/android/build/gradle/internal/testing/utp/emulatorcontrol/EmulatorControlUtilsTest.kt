@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.utp
+package com.android.build.gradle.internal.testing.utp.emulatorcontrol
 
 import com.google.common.truth.Truth.assertThat
 import com.google.crypto.tink.jwt.JwkSetConverter

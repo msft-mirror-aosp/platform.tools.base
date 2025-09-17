@@ -24,6 +24,8 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.test.ApkBundlesFinder
 import com.android.build.gradle.internal.test.ApksFinder
 import com.android.build.gradle.internal.testing.StaticTestData
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.computeRegistrationDirectoryContainer
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConnector
 import com.android.sdklib.BuildToolInfo

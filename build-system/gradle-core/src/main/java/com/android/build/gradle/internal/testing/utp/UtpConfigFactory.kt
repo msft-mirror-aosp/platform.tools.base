@@ -28,6 +28,11 @@ import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_PLUGIN_APK_INSTALLER
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_PLUGIN_HOST_EMULATOR_CONTROL
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorGrpcInfo
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.INVALID_JWT_CONFIG
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.createTokenConfig
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.findGrpcInfo
 import com.android.builder.testing.api.DeviceConnector
 import com.android.sdklib.BuildToolInfo
 import com.android.tools.utp.plugins.deviceprovider.ddmlib.proto.AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
