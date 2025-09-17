@@ -136,7 +136,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/multiDexWithLib",
     "//tools/base/build-system/integration-test:test-projects/multiproject",
     "//tools/base/build-system/integration-test:test-projects/multires",
-    "//tools/base/build-system/integration-test:test-projects/namespacedApp",
     "//tools/base/build-system/integration-test:test-projects/navigation",
     "//tools/base/build-system/integration-test:test-projects/ndkJniLib",
     "//tools/base/build-system/integration-test:test-projects/ndkLibPrebuilts",
