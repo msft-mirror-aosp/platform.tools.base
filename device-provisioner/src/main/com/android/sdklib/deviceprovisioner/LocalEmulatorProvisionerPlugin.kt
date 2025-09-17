@@ -886,7 +886,10 @@ data class LocalEmulatorProperties(
       model = avdInfo.deviceName
       androidVersion = avdInfo.androidVersion
       androidRelease = SdkVersionInfo.getVersionString(avdInfo.androidVersion.apiLevel)
-      abiList = listOfNotNull(Abi.getEnum(avdInfo.abiType))
+      abiList =
+        avdInfo.systemImage?.let {
+          (it.abiTypes + it.translatedAbiTypes).mapNotNull { Abi.getEnum(it) }
+        } ?: listOfNotNull(Abi.getEnum(avdInfo.abiType))
       avdName = avdInfo.name
       avdPath = avdInfo.dataFolderPath
       displayName = avdInfo.displayName

@@ -403,6 +403,21 @@ class LocalEmulatorProvisionerPluginTest {
     return avdManager.createAvd(builder)
   }
 
+  private fun createMultiAbiAvdInfo(): AvdInfo {
+    val fileSystem = createInMemoryFileSystem()
+    val sdkRoot: Path = Files.createDirectories(fileSystem.someRoot.resolve("sdk"))
+    val avdRoot: Path = sdkRoot.root.resolve("avd")
+    val sdkHandler = AndroidSdkHandler(sdkRoot, avdRoot)
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val deviceManager = DeviceManager.createInstance(sdkHandler, NullLogger.getLogger())
+    val avdManager =
+      AvdManager.createInstance(sdkHandler, avdRoot, deviceManager, NullLogger.getLogger())
+    val resizableDeviceProfile = deviceManager.getDevice("pixel_9", "Google")!!
+    val builder = avdManager.createAvdBuilder(resizableDeviceProfile)
+    builder.systemImage = testSystemImages.api36.image
+    return avdManager.createAvd(builder)
+  }
+
   @Test
   fun resizableDeviceType() {
     val resizableAvdInfo = createResizableAvdInfo()
@@ -414,6 +429,22 @@ class LocalEmulatorProvisionerPluginTest {
       val handle = provisioner.devices.value[0]
 
       assertThat(handle.state.properties.isResizable).isTrue()
+    }
+  }
+
+  @Test
+  fun multipleAbis() {
+    val multiAbiAvdInfo = createMultiAbiAvdInfo()
+    avdManager.createAvd(multiAbiAvdInfo)
+
+    runBlockingWithTimeout {
+      yieldUntil { provisioner.devices.value.size == 1 }
+
+      val handle = provisioner.devices.value[0]
+
+      assertThat(handle.state.properties.abiList)
+        .containsExactly(Abi.X86_64, Abi.ARM64_V8A)
+        .inOrder()
     }
   }
 
