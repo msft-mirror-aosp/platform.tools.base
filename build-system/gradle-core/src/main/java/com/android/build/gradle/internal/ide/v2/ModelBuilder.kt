@@ -1317,12 +1317,10 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             component.componentType.isForScreenshotPreview) {
             classesFolders.add(component.artifacts.get(UNIT_TEST_CONFIG_DIRECTORY).get().asFile)
         }
-        // TODO(b/111168382): When namespaced resources is on, then the provider returns null, so let's skip for now and revisit later
-        if (!extension.androidResources.namespaced) {
-            component.androidResourcesCreationConfig?.compiledRClassArtifact?.get()?.asFile?.let {
-                classesFolders.add(it)
-            }
+        component.androidResourcesCreationConfig?.compiledRClassArtifact?.get()?.asFile?.let {
+            classesFolders.add(it)
         }
+
 
         val generatedClassPaths = addGeneratedClassPaths(component, classesFolders)
 
@@ -1432,11 +1430,6 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         component: ComponentCreationConfig
     ): BundleInfo? {
         if (!component.componentType.isBaseModule) {
-            return null
-        }
-
-        // TODO(b/111168382): Remove when bundle can build apps with namespaced turned on.
-        if (extension.androidResources.namespaced) {
             return null
         }
 
