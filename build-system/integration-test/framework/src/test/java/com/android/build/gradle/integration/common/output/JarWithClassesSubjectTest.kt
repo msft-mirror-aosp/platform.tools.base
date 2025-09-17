@@ -125,6 +125,29 @@ class JarWithClassesSubjectTest: BaseZipSubjectTest() {
         }
     }
 
+    @Test
+    fun containsAtLeast() {
+        createJar("temp.jar") {
+            addClassWithEmptyMethods(
+                "com/example/SomeClass",
+                "foo()V",
+                "bar()Lcom/example/SomeClass;"
+            )
+        }.use { jar ->
+
+            assertThat(jar){
+                containsAtLeast("com/example/SomeClass")
+            }
+            expectFailure {
+                it.that(jar).containsAtLeast("com/example/MissingClass")
+            }.assert {
+                factValue("expected to contain").isEqualTo("com/example/MissingClass")
+                factValue("but was").isEqualTo("[com/example/SomeClass]")
+                factValue("jarWithClasses was").isEqualTo("Zip(name='temp.jar', status=EXISTS)")
+            }
+        }
+    }
+
     private fun assertThat(zip: Zip, action: ClassesSubject.() -> Unit) {
         JarWithClassesSubject.assertThat(zip).apply(action)
     }

@@ -352,7 +352,7 @@ internal class JarWithClassesSubject(
         check("entries()")
             .about(ArchiveEntriesSubject.classes())
             .that(this.classNames)
-            .containsAtLeast(classNames)
+            .containsAtLeast(items)
     }
 
     /**
