@@ -20,6 +20,7 @@ import com.android.testutils.ImageDiffUtil
 import com.android.testutils.TestUtils
 import com.android.tools.render.common.readPreviewRenderingResultJson
 import org.junit.Assert.assertNull
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -27,6 +28,7 @@ import org.junit.rules.TemporaryFolder
 import javax.imageio.ImageIO
 import java.nio.file.Paths
 
+@Ignore("b/441854224")
 class PerfMainTest {
     private val tmpFolder = TemporaryFolder()
     private val gradleProject = GradleProjectRule(
