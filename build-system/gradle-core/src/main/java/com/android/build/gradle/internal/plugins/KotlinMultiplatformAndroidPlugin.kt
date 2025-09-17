@@ -355,7 +355,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         )
             .configureDependencySubstitutions()
             .configureDependencyChecks()
-            .configureGeneralTransforms(namespacedAndroidResources = global.namespacedAndroidResources, global.aarOrJarTypeToConsume)
+            .configureGeneralTransforms(global.aarOrJarTypeToConsume)
             .configureCalculateStackFramesTransforms(global)
 
         val variantServices = VariantServicesImpl(projectServices)

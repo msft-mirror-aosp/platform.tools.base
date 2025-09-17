@@ -23,7 +23,6 @@ import com.android.build.api.dsl.SigningConfig
 import com.android.build.gradle.internal.dependency.PluginConfigurations
 import com.android.build.gradle.internal.dsl.PrivacySandboxSdkBundleImpl
 import com.android.build.gradle.internal.dsl.PrivacySandboxSdkOptimizationImpl
-import com.android.build.gradle.internal.fusedlibrary.NAMESPACED_ANDROID_RESOURCES_FOR_PRIVACY_SANDBOX_ENABLED
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.getAarOrJarTypeToConsume
 import com.android.build.gradle.internal.services.DslServices
@@ -101,10 +100,7 @@ class PrivacySandboxSdkVariantScopeImpl(
             false
         )
     override val aarOrJarTypeToConsume: AarOrJarTypeToConsume
-        get() = getAarOrJarTypeToConsume(
-            projectServices.projectOptions,
-            namespacedAndroidResources = NAMESPACED_ANDROID_RESOURCES_FOR_PRIVACY_SANDBOX_ENABLED
-        )
+        get() = getAarOrJarTypeToConsume(projectServices.projectOptions)
 
     override val lintOptions: Lint
         get() = extension.lint

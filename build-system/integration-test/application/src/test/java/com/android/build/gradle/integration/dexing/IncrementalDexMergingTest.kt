@@ -28,7 +28,7 @@ import com.android.build.gradle.integration.common.utils.ChangeType.CHANGED
 import com.android.build.gradle.integration.common.utils.ChangeType.UNCHANGED
 import com.android.build.gradle.integration.common.utils.IncrementalTestHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
-import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType.DEX
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.internal.tasks.DexMergingTaskDelegate
@@ -196,7 +196,7 @@ class IncrementalDexMergingTest {
             // Also check that classes of the same package are put in the same bucket/merged dex
             // file (except for R classes, see the comments in `getBucketNumber` of DexMergingTask)
             val rClassesPath =
-                    COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR.getOutputDir(app.buildDir)
+                    COMPILE_AND_RUNTIME_R_CLASS_JAR.getOutputDir(app.buildDir)
                             .resolve("debug/processDebugResources/R.jar")
             val rClasses = Zip(rClassesPath).entries
                     .map {

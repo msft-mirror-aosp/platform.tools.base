@@ -69,14 +69,6 @@ internal class DynamicFeatureTaskManager(
     }
 
     private fun createDynamicBundleTask(variantProperties: DynamicFeatureCreationConfig) {
-
-        // If namespaced resources are enabled, LINKED_RES_FOR_BUNDLE is not generated,
-        // and the bundle can't be created. For now, just don't add the bundle task.
-        // TODO(b/111168382): Remove this
-        if (globalConfig.namespacedAndroidResources) {
-            return
-        }
-
         taskFactory.register(PerModuleBundleTask.CreationAction(variantProperties))
 
         if (!variantProperties.debuggable) {

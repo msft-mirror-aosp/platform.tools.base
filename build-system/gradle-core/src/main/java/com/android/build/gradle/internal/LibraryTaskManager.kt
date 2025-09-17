@@ -110,15 +110,6 @@ class LibraryTaskManager(
             taskFactory.register(CreationAction(libraryVariant))
             taskFactory.register(AarCreationAction(libraryVariant))
         } else { // Resource processing is disabled.
-            // TODO(b/147579629): add a warning for manifests containing resource references.
-            if (globalConfig.namespacedAndroidResources) {
-                logger
-                    .error(
-                        "Disabling resource processing in resource namespace aware "
-                                + "modules is not supported currently."
-                    )
-            }
-
             // Create a task to generate empty/mock required resource artifacts.
             taskFactory.register(GenerateEmptyResourceFilesTask.CreateAction(libraryVariant))
         }
@@ -156,8 +147,8 @@ class LibraryTaskManager(
                 libraryVariant.services.projectInfo.getProjectBaseName()
             )
 
-            // Only verify resources if in Release and not namespaced.
-            if (!libraryVariant.debuggable && !globalConfig.namespacedAndroidResources) {
+            // Only verify resources if in Release.
+            if (!libraryVariant.debuggable) {
                 createVerifyLibraryResTask(libraryVariant)
             }
             registerLibraryRClassTransformStream(libraryVariant)
@@ -382,16 +373,11 @@ class LibraryTaskManager(
     }
 
     private fun createMergeResourcesTasks(variant: LibraryCreationConfig) {
-        val flags: ImmutableSet<MergeResources.Flag> = if (globalConfig.namespacedAndroidResources) {
-            Sets.immutableEnumSet(
-                MergeResources.Flag.REMOVE_RESOURCE_NAMESPACES,
-                MergeResources.Flag.PROCESS_VECTOR_DRAWABLES
-            )
-        } else {
+        val flags: ImmutableSet<MergeResources.Flag> =
             Sets.immutableEnumSet(
                 MergeResources.Flag.PROCESS_VECTOR_DRAWABLES
             )
-        }
+
         val callback = MergeResourceCallback(variant)
 
         // Create a merge task to only merge the resources from this library and not

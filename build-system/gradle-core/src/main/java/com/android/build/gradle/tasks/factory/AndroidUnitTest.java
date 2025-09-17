@@ -306,7 +306,7 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                                         return !file.getAbsolutePath()
                                                 .contains(
                                                         InternalArtifactType
-                                                                .COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+                                                                .COMPILE_AND_RUNTIME_R_CLASS_JAR
                                                                 .INSTANCE.getFolderName());
                                     }));
             task.setClasspath(computeClasspath(creationConfig, includeAndroidResources));
@@ -416,8 +416,7 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                                     RUNTIME_CLASSPATH, ALL, ArtifactType.JAVA_RES));
 
             // 4. The separately compile R class, if applicable.
-            if (creationConfig.getAndroidResourcesCreationConfig() != null
-                    && !creationConfig.getGlobal().getNamespacedAndroidResources()) {
+            if (creationConfig.getAndroidResourcesCreationConfig() != null) {
                 collection.from(
                         creationConfig
                                 .getAndroidResourcesCreationConfig()

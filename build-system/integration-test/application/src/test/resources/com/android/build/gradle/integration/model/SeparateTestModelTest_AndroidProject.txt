@@ -13,7 +13,7 @@
             - compileTaskName               = "compileDebugSources"
             - assembleTaskName              = "assembleDebug"
             - classesFolders:
-               * {PROJECT}/test/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debug/processDebugResources/R.jar{!}
+               * {PROJECT}/test/build/intermediates/compile_and_runtime_r_class_jar/debug/processDebugResources/R.jar{!}
                * {PROJECT}/test/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugSources"]
             - generatedSourceFolders:

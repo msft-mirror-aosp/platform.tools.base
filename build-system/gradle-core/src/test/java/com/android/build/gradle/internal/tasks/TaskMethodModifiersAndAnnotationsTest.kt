@@ -191,7 +191,6 @@ class TaskMethodModifiersAndAnnotationsTest {
         )
             .that(violations).containsExactly(
                 // Don't add new items to this list
-                "com.android.build.gradle.internal.res.namespaced.CompileRClassTaskCreationAction",
                 "com.android.build.gradle.internal.tasks.AndroidReportTask\$CreationAction",
                 "com.android.build.gradle.internal.tasks.AppClasspathCheckTask\$CreationAction",
                 "com.android.build.gradle.internal.tasks.AppMetadataTask\$CreationForAssetPackBundleAction",

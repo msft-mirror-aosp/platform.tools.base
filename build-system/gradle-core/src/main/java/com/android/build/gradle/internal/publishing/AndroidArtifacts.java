@@ -57,9 +57,6 @@ public class AndroidArtifacts {
     private static final String TYPE_JACOCO_CLASSES_JAR = "jacoco-classes-jar";
     private static final String TYPE_JACOCO_ASM_INSTRUMENTED_JARS = "jacoco-asm-instrumented-jars";
 
-    private static final String TYPE_MAYBE_NOT_NAMESPACED_AAR = "non-namespaced-aar";
-    private static final String TYPE_PREPROCESSED_AAR_FOR_AUTO_NAMESPACE =
-            "preprocessed-aar-for-auto-namespace";
     private static final String TYPE_CLASSES = "android-classes";
     private static final String TYPE_PACKAGES_FOR_R8 = "android-packages-for-r8";
 
@@ -351,8 +348,8 @@ public class AndroidArtifacts {
         /**
          * Original (unprocessed) jar.
          *
-         * <p>JAR vs. {@link #PROCESSED_JAR}: Jars usually need to be processed (e.g., jetified,
-         * namespaced) before they can be used.
+         * <p>JAR vs. {@link #PROCESSED_JAR}: Jars usually need to be processed (e.g., jetified)
+         * before they can be used.
          *
          * <p>In a few cases, consumers may want to use unprocessed jars (be sure to document the
          * reason in those cases). Common reasons are:
@@ -437,9 +434,6 @@ public class AndroidArtifacts {
          */
         APP_SYMBOL_LIST_FOR_DATA_BINDING(TYPE_APP_SYMBOL_FOR_DATA_BINDING),
 
-        /** Intermediate format of the preprocessed AAR for auto-namespacing */
-        MAYBE_NON_NAMESPACED_PROCESSED_AAR(TYPE_MAYBE_NOT_NAMESPACED_AAR),
-        PREPROCESSED_AAR_FOR_AUTO_NAMESPACE(TYPE_PREPROCESSED_AAR_FOR_AUTO_NAMESPACE),
         JNI(TYPE_JNI),
         SHARED_JNI(TYPE_SHARED_JNI),
 

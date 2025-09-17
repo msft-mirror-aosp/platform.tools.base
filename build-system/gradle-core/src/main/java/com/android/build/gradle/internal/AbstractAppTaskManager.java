@@ -268,11 +268,6 @@ public abstract class AbstractAppTaskManager<
         boolean nonTransitiveR = projectOptions.get(BooleanOption.NON_TRANSITIVE_R_CLASS);
         boolean appCompileRClass =
                 projectOptions.get(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS);
-        boolean namespaced = creationConfig.getGlobal().getNamespacedAndroidResources();
-
-        if (namespaced) {
-            return;
-        }
 
         if (creationConfig.getComponentType().isForTesting()
                 && !isTestApkCompileRClassEnabled(

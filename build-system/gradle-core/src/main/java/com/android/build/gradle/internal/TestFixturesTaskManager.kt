@@ -89,14 +89,8 @@ class TestFixturesTaskManager(
             createGenerateResValuesTask(testFixturesComponent)
 
             val flags: Set<MergeResources.Flag> =
-                if (globalConfig.namespacedAndroidResources) {
-                    Sets.immutableEnumSet(
-                        MergeResources.Flag.REMOVE_RESOURCE_NAMESPACES,
-                        MergeResources.Flag.PROCESS_VECTOR_DRAWABLES
-                    )
-                } else {
-                    Sets.immutableEnumSet(MergeResources.Flag.PROCESS_VECTOR_DRAWABLES)
-                }
+                Sets.immutableEnumSet(MergeResources.Flag.PROCESS_VECTOR_DRAWABLES)
+
             // Create a merge task to only merge the resources from this library and not
             // the dependencies. This is what gets packaged in the aar.
             basicCreateMergeResourcesTask(
@@ -149,8 +143,7 @@ class TestFixturesTaskManager(
             )
 
             // Only verify resources if in Release and not namespaced.
-            if (!testFixturesComponent.debuggable &&
-                !globalConfig.namespacedAndroidResources) {
+            if (!testFixturesComponent.debuggable) {
                 createVerifyLibraryResTask(testFixturesComponent)
             }
 

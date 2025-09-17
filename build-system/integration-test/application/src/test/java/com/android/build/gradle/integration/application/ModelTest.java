@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.application;
 
 import static com.android.SdkConstants.FN_R_CLASS_JAR;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR;
+import static com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR;
 
 import static org.junit.Assert.fail;
 
@@ -116,7 +116,7 @@ public class ModelTest {
             File rJar =
                     new File(
                             ArtifactTypeUtil.getOutputDir(
-                                    COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR.INSTANCE,
+                                    COMPILE_AND_RUNTIME_R_CLASS_JAR.INSTANCE,
                                     project.getBuildDir()),
                             fileName);
             assertThat(variant.getMainArtifact().getClassesFolders()).contains(rJar);

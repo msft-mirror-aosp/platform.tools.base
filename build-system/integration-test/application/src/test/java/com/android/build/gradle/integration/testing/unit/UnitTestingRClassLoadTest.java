@@ -140,7 +140,7 @@ public class UnitTestingRClassLoadTest {
         File rJar =
                 new File(
                         getOutputDir(
-                                InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+                                InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR
                                         .INSTANCE,
                                 project.getSubproject("c").getBuildDir()),
                         "debugUnitTest/generateDebugUnitTestStubRFile/" + FN_R_CLASS_JAR);

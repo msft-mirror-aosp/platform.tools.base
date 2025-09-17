@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.resources
 import com.android.build.gradle.integration.common.fixture.ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.DEBUG
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.truth.ApkSubject
@@ -31,9 +30,8 @@ import com.android.tools.smali.dexlib2.iface.value.IntEncodedValue
 import org.junit.Rule
 import org.junit.Test
 import org.objectweb.asm.Opcodes
-import java.io.File
 
-class NonNamespacedCompileRClassTest {
+class CompileRClassTest2 {
 
     private val lib = MinimalSubProject.lib("com.example.lib")
         .appendToBuild(

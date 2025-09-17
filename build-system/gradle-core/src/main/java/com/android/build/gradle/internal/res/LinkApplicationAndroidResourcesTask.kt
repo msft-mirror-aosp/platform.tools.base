@@ -755,7 +755,7 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
             creationConfig.artifacts.setInitialProvider(
                 taskProvider,
                 LinkApplicationAndroidResourcesTask::rClassOutputJar
-            ).withName(FN_R_CLASS_JAR).on(InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR)
+            ).withName(FN_R_CLASS_JAR).on(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
 
             creationConfig.artifacts.setInitialProvider(
                 taskProvider,

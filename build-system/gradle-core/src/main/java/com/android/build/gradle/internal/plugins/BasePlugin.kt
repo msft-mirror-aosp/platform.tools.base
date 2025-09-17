@@ -750,7 +750,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         )
             .configureDependencySubstitutions()
             .configureDependencyChecks()
-            .configureGeneralTransforms(globalConfig.namespacedAndroidResources, globalConfig.aarOrJarTypeToConsume)
+            .configureGeneralTransforms(globalConfig.aarOrJarTypeToConsume)
             .configureVariantTransforms(
                 variants,
                 variantManager.nestedComponents,

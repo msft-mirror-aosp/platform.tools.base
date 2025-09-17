@@ -357,18 +357,15 @@ package com.android.build.api.dsl {
     method public boolean getFailOnMissingConfigEntry();
     method public String? getIgnoreAssetsPattern();
     method public java.util.Collection<java.lang.String> getIgnoreAssetsPatterns();
-    method @org.gradle.api.Incubating public boolean getNamespaced();
     method public java.util.Collection<java.lang.String> getNoCompress();
     method @Deprecated public void noCompress(String noCompress);
     method @Deprecated public void noCompress(java.lang.String... noCompress);
     method public void setFailOnMissingConfigEntry(boolean);
     method public void setIgnoreAssetsPattern(String?);
-    method @org.gradle.api.Incubating public void setNamespaced(boolean);
     property public abstract java.util.List<java.lang.String> additionalParameters;
     property public abstract boolean failOnMissingConfigEntry;
     property public abstract String? ignoreAssetsPattern;
     property public abstract java.util.Collection<java.lang.String> ignoreAssetsPatterns;
-    property @org.gradle.api.Incubating public abstract boolean namespaced;
     property public abstract java.util.Collection<java.lang.String> noCompress;
   }
 

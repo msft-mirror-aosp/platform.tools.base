@@ -9,7 +9,7 @@
             - resGenTaskName = (null)
          - unitTestArtifact:
             - classesFolders:
-               * {PROJECT}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugUnitTest/generateDebugUnitTestStubRFile/R.jar{!}{REMOVED}
+               * {PROJECT}/lib/build/intermediates/compile_and_runtime_r_class_jar/debugUnitTest/generateDebugUnitTestStubRFile/R.jar{!}{REMOVED}
       < debug
       - release:
          - mainArtifact:

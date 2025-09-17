@@ -37,14 +37,14 @@ class AarOrJarTypeToConsume(val aar: ArtifactType, val jar: ArtifactType)
  * It will also return the "jetifier enabled" case if namespaced resources are enabled, as that
  * path is not optimized and still uses the transforms.
  */
-fun getAarOrJarTypeToConsume(projectOptions: ProjectOptions, namespacedAndroidResources: Boolean) =
+fun getAarOrJarTypeToConsume(projectOptions: ProjectOptions) =
         // The logic here should be kept in sync with the logic at DependencyConfigurator
         // We don't need to take into account the Dagger plugin existence, because it's only
         // provided so that the Dagger plugin keep working, we do the right thing here regardless.
 
         // Ideally, both namespaced android resources and dagger consideration is removed from here
         // after fixing the underlying issues.
-        if (projectOptions[BooleanOption.ENABLE_JETIFIER] || namespacedAndroidResources) {
+        if (projectOptions[BooleanOption.ENABLE_JETIFIER]) {
             // When jetifier or namespaced android resources is enabled
             // consumers should use the artifacts processed by it.
             AarOrJarTypeToConsume(

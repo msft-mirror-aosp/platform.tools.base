@@ -525,8 +525,7 @@ abstract class R8Task @Inject constructor(
                     artifacts.getAll(MultipleArtifact.MULTIDEX_KEEP_PROGUARD)
                 )
 
-                if (creationConfig.dexing.dexingType.isLegacyMultiDex &&
-                    !creationConfig.global.namespacedAndroidResources) {
+                if (creationConfig.dexing.dexingType.isLegacyMultiDex) {
                     task.mainDexRulesFiles.from(
                         artifacts.get(
                             InternalArtifactType.LEGACY_MULTIDEX_AAPT_DERIVED_PROGUARD_RULES

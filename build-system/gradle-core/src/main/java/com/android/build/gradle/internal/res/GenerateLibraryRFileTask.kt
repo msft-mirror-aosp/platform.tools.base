@@ -289,7 +289,7 @@ abstract class GenerateLibraryRFileTask : ProcessAndroidResources() {
             creationConfig.artifacts.setInitialProvider(
                 taskProvider,
                 GenerateLibraryRFileTask::rClassOutputJar
-            ).withName("R.jar").on(InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR)
+            ).withName("R.jar").on(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
         }
 
         override fun configure(

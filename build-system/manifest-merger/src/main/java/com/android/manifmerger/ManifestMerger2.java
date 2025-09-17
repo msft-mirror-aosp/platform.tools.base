@@ -1114,9 +1114,6 @@ public class ManifestMerger2 {
             @Nullable String namespace)
             throws MergeFailureException {
 
-        boolean rewriteNamespaces =
-                mOptionalFeatures.contains(Invoker.Feature.FULLY_NAMESPACE_LOCAL_RESOURCES);
-
         File xmlFile = manifestInfo.mLocation;
         XmlDocument xmlDocument;
         try {
@@ -1130,8 +1127,7 @@ public class ManifestMerger2 {
                             inputStream,
                             manifestInfo.getType(),
                             namespace,
-                            mModel,
-                            rewriteNamespaces);
+                            mModel);
         } catch (Exception e) {
             throw new MergeFailureException("Error parsing " + xmlFile.getAbsolutePath(), e);
         }
@@ -1295,8 +1291,7 @@ public class ManifestMerger2 {
                                     xmlFile,
                                     XmlDocument.Type.LIBRARY,
                                     null, /* namespace */
-                                    mModel,
-                                    false);
+                                    mModel);
                 } else {
                     libraryDocument =
                             XmlLoader.load(
@@ -1307,8 +1302,7 @@ public class ManifestMerger2 {
                                     mFileStreamProvider.getInputStream(xmlFile),
                                     XmlDocument.Type.LIBRARY,
                                     null, /* namespace */
-                                    mModel,
-                                    false);
+                                    mModel);
                 }
             } catch (Exception e) {
                 throw new MergeFailureException(e);
@@ -1837,9 +1831,6 @@ public class ManifestMerger2 {
              * application name if none is specified. Used for legacy multidex.
              */
             ADD_SUPPORT_MULTIDEX_APPLICATION_IF_NO_NAME,
-
-            /** Rewrite local resource references with fully qualified namespace */
-            FULLY_NAMESPACE_LOCAL_RESOURCES,
 
             /* Disables check for uniqueness of package names in dependencies manifests */
             DISABLE_PACKAGE_NAME_UNIQUENESS_CHECK,

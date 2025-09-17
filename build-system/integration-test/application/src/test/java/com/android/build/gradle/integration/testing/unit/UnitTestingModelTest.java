@@ -77,7 +77,7 @@ public class UnitTestingModelTest {
                     new File(
                             ArtifactTypeUtil.getOutputDir(
                                     InternalArtifactType
-                                            .COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+                                            .COMPILE_AND_RUNTIME_R_CLASS_JAR
                                             .INSTANCE,
                                     project.getSubproject("app").getBuildDir()),
                             variant.getName() + "/" + processResourcesTask + "/" + FN_R_CLASS_JAR));
@@ -120,7 +120,7 @@ public class UnitTestingModelTest {
                                             + variant.getName()
                                             + "UnitTest"),
                             project.file(
-                                    "app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/"
+                                    "app/build/intermediates/compile_and_runtime_r_class_jar/"
                                             + variant.getName()
                                             + "/"
                                             + processResourcesTask

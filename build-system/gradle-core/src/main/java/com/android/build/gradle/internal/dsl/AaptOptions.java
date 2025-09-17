@@ -35,7 +35,6 @@ public abstract class AaptOptions implements com.android.build.api.dsl.AaptOptio
 
     @Inject
     public AaptOptions(DslServices dslServices) {
-        this.setNamespaced(dslServices.getProjectOptions().get(BooleanOption.ENABLE_RESOURCE_NAMESPACING_DEFAULT));
     }
 
     // Use an internal type to keep the logging for now
@@ -212,13 +211,4 @@ public abstract class AaptOptions implements com.android.build.api.dsl.AaptOptio
     @Deprecated
     public abstract int getCruncherProcesses();
 
-    @Override
-    public abstract boolean getNamespaced();
-
-    @Override
-    public abstract void setNamespaced(boolean namespaced);
-
-    public void namespaced(boolean namespaced) {
-        setNamespaced(namespaced);
-    }
 }

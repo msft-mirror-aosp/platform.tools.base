@@ -59,8 +59,7 @@ public final class XmlLoader {
             @NotNull InputStream inputStream,
             @NotNull XmlDocument.Type type,
             @Nullable String namespace,
-            @NotNull DocumentModel<ManifestModel.NodeTypes> model,
-            boolean rewriteNamespaces)
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model)
             throws IOException, SAXException, ParserConfigurationException {
         Document domDocument = PositionXmlParser.parse(inputStream);
         return load(
@@ -71,14 +70,13 @@ public final class XmlLoader {
                 xmlFile,
                 type,
                 namespace,
-                model,
-                rewriteNamespaces);
+                model);
     }
 
     /**
      * Build an unvalidated {@link XmlDocument} object from given DOM Document Also see overload
      * {@link XmlLoader#load(KeyResolver, KeyBasedValueResolver, String, File, InputStream,
-     * XmlDocument.Type, String, DocumentModel, boolean)} for more details.
+     * XmlDocument.Type, String, DocumentModel)} for more details.
      *
      * @param domDocument Manifest Document object.
      */
@@ -91,18 +89,13 @@ public final class XmlLoader {
             @NotNull File xmlFile,
             @NotNull XmlDocument.Type type,
             @Nullable String namespace,
-            @NotNull DocumentModel<ManifestModel.NodeTypes> model,
-            boolean rewriteNamespaces)
+            @NotNull DocumentModel<ManifestModel.NodeTypes> model)
             throws IOException, SAXException, ParserConfigurationException {
         Element rootElement = domDocument.getDocumentElement();
         @Nullable
         final String namespaceOrPackageName =
                 namespace != null ? namespace : rootElement.getAttribute("package");
-        if (rewriteNamespaces) {
-            new NamespaceReferenceRewriter(
-                            namespaceOrPackageName, (String t, String n) -> namespaceOrPackageName)
-                    .rewriteManifestNode(rootElement, true);
-        }
+
         return new XmlDocument(
                 new SourceFile(xmlFile, displayName),
                 selectors,
