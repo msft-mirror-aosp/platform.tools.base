@@ -17,11 +17,13 @@
 package com.android.build.gradle.internal.publishing
 
 import com.android.build.api.artifact.Artifact
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.SingleArtifact.APK
 import com.android.build.api.artifact.SingleArtifact.ASSETS
 import com.android.build.api.artifact.SingleArtifact.MERGED_MANIFEST
 import com.android.build.api.artifact.SingleArtifact.METADATA_LIBRARY_DEPENDENCIES_REPORT
 import com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE
+import com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType.API_ELEMENTS
@@ -150,6 +152,7 @@ class PublishingSpecs {
                 runtime(RUNTIME_APP_CLASSES_JAR, ArtifactType.CLASSES_JAR)
                 output(JAVA_RES, ArtifactType.JAVA_RES)
                 api(OBFUSCATION_MAPPING_FILE, ArtifactType.APK_MAPPING)
+                api(OBFUSCATION_MAPPING_PARTITION_FILE, ArtifactType.APK_MAPPING_PARTITION)
 
                 api(RES_STATIC_LIBRARY, ArtifactType.RES_STATIC_LIBRARY)
                 api(FEATURE_RESOURCE_PKG, ArtifactType.FEATURE_RESOURCE_PKG)
@@ -193,6 +196,7 @@ class PublishingSpecs {
                 runtime(RUNTIME_APP_CLASSES_JAR, ArtifactType.CLASSES_JAR)
                 output(JAVA_RES, ArtifactType.JAVA_RES)
                 api(OBFUSCATION_MAPPING_FILE, ArtifactType.APK_MAPPING)
+                api(OBFUSCATION_MAPPING_PARTITION_FILE, ArtifactType.APK_MAPPING_PARTITION)
 
                 api(RES_STATIC_LIBRARY, ArtifactType.RES_STATIC_LIBRARY)
                 api(FEATURE_RESOURCE_PKG, ArtifactType.FEATURE_RESOURCE_PKG)

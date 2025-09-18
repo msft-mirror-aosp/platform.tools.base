@@ -300,27 +300,52 @@ class WearTileScreenshotTest {
     }
 
     @Test
+    fun runPreviewScreenshotTestsWithTilesToolingAsTestDep() {
+        val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
+        val build = rule.build {
+            androidApplication {
+                dependencies {
+                    remove("implementation", tilesToolingDep)
+                    screenshotTestImplementation(tilesToolingDep)
+                }
+            }
+        }
+        val appProject = build.androidApplication()
+
+        // Generate screenshots to be tested against
+        updateReferenceImage()
+
+        // Validate previews matches screenshots
+        build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+        // Verify that HTML reports are generated and all tests pass
+        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+        val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+        assertThat(indexHtmlReport).exists()
+        assertThat(classHtmlReport).exists()
+        val expectedOutput = listOf(
+            """<h3 class="success">multiplePreviewsTest_large_{device=id:wearos_large_round}</h3>""",
+            """<h3 class="success">multiplePreviewsTest_small_{device=id:wearos_small_round}</h3>""",
+            """<h3 class="success">simpleTilePreview2_simple tile 2</h3>""",
+            """<h3 class="success">simpleTilePreview_simple tile</h3>""",
+        )
+        val classHtmlReportText = classHtmlReport.readText()
+        expectedOutput.forEach { assertThat(classHtmlReportText).contains(it) }
+
+        // Assert that no diff images were generated because screenshot matched the reference image
+        val exampleTestDiffDir = appProject.buildDir.resolve("outputs/screenshotTest-results/preview/debug/diffs/pkg/name/ExampleTest")
+        assert(exampleTestDiffDir.listDirectoryEntries().isEmpty())
+    }
+
+    @Test
     fun runPreviewScreenshotTestsWithMissingTilesToolingDep() {
         val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
         val build = rule.build {
             androidApplication {
                 dependencies {
-                    // Verify that no exception is thrown when tiles-tooling is added as an screenshotTestImplementation dependency
+                    // Verify that exception is thrown when tiles-tooling dep is missing
                     remove("implementation", tilesToolingDep)
-                    screenshotTestImplementation(tilesToolingDep)
-                    // TODO(b/388773416): remove this when no longer needed
-                    // This is currently required when using screenshotTestImplementation
-                    // as the transitive dependencies don't seem to be taken into account in
-                    // screenshot dependencies
-                    implementation("androidx.wear.tiles:tiles-renderer:$TILES_VERSION")
                 }
-            }
-        }
-
-        // Verify that exception is thrown when tiles-tooling dep is missing
-        build.androidApplication().reconfigure {
-            dependencies {
-                remove("screenshotTestImplementation", tilesToolingDep)
             }
         }
 

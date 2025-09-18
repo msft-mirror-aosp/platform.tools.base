@@ -77,6 +77,8 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.util.PatternSet
 import java.io.File
 import java.util.Locale
@@ -552,6 +554,18 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
             )
         return configuration
     }
+
+    override fun configureJavaCompileTask(action: (JavaCompile) -> Unit) {
+        javaCompileTaskConfigActions.add(action)
+    }
+
+    override fun attachRegisteredActionsToJavaCompileTask(taskProvider: TaskProvider<out JavaCompile>) {
+        javaCompileTaskConfigActions.forEach {
+            taskProvider.configure { task -> it(task) }
+        }
+    }
+
+    private val javaCompileTaskConfigActions = mutableListOf<(JavaCompile) -> Unit>()
 
     override fun finalizeAndLock() {
         artifacts.finalizeAndLock()

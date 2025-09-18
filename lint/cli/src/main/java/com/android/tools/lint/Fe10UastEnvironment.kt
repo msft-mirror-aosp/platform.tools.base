@@ -385,6 +385,7 @@ private fun configureAnalysisApiServices(
 
 private fun configureFe10ApplicationEnvironment(appEnv: CoreApplicationEnvironment) {
   configureApplicationEnvironment(appEnv) {
+    registerCommonElementTypeConverters(it.application)
     it.addExtension(UastLanguagePlugin.EP, KotlinUastLanguagePlugin())
 
     it.application.registerService(

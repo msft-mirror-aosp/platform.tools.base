@@ -258,7 +258,7 @@ internal fun buildDexMetadata(
     infoList.forEachIndexed { i, info ->
         // Name should match the name of the APK.
         val output = File(File(outputDir, "$i"), "$apkName.dm")
-        require(output.parentFile.mkdirs())
+        require(output.parentFile!!.mkdirs())
         output.outputStream()
                 .writeDm(
                         profile,
@@ -271,7 +271,7 @@ internal fun buildDexMetadata(
             fileMap[info.apiLevels.first] = output
             fileMap[info.apiLevels.last] = output
         } else {
-            info.apiLevels.forEach { apiLevel ->
+            for (apiLevel in info.apiLevels) {
                 fileMap[apiLevel] = output
             }
         }

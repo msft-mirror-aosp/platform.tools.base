@@ -17,9 +17,12 @@
 package com.android.build.gradle.integration.r8
 
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.truth.PathSubject.assertThat
+import com.android.utils.FileUtils
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
@@ -154,7 +157,6 @@ class GradualR8ApiTest {
                 "com/example/javalib/ClassInJavaLib",
             )
         }
-
     }
 
     @Test
@@ -195,6 +197,7 @@ class GradualR8ApiTest {
             classes().subPackage("com/example/androidlib").containsExactly(listOf())
             classes().subPackage("com/example/javalib").containsExactly(listOf())
         }
+        checkMappingFiles(build)
     }
 
     @Test
@@ -225,5 +228,37 @@ class GradualR8ApiTest {
             classes().subPackage("com/example/androidlib").containsExactly(listOf())
             classes().subPackage("com/example/javalib").containsExactly(listOf())
         }
+        checkMappingFiles(build)
+
     }
+
+    @Test
+    fun `test gradual r8 default optimization`() {
+        val build = rule.build
+        build.executor.run(":app:assembleRelease")
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().subPackage("com/example/androidlib2").containsExactly(listOf())
+            classes().subPackage("com/example/androidlib").containsExactly(listOf())
+            classes().subPackage("com/example/javalib").containsExactly(listOf())
+        }
+        checkMappingFiles(build)
+    }
+
+    private fun checkMappingFiles(build: GradleBuild) {
+        build.checkMinifiedTxt("seeds.txt")
+        build.checkMinifiedTxt("usage.txt")
+        build.checkMinifiedTxt("configuration.txt")
+    }
+
+    private fun GradleBuild.checkMinifiedTxt(fileName:String){
+        FileUtils.join(
+            androidApplication().outputsDir.toFile(),
+            "mapping",
+            "release",
+            fileName
+        ).also {
+            assertThat(it).exists()
+        }
+    }
+
 }

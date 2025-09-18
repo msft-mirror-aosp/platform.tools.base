@@ -26,6 +26,7 @@ import static com.android.testutils.truth.PathSubject.assertThat;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
+import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
@@ -43,6 +44,7 @@ import com.google.common.io.Files;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
@@ -169,18 +171,18 @@ public class DataBindingIncrementalTest {
 
     @Test
     public void compileWithoutChange() throws Exception {
-        project.executor().run(TRIGGER_TASK);
+        executorWithLegacyApi().run(TRIGGER_TASK);
         File infoClass = getTriggerClass();
         assertThat(infoClass).exists();
         String contents = FileUtils.readFileToString(infoClass, Charsets.UTF_8);
-        project.executor().run(TRIGGER_TASK);
+        executorWithLegacyApi().run(TRIGGER_TASK);
         assertThat(getTriggerClass()).hasContents(contents);
     }
 
     @Test
     public void changeIrrelevantJavaCode() throws Exception {
         // Compile fully the first time
-        project.execute(COMPILE_JAVA_TASK);
+        executorWithLegacyApi().run(COMPILE_JAVA_TASK);
 
         File generatedInfoFile = getTriggerClass();
         File generatedSourceFile = getGeneratedSourceFile();
@@ -196,7 +198,7 @@ public class DataBindingIncrementalTest {
         // re-generated for now.
         TestFileUtils.searchAndReplace(
                 project.file(ACTIVITY_MAIN_JAVA), "return true;", "return false;");
-        GradleBuildResult result = project.executor().run(COMPILE_JAVA_TASK);
+        GradleBuildResult result = executorWithLegacyApi().run(COMPILE_JAVA_TASK);
 
         assertThat(generatedInfoFile).exists();
         assertThat(generatedSourceFile).exists();
@@ -217,7 +219,7 @@ public class DataBindingIncrementalTest {
     @Test
     public void changeRelevantJavaCode() throws Exception {
         // Compile fully the first time
-        project.execute(COMPILE_JAVA_TASK);
+        executorWithLegacyApi().run(COMPILE_JAVA_TASK);
 
         File generatedInfoFile = getTriggerClass();
         File generatedSourceFile = getGeneratedSourceFile();
@@ -232,7 +234,7 @@ public class DataBindingIncrementalTest {
         // re-generated.
         TestFileUtils.searchAndReplace(
                 project.file(USER_JAVA), "return this.name;", "return name;");
-        GradleBuildResult result = project.executor().run(COMPILE_JAVA_TASK);
+        GradleBuildResult result = executorWithLegacyApi().run(COMPILE_JAVA_TASK);
 
         assertThat(generatedInfoFile).exists();
         assertThat(generatedSourceFile).exists();
@@ -253,7 +255,7 @@ public class DataBindingIncrementalTest {
     @Test
     public void breakRelevantJavaCodeExpectFailure() throws Exception {
         // Compile fully the first time
-        project.execute(COMPILE_JAVA_TASK);
+        executorWithLegacyApi().run(COMPILE_JAVA_TASK);
 
         File generatedInfoFile = getTriggerClass();
         File generatedSourceFile = getGeneratedSourceFile();
@@ -266,7 +268,7 @@ public class DataBindingIncrementalTest {
                 project.file(USER_JAVA),
                 "public String getName() {",
                 "public String getFirstName() {");
-        GradleBuildResult result = project.executor().expectFailure().run(COMPILE_JAVA_TASK);
+        GradleBuildResult result = executorWithLegacyApi().expectFailure().run(COMPILE_JAVA_TASK);
         String stacktrace = Throwables.getStackTraceAsString(checkNotNull(result.getException()));
 
         if (withKotlin) {
@@ -280,7 +282,7 @@ public class DataBindingIncrementalTest {
 
     @Test
     public void changeVariableName() throws Exception {
-        project.execute(TRIGGER_TASK);
+        executorWithLegacyApi().run(TRIGGER_TASK);
         TestFileUtils.searchAndReplace(
                 project.file(ACTIVITY_MAIN_XML),
                 "<variable name=\"foo\" type=\"String\"/>",
@@ -289,7 +291,7 @@ public class DataBindingIncrementalTest {
                 project.file(ACTIVITY_MAIN_XML),
                 "<TextView android:text='@{foo + \" \" + foo}'",
                 "<TextView android:text='@{foo2 + \" \" + foo2}'");
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
 
         for (String className : mainActivityBindingClasses) {
             DexClassSubject bindingClass =
@@ -305,13 +307,13 @@ public class DataBindingIncrementalTest {
 
     @Test
     public void addVariable() throws Exception {
-        project.execute(TRIGGER_TASK);
+        executorWithLegacyApi().run(TRIGGER_TASK);
         TestFileUtils.searchAndReplace(
                 project.file(ACTIVITY_MAIN_XML),
                 "<variable name=\"foo\" type=\"String\"/>",
                 "<variable name=\"foo\" type=\"String\"/><variable name=\"foo2\""
                         + " type=\"String\"/>");
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
 
         for (String className : mainActivityBindingClasses) {
             assertThat(project.getApk(DEBUG))
@@ -325,13 +327,13 @@ public class DataBindingIncrementalTest {
 
     @Test
     public void addIdToView() throws Exception {
-        project.execute(TRIGGER_TASK);
+        executorWithLegacyApi().run(TRIGGER_TASK);
         TestFileUtils.searchAndReplace(
                 project.file(ACTIVITY_MAIN_XML),
                 "<TextView android:text='@{foo + \" \" + foo}'",
                 "<TextView android:text='@{foo + \" \" + foo}'\n"
                         + "android:id=\"@+id/myTextView\"");
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
 
         assertThat(project.getApk(DEBUG))
                 .hasMainDexFile()
@@ -349,7 +351,7 @@ public class DataBindingIncrementalTest {
 
         TestFileUtils.searchAndReplace(
                 project.file(ACTIVITY_MAIN_XML), "android:id=\"@+id/myTextView\"", "");
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
 
         assertThat(project.getApk(DEBUG))
                 .hasMainDexFile()
@@ -364,13 +366,13 @@ public class DataBindingIncrementalTest {
         String mainActivityBindingClassImpl =
                 "Landroid/databinding/testapp/databinding/ActivityMainBindingLandImpl;";
 
-        project.execute(TRIGGER_TASK);
+        executorWithLegacyApi().run(TRIGGER_TASK);
         File mainActivity = new File(project.getProjectDir(), ACTIVITY_MAIN_XML);
         File landscapeActivity = new File(mainActivity
                 .getParentFile().getParentFile(), "layout-land/activity_main.xml");
         assertThat(landscapeActivity.getParentFile().mkdirs()).isTrue();
         Files.copy(mainActivity, landscapeActivity);
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
 
         DexSubject apk = assertThat(project.getApk(DEBUG)).hasMainDexFile().that();
         apk.containsClass(MAIN_ACTIVITY_BINDING_CLASS);
@@ -379,7 +381,7 @@ public class DataBindingIncrementalTest {
 
         // delete and recompile
         assertThat(landscapeActivity.delete()).isTrue();
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
         assertThat(project.getApk(DEBUG)).doesNotContainClass(mainActivityBindingClassImpl);
         for (String className : mainActivityBindingClasses) {
             assertThat(project.getApk(DEBUG)).containsClass(className);
@@ -388,13 +390,13 @@ public class DataBindingIncrementalTest {
 
     @Test
     public void addNewLayout() throws Exception {
-        project.execute(TRIGGER_TASK);
+        executorWithLegacyApi().run(TRIGGER_TASK);
         File mainActivity = new File(project.getProjectDir(), ACTIVITY_MAIN_XML);
         File activity2 = new File(mainActivity.getParentFile(), "activity2.xml");
         Files.copy(mainActivity, activity2);
         assertThat(getLayoutInfoFile("activity2-layout.xml")).doesNotExist();
 
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
 
         assertThat(getLayoutInfoFile("activity2-layout.xml")).exists();
 
@@ -417,13 +419,13 @@ public class DataBindingIncrementalTest {
         File mainActivity = new File(project.getProjectDir(), ACTIVITY_MAIN_XML);
         File activity2 = new File(mainActivity.getParentFile(), "activity2.xml");
         Files.copy(mainActivity, activity2);
-        project.execute("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
         assertThat(project.getApk(DEBUG)).containsClass(MAIN_ACTIVITY_2_BINDING_CLASS);
         assertThat(project.getApk(DEBUG)).containsClass(MAIN_ACTIVITY_2_BINDING_CLASS_IMPL);
 
         assertThat(getLayoutInfoFile("activity2-layout.xml")).exists();
         assertThat(activity2.delete()).isTrue();
-        project.execute("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
         assertThat(project.getApk(DEBUG)).doesNotContainClass(MAIN_ACTIVITY_2_BINDING_CLASS);
         assertThat(project.getApk(DEBUG)).doesNotContainClass(MAIN_ACTIVITY_2_BINDING_CLASS_IMPL);
         assertThat(getLayoutInfoFile("activity2-layout.xml")).doesNotExist();
@@ -446,7 +448,7 @@ public class DataBindingIncrementalTest {
                         "android/databinding/testapp/databinding/Activity2BindingImpl.java");
         Files.copy(mainActivityLayout, activity2Layout);
 
-        project.execute(COMPILE_JAVA_TASK);
+        executorWithLegacyApi().run(COMPILE_JAVA_TASK);
         assertThat(mainActivityLayoutInfo).exists();
         assertThat(mainActivityBinding).exists();
         assertThat(activity2LayoutInfo).exists();
@@ -456,7 +458,7 @@ public class DataBindingIncrementalTest {
         FileUtils.write(activity2Layout, "<RelativeLayout />");
 
         // Expect that the corresponding layout info file and generated class file to be removed
-        project.execute(COMPILE_JAVA_TASK);
+        executorWithLegacyApi().run(COMPILE_JAVA_TASK);
         assertThat(mainActivityLayoutInfo).exists();
         assertThat(mainActivityBinding).exists();
         assertThat(activity2LayoutInfo).doesNotExist();
@@ -471,7 +473,7 @@ public class DataBindingIncrementalTest {
         File mainActivity = new File(project.getProjectDir(), ACTIVITY_MAIN_XML);
         File activity3 = new File(mainActivity.getParentFile(), "activity3.xml");
         Files.copy(mainActivity, activity3);
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
 
         File activity3DataBindingInfo = getLayoutInfoFile("activity3-layout.xml");
         assertThat(activity3DataBindingInfo).exists();
@@ -489,7 +491,7 @@ public class DataBindingIncrementalTest {
         // Make sure that the file was actually modified.
         assertThat(activity3.lastModified()).isNotEqualTo(activity3LayoutLastModified);
 
-        project.executor().run("assembleDebug");
+        executorWithLegacyApi().run("assembleDebug");
 
         assertThat(activity3DataBindingInfo).exists();
         assertThat(activity3DataBindingInfo.lastModified())
@@ -517,13 +519,17 @@ public class DataBindingIncrementalTest {
                 "<TextView android:id=\"@+id/duplicateId\" />\n"
                         + "<TextView android:id=\"@+id/duplicateId\" />\n"
                         + "<TextView android:text='@{foo + \" \" + foo}'");
-        project.executor().expectFailure().run(COMPILE_JAVA_TASK);
+        executorWithLegacyApi().expectFailure().run(COMPILE_JAVA_TASK);
 
         // Correct the layout file, expect the build to pass
         TestFileUtils.searchAndReplace(
                 project.file(ACTIVITY_MAIN_XML),
                 "<TextView android:id=\"@+id/duplicateId\" />",
                 "");
-        project.executor().run(COMPILE_JAVA_TASK);
+        executorWithLegacyApi().run(COMPILE_JAVA_TASK);
+    }
+
+    private @NotNull GradleTaskExecutor executorWithLegacyApi() {
+        return project.executor().with(BooleanOption.ENABLE_LEGACY_API, true);
     }
 }

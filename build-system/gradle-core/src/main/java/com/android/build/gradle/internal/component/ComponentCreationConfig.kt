@@ -45,6 +45,8 @@ import com.android.builder.core.ComponentType
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import java.io.File
 import java.util.function.Predicate
@@ -86,6 +88,11 @@ interface ComponentCreationConfig : ComponentIdentity {
 
     val useBuiltInKaptSupport: Boolean
         get() = builtInKaptSupportMode is BuiltInKaptSupportMode.Supported
+
+    /**
+     * Attaches all the registered callbacks on the java compilation task once it's registered
+     */
+    fun attachRegisteredActionsToJavaCompileTask(taskProvider: TaskProvider<out JavaCompile>)
 
     val explicitApiModeProvider: Provider<ExplicitApiMode>
         get() = if (componentType.isForTesting) {

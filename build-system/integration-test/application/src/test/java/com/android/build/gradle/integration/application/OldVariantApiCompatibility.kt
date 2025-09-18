@@ -43,6 +43,7 @@ class OldVariantApiCompatibility {
             """.trimIndent()
         )
         val result = project.executor()
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run(
                 "clean"
             )

@@ -37,6 +37,7 @@ import com.android.tools.lint.checks.fx.result.Point
 import com.android.tools.lint.checks.fx.result.PsiClassAdapter
 import com.android.tools.lint.checks.fx.result.PsiTypeAdapter
 import com.android.tools.lint.checks.fx.result.Result
+import com.android.tools.lint.checks.fx.result.ResultTable
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.TypeBounds
 import com.android.tools.lint.checks.fx.result.TypeEffectConstraintLattice
@@ -146,7 +147,9 @@ import org.jetbrains.uast.util.isConstructorCall
 /**
  * An [Analysis] of a [module] is a [Monotone] on summaries, as in "given a hypothetical
  * bootstrapping summary of the [module], what else must be true before the summary is sound?". The
- * summary of interest is the [Analysis]'s least fix point.
+ * summary of interest is the [Analysis]'s least fix point. In addition, [assumptions] has the
+ * assumed summaries of bindings that occur free in [module] (i.e. they are not defined in [module],
+ * but [module] may use those).
  *
  * The analysis is parameterized by a [concreteEffect] lattice, and assumes that effects are to be
  * joined regardless of whether they are combined sequentially or from different branches. Some
@@ -158,6 +161,7 @@ import org.jetbrains.uast.util.isConstructorCall
 internal open class Analysis<FX : Any>(
   private val module: Module<FX>,
   private val concreteEffect: Lattice<FX>,
+  private val assumptions: ResultTable<FX> = ResultTable.of(persistentMapOf()),
   private val log: (String) -> Unit = { /* ignore */ },
 ) : DependentMonotone<Point<FX>, Ans<FX>> {
 
@@ -929,7 +933,7 @@ internal open class Analysis<FX : Any>(
               translate((body.uastParent as UMethod).getContainingUClass()!!)
             body.expressions.any { it is UReturnExpression } -> target.returns
             // TODO: extract `Nothing` type. Anything else is `Unit`.
-            target.returns == Type.None && lastStm != null && lastStm !is UThrowExpression ->
+            target.returns == Type.None && (lastStm == null || lastStm !is UThrowExpression) ->
               Type.Unit
             else -> target.returns
           }
@@ -1035,25 +1039,38 @@ internal open class Analysis<FX : Any>(
   ): InstAns<FX> =
     when (method) {
       is Type.MethodRef ->
-        when (val methodDefn = module[method]) {
+        when (val assumption = assumptions[method]) {
           null ->
-            instantiationLattice.bottom // If method not found, we ASSUME it's from a spurious call
-          else -> {
-            val (t, methodEffectResult) = rec[method]
-            val methodFx: Effect<FX> =
-              when (methodEffectResult) {
-                is Checking<FX> ->
-                  Effect(
-                    concrete =
-                      (methodDefn.status as MethodBody.Status.ForChecking).upperBound.annotated,
-                    constraint = methodEffectResult.result,
-                  )
-                is Inference<FX> -> methodEffectResult.result
-                is Inapplicable -> effectLattice.bottom
-              // throw IllegalStateException("Applying abstract method $method")
+            when (val methodDefn = module[method]) {
+              null ->
+                instantiationLattice
+                  .bottom // If method not found, we ASSUME it's from a spurious call
+              else -> {
+                val (t, methodEffectResult) = rec[method]
+                val methodFx: Effect<FX> =
+                  when (methodEffectResult) {
+                    is Checking<FX> ->
+                      Effect(
+                        concrete =
+                          (methodDefn.status as MethodBody.Status.ForChecking).upperBound.annotated,
+                        constraint = methodEffectResult.result,
+                      )
+                    is Inference<FX> -> methodEffectResult.result
+                    is Inapplicable -> effectLattice.bottom
+                  // throw IllegalStateException("Applying abstract method $method")
+                  }
+                apply(rec, methodDefn.initEnvironment.types, methodDefn.domains, t, methodFx, args)
               }
-            apply(rec, methodDefn.initEnvironment.types, methodDefn.domains, t, methodFx, args)
-          }
+            }
+          else ->
+            apply(
+              rec,
+              assumption.typeBounds,
+              assumption.domains,
+              assumption.range,
+              assumption.effect,
+              args,
+            )
         }
       is Type.Lambda -> {
         val (xs, body, intf) = method // TODO make sure applying the right message
@@ -1368,21 +1385,30 @@ internal open class Analysis<FX : Any>(
       is MethodBody.Status.ForChecking -> {
         val baseAnn = intfMethodStatus.upperBound
         val annValue = baseAnn.annotated
-        when (val implFx = rec[implMethodRef].effect) {
-          is Inference -> {
-            val (concrete, /* TODO ignored, unsound */ _, _) = implFx.result
+        when (val assumption = assumptions[implMethodRef]) {
+          null ->
+            when (val implFx = rec[implMethodRef].effect) {
+              is Inference -> {
+                val (concrete, /* TODO ignored, unsound */ _, _) = implFx.result
+                if (!concreteEffects.precede(concrete, annValue)) {
+                  result += Error.ConflictingInference(arg, concrete, baseAnn)
+                }
+              }
+              is Checking -> {
+                val implCheckedFx =
+                  (methodImplHeader.status as MethodBody.Status.ForChecking).upperBound.annotated
+                if (!concreteEffects.precede(implCheckedFx, annValue)) {
+                  result += Error.ConflictingInference(arg, implCheckedFx, baseAnn)
+                }
+              }
+              is Inapplicable -> throw IllegalStateException()
+            }
+          else -> {
+            val (concrete, /* TODO ignored, unsound*/ _, _) = assumption.effect
             if (!concreteEffects.precede(concrete, annValue)) {
               result += Error.ConflictingInference(arg, concrete, baseAnn)
             }
           }
-          is Checking -> {
-            val implCheckedFx =
-              (methodImplHeader.status as MethodBody.Status.ForChecking).upperBound.annotated
-            if (!concreteEffects.precede(implCheckedFx, annValue)) {
-              result += Error.ConflictingInference(arg, implCheckedFx, baseAnn)
-            }
-          }
-          is Inapplicable -> throw IllegalStateException()
         }
       }
       is MethodBody.Status.ForInference,

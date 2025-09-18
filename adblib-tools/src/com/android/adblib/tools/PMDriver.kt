@@ -125,8 +125,10 @@ internal class PMDriver(private val service : AdbDeviceServices, private val dev
         val totalSize = apkSizes.sum()
 
         // 1/ Create session
+        logger.info { "  creating install session: 'total size=$totalSize' " }
         val flowCreate = pm.createSession(device, options, totalSize)
         val sessionID = parseSessionID(flowCreate.first())
+        logger.info { "  created session: 'sessionID=$sessionID' " }
 
         try {
             // 2/ Write all apks
@@ -134,12 +136,14 @@ internal class PMDriver(private val service : AdbDeviceServices, private val dev
                 val size = apkSizes[index]
                 // Make sure we have a filename that won't mess with our command
                 service.session.channelFactory.openFile(apk).use {
+                    logger.info { "  streaming 'apk=$apk' 'size=$size' " }
                     val flow = pm.streamApk(device, sessionID, it, "${apk.fileName}", size)
                     parseInstallResult(flow.first())
                 }
             }
         } catch (t: Throwable) {
             runCatching {
+                logger.info { "  abandoning session: 'sessionID=$sessionID' " }
                 val flow = pm.abandon(device, sessionID)
                 flow.first()
             }.onFailure { t.addSuppressed(it) }
@@ -148,11 +152,14 @@ internal class PMDriver(private val service : AdbDeviceServices, private val dev
         val pushEnd = Instant.now()
 
         // 3/ Finalize
+        logger.info { "  committing session: 'sessionID=$sessionID' " }
         val flow = pm.commit(device, sessionID)
         parseInstallResult(flow.first())
         val installEnd = Instant.now()
+        val installDuration = Duration.between(installStart, installEnd)
+        logger.info { "  installation completed in ${installDuration.seconds}s " }
 
-        return InstallMetrics(installStart, Duration.between(installStart, installEnd), pushStart, Duration.between(pushStart, pushEnd))
+        return InstallMetrics(installStart, installDuration, pushStart, Duration.between(pushStart, pushEnd))
     }
 
     companion object {

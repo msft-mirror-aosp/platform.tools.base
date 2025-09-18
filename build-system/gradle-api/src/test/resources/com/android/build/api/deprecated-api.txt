@@ -4,6 +4,8 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
 Deprecated from AGP 9.0.0
+  * com.android.build.api.dsl.BuildFeatures.getRenderScript: java.lang.Boolean ()
+  * com.android.build.api.dsl.BuildFeatures.setRenderScript: void (java.lang.Boolean)
   * com.android.build.api.variant.AndroidComponentsExtension.finalizeDSl: void (org.gradle.api.Action)
   * com.android.build.api.variant.Component.transformClassesWith: void (java.lang.Class, com.android.build.api.instrumentation.InstrumentationScope, kotlin.jvm.functions.Function1)
   * com.android.build.api.variant.VariantOutput.getEnable: org.gradle.api.provider.Property ()

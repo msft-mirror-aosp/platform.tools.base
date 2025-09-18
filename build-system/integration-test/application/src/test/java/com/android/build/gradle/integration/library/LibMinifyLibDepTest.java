@@ -49,6 +49,13 @@ public class LibMinifyLibDepTest {
                                 + " com.android.tests.basic.StringGetter",
                         "com.android.tests.internal.StringGetterInternal ->"
                                 + " com.android.tests.internal.StringGetterInternal");
+        File partition =
+                project.getSubproject("lib").file("build/outputs/mapping/debug/mapping.prt");
+        // it's binary format
+        assertThat(partition)
+                .containsAllOf(
+                        "com.android.tests.basic.StringGetter",
+                        "com.android.tests.internal.StringGetterInternal");
     }
 
     @Test

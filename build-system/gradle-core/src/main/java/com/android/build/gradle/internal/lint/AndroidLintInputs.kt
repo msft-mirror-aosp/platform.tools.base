@@ -2837,13 +2837,11 @@ class LintFromMaven(val files: FileCollection, val version: String) {
                     issueReporter
                 )
             val config =  project.configurations.detachedConfiguration(
-                project.dependencies.create(
-                    mapOf(
-                        "group" to "com.android.tools.lint",
-                        "name" to "lint-gradle",
-                        "version" to lintVersion,
+                project.dependencyFactory.create(
+                    "com.android.tools.lint",
+                    "lint-gradle",
+                    lintVersion,
                     )
-                )
             )
             config.isTransitive = true
             config.isCanBeConsumed = false

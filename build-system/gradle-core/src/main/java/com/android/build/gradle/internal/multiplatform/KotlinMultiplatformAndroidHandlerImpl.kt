@@ -133,7 +133,7 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
                 }
             }
 
-            registerAndroidTargetExtension(androidTarget, kotlinPluginVersion)
+            registerAndroidTargetExtension(androidTarget)
 
             val mainCompilation = createCompilation(
                 compilationName = KmpAndroidCompilationType.MAIN.defaultCompilationName,
@@ -163,7 +163,6 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
 
     private fun registerAndroidTargetExtension(
         androidTarget: KotlinMultiplatformAndroidLibraryTarget,
-        kotlinPluginVersion: Version?
     ) {
         // Register the deprecated extension (for backward compatibility during the deprecation period)
         (kotlinExtension as ExtensionAware).extensions.add(
@@ -172,14 +171,11 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
             androidTarget
         )
 
-        // TODO (b/421100391): after we start compiling AGP against KGP >= 2.2.0-Beta2, we clean up this runtime check
-        if (kotlinPluginVersion != null && kotlinPluginVersion >= MINIMUM_KGP_VERSION_FOR_ANDROID_NAMESPACE) {
-            (kotlinExtension as ExtensionAware).extensions.add(
-                KotlinMultiplatformAndroidLibraryTarget::class.java,
-                KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
-                androidTarget
-            )
-        }
+        (kotlinExtension as ExtensionAware).extensions.add(
+            KotlinMultiplatformAndroidLibraryTarget::class.java,
+            KotlinMultiplatformAndroidPlugin.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME,
+            androidTarget
+        )
     }
 
     override fun getAndroidTarget() = androidTarget
@@ -268,6 +264,5 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
 
     companion object {
         private val MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION = Version.parse("2.0.0")
-        private val MINIMUM_KGP_VERSION_FOR_ANDROID_NAMESPACE = Version.parse("2.2.0-Beta2")
     }
 }

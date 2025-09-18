@@ -742,6 +742,7 @@ abstract class R8Task @Inject constructor(
                 })
             it.resourcesJar.set(resourcesJar)
             it.mappingFile.set(mappingFile.get().asFile)
+            it.mappingPartitionFile.set(mappingPartitionFile.get().asFile)
             it.proguardSeedsOutput.set(getProguardSeedsOutput().get())
             it.proguardUsageOutput.set(getProguardUsageOutput().get())
             it.proguardConfigurationOutput.set(getProguardConfigurationOutput().get())
@@ -788,13 +789,17 @@ abstract class R8Task @Inject constructor(
 
     // Merge creation config included/excluded patterns with package.txt with merged R8 packages
     private fun aggregatePartialShrinkingConfig(): PartialShrinkingConfig? {
+        // loading include/exclude from custom properties
         val creationConfig = partialShrinkingConfig.orNull
-
-        val packages = loadR8AllowedPackages() + (gradualShrinkingPackages.orNull ?: listOf())
+        // load from files and from new gradual r8 dsl
         val includePatterns = creationConfig?.includedPatterns?.split(",") ?: listOf()
-        if (packages.isNotEmpty() || includePatterns.isNotEmpty() || partialShrinkingEnabled.orNull == true) {
-            val updatedPackages = packages + includePatterns
-
+        val fileIncludes = loadR8AllowedPackages()
+        val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
+        if (hasPartialScope(packages) ||
+            containsPartialRule(includePatterns) ||
+            containsPartialRule(fileIncludes)
+        ) {
+            val updatedPackages = packages + includePatterns + fileIncludes
             return PartialShrinkingConfig(
                 updatedPackages.joinToString(","),
                 creationConfig?.excludedPatterns
@@ -802,6 +807,17 @@ abstract class R8Task @Inject constructor(
         }
         return null
     }
+
+    private fun containsPartialRule(packages: List<String>): Boolean =
+        packages.any { it != "**" }
+
+    // check if user set anything in `packageScope`
+    // having "**" means it's not partial
+    // having empty list means user set it to empty
+    private fun hasPartialScope(packages: List<String>): Boolean =
+        if (packages.isNotEmpty()) {
+            containsPartialRule(packages)
+        } else partialShrinkingEnabled.orNull == true
 
     private fun loadR8AllowedPackages(): List<String> {
         val packageFile = packageList.orNull
@@ -822,6 +838,7 @@ abstract class R8Task @Inject constructor(
             inputProguardMapping: File?,
             proguardConfigurations: MutableList<String>,
             mappingFile: File,
+            mappingPartitionFile: File,
             proguardSeedsOutput: File,
             proguardUsageOutput: File,
             proguardConfigurationOutput: File,
@@ -857,6 +874,7 @@ abstract class R8Task @Inject constructor(
             val proguardOutputFiles =
                 ProguardOutputFiles(
                     mappingFile.toPath(),
+                    mappingPartitionFile.toPath(),
                     proguardSeedsOutput.toPath(),
                     proguardUsageOutput.toPath(),
                     proguardConfigurationOutput.toPath(),
@@ -952,6 +970,7 @@ abstract class R8Task @Inject constructor(
             abstract val inputProguardMapping: RegularFileProperty
             abstract val proguardConfigurations: ListProperty<String>
             abstract val mappingFile: RegularFileProperty
+            abstract val mappingPartitionFile: RegularFileProperty
             abstract val proguardSeedsOutput: RegularFileProperty
             abstract val proguardUsageOutput: RegularFileProperty
             abstract val proguardConfigurationOutput: RegularFileProperty
@@ -998,6 +1017,7 @@ abstract class R8Task @Inject constructor(
                     parameters.inputProguardMapping.orNull?.asFile,
                     parameters.proguardConfigurations.get(),
                     parameters.mappingFile.get().asFile,
+                    parameters.mappingPartitionFile.get().asFile,
                     parameters.proguardSeedsOutput.get().asFile,
                     parameters.proguardUsageOutput.get().asFile,
                     parameters.proguardConfigurationOutput.get().asFile,

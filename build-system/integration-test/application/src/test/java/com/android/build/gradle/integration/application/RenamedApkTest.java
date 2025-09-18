@@ -25,14 +25,17 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.AndroidProjectUtilsV2;
 import com.android.build.gradle.integration.common.utils.ProjectBuildOutputUtilsV2;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.v2.ide.Variant;
 import com.android.builder.model.v2.models.AndroidProject;
-import java.io.File;
-import java.util.Collection;
+
 import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.io.File;
+import java.util.Collection;
 
 /** Assemble tests for renamedApk. */
 public class RenamedApkTest {
@@ -47,9 +50,12 @@ public class RenamedApkTest {
 
     @Test
     public void checkModelReflectsRenamedApk() throws Exception {
-        project.executor().run("clean", "assembleDebug");
+        project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .run("clean", "assembleDebug");
         AndroidProject projectBuildOutput =
                 project.modelV2()
+                        .with(BooleanOption.ENABLE_LEGACY_API, true)
                         .ignoreSyncIssues()
                         .fetchModels(null, null)
                         .getContainer()
@@ -80,13 +86,19 @@ public class RenamedApkTest {
     @Test
     public void checkWarningForRelativePath() throws Exception {
         GradleBuildResult result;
-        result = project.executor().run("clean", "assembleDebug");
+        result =
+                project.executor()
+                        .with(BooleanOption.ENABLE_LEGACY_API, true)
+                        .run("clean", "assembleDebug");
         ScannerSubject.assertThat(result.getStdout())
                 .doesNotContain(
                         "Relative paths are not supported when setting an output file name.");
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(), "outputFileName = \"", "outputFileName = \"../");
-        result = project.executor().run("clean", "assembleDebug");
+        result =
+                project.executor()
+                        .with(BooleanOption.ENABLE_LEGACY_API, true)
+                        .run("clean", "assembleDebug");
         ScannerSubject.assertThat(result.getStdout())
                 .contains("Relative paths are not supported when setting an output file name.");
     }

@@ -35,6 +35,9 @@ common --enable_workspace
 common --experimental_google_legacy_api
 common --experimental_enable_android_migration_apis
 
+# Exposes artifacts to Sponge.
+common --legacy_important_outputs
+
 # TODO(b/270757509) remove after tests switched to flags from product-info.json (//tools/adt/idea/studio:default_user_jvm_args)
 build --jvmopt='-XX:CompileCommand=quiet -XX:CompileCommand=exclude,com/intellij/openapi/vfs/impl/FilePartNodeRoot,trieDescend'
 
@@ -160,6 +163,7 @@ build:ants --build_metadata=run_type=critical
 build:ants --bes_keywords=antswatcher:skip_tests_if_timeout
 build:ants --bes_keywords=antswatcher:use_dependent_jobs
 build:ants --bes_keywords=antswatcher:android_module_behavior
+build:ants --bes_keywords=antswatcher:enable_resultdb
 
 ## Base config for using the remote cache.
 ## This avoids building things which were already built by CI.

@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -93,11 +92,9 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
         Assume.assumeTrue(useComposeCompilerGradlePlugin)
 
         val tasks = listOf("clean", "assembleDebug", "assembleDebugAndroidTest")
-        project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(tasks)
+        project.executor().run(tasks)
         // run once again to test configuration caching
-        project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(tasks)
+        project.executor().run(tasks)
     }
 
     @Test
@@ -110,9 +107,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
             project.getSubproject("app").buildFile,
             "android.composeOptions.useLiveLiterals = true"
         )
-        val result = project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("assembleDebug")
+        val result = project.executor().run("assembleDebug")
         result.assertOutputContains("ComposeOptions.useLiveLiterals is deprecated and will be removed in AGP 9.0.")
 
         // Turn off live literals and run again
@@ -121,9 +116,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
             "android.composeOptions.useLiveLiterals = true",
             "android.composeOptions.useLiveLiterals = false"
         )
-        val result2 = project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("assembleDebug")
+        val result2 = project.executor().run("assembleDebug")
         assertThat(result2.didWorkTasks).contains(":app:compileDebugKotlin")
         result2.assertOutputContains("ComposeOptions.useLiveLiterals is deprecated and will be removed in AGP 9.0.")
     }
@@ -133,9 +126,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
         // KGP 2.0+ requires Compose compiler Gradle plugin when Compose is used
         Assume.assumeTrue(useComposeCompilerGradlePlugin)
 
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:compileDebugTestFixturesKotlin")
+        project.executor().run(":app:compileDebugTestFixturesKotlin")
         val testFixturesClassFile =
             project.getSubproject("app")
                 .getIntermediateFile(
@@ -150,9 +141,7 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
                 )
         assertThat(testFixturesClassFile).exists()
 
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:compileDebugScreenshotTestKotlin")
+        project.executor().run(":app:compileDebugScreenshotTestKotlin")
         val screenshotTestClassFile =
             project.getSubproject("app")
                 .getIntermediateFile(

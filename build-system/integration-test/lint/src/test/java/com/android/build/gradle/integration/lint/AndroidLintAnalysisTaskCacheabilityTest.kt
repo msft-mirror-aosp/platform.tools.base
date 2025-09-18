@@ -264,6 +264,7 @@ class AndroidLintAnalysisTaskCacheabilityTest {
                 val lintDefiniteFileName = "lint-definite.xml"
                 val lintPartialFileName = "lint-partial.xml"
                 val lintResourcesFileName = "lint-resources.xml"
+                val lintThreadDetectorDirName = "ThreadConstraint"
 
                 // First check that the contents of partialResultsDir1 and partialResultsDir2 are
                 // identical
@@ -273,10 +274,15 @@ class AndroidLintAnalysisTaskCacheabilityTest {
                             listOf(
                                 File(it, lintDefiniteFileName),
                                 File(it, lintPartialFileName),
-                                File(it, lintResourcesFileName)
+                                File(it, lintResourcesFileName),
+                                File(it, lintThreadDetectorDirName),
                             )
                         } else {
-                            listOf(File(it, lintDefiniteFileName), File(it, lintPartialFileName))
+                            listOf(
+                                File(it, lintDefiniteFileName),
+                                File(it, lintPartialFileName),
+                                File(it, lintThreadDetectorDirName),
+                            )
                         }
                     assertThat(it.listFiles()?.asList())
                         .containsExactlyElementsIn(expectedFileList)

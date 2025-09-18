@@ -160,7 +160,7 @@ package com.android.build.api.artifact {
     method public com.android.build.api.artifact.OutOperationRequest<FileTypeT> withName(String name);
   }
 
-  public abstract sealed class ScopedArtifact extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.RegularFile> {
+  public abstract sealed class ScopedArtifact extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.Directory> {
   }
 
   public static final class ScopedArtifact.CLASSES extends com.android.build.api.artifact.ScopedArtifact implements com.android.build.api.artifact.Artifact.Appendable com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
@@ -208,6 +208,10 @@ package com.android.build.api.artifact {
 
   public static final class SingleArtifact.OBFUSCATION_MAPPING_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
     field public static final com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE INSTANCE;
+  }
+
+  public static final class SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE INSTANCE;
   }
 
   public static final class SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
@@ -700,7 +704,7 @@ package com.android.build.api.dsl {
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getBuildConfig();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getCompose();
     method public Boolean? getPrefab();
-    method public Boolean? getRenderScript();
+    method @Deprecated public Boolean? getRenderScript();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getResValues();
     method public Boolean? getShaders();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getViewBinding();
@@ -708,7 +712,7 @@ package com.android.build.api.dsl {
     method public void setBuildConfig(Boolean?);
     method public void setCompose(Boolean?);
     method public void setPrefab(Boolean?);
-    method public void setRenderScript(Boolean?);
+    method @Deprecated public void setRenderScript(Boolean?);
     method public void setResValues(Boolean?);
     method public void setShaders(Boolean?);
     method public void setViewBinding(Boolean?);
@@ -716,7 +720,7 @@ package com.android.build.api.dsl {
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? buildConfig;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? compose;
     property public abstract Boolean? prefab;
-    property public abstract Boolean? renderScript;
+    property @Deprecated public abstract Boolean? renderScript;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? resValues;
     property public abstract Boolean? shaders;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? viewBinding;
@@ -2391,6 +2395,7 @@ package com.android.build.api.testsuites {
     method public String getValue();
     property public final String name;
     property public final String value;
+    field public static final String COVERAGE_DIR = "com.android.junit.engine.coverage.dir";
     field public static final com.android.build.api.testsuites.TestEngineInputProperty.Companion Companion;
     field public static final String LOGGING_FILE = "com.android.junit.engine.logging.file";
     field public static final String RESULTS_DIR = "com.android.junit.engine.results.dir";
@@ -2401,6 +2406,7 @@ package com.android.build.api.testsuites {
   }
 
   public static final class TestEngineInputProperty.Companion {
+    property public static final String COVERAGE_DIR;
     property public static final String LOGGING_FILE;
     property public static final String RESULTS_DIR;
     property public static final String SERIAL_IDS;
@@ -2671,6 +2677,7 @@ package com.android.build.api.variant {
 
   public interface Component extends com.android.build.api.variant.ComponentIdentity {
     method @org.gradle.api.Incubating public String computeTaskName(String action, String subject);
+    method @org.gradle.api.Incubating public void configureJavaCompileTask(kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.compile.JavaCompile,kotlin.Unit> action);
     method public org.gradle.api.artifacts.Configuration getAnnotationProcessorConfiguration();
     method public com.android.build.api.artifact.Artifacts getArtifacts();
     method @org.gradle.api.Incubating public org.gradle.api.file.FileCollection getCompileClasspath();

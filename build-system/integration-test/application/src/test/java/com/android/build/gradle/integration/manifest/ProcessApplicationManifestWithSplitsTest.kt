@@ -21,6 +21,7 @@ import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.gradle.api.Project
@@ -101,6 +102,7 @@ class ProcessApplicationManifestWithSplitsTest(private val abi: String, private 
 
         val result = build.executor
                 .with(StringOption.IDE_BUILD_TARGET_ABI, abi)
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .run(":app:assembleDebug")
         assertTrue { result.failedTasks.isEmpty()}
 

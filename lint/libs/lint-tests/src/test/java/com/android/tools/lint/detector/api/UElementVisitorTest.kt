@@ -235,7 +235,6 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
   }
 
   fun testAnnotationTargets_regularProperty() {
-    // TODO: https://youtrack.jetbrains.com/issue/KT-76431
     // b/406850340
     // https://kotlinlang.org/docs/annotations.html#annotation-use-site-targets
     // @property use-site is not visible to Java

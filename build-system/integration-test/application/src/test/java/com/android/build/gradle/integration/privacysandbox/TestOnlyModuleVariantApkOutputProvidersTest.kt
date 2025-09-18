@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.privacysandbox
 
 import com.android.build.api.variant.ApkOutput
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
@@ -100,7 +99,6 @@ class TestOnlyModuleVariantApkOutputProvidersTest {
         }
 
     private fun GradleBuild.configuredExecutor() = executor
-        .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
         .withPerTestPrefsRoot(true)
         .with(BooleanOption.ENABLE_PROFILE_JSON, true) // Regression test for b/237278679

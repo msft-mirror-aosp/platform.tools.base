@@ -44,6 +44,11 @@ data class TestEngineInputProperty(val name: String, val value: String) {
         const val RESULTS_DIR = "com.android.junit.engine.results.dir"
 
         /**
+         * Path to the coverage data directory
+         */
+        const val COVERAGE_DIR = "com.android.junit.engine.coverage.dir"
+
+        /**
          * Serial IDs to deploy to
          */
         const val SERIAL_IDS = "com.android.junit.engine.serial.ids"

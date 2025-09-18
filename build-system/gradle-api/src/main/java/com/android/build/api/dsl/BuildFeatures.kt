@@ -83,6 +83,7 @@ interface BuildFeatures : ExtensionAware {
      * Default value is `false`.
      *
      */
+    @Deprecated("This property and renderScript support will be removed in AGP 10.0")
     var renderScript: Boolean?
 
     /**

@@ -17,7 +17,6 @@
 package com.android.tools.journeys.testengine.robo
 
 import androidx.test.tools.crawler.proto.CrawlGuidanceProto.CrawlParameter
-import com.google.appcrawler.platform.client.GrpcClient
 import com.google.cloud.test.appcrawler.proto.Artifact
 import com.google.cloud.test.appcrawler.proto.ClientMetadata
 import com.google.cloud.test.appcrawler.proto.CrawlSetup
@@ -25,6 +24,7 @@ import com.google.cloud.test.appcrawler.proto.RoboConfig
 import com.google.common.base.Preconditions
 import com.google.protobuf.ByteString
 import com.google.protobuf.Duration
+import com.google.robo.platform.client.GrpcClient
 import io.grpc.CallCredentials
 import io.grpc.CallOptions
 import io.grpc.Channel
@@ -34,6 +34,7 @@ import io.grpc.CompositeCallCredentials
 import io.grpc.ManagedChannel
 import io.grpc.MethodDescriptor
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.net.ServerSocket
 import java.nio.file.Path
@@ -48,7 +49,6 @@ import kotlin.io.path.inputStream
  * and cleaning up the environment.
  *
  * @param adb An [Adb] instance for interacting with the target device.
- * @param crawlerAppApkPath Path to the crawler APK.
  * @param applicationId The package ID of the application under test.
  * @param appApkPath Path to the application under test APK.
  * @param accessTokenPath Path to obtain access token for establishing connection to backend.
@@ -56,7 +56,6 @@ import kotlin.io.path.inputStream
  */
 class Proxy(
     private val adb: Adb,
-    private val crawlerAppApkPath: String,
     private val applicationId: String,
     private val appApkPath: String,
     private val accessTokenPath: String,
@@ -132,9 +131,14 @@ class Proxy(
                 // Disable "Unsafe app blocked" dialog. b/407500906.
                 adb.setGlobalSettingsValue(deviceId, "verifier_verify_adb_installs", "0")
             }
-            adb.install(deviceId, crawlerAppApkPath, getCrawlerInstallFlags(deviceApiLevel))
+            val apkStream =
+                Proxy::class.java.classLoader?.getResourceAsStream("robo/crawler_app.apk")
+                    ?: throw RuntimeException("Crawler APK resource not found")
+            val tempApkFile = File.createTempFile("extracted_apk", ".apk").apply { deleteOnExit() }
+            FileOutputStream(tempApkFile).use { apkStream.copyTo(it) }
+            adb.install(deviceId, tempApkFile.absolutePath, getCrawlerInstallFlags(deviceApiLevel))
             val appApkLocation = File(appApkPath)
-            val appApkPath = if (appApkLocation.isDirectory()) {
+            val appApkPath = if (appApkLocation.isDirectory) {
                 // hopefully, there is only one APK in the directory, we don't handle
                 // multi APKs so far.
                 File(
@@ -254,7 +258,16 @@ class Proxy(
         if (instrumentation.isAlive && destroyIfActiveBeforeExit) {
             instrumentation.destroy()
         }
-        val exitValue = instrumentation.exitValue()
+
+        var exitValue = 0
+        try {
+            exitValue = instrumentation.exitValue()
+        } catch (_: Exception) {
+            System.err.println(
+                "Unable to terminate instrumentation process. Instrumentation Output:\n" +
+                        "$fullOut "
+            )
+        }
 
         val failed = exitValue != 0 || listOf(
             "failures",
@@ -416,7 +429,7 @@ class Proxy(
                 val clientLogger = Logger.getLogger(
                     "${RoboConfigConstants.CRAWLER_PACKAGE_ID}.client.GrpcClient"
                 )
-                clientLogger.setLevel(Level.WARNING)
+                clientLogger.level = Level.WARNING
             } catch (e: Exception) {
                 System.err.println("Failed to disable connection logs with error: ${e.message}")
             }

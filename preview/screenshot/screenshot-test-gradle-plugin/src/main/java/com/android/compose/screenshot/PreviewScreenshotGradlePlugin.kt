@@ -229,7 +229,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
             createLayoutlibConfiguration(project)
             createLayoutlibResourcesConfiguration(project)
             maybeCreateScreenshotTestConfiguration(project, validationEngineVersion)
-            maybeCreateJunitStandaloneLauncherConfiguration(project)
 
             val layoutlibDataFromMaven = LayoutlibDataFromMaven.create(
                 project,
@@ -282,13 +281,16 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                         task.group = JavaBasePlugin.VERIFICATION_GROUP
                         task.analyticsService.set(analyticsServiceProvider)
                         task.usesService(analyticsServiceProvider)
+                        task.useJUnitPlatform {
+                            it.excludeEngines("junit-jupiter")
+                            it.includeEngines("preview-screenshot-test-engine")
+                        }
+                        task.testLogging {
+                            it.showStandardStreams = true
+                        }
+                        task.isScanForTestClasses = false
 
-                        task.mainClass.set("org.junit.platform.console.ConsoleLauncher")
-                        task.args("execute", "--disable-banner",
-                            "--include-engine=preview-screenshot-test-engine",
-                            "--include-classname=.*","--details=none")
                         task.classpath.from(
-                            task.project.configurations.getByName(junitStandaloneLauncherConfigurationName),
                             task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
                             task.project.configurations.getByName(layoutlibJarConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,
@@ -462,23 +464,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val resourceFileProvider = artifactsImplGet(artifactImplObject, instance) as? Provider<RegularFile>
 
         return resourceFileProvider
-    }
-
-    private fun maybeCreateJunitStandaloneLauncherConfiguration(project: Project) {
-        val container = project.configurations
-        val dependencies = project.dependencies
-        if (container.findByName(junitStandaloneLauncherConfigurationName) == null) {
-            container.create(junitStandaloneLauncherConfigurationName).apply {
-                isVisible = false
-                isTransitive = true
-                isCanBeConsumed = false
-                description = "A configuration to resolve junit standalone launcher dependencies."
-            }
-
-            dependencies.add(
-                junitStandaloneLauncherConfigurationName,
-                "org.junit.platform:junit-platform-console-standalone:1.12.0")
-        }
     }
 
     private fun maybeCreateScreenshotTestConfiguration(project: Project, validationEngineVersion: String) {

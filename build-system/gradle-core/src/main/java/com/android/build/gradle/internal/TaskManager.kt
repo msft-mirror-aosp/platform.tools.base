@@ -942,6 +942,7 @@ abstract class TaskManager(
                     usingKapt
                 )
             )
+        creationConfig.attachRegisteredActionsToJavaCompileTask(javacTask)
         postJavacCreation(creationConfig)
         return javacTask
     }

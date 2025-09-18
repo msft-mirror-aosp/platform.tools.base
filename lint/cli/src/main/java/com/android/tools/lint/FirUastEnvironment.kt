@@ -131,6 +131,10 @@ private fun createAnalysisSession(
       projectDisposable = parentDisposable,
       compilerConfiguration = config.kotlinCompilerConfig,
     ) {
+      appLock.withLock {
+        // Should register this before the project structure is built
+        registerCommonElementTypeConverters(application as MockApplication)
+      }
       CoreApplicationEnvironment.registerExtensionPoint(
         project.extensionArea,
         KaResolveExtensionProvider.EP_NAME.name,

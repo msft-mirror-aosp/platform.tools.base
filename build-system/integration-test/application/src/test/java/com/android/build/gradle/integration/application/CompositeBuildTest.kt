@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -74,9 +73,7 @@ class CompositeBuildTest {
     @Test
     fun assembleDebug() {
         val build = rule.build
-        build.executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
             exists()
@@ -99,8 +96,6 @@ class CompositeBuildTest {
      */
     @Test
     fun lintDebug() {
-        rule.build.executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:lintDebug")
+        rule.build.executor.run(":app:lintDebug")
     }
 }

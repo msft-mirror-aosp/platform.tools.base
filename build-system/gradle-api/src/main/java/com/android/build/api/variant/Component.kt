@@ -25,6 +25,7 @@ import org.gradle.api.Incubating
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.compile.JavaCompile
 
 /**
  * Model for components that only contains build-time properties
@@ -178,4 +179,32 @@ interface Component: ComponentIdentity {
      */
     @Incubating
     fun getResolvableConfiguration(sourceSetConfigurationsAffix: String): Configuration
+
+
+    /**
+     * Runs an action to configure Components's java compilation [JavaCompile] task.
+     *
+     * The action will only run if the task is configured.
+     *
+     * Where possible, use the AGP DSL and API
+     *
+     * Note: This API is here to allow access to the java compiler elements that aren't exposed
+     * explicitly in the AGP DSL or API, such as [com.android.build.api.dsl.CompileOptions.targetCompatibility] for example.
+     * Properties set using this API don't propagate anywhere else. For example if you set
+     * `compileTask.targetCompatibility`, it will not update [com.android.build.api.dsl.CompileOptions.targetCompatibility]
+     *
+     * Example :
+     * ```(kotlin)
+     *  androidComponents {
+     *      onVariants { variant ->
+     *          variant.configureJavaCompileTask { compileTask ->
+     *              compileTask.options.compilerArgs.add("-Werror")
+     *          }
+     *      }
+     *  }
+     * ```
+     * @param action to configure the [JavaCompile] task.
+     */
+    @Incubating
+    fun configureJavaCompileTask(action: (JavaCompile) -> Unit)
 }

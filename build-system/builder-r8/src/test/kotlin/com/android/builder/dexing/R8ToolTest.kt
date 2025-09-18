@@ -209,6 +209,7 @@ class R8ToolTest {
                         listOf(),
                         ProguardOutputFiles(
                             tmp.root.toPath().resolve("mapping.txt"),
+                            tmp.root.toPath().resolve("mapping.prt"),
                             tmp.root.toPath().resolve("seeds.txt"),
                             tmp.root.toPath().resolve("usage.txt"),
                             tmp.root.toPath().resolve("configuration.txt"),
@@ -250,6 +251,7 @@ class R8ToolTest {
                 listOf(),
                 ProguardOutputFiles(
                     tmp.root.toPath().resolve("mapping.txt"),
+                    tmp.root.toPath().resolve("mapping.prt"),
                     proguardSeedsOutput,
                     proguardUsageOutput,
                     proguardConfigurationOutput,
@@ -430,6 +432,7 @@ class R8ToolTest {
         val proguardConfig = ProguardConfig(listOf(), null, listOf(),
                 ProguardOutputFiles(
                         tmp.newFile().toPath(),
+                    tmp.newFile().toPath(),
                         tmp.newFile().toPath(),
                         tmp.newFile().toPath(),
                         tmp.newFile().toPath(),
@@ -582,7 +585,7 @@ class R8ToolTest {
 
     private val emptyProguardOutputFiles by lazy {
         val fakeOutput = tmp.newFolder().resolve("fake_output.txt").toPath()
-        ProguardOutputFiles(fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput)
+        ProguardOutputFiles(fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput, fakeOutput)
     }
 
     private fun emptyProguardConfig() = ProguardConfig(listOf(), null, listOf(), emptyProguardOutputFiles)

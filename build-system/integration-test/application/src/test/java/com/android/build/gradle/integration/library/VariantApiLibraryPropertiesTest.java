@@ -21,7 +21,9 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -34,6 +36,7 @@ public class VariantApiLibraryPropertiesTest {
                     .create();
 
     @Test
+    @Ignore("b/432242523")
     public void checkOutputFileName() throws Exception {
         TestFileUtils.appendToFile(
                 project.getBuildFile(),
@@ -52,7 +55,7 @@ public class VariantApiLibraryPropertiesTest {
                     + "    }\n"
                     + "}\n");
 
-        project.executor().run("assembleDebug");
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("assembleDebug");
         project.assertAar(
                 AarSelector.DEBUG,
                 aar -> {

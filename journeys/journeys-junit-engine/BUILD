@@ -1,100 +1,43 @@
-load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
-load("//tools/base/bazel:maven.bzl", "maven_repository")
-load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
-load("//tools/base/journeys:release_version.bzl", "JOURNEYS_TEST_PLUGIN_VERSION_RELEASE")
-load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_PLUGIN_GRADLE_PROPERTIES")
+load("//tools/base/bazel:maven.bzl", "maven_library")
+load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_PLUGIN_VERSION")
 
-# A file group that contains gradle build file and source files to build journeys test
-# engine using Gradle inside Bazel's sandbox.
-filegroup(
-    name = "gradle_project_files",
-    # buildifier: disable=globs
-    srcs = glob([
-        "src/main/**/*.kt",
-        "src/main/resources/**",
-    ]) + [
-        "build.gradle",
-    ],
-    visibility = ["//tools/base/journeys/journeys-junit-engine-test-support:__subpackages__"],
-)
-
-filegroup(
-    name = "gradle_test_files",
-    srcs = glob([
-        "src/test/**/*.kt",
-        "src/test/resources/**",
-    ]) + [
-        "build.gradle",
-    ],
-    visibility = ["//visibility:private"],
-)
-
-maven_repository(
-    name = "maven_dependencies",
-    # keep sorted
-    artifacts = [
-        "@maven//:com.google.android.appcrawler.appcrawler-platform_" + JOURNEYS_TEST_PLUGIN_VERSION_RELEASE,
-        "@maven//:com.google.auth.google-auth-library-oauth2-http_1.24.0",
-        "@maven//:com.google.guava.guava_33.2.1-jre",
-        "@maven//:com.google.oauth-client.google-oauth-client_1.34.1",
-    ],
-)
-
-maven_repository(
-    name = "maven_test_dependencies",
-    # keep sorted
-    artifacts = [
-        "@maven//:com.google.android.appcrawler.appcrawler-platform_" + JOURNEYS_TEST_PLUGIN_VERSION_RELEASE,
-        "@maven//:com.google.auth.google-auth-library-oauth2-http_1.24.0",
-        "@maven//:com.google.guava.guava_33.2.1-jre",
-        "@maven//:com.google.oauth-client.google-oauth-client_1.34.1",
-        "@maven//:org.jetbrains.kotlin.kotlin-test-junit_1.7.10",
-        "@maven//:org.mockito.kotlin.mockito-kotlin_5.4.0",
-    ],
-    visibility = [
-        "//tools/base/build-system/integration-test:__subpackages__",
-        "//tools/base/journeys/journeys-junit-engine-test-support:__subpackages__",
-    ],
-)
-
-# keep sorted
-JOURNEYS_JUNIT_ENGINE_SOURCE_FILES = [
-    ":gradle_project_files",
-    "//tools:agp_gradle_build_files",
-    "//tools/base/common:agp_gradle_build_files",
-    "//tools/base/journeys:release_version.gradle",
-    "//tools/buildSrc:agp_gradle_build_files",
-    "//tools/buildSrc/base:agp_gradle_build_files",
-]
-
-gradle_build(
+maven_library(
     name = "journeys-junit-engine",
-    build_file = "//tools:agp_gradle_build_root_build_file",
-    data = ["//prebuilts/studio/jdk/jdk11:jdk_runtime_files"] + JOURNEYS_JUNIT_ENGINE_SOURCE_FILES,
-    gradle_properties = GRADLE_PROPERTIES | JOURNEYS_TEST_PLUGIN_GRADLE_PROPERTIES,
-    output_file = "journeys-junit-engine.zip",
-    output_file_source = "dist/repo.zip",
-    repos = [
-        ":maven_dependencies",
-        "//tools/base:agp_dependencies",
+    srcs = glob([
+        "src/main/java/**/*.java",
+        "src/main/java/**/*.kt",
+    ]),
+    # keep sorted
+    bundled_deps = [
+        "//tools/vendor/robo:crawler_apk",
+        "//tools/vendor/robo/client:client",
+        "//tools/vendor/robo/cloud/test/appcrawler/proto:crawler_service_java_grpc",
+        "//tools/vendor/robo/cloud/test/appcrawler/proto:robo_config_java_proto",
+        "//tools/vendor/robo/common:time_util",
+        "//tools/vendor/robo/proto:android_platform_java_proto",
+        "//tools/vendor/robo/proto:app_screen_style_java_proto",
+        "//tools/vendor/robo/proto:crawl_outputs_java_proto",
+        "//tools/vendor/robo/proto:guidance_java_proto",
+        "//tools/vendor/robo/proto:robo_results_java_proto",
     ],
-    tasks = [":base:journeys:journeys-junit-engine:zipRepo"],
+    coordinates = "com.android.tools.journeys:journeys-junit-engine",
+    resource_strip_prefix = "tools/base/journeys/journeys-junit-engine/src/main/resources/",
+    resources = glob(["src/main/resources/**"]),
+    version = JOURNEYS_TEST_PLUGIN_VERSION,
     visibility = ["//visibility:public"],
-)
-
-gradle_test(
-    name = "journeys-junit-engine_test",
-    build_file = "//tools:agp_gradle_build_root_build_file",
-    data = [
-        ":gradle_test_files",
-        "//prebuilts/studio/jdk/jdk11:jdk_runtime_files",
-    ] + JOURNEYS_JUNIT_ENGINE_SOURCE_FILES,
-    gradle_properties = GRADLE_PROPERTIES | JOURNEYS_TEST_PLUGIN_GRADLE_PROPERTIES,
-    repos = [
-        ":maven_test_dependencies",
-        "//tools/base:agp_dependencies",
+    deps = [
+        "@maven//:com.github.rholder.guava-retrying",
+        "@maven//:com.google.auth.google-auth-library-oauth2-http",
+        "@maven//:com.google.flogger.flogger",
+        "@maven//:com.google.flogger.flogger-system-backend",
+        "@maven//:com.google.oauth-client.google-oauth-client",
+        "@maven//:com.google.protobuf.protobuf-java",
+        "@maven//:io.grpc.grpc-auth",
+        "@maven//:io.grpc.grpc-core",
+        "@maven//:io.grpc.grpc-netty",
+        "@maven//:io.grpc.grpc-protobuf",
+        "@maven//:io.grpc.grpc-stub",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.junit.platform.junit-platform-engine",
     ],
-    tasks = [":base:journeys:journeys-junit-engine:test"],
-    test_output_dir = "build/base/journeys/journeys-junit-engine/build/test-results/test",
-    visibility = ["//visibility:public"],
 )

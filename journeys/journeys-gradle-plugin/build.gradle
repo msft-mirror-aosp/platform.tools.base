@@ -29,18 +29,19 @@ base {
 
 apply from: '../release_version.gradle'
 
-def generateVersionPropertiesResourceFile = tasks.register('generateVersionPropertiesResourceFile') {
-    def resourceFile = project.layout.buildDirectory.file("generated/resources/version.properties")
-    outputs.file(resourceFile)
+def generateVersionPropertiesResourceFile = tasks
+        .register('generateVersionPropertiesResourceFile') {
+            def resourceFile = project.layout.buildDirectory.file(
+                    "generated/resources/version.properties")
+            outputs.file(resourceFile)
 
-    doLast {
-        resourceFile.get().asFile.parentFile.mkdirs()
-        resourceFile.get().asFile.withWriter { writer ->
-            writer.writeLine("buildVersion=$version")
-            writer.writeLine("appcrawlerVersion=$project.ext.appcrawlerVersion")
+            doLast {
+                resourceFile.get().asFile.parentFile.mkdirs()
+                resourceFile.get().asFile.withWriter { writer ->
+                    writer.writeLine("buildVersion=$version")
+                }
+            }
         }
-    }
-}
 sourcesJar.dependsOn generateVersionPropertiesResourceFile
 processResources.dependsOn generateVersionPropertiesResourceFile
 

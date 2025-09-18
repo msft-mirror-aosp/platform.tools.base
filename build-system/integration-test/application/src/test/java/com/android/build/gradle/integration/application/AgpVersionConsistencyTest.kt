@@ -22,7 +22,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import org.junit.Ignore
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
@@ -40,7 +40,6 @@ class AgpVersionConsistencyTest {
             )
         ).create()
 
-    @Ignore("b/382773586")
     @Test
     fun testBuildConfiguration() {
         // do not add any buildscript dependencies, those are added per project
@@ -78,16 +77,19 @@ class AgpVersionConsistencyTest {
             """.trimIndent()
         )
 
-        project.executor()
+        val result = project.executor()
             .withFailOnWarning(false)
             .expectFailure()
             .run("androidLib1:mergeDebugAssets")
-            .assertErrorContains(
-                """
-                    Using multiple versions of the Android Gradle plugin($DIFFERENT_AGP,
-                     ${Version.ANDROID_GRADLE_PLUGIN_VERSION}) in the same build is not allowed.
-                """.trimIndent()
-            )
+
+        val expectationAlternatives = listOf(
+            """Using different versions of the Android Gradle plugin ($DIFFERENT_AGP, ${Version.ANDROID_GRADLE_PLUGIN_VERSION}) in the same build is not allowed.""",
+            """Using different versions of the Android Gradle plugin (${Version.ANDROID_GRADLE_PLUGIN_VERSION}, $DIFFERENT_AGP) in the same build is not allowed.""",
+        )
+
+        assertThat(expectationAlternatives.any { result.stderrAsText.contains(it) })
+            .named("Result contains one of %s", expectationAlternatives)
+            .isTrue()
     }
 
     private fun addDirectClasspath(name: String, agpVersion: String) {
@@ -108,6 +110,6 @@ class AgpVersionConsistencyTest {
     }
 
     companion object {
-        private const val DIFFERENT_AGP = "7.1.0"
+        private const val DIFFERENT_AGP = "8.12.0"
     }
 }

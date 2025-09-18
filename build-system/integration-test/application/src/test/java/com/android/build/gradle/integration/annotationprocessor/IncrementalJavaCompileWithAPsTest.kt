@@ -505,6 +505,7 @@ class IncrementalJavaCompileWithAPsTest(
     private fun runFullBuild(): GradleBuildResult {
         val result = project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run(CLEAN_TASK, COMPILE_TASK)
         recordTimestamps()
         return result
@@ -515,6 +516,7 @@ class IncrementalJavaCompileWithAPsTest(
             : GradleBuildResult {
         return project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run(COMPILE_TASK)
     }
 

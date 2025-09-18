@@ -144,6 +144,7 @@ public class AndroidArtifacts {
 
     // types for additional artifacts to go with APK
     private static final String TYPE_MAPPING = "android-mapping";
+    private static final String TYPE_MAPPING_PARTITION = "android-mapping-partition";
     private static final String TYPE_METADATA = "android-metadata";
 
     // types for APK to APK support (base/feature/tests)
@@ -497,6 +498,7 @@ public class AndroidArtifacts {
                 AndroidArtifacts.TYPE_LINT_MODEL_METADATA, ArtifactCategory.VERIFICATION),
 
         APK_MAPPING(TYPE_MAPPING),
+        APK_MAPPING_PARTITION(TYPE_MAPPING_PARTITION),
         APK_METADATA(TYPE_METADATA),
         APK(TYPE_APK),
         // zip of apks for publishing single or multi-apks to a repo.

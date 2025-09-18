@@ -2,11 +2,13 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library", "java_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:kotlin_common.bzl", "kt_java_toolchain_bundle")
 load("//tools/base/bazel:maven/artifacts.bzl", "ARTIFACTS")
 load("//tools/base/bazel:maven/data.bzl", "DATA")
 load("//tools/base/bazel:maven/remote_repos.bzl", "REMOTE_REPOS")
+load("//tools/base/bazel:owners.bzl", "owners_zip")
 load("//tools/base/bazel:proto.bzl", "PROTOC_VERSION", "java_proto_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
@@ -568,8 +570,8 @@ coverage_java_test(
 java_binary(
     name = "bazel-diff",
     main_class = "com.bazel_diff.Main",
-    runtime_deps = ["@bazel_diff//jar"],
     visibility = ["//tools/base/bazel/ci:__pkg__"],
+    runtime_deps = ["@bazel_diff//jar"],
 )
 
 java_proto_library(
@@ -605,4 +607,14 @@ java_binary(
     srcs = ["src/com/android/tools/binaries/JarFilter.java"],
     main_class = "com.android.tools.binaries.JarFilter",
     visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "create_owners_zip",
+    srcs = ["create_owners_zip.py"],
+)
+
+owners_zip(
+    name = "owners_zip",
+    out = "owners.zip",
 )

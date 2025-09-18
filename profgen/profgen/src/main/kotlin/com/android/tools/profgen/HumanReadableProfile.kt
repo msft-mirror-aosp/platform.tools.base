@@ -149,7 +149,7 @@ class HumanReadableProfile internal constructor(
         }
     }
 
-    fun printExact(os: Appendable): Unit {
+    fun printExact(os: Appendable) {
         val app = mutableMapOf<String, MutableList<DexMethod>>()
         for (classDescriptor in exactTypes) {
             app.getOrPut(classDescriptor) { mutableListOf() }

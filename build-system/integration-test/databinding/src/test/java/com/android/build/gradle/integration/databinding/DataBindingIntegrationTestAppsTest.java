@@ -36,8 +36,10 @@ import java.util.List;
 @RunWith(FilterableParameterized.class)
 public class DataBindingIntegrationTestAppsTest {
     @Rule public GradleTestProject project;
+    private final boolean enableLegacyApi;
 
-    public DataBindingIntegrationTestAppsTest(String projectName, boolean useAndroidX) {
+    public DataBindingIntegrationTestAppsTest(
+            String projectName, boolean useAndroidX, boolean enableLegacyApi) {
         GradleTestProjectBuilder builder =
                 GradleTestProject.builder()
                         .fromDataBindingIntegrationTest(projectName, useAndroidX)
@@ -52,26 +54,31 @@ public class DataBindingIntegrationTestAppsTest {
                         .addGradleProperties(
                                 BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName()
                                         + "=false")
+                        .addGradleProperties(
+                                BooleanOption.ENABLE_LEGACY_API.getPropertyName()
+                                        + "="
+                                        + enableLegacyApi)
                         .withDependencyChecker(!"KotlinTestApp".equals(projectName));
         if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
             builder.withCompileSdkVersion("28");
         }
         this.project = builder.create();
+        this.enableLegacyApi = enableLegacyApi;
     }
 
-    @Parameterized.Parameters(name = "app_{0}_useAndroidX_{1}")
+    @Parameterized.Parameters(name = "app_{0}_useAndroidX_{1}_enableLegacyApi_{2}")
     public static Iterable<Object[]> classNames() {
         List<Object[]> params = new ArrayList<>();
         for (boolean useAndroidX : new boolean[] {true, false}) {
-            params.add(new Object[] {"IndependentLibrary", useAndroidX});
+            params.add(new Object[] {"IndependentLibrary", useAndroidX, false});
             // b/161641190 (javac crash when running in RBE)
-            //params.add(new Object[] {"TestApp", useAndroidX});
-            params.add(new Object[] {"ViewBindingTestApp", useAndroidX});
-            params.add(new Object[] {"ProguardedAppWithTest", useAndroidX});
-            params.add(new Object[] {"AppWithDataBindingInTests", useAndroidX});
+            // params.add(new Object[] {"TestApp", useAndroidX});
+            params.add(new Object[] {"ViewBindingTestApp", useAndroidX, false});
+            params.add(new Object[] {"ProguardedAppWithTest", useAndroidX, false});
+            params.add(new Object[] {"AppWithDataBindingInTests", useAndroidX, false});
         }
-        params.add(new Object[] {"KotlinTestApp", true});
-        params.add(new Object[] {"ViewBindingWithDataBindingTestApp", true});
+        params.add(new Object[] {"KotlinTestApp", true, true});
+        params.add(new Object[] {"ViewBindingWithDataBindingTestApp", true, true});
         return params;
     }
 

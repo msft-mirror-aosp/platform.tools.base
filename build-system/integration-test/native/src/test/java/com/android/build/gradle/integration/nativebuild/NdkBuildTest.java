@@ -137,10 +137,12 @@ public class NdkBuildTest {
 
     @Test
     public void injectedAbi() throws IOException, InterruptedException {
-        // Pass invalid-abi, arm64-v8a and armeabi. The first (invalid-abi) should be ignored because
+        // Pass invalid-abi, arm64-v8a and armeabi. The first (invalid-abi) should be ignored
+        // because
         // it is not valid for the build . The second (arm64-v8a) should be the one chosen to build.
         // Finally, armeabi is valid but it will be ignored because arm64-v8a is "preferred".
         project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .with(StringOption.IDE_BUILD_TARGET_ABI, "invalid-abi,arm64-v8a,armeabi")
                 .run("clean", "assembleDebug");
         Apk apk = project.getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates);

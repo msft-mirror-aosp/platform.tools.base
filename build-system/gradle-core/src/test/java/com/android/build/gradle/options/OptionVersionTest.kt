@@ -74,14 +74,12 @@ class OptionVersionTest {
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
             BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
             BooleanOption.ENABLE_EMULATOR_CONTROL,
-            BooleanOption.ENABLE_LEGACY_VARIANT_API,
             BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
             BooleanOption.GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE,
             BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,
             BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
             BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
-            BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED,
             BooleanOption.TEST_SUITE_SUPPORT,
             BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER
         )

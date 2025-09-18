@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.connected.library;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
+import com.android.build.gradle.options.BooleanOption;
 
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -40,11 +41,11 @@ public class ApiConnectedTest {
         project.addAdbTimeout();
         // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
         // of each test and (2) check the adb connection before taking the time to build anything.
-        project.executor().run("uninstallAll");
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("uninstallAll");
     }
 
     @Test
     public void connectedCheck() throws IOException, InterruptedException {
-        project.executor().run("connectedAndroidTest");
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("connectedAndroidTest");
     }
 }

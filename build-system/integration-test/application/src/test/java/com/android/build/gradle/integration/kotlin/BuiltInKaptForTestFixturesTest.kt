@@ -151,6 +151,7 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             // Version 1.9.22 of the jetbrains KAPT plugin uses deprecated Gradle features
             .withFailOnWarning(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("app:assembleDebugTestFixtures")
 
         app.assertAar(AarSelector.DEBUG.forTestFixtures()) {
@@ -233,6 +234,7 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
                 // Version 1.9.22 of the jetbrains KAPT plugin uses deprecated Gradle features
                 .withFailOnWarning(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
         // test for caching when useBuildCache = true
         assertThat(
             executor.run("app:assembleDebugTestFixtures").didWorkTasks

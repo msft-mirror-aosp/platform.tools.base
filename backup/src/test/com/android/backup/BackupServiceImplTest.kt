@@ -57,9 +57,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-private const val TRANSPORT_NOT_SET_MESSAGE =
-  "Requested transport was not set: Selected transport com.google.android.gms/.backup.migrate.service.D2dTransport (formerly com.google.android.gms/.backup.BackupTransportService)"
-
 class BackupServiceImplTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
@@ -974,13 +971,16 @@ class BackupServiceImplTest {
     val backupService =
       BackupServiceImpl(
         FakeAdbServicesFactory("com.app") {
-          it.addCommandOverride(Output("bmgr list transports", ""))
+          it.addCommandOverride(Output("bmgr list transports", "unexpected output"))
         }
       )
 
     val result = backupService.restore("serial", backupFile, null)
 
-    assertThat(result).isEqualTo(TRANSPORT_NOT_SELECTED.asBackupResult(TRANSPORT_NOT_SET_MESSAGE))
+    assertThat(result)
+      .isEqualTo(
+        TRANSPORT_NOT_SELECTED.asBackupResult("Requested transport was not set: unexpected output")
+      )
   }
 
   @Test

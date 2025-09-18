@@ -18,10 +18,13 @@ package com.android.tools.lint.checks
 import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraint
 import com.android.tools.lint.checks.fx.JoinEffectDetector
 import com.android.tools.lint.checks.fx.analysis.isKtProperty
+import com.android.tools.lint.checks.fx.result.AssumptionTable
 import com.android.tools.lint.checks.fx.result.EffectAnnotation
 import com.android.tools.lint.checks.fx.result.EffectAnnotation.Explicit
 import com.android.tools.lint.checks.fx.result.Error
 import com.android.tools.lint.checks.fx.result.Type.Sym.Companion.chain
+import com.android.tools.lint.checks.fx.utils.Encoder
+import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.client.api.JavaEvaluator
 import com.android.tools.lint.detector.api.Context
@@ -29,6 +32,7 @@ import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.intellij.psi.PsiParameter
+import kotlinx.collections.immutable.persistentMapOf
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.uast.UAnnotation
@@ -57,13 +61,22 @@ import org.jetbrains.uast.resolveToUElement
  * [ThreadConstraintLattice.AnyThread] is not equivalent to `@Ui ⊓ @Worker ⊓ @Binder`, but
  * conceptually equivalent to `@Ui ⊓ @Worker ⊓ @Binder ⊓ Other`, where `Other` is an implicit,
  * programmer-inaccessible thread category.
+ *
+ * The analysis is also parameterizable by [initialAssumptions], which can be provided either from
+ * the analysis result of a dependent module, or assumed for primitives.
  */
 abstract class ThreadConstraintDetector<T : Enum<T>>(
-  protected val lattice: ThreadConstraintLattice<T>
-) : JoinEffectDetector<ThreadConstraint<T>>(lattice) {
+  protected val lattice: ThreadConstraintLattice<T>,
+  initialAssumptions: AssumptionTable<ThreadConstraint<T>> = persistentMapOf(),
+) : JoinEffectDetector<ThreadConstraint<T>>(lattice, initialAssumptions) {
 
   protected abstract val violationIssue: Issue
   protected abstract val unsatisfiableConstraintIssue: Issue
+  override val mainIssue
+    get() = violationIssue
+
+  override val effectEncoder
+    get() = lattice.encoder
 
   override fun report(context: Context, error: Error<ThreadConstraint<T>>) =
     when (error) {
@@ -381,6 +394,13 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
         second.isLeastPermissive() -> first
         // Only last case needed. Above cases are micro-optimization re-using common instances
         else -> of(first.cases or second.cases)
+      }
+
+    val encoder: Encoder<ThreadConstraint<T>> =
+      when {
+        fullCases < Byte.MAX_VALUE.toULong() ->
+          Encoder.byte.adapt({ it.cases.toByte() }, { of(it.toULong()) })
+        else -> Encoder.int.adapt({ it.cases.toInt() }, { of(it.toULong()) })
       }
 
     companion object {

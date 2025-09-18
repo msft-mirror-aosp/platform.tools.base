@@ -28,7 +28,7 @@ internal class MutablePrefixTree<T> {
     }
 
     fun firstOrNull(key: String, fn: (T) -> Boolean): T? {
-        prefixIterator(key).forEach {
+        for (it in prefixIterator(key)) {
             if (fn(it)) return it
         }
         return null

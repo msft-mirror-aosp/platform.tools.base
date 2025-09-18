@@ -38,6 +38,7 @@ class LinkApplicationAndroidResourcesTaskTest {
                 }
                 dependencies {
                     implementation("androidx.navigation:navigation-fragment:2.5.2")
+                    implementation(project(":lib"))
                 }
             }
         }.files {
@@ -60,6 +61,22 @@ class LinkApplicationAndroidResourcesTaskTest {
                 """.trimIndent())
 
         }
+
+        androidLibrary(":lib") {
+            android {
+                namespace = "com.example.lib"
+                defaultConfig {
+                    minSdk = 24
+                }
+            }
+        }.files {
+            add("src/main/res/navigation/lib_nav_graph.xml",
+                """
+                    <navigation xmlns:android="http://schemas.android.com/apk/res/android"
+                     android:id="@+id/lib_nav_graph">
+                    </navigation>
+                """.trimIndent())
+        }
     }
 
     @Test
@@ -73,6 +90,10 @@ class LinkApplicationAndroidResourcesTaskTest {
 
         assertThat(rTxt).exists()
         assertThat(rTxt).contains("int id nav_graph")
+        assertThat(rTxt).contains("int id lib_nav_graph")
+
+        // Regression test for b/443587266
+        build.executor.run("verifyReleaseResources")
     }
 
 }

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -44,6 +45,8 @@ class EarlyTaskConfigurationTest {
         )
 
         // Check that the build succeeds
-        project.executor().run("clean", "assembleDebug", "testDebugUnitTest")
+        project.executor()
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .run("clean", "assembleDebug", "testDebugUnitTest")
     }
 }

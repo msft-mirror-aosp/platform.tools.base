@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.publishing
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import org.junit.Before
@@ -114,7 +115,7 @@ class SourcePublishingTest {
         )
         addPublication(RELEASE)
 
-        library.execute("publish")
+        library.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("publish")
 
         val sourceJar =
             project.projectDir.resolve("$SOURCE_JAR_DIR/library-1.1-sources.jar")
@@ -139,7 +140,7 @@ class SourcePublishingTest {
         )
         addPublication(DEFAULT)
 
-        library.execute("publish")
+        library.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("publish")
 
         val sourceJar =
             project.projectDir.resolve("$SOURCE_JAR_DIR/library-1.1-release-sources.jar")

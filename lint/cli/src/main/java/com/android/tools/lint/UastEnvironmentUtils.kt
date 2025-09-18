@@ -32,18 +32,26 @@ import com.intellij.codeInsight.InferredAnnotationsManager
 import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.diagnostic.LoadingState
 import com.intellij.lang.LanguageASTFactory
+import com.intellij.lang.LanguageExtensionPoint
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.DefaultLogger
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.extensions.DefaultPluginDescriptor
+import com.intellij.openapi.extensions.PluginId
+import com.intellij.openapi.extensions.impl.ExtensionsAreaImpl
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.impl.CoreProgressManager
 import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.KeyedExtensionCollector
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.platform.syntax.psi.CommonElementTypeConverterFactory
+import com.intellij.platform.syntax.psi.ElementTypeConverterFactory
+import com.intellij.platform.syntax.psi.ElementTypeConverters
 import com.intellij.pom.PomModel
 import com.intellij.pom.core.impl.PomModelImpl
 import com.intellij.pom.java.LanguageFeatureProvider
@@ -53,6 +61,7 @@ import com.intellij.psi.augment.PsiAugmentProvider
 import com.intellij.psi.impl.PsiNameHelperImpl
 import com.intellij.psi.impl.RecordAugmentProvider
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.util.KeyedLazyInstance
 import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.collections.plus
@@ -111,6 +120,14 @@ internal fun createCommonKotlinCompilerConfig(): CompilerConfiguration {
   // We don't bundle .dll files in the Gradle plugin for native file system access;
   // prevent warning logs on Windows when it's not found (see b.android.com/260180).
   System.setProperty("idea.use.native.fs.for.win", "false")
+
+  // https://youtrack.jetbrains.com/issue/IDEA-369013
+  // intellij.java.psi.xml
+  // Even though `JavaCoreApplicationEnvironment` does a similar registration,
+  // we need to register `CommonElementTypeConverterFactory` _before_ AA session creation,
+  // which needs to read this registry key earlier than that.
+  System.setProperty("java.highest.language.level", "24")
+  System.setProperty("java.highest.language.level.restartRequired", "false")
 
   config.put(JVMConfigurationKeys.NO_JDK, true)
 
@@ -413,6 +430,7 @@ internal fun configureApplicationEnvironment(
   )
 
   // https://youtrack.jetbrains.com/issue/IJPL-175398
+  // JavaIndexingPlugin.xml (formerly JavaPsiPlugin.xml)
   System.setProperty("javac.fresh.variables.for.captured.wildcards.only", "true")
 
   appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
@@ -447,11 +465,48 @@ internal fun configureApplicationEnvironment(
   appEnv.registerParserDefinition(DeclarativeParserDefinition())
 
   // Mark the app as "started" to avoid early bailout paths in Registry.is() and more.
-  @Suppress("UnstableApiUsage")
-  LoadingState.setCurrentState(LoadingState.APP_STARTED)
+  @Suppress("UnstableApiUsage") LoadingState.setCurrentState(LoadingState.APP_STARTED)
 
   appConfigured = true
   Disposer.register(appEnv.parentDisposable, Disposable { appConfigured = false })
+}
+
+// https://youtrack.jetbrains.com/issue/IDEA-373647 or its fix:
+// https://github.com/JetBrains/intellij-community/commit/751be636a6f3a8c342b7a4324dde6cf4c561ddf5
+// We need to register `CommonElementTypeConverterFactory` _before_
+// `KotlinStandaloneProjectStructureProvider` (within AA session creation)
+// walks through the PSI file structures, including Java files.
+internal fun registerCommonElementTypeConverters(application: MockApplication) {
+  val extensionArea = application.extensionArea
+  val name = ElementTypeConverters.instance.name
+  // Avoid registering duplicate extension points.
+  if (extensionArea.hasExtensionPoint(name)) {
+    return
+  }
+  val pluginDescriptor =
+    DefaultPluginDescriptor(
+      // Technically, this common element type converter is registered as
+      // com.intellij.platform.syntax.psi, and to avoid any conflicts,
+      // we are using our own ID here.
+      PluginId.getId("com.android.tools.lint"),
+      application::class.java.classLoader,
+    )
+  extensionArea.registerFakeBeanPoint<ElementTypeConverterFactory>(name, pluginDescriptor)
+  val languagePlugin: LanguageExtensionPoint<ElementTypeConverterFactory> =
+    LanguageExtensionPoint("any", CommonElementTypeConverterFactory())
+  languagePlugin.pluginDescriptor = pluginDescriptor
+  addExtension(extensionArea, ElementTypeConverters.instance, languagePlugin)
+}
+
+// From com.intellij.testFramework.ExtensionTestUtil
+private fun <T, BEAN_TYPE : KeyedLazyInstance<T>, KeyT> addExtension(
+  area: ExtensionsAreaImpl,
+  collector: KeyedExtensionCollector<T, KeyT>,
+  bean: BEAN_TYPE,
+) {
+  val point = area.getExtensionPoint<BEAN_TYPE>(collector.name)
+  @Suppress("DEPRECATION") point.registerExtension(bean)
+  collector.clearCache()
 }
 
 internal fun reRegisterProgressManager(application: MockApplication) {

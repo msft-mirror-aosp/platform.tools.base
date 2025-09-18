@@ -21,6 +21,7 @@ import com.android.SdkConstants.NDK_DEFAULT_VERSION
 import com.android.SdkConstants.PLATFORM_WINDOWS
 import com.android.Version
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
+import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkLocation
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
@@ -374,13 +375,13 @@ class CmakeBasicProjectTest(
      * Helper function that controls arguments when running a task
      */
     private fun runTasks(vararg tasks : String): GradleBuildResult? {
-        return project.executor().withArgument("--build-cache").run(*tasks)
+        return executorWithLegacyApi().withArgument("--build-cache").run(*tasks)
     }
 
     @Test
     fun `check configuration caching`() {
-        project.execute("assembleRelease")
-        project.execute("assembleRelease")
+        executorWithLegacyApi().run("assembleRelease")
+        executorWithLegacyApi().run("assembleRelease")
         project.buildResult.assertConfigurationCacheHit()
     }
 
@@ -414,7 +415,7 @@ class CmakeBasicProjectTest(
             void f() { }
             """.trimIndent()
         )
-        project.execute("configureCMakeDebug[armeabi-v7a]")
+        executorWithLegacyApi().run("configureCMakeDebug[armeabi-v7a]")
 
         // Step 2 -- Change to root CMakeLists.txt so that it no longer refers to the nested CMakeLists.txt
         // Also, delete the nested CMakeLists.txt.
@@ -422,7 +423,7 @@ class CmakeBasicProjectTest(
         // [CXX1409] ...\android_gradle_build.json debug|armeabi-v7a : expected buildFiles file 'nested-a\CMakeLists.txt' to exist
         cmakeLists.writeText(cmakeListsOriginalContent)
         nestedACMakeLists.delete()
-        project.execute("configureCMakeDebug[armeabi-v7a]")
+        executorWithLegacyApi().run("configureCMakeDebug[armeabi-v7a]")
     }
 
     // Regression test for b/179062268
@@ -435,13 +436,13 @@ class CmakeBasicProjectTest(
                     buildTypes {
                         release {
                             minifyEnabled true
-                            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
                         }
                     }
                 }
             """.trimIndent()
         )
-        project.execute("clean", "assembleRelease")
+        executorWithLegacyApi().run("clean", "assembleRelease")
         assertThat(project.getIntermediateFile("default_proguard_files/global")).exists()
     }
 
@@ -455,7 +456,7 @@ class CmakeBasicProjectTest(
             android.defaultConfig.externalNativeBuild.cmake.arguments.addAll("-DCMAKE_VERBOSE_MAKEFILE=1")
             """.trimIndent()
         )
-        project.execute("generateJsonModelDebug")
+        executorWithLegacyApi().run("generateJsonModelDebug")
         val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
         val config = getNativeBuildMiniConfig(abi, null)
         val commands = config.buildTargetsCommandComponents
@@ -484,7 +485,7 @@ class CmakeBasicProjectTest(
 
         // For the others, validate that the cmake.exe process had our flag
         enableCxxStructuredLogging(project)
-        project.execute("generateJsonModelDebug")
+        executorWithLegacyApi().run("generateJsonModelDebug")
         println(project.readStructuredLogs(::decodeExecuteProcess))
         val process = project.readStructuredLogs(::decodeExecuteProcess).first()
         assertThat(process.argsList).contains("-C$path")
@@ -493,7 +494,7 @@ class CmakeBasicProjectTest(
     @Test
     fun `ensure hashed output paths are stable`() {
         Assume.assumeTrue(mode == Mode.CMake && cmakeVersionInDsl != "3.6.0")
-        project.execute("configure${mode.buildFolderTag}Debug[x86_64]")
+        executorWithLegacyApi().run("configure${mode.buildFolderTag}Debug[x86_64]")
         val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
         val minPlatform = abi.variant.module.ndkMinPlatform
         val hashKey = abi.cxxBuildHashKeyFile.readText()
@@ -543,7 +544,7 @@ class CmakeBasicProjectTest(
             android.defaultConfig.externalNativeBuild.cmake.arguments.addAll("-DMY_CPU_ARCH=\${"$"}{ndk.abiAltCpuArchitecture}")
             """.trimIndent()
         )
-        project.execute("generateJsonModelDebug")
+        executorWithLegacyApi().run("generateJsonModelDebug")
         val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
         assertThat(abi.configurationArguments).contains("-DMY_CPU_ARCH=x64")
     }
@@ -564,13 +565,13 @@ class CmakeBasicProjectTest(
             """.trimIndent())
         TestFileUtils.appendToFile(project.buildFile, moduleBody("root/CMakeLists.txt"))
 
-        project.execute("assemble")
+        executorWithLegacyApi().run("assemble")
 
         // Rename the target
         leafCmakeLists.writeText(leafCmakeLists.readText().replace("hello-jni", "hello-jni-renamed"))
 
         // Assemble again
-        project.execute("assemble")
+        executorWithLegacyApi().run("assemble")
     }
 
     @Test
@@ -603,11 +604,11 @@ class CmakeBasicProjectTest(
         //
         // To recreate those conditions, build the project twice, purging only the .cxx directory
         // between runs.
-        project.execute("assembleDebug")
+        executorWithLegacyApi().run("assembleDebug")
         val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
         project.projectDir.resolve(".cxx").deleteRecursively()
         assertThat(abi.soFolder.resolve("libfoo.so")).isFile()
-        project.execute("assembleDebug")
+        executorWithLegacyApi().run("assembleDebug")
     }
 
 
@@ -631,7 +632,7 @@ class CmakeBasicProjectTest(
             target_link_libraries(native_lib PRIVATE object_dependency)
             """.trimIndent())
 
-        project.execute("generateJsonModelDebug")
+        executorWithLegacyApi().run("generateJsonModelDebug")
 
         val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
     }
@@ -657,7 +658,7 @@ class CmakeBasicProjectTest(
             target_link_libraries(bar foo baz)
             """.trimIndent())
 
-        project.execute("generateJsonModelDebug")
+        executorWithLegacyApi().run("generateJsonModelDebug")
 
         val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
         val fooPath = abi.soFolder.resolve("libfoo.so")
@@ -699,7 +700,7 @@ class CmakeBasicProjectTest(
 
     @Test
     fun checkApkContent() {
-        project.execute("clean", "assembleDebug")
+        executorWithLegacyApi().run("clean", "assembleDebug")
         val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
         assertThatApk(apk).hasVersionCode(1)
         assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so")
@@ -717,7 +718,7 @@ class CmakeBasicProjectTest(
     fun checkTestOnlyNativeLibraries() {
         // First check that native libs are packaged in the main APK and not the android test APK by
         // default.
-        project.execute("clean", "assembleDebug", "assembleDebugAndroidTest")
+        executorWithLegacyApi().run("clean", "assembleDebug", "assembleDebugAndroidTest")
         var apk = project.getApk(GradleTestProject.ApkType.DEBUG)
         var androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
         assertThatApk(apk).contains("lib/armeabi-v7a/libhello-jni.so")
@@ -739,7 +740,7 @@ class CmakeBasicProjectTest(
                 }
             """.trimIndent()
         )
-        project.execute("assembleDebug", "assembleDebugAndroidTest")
+        executorWithLegacyApi().run("assembleDebug", "assembleDebugAndroidTest")
         apk = project.getApk(GradleTestProject.ApkType.DEBUG)
         androidTestApk = project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
         assertThatApk(apk).doesNotContain("lib/armeabi-v7a/libhello-jni.so")
@@ -750,7 +751,7 @@ class CmakeBasicProjectTest(
 
     @Test
     fun checkApkContentWithInjectedABI() {
-        project.executor()
+        executorWithLegacyApi()
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86_64")
             .run("clean", "assembleDebug")
         val apk = project.getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates)
@@ -793,7 +794,7 @@ class CmakeBasicProjectTest(
 
     @Test
     fun `build product golden locations`() {
-        project.execute(
+        executorWithLegacyApi().run(
             "assembleDebug",
             // The tasks externalNativeBuild* are no longer part of the regular build. Instead,
             // the MergeNativeLibs tasks depend directly on the individual buildCMake*[abi] tasks.
@@ -815,7 +816,7 @@ class CmakeBasicProjectTest(
             tasks.whenTaskAdded { }
             """.trimIndent()
         )
-        project.execute("assembleDebug", "externalNativeBuildDebug")
+        executorWithLegacyApi().run("assembleDebug", "externalNativeBuildDebug")
         assertEqualsMultiline(
             project.goldenBuildProducts(),
             expectedBuildProducts())
@@ -974,7 +975,7 @@ class CmakeBasicProjectTest(
     fun checkClean() {
         lateinit var modelV2: NativeModule
         // Build the project.
-        project.execute("clean", "assembleDebug", "assembleRelease")
+        executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
 
         // We specify to not generate the build information for any variants or ABIs here.
         val result = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
@@ -1034,14 +1035,14 @@ class CmakeBasicProjectTest(
         Truth.assertThat(outputFiles.toSet()).containsExactly("libhello-jni.so")
 
 
-        project.execute("clean")
+        executorWithLegacyApi().run("clean")
 
         outputFiles.forEach { file -> assertThat(File(file)).doesNotExist() }
     }
 
     @Test
     fun checkCleanAfterAbiSubset() {
-        project.execute("clean", "assembleDebug", "assembleRelease")
+        executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
         val buildOutputs = run {
             val result = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
             val nativeModule = result.container.singleNativeModule
@@ -1075,7 +1076,7 @@ apply plugin: 'com.android.application'
 
 """
         )
-        project.execute("clean")
+        executorWithLegacyApi().run("clean")
 
         // All build outputs should no longer exist, even the non-x86 outputs
         for (output in buildOutputs) {
@@ -1085,7 +1086,7 @@ apply plugin: 'com.android.application'
 
     @Test
     fun `build attributions are captured in chrome trace log`() {
-        project.executor()
+        executorWithLegacyApi()
             .with(BooleanOption.ENABLE_PROFILE_JSON, true)
             .run("clean", "assembleDebug")
         val traceFolder = join(project.projectDir, "build", "android-profile")
@@ -1097,7 +1098,7 @@ apply plugin: 'com.android.application'
     @Test
     fun `build attributions are captured in structured log`() {
         enableCxxStructuredLogging(project)
-        project.executor().run("assembleDebug")
+        executorWithLegacyApi().run("assembleDebug")
         println(project.readStructuredLogs(::decodeBuildTaskAttributions))
         val events = project.readStructuredLogs(::decodeBuildTaskAttributions)
             .flatMap { it.attributionList }
@@ -1112,7 +1113,7 @@ apply plugin: 'com.android.application'
     @Test
     fun `ensure that file synchronizations are hard links`() {
         enableCxxStructuredLogging(project)
-        project.executor().run("externalNativeBuildDebug")
+        executorWithLegacyApi().run("externalNativeBuildDebug")
         val fileSyncs = project.readStructuredLogs(::decodeSynchronizeFile)
         val syncs = fileSyncs
             .groupBy {
@@ -1132,12 +1133,12 @@ apply plugin: 'com.android.application'
 
     @Test
     fun `generateJsonModel task always runs`() {
-        project.executor().run("assembleDebug")
+        executorWithLegacyApi().run("assembleDebug")
         val abi = project.recoverExistingCxxAbiModels().first()
         val generationRecord = abi.jsonGenerationLoggingRecordFile
         assertThat(generationRecord).exists()
         val stateModificationTime = generationRecord.lastModified()
-        project.executor().run("assembleDebug")
+        executorWithLegacyApi().run("assembleDebug")
         assertThat(stateModificationTime).isNotEqualTo(0)
         assertThat(generationRecord).exists()
         assertThat(generationRecord.lastModified()).isGreaterThan(stateModificationTime)
@@ -1160,7 +1161,7 @@ apply plugin: 'com.android.application'
             target_precompile_headers(foo PUBLIC stdheader.h)
             target_link_libraries(foo ${'$'}{log-lib})
             """.trimIndent())
-        project.execute("assembleDebug")
+        executorWithLegacyApi().run("assembleDebug")
 
         val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
         val outputFiles = mutableListOf<String>()
@@ -1176,13 +1177,13 @@ apply plugin: 'com.android.application'
         enableCxxStructuredLogging(project)
 
         // Execute configure the first time, make sure it ran
-        project.execute("configureNinjaDebug[x86_64]")
+        executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
         project.assertLastConfigureWasRebuild()
         assertThat(project.totalProcessExecuted).isEqualTo(1) // Assert configure script was invoked
 
         // Execute again with everything up-to-date
         deleteExistingStructuredLogs(project)
-        project.execute("configureNinjaDebug[x86_64]")
+        executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
         project.assertLastConfigureWasNotRebuild()
         assertThat(project.totalProcessExecuted).isEqualTo(0)
 
@@ -1190,7 +1191,7 @@ apply plugin: 'com.android.application'
         deleteExistingStructuredLogs(project)
         assertThat(ninjaBuildConfigureScript).isFile()
         ninjaBuildConfigureScript.appendText("\n")
-        project.execute("configureNinjaDebug[x86_64]")
+        executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
         project.assertLastConfigureWasRebuild()
         assertThat(project.totalProcessExecuted).isEqualTo(1)
 
@@ -1199,7 +1200,7 @@ apply plugin: 'com.android.application'
         val abi = project.recoverExistingCxxAbiModels(Abi.X86_64)
         assertThat(abi.ninjaBuildFile.isFile).isTrue()
         abi.ninjaBuildFile.appendText("\n")
-        project.execute("configureNinjaDebug[x86_64]")
+        executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
         assertThat(project.lastConfigureInvalidationState.shouldConfigure).isTrue()
         assertThat(project.totalProcessExecuted).isEqualTo(1)
     }
@@ -1266,11 +1267,15 @@ apply plugin: 'com.android.application'
     // See b/207403732
     @Test
     fun `ensure configureX tasks have dependency on preBuild`() {
-        project.execute("configure${mode.taskNameTag}Debug[x86_64]")
+        executorWithLegacyApi().run("configure${mode.taskNameTag}Debug[x86_64]")
             .assertTask(":preDebugBuild")
             .wasUpToDate()
-        project.execute("configure${mode.taskNameTag}RelWithDebInfo[x86_64]")
+        executorWithLegacyApi().run("configure${mode.taskNameTag}RelWithDebInfo[x86_64]")
             .assertTask(":preReleaseBuild")
             .wasUpToDate()
+    }
+
+    private fun executorWithLegacyApi(): GradleTaskExecutor {
+        return project.executor().with(BooleanOption.ENABLE_LEGACY_API, true)
     }
 }

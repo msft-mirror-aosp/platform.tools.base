@@ -1127,7 +1127,10 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
       if (field is KtLightField) {
         val uField = field.toUElement() as UField?
         if (uField != null) {
-          val annotations = uField.uAnnotations
+          // https://youtrack.jetbrains.com/issue/KTIJ-33663
+          // Technically, @Deprecated is not applicable to field, hence dropped.
+          // To keep the old behavior, examine the annotations at the source level.
+          val annotations = uField.sourceAnnotations
           return annotations.any {
             val name = it.qualifiedName
             name == "java.lang.Deprecated" || name == "kotlin.Deprecated"

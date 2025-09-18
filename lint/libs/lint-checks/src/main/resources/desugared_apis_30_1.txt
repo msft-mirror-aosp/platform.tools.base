@@ -840,5 +840,6 @@ java/util/stream/Stream#sorted()Ljava/util/stream/Stream;
 java/util/stream/Stream#sorted(Ljava/util/Comparator;)Ljava/util/stream/Stream;
 java/util/stream/Stream#toArray()[Ljava/lang/Object;
 java/util/stream/Stream#toArray(Ljava/util/function/IntFunction;)[Ljava/lang/Object;
+java/util/stream/Stream#toList()Ljava/util/List;
 java/util/stream/Stream$Builder
 java/util/stream/StreamSupport

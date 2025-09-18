@@ -33,6 +33,7 @@ import com.google.wireless.android.sdk.stats.AsmFramesComputationModeUpdate
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
+import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.utils.`is`
 import org.junit.Rule
 import org.junit.Test
@@ -338,5 +339,17 @@ class AnalyticsEnabledComponentTest {
         ).isEqualTo(VariantPropertiesMethodType.LIFECYCLE_TASKS_VALUE)
         verify(delegate, times(1))
             .lifecycleTasks
+    }
+
+    @Test
+    fun configureJavaCompileTask() {
+        val action: (JavaCompile) -> Unit = { }
+        proxy.configureJavaCompileTask(action)
+
+        Truth.assertThat(
+            stats.variantApiAccess.variantPropertiesAccessList.first().type
+        ).isEqualTo(VariantPropertiesMethodType.CONFIGURE_JAVA_COMPILE_TASK_VALUE)
+        verify(delegate, times(1))
+            .configureJavaCompileTask(action)
     }
 }

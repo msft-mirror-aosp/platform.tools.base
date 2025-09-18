@@ -333,7 +333,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             "compileSdk version is not set.\n" +
                     "Specify the compileSdk version in the module's build file like so:\n" +
                     "kotlin {\n" +
-                    "    $DEPRECATED_ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
+                    "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
                     "        compileSdk = ${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.apiLevel}\n" +
                     "    }\n" +
                     "}\n"

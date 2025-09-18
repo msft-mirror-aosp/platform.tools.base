@@ -149,7 +149,7 @@ import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.psi.util.TypeConversionUtil
+import com.intellij.psi.util.TypeConversionUtil.erasure
 import java.io.IOException
 import java.util.EnumSet
 import kotlin.math.max
@@ -1098,7 +1098,10 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
               return false
             } else {
               val message = map.getString(KEY_MESSAGE, "") ?: ""
-              if (message.startsWith("Implicit cast ")) {
+              if (
+                message.startsWith("Implicit cast ") ||
+                  owner == "java.util.stream.Stream" /* b/441076971 */
+              ) {
                 if (lookup.isClassPartiallyDesugared(owner)) {
                   // For implicit casts we're also okay with classes that are partially
                   // mentioned; the assumption is it's probably okay
@@ -1462,6 +1465,10 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
         return
       }
       if (castType !is PsiClassType) {
+        return
+      }
+
+      if (erasure(operand.getExpressionType()) == erasure(castType)) {
         return
       }
 
@@ -2726,7 +2733,7 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
 
       // Check close-availability on the API which may have been introduced at a later API level
       for (resource in resourceList) {
-        val classType = TypeConversionUtil.erasure(resource.type) as? PsiClassType ?: continue
+        val classType = erasure(resource.type) as? PsiClassType ?: continue
         val psiClass = classType.resolve() ?: continue
         val name = "close"
         val desc = "()"

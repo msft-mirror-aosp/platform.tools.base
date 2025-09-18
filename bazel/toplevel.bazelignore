@@ -1,9 +1,9 @@
 .out
 tools/out/
-tools/idea/out
 tools/adt/idea/out
 tools/adt/idea/studio/monobuild/out
 tools/gpu-profiler/idea
+tools/idea
 tools/vendor/intellij/cidr
 tools/adt/idea/aswb/testing/test_deps/projects
 prebuilts/rust

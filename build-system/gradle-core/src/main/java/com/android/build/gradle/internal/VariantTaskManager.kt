@@ -124,6 +124,8 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
             screenshotTestTaskManager.createTopLevelTasks()
         }
 
+        checkMultidexDependency()
+
         // Create tasks for all variants (main, testFixtures and tests)
         for (variantInfo: ComponentInfo<VariantBuilderT, VariantT> in variants) {
             createTasksForVariant(variantInfo)
@@ -746,6 +748,33 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     protected abstract fun doCreateTasksForVariant(
         variantInfo: ComponentInfo<VariantBuilderT, VariantT>
     )
+
+    private fun checkMultidexDependency() {
+        variantPropertiesList.asSequence()
+            .filterIsInstance<ApkCreationConfig>()
+            .filter { it.minSdk.apiLevel >= 21 }
+            .mapNotNull { variant ->
+                val dependency =
+                    variant.variantDependencies.runtimeClasspath.incoming.dependencies.find {
+                        (it.group == "com.android.support" || it.group == "androidx.multidex") && it.name == "multidex"
+                    }
+
+                dependency?.let { it to variant.services.issueReporter }
+            }
+            .firstOrNull()
+            ?.let { (dependency, issueReporter) ->
+                val dependencyId =
+                    "${dependency.group}:${dependency.name}:${dependency.version ?: ""}".trimEnd(':')
+
+                issueReporter.reportWarning(
+                    IssueReporter.Type.GENERIC, """
+                        The multidex library is included as a dependency, but it is not needed for apps
+                        with minSdk >= 21. Please remove dependency '$dependencyId' from '${project.path}'.
+                        See https://developer.android.com/build/multidex for more information.
+                    """.trimIndent()
+                )
+            }
+    }
 
     companion object {
         private const val MULTIDEX_VERSION = "1.0.2"

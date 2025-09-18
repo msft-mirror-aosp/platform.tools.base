@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.api
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
@@ -103,9 +102,7 @@ class SourceSetsMixedApiUseTest {
     @Test
     fun sourceRegistrationShouldBeRepresented() {
         val build = rule.build
-        build.executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
             jniLibs().containsExactly(
                 "armeabi-v7a/main-sourceset-generated.so",

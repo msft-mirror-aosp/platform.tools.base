@@ -108,6 +108,7 @@ public class CheckAll {
                 // Test project depends on vector drawable libraries that violate unique
                 // namespacing.
                 .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .withEnableInfoLogging(false)
                 .run("assembleDebug", "assembleAndroidTest", "lint");
     }

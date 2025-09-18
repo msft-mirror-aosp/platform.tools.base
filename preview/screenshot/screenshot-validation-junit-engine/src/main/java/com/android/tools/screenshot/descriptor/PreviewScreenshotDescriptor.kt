@@ -20,6 +20,7 @@ import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput.ImageDifferInput
+import com.android.tools.screenshot.differ.ImageDiffer
 import com.android.tools.screenshot.differ.ImageUpdater
 import com.android.tools.screenshot.differ.ImageVerifier
 import com.android.tools.screenshot.differ.PixelPerfect
@@ -66,15 +67,33 @@ class PreviewScreenshotDescriptor(
             System.err.println(it)
         }
 
+        val imageVerifier = ImageVerifier(PixelPerfect(ImageDifferInput.threshold))
+        var verificationResult: com.android.tools.screenshot.differ.VerificationResult? = null
+
         try {
             if (PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled) {
                 ImageUpdater(PixelPerfect(ImageDifferInput.threshold))
                     .updateIfDifferent(newImagePath, refImagePath)
             } else {
-                ImageVerifier(PixelPerfect(ImageDifferInput.threshold))
-                    .verify(newImagePath, refImagePath, diffImagePath)
+                verificationResult = imageVerifier.verify(newImagePath, refImagePath, diffImagePath)
+
+                if (verificationResult.diffResult is ImageDiffer.DiffResult.Different) {
+                    throw ImageVerifier.ImageComparisonAssertionError(
+                        refImagePath,
+                        newImagePath,
+                        verificationResult.diffPercent?.trimEnd('%')?.toDoubleOrNull(),
+                        diffImagePath
+                    )
+                }
             }
         } finally {
+            // Always report diffPercentValue from the verification result
+            verificationResult?.diffPercent?.let {
+                context.executionListener.reportingEntryPublished(
+                    this, ReportEntry.from("PreviewScreenshot.diffPercent", it)
+                )
+            }
+
             if (File(newImagePath).exists()) {
                 context.executionListener.reportingEntryPublished(
                     this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath)

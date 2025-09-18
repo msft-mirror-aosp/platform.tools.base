@@ -75,7 +75,11 @@ class AbiRelatedDslUsageTest {
                 "}\n")
 
         // Query the model to get the incorrect DSL declaration.
-        val result = project.modelV2().ignoreSyncIssues().fetchModels()
+        val result =
+            project.modelV2()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .ignoreSyncIssues()
+                .fetchModels()
 
         val rootBuild = result.container.getProject(":")
         val issues = rootBuild.issues?.syncIssues ?: throw RuntimeException("Missing issues model")
@@ -190,6 +194,7 @@ class AbiRelatedDslUsageTest {
 
         // Query the model to get the incorrect ABI target.
         val result = project.modelV2()
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .ignoreSyncIssues()
             .fetchModels()
 
@@ -227,6 +232,7 @@ class AbiRelatedDslUsageTest {
         // Query the model to get the incorrect ABI target.
         val result = project.modelV2()
             .with(StringOption.IDE_BUILD_TARGET_ABI, "mips")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .ignoreSyncIssues()
             .fetchModels()
 
@@ -269,6 +275,7 @@ class AbiRelatedDslUsageTest {
         // Query the model to get the incorrect ABI target.
         val result = project.modelV2()
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .ignoreSyncIssues()
             .fetchModels()
 

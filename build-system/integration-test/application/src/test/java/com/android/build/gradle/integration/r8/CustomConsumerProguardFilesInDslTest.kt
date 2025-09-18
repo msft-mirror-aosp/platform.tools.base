@@ -16,10 +16,10 @@
 
 package com.android.build.gradle.integration.r8
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -37,23 +37,42 @@ class CustomConsumerProguardFilesInDslTest {
                     optimization.consumerKeepRules.publish = true
                     optimization.consumerKeepRules.files(File("proguard-rules.pro"))
                 }
-                files.add("proguard-rules.pro", "some proguard statements")
             }
         }
 
 
     @Test
     fun testRelativePath() {
-        val project = rule.build
-        project.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("clean")
+        val project = rule.build {
+            kotlinMultiplatformLibrary(":lib") {
+                files.add("proguard-rules.pro", "some proguard statements")
+            }
+        }
+        project.executor.run("clean")
 
-        project.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .run("assemble")
+        project.executor.run("assemble")
 
         // check the resulting aar.
         project.kotlinMultiplatformLibrary(":lib").assertAar(AarSelector.NO_BUILD_TYPE) {
             textFile("proguard.txt").isEqualTo("some proguard statements")
         }
+    }
+    @Test
+    fun testFileDoesNotExists() {
+        val project = rule.build
+        project.executor.expectFailure()
+            .with(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, true)
+            .run("assemble")
+            .assertErrorContains("Supplied consumer proguard configuration does not exist")
+
+    }
+
+    @Test
+    fun testFileDoesNotExistsWithFlag() {
+        val project = rule.build
+        project.executor
+            .with(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, false)
+            .run("assemble")
+            .assertOutputContains("Supplied consumer proguard configuration does not exist")
     }
 }

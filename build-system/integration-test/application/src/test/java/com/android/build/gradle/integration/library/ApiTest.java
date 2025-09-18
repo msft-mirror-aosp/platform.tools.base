@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -36,7 +37,9 @@ public class ApiTest {
 
     @BeforeClass
     public static void setUp() throws IOException, InterruptedException {
-        project.execute("clean", "assembleDebug");
+        project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .run("clean", "assembleDebug");
     }
 
     @AfterClass
@@ -46,7 +49,7 @@ public class ApiTest {
 
     @Test
     public void lint() throws IOException, InterruptedException {
-        project.executor().run("lint");
+        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("lint");
     }
 
     @Test

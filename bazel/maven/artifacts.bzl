@@ -24,7 +24,11 @@ ARTIFACTS = [
     "androidx.compose.ui:ui-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
     "androidx.compose.ui:ui-test-manifest-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
     "androidx.compose.ui:ui-text-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
+    "androidx.core:core:1.1.0",
     "androidx.lint:lint-gradle:1.0.0-alpha01",
+    "androidx.multidex:multidex:2.0.1",
+    "androidx.test:runner:1.4.0",
+    "androidx.test.uiautomator:uiautomator:2.3.0",
     "com.android.tools.build:bundletool:1.18.1",
     "com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10",
     "com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10",
@@ -41,6 +45,7 @@ ARTIFACTS = [
     "com.fasterxml.jackson.core:jackson-core:2.11.1",
     "com.fasterxml.jackson.core:jackson-databind:2.11.1",
     "com.github.javaparser:javaparser-core:3.23.0",
+    "com.github.rholder:guava-retrying:2.0.0",
     "com.github.rising3:semver:0.3.1",
     "com.google.api-client:google-api-client:1.35.2",
     "com.google.apis:google-api-services-cloudbilling:v1-rev20240119-2.0.0",
@@ -57,6 +62,7 @@ ARTIFACTS = [
     "com.google.code.findbugs:jsr305:3.0.2",
     "com.google.code.gson:gson:2.11.0",
     "com.google.crypto.tink:tink:1.7.0",
+    "com.google.dagger:dagger-compiler:2.48",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.10-2.0.2",  # AGP dependencies
     "com.google.errorprone:error_prone_annotations:2.28.0",
     "com.google.flatbuffers:flatbuffers-java:1.12.0",
@@ -144,6 +150,7 @@ ARTIFACTS = [
     "javax.inject:javax.inject:1",
     "javax.servlet:javax.servlet-api:3.0.1",
     "javax.xml.bind:jaxb-api:2.3.1",
+    "joda-time:joda-time:2.10.10",
     "junit:junit:4.13.2",
     "log4j:log4j:1.2.17",
     "net.java.dev.jna:jna:5.6.0",
@@ -175,6 +182,7 @@ ARTIFACTS = [
     "org.glassfish.jaxb:jaxb-runtime:2.3.2",
     "org.glassfish.jaxb:jaxb-xjc:2.3.2",
     "org.gradle:gradle-tooling-api:8.13",
+    "org.hamcrest:hamcrest:2.2",
     "org.hamcrest:hamcrest-core:1.3",
     "org.hamcrest:hamcrest-library:1.3",
     "org.hdrhistogram:HdrHistogram:2.1.12",

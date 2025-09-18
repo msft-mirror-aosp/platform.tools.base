@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.packaging
 
+import com.android.build.api.component.impl.ENABLE_LEGACY_API
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
@@ -72,6 +73,7 @@ class InjectedAbiTest {
         // and that APK only contains native libraries for target ABI
         build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("assembleDebug")
             .apply {
                 assertTask(":app:packageDebug").didWork()
@@ -92,6 +94,7 @@ class InjectedAbiTest {
         // https://issuetracker.google.com/issues/38481325)
         build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "armeabi-v7a")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("assembleDebug")
             .apply {
                 assertTask(":app:packageDebug").didWork()
@@ -129,6 +132,7 @@ class InjectedAbiTest {
         // Run the fourth build with a target ABI, check that the APK for that ABI is re-generated
         build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("assembleDebug")
             .apply {
                 assertTask(":app:packageDebug").didWork()
@@ -153,6 +157,7 @@ class InjectedAbiTest {
         // and main APK only contains native libraries for target ABI
         var result = build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("assembleDebug")
             .apply {
                 assertTask(":app:packageDebug").didWork()
@@ -174,6 +179,7 @@ class InjectedAbiTest {
         // generated (and the main APK is re-generated)
         build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "armeabi-v7a")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("assembleDebug")
             .apply {
                 assertTask(":app:packageDebug").didWork()
@@ -214,6 +220,7 @@ class InjectedAbiTest {
 
         build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("assemble")
 
         project.assertApk(RELEASE.fromIntermediates()) {
@@ -237,9 +244,10 @@ class InjectedAbiTest {
         val project = build.androidApplication()
 
         // Build first with all .so files present. Inject x86_64 first, followed by x86
-        val result1 = build.executor
+        val executor = build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86_64,x86")
-            .run("assembleDebug")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
+        val result1 = executor.run("assembleDebug")
 
         // we expect x86_64 .so files in the APK (and no x86 .so files) since there are x86_64 .so
         // files available, and we also don't expect a warning about missing .so files in this case.
@@ -257,9 +265,7 @@ class InjectedAbiTest {
         assertThat(jniLibsDir.listDirectoryEntries().map { it.name }).doesNotContain("x86_64")
 
         // Build again with the same command.
-        val result2 = build.executor
-            .with(StringOption.IDE_BUILD_TARGET_ABI, "x86_64,x86")
-            .run("assembleDebug")
+        val result2 = executor.run("assembleDebug")
 
         // we expect no .so files in the APK since there are no x86_64 .so files available, and we
         // also expect a warning about the missing .so files.
@@ -288,9 +294,7 @@ class InjectedAbiTest {
         assertThat(jniLibsDir.listDirectoryEntries().map { it.name }).doesNotContain("x86")
 
         // Build again with the same command.
-        val result3 = build.executor
-            .with(StringOption.IDE_BUILD_TARGET_ABI, "x86_64,x86")
-            .run("assembleDebug")
+        val result3 = executor.run("assembleDebug")
 
         // we expect only arm64-v8a .so files in the APK, and we also expect a warning about the
         // missing x86 and x86_64 .so files.
@@ -312,9 +316,10 @@ class InjectedAbiTest {
         val project = build.androidApplication()
 
         // Build first with all .so files present. Inject x86_64 first, followed by x86
-        val result1 = build.executor
+        val executor = build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86_64,x86")
-            .run("assembleDebug")
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
+        val result1 = executor.run("assembleDebug")
 
         // we expect the x86_64 APK to be created with the x86_64 .so files, and we also don't
         // expect a warning about missing .so files in this case.
@@ -334,9 +339,7 @@ class InjectedAbiTest {
         assertThat(jniLibsDir.listDirectoryEntries().map { it.name }).doesNotContain("x86_64")
 
         // Build again with the same command.
-        val result2 = build.executor
-            .with(StringOption.IDE_BUILD_TARGET_ABI, "x86_64,x86")
-            .run("assembleDebug")
+        val result2 = executor.run("assembleDebug")
 
         // we expect the x86_64 APK to be created, but we don't expect any .so files in the APK
         // since there were no "source" x86_64 .so files. We expect a warning about the missing .so

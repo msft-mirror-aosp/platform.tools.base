@@ -1872,6 +1872,94 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testDifferentModules() {
+    val project1 =
+      project()
+        .files(
+          kotlin(
+              """
+              package module1
+              import androidx.annotation.WorkerThread
+
+              @WorkerThread fun work() { }
+
+              fun runIt(f: () -> Unit) = f()
+
+              fun ignoreIt(f: () -> Unit) { }
+            """
+                .trimIndent()
+            )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+
+    val project2 =
+      project()
+        .files(
+          kotlin(
+              """
+              package module2
+              import androidx.annotation.UiThread
+              import androidx.annotation.WorkerThread
+              import module1.work
+              import module1.runIt
+              import module1.ignoreIt
+
+              @UiThread fun main() = work() // error
+
+              @WorkerThread fun runWorkerOnWorker() = runIt(::work) // ok
+
+              @UiThread fun ignoreWorkerOnUi() = ignoreIt(::work) // ok
+
+              @UiThread fun runWorkerOnUi() = runIt(::runWorkerOnWorker) // error
+            """
+                .trimIndent()
+            )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+        .dependsOn(project1)
+
+    val project3 =
+      project()
+        .files(
+          kotlin(
+              """
+            package module3
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+            import module1.runIt
+            import module2.runWorkerOnUi
+
+            @WorkerThread fun main() = runIt(::runWorkerOnUi) // error
+            """
+                .trimIndent()
+            )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+        )
+        .dependsOn(project1)
+        .dependsOn(project2)
+
+    lint()
+      .projects(project1, project2, project3)
+      .run()
+      .expect(
+        """
+        src/module3/test.kt:7: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+@WorkerThread fun main() = runIt(::runWorkerOnUi) // error
+                           ~~~~~~~~~~~~~~~~~~~~~~
+../lib2/src/module2/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+@UiThread fun main() = work() // error
+                       ~~~~~~
+../lib2/src/module2/test.kt:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+@UiThread fun runWorkerOnUi() = runIt(::runWorkerOnWorker) // error
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~
+3 errors
+        """
+      )
+  }
+
   /* Old tests from [ThreadDetectorTest] */
 
   fun testThreading() {

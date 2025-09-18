@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.privacysandbox
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
@@ -264,7 +263,6 @@ class PrivacySandboxMediatorSdkTest {
     }
 
     private fun GradleBuild.configuredExecutor() = executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .with(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, true)
             .withFailOnWarning(false) // kgp uses deprecated api WrapUtil
             .withPerTestPrefsRoot(true)

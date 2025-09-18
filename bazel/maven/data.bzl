@@ -539,6 +539,7 @@ DATA = [
     "com.android.tools.build:aapt2:jar:osx:8.10.1-12782657",
     "com.android.tools.build:aapt2:jar:osx:8.11.0-12782657",
     "com.android.tools.build:aapt2:jar:osx:8.12.0-13700139",
+    "com.android.tools.build:aapt2:jar:osx:8.13.0-rc01-13719691",
     "com.android.tools.build:aapt2:jar:osx:8.2.0-10154469",
     "com.android.tools.build:aapt2:jar:osx:8.2.2-10154469",
     "com.android.tools.build:aapt2:jar:osx:8.3.1-10880808",
@@ -563,6 +564,7 @@ DATA = [
     "com.android.tools.build:aapt2:jar:windows:8.10.1-12782657",
     "com.android.tools.build:aapt2:jar:windows:8.11.0-12782657",
     "com.android.tools.build:aapt2:jar:windows:8.12.0-13700139",
+    "com.android.tools.build:aapt2:jar:windows:8.13.0-rc01-13719691",
     "com.android.tools.build:aapt2:jar:windows:8.2.0-10154469",
     "com.android.tools.build:aapt2:jar:windows:8.2.2-10154469",
     "com.android.tools.build:aapt2:jar:windows:8.3.1-10880808",
@@ -688,7 +690,7 @@ DATA = [
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:31.1.0",
     "com.android:zipflinger:8.7.0",
-    "com.anthropic:anthropic-java:2.5.1",
+    "com.anthropic:anthropic-java:2.6.0",
     "com.beust:jcommander:1.82",
     "com.charleskorn.kaml:kaml:0.72.0",
     "com.crashlytics.sdk.android:crashlytics:2.6.8",
@@ -699,8 +701,6 @@ DATA = [
     "com.google.accompanist:accompanist-swiperefresh:0.28.0",  # Dependency of architecture-samples
     "com.google.ai.client.generativeai:generativeai:0.9.0",
     "com.google.android:android:4.1.1.4",
-    "com.google.android.appcrawler:appcrawler-app:0.0.1-alpha03",
-    "com.google.android.appcrawler:appcrawler-platform:0.0.1-alpha03",
     "com.google.android.gms:play-services-ads:20.6.0",
     "com.google.android.gms:play-services-ads:21.5.0",
     "com.google.android.gms:play-services-ads:9.8.0",
@@ -742,7 +742,6 @@ DATA = [
     "com.google.apis:google-api-services-toolresults:v1beta3-rev82-1.22.0",
     "com.google.auth:google-auth-library-credentials:1.24.0",
     "com.google.auth:google-auth-library-oauth2-http:1.24.0",
-    "com.google.auth:google-auth-library-parent:pom:1.24.0",  # For journeys engine
     "com.google.auto:auto-common:1.2.2",
     "com.google.auto.service:auto-service:1.0-rc2",
     "com.google.auto.service:auto-service:1.1.1",
@@ -796,11 +795,9 @@ DATA = [
     "com.google.guava:guava:31.1-jre",
     "com.google.guava:guava:32.1.2-jre",
     "com.google.guava:guava:33.2.1-jre",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
-    "com.google.http-client:google-http-client-bom:pom:1.42.0",  # For journeys engine
-    "com.google.http-client:google-http-client-bom:pom:1.44.2",  # For journeys engine
-    "com.google.oauth-client:google-oauth-client:1.34.1",  # For journeys engine
+    "com.google.http-client:google-http-client-bom:pom:1.43.3",
+    "com.google.http-client:google-http-client-bom:pom:1.45.0",
     "com.google.oauth-client:google-oauth-client-java6:1.34.1",
-    "com.google.oauth-client:google-oauth-client-parent:pom:1.34.1",  # For journeys engine
     "com.google.oboe:oboe:1.6.1",
     "com.google.prefab:cli:jar:all:2.1.0",
     "com.google.protobuf:protobuf-bom:pom:3.17.2",
@@ -809,7 +806,6 @@ DATA = [
     "com.google.protobuf:protobuf-bom:pom:3.22.3",
     "com.google.protobuf:protobuf-bom:pom:3.24.4",
     "com.google.protobuf:protobuf-bom:pom:3.25.5",
-    "com.google.protobuf:protobuf-bom:pom:4.27.2",  # For journeys engine
     "com.google.protobuf:protobuf-java:3.19.3",
     "com.google.protobuf:protobuf-java:3.22.3",
     "com.google.protobuf:protobuf-java:3.24.4",
@@ -827,7 +823,6 @@ DATA = [
     "com.google.protobuf:protobuf-parent:pom:3.22.3",
     "com.google.protobuf:protobuf-parent:pom:3.24.4",
     "com.google.protobuf:protobuf-parent:pom:3.25.5",
-    "com.google.protobuf:protobuf-parent:pom:4.27.2",  # For journeys engine
     "com.google.protobuf:protobuf-parent:pom:4.28.2",  # XR template
     "com.google.protobuf:protoc:exe:linux-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.22.3",
@@ -873,6 +868,11 @@ DATA = [
     "com.squareup:kotlinpoet:1.12.0",
     "com.squareup:kotlinpoet:2.0.0",
     "com.squareup:kotlinpoet:2.1.0",
+    "com.squareup.leakcanary:shark:2.14",
+    "com.squareup.leakcanary:shark-android:2.14",
+    "com.squareup.leakcanary:shark-graph:2.14",
+    "com.squareup.leakcanary:shark-hprof:2.14",
+    "com.squareup.leakcanary:shark-log:2.14",
     "com.squareup.okio:okio:3.4.0",
     "com.squareup.okio:okio-fakefilesystem:3.9.1",
     "com.squareup.wire:com.squareup.wire.gradle.plugin:pom:5.3.1",
@@ -1212,7 +1212,9 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.0",
+    "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.1",  # MCP kotlin-sdk
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0",
+    "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",  # MCP kotlin-sdk
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
     "org.jetbrains.skiko:skiko-awt:0.8.18",
@@ -1264,7 +1266,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.5",
     "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
-    "com.anthropic:anthropic-java-core:jar:sources:2.5.1",
+    "com.anthropic:anthropic-java-core:jar:sources:2.6.0",
     "com.squareup.okhttp3:okhttp:jar:sources:4.12.0",
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "io.grpc:grpc-all:jar:sources:1.69.1",

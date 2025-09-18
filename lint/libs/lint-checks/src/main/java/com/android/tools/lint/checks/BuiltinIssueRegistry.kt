@@ -292,6 +292,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           LogDetector.CONDITIONAL,
           LogDetector.LONG_TAG,
           LogDetector.WRONG_TAG,
+          ManifestAttributeDetector.ISSUE,
           ManifestDetector.APP_INDEXING_SERVICE,
           ManifestDetector.APPLICATION_ICON,
           ManifestDetector.DATA_EXTRACTION_RULES,

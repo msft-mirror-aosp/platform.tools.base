@@ -103,6 +103,7 @@ public class DataBindingIntegrationTestAppsConnectedTest {
         // of each test and (2) check the adb connection before taking the time to build anything.
         project.executor()
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .run("uninstallAll");
     }
 
@@ -110,6 +111,7 @@ public class DataBindingIntegrationTestAppsConnectedTest {
     public void clean() throws IOException, InterruptedException {
         project.executor()
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .run("clean");
     }
 
@@ -121,6 +123,7 @@ public class DataBindingIntegrationTestAppsConnectedTest {
                         BooleanOption.USE_NON_FINAL_RES_IDS,
                         !"ProguardedAppWithTest".equals(projectName))
                 .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
                 .run("connectedCheck");
     }
 }
