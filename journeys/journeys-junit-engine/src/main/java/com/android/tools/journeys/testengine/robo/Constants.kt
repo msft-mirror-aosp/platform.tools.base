@@ -55,7 +55,7 @@ object RoboConfigConstants {
 
     /** Constants used for auth and connecting to crawler backend. */
     const val CRAWLER_BACKEND_ENDPOINT = "dns:///appcrawler-pa.googleapis.com:443"
-    const val AUTH_SCOPE = "https://www.googleapis.com/auth/userinfo.email"
+    const val AUTH_SCOPE = "https://www.googleapis.com/auth/firebase.readonly"
     const val AUTH_PRINCIPAL = "journeys@appcrawler-external.iam.gserviceaccount.com"
     const val QUOTA_PROJECT_ID = "appcrawler-external"
 
