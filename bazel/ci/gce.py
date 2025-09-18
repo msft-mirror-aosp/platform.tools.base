@@ -96,8 +96,10 @@ def get_reference_build_id(bid: str, target: str) -> str:
       get_auth_header(),
       f'https://androidbuildinternal.googleapis.com/android/internal/build/v3/builds/{bid}/{target}',
   )
-
-  return json.loads(result)['referenceBuildIds'][0]
+  data = json.loads(result)
+  if 'referenceBuildIds' not in data:
+    return ''
+  return data['referenceBuildIds'][0]
 
 
 @functools.cache
