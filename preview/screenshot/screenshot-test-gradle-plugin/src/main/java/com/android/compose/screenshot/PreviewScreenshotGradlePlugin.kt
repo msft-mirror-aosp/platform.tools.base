@@ -88,6 +88,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
         const val ST_SOURCE_SET_ENABLED = "android.experimental.enableScreenshotTest"
         const val VALIDATION_ENGINE_VERSION_OVERRIDE = "android.compose.screenshot.validationEngineVersion"
+        const val MAX_HEAP_SIZE_OVERRIDE = "android.compose.screenshot.maxHeapSize"
 
         const val MIN_VALIDATION_ENGINE_VERSION = "0.0.1-alpha03"
 
@@ -219,6 +220,8 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                     val variantName = variant.name
                     val screenshotTestComponent = variant.hostTests[HostTestBuilder.SCREENSHOT_TEST_TYPE] ?: return@onVariants
                     variant.runtimeConfiguration.checkToolingPresent(screenshotTestComponent)
+                    val maxHeapSize =
+                        project.findProperty(MAX_HEAP_SIZE_OVERRIDE)?.toString()
 
                     val updateTask = project.tasks.register(
                         "update${variantName.capitalized()}ScreenshotTest",
@@ -242,6 +245,9 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             task.project.configurations.getByName(layoutlibJarConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,
                         )
+                        maxHeapSize?.let {
+                            task.maxHeapSize = it
+                        }
                     }
 
                     updateTask.configureTestEngineInput(
@@ -285,6 +291,10 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             task.project.configurations.getByName(layoutlibJarConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,
                         )
+
+                        maxHeapSize?.let {
+                            task.maxHeapSize = it
+                        }
                     }
 
                     previewScreenshotTestTask.configureTestEngineInput(
