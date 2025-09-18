@@ -15,22 +15,20 @@
  */
 package com.android.adblib.ddmlibcompatibility
 
+import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
-import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice.PROP_DEVICE_DENSITY
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.runBlocking
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -48,26 +46,19 @@ class AdbLibAndroidDebugBridgeIntegrationTest {
     private val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val useAdbLibAndroidDebugBridgeRule =
-        UseAdbLibAndroidDebugBridgeRule({ fakeAdbRule.fakeAdb.port }, { fakeAdbRule.adbSession })
+        UseAdbLibAndroidDebugBridgeRule({ fakeAdbRule.adbSession })
+
+    private val initAndroidDebugBridgeRule =
+        InitAndroidDebugBridgeRule({ fakeAdbRule.fakeAdb.port })
 
     @get:Rule
-    val ruleChain = RuleChain.outerRule(fakeAdbRule).around(useAdbLibAndroidDebugBridgeRule)!!
-
-    @Before
-    fun setUp() {
-        AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbRule.fakeAdb.port)
-    }
-
-    @After
-    fun tearDown() {
-        AndroidDebugBridge.terminate()
-        AndroidDebugBridge.disableFakeAdbServerMode()
-    }
+    val ruleChain = RuleChain.outerRule(fakeAdbRule)
+        .around(useAdbLibAndroidDebugBridgeRule)
+        .around(initAndroidDebugBridgeRule)!!
 
     @Test
     fun createBridge() = runBlocking {
-        // Act: init and create bridge
-        AndroidDebugBridge.init(AdbInitOptions.DEFAULT)
+        // Act: create bridge
         val bridgeInstance =
             AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("Bridge was null")
 
