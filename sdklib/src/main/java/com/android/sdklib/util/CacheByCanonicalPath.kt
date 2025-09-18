@@ -63,4 +63,9 @@ class CacheByCanonicalPath<T> {
     }
     return removed != null
   }
+
+  @Synchronized
+  fun clear() {
+    cache.clear()
+  }
 }

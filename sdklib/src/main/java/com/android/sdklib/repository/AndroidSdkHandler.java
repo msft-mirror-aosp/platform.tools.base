@@ -215,13 +215,11 @@ public final class AndroidSdkHandler {
     }
 
     /**
-     * Force removal of a cached {@code AndroidSdkHandler} instance. This will force a reparsing of
-     * the SDK next time a component is looked up.
-     *
-     * @param localPath The path to the local SDK.
+     * Force removal of any cached {@code AndroidSdkHandler} instances. This will force a reparsing
+     * of the SDK next time a component is looked up.
      */
-    public static void resetInstance(@NonNull Path localPath) {
-        sInstances.remove(localPath);
+    public static void reset() {
+        sInstances.clear();
     }
 
     /**
