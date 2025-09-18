@@ -55,6 +55,7 @@ const val COMPOSE_COMPILER_PLUGIN_ID = "org.jetbrains.kotlin.plugin.compose"
 const val KSP_PLUGIN_ID = "com.google.devtools.ksp"
 const val KOTLIN_MPP_PLUGIN_ID = "org.jetbrains.kotlin.multiplatform"
 private val KOTLIN_MPP_PLUGIN_IDS = listOf("kotlin-multiplatform", KOTLIN_MPP_PLUGIN_ID)
+internal const val ANDROID_KOTLIN_MPP_LIBRARY_PLUGIN_ID = "com.android.kotlin.multiplatform.library"
 
 /**
  * Returns `true` if any of the Kotlin plugins (e.g., [KOTLIN_ANDROID_PLUGIN_ID] or

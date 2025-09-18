@@ -31,8 +31,10 @@ import com.android.build.gradle.internal.services.BuiltInKotlinServices.Availabi
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.KotlinAndroidPluginAppliedAndTestFixturesOrScreenshotTestEnabled
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
+import com.android.build.gradle.internal.utils.ANDROID_KOTLIN_MPP_LIBRARY_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
+import com.android.build.gradle.internal.utils.KOTLIN_MPP_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KgpVersion
 import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUILT_IN_KOTLIN_VERSION
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
@@ -232,25 +234,7 @@ fun initBuiltInKotlinSupportIfRequired(project: Project, projectServices: Projec
 }
 
 private fun initBuiltInKotlinSupport(project: Project) {
-    project.pluginManager.withPlugin(KOTLIN_ANDROID_PLUGIN_ID) {
-        error(
-            """
-            The '$KOTLIN_ANDROID_PLUGIN_ID' plugin is no longer required for Kotlin support since AGP 9.0.
-            Remove the '$KOTLIN_ANDROID_PLUGIN_ID' plugin from this project's build file: ${project.buildFile}.
-            For more info, see https://issuetracker.google.com/438678642.
-            """.trimIndent()
-        )
-    }
-
-    project.pluginManager.withPlugin(KOTLIN_KAPT_PLUGIN_ID) {
-        error(
-            """
-            The '$KOTLIN_KAPT_PLUGIN_ID' plugin is not compatible with built-in Kotlin support.
-            Replace the '$KOTLIN_KAPT_PLUGIN_ID' plugin with the '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID' in this project's build file: ${project.buildFile}.
-            For more info, see https://issuetracker.google.com/438678642.
-            """.trimIndent()
-        )
-    }
+    failIfIncompatiblePluginsArePresent(project)
 
     // Apply KotlinBaseApiPlugin
     val kotlinBaseApiPlugin = project.plugins.apply(KotlinBaseApiPlugin::class.java)
@@ -262,6 +246,41 @@ private fun initBuiltInKotlinSupport(project: Project) {
 
     // Also provide built-in Kapt support
     initBuiltInKaptSupportIfRequired(project)
+}
+
+private fun failIfIncompatiblePluginsArePresent(project: Project) {
+    project.pluginManager.withPlugin(KOTLIN_ANDROID_PLUGIN_ID) {
+        error(
+            """
+            The '$KOTLIN_ANDROID_PLUGIN_ID' plugin is no longer required for Kotlin support since AGP 9.0.
+            Solution:
+              - [Recommended] Migrate this project to built-in Kotlin (https://developer.android.com/r/tools/built-in-kotlin).
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+            """.trimIndent()
+        )
+    }
+
+    project.pluginManager.withPlugin(KOTLIN_KAPT_PLUGIN_ID) {
+        error(
+            """
+            The '$KOTLIN_KAPT_PLUGIN_ID' plugin is not compatible with built-in Kotlin support.
+            Solution:
+              - [Recommended] Migrate this project to built-in Kotlin (https://developer.android.com/r/tools/built-in-kotlin).
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+            """.trimIndent()
+        )
+    }
+
+    project.pluginManager.withPlugin(KOTLIN_MPP_PLUGIN_ID) {
+        error(
+            """
+            The 'com.android.library' (or 'com.android.application') plugin is not compatible with the '$KOTLIN_MPP_PLUGIN_ID' plugin since AGP 9.0.
+            Solution:
+              - [Recommended] Replace the 'com.android.library' plugin with the '$ANDROID_KOTLIN_MPP_LIBRARY_PLUGIN_ID' plugin (see https://developer.android.com/r/tools/built-in-kotlin).
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+            """.trimIndent()
+        )
+    }
 }
 
 private fun KotlinAndroidProjectExtension.setDefaults(
