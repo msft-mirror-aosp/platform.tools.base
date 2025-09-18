@@ -1080,10 +1080,17 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
             val useEmbeddedDex = manifestData.useEmbeddedDex
             val dexPackagingMode = PackagingUtils.getDexPackagingMode(
                     useEmbeddedDex, params.dexUseLegacyPackaging.get())
-            if (params.dexUseLegacyPackaging.get() && java.lang.Boolean.TRUE == useEmbeddedDex) {
-                // TODO (b/149770867) make this an error in future AGP versions.
-                logger.warning("PackagingOptions.dex.useLegacyPackaging should be set to false because "
-                        + "android:useEmbeddedDex is set to \"true\" in AndroidManifest.xml.")
+            if (useEmbeddedDex != null) {
+                // Error if useEmbeddedDex value conflicts with useLegacyPackaging, warn otherwise
+                val removalSuggestion = "Please remove android:useEmbeddedDex from your AndroidManifest.xml"
+                if (params.dexUseLegacyPackaging.isPresent && params.dexUseLegacyPackaging.get() == useEmbeddedDex) {
+                    throw GradleException("PackagingOptions.dex.useLegacyPackaging is set " +
+                            "to ${params.dexUseLegacyPackaging.get()}, which conflicts with android:useEmbeddedDex=\"${useEmbeddedDex}\" in " +
+                            "AndroidManifest.xml. $removalSuggestion.")
+                } else {
+                    logger.warning("$removalSuggestion. This should be replaced with " +
+                            "PackagingOptions.dex.useLegacyPackaging in the build script.")
+                }
             }
             val dependencyData = if (params.dependencyDataFile.isPresent) Files.readAllBytes(
                     params.dependencyDataFile.get().asFile.toPath()) else null

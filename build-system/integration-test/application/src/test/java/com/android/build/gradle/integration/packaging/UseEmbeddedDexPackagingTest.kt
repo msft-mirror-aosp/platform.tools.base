@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_V
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.sdklib.AndroidVersion.VersionCodes.O
@@ -94,7 +95,7 @@ class UseEmbeddedDexPackagingTest(
                         apply plugin: 'com.android.application'
                         android {
                             namespace = "com.test"
-                            compileSdk = ${DEFAULT_COMPILE_SDK_VERSION}
+                            compileSdk = ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}
                             defaultConfig {
                                 minSdk = $minSdk
                             }
@@ -115,37 +116,50 @@ class UseEmbeddedDexPackagingTest(
 
     @Test
     fun testDexIsPackagedCorrectly() {
-        project.executor().run("assembleDebug").stdout.use {
-            val resolvedUseLegacyPackaging: Boolean = useLegacyPackaging ?: (minSdk < P)
-            if (resolvedUseLegacyPackaging && expectedCompression == ZipEntry.STORED) {
-                assertThat(it).contains(
-                    "PackagingOptions.dex.useLegacyPackaging should be set to false"
-                )
-            } else {
-                assertThat(it).doesNotContain("PackagingOptions.dex.useLegacyPackaging")
-            }
-        }
+        val resolvedUseLegacyPackaging = useLegacyPackaging ?: (minSdk < P)
 
-        project.assertApk(ApkSelector.DEBUG) {
-            manifestAsNodes()
-                .node("manifest")
-                .node("application").apply {
-                    if (expectedMergedManifestValue == null) {
-                        containsExactlyAttributesAndValues(
-                            "http://schemas.android.com/apk/res/android:debuggable=true",
-                            "http://schemas.android.com/apk/res/android:extractNativeLibs=false"
-                        )
-                    } else {
-                        containsExactlyAttributesAndValues(
-                            "http://schemas.android.com/apk/res/android:debuggable=true",
-                            "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
-                            "http://schemas.android.com/apk/res/android:useEmbeddedDex=$expectedMergedManifestValue"
-                        )
-                    }
+        // The build should fail if `android:useEmbeddedDex` in the manifest
+        // contradicts the resolved packaging choice.
+        val expectFailure = sourceManifestValue != null && sourceManifestValue == resolvedUseLegacyPackaging
+        val expectedSuggestion = "Please remove android:useEmbeddedDex from your AndroidManifest.xml"
+
+        if (expectFailure) {
+            val result = project.executor().expectFailure().run("assembleDebug")
+            assertThat(result.stderr).contains(expectedSuggestion)
+        } else {
+            project.executor().run("assembleDebug").stdout.use {
+                if (sourceManifestValue != null) {
+                    // If the manifest setting is redundant (matches the resolved value),
+                    // the build should pass but show a warning about the deprecated attribute.
+                    assertThat(it).contains(expectedSuggestion)
+                } else {
+                    // If the deprecated manifest attribute isn't used, ensure no warning is shown.
+                    assertThat(it).doesNotContain(expectedSuggestion)
                 }
+            }
 
-            // check compression
-            zipEntry("classes.dex").hasCompressionMethod(expectedCompression)
+            project.assertApk(ApkSelector.DEBUG) {
+                // Verify the merged manifest contains the correct `useEmbeddedDex` value, or none at all.
+                manifestAsNodes()
+                    .node("manifest")
+                    .node("application").apply {
+                        if (expectedMergedManifestValue == null) {
+                            containsExactlyAttributesAndValues(
+                                "http://schemas.android.com/apk/res/android:debuggable=true",
+                                "http://schemas.android.com/apk/res/android:extractNativeLibs=false"
+                            )
+                        } else {
+                            containsExactlyAttributesAndValues(
+                                "http://schemas.android.com/apk/res/android:debuggable=true",
+                                "http://schemas.android.com/apk/res/android:extractNativeLibs=false",
+                                "http://schemas.android.com/apk/res/android:useEmbeddedDex=$expectedMergedManifestValue"
+                            )
+                        }
+                    }
+
+                // Verify the DEX file has the expected compression method.
+                zipEntry("classes.dex").hasCompressionMethod(expectedCompression)
+            }
         }
     }
 }
