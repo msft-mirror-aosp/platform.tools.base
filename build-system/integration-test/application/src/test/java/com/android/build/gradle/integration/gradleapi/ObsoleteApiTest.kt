@@ -122,12 +122,32 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
             .expectFailure()
             .run("help")
 
-        result.assertErrorContains("API 'applicationVariants' is obsolete.\n" +
-                "It will be removed in version 10.0 of the Android Gradle plugin.\n" +
-                "The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding \n" +
-                "    android.enableLegacyVariantApi=true\n" +
-                "to this project's gradle.properties file.\n" +
-                "For more information, see https://developer.android.com/studio/releases/gradle-plugin-api-updates.")
+        when (provider.name) {
+            "Java" -> result.assertErrorContains(
+                """
+                API 'applicationVariants' is obsolete.
+                It will be removed in version 10.0 of the Android Gradle plugin.
+                The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding
+                    android.enableLegacyVariantApi=true
+                to this project's gradle.properties file.
+                For more information, see https://developer.android.com/studio/releases/gradle-plugin-api-updates.
+                """.trimIndent()
+            )
+
+            "Kotlin" -> result.assertErrorContains(
+                """
+                API 'applicationVariants' is obsolete.
+                It will be removed in version 10.0 of the Android Gradle plugin.
+                The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding
+                    android.enableLegacyVariantApi=true
+                to this project's gradle.properties file.
+                For more information, see https://developer.android.com/studio/releases/gradle-plugin-api-updates.
+
+                REASON: The 'kotlin-android' plugin is currently calling this deprecated API.
+                Please migrate this project to built-in kotlin (https://developer.android.com/r/tools/built-in-kotlin).
+                """.trimIndent()
+            )
+        }
     }
 }
 

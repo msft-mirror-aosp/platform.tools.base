@@ -71,13 +71,15 @@ class DeprecationReporterImpl(
                 val traces = Thread.currentThread().stackTrace // TODO: Use StackWalker ?
 
                 // special check for the Kotlin plugin.
-                val kotlin = traces.filter {
-                    it.className.startsWith("org.jetbrains.kotlin.gradle.plugin.")
+                val kotlinAndroidPluginPresent = Thread.currentThread().stackTrace.any {
+                    it.className == "org.jetbrains.kotlin.gradle.plugin.KotlinAndroidPlugin"
                 }
 
-                messageEnd = if (kotlin.isNotEmpty() && false) {
-                    "REASON: The Kotlin plugin is currently calling this deprecated API." +
-                            " Please migrate to built in kotlin."
+                messageEnd = if (kotlinAndroidPluginPresent) {
+                    """
+                    REASON: The 'kotlin-android' plugin is currently calling this deprecated API.
+                    Please migrate this project to built-in kotlin (https://developer.android.com/r/tools/built-in-kotlin).
+                    """.trimIndent()
                 } else {
                     // other cases.
                     getCallingSite(traces)
