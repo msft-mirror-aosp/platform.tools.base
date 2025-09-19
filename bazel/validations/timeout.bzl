@@ -5,6 +5,7 @@ the allowlisted targets below can use the eternal timeout.
 """
 APPROVED_ETERNAL_TESTS = [
     "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests-mac_tests__Benchmark2000Cpu",
+    "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests-mac_tests__Benchmark2000Memory",
 ]
 
 FAILURE_MESSAGE = """Test target {} has timeout set to eternal.
