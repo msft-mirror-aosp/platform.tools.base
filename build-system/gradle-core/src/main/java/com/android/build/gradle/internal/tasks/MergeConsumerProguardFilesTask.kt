@@ -20,7 +20,7 @@ import com.android.build.gradle.internal.caching.DisabledCachingReason.SIMPLE_ME
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.GENERATED_PROGUARD_FILE
-import com.android.build.gradle.internal.tasks.ExportConsumerProguardFilesTask.Companion.checkProguardFiles
+import com.android.build.gradle.internal.tasks.ExportConsumerProguardFilesTask.Companion.checkConsumerProguardFiles
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationActionImpl
@@ -53,6 +53,10 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
     var isBaseModule = false
         private set
 
+    @get:Input
+    var disallowGlobalOptions = false
+        private set
+
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:InputFiles
     abstract val consumerProguardFiles: ConfigurableFileCollection
@@ -66,14 +70,6 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
     @Throws(IOException::class)
     public override fun doTaskAction() {
         val consumerProguardFiles = consumerProguardFiles.files
-        // We check for default files unless it's a base feature, which can include default files.
-        if (!isBaseModule) {
-            checkProguardFiles(
-                    buildDirectory,
-                    isDynamicFeature,
-                    consumerProguardFiles
-            ) { errorMessage: String? -> throw EvalIssueException(errorMessage!!) }
-        }
 
         consumerProguardFiles.forEach { file: File ->
             if (file.isFile) {
@@ -83,6 +79,17 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
             } else {
                 reportMissingFile("Supplied consumer proguard configuration does not exist: ${file.path}")
             }
+        }
+
+        // We check consumer files for default files or global options unless it's a base feature,
+        // which can include both of those
+        if (!isBaseModule) {
+            checkConsumerProguardFiles(
+                buildDirectory,
+                isDynamicFeature,
+                consumerProguardFiles,
+                disallowGlobalOptions
+            ) { errorMessage: String? -> throw EvalIssueException(errorMessage!!) }
         }
 
         super.doTaskAction()
@@ -121,6 +128,8 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
             super.configure(task)
             task.isBaseModule = creationConfig.componentType.isBaseModule
             task.isDynamicFeature = creationConfig.componentType.isDynamicFeature
+            task.disallowGlobalOptions =
+                creationConfig.services.projectOptions.get(BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED)
             task.consumerProguardFiles.from(
                 optimizationCreationConfig.consumerProguardFiles
             )

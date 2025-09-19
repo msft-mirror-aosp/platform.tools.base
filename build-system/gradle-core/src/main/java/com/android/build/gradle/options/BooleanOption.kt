@@ -530,6 +530,23 @@ enum class BooleanOption(
         )
     ),
 
+    /**
+     * Global options such as `-dontoptimize` no longer supported in consumer rules in 9.0
+     *
+     * These options are only supported in app (base) modules.
+     */
+    R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED(
+        "android.r8.globalOptionsInConsumerRules.disallowed",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_9_0
+        )
+    ),
+
+
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
