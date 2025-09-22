@@ -192,7 +192,7 @@ enum class BooleanOption(
      * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
      */
     ENABLE_LEGACY_VARIANT_API(
-        "android.enableLegacyVariantApi", false, FeatureStage.Supported,
+        "android.enableLegacyVariantApi", true, FeatureStage.Supported,
         FutureStage(false, FeatureStage.Enforced(Version.VERSION_10_0), Version.VERSION_10_0)
     ),
 
