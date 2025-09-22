@@ -103,6 +103,10 @@ interface DeviceHandle : Extensible {
   val wifiPairDeviceAction: PairDeviceAction?
     get() = null
 
+  /** Attempts to hide the device from DeviceManager. */
+  val hideDeviceAction: HideDeviceAction?
+    get() = null
+
   /** Waits until this device handle is no longer associated with [device]. */
   suspend fun awaitRelease(device: ConnectedDevice) {
     stateFlow.takeWhile { it.connectedDevice == device }.collect()
