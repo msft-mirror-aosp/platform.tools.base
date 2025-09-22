@@ -17,12 +17,12 @@
 package com.android.build.gradle.internal.testing.utp.worker
 
 import com.android.build.gradle.internal.testing.utp.UtpDependency
+import com.android.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.logging.Logger
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.ExpectedException
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
@@ -39,10 +39,6 @@ class UtpRunnerTest {
     @Rule
     @JvmField
     val tempDir = TemporaryFolder()
-
-    @Rule
-    @JvmField
-    val expectedException: ExpectedException = ExpectedException.none()
 
     @Mock
     lateinit var logger: Logger
@@ -140,10 +136,9 @@ class UtpRunnerTest {
         verify(process, never()).destroyForcibly()
 
         // 3. Verify logging
-        // Use timeout because GrabProcessOutput runs in separate threads
-        verify(logger, timeout(1000)).info("stdout line 1")
-        verify(logger, timeout(1000)).info("stdout line 2")
-        verify(logger, timeout(1000)).info("stderr line 1")
+        verify(logger).info("stdout line 1")
+        verify(logger).info("stdout line 2")
+        verify(logger).info("stderr line 1")
     }
 
     @Test
@@ -158,18 +153,11 @@ class UtpRunnerTest {
             .thenThrow(InterruptedException("Test interrupt")) // First call in try-block
             .thenReturn(143) // Second call in catch-block
 
-        // Assert
-        // 1. Expect the correct exception to be thrown
-        expectedException.expect(InterruptedException::class.java)
-        expectedException.expectMessage("Test interrupt")
-
         // Act
-        utpRunner.execute()
+        val e = assertThrows<InterruptedException> { utpRunner.execute() }
+        assertThat(e).hasMessageThat().contains("Test interrupt")
 
-        // 2. Verify the process lifecycle
-        // (Note: If execute() throws, these lines are only reached if the exception
-        // was expected. This is a slight difference from JUnit 5's assertThrows,
-        // but for this case, it works.)
+        // Verify the process lifecycle
         verify(processBuilder).start()
         verify(process).destroyForcibly() // Should be called from the catch block
         verify(process, times(2)).waitFor() // First call in try, second in catch

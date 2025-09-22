@@ -75,26 +75,24 @@ class UtpRunner(
         try {
             Runtime.getRuntime().addShutdownHook(shutdownHook)
 
-            GrabProcessOutput.grabProcessOutput(
-                process,
-                GrabProcessOutput.Wait.ASYNC,
-                object : GrabProcessOutput.IProcessOutput {
-                    override fun out(line: String?) {
-                        if (!line.isNullOrBlank()) {
-                            logger.info(line)
-                        }
-                    }
-
-                    override fun err(line: String?) {
-                        if (!line.isNullOrBlank()) {
-                            logger.info(line)
-                        }
-                    }
-                }, null, null
-            )
-
             try {
-                process.waitFor()
+                GrabProcessOutput.grabProcessOutput(
+                    process,
+                    GrabProcessOutput.Wait.WAIT_FOR_READERS,
+                    object : GrabProcessOutput.IProcessOutput {
+                        override fun out(line: String?) {
+                            if (!line.isNullOrBlank()) {
+                                logger.info(line)
+                            }
+                        }
+
+                        override fun err(line: String?) {
+                            if (!line.isNullOrBlank()) {
+                                logger.info(line)
+                            }
+                        }
+                    }, null, null
+                )
             } catch (e: InterruptedException) {
                 process.destroyForcibly()
                 process.waitFor()
