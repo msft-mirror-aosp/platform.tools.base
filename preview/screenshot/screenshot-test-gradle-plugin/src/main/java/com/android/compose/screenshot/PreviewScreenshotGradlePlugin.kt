@@ -39,8 +39,6 @@ import java.io.File
 import java.util.Locale
 import java.util.Properties
 import java.util.UUID
-import org.gradle.api.GradleException
-import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -49,15 +47,11 @@ import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
-import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
-import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.gradle.jvm.toolchain.JavaLauncher
-import org.gradle.jvm.toolchain.JavaToolchainService
+import org.gradle.api.JavaVersion
 import org.gradle.util.GradleVersion
 
 private val minAgpVersion = AndroidPluginVersion(8, 5, 0).beta(1)
@@ -99,18 +93,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
         private const val LAYOUTLIB_VERSION = "15.1.3"
 
-        /**
-         * layoutlib, a core dependency for screenshot tests, is incompatible with
-         * JDK 24+ due to the removal of the Security Manager.
-         */
-        const val MAX_JDK_MAJOR_VERSION = 23
-        /**
-         * The minimum supported JDK major version for toolchain resolution.
-         * Set to 11 as it is a common Long-Term Support (LTS) version, ensuring
-         * broad compatibility for automatic toolchain resolution.
-         */
-        const val MIN_SUPPORTED_JDK_MAJOR_VERSION = 11
-
         val SCREENSHOT_TEST_PLUGIN_VERSION: String by lazy {
             requireNotNull(PreviewScreenshotGradlePlugin::class.java.getResourceAsStream("/version.properties"))
                 .buffered().use { stream ->
@@ -122,66 +104,31 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         }
     }
 
-    private fun findCompatibleLauncher(project: Project, currentJdk: JavaVersion): Provider<JavaLauncher>? {
-        val needsToolchain = currentJdk.majorVersion.toInt() > MAX_JDK_MAJOR_VERSION
-        if (!needsToolchain) {
-            return null
-        }
-
-        val currentGradleVersion = GradleVersion.current()
-        /**
-        * When an incompatible JDK (like 24+) is used, we must enforce a minimum Gradle version of 8.14.
-        * This is because versions prior to 8.14 are not officially supported for running on JDK 24, which can cause the build itself to fail before our toolchain logic can even execute.
-        * Gradle 8.14 is the first version to officially support Java 24, ensuring a stable environment for our plugin to find and use a compatible JDK toolchain.
-        */
-        val requiredGradleVersion = GradleVersion.version("8.14")
-
-        if (currentGradleVersion < requiredGradleVersion) {
-            error(
-                """
-            Using JDK ${currentJdk.majorVersion} requires Gradle version ${requiredGradleVersion.version} or newer for screenshot tests.
-            Current Gradle version is ${currentGradleVersion.version}.
-            Please upgrade your project's Gradle version.
-            """.trimIndent()
-            )
-        }
-        project.logger.log(LogLevel.LIFECYCLE,
-            "Current JDK version (${currentJdk.majorVersion}) is incompatible. " +
-                    "Searching for a compatible toolchain (JDK $MIN_SUPPORTED_JDK_MAJOR_VERSION-$MAX_JDK_MAJOR_VERSION)."
-        )
-        val javaToolchains = project.extensions.getByType(JavaToolchainService::class.java)
-        var foundLauncher: Provider<JavaLauncher>? = null
-
-        for (version in MAX_JDK_MAJOR_VERSION downTo MIN_SUPPORTED_JDK_MAJOR_VERSION) {
-            try {
-                val launcherProvider = javaToolchains.launcherFor { spec ->
-                    spec.languageVersion.set(JavaLanguageVersion.of(version))
-                }
-                // Eagerly check if the provider can be resolved to ensure the toolchain exists.
-                launcherProvider.get()
-                project.logger.log(LogLevel.LIFECYCLE,
-                    "Found compatible toolchain: Java $version. Will use it for screenshot tasks.")
-                foundLauncher = launcherProvider
-                break
-            } catch (e: Exception) {
-                // This is the expected exception if the JDK for `version` is not found.
-                // Continue to the next version.
-            }
-        }
-
-        return foundLauncher ?: throw GradleException(
-            "Compose Preview Screenshot Testing requires a JDK toolchain between version " +
-                    "$MIN_SUPPORTED_JDK_MAJOR_VERSION and $MAX_JDK_MAJOR_VERSION, but none was found. " +
-                    "Please configure a compatible JDK in your build environment."
-        )
-    }
-
     override fun apply(project: Project) {
         project.plugins.withType(AndroidBasePlugin::class.java) {
             val componentsExtension = project.extensions.getByType(AndroidComponentsExtension::class.java)
             val agpVersion = componentsExtension.pluginVersion
+
             val currentJdk = JavaVersion.current()
-            val compatibleLauncher = findCompatibleLauncher(project, currentJdk)
+            val currentGradleVersion = GradleVersion.current()
+            /**
+             * When an incompatible JDK (like 24+) is used, we must enforce a minimum Gradle version of 8.14.
+             * This is because versions prior to 8.14 are not officially supported for running on JDK 24, which can cause the build itself to fail before our toolchain logic can even execute.
+             * Gradle 8.14 is the first version to officially support Java 24, ensuring a stable environment for our plugin to find and use a compatible JDK toolchain.
+             */
+            if (currentJdk.majorVersion.toInt() >= 24) {
+                val requiredGradleVersion = GradleVersion.version("8.14")
+
+                if (currentGradleVersion < requiredGradleVersion) {
+                    error(
+                        """
+                        Using JDK ${currentJdk.majorVersion} requires Gradle version ${requiredGradleVersion.version} or newer for screenshot tests.
+                        Current Gradle version is ${currentGradleVersion.version}.
+                        Please upgrade your project's Gradle version.
+                        """.trimIndent()
+                    )
+                }
+            }
 
             if (agpVersion < minAgpVersion || (agpVersion > maxAgpVersion && agpVersion.previewType != "dev")) {
                 error(
@@ -295,9 +242,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             task.project.configurations.getByName(layoutlibJarConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,
                         )
-                        compatibleLauncher?.let { launcher ->
-                            task.javaLauncher.set(launcher)
-                        }
                     }
 
                     updateTask.configureTestEngineInput(
@@ -341,9 +285,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             task.project.configurations.getByName(layoutlibJarConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,
                         )
-                        compatibleLauncher?.let { launcher ->
-                            task.javaLauncher.set(launcher)
-                        }
                     }
 
                     previewScreenshotTestTask.configureTestEngineInput(
