@@ -10,7 +10,7 @@ class CITest(absltest.TestCase):
   """Tests for the CI wrapper."""
 
   def test_run_with_exception(self):
-    ci_ = ci.CI(build_env=bazel.make_build_env(bazel_path='', bazel_version='7'))
+    ci_ = ci.CI(build_env=bazel.make_build_env(bazel_path='', bazel_version='7', is_studio_only_release=False))
     exception = query_checks.BuildGraphException(title='', go_link='', body='')
 
     def failing_func(_: bazel.BuildEnv):
@@ -22,7 +22,7 @@ class CITest(absltest.TestCase):
     self.assertTrue(ci_.has_errors(), 'expected has_errors() = True')
 
   def test_run(self):
-    ci_ = ci.CI(build_env=bazel.make_build_env(bazel_path='', bazel_version='7'))
+    ci_ = ci.CI(build_env=bazel.make_build_env(bazel_path='', bazel_version='7', is_studio_only_release=False))
 
     def func(_: bazel.BuildEnv):
       return
