@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
@@ -73,6 +74,10 @@ class TestSuiteImpl internal constructor(
     override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
         testTaskConfigActions.add(action)
     }
+
+    override val codeCoverage: Property<Boolean> = variantServices.propertyOf(
+        Boolean::class.java, testSuiteBuilder.codeCoverage
+    )
 
     /**
      * Internal APIs

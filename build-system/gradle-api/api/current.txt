@@ -307,12 +307,15 @@ package com.android.build.api.dsl {
   @org.gradle.api.Incubating public interface AgpTestSuite extends org.gradle.testing.base.TestSuite {
     method @org.gradle.api.Incubating public void assets(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteAssetsSpec,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public boolean getCodeCoverage();
     method @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
     method @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuiteTarget> getTargets();
     method @org.gradle.api.Incubating public com.android.build.api.dsl.JUnitEngineSpec getUseJunitEngine();
     method @org.gradle.api.Incubating public void hostJar(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteHostJarSpec,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void setCodeCoverage(boolean);
     method @org.gradle.api.Incubating public void testApk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void useJunitEngine(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JUnitEngineSpec,kotlin.Unit> action);
+    property @org.gradle.api.Incubating public abstract boolean codeCoverage;
     property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.JUnitEngineSpec useJunitEngine;
   }
@@ -3341,8 +3344,10 @@ package com.android.build.api.variant {
 
   public interface TestSuite extends org.gradle.api.Named {
     method public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.Boolean> getCodeCoverage();
     method @org.gradle.api.Incubating public com.android.build.api.variant.JUnitEngineSpec getJunitEngineSpec();
     method public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> getTargets();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Boolean> codeCoverage;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.JUnitEngineSpec junitEngineSpec;
     property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> targets;
   }

@@ -125,6 +125,8 @@ abstract class AgpTestSuiteImpl @Inject constructor(
         testTaskConfigActions.add(action)
     }
 
+    override var codeCoverage = false
+
     /**
      * Internal APIs
      */
