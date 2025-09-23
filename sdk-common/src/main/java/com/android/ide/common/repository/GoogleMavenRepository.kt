@@ -388,7 +388,7 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                                     version = bom?.version?.lowerBound?.toString() ?: ""
                                 }
                                 check(version, "version")
-                                Dependency(groupId, artifactId, RichVersion.parse(version))
+                                Dependency(groupId, artifactId, RichVersion.fromPomVersion(version))
                             } else if (parser.depth == 4 && groupId.isNotEmpty() &&
                                 artifactId.isNotEmpty() && version.isNotEmpty()
                             ) {
@@ -396,7 +396,7 @@ abstract class GoogleMavenRepository @JvmOverloads constructor(
                                     Dependency(
                                         groupId,
                                         artifactId,
-                                        RichVersion.parse(version)
+                                        RichVersion.fromPomVersion(version)
                                     )
                                 )
                                 null

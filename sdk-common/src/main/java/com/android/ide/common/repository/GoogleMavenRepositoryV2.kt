@@ -230,7 +230,7 @@ private class GoogleMavenRepositoryV2Impl : GoogleMavenRepositoryV2 {
                             version = bom?.version?.lowerBound?.toString() ?: ""
                         }
                         check(version, "version")
-                        Dependency(groupId, artifactId, RichVersion.parse(version))
+                        Dependency(groupId, artifactId, RichVersion.fromPomVersion(version))
                     } else if (
                         parser.depth == 4 && groupId.isNotEmpty() &&
                         artifactId.isNotEmpty() && version.isNotEmpty()
@@ -239,7 +239,7 @@ private class GoogleMavenRepositoryV2Impl : GoogleMavenRepositoryV2 {
                             Dependency(
                                 groupId,
                                 artifactId,
-                                RichVersion.parse(version)
+                                RichVersion.fromPomVersion(version)
                             )
                         )
                         null
