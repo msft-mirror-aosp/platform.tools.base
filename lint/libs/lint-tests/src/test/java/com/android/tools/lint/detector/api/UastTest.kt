@@ -4772,6 +4772,58 @@ class UastTest : TestCase() {
     assertEquals(2, count)
   }
 
+  fun testAnnotationOnFakePsi() {
+    // b/427764853
+    // https://youtrack.jetbrains.com/issue/KTIJ-34874
+    // TODO(b/427764853): needs artifact patch/update to 253
+    if (useFirUast()) {
+      return
+    }
+    val source =
+      kotlin(
+          """
+          package test.pkg
+
+          annotation class Anno(
+            val value: String
+          )
+
+          class Test {
+            @Anno("attr")
+            @JvmSynthetic
+            fun foo() {}
+          }
+        """
+        )
+        .indented()
+
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitMethod(node: UMethod): Boolean {
+            if (node.name != "foo") {
+              return super.visitMethod(node)
+            }
+
+            val uAnno = node.uAnnotations.find { it.qualifiedName == "test.pkg.Anno" }
+            assertNotNull(uAnno)
+            assertEquals("test.pkg.Anno", uAnno!!.qualifiedName)
+            val uAttr = uAnno.findAttributeValue("value")
+            assertEquals("attr", uAttr?.evaluate())
+
+            val jAnno = node.javaPsi.annotations.find { it.qualifiedName == "test.pkg.Anno" }
+            assertNotNull(jAnno)
+            assertEquals("test.pkg.Anno", jAnno!!.qualifiedName)
+            val jAttr = jAnno.findAttributeValue("value")
+            assertEquals("attr", (jAttr as? PsiLiteral)?.value)
+
+            return super.visitMethod(node)
+          }
+        }
+      )
+    }
+  }
+
   fun testAnnotationOnDeclarationWithValueClass() {
     // b/402629264
     // https://youtrack.jetbrains.com/issue/KTIJ-33916
