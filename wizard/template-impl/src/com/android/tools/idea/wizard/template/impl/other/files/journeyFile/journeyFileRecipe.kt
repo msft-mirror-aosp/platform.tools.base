@@ -47,7 +47,7 @@ private fun RecipeExecutor.addJourneyFile(
   val directory = moduleData.rootDir.resolve("src").resolve(testSuiteName)
   createDirectory(directory)
 
-  val file = directory.resolve("$fileName.xml")
+  val file = directory.resolve("$fileName.journey.xml")
 
   save(journeyXml(name, description), file)
   open(file)
