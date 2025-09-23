@@ -80,6 +80,7 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.util.PatternSet
+import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
 import java.io.File
 import java.util.Locale
 import java.util.function.Predicate
@@ -569,5 +570,13 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
 
     override fun finalizeAndLock() {
         artifacts.finalizeAndLock()
+    }
+
+    fun addKotlinSourcesToCompilation() {
+        this.androidKotlinCompilation.compileTaskProvider.configure { kotlincTask ->
+            this.sources.kotlin {
+                (kotlincTask as AbstractKotlinCompile<*>).source(it.getAsFileTrees())
+            }
+        }
     }
 }
