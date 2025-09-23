@@ -47,8 +47,6 @@ import kotlin.io.path.outputStream
 import kotlin.io.path.pathString
 import kotlinx.coroutines.withContext
 
-private const val TRANSPORT_DTD = "com.google.android.gms/.backup.migrate.service.D2dTransport"
-private const val TRANSPORT_CLOUD = "com.google.android.gms/.backup.BackupTransportService"
 private const val CONTENT_URI =
   "content://com.google.android.gms.fileprovider/backup_testing_flows/"
 
@@ -66,10 +64,13 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
       with(adbServices) {
         val tempFile = Files.createTempFile("", ".backup")
         val user = getCurrentUser()
-        val appInfo = getAppInfo(applicationId, withPermissions = true, user)
-        if (appInfo == null) {
-          throw BackupException(APP_NOT_INSTALLED, "Application '$applicationId' is not installed")
-        }
+        val appInfo =
+          getAppInfo(applicationId, withPermissions = true, user)
+            ?: throw BackupException(
+              APP_NOT_INSTALLED,
+              "Application '$applicationId' is not installed",
+            )
+
         if (!appInfo.debuggable) {
           throw BackupException(
             APP_NOT_DEBUGGABLE,
@@ -78,9 +79,9 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
         }
         waitForBackupManager(user)
         // Backup is always handled by the D2D transport
-        withSetup(TRANSPORT_DTD) {
+        withSetup(BackupTransport.D2D) {
           reportProgress("Initializing backup transport")
-          val initOk = initializeTransport(TRANSPORT_DTD)
+          val initOk = initializeTransport(BackupTransport.D2D.className)
           try {
             reportProgress("Running backup")
             backupNow(applicationId, type, initOk)
@@ -129,13 +130,13 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
           ZipFile(backupFile.pathString).use { zip ->
             val metadata = zip.getMetaData()
             val applicationId = metadata.applicationId
-            val appInfo = getAppInfo(applicationId, withPermissions = false)
-            if (appInfo == null) {
-              throw BackupException(
-                APP_NOT_INSTALLED,
-                "Application '$applicationId' is not installed on the device",
-              )
-            }
+            val appInfo =
+              getAppInfo(applicationId, withPermissions = false)
+                ?: throw BackupException(
+                  APP_NOT_INSTALLED,
+                  "Application '$applicationId' is not installed on the device",
+                )
+
             if (!appInfo.debuggable) {
               throw BackupException(
                 APP_NOT_DEBUGGABLE,
@@ -145,10 +146,10 @@ internal class BackupServiceImpl(private val factory: AdbServicesFactory) : Back
 
             waitForBackupManager(getCurrentUser())
             // Restore is always handled by the Cloud transport
-            withSetup(TRANSPORT_DTD) {
+            withSetup(BackupTransport.D2D) {
               reportProgress("Initializing backup transport")
-              val initOk = initializeTransport(TRANSPORT_DTD)
-              setTransport(TRANSPORT_CLOUD, true)
+              val initOk = initializeTransport(BackupTransport.D2D.className)
+              setTransport(BackupTransport.CLOUD)
               val token = zip.getRestoreToken()
               reportProgress("Pushing backup file")
               pushBackup(zip)

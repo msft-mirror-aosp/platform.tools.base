@@ -81,19 +81,6 @@ val DUMPSYS_PACKAGE_OUT =
 /** Tests for [AbstractAdbServices] */
 class AbstractAdbServicesTest {
 
-  private val transport = "com.google.android.gms/.backup.migrate.service.D2dTransport"
-
-  @Test
-  fun setTransport_withBadExistingTransport_doesNotThrow() = runBlocking {
-    val invalidTransport = "Invalid"
-    val backupServices = FakeAdbServices("serial", totalSteps = 10)
-    backupServices.activeTransport = invalidTransport
-    backupServices.withSetup(transport) {
-      assertThat(backupServices.activeTransport).isEqualTo(transport)
-    }
-    assertThat(backupServices.activeTransport).isEqualTo(invalidTransport)
-  }
-
   @Test
   fun missingGmsCore() {
     val backupServices = FakeAdbServices("serial", 10)
@@ -108,7 +95,7 @@ class AbstractAdbServicesTest {
     )
     val exception =
       assertThrows(BackupException::class.java) {
-        runBlocking { backupServices.withSetup(transport) {} }
+        runBlocking { backupServices.withSetup(BackupTransport.D2D) {} }
       }
     assertThat(exception.errorCode).isEqualTo(GMSCORE_NOT_FOUND)
   }
@@ -128,7 +115,7 @@ class AbstractAdbServicesTest {
     )
     val exception =
       assertThrows(BackupException::class.java) {
-        runBlocking { backupServices.withSetup(transport) {} }
+        runBlocking { backupServices.withSetup(BackupTransport.D2D) {} }
       }
     assertThat(exception.errorCode).isEqualTo(GMSCORE_IS_TOO_OLD)
   }
