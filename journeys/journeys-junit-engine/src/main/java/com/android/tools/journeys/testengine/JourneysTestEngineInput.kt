@@ -22,8 +22,8 @@ import java.util.Properties
 object JourneysTestEngineInput {
 
     val journeysInputDir: File
-    val testDeviceId: String
-    val testDeviceDisplayName: String
+    val testDeviceIds: String
+    val testDeviceDisplayNames: String
     val journeysFilter: List<String> =
         getStringListFromSystemPropertyOrEnvVar("journeysFilter", "JOURNEYS_FILTER")
     val resultsDir: File
@@ -35,17 +35,17 @@ object JourneysTestEngineInput {
             }
             journeysInputDir =
                 File(inputProperties["com.android.junit.engine.source.folders"].toString())
-            testDeviceId =
+            testDeviceIds =
                 inputProperties["com.android.junit.engine.serial.ids"].toString()
                     .substringAfter(":")
-            testDeviceDisplayName =
+            testDeviceDisplayNames =
                 inputProperties["com.android.junit.engine.serial.ids"].toString()
                     .substringBefore(":")
             resultsDir = File(inputProperties["om.android.junit.engine.results.dir"].toString())
         } else {
             journeysInputDir = getFileFromSystemProperty("journeysInputDir")
-            testDeviceId = getSystemProperty("testDeviceId")
-            testDeviceDisplayName = getSystemProperty("testDeviceDisplayName")
+            testDeviceIds = getSystemProperty("testDeviceId")
+            testDeviceDisplayNames = getSystemProperty("testDeviceDisplayName")
             resultsDir = getFileFromSystemProperty("resultsDir")
         }
     }
