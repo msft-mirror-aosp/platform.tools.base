@@ -61,10 +61,10 @@ class KotlinMultiplatformAndroidDslTest {
             extension: KotlinMultiplatformAndroidComponentsExtension
         ) {
             extension.finalizeDsl { extension ->
-                assert(extension.compileSdk == 36) {
+                check(extension.compileSdk == 36) {
                     "compileSdk should be 36"
                 }
-                assert(extension.compileSdkExtension == 4) {
+                check(extension.compileSdkExtension == 4) {
                     "compileSdkExtension should be 4"
                 }
             }

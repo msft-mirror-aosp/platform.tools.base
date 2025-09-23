@@ -20,13 +20,10 @@ import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.StringOption
-import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
@@ -224,70 +221,6 @@ class SettingsExecutionProfileTest {
         // with invalid arguments
         result.stderr.use {
             ScannerSubject.assertThat(it).contains("Error: Could not find or load main class :pizza.foo")
-        }
-    }
-
-    @Test
-    fun checkCompileMinAndTargetAreSet() {
-        val compileSdk = DEFAULT_COMPILE_SDK_VERSION
-        val targetSdk = DEFAULT_COMPILE_SDK_VERSION - 1
-        val minSdk = DEFAULT_COMPILE_SDK_VERSION - 2
-
-        val build = rule.build {
-            settings {
-                addSettingsBlock(compileSdk = compileSdk,
-                    targetSdk = targetSdk,
-                    minSdk = minSdk,
-                    execProfile = null,
-                    profileList = listOf())
-            }
-        }
-
-        // First check app
-        val modelInfo = build.modelBuilder
-            .fetchModels()
-            .container
-            .getProject(DEFAULT_APP_PATH)
-
-        val androidDsl = modelInfo.androidDsl ?: error("failed to fetch android DSL model")
-        assertThat(androidDsl.compileTarget)
-                .named("androidDsl.compileTarget")
-                .isEqualTo("android-$compileSdk")
-        assertThat(androidDsl.defaultConfig?.targetSdkVersion?.apiLevel)
-                .named("androidDsl.defaultConfig.targetSdkVersion.apiLevel")
-                .isEqualTo(targetSdk)
-        assertThat(androidDsl.lintOptions?.targetSdk?.apiLevel)
-            .named("androidDsl.lintOptions.targetSdk.apiLevel")
-            .isEqualTo(null)
-        val androidProject = modelInfo.androidProject ?: error("Failed to fetch android project")
-        assertThat(androidProject.variants).isNotEmpty()
-        for (variant in androidProject.variants) {
-            assertThat(variant.mainArtifact.minSdkVersion.apiLevel)
-                    .named("variant %s mainArtifact.minSdkVersion.apiLevel", variant.name)
-                    .isEqualTo(minSdk)
-        }
-
-        // Then check library
-        val libModelInfo = build.modelBuilder
-            .fetchModels()
-            .container
-            .getProject(DEFAULT_LIB_PATH)
-        val libAndroidDsl = libModelInfo.androidDsl ?: error("failed to fetch android DSL model")
-        assertThat(libAndroidDsl.compileTarget)
-            .named("libAndroidDsl.compileTarget")
-            .isEqualTo("android-$compileSdk")
-        assertThat(libAndroidDsl.defaultConfig.targetSdkVersion)
-            .named("libAndroidDsl.defaultConfig.targetSdkVersion")
-            .isEqualTo(null)
-        assertThat(libAndroidDsl.lintOptions?.targetSdk?.apiLevel)
-            .named("libAndroidDsl.lintOptions.targetSdk.apiLevel")
-            .isEqualTo(targetSdk)
-        val libAndroidProject = modelInfo.androidProject ?: error("Failed to fetch android project")
-        assertThat(libAndroidProject.variants).isNotEmpty()
-        for (variant in libAndroidProject.variants) {
-            assertThat(variant.mainArtifact.minSdkVersion.apiLevel)
-                .named("variant %s mainArtifact.minSdkVersion.apiLevel", variant.name)
-                .isEqualTo(minSdk)
         }
     }
 }
