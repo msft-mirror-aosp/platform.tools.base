@@ -29,6 +29,7 @@ private const val GMS_AND_FIREBASE_SEMANTIC_START = 15
 // The kotlin stability rules are found here:
 //     https://kotlinlang.org/docs/reference/evolution/components-stability.html
 private const val KOTLIN_GROUP_ID = "org.jetbrains.kotlin"
+private const val KOTLINX_GROUP_ID = "org.jetbrains.kotlinx"
 private const val KOTLIN_STDLIB = "kotlin-stdlib"
 private const val KOTLIN_REFLECT = "kotlin-reflect"
 private const val KOTLIN_JDK9 = "kotlin-stdlib-jdk9"
@@ -83,6 +84,7 @@ enum class KnownVersionStability {
 
 val Component.stability get() = when {
     group == KOTLIN_GROUP_ID -> kotlinStabilityOf(name)
+    group == KOTLINX_GROUP_ID -> KnownVersionStability.SEMANTIC
     group == GOOGLE_MOBILE_SERVICES_GROUP_ID -> gmsAndFirebaseStability(version)
     group == FIREBASE_GROUP_ID -> gmsAndFirebaseStability(version)
     group == MATERIAL2_PKG -> KnownVersionStability.SEMANTIC

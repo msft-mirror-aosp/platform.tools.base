@@ -60,6 +60,11 @@ class KnownVersionStabilityTest {
             .isEqualTo(KnownVersionStability.STABLE)
         assertThat(component("org.jetbrains.kotlin", "kotlin-reflect").stability)
             .isEqualTo(KnownVersionStability.INCREMENTAL)
+
+        assertThat(component("org.jetbrains.kotlinx", "kotlinx-coroutines-android").stability)
+            .isEqualTo(KnownVersionStability.SEMANTIC)
+        assertThat(component("org.jetbrains.kotlinx", "kotlinx-coroutines-core").stability)
+            .isEqualTo(KnownVersionStability.SEMANTIC)
     }
 
     @Test
