@@ -29,7 +29,7 @@ ARTIFACTS = [
     "androidx.multidex:multidex:2.0.1",
     "androidx.test:runner:1.4.0",
     "androidx.test.uiautomator:uiautomator:2.3.0",
-    "com.android.tools.build:bundletool:1.18.1",
+    "com.android.tools.build:bundletool:1.18.2",
     "com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10",
     "com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10",
     "com.android.tools.build:transform-api:2.0.0-deprecated-use-gradle-api",
