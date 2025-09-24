@@ -52,7 +52,7 @@ internal class BundleTestDataImpl(
     val apkBundle: FileCollection,
     privacySandboxSdkApks: FileCollection?,
     privacySandboxCompatSdkApks: Provider<Directory>?,
-    extraInstrumentationTestRunnerArgs: Map<String, String>
+    extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>
 ) : AbstractTestDataImpl(
     namespace = namespace,
     creationConfig = creationConfig,

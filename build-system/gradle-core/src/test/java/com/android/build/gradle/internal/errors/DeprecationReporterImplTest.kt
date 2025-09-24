@@ -72,7 +72,7 @@ class DeprecationReporterImplTest {
     }
     private val issueReporter = FakeSyncIssueReporter()
     private val reporter =
-        DeprecationReporterImpl(issueReporter, ProjectOptions(ImmutableMap.of(), FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of())), "")
+        DeprecationReporterImpl(issueReporter, ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, ImmutableMap.of())), "")
 
     @After
     fun after() {
@@ -218,7 +218,6 @@ class DeprecationReporterImplTest {
     fun `test option state change behavior - deprecated`() {
         val futureReporter = DeprecationReporterImpl(
             issueReporter, ProjectOptions(
-                ImmutableMap.of(),
                 FakeProviderFactory(
                     factory, ImmutableMap.of(
                         "android.simulateAgpVersionBehavior", "10.0.0"

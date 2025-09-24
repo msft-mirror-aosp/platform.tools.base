@@ -40,7 +40,6 @@ class IncompatibleProjectOptionsReporterTest {
         IncompatibleProjectOptionsReporter.check(
             ProjectOptions(
                 @Suppress("RemoveExplicitTypeArguments")
-                ImmutableMap.of(),
                 FakeProviderFactory(FakeProviderFactory.factory, gradleProperties)
             ),
             reporter
@@ -58,7 +57,6 @@ class IncompatibleProjectOptionsReporterTest {
         IncompatibleProjectOptionsReporter.check(
             ProjectOptions(
                 @Suppress("RemoveExplicitTypeArguments")
-                ImmutableMap.of(),
                 FakeProviderFactory(FakeProviderFactory.factory, gradleProperties)
             ),
             reporter

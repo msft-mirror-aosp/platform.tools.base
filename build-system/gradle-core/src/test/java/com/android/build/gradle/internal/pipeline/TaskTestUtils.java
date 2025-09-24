@@ -143,7 +143,6 @@ public class TaskTestUtils {
         when(taskCreationServices.getProjectOptions())
                 .thenReturn(
                         new ProjectOptions(
-                                ImmutableMap.of(),
                                 new FakeProviderFactory(
                                         FakeProviderFactory.getFactory(), properties)));
 

@@ -29,7 +29,6 @@ public class SyncOptionsTest {
     public void getModelQueryMode() throws Exception {
         ProjectOptions noOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(), ImmutableMap.of()));
         assertThat(SyncOptions.getModelQueryMode(noOptions)).isEqualTo(EvaluationMode.STANDARD);
@@ -42,7 +41,6 @@ public class SyncOptionsTest {
                         "true");
         ProjectOptions advancedOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(), gradleProperties));
         assertThat(SyncOptions.getModelQueryMode(advancedOptions)).isEqualTo(EvaluationMode.IDE);
@@ -53,7 +51,6 @@ public class SyncOptionsTest {
 
         ProjectOptions noOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(), ImmutableMap.of()));
         assertThat(SyncOptions.getErrorFormatMode(noOptions))
@@ -63,7 +60,6 @@ public class SyncOptionsTest {
                 ImmutableMap.of("android.injected.invoked.from.ide", "true");
         ProjectOptions ideOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(), gradleProperties));
         assertThat(SyncOptions.getErrorFormatMode(ideOptions))

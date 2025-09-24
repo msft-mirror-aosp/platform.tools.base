@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.options;
 
+import static com.android.build.gradle.options.TestRunnerArguments.TEST_RUNNER_ARGS_PREFIX;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
@@ -24,7 +26,6 @@ import com.android.ide.common.repository.AgpVersion;
 import com.android.utils.Environment;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
@@ -35,7 +36,7 @@ import java.util.Map;
 @Immutable
 public final class ProjectOptions {
 
-    private final ImmutableMap<String, String> testRunnerArgs;
+    private final Provider<Map<String, String>> testRunnerArgs;
     private final ProviderFactory providerFactory;
     private final ImmutableMap<BooleanOption, OptionValue<BooleanOption, Boolean>>
             booleanOptionValues;
@@ -47,11 +48,9 @@ public final class ProjectOptions {
             replacedOptionValues;
     private final ImmutableMap<StringOption, OptionValue<StringOption, String>> stringOptionValues;
 
-    public ProjectOptions(
-            @NonNull ImmutableMap<String, String> customTestRunnerArgs,
-            @NonNull ProviderFactory providerFactory) {
+    public ProjectOptions(@NonNull ProviderFactory providerFactory) {
         this.providerFactory = providerFactory;
-        testRunnerArgs = readTestRunnerArgs(customTestRunnerArgs);
+        testRunnerArgs = readTestRunnerArgs();
         booleanOptionValues = createOptionValues(BooleanOption.values());
         optionalBooleanOptionValues = createOptionValues(OptionalBooleanOption.values());
         integerOptionValues = createOptionValues(IntegerOption.values());
@@ -72,23 +71,8 @@ public final class ProjectOptions {
     }
 
     @NonNull
-    private ImmutableMap<String, String> readTestRunnerArgs(Map<String, String> customArgs) {
-        ImmutableMap.Builder<String, String> testRunnerArgsBuilder = ImmutableMap.builder();
-        ImmutableSet.Builder<String> standardArgKeysBuilder = ImmutableSet.builder();
-
-        // Standard test runner arguments are fully compatible with configuration caching
-        for (TestRunnerArguments arg : TestRunnerArguments.values()) {
-            standardArgKeysBuilder.add(arg.getShortKey());
-            String argValue =
-                    providerFactory
-                            .gradleProperty(arg.getFullKey())
-                            .getOrNull();
-            if (argValue != null) {
-                testRunnerArgsBuilder.put(arg.getShortKey(), argValue);
-            }
-        }
-        testRunnerArgsBuilder.putAll(customArgs);
-        return testRunnerArgsBuilder.build();
+    private Provider<Map<String, String>> readTestRunnerArgs() {
+        return providerFactory.gradlePropertiesPrefixedBy(TEST_RUNNER_ARGS_PREFIX);
     }
 
     /** Obtain the gradle property value immediately at configuration time. */
@@ -193,7 +177,7 @@ public final class ProjectOptions {
     }
 
     @NonNull
-    public Map<String, String> getExtraInstrumentationTestRunnerArgs() {
+    public Provider<Map<String, String>> getExtraInstrumentationTestRunnerArgs() {
         return testRunnerArgs;
     }
 

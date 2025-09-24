@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -63,20 +64,8 @@ class GradlePropertiesTest {
 
     @Test
     fun testCapturingStandardInstrumentationTestRunnerArgs() {
-        executor()
-            .run("assembleDebug")
-        executor().run("clean")
-        // Make sure we are able to capture new arguments added in following builds
-        var result = executor()
-            .withArgument("-Pandroid.testInstrumentationRunnerArguments.size=medium")
-            .run("assembleDebug")
-        result.stdout.use {
-            ScannerSubject.assertThat(it).contains(
-                "Calculating task graph as configuration cache cannot be reused because " +
-                        "Gradle property 'android.testInstrumentationRunnerArguments.size' has changed")
-        }
-        executor().run("clean")
-        result = executor()
+        executor().run("assembleDebug")
+        val result = executor()
             .withArgument("-Pandroid.testInstrumentationRunnerArguments.size=medium")
             .run("assembleDebug")
         result.assertConfigurationCacheHit()
@@ -84,29 +73,13 @@ class GradlePropertiesTest {
 
     @Test
     fun testCapturingCustomInstrumentationTestRunnerArgs() {
-        var result = executor()
+        executor()
             .withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=origin")
             .run("assembleDebug")
-        result.stdout.use {
-            ScannerSubject.assertThat(it).contains("Passing custom test runner argument" +
-                    " android.testInstrumentationRunnerArguments.foo from gradle.properties or " +
-                    "command line is not compatible with configuration caching")
-        }
-        executor().run("clean")
-        result = executor()
-            .withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=origin")
-            .run("assembleDebug")
-        result.assertConfigurationCacheHit()
-        // Make sure we are able to capture changes to the arguments exist in the "first" build to
-        // make it partially compatible with configuration caching.
-        result = executor()
+        val result = executor()
             .withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=changed")
             .run("assembleDebug")
-        result.stdout.use {
-            ScannerSubject.assertThat(it).contains(
-                "Calculating task graph as configuration cache cannot be reused because " +
-                        "Gradle property 'android.testInstrumentationRunnerArguments.foo' has changed")
-        }
+        result.assertConfigurationCacheHit()
     }
 
     private fun executor(): GradleTaskExecutor = project.executor()

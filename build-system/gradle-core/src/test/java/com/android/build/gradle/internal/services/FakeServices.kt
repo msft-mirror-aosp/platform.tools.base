@@ -47,7 +47,7 @@ fun createProjectServices(
     objectFactory: ObjectFactory = project.objects,
     logger: Logger = FakeLogger(),
     providerFactory: ProviderFactory = project.providers,
-    projectOptions: ProjectOptions = ProjectOptions(ImmutableMap.of(), providerFactory),
+    projectOptions: ProjectOptions = ProjectOptions(providerFactory),
     fileResolver: (Any) -> File = { File(it.toString()) }
 ): ProjectServices =
     ProjectServices(
