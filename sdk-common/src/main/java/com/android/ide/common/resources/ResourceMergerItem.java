@@ -822,8 +822,10 @@ public class ResourceMergerItem extends DataItem<ResourceFile>
             }
 
             if (haveElementChildrenOrCdata) {
-                String markupText = getMarkupText(children);
+                String markupText = getMarkupText(children, false);
                 value.setRawXmlValue(markupText);
+                String markupTextForRendering = getMarkupText(children, true);
+                value.setRenderingValue(markupTextForRendering);
             }
         }
 
@@ -831,7 +833,7 @@ public class ResourceMergerItem extends DataItem<ResourceFile>
     }
 
     @NonNull
-    private static String getMarkupText(@NonNull NodeList children) {
+    private static String getMarkupText(@NonNull NodeList children, boolean isForRendering) {
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0, n = children.getLength(); i < n; i++) {
@@ -844,32 +846,41 @@ public class ResourceMergerItem extends DataItem<ResourceFile>
                     {
                         Element element = (Element) child;
                         String tagName = element.getTagName();
-                        sb.append('<');
-                        sb.append(tagName);
-
-                        NamedNodeMap attributes = element.getAttributes();
-                        int attributeCount = attributes.getLength();
-                        if (attributeCount > 0) {
-                            for (int j = 0; j < attributeCount; j++) {
-                                Node attribute = attributes.item(j);
-                                sb.append(' ');
-                                sb.append(attribute.getNodeName());
-                                sb.append('=').append('"');
-                                XmlUtils.appendXmlAttributeValue(sb, attribute.getNodeValue());
-                                sb.append('"');
+                        if (isForRendering && XLIFF_G_TAG.equals(element.getLocalName())
+                           && element.getNamespaceURI() != null
+                           && element.getNamespaceURI().startsWith(XLIFF_NAMESPACE_PREFIX)) {
+                            NodeList childNodes = child.getChildNodes();
+                            if (childNodes.getLength() > 0) {
+                                sb.append(getMarkupText(childNodes, isForRendering));
                             }
-                        }
-                        sb.append('>');
+                        }else {
+                            sb.append('<');
+                            sb.append(tagName);
 
-                        NodeList childNodes = child.getChildNodes();
-                        if (childNodes.getLength() > 0) {
-                            sb.append(getMarkupText(childNodes));
-                        }
+                            NamedNodeMap attributes = element.getAttributes();
+                            int attributeCount = attributes.getLength();
+                            if (attributeCount > 0) {
+                                for (int j = 0; j < attributeCount; j++) {
+                                    Node attribute = attributes.item(j);
+                                    sb.append(' ');
+                                    sb.append(attribute.getNodeName());
+                                    sb.append('=').append('"');
+                                    XmlUtils.appendXmlAttributeValue(sb, attribute.getNodeValue());
+                                    sb.append('"');
+                                }
+                            }
+                            sb.append('>');
 
-                        sb.append('<');
-                        sb.append('/');
-                        sb.append(tagName);
-                        sb.append('>');
+                            NodeList childNodes = child.getChildNodes();
+                            if (childNodes.getLength() > 0) {
+                                sb.append(getMarkupText(childNodes, isForRendering));
+                            }
+
+                            sb.append('<');
+                            sb.append('/');
+                            sb.append(tagName);
+                            sb.append('>');
+                        }
 
                         break;
                     }
@@ -877,9 +888,13 @@ public class ResourceMergerItem extends DataItem<ResourceFile>
                     sb.append(child.getNodeValue());
                     break;
                 case Node.CDATA_SECTION_NODE:
-                    sb.append(CDATA_PREFIX);
-                    sb.append(child.getNodeValue());
-                    sb.append(CDATA_SUFFIX);
+                    if (isForRendering) {
+                        sb.append(child.getNodeValue());
+                    } else {
+                        sb.append(CDATA_PREFIX);
+                        sb.append(child.getNodeValue());
+                        sb.append(CDATA_SUFFIX);
+                    }
                     break;
             }
         }

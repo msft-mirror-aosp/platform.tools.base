@@ -97,6 +97,16 @@ public interface ResourceValue extends Serializable {
     }
 
     /**
+     * Similar to {@link #getRawXmlValue()}, but with the metadata unnecessary for rendering removed.
+     * For example, if the raw XML contains <xliff> tags, the rendering value will remove them. But
+     * it will keep HTML tags that affect the rendering such as <b>.
+     */
+    @Nullable
+    default String getRenderingValue() {
+        return getRawXmlValue();
+    }
+
+    /**
      * Returns the namespace resolver that can be used to resolve any name prefixes in the string
      * values associated with this resource.
      */

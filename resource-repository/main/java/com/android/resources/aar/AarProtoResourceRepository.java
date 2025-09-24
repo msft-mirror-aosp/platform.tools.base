@@ -449,7 +449,7 @@ public class AarProtoResourceRepository extends AbstractAarResourceRepository {
           if (rawXmlValue.equals(textValue)) {
             return new BasicValueResourceItem(resourceType, resourceName, sourceFile, visibility, textValue);
           }
-          return new BasicTextValueResourceItem(resourceType, resourceName, sourceFile, visibility, textValue, rawXmlValue);
+          return new BasicTextValueResourceItem(resourceType, resourceName, sourceFile, visibility, textValue, rawXmlValue, null);
         }
 
         case ID: {

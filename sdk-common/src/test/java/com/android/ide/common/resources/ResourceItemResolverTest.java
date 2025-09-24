@@ -306,6 +306,8 @@ public class ResourceItemResolverTest extends TestCase {
                 resolver.findResValue("@string/xliff_string", false).getValue());
         assertEquals("First: <xliff:g id=\"firstName\">%1$s</xliff:g> Last: <xliff:g id=\"lastName\">%2$s</xliff:g>",
                 resolver.findResValue("@string/xliff_string", false).getRawXmlValue());
+        assertEquals("First: %1$s Last: %2$s",
+                 resolver.findResValue("@string/xliff_string", false).getRenderingValue());
 
         chain.clear();
         assertEquals("#ffffffff", resolver.resolveResValue(v).getValue());

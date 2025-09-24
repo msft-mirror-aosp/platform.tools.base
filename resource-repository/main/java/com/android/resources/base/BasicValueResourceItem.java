@@ -79,6 +79,8 @@ public class BasicValueResourceItem extends BasicValueResourceItemBase {
     stream.writeString(myValue);
     String rawXmlValue = getRawXmlValue();
     stream.writeString(Objects.equals(rawXmlValue, myValue) ? null : rawXmlValue);
+    String renderingValue = getRenderingValue();
+    stream.writeString(Objects.equals(renderingValue, myValue) ? null : renderingValue);
   }
 
   /**
@@ -93,9 +95,11 @@ public class BasicValueResourceItem extends BasicValueResourceItemBase {
                                             @NonNull ResourceNamespace.Resolver resolver) throws IOException {
     String value = stream.readString();
     String rawXmlValue = stream.readString();
+    String renderingValue = stream.readString();
     BasicValueResourceItem item = rawXmlValue == null ?
                                   new BasicValueResourceItem(resourceType, name, sourceFile, visibility, value) :
-                                  new BasicTextValueResourceItem(resourceType, name, sourceFile, visibility, value, rawXmlValue);
+                                  new BasicTextValueResourceItem(resourceType, name, sourceFile, visibility, value, rawXmlValue,
+                                                                 renderingValue);
     item.setNamespaceResolver(resolver);
     return item;
   }
