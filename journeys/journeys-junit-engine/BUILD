@@ -9,6 +9,7 @@ maven_library(
     ]),
     # keep sorted
     bundled_deps = [
+        "//tools/base/journeys/journeys-protos:journeys-java-proto",
         "//tools/vendor/robo:crawler_apk",
         "//tools/vendor/robo/client:client",
         "//tools/vendor/robo/cloud/test/appcrawler/proto:crawler_service_java_grpc",
