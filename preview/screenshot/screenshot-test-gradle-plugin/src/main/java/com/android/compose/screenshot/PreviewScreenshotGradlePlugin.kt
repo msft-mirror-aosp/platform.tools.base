@@ -140,7 +140,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 )
             }
             val screenshotSourcesetEnabled = project.findProperty(ST_SOURCE_SET_ENABLED)
-            if (screenshotSourcesetEnabled.toString().lowercase(Locale.US) != "true") {
+            if (screenshotSourcesetEnabled?.toString()?.toBoolean() != true) {
                 error(
                     """
                     Please enable screenshotTest source set first to apply the screenshot test plugin.
@@ -205,7 +205,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
             componentsExtension.beforeVariants {
                 val extension = project.extensions.getByType(CommonExtension::class.java)
                 val screenshotSourceSetEnabledInModule = extension.experimentalProperties[ST_SOURCE_SET_ENABLED]
-                if (screenshotSourceSetEnabledInModule.toString().lowercase(Locale.US) != "true") {
+                if (screenshotSourceSetEnabledInModule?.toString()?.toBoolean() != true) {
                     error(
                         """
                     Please enable screenshotTest source set in module first to apply the screenshot test plugin.
