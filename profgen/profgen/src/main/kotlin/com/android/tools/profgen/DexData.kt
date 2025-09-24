@@ -95,8 +95,6 @@ class DexFile internal constructor(
     }
 }
 
-fun DexFile(file: File): DexFile = DexFile(file.inputStream(), file.name)
-
 fun DexFile(src: InputStream, name: String): DexFile = parseDexFile(src.readBytes(), name)
 
 internal class DexHeader(
