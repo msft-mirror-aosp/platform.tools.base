@@ -7,6 +7,8 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.SocketSpec
 import com.android.adblib.connectedDevicesTracker
+import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
+import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.deviceInfo
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
@@ -51,12 +53,10 @@ import kotlin.io.path.readBytes
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+import org.junit.Before
+import org.junit.rules.RuleChain
 
 class AdblibIDeviceWrapperTest {
-
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
 
     @JvmField
     @Rule
@@ -66,10 +66,26 @@ class AdblibIDeviceWrapperTest {
     @Rule
     val temporaryFolder = TemporaryFolder()
 
+    private val fakeAdbRule = FakeAdbServerProviderRule()
+    private val useAdbLibAndroidDebugBridgeRule =
+        UseAdbLibAndroidDebugBridgeRule { fakeAdbRule.adbSession }
+    private val initAndroidDebugBridgeRule =
+        InitAndroidDebugBridgeRule { fakeAdbRule.fakeAdb.port }
+    @get:Rule
+    val ruleChain = RuleChain.outerRule(fakeAdbRule)
+        .around(useAdbLibAndroidDebugBridgeRule)
+        .around(initAndroidDebugBridgeRule)!!
+
     private val fakeAdb get() = fakeAdbRule.fakeAdb
     private val deviceServices get() = fakeAdbRule.adbSession.deviceServices
     private val hostServices get() = fakeAdbRule.adbSession.hostServices
-    private val bridge = AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
+
+    private lateinit var bridge: AndroidDebugBridge
+
+    @Before
+    fun setUp() {
+        bridge = AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
+    }
 
     @Test
     fun getSerialNumber() = runBlockingWithTimeout {

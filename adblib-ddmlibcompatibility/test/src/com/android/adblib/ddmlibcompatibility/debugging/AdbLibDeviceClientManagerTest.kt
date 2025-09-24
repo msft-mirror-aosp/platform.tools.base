@@ -15,17 +15,15 @@
  */
 package com.android.adblib.ddmlibcompatibility.debugging
 
-import com.android.adblib.ddmlibcompatibility.testutils.AndroidDebugBridgeListenerRule
 import com.android.adblib.ddmlibcompatibility.testutils.FakeIDevice
+import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.TestDeviceClientManagerListener
 import com.android.adblib.ddmlibcompatibility.testutils.TestDeviceClientManagerListener.EventKind.PROCESS_LIST_UPDATED
 import com.android.adblib.ddmlibcompatibility.testutils.TestDeviceClientManagerListener.EventKind.PROCESS_NAME_UPDATED
-import com.android.adblib.ddmlibcompatibility.testutils.connectTestDevice
-import com.android.adblib.ddmlibcompatibility.testutils.createAdbSession
-import com.android.adblib.ddmlibcompatibility.testutils.disconnectTestDevice
-import com.android.adblib.testingutils.CloseablesRule
+import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
+import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.debugging.DdmsProtocolKind
 import com.android.adblib.tools.debugging.JdwpProcessHolder
 import com.android.adblib.tools.debugging.ddmsProtocolKind
@@ -38,7 +36,7 @@ import com.android.ddmlib.DebugViewDumpHandler
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.clientmanager.DeviceClientManager
 import com.android.ddmlib.clientmanager.DeviceClientManagerListener
-import com.android.ddmlib.testing.FakeAdbRule
+import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.readLengthPrefixedString
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.CoroutineScope
@@ -60,37 +58,44 @@ import org.junit.rules.ExpectedException
 import java.nio.ByteBuffer
 import kotlin.math.abs
 import kotlin.math.max
+import org.junit.Before
+import org.junit.rules.RuleChain
 
 class AdbLibDeviceClientManagerTest {
 
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+    private val fakeAdb = FakeAdbServerProviderRule()
+    private val useAdbLibAndroidDebugBridgeRule =
+        UseAdbLibAndroidDebugBridgeRule { fakeAdb.adbSession }
+    private val initAndroidDebugBridgeRule =
+        InitAndroidDebugBridgeRule { fakeAdb.fakeAdb.port }
+    private val exceptionRule: ExpectedException = ExpectedException.none()
+
+    private lateinit var bridge: AndroidDebugBridge
+
+    @Before
+    fun setUp() {
+        bridge = AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
+    }
 
     @JvmField
     @Rule
-    val fakeAdb = FakeAdbRule().withClientSupport(false)
-
-    @JvmField
-    @Rule
-    val exceptionRule: ExpectedException = ExpectedException.none()
-
-    @JvmField
-    @Rule
-    val androidDebugBridgeRule = AndroidDebugBridgeListenerRule()
+    val ruleChain: RuleChain = RuleChain.outerRule(fakeAdb)
+        .around(useAdbLibAndroidDebugBridgeRule)
+        .around(initAndroidDebugBridgeRule)
+        .around(exceptionRule)
 
     @Test
     fun testTrackingWaitsUntilDeviceIsTracked() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
 
         // Act
-        val fakeIDevice = FakeIDevice("1234")
+        val deviceSerial = "1234"
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
+                bridge,
                 fakeIDevice,
                 listener
             )
@@ -100,7 +105,7 @@ class AdbLibDeviceClientManagerTest {
         // the DEVICE_TRACKER_WAIT_TIMEOUT timeout used by AdbLibDeviceClientManager.
         delay(500)
         val clientSizeBeforeTracking = deviceClientManager.clients.size
-        val (_, deviceState) = fakeAdb.connectTestDevice()
+        val deviceState = connectTestDevice(deviceSerial)
         deviceState.startClient(10, 0, "foo.bar", false)
 
         // If things work as expected, the client list should be updated
@@ -115,14 +120,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testScopeIsCancelledWhenDeviceDisconnects() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
         deviceState.startClient(10, 0, "foo.bar", false)
@@ -132,7 +138,7 @@ class AdbLibDeviceClientManagerTest {
         }
 
         // Act
-        fakeAdb.disconnectTestDevice(device.serialNumber)
+        fakeAdb.fakeAdb.disconnectDevice(fakeIDevice.serialNumber)
         yieldUntil {
             listener.filterEvents { events -> events.any { it.kind == PROCESS_LIST_UPDATED } }
                     && deviceClientManager.clients.size == 0
@@ -143,7 +149,7 @@ class AdbLibDeviceClientManagerTest {
             .lastOrNull { it.kind == PROCESS_LIST_UPDATED }
             ?.also { lastEvent ->
                 Assert.assertSame(deviceClientManager, lastEvent.deviceClientManager)
-                Assert.assertSame(fakeAdb.bridge, lastEvent.bridge)
+                Assert.assertSame(bridge, lastEvent.bridge)
             } ?: Assert.fail("No PROCESS_LIST_UPDATED event")
         Unit
     }
@@ -151,16 +157,17 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testCoroutinesAreCancelledAfterDeviceDisconnects() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
         val clientManagerCount = 20
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         deviceState.startClient(10, 0, "foo.bar", false)
         deviceState.startClient(12, 0, "foo.bar.baz", false)
 
         // Act
-        val jobsBefore = session.scope.collectJobs()
+        val jobsBefore = fakeAdb.adbSession.scope.collectJobs()
 
         // Create and start `clientManagerCount` device client managers concurrently
         coroutineScope {
@@ -168,8 +175,8 @@ class AdbLibDeviceClientManagerTest {
                 async {
                     val deviceClientManager =
                         clientManager.createDeviceClientManager(
-                            fakeAdb.bridge,
-                            device,
+                            bridge,
+                            fakeIDevice,
                             listener
                         )
                     yieldUntil { deviceClientManager.clients.size == 2 }
@@ -180,10 +187,10 @@ class AdbLibDeviceClientManagerTest {
         // Disconnecting the device should lead to all device client manager instances to stop
         // all their coroutines and release their resources (we add a little delay, because this
         // is asynchronous)
-        fakeAdb.disconnectTestDevice(device.serialNumber)
+        fakeAdb.fakeAdb.disconnectDevice(deviceSerial)
         delay(100)
 
-        val jobsAfter = session.scope.collectJobs()
+        val jobsAfter = fakeAdb.adbSession.scope.collectJobs()
 
         // Assert
         // There are typically 1 or 2 coroutines more in `jobsAfter` because
@@ -211,14 +218,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testClientListIsUpdatedWhenProcessesStart() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -244,7 +252,7 @@ class AdbLibDeviceClientManagerTest {
         Assert.assertNotNull(clients.find { it.clientData.pid == 12 })
 
         val client = clients.first { it.clientData.pid == 10 }
-        Assert.assertSame(device, client.device)
+        Assert.assertSame(fakeIDevice, client.device)
         Assert.assertNotNull(client.clientData)
         Assert.assertEquals(10, client.clientData.pid)
         Assert.assertTrue(client.clientData.hasFeature("view-hierarchy"))
@@ -267,18 +275,10 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testClientListUpdatesAreSerialized() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
-        val listener = AndroidDebugBridgeListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
-        val deviceClientManager =
-            clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
-                listener
-            )
-
-        // Act
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val ddmlibListener = object : IDeviceChangeListener {
             val lock = Any()
 
@@ -314,8 +314,15 @@ class AdbLibDeviceClientManagerTest {
                 }
             }
         }
-        androidDebugBridgeRule.addDeviceChangeListener(ddmlibListener)
+        val listener = AndroidDebugBridgeListener(ddmlibListener)
+        val deviceClientManager =
+            clientManager.createDeviceClientManager(
+                bridge,
+                fakeIDevice,
+                listener
+            )
 
+        // Act
         while (ddmlibListener.totalCalls < 100) {
             deviceState.startClient(10, 0, "foo.bar", false)
             deviceState.startClient(12, 0, "foo.bar.baz", false)
@@ -341,14 +348,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testClientListIsUpdatedWhenProcessesStop() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
         deviceState.startClient(10, 0, "foo.bar", false)
@@ -370,14 +378,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testListenerIsCalledWhenProcessesStart() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -391,7 +400,7 @@ class AdbLibDeviceClientManagerTest {
         // Assert
         val firstEvent = listener.events().first { it.kind == PROCESS_LIST_UPDATED }
         Assert.assertSame(deviceClientManager, firstEvent.deviceClientManager)
-        Assert.assertSame(fakeAdb.bridge, firstEvent.bridge)
+        Assert.assertSame(bridge, firstEvent.bridge)
         Assert.assertEquals(PROCESS_LIST_UPDATED, firstEvent.kind)
         Assert.assertNull(firstEvent.client)
     }
@@ -399,14 +408,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testListenerIsCalledWhenProcessesEnd() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -428,21 +438,22 @@ class AdbLibDeviceClientManagerTest {
         // Assert
         val processListUpdatedEvent = listener.events().last { it.kind == PROCESS_LIST_UPDATED }
         Assert.assertSame(deviceClientManager, processListUpdatedEvent.deviceClientManager)
-        Assert.assertSame(fakeAdb.bridge, processListUpdatedEvent.bridge)
+        Assert.assertSame(bridge, processListUpdatedEvent.bridge)
         Assert.assertNull(processListUpdatedEvent.client)
     }
 
     @Test
     fun testListenerIsCalledWhenProcessPropertiesChange() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -474,14 +485,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testClientIsJdwpProcessHolder() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -499,14 +511,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testClientKillWorks() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -530,14 +543,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testListViewRootsWorks() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -565,14 +579,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testCaptureViewWorks() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -609,14 +624,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testCaptureViewTimesOutOnInvalidArgs() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
         val clientState = deviceState.startClient(10, 0, "foo.bar", false)
@@ -646,14 +662,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testDumpViewHierarchyWorks() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -708,14 +725,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testExecuteGarbageCollectorWorks() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -746,14 +764,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testExecuteGarbageCollectorOnPreApi28DeviceWorks() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice(sdk = AndroidApiLevel(27))
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial, sdk = AndroidApiLevel(27))
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -783,14 +802,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testRequestAllocationDetails() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
         val expectedAllocationTrackerDetails = "sample allocation tracker details"
@@ -826,14 +846,15 @@ class AdbLibDeviceClientManagerTest {
     @Test
     fun testEnableAllocationTrackerWorks() = runBlockingWithTimeout {
         // Prepare
-        val session = fakeAdb.createAdbSession(closeables)
-        val clientManager = AdbLibClientManager(session)
+        val clientManager = AdbLibClientManager(fakeAdb.adbSession)
         val listener = TestDeviceClientManagerListener()
-        val (device, deviceState) = fakeAdb.connectTestDevice()
+        val deviceSerial = "1234"
+        val deviceState = connectTestDevice(deviceSerial)
+        val fakeIDevice = FakeIDevice(deviceSerial)
         val deviceClientManager =
             clientManager.createDeviceClientManager(
-                fakeAdb.bridge,
-                device,
+                bridge,
+                fakeIDevice,
                 listener
             )
 
@@ -855,6 +876,20 @@ class AdbLibDeviceClientManagerTest {
 
         // Assert
         Assert.assertEquals(true, clientState.isAllocationTrackerEnabled)
+    }
+
+    private fun connectTestDevice(
+        deviceSerial: String,
+        sdk: AndroidApiLevel = AndroidApiLevel(31)
+    ): DeviceState {
+        return fakeAdb.fakeAdb.connectDevice(
+            deviceSerial,
+            "test1",
+            "test2",
+            "model",
+            sdk,
+            DeviceState.HostConnectionType.USB
+        ).also { it.deviceStatus = DeviceState.DeviceStatus.ONLINE }
     }
 
     private fun assertThrows(block: () -> Unit) {
@@ -931,13 +966,13 @@ class AdbLibDeviceClientManagerTest {
         }
     }
 
-    class AndroidDebugBridgeListener : DeviceClientManagerListener {
+    class AndroidDebugBridgeListener(private val ddmlibListener: IDeviceChangeListener) : DeviceClientManagerListener {
         override fun processListUpdated(
             bridge: AndroidDebugBridge,
             deviceClientManager: DeviceClientManager
         ) {
             if (bridge === AndroidDebugBridge.getBridge()) {
-                AndroidDebugBridge.deviceChanged(
+                ddmlibListener.deviceChanged(
                     deviceClientManager.device, IDevice.CHANGE_CLIENT_LIST
                 )
             }
@@ -948,7 +983,7 @@ class AdbLibDeviceClientManagerTest {
             deviceClientManager: DeviceClientManager
         ) {
             if (bridge === AndroidDebugBridge.getBridge()) {
-                AndroidDebugBridge.deviceChanged(
+                ddmlibListener.deviceChanged(
                     deviceClientManager.device, IDevice.CHANGE_PROFILEABLE_CLIENT_LIST
                 )
             }
@@ -959,9 +994,7 @@ class AdbLibDeviceClientManagerTest {
             deviceClientManager: DeviceClientManager,
             client: Client
         ) {
-            if (bridge === AndroidDebugBridge.getBridge()) {
-                AndroidDebugBridge.clientChanged(client, Client.CHANGE_NAME)
-            }
+            throw NotImplementedError("processNameUpdated")
         }
 
         override fun processDebuggerStatusUpdated(
@@ -969,9 +1002,7 @@ class AdbLibDeviceClientManagerTest {
             deviceClientManager: DeviceClientManager,
             client: Client
         ) {
-            if (bridge === AndroidDebugBridge.getBridge()) {
-                AndroidDebugBridge.clientChanged(client, Client.CHANGE_DEBUGGER_STATUS)
-            }
+            throw NotImplementedError("processDebuggerStatusUpdated")
         }
 
         override fun processHeapAllocationsUpdated(
@@ -979,9 +1010,7 @@ class AdbLibDeviceClientManagerTest {
             deviceClientManager: DeviceClientManager,
             client: Client
         ) {
-            if (bridge === AndroidDebugBridge.getBridge()) {
-                AndroidDebugBridge.clientChanged(client, Client.CHANGE_HEAP_ALLOCATIONS)
-            }
+            throw NotImplementedError("processHeapAllocationsUpdated")
         }
 
         override fun processMethodProfilingStatusUpdated(
@@ -989,9 +1018,7 @@ class AdbLibDeviceClientManagerTest {
             deviceClientManager: DeviceClientManager,
             client: Client
         ) {
-            if (bridge === AndroidDebugBridge.getBridge()) {
-                AndroidDebugBridge.clientChanged(client, Client.CHANGE_METHOD_PROFILING_STATUS)
-            }
+            throw NotImplementedError("processMethodProfilingStatusUpdated")
         }
     }
 }

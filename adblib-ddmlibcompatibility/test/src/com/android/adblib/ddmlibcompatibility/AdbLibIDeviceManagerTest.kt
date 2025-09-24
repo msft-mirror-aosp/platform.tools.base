@@ -1,6 +1,8 @@
 package com.android.adblib.ddmlibcompatibility
 
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManagerTest.TestIDeviceManagerListener.EventType
+import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
+import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
@@ -18,15 +20,29 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import kotlin.math.max
+import org.junit.Before
+import org.junit.rules.RuleChain
 
 class AdbLibIDeviceManagerTest {
 
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
-
+    private val fakeAdbRule = FakeAdbServerProviderRule()
     private val fakeAdb get() = fakeAdbRule.fakeAdb
-    private val bridge = AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
+    private val useAdbLibAndroidDebugBridgeRule =
+        UseAdbLibAndroidDebugBridgeRule { fakeAdbRule.adbSession }
+    private val initAndroidDebugBridgeRule =
+        InitAndroidDebugBridgeRule { fakeAdbRule.fakeAdb.port }
+
+    @get:Rule
+    val ruleChain = RuleChain.outerRule(fakeAdbRule)
+        .around(useAdbLibAndroidDebugBridgeRule)
+        .around(initAndroidDebugBridgeRule)!!
+
+    private lateinit var bridge: AndroidDebugBridge
+
+    @Before
+    fun setUp() {
+        bridge = AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
+    }
 
     @Test
     fun hasInitialDeviceList() = runBlockingWithTimeout {
