@@ -19,8 +19,8 @@ import com.android.SdkConstants.ANDROID_URI
 import com.android.SdkConstants.ATTR_MAX_SDK_VERSION
 import com.android.SdkConstants.ATTR_MIN_SDK_VERSION
 import com.android.SdkConstants.ATTR_NAME
-import com.android.SdkConstants.ATTR_PURPOSE
 import com.android.SdkConstants.TAG_PERMISSION
+import com.android.SdkConstants.TAG_PURPOSE
 import com.android.SdkConstants.TAG_USES_PERMISSION
 import com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23
 import com.android.SdkConstants.TAG_VALID_PURPOSE
@@ -100,7 +100,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     }
 
     val requiredRange = SdkRange(minSdk, maxSdk)
-    val purposeElements = getSubTagsByName(element, ATTR_PURPOSE).toList()
+    val purposeElements = getSubTagsByName(element, TAG_PURPOSE).toList()
 
     // Handle the most common case: no <purpose> tags are declared at all.
     if (purposeElements.isEmpty()) {
