@@ -17,6 +17,7 @@
 package com.android.tools.journeys.testengine.adapter
 
 import com.android.tools.journeys.testengine.adapter.JourneysResultAdapter.JourneysResultAdapterConfig
+import com.android.tools.journeys.testengine.robo.adapter.RoboResultAdapter
 
 /**
  * Creates an instance of [JourneysResultAdapter] for the given backend ID and configuration.
@@ -26,5 +27,8 @@ import com.android.tools.journeys.testengine.adapter.JourneysResultAdapter.Journ
  * @return An instance of the appropriate adapter.
  */
 fun createAdapter(backendId: String, config: JourneysResultAdapterConfig): JourneysResultAdapter {
-    return DefaultResultAdapter(config)
+    return when (backendId) {
+        "ROBO" -> RoboResultAdapter(config as RoboResultAdapter.RoboResultAdapterConfig)
+        else -> DefaultResultAdapter(config)
+    }
 }

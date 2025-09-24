@@ -50,6 +50,9 @@ object RoboConfigConstants {
     /** Argument key for enabling UI Automator only mode in Robo tests. */
     const val ROBO_V2_UI_AUTOMATOR_ONLY_MODE = "uiAutomatorOnlyMode"
 
+    /** Model reasoning used when it is missing in the data provided by the backend. */
+    const val DEFAULT_MODEL_REASONING = "Reasoning not available"
+
     /** The fully qualified class name of the test runner for instrumentation. */
     const val TEST_RUNNER_CLASS = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -61,15 +64,6 @@ object RoboConfigConstants {
 
     /** The timeout for the crawl to complete. */
     const val TEST_TIMEOUT_SECONDS = 3600L
-
-    /** The prefix for model description of assertion prompts. */
-    const val ASSERTION_PROMPT_PREFIX = "Assertion prompt:"
-
-    /** Description of a goal complete model detail. */
-    private const val GOAL_COMPLETE_DESCRIPTION = "Goal Complete"
-
-    /** Description of a goal failed model detail. */
-    private const val GOAL_FAILED_DESCRIPTION = "Goal Failed"
 
     /** Default timeout duration for platform connection. */
     val DEFAULT_PLATFORM_TIMEOUT: Duration = Duration.ofSeconds(60)
@@ -85,9 +79,6 @@ object RoboConfigConstants {
      * capturing the bound port number in group 1.
      */
     val ROBO_PROXY_PORT_IS_BOUND_PATTERN = "port_is_bound(?:\\s+(\\d+))?".toPattern()
-
-    /** Model descriptions which specify goal state. */
-    val GOAL_STATUS_MODEL_DESCRIPTION = setOf(GOAL_COMPLETE_DESCRIPTION, GOAL_FAILED_DESCRIPTION)
 
     /** IDs of Builtin roboscripts allowed in context of journeys. */
     val ALLOWED_BUILTIN_ROBOSCRIPT_IDS = setOf(35)

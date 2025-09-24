@@ -24,12 +24,12 @@ import java.util.Base64
  * and writes it to an output publisher.
  **/
 class StreamingEventConsumer(
-    private val outputPublisher: (value: String) -> Unit
+    private val outputPublisher: (key: String, value: String) -> Unit
 ) : JourneyRunEventConsumer {
 
     override fun onEvent(event: JourneyRunEvent) {
         val eventBytes = event.toByteArray()
         val base64EncodedEvent = Base64.getEncoder().encodeToString(eventBytes)
-        outputPublisher(base64EncodedEvent)
+        outputPublisher(event.eventPayloadCase.name, base64EncodedEvent)
     }
 }

@@ -18,7 +18,6 @@ package com.android.tools.journeys.testengine.descriptor
 import com.android.tools.journeys.testengine.JourneysExecutionContext
 import org.junit.platform.engine.TestDescriptor.Type
 import org.junit.platform.engine.UniqueId
-import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.hierarchical.Node
@@ -36,6 +35,7 @@ class DeviceDescriptor(
     Node<JourneysExecutionContext> {
 
     companion object {
+
         const val SEGMENT_TYPE: String = "deviceId"
     }
 
@@ -50,16 +50,6 @@ class DeviceDescriptor(
         context: JourneysExecutionContext,
         dynamicTestExecutor: Node.DynamicTestExecutor
     ): JourneysExecutionContext {
-        context.executionListener.reportingEntryPublished(
-            this,
-            ReportEntry.from("deviceId", deviceId)
-        )
-        if (deviceName.isNotBlank()) {
-            context.executionListener.reportingEntryPublished(
-                this,
-                ReportEntry.from("deviceDisplayName", deviceName)
-            )
-        }
-        return context.copy(targetDeviceId = deviceId)
+        return context.copy(targetDeviceId = deviceId, targetDeviceName = deviceName)
     }
 }

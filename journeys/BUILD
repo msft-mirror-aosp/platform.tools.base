@@ -5,7 +5,6 @@ merged_zip(
     name = "journeys_maven_repo",
     srcs = [
         ":maven_engine_no_transitive_deps.zip",
-        "//tools/base/journeys/journeys-gradle-plugin:journeys-gradle-plugin.zip",
     ],
     visibility = ["//visibility:public"],
 )

@@ -38,7 +38,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.ServerSocket
 import java.nio.file.Path
-import java.util.UUID
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.io.path.inputStream
@@ -66,12 +65,14 @@ class Proxy(
      * Executes a journey defined by the script at the given path.
      * Manages instrumentation setup, crawl execution, and cleanup.
      *
+     * @param journeyRunId The ID of the journey being run.
      * @param deviceId The ID of the target device.
      * @param journeyPath Path to the file containing the journey script definition.
      * @param artifactProcessor A lambda function to process any [Artifact] produced during the crawl.
      * @throws JourneyExecutionException if any stage of the execution fails.
      */
     fun executeJourney(
+        journeyRunId: String,
         deviceId: String,
         journeyPath: Path,
         artifactProcessor: (Artifact) -> Unit
@@ -83,6 +84,7 @@ class Proxy(
             hostPort = setupAdbForward(deviceId)
             val result =
                 connectToCrawlerBackend(
+                    journeyRunId,
                     hostPort,
                     journeyScript,
                     accessTokenPath,
@@ -391,12 +393,14 @@ class Proxy(
     /**
      * Connects to the crawler backend via gRPC and starts the crawl process.
      *
+     * @param journeyRunId The ID of the journey being run.
      * @param hostPort The host port forwarded to the device's Robo service port.
      * @param journeyScript The journey script content as a string.
      * @param accessTokenPath Path to obtain access token for establishing connection to backend.
      * @param artifactProcessor A lambda function to process any [Artifact] produced during the crawl.
      */
     private fun connectToCrawlerBackend(
+        journeyRunId: String,
         hostPort: Int,
         journeyScript: String,
         accessTokenPath: String,
@@ -405,7 +409,7 @@ class Proxy(
         val crawlSetup =
             CrawlSetup.newBuilder()
                 .setAppPackageId(applicationId)
-                .setIdentifier(UUID.randomUUID().toString())
+                .setIdentifier(journeyRunId)
                 .setClientMetadata(
                     ClientMetadata.newBuilder()
                         .setName("journeys-junit5-engine")

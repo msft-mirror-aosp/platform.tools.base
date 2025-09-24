@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.tools.journeys.testengine.robo
+package com.android.tools.journeys.testengine.robo.platform
 
-import com.google.appcrawler.platform.client.GrpcClient
 import com.google.auth.oauth2.ImpersonatedCredentials
+import com.google.robo.platform.client.GrpcClient
 import io.grpc.ClientInterceptor
 import io.grpc.ManagedChannel
 import io.grpc.netty.NettyChannelBuilder
@@ -39,8 +39,8 @@ import org.mockito.Mockito.mockConstruction
 import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
-import org.mockito.kotlin.argThat
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import java.io.ByteArrayInputStream
@@ -83,7 +83,7 @@ class ProxyTest {
         val journeyPath = Paths.get("non_existent_journey.xml")
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", journeyPath) { artifact -> }
+            proxy.executeJourney("run-1", "device-123", journeyPath) { artifact -> }
         }.apply {
             assertEquals(JourneyFailureReason.JOURNEY_READ_FAILED, reason)
             assertContains(message!!, "Failed to read journey: non_existent_journey.xml")
@@ -96,7 +96,7 @@ class ProxyTest {
         invalidJourneyPath.toFile().writeText("<journey><actions></journey>")
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", invalidJourneyPath) { artifact -> }
+            proxy.executeJourney("run-1", "device-123", invalidJourneyPath) { artifact -> }
         }.apply {
             assertEquals(JourneyFailureReason.JOURNEY_READ_FAILED, reason)
             assertContains(
@@ -120,7 +120,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }
 
         verify(mockAdb).setGlobalSettingsValue("device-123", "verifier_verify_adb_installs", "0")
@@ -160,7 +160,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }
 
         verify(mockAdb, never()).setGlobalSettingsValue(
@@ -202,7 +202,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }
 
         verify(mockAdb, never()).setGlobalSettingsValue(
@@ -243,7 +243,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Install failed"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { artifact -> }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { artifact -> }
         }.apply {
             assertEquals(JourneyFailureReason.ADB_INSTALL_FAILED, reason)
             assertContains(message!!, "Installation failure: Install failed")
@@ -267,7 +267,7 @@ class ProxyTest {
         `when`(mockAdb.dumpsys(anyString(), anyString(), anyLong())).thenReturn("random port")
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }
 
         val instrumentationArgsCaptor = argumentCaptor<Map<String, String>>()
@@ -300,7 +300,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Instrumentation failed"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }.apply {
             assertEquals(JourneyFailureReason.INSTRUMENTATION_FAILED, reason)
             assertContains(message!!, "Failed to run instrumentation: Instrumentation failed")
@@ -337,7 +337,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }
         val devicePortCaptor = ArgumentCaptor.forClass(Int::class.java)
         verify(mockAdb).forward(eq("device-123"), anyInt(), devicePortCaptor.capture())
@@ -361,7 +361,7 @@ class ProxyTest {
         `when`(mockAdb.dumpsys(anyString(), anyString(), anyLong())).thenReturn("some other output")
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }.apply {
             assertEquals(JourneyFailureReason.ROBO_PORT_EXTRACTION_FAILED, reason)
             assertContains(message!!, "Failed to obtain device port after 10 attempts.")
@@ -398,7 +398,7 @@ class ProxyTest {
         ).thenThrow(RuntimeException("Forwarding failed"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }.apply {
             assertEquals(JourneyFailureReason.ADB_FORWARDING_FAILED, reason)
             assertContains(message!!, "Forwarding failed")
@@ -439,7 +439,7 @@ class ProxyTest {
         )
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxyWithMissingToken.executeJourney("device-123", validJourneyPath) { }
+            proxyWithMissingToken.executeJourney("run-1", "device-123", validJourneyPath) { }
         }.apply {
             assertEquals(JourneyFailureReason.AUTHENTICATION_FAILED, reason)
             assertContains(message!!, "Failed to obtain credentials")
@@ -499,6 +499,9 @@ class ProxyTest {
                 )
                 `when`(mockChannelBuilder.build()).thenReturn(mock(ManagedChannel::class.java))
 
+                // The static analysis tool flags this as an unused result, but it's
+                // required for Mockito's static mocking to work.
+                @Suppress("CheckResult")
                 mockedNettyChannelBuilder.`when`<Any> { NettyChannelBuilder.forTarget(anyString()) }
                     .thenReturn(mockChannelBuilder)
 
@@ -517,7 +520,7 @@ class ProxyTest {
                         )
                     ).thenReturn(mockResult)
                 }.use {
-                    proxyWithFakeToken.executeJourney("device-123", validJourneyPath) {}
+                    proxyWithFakeToken.executeJourney("run-1", "device-123", validJourneyPath) {}
                 }
             }
         }
@@ -532,7 +535,7 @@ class ProxyTest {
         `when`(mockAdb.getDeviceApiLevel(anyString())).thenThrow(RuntimeException("Test failure"))
 
         assertThrows(JourneyExecutionException::class.java) {
-            proxy.executeJourney("device-123", validJourneyPath) { }
+            proxy.executeJourney("run-1", "device-123", validJourneyPath) { }
         }
 
         verify(mockAdb).removeForward(eq("device-123"), anyInt())

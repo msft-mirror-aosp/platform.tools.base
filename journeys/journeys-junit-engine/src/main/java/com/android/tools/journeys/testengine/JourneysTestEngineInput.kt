@@ -28,6 +28,10 @@ object JourneysTestEngineInput {
         getStringListFromSystemPropertyOrEnvVar("journeysFilter", "JOURNEYS_FILTER")
     val resultsDir: File
 
+    // Disabled by default i.e. not setting (empty string) equates to false.
+    val enableStdoutReport: Boolean =
+        getSystemPropertyOrEnvVar("", "JOURNEYS_ENABLE_STDOUT_REPORT").toBoolean()
+
     init {
         if (System.getenv("com.android.junit.engine.input.parameters") != null) {
             val inputProperties = Properties().also {
