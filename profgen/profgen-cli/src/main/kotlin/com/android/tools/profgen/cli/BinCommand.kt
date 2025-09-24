@@ -116,9 +116,8 @@ class ValidateCommand : Subcommand("validate", "Validate Profile") {
 
 @ExperimentalCli
 class PrintCommand : Subcommand("print", "Print methods matching profile") {
-    val hrpPath by argument(ArgType.String, "profile", "File path to Human Readable profile")
+    val hrpPath by option(ArgType.String, "profile", "p","File path to Human Readable profile").required()
     val apkPath by option(ArgType.String, "apk", "a", "File path to apk").required()
-    val outPath by option(ArgType.String, "output", "o", "File path to generated binary profile").required()
     val obfPath by option(ArgType.String, "map", "m", "File path to name obfuscation map")
     override fun execute() {
         val hrpFile = Path(hrpPath).toFile()
@@ -130,9 +129,6 @@ class PrintCommand : Subcommand("print", "Print methods matching profile") {
         val obfFile = obfPath?.let { Path(it).toFile() }
         require(obfFile?.exists() != false) { "File not found: $obfPath" }
 
-        val outFile = Path(outPath).toFile()
-        require(outFile.parentFile.exists()) { "Directory does not exist: ${outFile.parent}" }
-
         val hrp = readHumanReadableProfileOrExit(hrpFile, StdErrorDiagnostics)
         val apk = Apk(apkFile)
         val obf = if (obfFile != null) ObfuscationMap(obfFile) else ObfuscationMap.Empty
@@ -140,6 +136,7 @@ class PrintCommand : Subcommand("print", "Print methods matching profile") {
         profile.print(System.out, obf)
     }
 }
+
 @ExperimentalCli
 class ProfileDumpCommand: Subcommand("dumpProfile", "Dump a binary profile to a HRF") {
     val binPath by option(ArgType.String, "profile", "p", "File path to the binary profile").required()

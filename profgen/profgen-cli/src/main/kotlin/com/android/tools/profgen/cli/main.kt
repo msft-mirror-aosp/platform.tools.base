@@ -28,6 +28,7 @@ fun main(args: Array<String>) {
         ProfileDumpCommand(),
         ExpandWildcardsCommand(),
         ExtractProfileCommand(),
+        PrintCommand()
     )
     parser.parse(args)
 }
