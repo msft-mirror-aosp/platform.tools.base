@@ -51,28 +51,8 @@ suspend fun FakeAdbRule.connectTestDevice(
 
         // Ensure device is online
         deviceState.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        waitForOnlineDevice(deviceState)
-    }
-}
-
-suspend fun FakeAdbRule.waitForOnlineDevice(
-    deviceState: DeviceState,
-    timeout: Duration = Duration.ofSeconds(2)
-): Pair<IDevice, DeviceState> {
-    suspend fun FakeAdbRule.waitOnline(deviceState: DeviceState): Pair<IDevice, DeviceState> {
-        while (true) {
-            val device = this.bridge.devices.find {
-                it.isOnline && it.serialNumber == deviceState.deviceId
-            }
-            if (device != null) {
-                return Pair(device, deviceState)
-            }
-            delay(20)
-        }
-    }
-
-    return withTimeout(timeout.toMillis()) {
-        waitOnline(deviceState)
+        val device = deviceState.waitForOnlineDevice()
+        Pair(device, deviceState)
     }
 }
 
