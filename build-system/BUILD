@@ -112,6 +112,12 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+filegroup(
+    name = "gradle-distrib-declarative-snapshot",
+    srcs = ["//tools/external/gradle:gradle-distrib-declarative-snapshot"],
+    visibility = ["//visibility:public"],
+)
+
 # See https://docs.gradle.org/current/userguide/compatibility.html#kotlin
 maven_repository(
     name = "gradle-runtime-maven",
