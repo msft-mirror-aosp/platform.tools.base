@@ -132,7 +132,9 @@ class FusedLibraryTest {
             }
             fusedLibrary(":fusedLib1") {
                 androidFusedLibrary {
-                    minSdk = DEFAULT_MIN_SDK_VERSION
+                    minSdk {
+                        version = release(DEFAULT_MIN_SDK_VERSION)
+                    }
                 }
                 pluginCallbacks += FusedLibCallback::class.java
                 dependencies {

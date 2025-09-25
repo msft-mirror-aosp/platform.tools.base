@@ -42,7 +42,6 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -187,7 +186,7 @@ abstract class FusedLibraryManifestMergerTask : ManifestProcessorTask() {
             )
             task.libraryManifests.set(libraryManifests)
             task.manifestPlaceholders.set(creationConfig.manifestPlaceholders)
-            task.minSdkVersion.setDisallowChanges(creationConfig.minSdk.toString())
+            task.minSdkVersion.setDisallowChanges(creationConfig.minSdkApiLevel.toString())
             task.namespace.set(creationConfig.namespace)
             task.tmpDir.setDisallowChanges(
                     creationConfig.projectLayout.buildDirectory.dir("tmp/FusedLibraryManifestMerger")

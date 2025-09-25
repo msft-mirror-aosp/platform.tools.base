@@ -426,9 +426,7 @@ https://issuetracker.google.com/328749318
   * com.android.build.api.variant.DeviceTestBuilder.setEnable: void (boolean)
 https://issuetracker.google.com/330685970
   * com.android.build.api.dsl.FusedLibraryExtension
-  * com.android.build.api.dsl.FusedLibraryExtension.getMinSdk: java.lang.Integer ()
   * com.android.build.api.dsl.FusedLibraryExtension.getNamespace: java.lang.String ()
-  * com.android.build.api.dsl.FusedLibraryExtension.setMinSdk: void (java.lang.Integer)
   * com.android.build.api.dsl.FusedLibraryExtension.setNamespace: void (java.lang.String)
 https://issuetracker.google.com/330686862
   * com.android.build.api.dsl.TestFixtures
@@ -683,3 +681,5 @@ https://issuetracker.google.com/443715703
   * com.android.build.api.variant.Component.configureJavaCompileTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.compile.JavaCompile, kotlin.Unit>)
 https://issuetracker.google.com/443976533
   * com.android.build.api.artifact.SingleArtifact$VERSION_CONTROL_INFO_FILE extends com.android.build.api.artifact.SingleArtifact
+https://issuetracker.google.com/448316593
+  * com.android.build.api.dsl.FusedLibraryExtension.minSdk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec, kotlin.Unit>)

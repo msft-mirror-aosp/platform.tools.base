@@ -20,8 +20,10 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.FusedLibraryExtension
+import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.gradle.internal.dependency.configureKotlinPlatformAttribute
 import com.android.build.gradle.internal.dsl.FusedLibraryExtensionImpl
+import com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScopeImpl
@@ -97,14 +99,14 @@ class FusedLibraryPlugin @Inject constructor(
     private val variantScope: FusedLibraryGlobalScope by lazy(LazyThreadSafetyMode.NONE) {
         withProject("variantScope") { project ->
             FusedLibraryGlobalScopeImpl(
-                    project,
-                    projectServices,
-                    { extension }
+                project,
+                projectServices,
+                { extension }
             )
         }
     }
 
-    private val extension: FusedLibraryExtension by lazy(LazyThreadSafetyMode.NONE) {
+    private val extension: InternalFusedLibraryExtension by lazy(LazyThreadSafetyMode.NONE) {
         withProject("extension") { project ->
             instantiateExtension(project)
         }
@@ -122,7 +124,7 @@ class FusedLibraryPlugin @Inject constructor(
         extension
     }
 
-    private fun instantiateExtension(project: Project): FusedLibraryExtension {
+    private fun instantiateExtension(project: Project): InternalFusedLibraryExtension {
 
         val fusedLibraryExtensionImpl = dslServices.newDecoratedInstance(
                 FusedLibraryExtensionImpl::class.java,
@@ -131,15 +133,15 @@ class FusedLibraryPlugin @Inject constructor(
 
         abstract class Extension(
                 val publicExtensionImpl: FusedLibraryExtensionImpl,
-        ): FusedLibraryExtension by publicExtensionImpl
+        ): InternalFusedLibraryExtension by publicExtensionImpl
 
-        return project.extensions.create(
+        project.extensions.create(
                 FusedLibraryExtension::class.java,
                 FusedLibraryConstants.EXTENSION_NAME,
                 Extension::class.java,
                 fusedLibraryExtensionImpl
         )
-
+        return fusedLibraryExtensionImpl
     }
 
     private fun maybePublishToMaven(

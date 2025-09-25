@@ -147,7 +147,9 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
                 pluginCallbacks += FusedLibraryConfigureMavenPublishCallback::class.java
                 androidFusedLibrary {
                     namespace = "com.example.fusedLib1"
-                    minSdk = 1
+                    minSdk {
+                        version = release(1)
+                    }
                 }
                 dependencies {
                     include(project(":androidLib2"))

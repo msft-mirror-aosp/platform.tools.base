@@ -16,19 +16,32 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.build.api.dsl.FusedLibraryExtension
-import com.android.build.api.variant.AndroidVersion
-import com.android.build.api.variant.impl.AndroidVersionImpl
+import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.gradle.internal.services.DslServices
+import org.gradle.api.Action
 import javax.inject.Inject
 
 abstract class FusedLibraryExtensionImpl @Inject constructor(
-    val dslServices: DslServices,
-): FusedLibraryExtension{
+    val dslServices: DslServices
+): InternalFusedLibraryExtension {
 
     abstract override var namespace: String?
 
-    abstract override var minSdk: Int?
+    protected abstract var _minSdkVersion: MinSdkVersion?
+
+    private val minSdkDelegate = MinSdkDelegate(
+        getMinSdk = { _minSdkVersion },
+        setMinSdk = { _minSdkVersion = it },
+        dslServices = dslServices
+    )
+
+    override val minSdkApiLevel: Int?
+        get() = minSdkDelegate.minSdkVersion?.apiLevel
+
+    override fun minSdk(action: Action<MinSdkSpec>) {
+        minSdkDelegate.minSdk(action)
+    }
 
     abstract override val manifestPlaceholders: MutableMap<String, String>
 

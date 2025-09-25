@@ -18,9 +18,10 @@ package com.android.build.gradle.internal.fusedlibrary
 
 import com.android.SdkConstants.EXT_JAR
 import com.android.build.api.artifact.impl.ArtifactsImpl
-import com.android.build.api.dsl.FusedLibraryExtension
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.AarMetadataImpl
+import com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension
+import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants.EXTENSION_NAME
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -34,7 +35,7 @@ import org.gradle.api.provider.MapProperty
 class FusedLibraryGlobalScopeImpl(
     project: Project,
     private val projectServices: ProjectServices,
-    extensionProvider: () -> FusedLibraryExtension
+    extensionProvider: () -> InternalFusedLibraryExtension,
 ) : FusedLibraryGlobalScope {
 
     private val internalServices = VariantServicesImpl(projectServices)
@@ -44,7 +45,7 @@ class FusedLibraryGlobalScopeImpl(
     override val artifacts= ArtifactsImpl(project, "single")
     override val dependencies = FusedLibraryDependencies()
     override val incomingConfigurations = dependencies.configurations
-    override val extension: FusedLibraryExtension by lazy {
+    override val extension: InternalFusedLibraryExtension by lazy {
         extensionProvider.invoke()
     }
 
@@ -65,7 +66,7 @@ class FusedLibraryGlobalScopeImpl(
 
                 For example:
                 ```
-                ${FusedLibraryConstants.EXTENSION_NAME} {
+                $EXTENSION_NAME {
                     namespace = "com.example.mylibrary"
                 }
                 ```
@@ -75,17 +76,19 @@ class FusedLibraryGlobalScopeImpl(
     override val manifestPlaceholders: MutableMap<String, String>
         get() = extension.manifestPlaceholders
 
-    override val minSdk: Int
-        get() = extension.minSdk ?: error(
+    override val minSdkApiLevel: Int
+        get() = extension.minSdkApiLevel ?: error(
             """
                 Minimum Sdk is not defined.
 
-                Please add the `minSdk` field to the :${projectServices.projectInfo.name} build file.
+                Please configure `minSdk` in the `${EXTENSION_NAME}`:${projectServices.projectInfo.name} build file.
 
                 For example:
                 ```
-                ${FusedLibraryConstants.EXTENSION_NAME} {
-                    minSdk = 34
+                $EXTENSION_NAME {
+                    minSdk {
+                        version = release(34)
+                    }
                 }
                 ```
             """.trimIndent()

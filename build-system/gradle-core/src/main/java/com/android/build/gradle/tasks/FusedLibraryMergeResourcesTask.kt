@@ -128,7 +128,7 @@ abstract class FusedLibraryMergeResourcesTask : NonIncrementalGlobalTask() {
             task.analyticsService.setDisallowChanges(
                     getBuildService(task.project.gradle.sharedServices)
             )
-            task.minSdk.setDisallowChanges(creationConfig.minSdk)
+            task.minSdk.setDisallowChanges(creationConfig.minSdkApiLevel)
             task.resourceSets.setFrom(
                     creationConfig.dependencies.getArtifactFileCollection(
                         AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,

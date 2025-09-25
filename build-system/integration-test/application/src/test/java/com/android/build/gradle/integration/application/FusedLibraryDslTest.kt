@@ -61,19 +61,23 @@ class FusedLibraryDslTest {
             it.assertErrorContains(
                 """Minimum Sdk is not defined.
 
-     Please add the `minSdk` field to the :fusedLib build file.
+     Please configure `minSdk` in the `androidFusedLibrary`:fusedLib build file.
 
      For example:
      ```
      androidFusedLibrary {
-         minSdk = 34
+         minSdk {
+             version = release(34)
+         }
      }
      ```"""
             )
         }
         build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME").reconfigure {
             androidFusedLibrary {
-                minSdk = 34
+                minSdk {
+                    version = release(34)
+                }
             }
         }
         build.executor.run(":$FUSED_LIB_PROJECT_NAME:assemble")

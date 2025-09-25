@@ -103,7 +103,9 @@ internal class FusedLibraryManifestMergerTaskTest {
             fusedLibrary(":fusedLib1") {
                 androidFusedLibrary {
                     namespace = "com.example.fusedLib1"
-                    minSdk = 19
+                    minSdk {
+                        version = release(19)
+                    }
                     manifestPlaceholders["hostName"] = "injected-value-for-hostName"
                 }
                 dependencies {
@@ -176,7 +178,9 @@ internal class FusedLibraryManifestMergerTaskTest {
         val build = rule.build {
             fusedLibrary(":fusedLib1") {
                 androidFusedLibrary {
-                    minSdk = 20
+                    minSdk {
+                        version = release(20)
+                    }
                 }
             }
         }

@@ -25,22 +25,24 @@ import org.gradle.api.Incubating
 @Incubating
 interface FusedLibraryExtension {
 
+    // Options required to be explicitly specified:
+
     /** Namespace of the Fused Library. */
     @get:Incubating
     @set:Incubating
     var namespace: String?
 
+    @Incubating
+    /**
+     * Configures minSdk, see [MinSdkSpec] for available options.
+     */
+    fun minSdk(action: MinSdkSpec.() -> Unit)
+
+    // Additional options:
+
     /** Used to set module-specific experimental property values. */
     @get:Incubating
     val experimentalProperties: MutableMap<String, Any>
-
-    /**
-     * For basic validation that all included libraries in the fused library are at least the minSdk.
-     * Eventually (b/229956178) this value should be able to be automatically determined by the plugin.
-     */
-    @get:Incubating
-    @set:Incubating
-    var minSdk: Int?
 
     /** Map with Manifest placeholder key and placeholder resolved value. See
      * [Inject build variables into the manifest](https://developer.android.com/build/manage-manifests#inject_build_variables_into_the_manifest)

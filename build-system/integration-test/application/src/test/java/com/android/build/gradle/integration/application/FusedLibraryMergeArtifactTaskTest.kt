@@ -174,7 +174,9 @@ internal class FusedLibraryMergeArtifactsTest {
         fusedLibrary(":fusedLib1") {
             androidFusedLibrary {
                 namespace = "com.example.fusedLib1"
-                minSdk = 19
+                minSdk {
+                    version = release(19)
+                }
             }
             dependencies {
                 include(project(":libraryWithLint"))

@@ -243,7 +243,9 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
                 applyPlugin(PluginType.MAVEN_PUBLISH)
                 androidFusedLibrary {
                     namespace = "com.example.fusedLib1"
-                    minSdk = 34
+                    minSdk {
+                        version = release(34)
+                    }
                     experimentalProperties[ModulePropertyKey.BooleanWithDefault.FUSED_LIBRARY_VALIDATE_DEPENDENCIES.key] = true
                 }
                 // Use addDependenciesToFusedLibProject() for setting dependencies.
