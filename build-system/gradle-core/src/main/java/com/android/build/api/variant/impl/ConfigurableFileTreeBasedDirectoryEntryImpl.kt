@@ -28,20 +28,34 @@ import org.gradle.api.tasks.util.PatternFilterable
  * Implementation of [DirectoryEntry] based on a [ConfigurableFileTree]. This is for backward
  * compatibility of the old variant API.
  *
+ * In order to treat the KSP and KAPT outputs differently, we need to pass the [DirectoryEntry.Kind]
+ * to identify those explicitly.
+ *
  * Do not use without explicitly stating the reasons as this class should be removed once the old
  * variant API is removed.
  */
 class ConfigurableFileTreeBasedDirectoryEntryImpl(
     override val name: String,
     private val configurableFileTree: ConfigurableFileTree,
+    override val kind: DirectoryEntry.Kind,
 ): DirectoryEntry {
 
+    /**
+     * [ConfigurableFileTree] will returns its entries as files, instead of directories but what
+     * we need is the top level directory. the [ConfigurableFileTree] is always based on a single
+     * directory but we can't return it directly as there is not a [Provider] based API that will
+     * keep the producer task dependency. So instead of using [ConfigurableFileTree.getDir], I must
+     * use [ConfigurableFileTree.getElements] which does keep the task dependency, yet provide a
+     * mapping from files to directories. The mapping will in fact always return the top level
+     * directory and we just need to have a single one of them.
+     */
+    internal fun asListOfDirectories(projectDir: Directory): Provider<List<Directory>> =
+        configurableFileTree.elements.map { _ ->
+            listOf(projectDir.dir(configurableFileTree.dir.absolutePath))
+        }
+
     override fun addTo(projectDir: Directory, listProperty: ListProperty<Directory>) {
-        val map: Provider<List<Directory>> = configurableFileTree.elements.map { files ->
-            files
-                .filter { it.asFile.isDirectory || !it.asFile.exists() }
-                .map { projectDir.dir(it.asFile.absolutePath)}}
-        listProperty.addAll(map)
+        listProperty.addAll(asListOfDirectories(projectDir))
     }
 
     override fun addTo(

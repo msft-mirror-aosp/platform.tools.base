@@ -24,7 +24,6 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 import java.io.File
-import org.gradle.api.file.FileTree
 
 /**
  * A set of source directories for a specific [SourceType]
@@ -36,7 +35,7 @@ import org.gradle.api.file.FileTree
  */
 open class FlatSourceDirectoriesImpl(
     _name: String,
-    private val variantServices: VariantServices,
+    protected val variantServices: VariantServices,
     variantDslFilters: PatternFilterable?
 ): SourceDirectoriesImpl(_name, variantServices, variantDslFilters),
     SourceDirectories.Flat {

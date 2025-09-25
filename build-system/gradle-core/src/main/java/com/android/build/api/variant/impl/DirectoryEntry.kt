@@ -30,6 +30,16 @@ import org.gradle.api.tasks.util.PatternFilterable
 interface DirectoryEntry {
 
     /**
+     * To avoid circular dependencies, especially with the old variant API, we need to store the
+     * the KSP and KAPT generated directories separately so the KSP compiler can see all user
+     * generated and java sources but not the KAPT generated ones.
+     *
+     * Therefore, it is necessary to tag the KSP and KAPT generated directories using the enum
+     * below.
+     */
+    enum class Kind { KAPT, KSP, GENERIC }
+
+    /**
      *  source folder name, human readable but not guaranteed to be unique.
      */
     val name: String
@@ -103,4 +113,11 @@ interface DirectoryEntry {
     fun makeDependentOf(task: Task) {
         // by default do nothing, only TaskBasedDirectoryEntry can be a valid dependent
     }
+
+    /**
+     * Kind of [DirectoryEntry], it is a [Kind.GENERIC] one by default which mean it is neither the
+     * KSP and KAPT generated source folders.
+     */
+    val kind: Kind
+        get() = Kind.GENERIC
 }

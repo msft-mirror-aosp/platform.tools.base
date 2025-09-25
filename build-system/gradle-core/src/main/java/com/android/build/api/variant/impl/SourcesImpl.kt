@@ -47,7 +47,7 @@ class SourcesImpl(
 ): InternalSources {
 
     override val java =
-        FlatSourceDirectoriesImpl(
+        FlatSourceDirectoriesForJavaImpl(
             SourceType.JAVA.folder,
             variantServices,
             variantSourceProvider?.java?.filter

@@ -22,6 +22,7 @@ import com.android.build.api.artifact.SingleArtifact;
 import com.android.build.api.component.impl.ComponentUtils;
 import com.android.build.api.variant.ResValue;
 import com.android.build.api.variant.impl.ConfigurableFileTreeBasedDirectoryEntryImpl;
+import com.android.build.api.variant.impl.DirectoryEntry;
 import com.android.build.api.variant.impl.FileCollectionBasedDirectoryEntryImpl;
 import com.android.build.api.variant.impl.ResValueKeyImpl;
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl;
@@ -50,13 +51,11 @@ import com.android.builder.errors.IssueReporter;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SourceProvider;
+
 import com.google.common.collect.ImmutableList;
-import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
+
 import kotlin.Unit;
+
 import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Task;
@@ -74,6 +73,12 @@ import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.compile.JavaCompile;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Base class for variants.
@@ -238,14 +243,17 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
             services.getIssueReporter()
                     .reportError(
                             IssueReporter.Type.GENERIC,
-                            "variant.getApplicationId() is not supported by dynamic-feature plugins as it cannot handle delayed setting of the application ID. Please use getApplicationIdTextResource() instead.");
+                            "variant.getApplicationId() is not supported by dynamic-feature plugins"
+                                    + " as it cannot handle delayed setting of the application ID."
+                                    + " Please use getApplicationIdTextResource() instead.");
         }
         if (!services.getProjectOptions().get(BooleanOption.ENABLE_LEGACY_API)) {
             services.getIssueReporter()
                     .reportError(
                             IssueReporter.Type.GENERIC,
                             new RuntimeException(
-                                    "Access to applicationId via deprecated Variant API requires compatibility mode.\n"
+                                    "Access to applicationId via deprecated Variant API requires"
+                                            + " compatibility mode.\n"
                                             + ComponentUtils.getENABLE_LEGACY_API()));
             // return default value during sync
             return "";
@@ -641,7 +649,8 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
                                                 mappedDirectory,
                                                 true, /* isGenerated */
                                                 true, /*isUserProvided */
-                                                true /* shouldBeAddedToIdeModel */));
+                                                true /* shouldBeAddedToIdeModel */,
+                                                DirectoryEntry.Kind.GENERIC));
                                 return Unit.INSTANCE;
                             });
         }
@@ -655,7 +664,7 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
                         javaSources -> {
                             javaSources.addSource$gradle_core(
                                     new ConfigurableFileTreeBasedDirectoryEntryImpl(
-                                            "legacy_api_apt", folder));
+                                            "legacy_api_apt", folder, DirectoryEntry.Kind.KAPT));
                             return Unit.INSTANCE;
                         });
     }

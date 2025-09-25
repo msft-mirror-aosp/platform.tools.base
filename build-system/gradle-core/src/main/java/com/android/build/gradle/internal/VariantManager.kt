@@ -1178,6 +1178,10 @@ class VariantManager<
         finalizeAllComponents(
             variants.map { it.variant } + testComponents + testFixturesComponents
         )
+
+        // lock the Properties of the variant API after the old API because
+        // of the versionCode/versionName properties that are shared between the old and new APIs.
+        lockVariantProperties()
     }
 
     init {

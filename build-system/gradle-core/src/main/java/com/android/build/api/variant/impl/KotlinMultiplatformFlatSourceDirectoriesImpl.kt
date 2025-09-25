@@ -27,7 +27,7 @@ import org.gradle.api.tasks.util.PatternFilterable
  */
 class KotlinMultiplatformFlatSourceDirectoriesImpl(
     name: String,
-    val variantServices: VariantServices,
+    variantServices: VariantServices,
     variantDslFilters: PatternFilterable?
 ): FlatSourceDirectoriesImpl(name, variantServices, variantDslFilters) {
 
