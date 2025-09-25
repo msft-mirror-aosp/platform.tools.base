@@ -36,15 +36,17 @@ import org.junit.platform.engine.TestEngine
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
+import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.util.Properties
+import kotlin.io.path.absolutePathString
 
-    class TestEngineSystemParametersTest {
+class TestEngineSystemParametersTest {
 
     @get:Rule
-    private val temporaryFolder = org.junit.rules.TemporaryFolder().also {
+    private val temporaryFolder = TemporaryFolder().also {
         it.create()
     }
     private val temporaryFile = temporaryFolder.newFile("junit_engines_additional_inputs.txt").also {
@@ -117,12 +119,18 @@ import java.util.Properties
             .run("testFirstT1DebugTestSuite")
         Truth.assertThat(result.didWorkTasks).contains(":app:testFirstT1DebugTestSuite")
 
+        val appBuildDir = project.subProject(":app").buildDir
+
         // lookup the test engine logging file.
-        val loggingFile = File(project.subProject(":app").buildDir.toFile(),
+        val loggingFile = File(
+            appBuildDir.toFile(),
             "intermediates/debug/testFirstT1DebugTestSuite/junit_engines_logging.txt")
 
         PathSubject.assertThat(loggingFile).exists()
         PathSubject.assertThat(loggingFile).contains("token = _random_token_")
+        PathSubject.assertThat(loggingFile).contains(
+            "Property com.android.junit.engine.results.dir = ${appBuildDir.absolutePathString()}"
+        )
     }
 }
 
@@ -153,6 +161,13 @@ class ToyJunitEngineForTestingSystemProperties: TestEngine {
             }
             val additionalInputs = Properties().also {
                 it.load(FileReader(additionalInputsPath))
+            }
+
+            // keep this code old fashioned to avoid creating inner classes that need to be packaged.
+            val entries = inputParams.inputParameters.iterator()
+            while (entries.hasNext()) {
+                val next = entries.next()
+                logger.info("Property ${next.name} = ${next.value}")
             }
 
             val token = additionalInputs.getProperty("com.android.build.test.token")

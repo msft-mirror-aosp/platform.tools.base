@@ -31,7 +31,7 @@ interface AdbServices {
    *
    * @param transport The backup transport to use for the operation
    */
-  suspend fun withSetup(transport: String, block: suspend () -> Unit)
+  suspend fun withSetup(transport: BackupTransport, block: suspend () -> Unit)
 
   /**
    * Initialize a backup transport
@@ -107,7 +107,7 @@ interface AdbServices {
         .trimIndent()
   }
 
-  suspend fun setTransport(transport: String, verify: Boolean): String
+  suspend fun setTransport(transport: BackupTransport)
 
   suspend fun getDebuggableApps(): List<String>
 }

@@ -44,8 +44,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 
-private val TRANSPORT_COMMAND_REGEX =
-  "Selected transport [^ ]+ \\(formerly (?<old>[^ ]+)\\)".toRegex()
+private const val SELECT_TRANSPORT_COMPONENT_SUCCESS = "Success. Selected transport: "
 private val PACKAGE_VERSION_CODE_REGEX = "^ {4}versionCode=(?<version>\\d+).*$".toRegex()
 private val APPLICATION_ID_REGEX = "^([a-z][a-z\\d_]*\\.)+[a-z][a-z\\d_]*$".toRegex(IGNORE_CASE)
 private const val SECURE_SETTING_ENABLE_TESTING = "backup_enable_testing_flows"
@@ -71,7 +70,7 @@ abstract class AbstractAdbServices(
     progressListener?.onStep(Step(++step, totalSteps, text))
   }
 
-  override suspend fun withSetup(transport: String, block: suspend () -> Unit) {
+  override suspend fun withSetup(transport: BackupTransport, block: suspend () -> Unit) {
     verifyGmsCore()
     withBmgr { withTestMode { withTransport(transport) { block() } } }
   }
@@ -331,24 +330,20 @@ abstract class AbstractAdbServices(
     }
   }
 
-  private suspend fun withTransport(transport: String, block: suspend () -> Unit) {
+  private suspend fun withTransport(transport: BackupTransport, block: suspend () -> Unit) {
     reportProgress("Setting backup transport")
-    val oldTransport = setTransport(transport, verify = true)
-    if (oldTransport != transport) {
-      totalSteps++
+    val oldTransport = getCurrentTransport()
+    if (oldTransport == transport.className) {
+      block()
+      return
     }
+    totalSteps++
+    setTransport(transport)
     try {
       block()
     } finally {
-      if (oldTransport != transport) {
-        reportProgress("Restoring backup transport")
-        // It's possible to set to a "transport" that does not exist. If the device was already in
-        // this state, trying to restore to it will result in the "transport" being set but not
-        // marked as "current" (prefix of "*" in list transports).
-        // In order to not fail the entire operation when this happens, we do not verify that the
-        // "transport" is set when we restore it.
-        setTransport(oldTransport, verify = false)
-      }
+      reportProgress("Restoring backup transport")
+      restoreTransport(oldTransport)
     }
   }
 
@@ -371,28 +366,45 @@ abstract class AbstractAdbServices(
     }
   }
 
-  override suspend fun setTransport(transport: String, verify: Boolean): String {
+  override suspend fun setTransport(transport: BackupTransport) {
     val selectTransportOut =
-      executeCommand("bmgr transport $transport", TRANSPORT_NOT_SELECTED).stdout.trim()
-    val result =
-      TRANSPORT_COMMAND_REGEX.matchEntire(selectTransportOut)
-        ?: throw BackupException(
-          TRANSPORT_NOT_SELECTED,
-          "Unexpected result from 'bmgr transport' command: $selectTransportOut",
-        )
-
-    if (verify) {
-      val listTransportsOut = executeCommand("bmgr list transports", TRANSPORT_NOT_SELECTED).stdout
-      val transports = listTransportsOut.lines()
-      val currentTransport = transports.find { it.startsWith("  *") }?.dropPrefix("  * ")
-      if (currentTransport != transport) {
-        throw BackupException(
-          TRANSPORT_NOT_SELECTED,
-          "Requested transport was not set: $listTransportsOut",
-        )
-      }
+      executeCommand("bmgr transport -c ${transport.componentName}", TRANSPORT_NOT_SELECTED)
+        .stdout
+        .trim()
+    if (!selectTransportOut.startsWith(SELECT_TRANSPORT_COMPONENT_SUCCESS)) {
+      throw BackupException(
+        TRANSPORT_NOT_SELECTED,
+        "Unexpected result from 'bmgr transport -c' command: $selectTransportOut",
+      )
     }
-    return result.getGroup("old")
+    val listTransportsOut = executeCommand("bmgr list transports", TRANSPORT_NOT_SELECTED).stdout
+    val transports = listTransportsOut.lines()
+    val currentTransport = transports.find { it.startsWith("  *") }?.dropPrefix("  * ")
+    if (currentTransport != transport.className) {
+      throw BackupException(
+        TRANSPORT_NOT_SELECTED,
+        "Requested transport was not set: $listTransportsOut",
+      )
+    }
+  }
+
+  // When restoring to a the original transport, we don't want to fail the entire operation so
+  // there's no error checking here.
+  private suspend fun restoreTransport(transport: String?) {
+    if (transport == null) {
+      return
+    }
+    try {
+      executeCommand("bmgr transport $transport", TRANSPORT_NOT_SELECTED)
+    } catch (_: Throwable) {
+      // Ignore errors
+    }
+  }
+
+  private suspend fun getCurrentTransport(): String? {
+    val listTransportsOut = executeCommand("bmgr list transports").stdout
+    val transports = listTransportsOut.lines()
+    return transports.find { it.startsWith("  *") }?.dropPrefix("  * ")
   }
 
   private suspend fun enableBmgr(enabled: Boolean) {

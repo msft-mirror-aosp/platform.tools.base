@@ -19,6 +19,7 @@ package com.android.backup.testing
 import com.android.backup.AbstractAdbServices
 import com.android.backup.AdbServices.AdbOutput
 import com.android.backup.BackupException
+import com.android.backup.BackupTransport.D2D
 import com.android.backup.ErrorCode
 import com.android.tools.environment.log.NoopLogger
 import com.android.utils.text.dropPrefix
@@ -182,9 +183,16 @@ class FakeAdbServices(
   }
 
   private fun handleSetTransport(command: String): AdbOutput {
-    val oldTransport = activeTransport
-    activeTransport = command.dropPrefix(SET_TRANSPORT)
-    return "Selected transport $activeTransport (formerly $oldTransport)".asStdout()
+    val asComponent = command.contains(" -c ")
+    if (asComponent) {
+      val transport = command.dropPrefix("$SET_TRANSPORT-c ")
+      activeTransport = transport.takeIf { transport != D2D.componentName } ?: D2D.className
+      return "Success. Selected transport: $activeTransport".asStdout()
+    } else {
+      val oldTransport = activeTransport
+      activeTransport = command.dropPrefix(SET_TRANSPORT)
+      return "Selected transport $activeTransport (formerly $oldTransport)".asStdout()
+    }
   }
 
   private fun handleListTransports(): AdbOutput {

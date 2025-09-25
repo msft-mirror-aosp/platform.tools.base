@@ -15,7 +15,7 @@ from tools.base.bazel.ci.presubmit import gerrit
 _BUCKET = 'adt-byob'
 _FILE_NAME = 'known-flakes/{target}.txt'
 
-_MAX_RUNS_PER_TEST = 200
+_MAX_RUNS_PER_TEST = 500
 _RUNS_PER_FLAKY_TEST = 100
 _MINIMUM_FLAKE_RATE = 0.05
 
